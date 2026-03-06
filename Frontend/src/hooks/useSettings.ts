@@ -73,6 +73,10 @@ async function SetShowAlphaMods(v: boolean): Promise<void> {
   await ipc.settings.update({ showAlphaMods: v }); 
 }
 
+async function SetUseDualAuth(v: boolean): Promise<void> {
+  await ipc.settings.update({ useDualAuth: v });
+}
+
 async function GetBackgroundMode(): Promise<string> { 
   return (await ipc.settings.get()).backgroundMode ?? 'image'; 
 }
@@ -203,11 +207,12 @@ export function useSettings(options: UseSettingsOptions) {
   // General settings
   const [hasOfficialAccount, setHasOfficialAccount] = useState(false);
   const [isActiveProfileOfficial, setIsActiveProfileOfficial] = useState(false);
+  const [profileLoaded, setProfileLoaded] = useState(false);
   const [closeAfterLaunch, setCloseAfterLaunch] = useState(false);
   const [showAlphaMods, setShowAlphaMods] = useState(false);
   const [devModeEnabled, setDevModeEnabled] = useState(false);
   const [onlineMode, setOnlineMode] = useState(true);
-  const [useDualAuth, setUseDualAuth] = useState(false);
+  const [useDualAuth, setUseDualAuth] = useState(true);
   const [launchAfterDownload, setLaunchAfterDownload] = useState(true);
 
   // Java settings
@@ -309,7 +314,7 @@ export function useSettings(options: UseSettingsOptions) {
         const online = settingsSnapshot.onlineMode ?? true;
         setOnlineMode(online);
 
-        setUseDualAuth(settingsSnapshot.useDualAuth ?? false);
+        setUseDualAuth(settingsSnapshot.useDualAuth ?? true);
         setLaunchAfterDownload(settingsSnapshot.launchAfterDownload ?? true);
 
         const loadedJavaArgs = settingsSnapshot.javaArguments;
@@ -401,8 +406,10 @@ export function useSettings(options: UseSettingsOptions) {
 
         const savedDevMode = localStorage.getItem('hyprism_dev_mode');
         setDevModeEnabled(savedDevMode === 'true');
+        setProfileLoaded(true);
       } catch (err) {
         console.error('Failed to load settings:', err);
+        setProfileLoaded(true);
       }
     };
     loadSettings();
@@ -514,6 +521,12 @@ export function useSettings(options: UseSettingsOptions) {
     setShowAlphaMods(newValue);
     await SetShowAlphaMods(newValue);
   }, [showAlphaMods]);
+
+  const handleUseDualAuthChange = useCallback(async () => {
+    const newValue = !useDualAuth;
+    setUseDualAuth(newValue);
+    await SetUseDualAuth(newValue);
+  }, [useDualAuth]);
 
   const handleSaveJavaArguments = useCallback(async () => {
     const { sanitized, blocked } = sanitizeAdvancedJavaArguments(javaArguments);
@@ -798,6 +811,8 @@ export function useSettings(options: UseSettingsOptions) {
     setOnlineMode,
     useDualAuth,
     setUseDualAuth,
+    handleUseDualAuthChange,
+    profileLoaded,
     launchAfterDownload,
     setLaunchAfterDownload,
     javaArguments,

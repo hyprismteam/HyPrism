@@ -172,7 +172,9 @@
       "showAlphaMods": "Show Alpha Mods",
       "showAlphaModsHint": "Show mods with alpha release type in the mod manager",
       "dualAuth": "DualAuth (Experimental)",
-      "dualAuthHint": "Uses a runtime Java Agent for server authentication instead of static JAR patching. May cause crashes or connection issues."
+      "dualAuthHint": "Uses a runtime Java Agent for server authentication instead of static JAR patching. May cause crashes or connection issues.",
+      "legacyPatching": "Legacy Patching",
+      "legacyPatchingHint": "Uses static JAR patching for server authentication instead of the DualAuth Java Agent. More compatible but less flexible."
     },
     "downloads": {
       "title": "Downloads",

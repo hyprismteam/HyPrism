@@ -140,7 +140,9 @@
       "showAlphaMods": "アルファ版Modを表示",
       "showAlphaModsHint": "ModマネージャーでアルファリリースタイプのModを表示",
       "dualAuth": "DualAuth（実験的）",
-      "dualAuthHint": "静的なJARパッチングの代わりにランタイムJavaエージェントでサーバー認証を行います。クラッシュや接続の問題が発生する可能性があります。"
+      "dualAuthHint": "静的なJARパッチングの代わりにランタイムJavaエージェントでサーバー認証を行います。クラッシュや接続の問題が発生する可能性があります。",
+      "legacyPatching": "レガシーパッチ",
+      "legacyPatchingHint": "DualAuth Javaエージェントの代わりに静的JARパッチングを使用してサーバー認証を行います。互換性が高いですが柔軟性が低いです。"
     },
     "downloads": {
       "title": "ダウンロード",

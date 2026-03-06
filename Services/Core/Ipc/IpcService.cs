@@ -487,7 +487,7 @@ public class IpcService(IServiceProvider services) : IpcServiceBase(services)
     {
         var s = Services.GetRequiredService<ISettingsService>();
         var oldBranch = s.GetLauncherBranch();
-        foreach (var (key, value) in req.Updates)
+        foreach (var (key, value) in req.Updates ?? new Dictionary<string, JsonElement>())
             ApplySetting(s, key, value);
         if (!string.Equals(oldBranch, s.GetLauncherBranch(), StringComparison.OrdinalIgnoreCase))
             _ = Task.Run(async () =>

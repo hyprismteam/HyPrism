@@ -164,7 +164,9 @@
       "showAlphaMods": "알파 모드 표시",
       "showAlphaModsHint": "모드 관리자에서 알파 릴리스 유형의 모드 표시",
       "dualAuth": "DualAuth (실험적)",
-      "dualAuthHint": "정적 JAR 패치 대신 런타임 Java 에이전트를 사용하여 서버 인증을 수행합니다. 충돌이나 연결 문제가 발생할 수 있습니다."
+      "dualAuthHint": "정적 JAR 패치 대신 런타임 Java 에이전트를 사용하여 서버 인증을 수행합니다. 충돌이나 연결 문제가 발생할 수 있습니다.",
+      "legacyPatching": "레거시 패칭",
+      "legacyPatchingHint": "DualAuth Java 에이전트 대신 정적 JAR 패치를 사용하여 서버 인증을 수행합니다. 더 호환되지만 덜 유연합니다."
     },
     "downloads": {
       "title": "다운로드",

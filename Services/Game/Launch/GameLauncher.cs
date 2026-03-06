@@ -429,12 +429,14 @@ public class GameLauncher : IGameLauncher
                 });
 
                 // DualAuth agent handles server-side auth flow at runtime.
-                Logger.Info("Game", $"Setting up DualAuth agent for auth domain: {baseDomain}");
+                // Always check for a newer version before launch; falls back to local check
+                // if GitHub API is unreachable.
+                Logger.Info("Game", $"Checking DualAuth agent version for auth domain: {baseDomain}");
                 _progressService.ReportDownloadProgress("patching", 65, "launch.detail.dualauth_setup", null, 0, 0);
 
                 try
                 {
-                    var dualAuthResult = await DualAuthService.EnsureAgentAvailableAsync(_appDir, (msg, progress) =>
+                    var dualAuthResult = await DualAuthService.EnsureAgentUpToDateAsync(_appDir, (msg, progress) =>
                     {
                         Logger.Info("DualAuth", progress.HasValue ? $"{msg} ({progress}%)" : msg);
                         if (progress.HasValue)

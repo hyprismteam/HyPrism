@@ -26,10 +26,12 @@ export function send(channel: string, data?: unknown): void {
   ipcRenderer.send(channel, JSON.stringify(data));
 }
 
-export function on<T>(channel: string, cb: (data: T) => void): void {
-  ipcRenderer.on(channel, (_: unknown, raw: string) => {
+export function on<T>(channel: string, cb: (data: T) => void): () => void {
+  const handler = (_: unknown, raw: string) => {
     try { cb(JSON.parse(raw) as T); } catch { /* ignore */ }
-  });
+  };
+  ipcRenderer.on(channel, handler);
+  return () => ipcRenderer.removeListener(channel, handler);
 }
 
 export function invoke<T>(channel: string, data?: unknown, timeoutMs = 10_000): Promise<T> {

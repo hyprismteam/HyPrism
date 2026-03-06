@@ -98,6 +98,7 @@ scripts/build-linux-all-ubuntu.sh
 *.py
 __pycache__/
 *.pyc
+*.hash
 
 # Virtual environments
 .venv/

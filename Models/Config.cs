@@ -171,10 +171,10 @@ public class Config
     public string GameEnvironmentVariables { get; set; } = "";
     
     /// <summary>
-    /// If true, uses DualAuth Java Agent for server authentication (experimental).
-    /// If false (default), uses legacy static JAR patching which is more stable.
+    /// If true (default), uses DualAuth Java Agent for server authentication.
+    /// If false, uses legacy static JAR patching instead (opt-in via Settings).
     /// </summary>
-    public bool UseDualAuth { get; set; } = false;
+    public bool UseDualAuth { get; set; } = true;
 
     /// <summary>
     /// CurseForge API key for mod manager functionality.

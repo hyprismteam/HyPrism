@@ -205,7 +205,9 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                   onlineMode={settings.onlineMode}
                   authMode={settings.authMode}
                   useDualAuth={settings.useDualAuth}
-                  setUseDualAuth={settings.setUseDualAuth}
+                  handleUseDualAuthChange={settings.handleUseDualAuthChange}
+                  isActiveProfileOfficial={settings.isActiveProfileOfficial}
+                  profileLoaded={settings.profileLoaded}
                 />
               )}
 
