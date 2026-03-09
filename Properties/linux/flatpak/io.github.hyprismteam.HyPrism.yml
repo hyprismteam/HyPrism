@@ -37,28 +37,22 @@ modules:
     build-commands:
       - mkdir -p /app/lib/i386-linux-gnu/codecs-extra
       - install -d /app/HyPrism
+      # We will have a single command for both local Flatpak build and Flathub as the directory structure is sightly different between them
+      - cp -R wwwroot /app/wwwroot || cp -R linux-unpacked/wwwroot /app/wwwroot && rm -rf linux-unpacked/wwwroot 
       - cp -R linux-unpacked/* /app/HyPrism
       - chmod +x /app/HyPrism/chrome-sandbox /app/HyPrism/HyPrism
-      - cp -R wwwroot /app/wwwroot
-      - install -Dm755 hyprism-launcher-wrapper.sh /app/bin/hyprism-launcher-wrapper
-      - install -Dm644 io.github.hyprismteam.HyPrism.png /app/share/icons/hicolor/256x256/apps/io.github.hyprismteam.HyPrism.png
-      - install -Dm644 io.github.hyprismteam.HyPrism.desktop /app/share/applications/io.github.hyprismteam.HyPrism.desktop
-      - install -Dm644 io.github.hyprismteam.HyPrism.metainfo.xml /app/share/metainfo/io.github.hyprismteam.HyPrism.metainfo.xml
+      - install -Dm755 Properties/linux/flatpak/hyprism-launcher-wrapper.sh /app/bin/hyprism-launcher-wrapper
+      - install -Dm644 Properties/linux/flatpak/io.github.hyprismteam.HyPrism.png /app/share/icons/hicolor/256x256/apps/io.github.hyprismteam.HyPrism.png
+      - install -Dm644 Properties/linux/flatpak/io.github.hyprismteam.HyPrism.desktop /app/share/applications/io.github.hyprismteam.HyPrism.desktop
+      - install -Dm644 Properties/linux/flatpak/io.github.hyprismteam.HyPrism.metainfo.xml /app/share/metainfo/io.github.hyprismteam.HyPrism.metainfo.xml
       - ln -s /app/HyPrism/HyPrism /app/bin/HyPrism
     sources:
       - type: dir
-        path: ../../../bin/Release/net10.0/linux-x64/publish/linux-unpacked
-        dest: linux-unpacked
+        path: .
+        dest: Properties/linux/flatpak
       - type: dir
         path: ../../../wwwroot
         dest: wwwroot
-      - type: file
-        path: hyprism-launcher-wrapper.sh
-      - type: file
-        path: io.github.hyprismteam.HyPrism.png
-      - type: file
-        path: hyprism-launcher-wrapper.sh
-      - type: file
-        path: io.github.hyprismteam.HyPrism.desktop
-      - type: file
-        path: io.github.hyprismteam.HyPrism.metainfo.xml
+      - type: dir
+        path: ../../../bin/Release/net10.0/linux-x64/publish/linux-unpacked
+        dest: linux-unpacked

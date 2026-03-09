@@ -59,6 +59,8 @@ dotnet publish -c Release
 
 The published output is in `bin/Release/net10.0/linux-x64/publish/` (or platform equivalent) and includes the `wwwroot/` folder with the compiled frontend.
 
+When generating standalone archives (`tar.xz`) via `./Scripts/publish.sh tar` or the GitHub release pipeline, the archive will now expose `wwwroot/` at the top level in addition to the internal `resources/bin/wwwroot` location. This makes it easier to inspect or run the bundled frontend after extracting the tarball.
+
 ## Platform Notes
 
 ### Linux

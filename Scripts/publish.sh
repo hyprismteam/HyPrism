@@ -544,6 +544,21 @@ do_publish() {
         local size
         size=$(du -h "$artifact" | cut -f1)
         log_ok "  $(basename "$artifact") (${size})"
+
+        # ensure tar archives expose wwwroot at the root level as well
+        if [[ "$artifact" == *.tar.xz ]]; then
+            log_info "Adjusting $(basename "$artifact") to include wwwroot at top-level"
+            tmpdir=$(mktemp -d)
+            tar -xJf "$artifact" -C "$tmpdir"
+            # base directory inside extracted archive
+            base=$(find "$tmpdir" -maxdepth 1 -type d ! -path "$tmpdir" | head -n1)
+            if [[ -n "$base" && -d "$base/resources/bin/wwwroot" ]]; then
+                cp -a "$base/resources/bin/wwwroot" "$base/wwwroot"
+                # re-create archive with updated contents
+                tar -cJf "$artifact" -C "$tmpdir" "$(basename "$base")"
+            fi
+            rm -rf "$tmpdir"
+        fi
     done < <(find "$publish_dir" -maxdepth 1 -type f \( \
         -name "*.AppImage" -o \
         -name "*.deb" -o \

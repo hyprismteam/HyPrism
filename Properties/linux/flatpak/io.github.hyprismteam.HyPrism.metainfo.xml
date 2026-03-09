@@ -10,23 +10,23 @@
     <screenshots>
     <screenshot type="default">
       <caption>HyPrism launcher dashboard</caption>
-      <image>https://github.com/hyprismteam/HyPrism/blob/dev/Frontend/public/preview_launcher.png?raw=true</image>
+      <image>https://raw.githubusercontent.com/hyprismteam/HyPrism/refs/heads/dev/Frontend/public/preview_launcher.png</image>
     </screenshot>
     <screenshot>
       <image>
-        https://github.com/RetroDECK/RetroDECK/blob/dev/res/screenshots/instances.png?raw=true</image>
+        https://raw.githubusercontent.com/hyprismteam/HyPrism/refs/heads/dev/Frontend/public/instances.png</image>
     </screenshot>
     <screenshot>
       <image>
-        https://github.com/RetroDECK/RetroDECK/blob/dev/res/screenshots/news.png?raw=true</image>
+        https://raw.githubusercontent.com/hyprismteam/HyPrism/refs/heads/dev/Frontend/public/news.png</image>
     </screenshot>
     <screenshot>
       <image>
-        https://github.com/RetroDECK/RetroDECK/blob/dev/res/screenshots/profiles.png?raw=true</image>
+        https://raw.githubusercontent.com/hyprismteam/HyPrism/refs/heads/dev/Frontend/public/profiles.png</image>
     </screenshot>
     <screenshot>
       <image>
-        https://github.com/RetroDECK/RetroDECK/blob/dev/res/screenshots/settings.png?raw=true</image>
+        https://raw.githubusercontent.com/hyprismteam/HyPrism/refs/heads/dev/Frontend/public/settings.png</image>
     </screenshot>
   </screenshots>
 

@@ -130,7 +130,12 @@
     <Copy SourceFiles="@(FrontendFiles)" DestinationFiles="@(FrontendFiles->'$(OutputPath)/wwwroot/%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
   </Target>
 
-  <Target Name="CopyFrontendDistPublish" AfterTargets="Publish" Condition="Exists('wwwroot/index.html')">
+  <!-- Ensure the compiled frontend is present in the publish directory both
+       before and after the actual Publish target.  Prior to 3.0.1 the copy only
+       ran after publishing, which meant packaging steps that executed as part of
+       the publish could miss the wwwroot folder.  Running beforePublish makes
+       sure electron-builder and other post-publish tooling see the files. -->
+  <Target Name="CopyFrontendDistPublish" BeforeTargets="Publish" AfterTargets="Publish" Condition="Exists('wwwroot/index.html')">
     <ItemGroup>
       <FrontendFilesPublish Include="wwwroot/**/*" />
     </ItemGroup>
