@@ -18,7 +18,7 @@ modules:
     sources:
       - type: git
         url:  https://github.com/hyprismteam/HyPrism
-        branch: main
+        branch: HYPRISM_MAIN_BRANCH
       - type: archive
         url: HYPRISM_RELEASE_URL
         sha256: HYPRISM_RELEASE_SHA256

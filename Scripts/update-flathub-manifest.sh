@@ -15,6 +15,16 @@ MANIFEST="$(dirname "$0")/../Properties/linux/flathub/io.github.hyprismteam.HyPr
 # query GitHub API for the latest release
 API="https://api.github.com/repos/hyprismteam/HyPrism/releases/latest"
 
+# also fetch the SHA of the tip of the main branch
+# we can use the GitHub API which doesn't require a local repo
+MAIN_SHA=$(curl -s "https://api.github.com/repos/hyprismteam/HyPrism/branches/main" \
+    | jq -r .commit.sha)
+if [[ -z "$MAIN_SHA" || "$MAIN_SHA" == "null" ]]; then
+    echo "error: unable to fetch main branch SHA" >&2
+    exit 1
+fi
+
+
 # find the first asset matching our pattern
 read -r url name < <(curl -s "$API" \
     | jq -r '.assets[] |
@@ -64,6 +74,7 @@ header=$(printf '%s' "$header" | sed '/^modules:$/d')
 modules=$(sed \
     -e "s|HYPRISM_RELEASE_URL|$url|" \
     -e "s|HYPRISM_RELEASE_SHA256|$sha|" \
+    -e "s|HYPRISM_MAIN_BRANCH|$MAIN_SHA|" \
     "$MODULE_FILE" \
   | sed '1{/^$/d}' \
   | sed '1d')
