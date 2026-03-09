@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=HyPrism
+Comment=All in one launcher and mod manager fotr Hytale
+Exec=hyprism-launcher-wrapper
+Icon=io.github.HyPrismTeam.HyPrism
+Terminal=false
+Type=Application
+Categories=Game;
+Keywords=hytale;launcher;gaming;mods;
+StartupWMClass=HyPrism
+StartupNotify=true

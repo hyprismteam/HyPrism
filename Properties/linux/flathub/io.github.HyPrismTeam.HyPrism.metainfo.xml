@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.HyPrismTeam.HyPrism</id>
+  <name>HyPrism</name>
+  <summary>Cross-platform Hytale launcher and mod manager</summary>
+  <icon type="cached">io.github.HyPrismTeam.HyPrism</icon>
+  <metadata_license>MIT</metadata_license>
+  <project_license>MIT</project_license>
+
+  <description>
+    <p>
+      HyPrism is an open-source launcher and mod manager for Hytale with instance management,
+      CurseForge mod integration, and streamlined updates.
+    </p>
+    <ul>
+      <li>Multiple isolated game instances</li>
+      <li>Integrated mod browser and installer</li>
+      <li>Per-instance mods and user data</li>
+      <li>Custom auth support and profile management</li>
+    </ul>
+  </description>
+
+  <launchable type="desktop-id">io.github.HyPrismTeam.HyPrism.desktop</launchable>
+
+  <screenshots>
+    <screenshot type="default">
+      <caption>HyPrism launcher dashboard</caption>
+      <image>https://raw.githubusercontent.com/HyPrismTeam.HyPrism/HyPrism/main/assets/screenshot.png</image>
+    </screenshot>
+  </screenshots>
+
+  <url type="homepage">https://github.com/HyPrismTeam.HyPrism/HyPrism</url>
+  <url type="bugtracker">https://github.com/HyPrismTeam.HyPrism/HyPrism/issues</url>
+  <developer_name>HyPrism Team</developer_name>
+
+  <provides>
+    <binary>HyPrism</binary>
+  </provides>
+
+  <categories>
+    <category>Game</category>
+    <category>Utility</category>
+  </categories>
+
+  <keywords>
+    <keyword>hytale</keyword>
+    <keyword>launcher</keyword>
+    <keyword>mods</keyword>
+    <keyword>instances</keyword>
+  </keywords>
+
+  <content_rating type="oars-1.1" />
+</component>
