@@ -8,15 +8,15 @@ import {
 import { useAccentColor } from '@/contexts/AccentColorContext';
 import { invoke, type ModInfo as CurseForgeModInfo, type ModScreenshot } from '@/lib/ipc';
 import { Button, IconButton, SelectableCheckbox } from '@/components/ui/Controls';
-import type { ModInfo } from '@/types';
+import type { InstalledModInfo } from '@/types';
 
 interface BulkOperationModalProps {
   isOpen: boolean;
   onClose: () => void;
-  modList: ModInfo[];
+  modList: InstalledModInfo[];
   modDetailsCache: Record<string, CurseForgeModInfo | null>;
-  prefetchModDetails: (mods: ModInfo[]) => Promise<void>;
-  getCurseForgeModId: (mod: ModInfo) => string;
+  prefetchModDetails: (mods: InstalledModInfo[]) => Promise<void>;
+  getCurseForgeModId: (mod: InstalledModInfo) => string;
 }
 
 interface BulkUpdateModalProps extends BulkOperationModalProps {
@@ -57,7 +57,7 @@ export const BulkUpdateModal: React.FC<BulkUpdateModalProps> = ({
     void prefetchModDetails(modList);
   }, [isOpen, modList, prefetchModDetails]);
 
-  const loadChangelogFor = useCallback(async (mod: ModInfo) => {
+  const loadChangelogFor = useCallback(async (mod: InstalledModInfo) => {
     if (changelogCache[mod.id]?.status === 'loading' || changelogCache[mod.id]?.status === 'ready') return;
     if (typeof mod.latestFileId !== 'number' || !Number.isFinite(mod.latestFileId)) return;
 
@@ -181,7 +181,7 @@ export const BulkUpdateModal: React.FC<BulkUpdateModalProps> = ({
                                 <img src={iconUrl} alt="" className="w-full h-full object-cover" loading="lazy" />
                               ) : (
                                 <div className="w-full h-full flex items-center justify-center">
-                                  <Package size={18} className="text-white/30" />
+                                  <Package size={18} className="text-white opacity-30" />
                                 </div>
                               )}
                             </div>
@@ -384,7 +384,7 @@ export const BulkDeleteModal: React.FC<BulkDeleteModalProps> = ({
                                 <img src={iconUrl} alt="" className="w-full h-full object-cover" loading="lazy" />
                               ) : (
                                 <div className="w-full h-full flex items-center justify-center">
-                                  <Package size={18} className="text-white/30" />
+                                  <Package size={18} className="text-white opacity-30" />
                                 </div>
                               )}
                             </div>

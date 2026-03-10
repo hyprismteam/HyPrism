@@ -2,7 +2,7 @@
 Name=HyPrism
 Comment=All in one launcher and mod manager fotr Hytale
 Exec=hyprism-launcher-wrapper
-Icon=io.github.HyPrismTeam.HyPrism
+Icon=io.github.hyprismteam.HyPrism
 Terminal=false
 Type=Application
 Categories=Game;

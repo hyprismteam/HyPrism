@@ -1,12 +1,7 @@
-using System;
-using System.IO;
 using System.IO.Compression;
-using System.Linq;
-using System.Threading;
-using System.Diagnostics;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Runtime.InteropServices;
+using System.Text.Json;
+using System.Text.RegularExpressions;
 using ElectronNET.API;
 using Microsoft.Extensions.DependencyInjection;
 using SixLabors.ImageSharp;
@@ -22,3317 +17,1383 @@ using HyPrism.Services.Game.Instance;
 using HyPrism.Services.Game.Launch;
 using HyPrism.Services.Game.Mod;
 using HyPrism.Services.Game.Sources;
-using HyPrism.Services.Game.Version;
 using HyPrism.Services.User;
+using HyPrism.Services.Core.Ipc.Attributes;
+using HyPrism.Services.Core.Ipc.Requests;
+using HyPrism.Services.Core.Ipc.Responses;
+using HyPrism.Services.Game.Version;
 
 namespace HyPrism.Services.Core.Ipc;
 
 /// <summary>
-/// Central IPC service — bridges Electron IPC channels to .NET services.
-/// Registered as a singleton via DI in Bootstrapper.cs.
-/// Each channel follows the pattern: "hyprism:{domain}:{action}"
-///
-/// Structured @ipc annotations are parsed by Scripts/generate-ipc.mjs
-/// to auto-generate Frontend/src/lib/ipc.ts (the ONLY IPC file).
-///
-/// These @type blocks define TypeScript interfaces emitted into the
-/// generated ipc.ts. The C# code never reads them — they are only
-/// consumed by the codegen script.
+/// Bridges all Electron IPC channels to .NET services.
+/// Registered as a singleton via DI; call <see cref="IpcServiceBase.RegisterAll"/> once at startup.
 /// </summary>
-/// 
-/// @type ProgressUpdate { state: string; progress: number; messageKey: string; args?: unknown[]; downloadedBytes: number; totalBytes: number; }
-/// @type GameState { state: 'starting' | 'started' | 'running' | 'stopped'; exitCode: number; }
-/// @type GameError { type: string; message: string; technical?: string; }
-/// @type NewsItem { title: string; excerpt?: string; url?: string; date?: string; publishedAt?: string; author?: string; imageUrl?: string; source?: 'hytale' | 'hyprism'; }
-/// @type Profile { id: string; name: string; uuid?: string; isOfficial?: boolean; avatar?: string; folderName?: string; }
-/// @type HytaleAuthStatus { loggedIn: boolean; username?: string; uuid?: string; error?: string; errorType?: string; }
-/// @type ProfileSnapshot { nick: string; uuid: string; avatarPath?: string; }
-/// @type SettingsSnapshot { language: string; musicEnabled: boolean; launcherBranch: string; versionType: string; selectedVersion: number; closeAfterLaunch: boolean; launchAfterDownload: boolean; showDiscordAnnouncements: boolean; disableNews: boolean; backgroundMode: string; availableBackgrounds: string[]; accentColor: string; hasCompletedOnboarding: boolean; onlineMode: boolean; authDomain: string; javaArguments?: string; useCustomJava?: boolean; customJavaPath?: string; systemMemoryMb?: number; dataDirectory: string; instanceDirectory: string; gpuPreference?: string; gameEnvironmentVariables?: Record<string, string>; useDualAuth?: boolean; showAlphaMods: boolean; launcherVersion: string; launchOnStartup?: boolean; minimizeToTray?: boolean; animations?: boolean; transparency?: boolean; resolution?: string; ramMb?: number; sound?: boolean; closeOnLaunch?: boolean; developerMode?: boolean; verboseLogging?: boolean; preRelease?: boolean; [key: string]: unknown; }
-/// @type MirrorInfo { id: string; name: string; description?: string; priority: number; enabled: boolean; sourceType: string; hostname: string; }
-/// @type MirrorSpeedTestResult { mirrorId: string; mirrorUrl: string; mirrorName: string; pingMs: number; speedMBps: number; isAvailable: boolean; testedAt: string; }
-/// @type ModScreenshot { id: number; title: string; thumbnailUrl: string; url: string; }
-/// @type ModInfo { id: string; name: string; slug: string; summary: string; author: string; downloadCount: number; iconUrl: string; thumbnailUrl: string; categories: string[]; dateUpdated: string; latestFileId: string; screenshots: ModScreenshot[]; }
-/// @type ModSearchResult { mods: ModInfo[]; totalCount: number; }
-/// @type ModFileInfo { id: string; modId: string; fileName: string; displayName: string; downloadUrl: string; fileLength: number; fileDate: string; releaseType: number; gameVersions: string[]; downloadCount: number; }
-/// @type ModFilesResult { files: ModFileInfo[]; totalCount: number; }
-/// @type ModCategory { id: number; name: string; slug: string; }
-/// @type InstalledMod { id: string; name: string; slug?: string; version?: string; fileId?: string; fileName?: string; enabled: boolean; author?: string; description?: string; iconUrl?: string; curseForgeId?: string; fileDate?: string; releaseType?: number; latestFileId?: string; latestVersion?: string; screenshots?: ModScreenshot[]; }
-/// @type SaveInfo { name: string; previewPath?: string; lastModified?: string; sizeBytes?: number; }
-/// @type AppConfig { language: string; dataDirectory: string; [key: string]: unknown; }
-/// @type InstanceValidationDetails { hasExecutable: boolean; hasAssets: boolean; hasLibraries: boolean; hasConfig: boolean; missingComponents: string[]; errorMessage?: string; }
-/// @type InstalledInstance { id: string; branch: string; version: number; path: string; hasUserData: boolean; userDataSize: number; totalSize: number; isValid: boolean; validationStatus?: 'Valid' | 'NotInstalled' | 'Corrupted' | 'Unknown'; validationDetails?: InstanceValidationDetails; customName?: string; }
-/// @type InstanceInfo { id: string; name: string; branch: string; version: number; isInstalled: boolean; }
-/// @type LanguageInfo { code: string; name: string; }
-/// @type GpuAdapterInfo { name: string; vendor: string; type: string; }
-/// @type VersionInfo { version: number; source: 'Official' | 'Mirror'; isLatest: boolean; }
-/// @type VersionListResponse { versions: VersionInfo[]; hasOfficialAccount: boolean; officialSourceAvailable: boolean; }
-/// @type LauncherUpdateInfo { currentVersion: string; latestVersion: string; changelog?: string; downloadUrl?: string; assetName?: string; releaseUrl?: string; isBeta?: boolean; }
-/// @type LauncherUpdateProgress { stage: string; progress: number; message: string; downloadedBytes?: number; totalBytes?: number; downloadedFilePath?: string; hasDownloadedFile?: boolean; }
-/// @type AuthServerPingResult { isAvailable: boolean; pingMs: number; authDomain: string; error?: string; checkedAt: string; isOfficial: boolean; }
-public class IpcService
+/// <remarks>
+/// Methods are discovered and wired automatically by <see cref="IpcServiceBase.RegisterAll"/>
+/// through reflection — no manual <c>Electron.IpcMain.On</c> calls are needed here.
+/// <para>Attribute conventions:</para>
+/// <list type="bullet">
+///   <item><c>[IpcInvoke("channel")]</c> — request/reply; return type → TypeScript response type.</item>
+///   <item><c>[IpcSend("channel")]</c>   — fire-and-forget; no reply sent to renderer.</item>
+///   <item><c>[IpcEvent("channel")]</c>  — C# → JS push; method accepts <c>Action&lt;T&gt; emit</c>
+///         and subscribes to a C# event in its body.</item>
+/// </list>
+/// <para>
+/// TypeScript bindings are auto-generated from method signatures by the Roslyn CLI tool in
+/// <c>HyPrism.IpcGen/</c>. Re-generate: <c>dotnet build</c> (MSBuild target <c>GenerateIpcTs</c>).
+/// </para>
+/// </remarks>
+public class IpcService(IServiceProvider services) : IpcServiceBase(services)
 {
-    private readonly IServiceProvider _services;
+    #region Launcher Update
 
-    private static int _hasRegisteredAll;
-
-    private static readonly JsonSerializerOptions JsonOpts = new()
+    /// <summary>Triggers an asynchronous check for available launcher updates.</summary>
+    [IpcInvoke("hyprism:update:check")]
+    public async Task<SuccessResult> CheckForUpdate()
     {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-        Converters = { new JsonStringEnumConverter() }
-    };
-
-    public IpcService(IServiceProvider services)
-    {
-        _services = services;
+        await Services.GetRequiredService<IUpdateService>().CheckForLauncherUpdatesAsync();
+        return new SuccessResult(true);
     }
 
-    private static BrowserWindow? GetMainWindow()
+    /// <summary>Downloads and installs the pending launcher update, then restarts the app.</summary>
+    [IpcInvoke("hyprism:update:install", 300_000)]
+    public async Task<bool> InstallUpdate()
     {
-        return Electron.WindowManager.BrowserWindows.FirstOrDefault();
+        var ok = await Services.GetRequiredService<IUpdateService>().UpdateAsync(null);
+        if (ok)
+            _ = Task.Run(async () =>
+            {
+                await Task.Delay(750);
+                try { Electron.App.Exit(); } catch { Environment.Exit(0); }
+            });
+        return ok;
     }
 
-    /// <summary>
-    /// Converts IPC args to a JSON string for deserialization.
-    /// The renderer sends JSON.stringify(data), so args is typically a string.
-    /// But ElectronNET may also deliver a JsonElement or other deserialized object.
-    /// </summary>
-    private static string ArgsToJson(object? args)
+    /// <summary>Subscribes the renderer to launcher-update-available push notifications.</summary>
+    [IpcEvent("hyprism:update:available")]
+    public void SubscribeUpdateAvailable(Action<LauncherUpdateInfo> emit)
     {
-        if (args is null) return "{}";
-        if (args is string s) return s;
-        if (args is JsonElement je) return je.GetRawText();
-        // Fallback: re-serialize whatever C# object ElectronNET produced
-        return JsonSerializer.Serialize(args, JsonOpts);
-    }
-
-    /// <summary>
-    /// Extracts a plain string from IPC args (for channels that expect a single string value).
-    /// The renderer sends JSON.stringify("someValue") which produces '"someValue"',
-    /// so we need to unwrap the outer quotes.
-    /// </summary>
-    private static string ArgsToString(object? args)
-    {
-        if (args is null) return string.Empty;
-        var raw = args.ToString() ?? string.Empty;
-        // If the renderer sent JSON.stringify("text"), we get a JSON-quoted string
-        if (raw.Length >= 2 && raw[0] == '"' && raw[^1] == '"')
+        Services.GetRequiredService<IUpdateService>().LauncherUpdateAvailable += info =>
         {
-            try { return JsonSerializer.Deserialize<string>(raw) ?? raw; }
-            catch { /* fall through */ }
-        }
-        return raw;
+            try
+            {
+                var json = JsonSerializer.Serialize(info, IpcServiceBase.JsonOpts);
+                var typed = JsonSerializer.Deserialize<LauncherUpdateInfo>(json, IpcServiceBase.JsonOpts);
+                if (typed != null) emit(typed);
+            }
+            catch { /* swallow */ }
+        };
     }
 
-    private static void Reply(string channel, object? data)
+    /// <summary>Subscribes the renderer to launcher update download progress events.</summary>
+    [IpcEvent("hyprism:update:progress")]
+    public void SubscribeUpdateProgress(Action<LauncherUpdateProgress> emit)
     {
-        var win = GetMainWindow();
-        if (win == null) return;
-        Electron.IpcMain.Send(win, channel, JsonSerializer.Serialize(data, JsonOpts));
+        Services.GetRequiredService<IUpdateService>().LauncherUpdateProgress += progress =>
+        {
+            try
+            {
+                var json = JsonSerializer.Serialize(progress, IpcServiceBase.JsonOpts);
+                var typed = JsonSerializer.Deserialize<LauncherUpdateProgress>(json, IpcServiceBase.JsonOpts);
+                if (typed != null) emit(typed);
+            }
+            catch { /* swallow */ }
+        };
     }
 
-    private static void ReplyRaw(string channel, string raw)
+    #endregion
+
+    #region Config
+
+    /// <summary>Returns the current application configuration snapshot needed by the renderer.</summary>
+    [IpcInvoke("hyprism:config:get")]
+    public AppConfig GetConfig()
     {
-        var win = GetMainWindow();
-        if (win == null) return;
-        Electron.IpcMain.Send(win, channel, raw);
+        var config = Services.GetRequiredService<IConfigService>().Configuration;
+        return new AppConfig(config.Language, Services.GetRequiredService<AppPathConfiguration>().AppDir);
     }
 
-    private static int GetSystemMemoryMb()
+    /// <summary>Flushes the current in-memory configuration to disk.</summary>
+    [IpcInvoke("hyprism:config:save")]
+    public SuccessResult SaveConfig()
     {
+        Services.GetRequiredService<IConfigService>().SaveConfig();
+        return new SuccessResult(true);
+    }
+
+    #endregion
+
+    #region Game Session
+
+    /// <summary>Starts the game download and/or launch sequence for the currently selected instance.</summary>
+    [IpcSend("hyprism:game:launch")]
+    public void LaunchGame(LaunchGameRequest? req)
+        => _ = LaunchGameAsync(req);
+
+    /// <summary>Cancels an in-progress game download.</summary>
+    [IpcSend("hyprism:game:cancel")]
+    public void CancelGame()
+        => Services.GetRequiredService<IGameSessionService>().CancelDownload();
+
+    /// <summary>Sends an exit signal to the running game process.</summary>
+    [IpcInvoke("hyprism:game:stop")]
+    public bool StopGame()
+        => Services.GetRequiredService<IGameProcessService>().ExitGame();
+
+    /// <summary>Returns a list of all locally installed game instances with validation status.</summary>
+    [IpcInvoke("hyprism:game:instances")]
+    public List<InstalledInstance> GetInstances()
+        => Services.GetRequiredService<IInstanceService>().GetInstalledInstances();
+
+    /// <summary>Returns whether the game process is currently running.</summary>
+    [IpcInvoke("hyprism:game:isRunning")]
+    public bool IsGameRunning()
+        => Services.GetRequiredService<IGameProcessService>().CheckForRunningGame();
+
+    /// <summary>Returns the list of available game version numbers for the given branch.</summary>
+    [IpcInvoke("hyprism:game:versions")]
+    public async Task<List<int>> GetVersions(GetVersionsRequest? req)
+    {
+#pragma warning disable CS0618
+        var branch = Services.GetRequiredService<IConfigService>().Configuration.VersionType ?? "release";
+#pragma warning restore CS0618
+        if (!string.IsNullOrEmpty(req?.Branch)) branch = req.Branch;
+        return await Services.GetRequiredService<IVersionService>().GetVersionListAsync(branch);
+    }
+
+    /// <summary>Returns available game versions enriched with download-source metadata (official and mirror).</summary>
+    [IpcInvoke("hyprism:game:versionsWithSources")]
+    public async Task<VersionListResponse> GetVersionsWithSources(GetVersionsRequest? req)
+    {
+#pragma warning disable CS0618
+        var branch = Services.GetRequiredService<IConfigService>().Configuration.VersionType ?? "release";
+#pragma warning restore CS0618
+        if (!string.IsNullOrEmpty(req?.Branch)) branch = req.Branch;
+        return await Services.GetRequiredService<IVersionService>().GetVersionListWithSourcesAsync(branch);
+    }
+
+    /// <summary>Subscribes the renderer to real-time download/install progress updates.</summary>
+    [IpcEvent("hyprism:game:progress")]
+    public void SubscribeGameProgress(Action<ProgressUpdate> emit)
+    {
+        Services.GetRequiredService<ProgressNotificationService>().DownloadProgressChanged += msg =>
+        {
+            try { emit(new ProgressUpdate(msg.State, msg.Progress, msg.MessageKey, msg.Args, msg.DownloadedBytes, msg.TotalBytes)); }
+            catch { /* swallow */ }
+        };
+    }
+
+    /// <summary>Subscribes the renderer to game lifecycle state change events (e.g. running, stopped).</summary>
+    [IpcEvent("hyprism:game:state")]
+    public void SubscribeGameState(Action<GameState> emit)
+    {
+        Services.GetRequiredService<ProgressNotificationService>().GameStateChanged += (state, exitCode) =>
+        {
+            try { emit(new GameState(state, exitCode)); } catch { /* swallow */ }
+        };
+    }
+
+    /// <summary>Subscribes the renderer to game error events (download failures, launch errors).</summary>
+    [IpcEvent("hyprism:game:error")]
+    public void SubscribeGameError(Action<GameError> emit)
+    {
+        Services.GetRequiredService<ProgressNotificationService>().ErrorOccurred += (type, message, technical) =>
+        {
+            try { emit(new GameError(type, message, technical)); } catch { /* swallow */ }
+        };
+    }
+
+    #endregion
+
+    #region Instance Management
+
+    /// <summary>Creates a new game instance metadata entry and returns its info record.</summary>
+    [IpcInvoke("hyprism:instance:create")]
+    public InstanceInfo? CreateInstance(CreateInstanceRequest req)
+    {
+        var meta = Services.GetRequiredService<IInstanceService>()
+            .CreateInstanceMeta(req.Branch, req.Version, req.CustomName, req.IsLatest ?? false);
+        return meta == null ? null : new InstanceInfo
+        {
+            Id = meta.Id, Name = meta.Name, Branch = meta.Branch, Version = meta.Version
+        };
+    }
+
+    /// <summary>Deletes a game instance by ID, removing its directory and metadata.</summary>
+    [IpcInvoke("hyprism:instance:delete")]
+    public bool DeleteInstance(InstanceIdRequest req)
+        => Services.GetRequiredService<IInstanceService>().DeleteGameById(req.InstanceId);
+
+    /// <summary>Sets the specified instance as the currently selected instance to launch.</summary>
+    [IpcInvoke("hyprism:instance:select")]
+    public bool SelectInstance(SelectInstanceRequest req)
+    {
+        if (string.IsNullOrEmpty(req.Id)) return false;
+        Services.GetRequiredService<IInstanceService>().SetSelectedInstance(req.Id);
+        return true;
+    }
+
+    /// <summary>Returns the currently selected instance info, or null if none is selected.</summary>
+    [IpcInvoke("hyprism:instance:getSelected")]
+    public InstanceInfo? GetSelectedInstance()
+        => Services.GetRequiredService<IInstanceService>().GetSelectedInstance();
+
+    /// <summary>Returns a list of all known instances with lightweight info (name, branch, version, installed state).</summary>
+    [IpcInvoke("hyprism:instance:list")]
+    public List<InstanceInfo> ListInstances()
+    {
+        var svc = Services.GetRequiredService<IInstanceService>();
+        svc.SyncInstancesWithConfig();
+        return svc.GetCachedInstances().Select(i => new InstanceInfo
+        {
+            Id = i.Id,
+            Name = i.Name,
+            Branch = i.Branch,
+            Version = i.Version,
+            IsInstalled = svc.IsClientPresent(svc.GetInstancePathById(i.Id) ?? "")
+        }).ToList();
+    }
+
+    /// <summary>Sets a custom display name for the specified instance.</summary>
+    [IpcInvoke("hyprism:instance:rename")]
+    public bool RenameInstance(RenameInstanceRequest req)
+    {
+        if (string.IsNullOrEmpty(req.InstanceId)) return false;
+        Services.GetRequiredService<IInstanceService>().SetInstanceCustomNameById(req.InstanceId, req.CustomName);
+        return true;
+    }
+
+    /// <summary>Changes the target version (or branch) of a "latest" instance.</summary>
+    [IpcInvoke("hyprism:instance:changeVersion")]
+    public bool ChangeVersion(ChangeVersionRequest req)
+        => Services.GetRequiredService<IInstanceService>()
+            .ChangeInstanceVersion(req.InstanceId, req.Branch, req.Version);
+
+    /// <summary>Opens the instance directory in the system file manager.</summary>
+    [IpcSend("hyprism:instance:openFolder")]
+    public void OpenInstanceFolder(InstanceIdRequest req)
+    {
+        var path = Services.GetRequiredService<IInstanceService>().GetInstancePathById(req.InstanceId);
+        if (!string.IsNullOrEmpty(path) && Directory.Exists(path))
+            Services.GetRequiredService<IFileService>().OpenFolder(path);
+    }
+
+    /// <summary>Opens the instance's UserData/Mods directory in the system file manager, creating it if needed.</summary>
+    [IpcSend("hyprism:instance:openModsFolder")]
+    public void OpenModsFolder(InstanceIdRequest req)
+    {
+        var svc = Services.GetRequiredService<IInstanceService>();
+        var path = svc.GetInstancePathById(req.InstanceId);
+        if (string.IsNullOrEmpty(path)) return;
+        var modsPath = Path.Combine(path, "UserData", "Mods");
+        ModService.EnsureModsDirectory(modsPath);
+        Services.GetRequiredService<IFileService>().OpenFolder(modsPath);
+    }
+
+    /// <summary>Exports the specified instance as a ZIP archive and returns the path to the archive.</summary>
+    [IpcInvoke("hyprism:instance:export", 300_000)]
+    public async Task<string> ExportInstance(InstanceIdRequest req)
+        => await ExportInstanceAsync(req.InstanceId);
+
+    /// <summary>Prompts the user to select an instance ZIP and imports it.</summary>
+    [IpcInvoke("hyprism:instance:import", 300_000)]
+    public async Task<bool> ImportInstance()
+        => await ImportInstanceAsync();
+
+    /// <summary>Returns a list of save folders found inside the instance's UserData/Saves directory.</summary>
+    [IpcInvoke("hyprism:instance:saves")]
+    public List<SaveInfo> GetSaves(InstanceIdRequest req)
+        => GetInstanceSaves(req.InstanceId);
+
+    /// <summary>Opens a specific save folder inside the instance in the system file manager.</summary>
+    [IpcSend("hyprism:instance:openSaveFolder")]
+    public void OpenSaveFolder(OpenSaveFolderRequest req)
+    {
+        var path = Services.GetRequiredService<IInstanceService>().GetInstancePathById(req.InstanceId);
+        if (string.IsNullOrEmpty(path)) return;
+        var savePath = Path.Combine(path, "UserData", "Saves", req.SaveName);
+        if (Directory.Exists(savePath))
+            Services.GetRequiredService<IFileService>().OpenFolder(savePath);
+    }
+
+    /// <summary>Returns a <c>file://</c> URL to the instance icon image with a cache-busting query parameter.</summary>
+    [IpcInvoke("hyprism:instance:getIcon")]
+    public string? GetInstanceIcon(InstanceIdRequest req)
+    {
+        var path = Services.GetRequiredService<IInstanceService>().GetInstancePathById(req.InstanceId);
+        if (string.IsNullOrEmpty(path) || !Directory.Exists(path)) return null;
+        var logo = Path.Combine(path, "logo.png");
+        var icon = Path.Combine(path, "icon.png");
+        var found = File.Exists(logo) ? logo : File.Exists(icon) ? icon : null;
+        if (found == null) return null;
+        var bust = File.GetLastWriteTimeUtc(found).Ticks;
+        return $"file://{found.Replace("\\", "/")}?v={bust}";
+    }
+
+    /// <summary>Crops and saves a base64-encoded image as the instance icon (logo.png).</summary>
+    [IpcInvoke("hyprism:instance:setIcon")]
+    public async Task<bool> SetInstanceIcon(SetIconRequest req)
+    {
+        var path = Services.GetRequiredService<IInstanceService>().GetInstancePathById(req.InstanceId);
+        if (string.IsNullOrEmpty(path) || !Directory.Exists(path)) return false;
+        if (string.IsNullOrEmpty(req.IconBase64)) return false;
+
+        var b64 = req.IconBase64.Contains(',')
+            ? req.IconBase64[(req.IconBase64.IndexOf(',') + 1)..]
+            : req.IconBase64;
+
+        var bytes = Convert.FromBase64String(b64);
+        using var ms = new MemoryStream(bytes);
+        using var img = await Image.LoadAsync(ms);
+        img.Mutate(x => x.Resize(new ResizeOptions
+        {
+            Size = new SixLabors.ImageSharp.Size(256, 256),
+            Mode = ResizeMode.Crop
+        }));
+        await img.SaveAsPngAsync(Path.Combine(path, "logo.png"));
+        return true;
+    }
+
+    #endregion
+
+    #region News
+
+    /// <summary>Fetches the latest 20 news items from the Hytale blog and launcher announcement feed.</summary>
+    [IpcInvoke("hyprism:news:get")]
+    public async Task<List<NewsItemResponse>> GetNews()
+        => await Services.GetRequiredService<INewsService>().GetNewsAsync(count: 20);
+
+    #endregion
+
+    #region Profiles
+
+    /// <summary>Returns the current active profile's nickname, UUID, and avatar preview.</summary>
+    [IpcInvoke("hyprism:profile:get")]
+    public ProfileSnapshot GetProfile()
+    {
+        var svc = Services.GetRequiredService<IProfileService>();
+        return new ProfileSnapshot(svc.GetNick(), svc.GetUUID(), svc.GetAvatarPreview());
+    }
+
+    /// <summary>Returns a list of all saved profiles (id, name, uuid, isOfficial).</summary>
+    [IpcInvoke("hyprism:profile:list")]
+    public List<IpcProfile> ListProfiles()
+        => Services.GetRequiredService<IProfileManagementService>().GetProfiles()
+            .Select(p => new IpcProfile(p.Id, p.Name, p.UUID, p.IsOfficial))
+            .ToList();
+
+    /// <summary>Switches to the specified profile and reloads the Hytale auth session accordingly.</summary>
+    [IpcInvoke("hyprism:profile:switch")]
+    public SuccessResult SwitchProfile(SwitchProfileRequest req)
+    {
+        var ok = Services.GetRequiredService<IProfileManagementService>().SwitchProfile(req.Id);
+        if (ok)
+            Services.GetRequiredService<IHytaleAuthService>().ReloadSessionForCurrentProfile();
+        return new SuccessResult(ok);
+    }
+
+    /// <summary>Updates the display name of the currently active profile.</summary>
+    [IpcInvoke("hyprism:profile:setNick")]
+    public SuccessResult SetNick(string nick)
+        => new(Services.GetRequiredService<IProfileService>().SetNick(nick));
+
+    /// <summary>Updates the UUID of the currently active profile.</summary>
+    [IpcInvoke("hyprism:profile:setUuid")]
+    public SuccessResult SetUuid(string uuid)
+        => new(Services.GetRequiredService<IProfileService>().SetUUID(uuid));
+
+    /// <summary>Creates a new profile with the given name and UUID, optionally marking it as an official Hytale account.</summary>
+    [IpcInvoke("hyprism:profile:create")]
+    public IpcProfile? CreateProfile(CreateProfileRequest req)
+    {
+        var mgmt = Services.GetRequiredService<IProfileManagementService>();
+        var profile = mgmt.CreateProfile(req.Name, req.Uuid);
+        if (profile == null) return null;
+        profile.IsOfficial = req.IsOfficial ?? false;
+        Services.GetRequiredService<ConfigService>().SaveConfig();
+        if (profile.IsOfficial)
+            Services.GetRequiredService<IHytaleAuthService>().SaveSessionToProfile(profile);
+        return new IpcProfile(profile.Id, profile.Name, profile.UUID, profile.IsOfficial);
+    }
+
+    /// <summary>Deletes the profile with the specified ID.</summary>
+    [IpcInvoke("hyprism:profile:delete")]
+    public SuccessResult DeleteProfile(string id)
+        => new(Services.GetRequiredService<IProfileManagementService>().DeleteProfile(id));
+
+    /// <summary>Returns the zero-based index of the currently active profile in the profile list.</summary>
+    [IpcInvoke("hyprism:profile:activeIndex")]
+    public int GetActiveProfileIndex()
+        => Services.GetRequiredService<IProfileManagementService>().GetActiveProfileIndex();
+
+    /// <summary>Saves the current active profile state as a named profile entry.</summary>
+    [IpcInvoke("hyprism:profile:save")]
+    public SuccessResult SaveProfile()
+        => new(Services.GetRequiredService<IProfileManagementService>().SaveCurrentAsProfile() != null);
+
+    /// <summary>Creates a copy of the specified profile (without copying its user data).</summary>
+    [IpcInvoke("hyprism:profile:duplicate")]
+    public IpcProfile? DuplicateProfile(string id)
+    {
+        var p = Services.GetRequiredService<IProfileManagementService>().DuplicateProfileWithoutData(id);
+        return p == null ? null : new IpcProfile(p.Id, p.Name, p.UUID, p.IsOfficial);
+    }
+
+    /// <summary>Opens the current profile's data directory in the system file manager.</summary>
+    [IpcSend("hyprism:profile:openFolder")]
+    public void OpenProfileFolder()
+        => Services.GetRequiredService<IProfileManagementService>().OpenCurrentProfileFolder();
+
+    /// <summary>Returns a base64-encoded avatar preview image for the given UUID.</summary>
+    [IpcInvoke("hyprism:profile:avatarForUuid")]
+    public string GetAvatarForUuid(string uuid)
+        => Services.GetRequiredService<IProfileService>().GetAvatarPreviewForUUID(uuid) ?? "";
+
+    #endregion
+
+    #region Hytale Auth
+
+    /// <summary>Returns the current Hytale account authentication status and linked profile info.</summary>
+    [IpcInvoke("hyprism:auth:status")]
+    public HytaleAuthStatus GetAuthStatus()
+        => MapAuthStatus(Services.GetRequiredService<HytaleAuthService>().GetAuthStatus());
+
+    /// <summary>Opens the Hytale OAuth login flow and returns the resulting auth status.</summary>
+    [IpcInvoke("hyprism:auth:login")]
+    public async Task<HytaleAuthStatus> Login()
+    {
+        var auth = Services.GetRequiredService<HytaleAuthService>();
         try
         {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                var memoryStatus = new MemoryStatusEx();
-                if (GlobalMemoryStatusEx(memoryStatus) && memoryStatus.ullTotalPhys > 0)
-                {
-                    return (int)(memoryStatus.ullTotalPhys / (1024 * 1024));
-                }
-            }
-
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-            {
-                const string memInfoPath = "/proc/meminfo";
-                if (File.Exists(memInfoPath))
-                {
-                    var memTotalLine = File.ReadLines(memInfoPath).FirstOrDefault(line => line.StartsWith("MemTotal:", StringComparison.OrdinalIgnoreCase));
-                    if (!string.IsNullOrWhiteSpace(memTotalLine))
-                    {
-                        var parts = memTotalLine.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-                        if (parts.Length >= 2 && long.TryParse(parts[1], out var kb) && kb > 0)
-                        {
-                            return (int)(kb / 1024);
-                        }
-                    }
-                }
-            }
-
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-            {
-                var psi = new System.Diagnostics.ProcessStartInfo
-                {
-                    FileName = "/usr/sbin/sysctl",
-                    Arguments = "-n hw.memsize",
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    UseShellExecute = false,
-                    CreateNoWindow = true
-                };
-
-                using var process = System.Diagnostics.Process.Start(psi);
-                if (process != null)
-                {
-                    var output = process.StandardOutput.ReadToEnd().Trim();
-                    process.WaitForExit(2000);
-                    if (process.ExitCode == 0 && long.TryParse(output, out var bytes) && bytes > 0)
-                    {
-                        return (int)(bytes / (1024 * 1024));
-                    }
-                }
-            }
+            await auth.LoginAsync();
+            return MapAuthStatus(auth.GetAuthStatus());
         }
-        catch
+        catch (HytaleNoProfileException)
         {
+            return new HytaleAuthStatus(false, ErrorType: "no_profile", Error: "No game profiles found in this Hytale account");
         }
-
-        var fallback = GC.GetGCMemoryInfo().TotalAvailableMemoryBytes;
-        if (fallback > 0)
+        catch (HytaleAuthException ex)
         {
-            return (int)Math.Max(1024, fallback / (1024 * 1024));
+            return new HytaleAuthStatus(false, ErrorType: ex.ErrorType, Error: ex.Message);
         }
-
-        return 8192;
+        catch (Exception ex)
+        {
+            return new HytaleAuthStatus(false, ErrorType: "unknown", Error: ex.Message);
+        }
     }
 
-    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
-    private sealed class MemoryStatusEx
+    /// <summary>Revokes the current Hytale session token and clears stored credentials.</summary>
+    [IpcInvoke("hyprism:auth:logout")]
+    public SuccessResult Logout()
     {
-        public uint dwLength = (uint)Marshal.SizeOf<MemoryStatusEx>();
-        public uint dwMemoryLoad;
-        public ulong ullTotalPhys;
-        public ulong ullAvailPhys;
-        public ulong ullTotalPageFile;
-        public ulong ullAvailPageFile;
-        public ulong ullTotalVirtual;
-        public ulong ullAvailVirtual;
-        public ulong ullAvailExtendedVirtual;
+        Services.GetRequiredService<HytaleAuthService>().Logout();
+        return new SuccessResult(true);
     }
 
-    [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool GlobalMemoryStatusEx([In, Out] MemoryStatusEx lpBuffer);
+    #endregion
 
-    public void RegisterAll()
+    #region Settings
+
+    /// <summary>Returns a complete settings snapshot for the renderer (all launcher settings in one call).</summary>
+    [IpcInvoke("hyprism:settings:get")]
+    public SettingsSnapshot GetSettings()
     {
-        if (Interlocked.Exchange(ref _hasRegisteredAll, 1) == 1)
+        var s = Services.GetRequiredService<ISettingsService>();
+        var appPath = Services.GetRequiredService<AppPathConfiguration>();
+        return new SettingsSnapshot(
+            Language: s.GetLanguage(),
+            MusicEnabled: s.GetMusicEnabled(),
+            LauncherBranch: s.GetLauncherBranch(),
+            VersionType: s.GetVersionType(),
+            SelectedVersion: s.GetSelectedVersion(),
+            CloseAfterLaunch: s.GetCloseAfterLaunch(),
+            LaunchAfterDownload: s.GetLaunchAfterDownload(),
+            ShowDiscordAnnouncements: s.GetShowDiscordAnnouncements(),
+            DisableNews: s.GetDisableNews(),
+            BackgroundMode: s.GetBackgroundMode(),
+            AvailableBackgrounds: s.GetAvailableBackgrounds(),
+            AccentColor: s.GetAccentColor(),
+            HasCompletedOnboarding: s.GetHasCompletedOnboarding(),
+            OnlineMode: s.GetOnlineMode(),
+            AuthDomain: s.GetAuthDomain(),
+            DataDirectory: appPath.AppDir,
+            InstanceDirectory: s.GetInstanceDirectory(),
+            ShowAlphaMods: s.GetShowAlphaMods(),
+            LauncherVersion: UpdateService.GetCurrentVersion(),
+            JavaArguments: s.GetJavaArguments(),
+            UseCustomJava: s.GetUseCustomJava(),
+            CustomJavaPath: s.GetCustomJavaPath(),
+            SystemMemoryMb: SystemInfoService.GetSystemMemoryMb(),
+            GpuPreference: s.GetGpuPreference(),
+            GameEnvironmentVariables: s.GetGameEnvironmentVariables(),
+            UseDualAuth: s.GetUseDualAuth());
+    }
+
+    /// <summary>Applies a partial settings update from the renderer and saves to disk; triggers update check if branch changed.</summary>
+    [IpcInvoke("hyprism:settings:update")]
+    public SuccessResult UpdateSettings(UpdateSettingsRequest req)
+    {
+        var s = Services.GetRequiredService<ISettingsService>();
+        var oldBranch = s.GetLauncherBranch();
+        foreach (var (key, value) in req.Updates ?? new Dictionary<string, JsonElement>())
+            ApplySetting(s, key, value);
+        if (!string.Equals(oldBranch, s.GetLauncherBranch(), StringComparison.OrdinalIgnoreCase))
+            _ = Task.Run(async () =>
+            {
+                try { await Services.GetRequiredService<IUpdateService>().CheckForLauncherUpdatesAsync(); }
+                catch (Exception ex) { Logger.Warning("Update", $"Update check after channel switch failed: {ex.Message}"); }
+            });
+        return new SuccessResult(true);
+    }
+
+    /// <summary>Runs a speed test for the specified community mirror and returns the result.</summary>
+    [IpcInvoke("hyprism:settings:testMirrorSpeed")]
+    public async Task<MirrorSpeedTestResult> TestMirrorSpeed(TestMirrorSpeedRequest req)
+        => await Services.GetRequiredService<IVersionService>()
+            .TestMirrorSpeedAsync(req.MirrorId, req.ForceRefresh ?? false);
+
+    /// <summary>Runs a speed test for the official Hytale download servers and returns the result.</summary>
+    [IpcInvoke("hyprism:settings:testOfficialSpeed")]
+    public async Task<MirrorSpeedTestResult> TestOfficialSpeed(TestOfficialSpeedRequest? req)
+        => await Services.GetRequiredService<IVersionService>()
+            .TestOfficialSpeedAsync(req?.ForceRefresh ?? false);
+
+    /// <summary>Returns a summary of available download sources (official account state, enabled mirror count).</summary>
+    [IpcInvoke("hyprism:settings:hasDownloadSources")]
+    public DownloadSourcesSummary GetDownloadSources()
+    {
+        var vs = Services.GetRequiredService<IVersionService>();
+        return new DownloadSourcesSummary(vs.HasDownloadSources(), vs.HasOfficialAccount, vs.EnabledMirrorCount);
+    }
+
+    /// <summary>Returns the list of all configured mirrors with their metadata and hostname.</summary>
+    [IpcInvoke("hyprism:settings:getMirrors")]
+    public List<MirrorInfo> GetMirrors()
+    {
+        var appPath = Services.GetRequiredService<AppPathConfiguration>();
+        return MirrorLoaderService.GetAllMirrorMetas(appPath.AppDir)
+            .Select(m => new MirrorInfo(m.Id, m.Name, m.Priority, m.Enabled, m.SourceType, GetMirrorHostname(m), m.Description))
+            .ToList();
+    }
+
+    /// <summary>Discovers a mirror from a URL, saves it to disk, and reloads mirror sources.</summary>
+    [IpcInvoke("hyprism:settings:addMirror", 0)]
+    public async Task<AddMirrorResult> AddMirror(AddMirrorRequest req)
+    {
+        if (string.IsNullOrWhiteSpace(req.Url))
+            return new AddMirrorResult(false, "URL is required");
+
+        var appPath = Services.GetRequiredService<AppPathConfiguration>();
+        var parsedHeaders = !string.IsNullOrWhiteSpace(req.Headers)
+            ? ParseHeadersString(req.Headers)
+            : null;
+        var httpClient = Services.GetRequiredService<HttpClient>();
+        var discovery = new MirrorDiscoveryService(httpClient);
+        var result = await discovery.DiscoverMirrorAsync(req.Url, parsedHeaders);
+
+        if (!result.Success || result.Mirror == null)
+            return new AddMirrorResult(false, result.Error ?? "Discovery failed");
+
+        if (parsedHeaders?.Count > 0)
+            result.Mirror.Headers = parsedHeaders;
+
+        if (MirrorLoaderService.MirrorExists(appPath.AppDir, result.Mirror.Id))
         {
-            Logger.Warning("IPC", "RegisterAll called more than once; skipping duplicate IPC handler registration");
+            var baseId = result.Mirror.Id;
+            var counter = 2;
+            while (MirrorLoaderService.MirrorExists(appPath.AppDir, $"{baseId}-{counter}")) counter++;
+            result.Mirror.Id = $"{baseId}-{counter}";
+        }
+
+        MirrorLoaderService.SaveMirror(appPath.AppDir, result.Mirror);
+        Services.GetRequiredService<IVersionService>().ReloadMirrorSources();
+
+        var mirrorDto = new MirrorInfo(result.Mirror.Id, result.Mirror.Name, result.Mirror.Priority,
+            result.Mirror.Enabled, result.Mirror.SourceType, GetMirrorHostname(result.Mirror), result.Mirror.Description);
+        return new AddMirrorResult(true, Mirror: mirrorDto);
+    }
+
+    /// <summary>Deletes the mirror with the given ID from disk and reloads mirror sources.</summary>
+    [IpcInvoke("hyprism:settings:deleteMirror")]
+    public SuccessResult DeleteMirror(MirrorIdRequest req)
+    {
+        if (string.IsNullOrWhiteSpace(req.MirrorId))
+            return new SuccessResult(false, "Mirror ID is required");
+        var appPath = Services.GetRequiredService<AppPathConfiguration>();
+        var deleted = MirrorLoaderService.DeleteMirror(appPath.AppDir, req.MirrorId);
+        if (deleted) Services.GetRequiredService<IVersionService>().ReloadMirrorSources();
+        return new SuccessResult(deleted);
+    }
+
+    /// <summary>Enables or disables the specified mirror and persists the change to disk.</summary>
+    [IpcInvoke("hyprism:settings:toggleMirror")]
+    public SuccessResult ToggleMirror(ToggleMirrorRequest req)
+    {
+        var appPath = Services.GetRequiredService<AppPathConfiguration>();
+        var mirrors = MirrorLoaderService.GetAllMirrorMetas(appPath.AppDir);
+        var mirror = mirrors.FirstOrDefault(m => m.Id == req.MirrorId);
+        if (mirror == null) return new SuccessResult(false, "Mirror not found");
+        mirror.Enabled = req.Enabled;
+        MirrorLoaderService.SaveMirror(appPath.AppDir, mirror);
+        Services.GetRequiredService<IVersionService>().ReloadMirrorSources();
+        return new SuccessResult(true);
+    }
+
+    /// <summary>Returns the absolute path to the launcher data directory.</summary>
+    [IpcInvoke("hyprism:settings:launcherPath")]
+    public string GetLauncherPath()
+        => Services.GetRequiredService<AppPathConfiguration>().AppDir;
+
+    /// <summary>Returns the default path for game instances (AppDir/Instances).</summary>
+    [IpcInvoke("hyprism:settings:defaultInstanceDir")]
+    public string GetDefaultInstanceDir()
+        => Path.Combine(Services.GetRequiredService<AppPathConfiguration>().AppDir, "Instances");
+
+    /// <summary>Changes the root directory for game instances, migrating existing data if needed.</summary>
+    [IpcInvoke("hyprism:settings:setInstanceDir", 300_000)]
+    public async Task<SetInstanceDirResult> SetInstanceDir(string path)
+        => await SetInstanceDirAsync(path);
+
+    #endregion
+
+    #region Network
+
+    /// <summary>Pings the configured auth server and returns latency and reachability info.</summary>
+    [IpcInvoke("hyprism:network:pingAuthServer")]
+    public async Task<AuthServerPingResult> PingAuthServer(PingAuthServerRequest? req)
+        => await PingAuthServerAsync(req?.AuthDomain);
+
+    #endregion
+
+    #region Localisation
+
+    /// <summary>Returns the BCP 47 language code currently active in the launcher.</summary>
+    [IpcInvoke("hyprism:i18n:current")]
+    public string GetCurrentLanguage()
+        => Services.GetRequiredService<LocalizationService>().CurrentLanguage;
+
+    /// <summary>Sets the launcher UI language and persists the setting; returns the resolved language code.</summary>
+    [IpcInvoke("hyprism:i18n:set")]
+    public SetLanguageResult SetLanguage(string lang)
+    {
+        if (string.IsNullOrEmpty(lang)) lang = "en-US";
+        var s = Services.GetRequiredService<ISettingsService>();
+        var l = Services.GetRequiredService<LocalizationService>();
+        var ok = s.SetLanguage(lang);
+        return new SetLanguageResult(ok, ok ? lang : l.CurrentLanguage);
+    }
+
+    /// <summary>Returns the list of all supported UI languages with their display names.</summary>
+    [IpcInvoke("hyprism:i18n:languages")]
+    public List<LanguageInfo> GetLanguages()
+        => LocalizationService.GetAvailableLanguages()
+            .Select(l => new LanguageInfo(l.Key, l.Value))
+            .ToList();
+
+    #endregion
+
+    #region Window Controls
+
+    /// <summary>Minimizes the main browser window to the taskbar.</summary>
+    [IpcSend("hyprism:window:minimize")]
+    public void MinimizeWindow()
+        => Electron.WindowManager.BrowserWindows.FirstOrDefault()?.Minimize();
+
+    /// <summary>Maximizes or restores (un-maximizes) the main browser window.</summary>
+    [IpcSend("hyprism:window:maximize")]
+    public async void MaximizeWindow()
+    {
+        var win = Electron.WindowManager.BrowserWindows.FirstOrDefault();
+        if (win == null) return;
+        if (await win.IsMaximizedAsync()) win.Unmaximize();
+        else win.Maximize();
+    }
+
+    /// <summary>Closes the main browser window.</summary>
+    [IpcSend("hyprism:window:close")]
+    public void CloseWindow()
+        => Electron.WindowManager.BrowserWindows.FirstOrDefault()?.Close();
+
+    /// <summary>Exits the Electron process, causing the OS to restart the app if configured to do so.</summary>
+    [IpcSend("hyprism:window:restart")]
+    public void RestartApp()
+    {
+        try { Electron.App.Exit(); }
+        catch { Electron.WindowManager.BrowserWindows.FirstOrDefault()?.Close(); }
+    }
+
+    /// <summary>Opens an external URL in the system default browser.</summary>
+    [IpcSend("hyprism:browser:open")]
+    public void OpenBrowser(string url)
+    {
+        if (!string.IsNullOrEmpty(url))
+            Electron.Shell.OpenExternalAsync(url);
+    }
+
+    #endregion
+
+    #region Mods
+
+    /// <summary>Returns installed mods for the currently selected instance.</summary>
+    [IpcInvoke("hyprism:mods:list")]
+    public List<InstalledMod> ListMods()
+    {
+        var path = ResolveModInstancePath(null);
+        return string.IsNullOrEmpty(path)
+            ? []
+            : Services.GetRequiredService<IModService>().GetInstanceInstalledMods(path);
+    }
+
+    /// <summary>Searches CurseForge for mods matching the query, with pagination and filtering.</summary>
+    [IpcInvoke("hyprism:mods:search", 30_000)]
+    public async Task<ModSearchResult> SearchMods(ModSearchRequest req)
+        => await Services.GetRequiredService<IModService>().SearchModsAsync(
+            req.Query, req.Page, req.PageSize,
+            req.Categories.ToArray(), req.SortField, req.SortOrder);
+
+    /// <summary>Returns installed mods for the specified instance.</summary>
+    [IpcInvoke("hyprism:mods:installed")]
+    public List<InstalledMod> GetInstalledMods(ModInstalledRequest req)
+    {
+        var path = ResolveModInstancePath(req.InstanceId);
+        return string.IsNullOrEmpty(path)
+            ? []
+            : Services.GetRequiredService<IModService>().GetInstanceInstalledMods(path);
+    }
+
+    /// <summary>Removes the specified mod from the instance's Mods directory.</summary>
+    [IpcInvoke("hyprism:mods:uninstall")]
+    public async Task<bool> UninstallMod(ModUninstallRequest req)
+        => await UninstallModAsync(req.ModId, req.InstanceId);
+
+    /// <summary>Checks CurseForge for updates to all installed mods in the specified instance and returns updated entries.</summary>
+    [IpcInvoke("hyprism:mods:checkUpdates", 30_000)]
+    public async Task<List<InstalledMod>> CheckModUpdates(ModCheckUpdatesRequest req)
+    {
+        var path = ResolveModInstancePath(req.InstanceId);
+        return string.IsNullOrEmpty(path)
+            ? []
+            : await Services.GetRequiredService<IModService>().CheckInstanceModUpdatesAsync(path);
+    }
+
+    /// <summary>Downloads and installs a specific CurseForge mod file into the instance's Mods directory.</summary>
+    [IpcInvoke("hyprism:mods:install", 300_000)]
+    public async Task<bool> InstallMod(ModInstallRequest req)
+    {
+        var path = ResolveModInstancePath(req.InstanceId);
+        return !string.IsNullOrEmpty(path) &&
+               await Services.GetRequiredService<IModService>()
+                   .InstallModFileToInstanceAsync(req.ModId, req.FileId, path);
+    }
+
+    /// <summary>Returns a paged list of files available for the specified CurseForge mod.</summary>
+    [IpcInvoke("hyprism:mods:files")]
+    public async Task<ModFilesResult> GetModFiles(ModFilesRequest req)
+        => await Services.GetRequiredService<IModService>()
+            .GetModFilesAsync(req.ModId, req.Page ?? 0, req.PageSize ?? 20);
+
+    /// <summary>Returns detailed information about the specified CurseForge mod.</summary>
+    [IpcInvoke("hyprism:mods:info", 30_000)]
+    public async Task<ModInfo?> GetModInfo(ModInfoRequest req)
+        => await Services.GetRequiredService<IModService>().GetModAsync(req.ModId);
+
+    /// <summary>Returns the changelog text for the specified mod file.</summary>
+    [IpcInvoke("hyprism:mods:changelog")]
+    public async Task<string> GetModChangelog(ModChangelogRequest req)
+        => await Services.GetRequiredService<IModService>()
+               .GetModFileChangelogAsync(req.ModId, req.FileId) ?? "";
+
+    /// <summary>Returns all available CurseForge mod categories for Hytale.</summary>
+    [IpcInvoke("hyprism:mods:categories")]
+    public async Task<List<ModCategory>> GetModCategories()
+        => await Services.GetRequiredService<IModService>().GetModCategoriesAsync();
+
+    /// <summary>Copies a local JAR/ZIP file into the instance's Mods directory.</summary>
+    [IpcInvoke("hyprism:mods:installLocal")]
+    public async Task<bool> InstallLocalMod(ModInstallLocalRequest req)
+    {
+        var path = ResolveModInstancePath(req.InstanceId);
+        return !string.IsNullOrEmpty(path) &&
+               await Services.GetRequiredService<IModService>().InstallLocalModFile(req.SourcePath, path);
+    }
+
+    /// <summary>Decodes a base64-encoded mod file and installs it into the instance's Mods directory.</summary>
+    [IpcInvoke("hyprism:mods:installBase64")]
+    public async Task<bool> InstallModFromBase64(ModInstallBase64Request req)
+    {
+        var path = ResolveModInstancePath(req.InstanceId);
+        return !string.IsNullOrEmpty(path) &&
+               await Services.GetRequiredService<IModService>().InstallModFromBase64(req.FileName, req.Base64Content, path);
+    }
+
+    /// <summary>Opens the instance's UserData/Mods directory in the system file manager.</summary>
+    [IpcSend("hyprism:mods:openFolder")]
+    public void OpenModsFolder(ModOpenFolderRequest req)
+    {
+        var path = ResolveModInstancePath(req.InstanceId);
+        if (string.IsNullOrEmpty(path)) return;
+        var modsPath = Path.Combine(path, "UserData", "Mods");
+        ModService.EnsureModsDirectory(modsPath);
+        Electron.Shell.OpenPathAsync(modsPath);
+    }
+
+    /// <summary>Toggles a mod's enabled state by adding or removing the <c>.disabled</c> extension.</summary>
+    [IpcInvoke("hyprism:mods:toggle")]
+    public async Task<bool> ToggleMod(ModToggleRequest req)
+        => await ToggleModAsync(req.ModId, req.InstanceId);
+
+    /// <summary>Exports the instance's mod list to a folder as JSON or individual JARs.</summary>
+    [IpcInvoke("hyprism:mods:exportToFolder")]
+    public async Task<string> ExportModsToFolder(ModExportRequest req)
+        => await ExportModsAsync(req.InstanceId, req.ExportPath, req.ExportType ?? "modlist");
+
+    /// <summary>Imports a mod list JSON and installs all listed mods into the instance.</summary>
+    [IpcInvoke("hyprism:mods:importList")]
+    public async Task<int> ImportModList(ModImportListRequest req)
+        => await ImportModListAsync(req.ListPath, null);
+
+    #endregion
+
+    #region System Info
+
+    /// <summary>Returns a list of detected GPU adapters with vendor and name information.</summary>
+    [IpcInvoke("hyprism:system:gpuAdapters")]
+    public List<GpuAdapterInfo> GetGpuAdapters()
+        => Services.GetRequiredService<GpuDetectionService>().GetAdapters();
+
+    /// <summary>Returns the current operating system platform information.</summary>
+    [IpcInvoke("hyprism:system:platform")]
+    public PlatformInfo GetPlatform()
+    {
+        var linux = RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
+        var windows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+        var mac = RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
+        var os = linux ? "linux" : windows ? "windows" : mac ? "macos" : "unknown";
+        return new PlatformInfo(os, linux, windows, mac);
+    }
+
+    #endregion
+
+    #region Console / Logs
+
+    /// <summary>Forwards an informational log message from the renderer to the .NET logger.</summary>
+    [IpcSend("hyprism:console:log")]
+    public void ConsoleLog(string msg) => Logger.Info("Renderer", msg);
+
+    /// <summary>Forwards a warning log message from the renderer to the .NET logger.</summary>
+    [IpcSend("hyprism:console:warn")]
+    public void ConsoleWarn(string msg) => Logger.Warning("Renderer", msg);
+
+    /// <summary>Forwards an error log message from the renderer to the .NET logger.</summary>
+    [IpcSend("hyprism:console:error")]
+    public void ConsoleError(string msg) => Logger.Error("Renderer", msg);
+
+    /// <summary>Returns the most recent log lines from the .NET logger ring buffer.</summary>
+    [IpcInvoke("hyprism:logs:get")]
+    public List<string> GetLogs(GetLogsRequest? req)
+        => Logger.GetRecentLogs(req?.Count ?? 100);
+
+    #endregion
+
+    #region File Dialogs
+
+    /// <summary>Opens a native folder picker dialog and returns the selected path, or an empty string if cancelled.</summary>
+    [IpcInvoke("hyprism:file:browseFolder", 300_000)]
+    public async Task<string> BrowseFolder(string? initialPath)
+        => await Services.GetRequiredService<IFileDialogService>()
+               .BrowseFolderAsync(string.IsNullOrEmpty(initialPath) ? null : initialPath) ?? "";
+
+    /// <summary>Opens a native file picker filtered to Java executables and returns the selected path.</summary>
+    [IpcInvoke("hyprism:file:browseJavaExecutable", 300_000)]
+    public async Task<string> BrowseJavaExecutable()
+        => await Services.GetRequiredService<IFileDialogService>().BrowseJavaExecutableAsync() ?? "";
+
+    /// <summary>Opens a native file picker for JAR/ZIP files and returns the selected paths.</summary>
+    [IpcInvoke("hyprism:file:browseModFiles")]
+    public async Task<string[]> BrowseModFiles()
+        => await Services.GetRequiredService<IFileDialogService>().BrowseModFilesAsync()
+           ?? Array.Empty<string>();
+
+    /// <summary>Returns whether the file at the given absolute path exists on disk.</summary>
+    [IpcInvoke("hyprism:file:exists")]
+    public bool FileExists(string path)
+        => !string.IsNullOrWhiteSpace(path) && File.Exists(path);
+
+    #endregion
+
+    #region Private helpers
+
+    private async Task LaunchGameAsync(LaunchGameRequest? req)
+    {
+        var gameSession    = Services.GetRequiredService<IGameSessionService>();
+        var processService = Services.GetRequiredService<IGameProcessService>();
+        var instanceSvc    = Services.GetRequiredService<IInstanceService>();
+        var configSvc      = Services.GetRequiredService<IConfigService>();
+        var progressSvc    = Services.GetRequiredService<ProgressNotificationService>();
+
+        if (processService.IsGameRunning())
+        {
+            Logger.Warning("IPC", "Game launch request ignored - game already running");
             return;
         }
 
-        Logger.Info("IPC", "Registering IPC handlers...");
+        var launchAfterDownload = configSvc.Configuration.LaunchAfterDownload;
 
-        RegisterConfigHandlers();
-        RegisterGameHandlers();
-        RegisterInstanceHandlers();
-        RegisterNewsHandlers();
-        RegisterProfileHandlers();
-        RegisterAuthHandlers();
-        RegisterSettingsHandlers();
-        RegisterUpdateHandlers();
-        RegisterLocalizationHandlers();
-        RegisterWindowHandlers();
-        RegisterModHandlers();
-        RegisterSystemHandlers();
-        RegisterConsoleHandlers();
-        RegisterFileDialogHandlers();
-
-        Logger.Success("IPC", "All IPC handlers registered");
-    }
-
-    // #region Launcher Update
-    // @ipc invoke hyprism:update:check -> { success: boolean }
-    // @ipc invoke hyprism:update:install -> boolean 300000
-    // @ipc event hyprism:update:available -> LauncherUpdateInfo
-    // @ipc event hyprism:update:progress -> LauncherUpdateProgress
-
-    private void RegisterUpdateHandlers()
-    {
-        var updateService = _services.GetRequiredService<IUpdateService>();
-
-        // Forward backend update notifications to renderer
-        updateService.LauncherUpdateAvailable += (info) =>
+        if (req != null)
         {
-            try { Reply("hyprism:update:available", info); } catch { /* swallow */ }
-        };
+            if (!string.IsNullOrWhiteSpace(req.InstanceId))
+                instanceSvc.SetSelectedInstance(req.InstanceId);
+            if (req.LaunchAfterDownload.HasValue)
+                launchAfterDownload = req.LaunchAfterDownload.Value;
+        }
 
-        updateService.LauncherUpdateProgress += (progress) =>
+        Logger.Info("IPC", "Game launch requested");
+        try
         {
-            try { Reply("hyprism:update:progress", progress); } catch { /* swallow */ }
-        };
+            var result = await gameSession.DownloadAndLaunchAsync(() => launchAfterDownload);
 
-        // Explicit check (useful for manual refresh or debugging)
-        Electron.IpcMain.On("hyprism:update:check", async (_) =>
-        {
-            try
+            if (result.Cancelled || string.Equals(result.Error, "Cancelled", StringComparison.OrdinalIgnoreCase))
             {
-                await updateService.CheckForLauncherUpdatesAsync();
-                Reply("hyprism:update:check:reply", new { success = true });
-            }
-            catch (Exception ex)
-            {
-                Logger.Error("IPC", $"Update check failed: {ex.Message}");
-                Reply("hyprism:update:check:reply", new { success = false, error = ex.Message });
-            }
-        });
-
-        // Install update (will usually terminate the current process after starting the replacement script)
-        Electron.IpcMain.On("hyprism:update:install", async (_) =>
-        {
-            try
-            {
-                var ok = await updateService.UpdateAsync(null);
-                Reply("hyprism:update:install:reply", ok);
-
-                if (ok)
-                {
-                    // Give IPC a moment to flush, then exit. The updater script will restart the app.
-                    _ = Task.Run(async () =>
-                    {
-                        await Task.Delay(750);
-                        try { Electron.App.Exit(); } catch { Environment.Exit(0); }
-                    });
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Error("IPC", $"Update install failed: {ex.Message}");
-                Reply("hyprism:update:install:reply", false);
-            }
-        });
-    }
-
-    // #endregion
-
-    // #region Config
-    // @ipc invoke hyprism:config:get -> AppConfig
-    // @ipc invoke hyprism:config:save -> { success: boolean }
-
-    private void RegisterConfigHandlers()
-    {
-        var config = _services.GetRequiredService<IConfigService>();
-
-        Electron.IpcMain.On("hyprism:config:get", (_) =>
-        {
-            Reply("hyprism:config:get:reply", config.Configuration);
-        });
-
-        Electron.IpcMain.On("hyprism:config:save", (_) =>
-        {
-            try
-            {
-                config.SaveConfig();
-                Reply("hyprism:config:save:reply", new { success = true });
-            }
-            catch (Exception ex)
-            {
-                Logger.Error("IPC", $"Config save failed: {ex.Message}");
-                Reply("hyprism:config:save:reply", new { success = false, error = ex.Message });
-            }
-        });
-    }
-
-    // #endregion
-
-    // #region Game Session
-    // @ipc send hyprism:game:launch
-    // @ipc send hyprism:game:cancel
-    // @ipc invoke hyprism:game:stop -> boolean
-    // @ipc invoke hyprism:game:instances -> InstalledInstance[]
-    // @ipc invoke hyprism:game:isRunning -> boolean
-    // @ipc invoke hyprism:game:versions -> number[]
-    // @ipc event hyprism:game:progress -> ProgressUpdate
-    // @ipc event hyprism:game:state -> GameState
-    // @ipc event hyprism:game:error -> GameError
-
-    private void RegisterGameHandlers()
-    {
-        var gameSession = _services.GetRequiredService<IGameSessionService>();
-        var progressService = _services.GetRequiredService<ProgressNotificationService>();
-        var instanceService = _services.GetRequiredService<IInstanceService>();
-        var gameProcessService = _services.GetRequiredService<IGameProcessService>();
-        var versionService = _services.GetRequiredService<IVersionService>();
-        var configService = _services.GetRequiredService<IConfigService>();
-
-        // Push events from .NET → React
-        progressService.DownloadProgressChanged += (msg) =>
-        {
-            try { Reply("hyprism:game:progress", msg); } catch { /* swallow */ }
-        };
-
-        progressService.GameStateChanged += (state, exitCode) =>
-        {
-            Logger.Info("IPC", $"Sending game-state event: state={state}, exitCode={exitCode}");
-            try { Reply("hyprism:game:state", new { state, exitCode }); } catch { /* swallow */ }
-        };
-
-        progressService.ErrorOccurred += (type, message, technical) =>
-        {
-            try { Reply("hyprism:game:error", new { type, message, technical }); } catch { /* swallow */ }
-        };
-
-        Electron.IpcMain.On("hyprism:game:launch", async (args) =>
-        {
-            // First check if game is already running
-            if (gameProcessService.IsGameRunning())
-            {
-                Logger.Warning("IPC", "Game launch request ignored - game already running");
+                progressSvc.ReportGameStateChanged("stopped", 0);
                 return;
             }
-            
-            // Default behavior comes from persisted config.
-            var launchAfterDownload = configService.Configuration.LaunchAfterDownload;
 
-            // Optionally accept branch and version to launch a specific instance
-            if (args != null)
+            if (result.Success && !launchAfterDownload)
             {
-                try
-                {
-                    var json = ArgsToJson(args);
-                    var data = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(json, JsonOpts);
-                    if (data != null)
-                    {
-                        if (data.TryGetValue("branch", out var branchEl))
-                        {
-                            var branchValue = branchEl.GetString() ?? "release";
-                            #pragma warning disable CS0618 // Backward compatibility: VersionType kept for migration
-                            configService.Configuration.VersionType = branchValue;
-                            #pragma warning restore CS0618
-                            configService.Configuration.LauncherBranch = branchValue;
-                        }
-                        if (data.TryGetValue("version", out var versionEl))
-                        {
-                            #pragma warning disable CS0618 // Backward compatibility: SelectedVersion kept for migration
-                            configService.Configuration.SelectedVersion = versionEl.GetInt32();
-                            #pragma warning restore CS0618
-                        }
-
-                        if (data.TryGetValue("instanceId", out var instanceIdEl))
-                        {
-                            var instanceId = instanceIdEl.GetString();
-                            if (!string.IsNullOrWhiteSpace(instanceId))
-                            {
-                                instanceService.SetSelectedInstance(instanceId);
-
-                                // Ensure launch config follows selected instance exactly.
-                                var selected = instanceService.FindInstanceById(instanceId);
-                                if (selected != null)
-                                {
-                                    #pragma warning disable CS0618 // Backward compatibility: VersionType/SelectedVersion kept for migration
-                                    configService.Configuration.VersionType = selected.Branch;
-                                    configService.Configuration.SelectedVersion = selected.Version;
-                                    #pragma warning restore CS0618
-                                }
-                            }
-                        }
-
-                        if (data.TryGetValue("launchAfterDownload", out var launchAfterEl) && launchAfterEl.ValueKind == JsonValueKind.True)
-                        {
-                            launchAfterDownload = true;
-                        }
-                        else if (data.TryGetValue("launchAfterDownload", out launchAfterEl) && launchAfterEl.ValueKind == JsonValueKind.False)
-                        {
-                            launchAfterDownload = false;
-                        }
-                    }
-                }
-                catch { /* ignore parsing errors, use current config */ }
-            }
-            
-            Logger.Info("IPC", "Game launch requested");
-            try
-            {
-                var result = await gameSession.DownloadAndLaunchAsync(() => launchAfterDownload);
-
-                if (result.Cancelled || string.Equals(result.Error, "Cancelled", StringComparison.OrdinalIgnoreCase))
-                {
-                    // Cancellation is a normal operation — just reset state, no error.
-                    progressService.ReportGameStateChanged("stopped", 0);
-                    return;
-                }
-
-                // Download-only (no launch) completed successfully
-                if (result.Success && !launchAfterDownload)
-                {
-                    progressService.ReportGameStateChanged("stopped", 0);
-                    return;
-                }
-
-                if (!result.Success)
-                {
-                    var technical = result.Error ?? "Unknown download/install error";
-                    progressService.ReportError("download", "Failed to install game", technical);
-                    progressService.ReportGameStateChanged("stopped", 1);
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Error("IPC", $"Game launch failed: {ex.Message}");
-                progressService.ReportError("download", "Failed to install game", ex.ToString());
-                progressService.ReportGameStateChanged("stopped", 1);
-            }
-        });
-
-        Electron.IpcMain.On("hyprism:game:cancel", (_) =>
-        {
-            Logger.Info("IPC", "Game download cancel requested");
-            gameSession.CancelDownload();
-        });
-
-        Electron.IpcMain.On("hyprism:game:stop", (_) =>
-        {
-            try
-            {
-                var stopped = gameProcessService.ExitGame();
-                Logger.Info("IPC", stopped ? "Game stop requested and process terminated" : "Game stop requested but no running process found");
-                Reply("hyprism:game:stop:reply", stopped);
-            }
-            catch (Exception ex)
-            {
-                Logger.Error("IPC", $"Game stop failed: {ex.Message}");
-                Reply("hyprism:game:stop:reply", false);
-            }
-        });
-
-        Electron.IpcMain.On("hyprism:game:instances", (_) =>
-        {
-            try
-            {
-                var instances = instanceService.GetInstalledInstances();
-                Logger.Debug("IPC", $"Returning {instances.Count} installed instances");
-                Reply("hyprism:game:instances:reply", instances);
-            }
-            catch (Exception ex)
-            {
-                Logger.Error("IPC", $"Failed to get instances: {ex.Message}");
-                Reply("hyprism:game:instances:reply", new List<object>());
-            }
-        });
-
-        Electron.IpcMain.On("hyprism:game:isRunning", (_) =>
-        {
-            try
-            {
-                var isRunning = gameProcessService.CheckForRunningGame();
-                Reply("hyprism:game:isRunning:reply", isRunning);
-            }
-            catch
-            {
-                Reply("hyprism:game:isRunning:reply", false);
-            }
-        });
-
-        Electron.IpcMain.On("hyprism:game:versions", async (args) =>
-        {
-            try
-            {
-                #pragma warning disable CS0618 // Backward compatibility: VersionType kept for migration
-                string branch = configService.Configuration.VersionType ?? "release";
-                #pragma warning restore CS0618
-                if (args != null)
-                {
-                    var json = ArgsToJson(args);
-                    var data = JsonSerializer.Deserialize<Dictionary<string, string>>(json, JsonOpts);
-                    if (data != null && data.TryGetValue("branch", out var b) && !string.IsNullOrEmpty(b))
-                    {
-                        branch = b;
-                    }
-                }
-                
-                var versions = await versionService.GetVersionListAsync(branch);
-                Logger.Info("IPC", $"Returning {versions.Count} available versions for branch {branch}");
-                Reply("hyprism:game:versions:reply", versions);
-            }
-            catch (Exception ex)
-            {
-                Logger.Error("IPC", $"Failed to get versions: {ex.Message}");
-                Reply("hyprism:game:versions:reply", new List<int>());
-            }
-        });
-
-        // Get versions with source information (official vs mirror)
-        // @ipc invoke hyprism:game:versionsWithSources -> VersionListResponse
-        Electron.IpcMain.On("hyprism:game:versionsWithSources", async (args) =>
-        {
-            try
-            {
-                #pragma warning disable CS0618 // Backward compatibility: VersionType kept for migration
-                string branch = configService.Configuration.VersionType ?? "release";
-                #pragma warning restore CS0618
-                if (args != null)
-                {
-                    var json = ArgsToJson(args);
-                    var data = JsonSerializer.Deserialize<Dictionary<string, string>>(json, JsonOpts);
-                    if (data != null && data.TryGetValue("branch", out var b) && !string.IsNullOrEmpty(b))
-                    {
-                        branch = b;
-                    }
-                }
-                
-                var response = await versionService.GetVersionListWithSourcesAsync(branch);
-                Logger.Info("IPC", $"Returning {response.Versions.Count} versions with sources for branch {branch} (official={response.OfficialSourceAvailable})");
-                Reply("hyprism:game:versionsWithSources:reply", response);
-            }
-            catch (Exception ex)
-            {
-                Logger.Error("IPC", $"Failed to get versions with sources: {ex.Message}");
-                Reply("hyprism:game:versionsWithSources:reply", new { versions = new List<object>(), hasOfficialAccount = false, officialSourceAvailable = false, hasDownloadSources = false, enabledMirrorCount = 0 });
-            }
-        });
-    }
-    // #endregion
-
-    // #region Instance Management
-    // @ipc invoke hyprism:instance:create -> InstanceInfo | null
-    // @ipc invoke hyprism:instance:delete -> boolean
-    // @ipc send hyprism:instance:openFolder
-    // @ipc send hyprism:instance:openModsFolder
-    // @ipc invoke hyprism:instance:export -> string
-    // @ipc invoke hyprism:instance:import -> boolean
-    // @ipc invoke hyprism:instance:saves -> SaveInfo[]
-    // @ipc send hyprism:instance:openSaveFolder
-    // @ipc invoke hyprism:instance:getIcon -> string | null
-    // @ipc invoke hyprism:instance:select -> boolean
-    // @ipc invoke hyprism:instance:getSelected -> InstanceInfo | null
-    // @ipc invoke hyprism:instance:list -> InstanceInfo[]
-
-    private void RegisterInstanceHandlers()
-    {
-        var instanceService = _services.GetRequiredService<IInstanceService>();
-        var fileService = _services.GetRequiredService<IFileService>();
-
-        // Create an instance with generated ID
-        Electron.IpcMain.On("hyprism:instance:create", (args) =>
-        {
-            try
-            {
-                var json = ArgsToJson(args);
-                var data = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(json, JsonOpts);
-                var branch = data?["branch"].GetString() ?? "release";
-                var version = data?["version"].GetInt32() ?? 0;
-                var customName = data?.ContainsKey("customName") == true ? data["customName"].GetString() : null;
-                var isLatest = data?.ContainsKey("isLatest") == true && data["isLatest"].GetBoolean();
-
-                // Create the instance with generated ID
-                var meta = instanceService.CreateInstanceMeta(branch, version, customName, isLatest);
-                
-                Logger.Success("IPC", $"Created instance {meta.Id} ({meta.Name})");
-                Reply("hyprism:instance:create:reply", new {
-                    id = meta.Id,
-                    name = meta.Name,
-                    branch = meta.Branch,
-                    version = meta.Version
-                });
-            }
-            catch (Exception ex)
-            {
-                Logger.Error("IPC", $"Failed to create instance: {ex.Message}");
-                Reply("hyprism:instance:create:reply", null);
-            }
-        });
-
-        // Select an instance by ID
-        Electron.IpcMain.On("hyprism:instance:select", (args) =>
-        {
-            try
-            {
-                var json = ArgsToJson(args);
-                var data = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(json, JsonOpts);
-                var instanceId = data?["id"].GetString() ?? "";
-                
-                if (string.IsNullOrEmpty(instanceId))
-                {
-                    Reply("hyprism:instance:select:reply", false);
-                    return;
-                }
-                
-                instanceService.SetSelectedInstance(instanceId);
-                Logger.Info("IPC", $"Selected instance: {instanceId}");
-                Reply("hyprism:instance:select:reply", true);
-            }
-            catch (Exception ex)
-            {
-                Logger.Error("IPC", $"Failed to select instance: {ex.Message}");
-                Reply("hyprism:instance:select:reply", false);
-            }
-        });
-
-        // Get selected instance
-        Electron.IpcMain.On("hyprism:instance:getSelected", (_) =>
-        {
-            try
-            {
-                var selected = instanceService.GetSelectedInstance();
-                Reply("hyprism:instance:getSelected:reply", selected != null ? new {
-                    id = selected.Id,
-                    name = selected.Name,
-                    branch = selected.Branch,
-                    version = selected.Version,
-                    isInstalled = selected.IsInstalled
-                } : null);
-            }
-            catch (Exception ex)
-            {
-                Logger.Error("IPC", $"Failed to get selected instance: {ex.Message}");
-                Reply("hyprism:instance:getSelected:reply", null);
-            }
-        });
-
-        // List all instances from config
-        Electron.IpcMain.On("hyprism:instance:list", (_) =>
-        {
-            try
-            {
-                instanceService.SyncInstancesWithConfig();
-                var config = _services.GetRequiredService<IConfigService>().Configuration;
-                var instances = config.Instances?.Select(i => {
-                    // Check installation status for each instance
-                    var instancePath = instanceService.GetInstancePathById(i.Id);
-                    bool isInstalled = false;
-                    if (!string.IsNullOrEmpty(instancePath))
-                    {
-                        isInstalled = instanceService.IsClientPresent(instancePath);
-                    }
-                    return (object)new {
-                        id = i.Id,
-                        name = i.Name,
-                        branch = i.Branch,
-                        version = i.Version,
-                        isInstalled = isInstalled
-                    };
-                }).ToList() ?? new List<object>();
-                
-                Reply("hyprism:instance:list:reply", instances);
-            }
-            catch (Exception ex)
-            {
-                Logger.Error("IPC", $"Failed to list instances: {ex.Message}");
-                Reply("hyprism:instance:list:reply", new List<object>());
-            }
-        });
-
-        // Delete an instance
-        Electron.IpcMain.On("hyprism:instance:delete", (args) =>
-        {
-            try
-            {
-                var json = ArgsToJson(args);
-                var data = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(json, JsonOpts);
-                var instanceId = data?.TryGetValue("instanceId", out var idElement) == true ? idElement.GetString() : null;
-
-                bool result;
-                if (!string.IsNullOrWhiteSpace(instanceId))
-                {
-                    result = instanceService.DeleteGameById(instanceId);
-                    Logger.Info("IPC", $"Deleted instance by ID {instanceId}: {result}");
-                }
-                else
-                {
-                    var branch = data?["branch"].GetString() ?? "release";
-                    var version = data?["version"].GetInt32() ?? 0;
-                    result = instanceService.DeleteGame(branch, version);
-                    Logger.Info("IPC", $"Deleted instance {branch}/{version}: {result}");
-                }
-
-                Reply("hyprism:instance:delete:reply", result);
-            }
-            catch (Exception ex)
-            {
-                Logger.Error("IPC", $"Failed to delete instance: {ex.Message}");
-                Reply("hyprism:instance:delete:reply", false);
-            }
-        });
-
-        // Open instance folder
-        Electron.IpcMain.On("hyprism:instance:openFolder", (args) =>
-        {
-            try
-            {
-                var json = ArgsToJson(args);
-                var data = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(json, JsonOpts);
-                var instanceId = data?["instanceId"].GetString();
-                
-                if (string.IsNullOrEmpty(instanceId))
-                {
-                    Logger.Warning("IPC", "openFolder: instanceId is required");
-                    return;
-                }
-                
-                var path = instanceService.GetInstancePathById(instanceId);
-                if (!string.IsNullOrEmpty(path) && Directory.Exists(path))
-                {
-                    fileService.OpenFolder(path);
-                    Logger.Info("IPC", $"Opened folder: {path}");
-                }
-                else
-                {
-                    Logger.Warning("IPC", $"Instance folder not found for id: {instanceId}");
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Error("IPC", $"Failed to open instance folder: {ex.Message}");
-            }
-        });
-
-        // Open mods folder
-        Electron.IpcMain.On("hyprism:instance:openModsFolder", (args) =>
-        {
-            try
-            {
-                var json = ArgsToJson(args);
-                var data = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(json, JsonOpts);
-                
-                string? instancePath = null;
-                
-                // Try instanceId first (new method)
-                if (data?.TryGetValue("instanceId", out var idElement) == true)
-                {
-                    var instanceId = idElement.GetString();
-                    if (!string.IsNullOrEmpty(instanceId))
-                    {
-                        instancePath = instanceService.GetInstancePathById(instanceId);
-                    }
-                }
-                
-                // Fall back to branch/version (for ModManager compatibility)
-                if (string.IsNullOrEmpty(instancePath))
-                {
-                    var branch = data?["branch"].GetString() ?? "release";
-                    var version = data?["version"].GetInt32() ?? 0;
-                    instancePath = instanceService.GetInstancePath(branch, version);
-                }
-                
-                if (string.IsNullOrEmpty(instancePath))
-                {
-                    Logger.Warning("IPC", "openModsFolder: Could not find instance path");
-                    return;
-                }
-                
-                var modsPath = Path.Combine(instancePath, "UserData", "Mods");
-                
-                ModService.EnsureModsDirectory(modsPath);
-                
-                fileService.OpenFolder(modsPath);
-                Logger.Info("IPC", $"Opened mods folder: {modsPath}");
-            }
-            catch (Exception ex)
-            {
-                Logger.Error("IPC", $"Failed to open mods folder: {ex.Message}");
-            }
-        });
-
-        // Export instance as zip
-        Electron.IpcMain.On("hyprism:instance:export", async (args) =>
-        {
-            try
-            {
-                var fileDialog = _services.GetRequiredService<IFileDialogService>();
-                var json = ArgsToJson(args);
-                var data = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(json, JsonOpts);
-                var instanceId = data?.TryGetValue("instanceId", out var idEl) == true ? idEl.GetString() : null;
-                
-                // Support both instanceId and legacy branch/version
-                string? instancePath;
-                string defaultFileName;
-                
-                if (!string.IsNullOrEmpty(instanceId))
-                {
-                    instancePath = instanceService.GetInstancePathById(instanceId);
-                    defaultFileName = $"HyPrism-{instanceId.Substring(0, Math.Min(8, instanceId.Length))}_{DateTime.Now:yyyyMMdd_HHmmss}.zip";
-                }
-                else
-                {
-                    var branch = data?["branch"].GetString() ?? "release";
-                    var version = data?["version"].GetInt32() ?? 0;
-                    instancePath = instanceService.GetInstancePath(branch, version);
-                    defaultFileName = $"HyPrism-{branch}-v{version}_{DateTime.Now:yyyyMMdd_HHmmss}.zip";
-                }
-                
-                if (string.IsNullOrEmpty(instancePath) || !Directory.Exists(instancePath))
-                {
-                    Reply("hyprism:instance:export:reply", "");
-                    return;
-                }
-
-                // Show save file dialog
-                var desktop = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
-                var savePath = await fileDialog.SaveFileAsync(defaultFileName, "Zip files|*.zip", desktop);
-                
-                if (string.IsNullOrEmpty(savePath))
-                {
-                    // User cancelled
-                    Reply("hyprism:instance:export:reply", "");
-                    return;
-                }
-                
-                // Ensure .zip extension
-                if (!savePath.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
-                    savePath += ".zip";
-
-                // Create zip
-                if (File.Exists(savePath)) File.Delete(savePath);
-                ZipFile.CreateFromDirectory(instancePath, savePath, CompressionLevel.Optimal, false);
-                
-                Logger.Success("IPC", $"Exported instance to: {savePath}");
-                Reply("hyprism:instance:export:reply", savePath);
-            }
-            catch (Exception ex)
-            {
-                Logger.Error("IPC", $"Failed to export instance: {ex.Message}");
-                Reply("hyprism:instance:export:reply", "");
-            }
-        });
-
-        // Import instance from zip or pwr file (using file dialog service)
-        Electron.IpcMain.On("hyprism:instance:import", async (_) =>
-        {
-            try
-            {
-                var fileDialog = _services.GetRequiredService<IFileDialogService>();
-                // Show file picker for zip/pwr files
-                var filePath = await fileDialog.BrowseInstanceArchiveAsync();
-                
-                if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
-                {
-                    Logger.Info("IPC", "Import cancelled or file not found");
-                    Reply("hyprism:instance:import:reply", false);
-                    return;
-                }
-                
-                Logger.Info("IPC", $"Importing instance from: {filePath}");
-                
-                var extension = Path.GetExtension(filePath).ToLowerInvariant();
-                
-                if (extension == ".pwr")
-                {
-                    // Handle PWR file import using Butler
-                    await ImportPwrFileAsync(filePath, instanceService);
-                }
-                else
-                {
-                    // Handle ZIP file import (existing logic)
-                    await ImportZipFileAsync(filePath, instanceService);
-                }
-                
-                Logger.Success("IPC", $"Instance imported successfully");
-                Reply("hyprism:instance:import:reply", true);
-            }
-            catch (Exception ex)
-            {
-                Logger.Error("IPC", $"Failed to import instance: {ex.Message}");
-                Reply("hyprism:instance:import:reply", false);
-            }
-        });
-
-        // Get saves for an instance
-        Electron.IpcMain.On("hyprism:instance:saves", (args) =>
-        {
-            try
-            {
-                var json = ArgsToJson(args);
-                var data = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(json, JsonOpts);
-                var instanceId = data?.TryGetValue("instanceId", out var idElement) == true ? idElement.GetString() : null;
-                var branch = data?["branch"].GetString() ?? "release";
-                var version = data?["version"].GetInt32() ?? 0;
-
-                var instancePath = !string.IsNullOrWhiteSpace(instanceId)
-                    ? instanceService.GetInstancePathById(instanceId) ?? instanceService.GetInstancePath(branch, version)
-                    : instanceService.GetInstancePath(branch, version);
-
-                if (string.IsNullOrWhiteSpace(instancePath))
-                {
-                    Reply("hyprism:instance:saves:reply", new List<object>());
-                    return;
-                }
-
-                var savesPath = Path.Combine(instancePath, "UserData", "Saves");
-                
-                var saves = new List<object>();
-                
-                if (Directory.Exists(savesPath))
-                {
-                    foreach (var saveDir in Directory.GetDirectories(savesPath))
-                    {
-                        var dirInfo = new DirectoryInfo(saveDir);
-                        var previewPath = Path.Combine(saveDir, "preview.png");
-                        
-                        // Calculate total size
-                        long sizeBytes = 0;
-                        try
-                        {
-                            sizeBytes = dirInfo.EnumerateFiles("*", SearchOption.AllDirectories).Sum(f => f.Length);
-                        }
-                        catch { /* ignore */ }
-
-                        saves.Add(new
-                        {
-                            name = dirInfo.Name,
-                            path = saveDir,
-                            previewPath = File.Exists(previewPath) ? $"file://{previewPath.Replace("\\", "/")}" : null,
-                            lastModified = dirInfo.LastWriteTime.ToString("o"),
-                            sizeBytes
-                        });
-                    }
-                }
-                
-                Logger.Info("IPC", $"Found {saves.Count} saves for {branch}/{version}");
-                Reply("hyprism:instance:saves:reply", saves);
-            }
-            catch (Exception ex)
-            {
-                Logger.Error("IPC", $"Failed to get saves: {ex.Message}");
-                Reply("hyprism:instance:saves:reply", new List<object>());
-            }
-        });
-
-        // Open save folder
-        Electron.IpcMain.On("hyprism:instance:openSaveFolder", (args) =>
-        {
-            try
-            {
-                var json = ArgsToJson(args);
-                var data = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(json, JsonOpts);
-                var instanceId = data?.TryGetValue("instanceId", out var idElement) == true ? idElement.GetString() : null;
-                var branch = data?["branch"].GetString() ?? "release";
-                var version = data?["version"].GetInt32() ?? 0;
-                var saveName = data?["saveName"].GetString() ?? "";
-                
-                var instancePath = !string.IsNullOrWhiteSpace(instanceId)
-                    ? instanceService.GetInstancePathById(instanceId) ?? instanceService.GetInstancePath(branch, version)
-                    : instanceService.GetInstancePath(branch, version);
-
-                if (string.IsNullOrWhiteSpace(instancePath))
-                {
-                    return;
-                }
-
-                var savePath = Path.Combine(instancePath, "UserData", "Saves", saveName);
-                
-                if (Directory.Exists(savePath))
-                {
-                    fileService.OpenFolder(savePath);
-                    Logger.Info("IPC", $"Opened save folder: {savePath}");
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Error("IPC", $"Failed to open save folder: {ex.Message}");
-            }
-        });
-
-        // Delete save folder
-        Electron.IpcMain.On("hyprism:instance:deleteSave", (args) =>
-        {
-            try
-            {
-                var json = ArgsToJson(args);
-                var data = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(json, JsonOpts);
-                var instanceId = data?.TryGetValue("instanceId", out var idElement) == true ? idElement.GetString() : null;
-                var branch = data?["branch"].GetString() ?? "release";
-                var version = data?["version"].GetInt32() ?? 0;
-                var saveName = data?["saveName"].GetString() ?? "";
-
-                if (string.IsNullOrWhiteSpace(saveName))
-                {
-                    Reply("hyprism:instance:deleteSave:reply", false);
-                    return;
-                }
-
-                var instancePath = !string.IsNullOrWhiteSpace(instanceId)
-                    ? instanceService.GetInstancePathById(instanceId) ?? instanceService.GetInstancePath(branch, version)
-                    : instanceService.GetInstancePath(branch, version);
-
-                if (string.IsNullOrWhiteSpace(instancePath))
-                {
-                    Reply("hyprism:instance:deleteSave:reply", false);
-                    return;
-                }
-
-                var savesPath = Path.GetFullPath(Path.Combine(instancePath, "UserData", "Saves"));
-                var targetSavePath = Path.GetFullPath(Path.Combine(savesPath, saveName));
-
-                if (!targetSavePath.StartsWith(savesPath, StringComparison.OrdinalIgnoreCase))
-                {
-                    Logger.Warning("IPC", $"Blocked save delete outside saves directory: {targetSavePath}");
-                    Reply("hyprism:instance:deleteSave:reply", false);
-                    return;
-                }
-
-                if (!Directory.Exists(targetSavePath))
-                {
-                    Reply("hyprism:instance:deleteSave:reply", false);
-                    return;
-                }
-
-                Directory.Delete(targetSavePath, true);
-                Logger.Info("IPC", $"Deleted save folder: {targetSavePath}");
-                Reply("hyprism:instance:deleteSave:reply", true);
-            }
-            catch (Exception ex)
-            {
-                Logger.Error("IPC", $"Failed to delete save folder: {ex.Message}");
-                Reply("hyprism:instance:deleteSave:reply", false);
-            }
-        });
-
-        // Get instance icon
-        Electron.IpcMain.On("hyprism:instance:getIcon", (args) =>
-        {
-            try
-            {
-                var json = ArgsToJson(args);
-                var data = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(json, JsonOpts);
-                var instanceId = data?["instanceId"].GetString();
-                
-                if (string.IsNullOrEmpty(instanceId))
-                {
-                    Reply("hyprism:instance:getIcon:reply", null);
-                    return;
-                }
-                
-                var instancePath = instanceService.GetInstancePathById(instanceId);
-                if (string.IsNullOrEmpty(instancePath) || !Directory.Exists(instancePath))
-                {
-                    Reply("hyprism:instance:getIcon:reply", null);
-                    return;
-                }
-                
-                // Check for logo.png first (new format), then icon.png (legacy)
-                var logoPath = Path.Combine(instancePath, "logo.png");
-                var iconPath = Path.Combine(instancePath, "icon.png");
-                
-                var foundPath = File.Exists(logoPath) ? logoPath : (File.Exists(iconPath) ? iconPath : null);
-                
-                if (foundPath != null)
-                {
-                    var cacheBuster = File.GetLastWriteTimeUtc(foundPath).Ticks;
-                    Reply("hyprism:instance:getIcon:reply", $"file://{foundPath.Replace("\\", "/")}?v={cacheBuster}");
-                }
-                else
-                {
-                    Reply("hyprism:instance:getIcon:reply", null);
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Error("IPC", $"Failed to get instance icon: {ex.Message}");
-                Reply("hyprism:instance:getIcon:reply", null);
-            }
-        });
-
-        // Set instance icon
-        Electron.IpcMain.On("hyprism:instance:setIcon", async (args) =>
-        {
-            try
-            {
-                var json = ArgsToJson(args);
-                var data = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(json, JsonOpts);
-                var instanceId = data?["instanceId"].GetString();
-                var iconBase64 = data?["iconBase64"].GetString();
-                
-                if (string.IsNullOrEmpty(instanceId))
-                {
-                    Logger.Warning("IPC", "Set icon failed: no instanceId provided");
-                    Reply("hyprism:instance:setIcon:reply", false);
-                    return;
-                }
-                
-                var instancePath = instanceService.GetInstancePathById(instanceId);
-                if (string.IsNullOrEmpty(instancePath) || !Directory.Exists(instancePath))
-                {
-                    Logger.Warning("IPC", $"Set icon failed: instance not found by ID: {instanceId}");
-                    Reply("hyprism:instance:setIcon:reply", false);
-                    return;
-                }
-                
-                var targetIconPath = Path.Combine(instancePath, "logo.png");
-                
-                if (!string.IsNullOrEmpty(iconBase64))
-                {
-                    // Remove data URL prefix if present (e.g., "data:image/png;base64,")
-                    var base64Data = iconBase64.Contains(",") 
-                        ? iconBase64.Substring(iconBase64.IndexOf(",") + 1) 
-                        : iconBase64;
-                    
-                    var imageBytes = Convert.FromBase64String(base64Data);
-                    
-                    // Resize to 256x256 using ImageSharp
-                    using var inputStream = new MemoryStream(imageBytes);
-                    using var image = await SixLabors.ImageSharp.Image.LoadAsync(inputStream);
-                    
-                    image.Mutate(x => x.Resize(new SixLabors.ImageSharp.Processing.ResizeOptions
-                    {
-                        Size = new SixLabors.ImageSharp.Size(256, 256),
-                        Mode = SixLabors.ImageSharp.Processing.ResizeMode.Crop
-                    }));
-                    
-                    await image.SaveAsPngAsync(targetIconPath);
-                    
-                    Reply("hyprism:instance:setIcon:reply", true);
-                    Logger.Info("IPC", $"Set icon for instance {instanceId} (256x256)");
-                }
-                else
-                {
-                    // Icon data not provided
-                    Reply("hyprism:instance:setIcon:reply", false);
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Error("IPC", $"Failed to set instance icon: {ex.Message}");
-                Reply("hyprism:instance:setIcon:reply", false);
-            }
-        });
-
-        // Rename instance (set custom name)
-        Electron.IpcMain.On("hyprism:instance:rename", (args) =>
-        {
-            try
-            {
-                var json = ArgsToJson(args);
-                var data = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(json, JsonOpts);
-                var instanceId = data?["instanceId"].GetString();
-                var customName = data?["customName"].GetString();
-                
-                if (string.IsNullOrEmpty(instanceId))
-                {
-                    Logger.Warning("IPC", "Instance rename failed: no instanceId provided");
-                    Reply("hyprism:instance:rename:reply", false);
-                    return;
-                }
-                
-                instanceService.SetInstanceCustomNameById(instanceId, customName);
-                Reply("hyprism:instance:rename:reply", true);
-                Logger.Info("IPC", $"Renamed instance {instanceId} to: {customName ?? "(default)"}");
-            }
-            catch (Exception ex)
-            {
-                Logger.Error("IPC", $"Failed to rename instance: {ex.Message}");
-                Reply("hyprism:instance:rename:reply", false);
-            }
-        });
-
-        // @ipc invoke hyprism:instance:changeVersion -> boolean
-        // Change the version/branch of an existing instance.
-        // Clears game client files, updates meta.json, marks non-latest.
-        Electron.IpcMain.On("hyprism:instance:changeVersion", (args) =>
-        {
-            try
-            {
-                var json = ArgsToJson(args);
-                var data = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(json, JsonOpts);
-                var instanceId = data?["instanceId"].GetString();
-                var branch = data?["branch"].GetString();
-                var version = data?["version"].GetInt32() ?? 0;
-
-                if (string.IsNullOrEmpty(instanceId) || string.IsNullOrEmpty(branch))
-                {
-                    Logger.Warning("IPC", "Instance changeVersion failed: missing instanceId or branch");
-                    Reply("hyprism:instance:changeVersion:reply", false);
-                    return;
-                }
-
-                var result = instanceService.ChangeInstanceVersion(instanceId, branch, version);
-                Reply("hyprism:instance:changeVersion:reply", result);
-                Logger.Info("IPC", $"Changed instance {instanceId} version to {branch} v{version}: {result}");
-            }
-            catch (Exception ex)
-            {
-                Logger.Error("IPC", $"Failed to change instance version: {ex.Message}");
-                Reply("hyprism:instance:changeVersion:reply", false);
-            }
-        });
-    }
-    // #endregion
-
-    // #region News
-    // @ipc invoke hyprism:news:get -> NewsItem[]
-
-    private void RegisterNewsHandlers()
-    {
-        var newsService = _services.GetRequiredService<INewsService>();
-
-        Electron.IpcMain.On("hyprism:news:get", async (_) =>
-        {
-            try
-            {
-                var news = await newsService.GetNewsAsync();
-                Reply("hyprism:news:get:reply", news);
-            }
-            catch (Exception ex)
-            {
-                Logger.Error("IPC", $"News fetch failed: {ex.Message}");
-                Reply("hyprism:news:get:reply", new { error = ex.Message });
-            }
-        });
-    }
-
-    // #endregion
-
-    // #region Profiles
-    // @ipc invoke hyprism:profile:get -> ProfileSnapshot
-    // @ipc invoke hyprism:profile:list -> Profile[]
-    // @ipc invoke hyprism:profile:switch -> { success: boolean }
-    // @ipc invoke hyprism:profile:setNick -> { success: boolean }
-    // @ipc invoke hyprism:profile:setUuid -> { success: boolean }
-    // @ipc invoke hyprism:profile:create -> Profile
-    // @ipc invoke hyprism:profile:delete -> { success: boolean }
-    // @ipc invoke hyprism:profile:activeIndex -> number
-    // @ipc invoke hyprism:profile:save -> { success: boolean }
-    // @ipc invoke hyprism:profile:duplicate -> Profile
-    // @ipc send hyprism:profile:openFolder
-    // @ipc invoke hyprism:profile:avatarForUuid -> string
-
-    private void RegisterProfileHandlers()
-    {
-        var profileService = _services.GetRequiredService<IProfileService>();
-        var profileMgmt = _services.GetRequiredService<IProfileManagementService>();
-
-        Electron.IpcMain.On("hyprism:profile:get", (_) =>
-        {
-            Reply("hyprism:profile:get:reply", new
-            {
-                nick = profileService.GetNick(),
-                uuid = profileService.GetUUID(),
-                avatarPath = profileService.GetAvatarPreview()
-            });
-        });
-
-        Electron.IpcMain.On("hyprism:profile:list", (_) =>
-        {
-            Reply("hyprism:profile:list:reply", profileMgmt.GetProfiles());
-        });
-
-        Electron.IpcMain.On("hyprism:profile:switch", (args) =>
-        {
-            try
-            {
-                var json = ArgsToJson(args);
-                using var doc = JsonDocument.Parse(json);
-                var index = doc.RootElement.GetProperty("index").GetInt32();
-                var success = profileMgmt.SwitchProfile(index);
-                
-                // Reload Hytale session for the new profile
-                if (success)
-                {
-                    var authService = _services.GetRequiredService<IHytaleAuthService>();
-                    authService.ReloadSessionForCurrentProfile();
-                }
-                
-                Reply("hyprism:profile:switch:reply", new { success });
-            }
-            catch (Exception ex)
-            {
-                Logger.Error("IPC", $"Profile switch failed: {ex.Message}");
-                Reply("hyprism:profile:switch:reply", new { success = false });
-            }
-        });
-
-        Electron.IpcMain.On("hyprism:profile:setNick", (args) =>
-        {
-            var nick = ArgsToString(args);
-            var success = profileService.SetNick(nick);
-            Reply("hyprism:profile:setNick:reply", new { success });
-        });
-
-        Electron.IpcMain.On("hyprism:profile:setUuid", (args) =>
-        {
-            var uuid = ArgsToString(args);
-            var success = profileService.SetUUID(uuid);
-            Reply("hyprism:profile:setUuid:reply", new { success });
-        });
-
-        Electron.IpcMain.On("hyprism:profile:create", (args) =>
-        {
-            try
-            {
-                var json = ArgsToJson(args);
-                using var doc = JsonDocument.Parse(json);
-                var name = doc.RootElement.GetProperty("name").GetString() ?? "";
-                var uuid = doc.RootElement.GetProperty("uuid").GetString() ?? "";
-                var isOfficial = doc.RootElement.TryGetProperty("isOfficial", out var officialProp) && officialProp.GetBoolean();
-                
-                var profile = profileMgmt.CreateProfile(name, uuid);
-                if (profile != null)
-                {
-                    profile.IsOfficial = isOfficial;
-                    _services.GetRequiredService<ConfigService>().SaveConfig();
-                    
-                    // Save Hytale session to the new profile if it's official
-                    if (isOfficial)
-                    {
-                        var authService = _services.GetRequiredService<IHytaleAuthService>();
-                        authService.SaveSessionToProfile(profile);
-                    }
-                }
-                Reply("hyprism:profile:create:reply", profile != null ? (object)profile : new { error = "Failed to create profile" });
-            }
-            catch (Exception ex)
-            {
-                Logger.Error("IPC", $"Profile create failed: {ex.Message}");
-                Reply("hyprism:profile:create:reply", new { error = ex.Message });
-            }
-        });
-
-        Electron.IpcMain.On("hyprism:profile:delete", (args) =>
-        {
-            var id = ArgsToString(args);
-            var success = profileMgmt.DeleteProfile(id);
-            Reply("hyprism:profile:delete:reply", new { success });
-        });
-
-        Electron.IpcMain.On("hyprism:profile:activeIndex", (_) =>
-        {
-            Reply("hyprism:profile:activeIndex:reply", profileMgmt.GetActiveProfileIndex());
-        });
-
-        Electron.IpcMain.On("hyprism:profile:save", (_) =>
-        {
-            var profile = profileMgmt.SaveCurrentAsProfile();
-            Reply("hyprism:profile:save:reply", new { success = profile != null });
-        });
-
-        Electron.IpcMain.On("hyprism:profile:duplicate", (args) =>
-        {
-            var id = ArgsToString(args);
-            var profile = profileMgmt.DuplicateProfileWithoutData(id);
-            Reply("hyprism:profile:duplicate:reply", profile != null ? (object)profile : new { error = "Failed to duplicate" });
-        });
-
-        Electron.IpcMain.On("hyprism:profile:openFolder", (_) =>
-        {
-            profileMgmt.OpenCurrentProfileFolder();
-        });
-
-        Electron.IpcMain.On("hyprism:profile:avatarForUuid", (args) =>
-        {
-            var uuid = ArgsToString(args);
-            var path = profileService.GetAvatarPreviewForUUID(uuid);
-            Reply("hyprism:profile:avatarForUuid:reply", path ?? "");
-        });
-    }
-
-    // #endregion
-
-    // #region Hytale Auth
-    // @ipc invoke hyprism:auth:status -> HytaleAuthStatus
-    // @ipc invoke hyprism:auth:login -> HytaleAuthStatus
-    // @ipc invoke hyprism:auth:logout -> { success: boolean }
-
-    private void RegisterAuthHandlers()
-    {
-        var authService = _services.GetRequiredService<HytaleAuthService>();
-
-        Electron.IpcMain.On("hyprism:auth:status", (_) =>
-        {
-            Reply("hyprism:auth:status:reply", authService.GetAuthStatus());
-        });
-
-        Electron.IpcMain.On("hyprism:auth:login", async (_) =>
-        {
-            try
-            {
-                var session = await authService.LoginAsync();
-                Reply("hyprism:auth:login:reply", authService.GetAuthStatus());
-            }
-            catch (HytaleNoProfileException)
-            {
-                Logger.Warning("IPC", "Auth login: no Hytale game profile found");
-                Reply("hyprism:auth:login:reply", new { loggedIn = false, errorType = "no_profile", error = "No game profiles found in this Hytale account" });
-            }
-            catch (HytaleAuthException ex)
-            {
-                Logger.Error("IPC", $"Auth login error ({ex.ErrorType}): {ex.Message}");
-                Reply("hyprism:auth:login:reply", new { loggedIn = false, errorType = ex.ErrorType, error = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                Logger.Error("IPC", $"Auth login failed: {ex.Message}");
-                Reply("hyprism:auth:login:reply", new { loggedIn = false, errorType = "unknown", error = ex.Message });
-            }
-        });
-
-        Electron.IpcMain.On("hyprism:auth:logout", (_) =>
-        {
-            authService.Logout();
-            Reply("hyprism:auth:logout:reply", new { success = true });
-        });
-    }
-
-    // #endregion
-
-    // #region Settings
-    // @ipc invoke hyprism:settings:get -> SettingsSnapshot
-    // @ipc invoke hyprism:settings:update -> { success: boolean }
-
-    private void RegisterSettingsHandlers()
-    {
-        var settings = _services.GetRequiredService<ISettingsService>();
-        var appPath = _services.GetRequiredService<AppPathConfiguration>();
-        var updateService = _services.GetRequiredService<IUpdateService>();
-
-        Electron.IpcMain.On("hyprism:settings:get", (_) =>
-        {
-            var lang = settings.GetLanguage();
-            Reply("hyprism:settings:get:reply", new
-            {
-                language = lang,
-                musicEnabled = settings.GetMusicEnabled(),
-                launcherBranch = settings.GetLauncherBranch(),
-                versionType = settings.GetVersionType(),
-                selectedVersion = settings.GetSelectedVersion(),
-                closeAfterLaunch = settings.GetCloseAfterLaunch(),
-                launchAfterDownload = settings.GetLaunchAfterDownload(),
-                showDiscordAnnouncements = settings.GetShowDiscordAnnouncements(),
-                disableNews = settings.GetDisableNews(),
-                backgroundMode = settings.GetBackgroundMode(),
-                availableBackgrounds = settings.GetAvailableBackgrounds(),
-                accentColor = settings.GetAccentColor(),
-                hasCompletedOnboarding = settings.GetHasCompletedOnboarding(),
-                onlineMode = settings.GetOnlineMode(),
-                authDomain = settings.GetAuthDomain(),
-                javaArguments = settings.GetJavaArguments(),
-                useCustomJava = settings.GetUseCustomJava(),
-                customJavaPath = settings.GetCustomJavaPath(),
-                systemMemoryMb = GetSystemMemoryMb(),
-                dataDirectory = appPath.AppDir,
-                instanceDirectory = settings.GetInstanceDirectory(),
-                gpuPreference = settings.GetGpuPreference(),
-                gameEnvironmentVariables = settings.GetGameEnvironmentVariables(),
-                useDualAuth = settings.GetUseDualAuth(),
-                showAlphaMods = settings.GetShowAlphaMods(),
-                launcherVersion = UpdateService.GetCurrentVersion()
-            });
-        });
-
-        Electron.IpcMain.On("hyprism:settings:update", (args) =>
-        {
-            try
-            {
-                var oldLauncherBranch = settings.GetLauncherBranch();
-                var json = ArgsToJson(args);
-                var updates = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(json);
-                if (updates != null)
-                    foreach (var (key, value) in updates)
-                        ApplySetting(settings, key, value);
-
-                // If the user changed the launcher branch, re-check updates immediately.
-                // This enables release ↔ beta switching without requiring restart.
-                var newLauncherBranch = settings.GetLauncherBranch();
-                if (!string.Equals(oldLauncherBranch, newLauncherBranch, StringComparison.OrdinalIgnoreCase))
-                {
-                    _ = Task.Run(async () =>
-                    {
-                        try { await updateService.CheckForLauncherUpdatesAsync(); }
-                        catch (Exception ex) { Logger.Warning("Update", $"Update check after channel switch failed: {ex.Message}"); }
-                    });
-                }
-
-                Reply("hyprism:settings:update:reply", new { success = true });
-            }
-            catch (Exception ex)
-            {
-                Logger.Error("IPC", $"Settings update failed: {ex.Message}");
-                Reply("hyprism:settings:update:reply", new { success = false, error = ex.Message });
-            }
-        });
-        
-        // @ipc invoke hyprism:settings:testMirrorSpeed -> MirrorSpeedTestResult
-        Electron.IpcMain.On("hyprism:settings:testMirrorSpeed", async (args) =>
-        {
-            try
-            {
-                var json = ArgsToJson(args);
-                var request = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(json);
-                var mirrorId = request?.GetValueOrDefault("mirrorId").GetString() ?? "estrogen";
-                var forceRefresh = request?.GetValueOrDefault("forceRefresh").ValueKind == JsonValueKind.True;
-                
-                var versionService = _services.GetRequiredService<IVersionService>();
-                var result = await versionService.TestMirrorSpeedAsync(mirrorId, forceRefresh);
-                
-                Reply("hyprism:settings:testMirrorSpeed:reply", result);
-            }
-            catch (Exception ex)
-            {
-                Logger.Error("IPC", $"Mirror speed test failed: {ex.Message}");
-                Reply("hyprism:settings:testMirrorSpeed:reply", new { 
-                    mirrorId = "unknown",
-                    mirrorName = "Unknown",
-                    mirrorUrl = "",
-                    pingMs = 0L,
-                    speedMBps = 0.0,
-                    isAvailable = false,
-                    testedAt = DateTime.UtcNow
-                });
-            }
-        });
-        
-        // @ipc invoke hyprism:settings:testOfficialSpeed -> MirrorSpeedTestResult
-        Electron.IpcMain.On("hyprism:settings:testOfficialSpeed", async (args) =>
-        {
-            try
-            {
-                var json = ArgsToJson(args);
-                var request = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(json);
-                var forceRefresh = request?.GetValueOrDefault("forceRefresh").ValueKind == JsonValueKind.True;
-                
-                var versionService = _services.GetRequiredService<IVersionService>();
-                var result = await versionService.TestOfficialSpeedAsync(forceRefresh);
-                
-                Reply("hyprism:settings:testOfficialSpeed:reply", result);
-            }
-            catch (Exception ex)
-            {
-                Logger.Error("IPC", $"Official speed test failed: {ex.Message}");
-                Reply("hyprism:settings:testOfficialSpeed:reply", new { 
-                    mirrorId = "official",
-                    mirrorName = "Hytale",
-                    mirrorUrl = "https://cdn.hytale.com",
-                    pingMs = -1L,
-                    speedMBps = 0.0,
-                    isAvailable = false,
-                    testedAt = DateTime.UtcNow
-                });
-            }
-        });
-
-        // @ipc invoke hyprism:settings:hasDownloadSources -> { hasDownloadSources: boolean; hasOfficialAccount: boolean; enabledMirrorCount: number; }
-        Electron.IpcMain.On("hyprism:settings:hasDownloadSources", async (_) =>
-        {
-            await Task.CompletedTask;
-            try
-            {
-                var versionService = _services.GetRequiredService<IVersionService>();
-                Reply("hyprism:settings:hasDownloadSources:reply", new {
-                    hasDownloadSources = versionService.HasDownloadSources(),
-                    hasOfficialAccount = versionService.HasOfficialAccount,
-                    enabledMirrorCount = versionService.EnabledMirrorCount
-                });
-            }
-            catch (Exception ex)
-            {
-                Logger.Error("IPC", $"hasDownloadSources failed: {ex.Message}");
-                Reply("hyprism:settings:hasDownloadSources:reply", new {
-                    hasDownloadSources = false,
-                    hasOfficialAccount = false,
-                    enabledMirrorCount = 0
-                });
-            }
-        });
-
-        // @ipc invoke hyprism:settings:getMirrors -> MirrorInfo[]
-        Electron.IpcMain.On("hyprism:settings:getMirrors", async (_) =>
-        {
-            await Task.CompletedTask;
-            try
-            {
-                var appPath = _services.GetRequiredService<AppPathConfiguration>();
-                var mirrors = MirrorLoaderService.GetAllMirrorMetas(appPath.AppDir);
-                var result = mirrors.Select(m => new {
-                    id = m.Id,
-                    name = m.Name,
-                    description = m.Description,
-                    priority = m.Priority,
-                    enabled = m.Enabled,
-                    sourceType = m.SourceType,
-                    hostname = GetMirrorHostname(m)
-                }).ToList();
-                Reply("hyprism:settings:getMirrors:reply", result);
-            }
-            catch (Exception ex)
-            {
-                Logger.Error("IPC", $"Get mirrors failed: {ex.Message}");
-                Reply("hyprism:settings:getMirrors:reply", Array.Empty<object>());
-            }
-        });
-
-        // @ipc invoke hyprism:settings:addMirror -> { success: boolean; error?: string; mirror?: MirrorInfo; } 0
-        Electron.IpcMain.On("hyprism:settings:addMirror", async (args) =>
-        {
-            try
-            {
-                var appPath = _services.GetRequiredService<AppPathConfiguration>();
-                var json = ArgsToJson(args);
-                var request = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(json);
-                var url = request?.TryGetValue("url", out var urlEl) == true && urlEl.ValueKind == JsonValueKind.String
-                    ? urlEl.GetString() ?? ""
-                    : "";
-                var headersString = request?.TryGetValue("headers", out var headersEl) == true && headersEl.ValueKind == JsonValueKind.String
-                    ? headersEl.GetString() ?? ""
-                    : "";
-                
-                if (string.IsNullOrWhiteSpace(url))
-                {
-                    Reply("hyprism:settings:addMirror:reply", new { success = false, error = "URL is required" });
-                    return;
-                }
-                
-                // Parse custom headers before discovery so they're used during requests
-                var parsedHeaders = !string.IsNullOrWhiteSpace(headersString) 
-                    ? ParseHeadersString(headersString) 
-                    : null;
-                
-                var httpClient = _services.GetRequiredService<HttpClient>();
-                var discoveryService = new MirrorDiscoveryService(httpClient);
-                var result = await discoveryService.DiscoverMirrorAsync(url, parsedHeaders);
-                
-                if (!result.Success || result.Mirror == null)
-                {
-                    Reply("hyprism:settings:addMirror:reply", new { success = false, error = result.Error ?? "Discovery failed" });
-                    return;
-                }
-                
-                // Apply custom headers to mirror config for future use
-                if (parsedHeaders != null && parsedHeaders.Count > 0)
-                {
-                    result.Mirror.Headers = parsedHeaders;
-                }
-                
-                // Check if mirror with same ID already exists
-                if (MirrorLoaderService.MirrorExists(appPath.AppDir, result.Mirror.Id))
-                {
-                    // Generate unique ID
-                    var baseId = result.Mirror.Id;
-                    var counter = 2;
-                    while (MirrorLoaderService.MirrorExists(appPath.AppDir, $"{baseId}-{counter}"))
-                    {
-                        counter++;
-                    }
-                    result.Mirror.Id = $"{baseId}-{counter}";
-                }
-                
-                MirrorLoaderService.SaveMirror(appPath.AppDir, result.Mirror);
-                
-                // Reload mirror sources in VersionService
-                var versionService = _services.GetRequiredService<IVersionService>();
-                versionService.ReloadMirrorSources();
-                
-                Reply("hyprism:settings:addMirror:reply", new { 
-                    success = true, 
-                    mirror = new {
-                        id = result.Mirror.Id,
-                        name = result.Mirror.Name,
-                        description = result.Mirror.Description,
-                        priority = result.Mirror.Priority,
-                        enabled = result.Mirror.Enabled,
-                        sourceType = result.Mirror.SourceType,
-                        hostname = GetMirrorHostname(result.Mirror),
-                        detectedType = result.DetectedType
-                    }
-                });
-                
-                Logger.Success("IPC", $"Added mirror: {result.Mirror.Name} ({result.Mirror.Id})");
-            }
-            catch (Exception ex)
-            {
-                Logger.Error("IPC", $"Add mirror failed: {ex.Message}");
-                Reply("hyprism:settings:addMirror:reply", new { success = false, error = ex.Message });
-            }
-        });
-
-        // @ipc invoke hyprism:settings:deleteMirror -> { success: boolean; }
-        Electron.IpcMain.On("hyprism:settings:deleteMirror", async (args) =>
-        {
-            await Task.CompletedTask;
-            try
-            {
-                var appPath = _services.GetRequiredService<AppPathConfiguration>();
-                var json = ArgsToJson(args);
-                var request = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(json);
-                var mirrorId = request?.GetValueOrDefault("mirrorId").GetString() ?? "";
-                
-                if (string.IsNullOrWhiteSpace(mirrorId))
-                {
-                    Reply("hyprism:settings:deleteMirror:reply", new { success = false, error = "Mirror ID is required" });
-                    return;
-                }
-                
-                var deleted = MirrorLoaderService.DeleteMirror(appPath.AppDir, mirrorId);
-                
-                if (deleted)
-                {
-                    // Reload mirror sources in VersionService
-                    var versionService = _services.GetRequiredService<IVersionService>();
-                    versionService.ReloadMirrorSources();
-                    Logger.Info("IPC", $"Deleted mirror: {mirrorId}");
-                }
-                
-                Reply("hyprism:settings:deleteMirror:reply", new { success = deleted });
-            }
-            catch (Exception ex)
-            {
-                Logger.Error("IPC", $"Delete mirror failed: {ex.Message}");
-                Reply("hyprism:settings:deleteMirror:reply", new { success = false, error = ex.Message });
-            }
-        });
-
-        // @ipc invoke hyprism:settings:toggleMirror -> { success: boolean; }
-        Electron.IpcMain.On("hyprism:settings:toggleMirror", async (args) =>
-        {
-            await Task.CompletedTask;
-            try
-            {
-                var appPath = _services.GetRequiredService<AppPathConfiguration>();
-                var json = ArgsToJson(args);
-                var request = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(json);
-                var mirrorId = request?.GetValueOrDefault("mirrorId").GetString() ?? "";
-                var enabled = request?.GetValueOrDefault("enabled").GetBoolean() ?? true;
-                
-                var mirrors = MirrorLoaderService.GetAllMirrorMetas(appPath.AppDir);
-                var mirror = mirrors.FirstOrDefault(m => m.Id == mirrorId);
-                
-                if (mirror == null)
-                {
-                    Reply("hyprism:settings:toggleMirror:reply", new { success = false, error = "Mirror not found" });
-                    return;
-                }
-                
-                mirror.Enabled = enabled;
-                MirrorLoaderService.SaveMirror(appPath.AppDir, mirror);
-                
-                // Reload mirror sources in VersionService
-                var versionService = _services.GetRequiredService<IVersionService>();
-                versionService.ReloadMirrorSources();
-                
-                Reply("hyprism:settings:toggleMirror:reply", new { success = true });
-            }
-            catch (Exception ex)
-            {
-                Logger.Error("IPC", $"Toggle mirror failed: {ex.Message}");
-                Reply("hyprism:settings:toggleMirror:reply", new { success = false, error = ex.Message });
-            }
-        });
-
-        // @ipc invoke hyprism:network:pingAuthServer -> AuthServerPingResult
-        Electron.IpcMain.On("hyprism:network:pingAuthServer", async (args) =>
-        {
-            try
-            {
-                var json = ArgsToJson(args);
-                var request = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(json);
-                var authDomainOverride = request?.TryGetValue("authDomain", out var domainEl) == true 
-                    && domainEl.ValueKind == JsonValueKind.String
-                    ? domainEl.GetString() : null;
-                
-                var settingsSvc = _services.GetRequiredService<ISettingsService>();
-                var authDomain = !string.IsNullOrWhiteSpace(authDomainOverride) 
-                    ? authDomainOverride 
-                    : settingsSvc.GetAuthDomain();
-                
-                if (string.IsNullOrWhiteSpace(authDomain))
-                {
-                    authDomain = "sessions.sanasol.ws";
-                }
-                
-                var isOfficial = IsOfficialAuthDomain(authDomain);
-                
-                // Official auth servers are always considered available (no ping needed)
-                if (isOfficial)
-                {
-                    Reply("hyprism:network:pingAuthServer:reply", new
-                    {
-                        isAvailable = true,
-                        pingMs = 0L,
-                        authDomain = authDomain,
-                        checkedAt = DateTime.UtcNow.ToString("o"),
-                        isOfficial = true
-                    });
-                    return;
-                }
-                
-                // Build ping URL for custom auth server
-                var pingUrl = BuildAuthPingUrl(authDomain);
-                var httpClient = _services.GetRequiredService<HttpClient>();
-                
-                var sw = System.Diagnostics.Stopwatch.StartNew();
-                try
-                {
-                    using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
-                    using var response = await httpClient.GetAsync(pingUrl, cts.Token);
-                    sw.Stop();
-                    
-                    // Consider 2xx and some 4xx as "server is reachable"
-                    var isAvailable = response.IsSuccessStatusCode || 
-                        (int)response.StatusCode == 404 || 
-                        (int)response.StatusCode == 401 ||
-                        (int)response.StatusCode == 403;
-                    
-                    Reply("hyprism:network:pingAuthServer:reply", new
-                    {
-                        isAvailable,
-                        pingMs = sw.ElapsedMilliseconds,
-                        authDomain = authDomain,
-                        checkedAt = DateTime.UtcNow.ToString("o"),
-                        isOfficial = false
-                    });
-                }
-                catch (Exception pingEx)
-                {
-                    sw.Stop();
-                    Logger.Warning("IPC", $"Auth server ping failed for {authDomain}: {pingEx.Message}");
-                    Reply("hyprism:network:pingAuthServer:reply", new
-                    {
-                        isAvailable = false,
-                        pingMs = sw.ElapsedMilliseconds,
-                        authDomain = authDomain,
-                        error = pingEx.Message,
-                        checkedAt = DateTime.UtcNow.ToString("o"),
-                        isOfficial = false
-                    });
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Error("IPC", $"Auth server ping failed: {ex.Message}");
-                Reply("hyprism:network:pingAuthServer:reply", new
-                {
-                    isAvailable = false,
-                    pingMs = -1L,
-                    authDomain = "",
-                    error = ex.Message,
-                    checkedAt = DateTime.UtcNow.ToString("o"),
-                    isOfficial = false
-                });
-            }
-        });
-    }
-
-    private static bool IsOfficialAuthDomain(string domain)
-    {
-        if (string.IsNullOrWhiteSpace(domain)) return false;
-        var normalized = domain.Trim().ToLowerInvariant();
-        // Remove scheme if present
-        if (normalized.StartsWith("https://")) normalized = normalized[8..];
-        if (normalized.StartsWith("http://")) normalized = normalized[7..];
-        normalized = normalized.TrimEnd('/');
-        
-        return normalized == "sessions.hytale.com" || 
-               normalized.EndsWith(".hytale.com") ||
-               normalized == "hytale.com";
-    }
-
-    private static string BuildAuthPingUrl(string authDomain)
-    {
-        var normalized = authDomain.Trim().TrimEnd('/');
-        if (!normalized.StartsWith("http://", StringComparison.OrdinalIgnoreCase) &&
-            !normalized.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
-        {
-            normalized = $"https://{normalized}";
-        }
-        // Ping the health/status endpoint or just the root
-        return $"{normalized}/health";
-    }
-
-    private static string GetMirrorHostname(MirrorMeta mirror)
-    {
-        try
-        {
-            if (mirror.SourceType == "json-index" && !string.IsNullOrEmpty(mirror.JsonIndex?.ApiUrl))
-            {
-                return new Uri(mirror.JsonIndex.ApiUrl).Host;
-            }
-            if (mirror.SourceType == "pattern" && !string.IsNullOrEmpty(mirror.Pattern?.BaseUrl))
-            {
-                return new Uri(mirror.Pattern.BaseUrl).Host;
-            }
-        }
-        catch { }
-        return "";
-    }
-
-    private static void ApplySetting(ISettingsService s, string key, JsonElement val)
-    {
-        switch (key)
-        {
-            case "language": s.SetLanguage(val.GetString() ?? "en-US"); break;
-            case "musicEnabled": s.SetMusicEnabled(val.GetBoolean()); break;
-            case "launcherBranch": s.SetLauncherBranch(val.GetString() ?? "release"); break;
-            case "versionType": s.SetVersionType(val.GetString() ?? "release"); break;
-            case "selectedVersion": s.SetSelectedVersion(val.ValueKind == JsonValueKind.Number ? val.GetInt32() : 0); break;
-            case "closeAfterLaunch": s.SetCloseAfterLaunch(val.GetBoolean()); break;
-            case "launchAfterDownload": s.SetLaunchAfterDownload(val.GetBoolean()); break;
-            case "showDiscordAnnouncements": s.SetShowDiscordAnnouncements(val.GetBoolean()); break;
-            case "disableNews": s.SetDisableNews(val.GetBoolean()); break;
-            case "backgroundMode": s.SetBackgroundMode(val.GetString() ?? "default"); break;
-            case "accentColor": s.SetAccentColor(val.GetString() ?? "#7C5CFC"); break;
-            case "onlineMode": s.SetOnlineMode(val.GetBoolean()); break;
-            case "authDomain": s.SetAuthDomain(val.GetString() ?? ""); break;
-            case "javaArguments": s.SetJavaArguments(val.GetString() ?? ""); break;
-            case "useCustomJava": s.SetUseCustomJava(val.GetBoolean()); break;
-            case "customJavaPath": s.SetCustomJavaPath(val.GetString() ?? ""); break;
-            case "gpuPreference": s.SetGpuPreference(val.GetString() ?? "dedicated"); break;
-            case "gameEnvironmentVariables": s.SetGameEnvironmentVariables(val.GetString() ?? ""); break;
-            case "useDualAuth": s.SetUseDualAuth(val.GetBoolean()); break;
-            case "hasCompletedOnboarding": s.SetHasCompletedOnboarding(val.GetBoolean()); break;
-            case "showAlphaMods": s.SetShowAlphaMods(val.GetBoolean()); break;
-            default: Logger.Warning("IPC", $"Unknown setting key: {key}"); break;
-        }
-    }
-    
-    // #endregion
-
-    // #region Localization
-    // @ipc invoke hyprism:i18n:get -> Record<string, string>
-    // @ipc invoke hyprism:i18n:current -> string
-    // @ipc invoke hyprism:i18n:set -> { success: boolean, language: string }
-    // @ipc invoke hyprism:i18n:languages -> LanguageInfo[]
-
-    private void RegisterLocalizationHandlers()
-    {
-        var localization = _services.GetRequiredService<LocalizationService>();
-        var settings = _services.GetRequiredService<ISettingsService>();
-
-        Electron.IpcMain.On("hyprism:i18n:current", (_) =>
-        {
-            Reply("hyprism:i18n:current:reply", localization.CurrentLanguage);
-        });
-
-        Electron.IpcMain.On("hyprism:i18n:set", (args) =>
-        {
-            var lang = ArgsToString(args);
-            if (string.IsNullOrEmpty(lang)) lang = "en-US";
-            Logger.Info("IPC", $"Language change requested: {lang}");
-            // Use SettingsService.SetLanguage which persists to config file
-            var success = settings.SetLanguage(lang);
-            Reply("hyprism:i18n:set:reply", new { success, language = success ? lang : localization.CurrentLanguage });
-        });
-
-        Electron.IpcMain.On("hyprism:i18n:languages", (_) =>
-        {
-            Reply("hyprism:i18n:languages:reply", LocalizationService.GetAvailableLanguages());
-        });
-    }
-    
-    // #endregion
-
-    // #region Window Controls
-    // @ipc send hyprism:window:minimize
-    // @ipc send hyprism:window:maximize
-    // @ipc send hyprism:window:close
-    // @ipc send hyprism:window:restart
-    // @ipc send hyprism:browser:open
-
-    private void RegisterWindowHandlers()
-    {
-        Electron.IpcMain.On("hyprism:window:minimize", (_) => GetMainWindow()?.Minimize());
-
-        Electron.IpcMain.On("hyprism:window:maximize", async (_) =>
-        {
-            var win = GetMainWindow();
-            if (win == null) return;
-            if (await win.IsMaximizedAsync()) win.Unmaximize();
-            else win.Maximize();
-        });
-
-        Electron.IpcMain.On("hyprism:window:close", (_) => GetMainWindow()?.Close());
-
-        Electron.IpcMain.On("hyprism:window:restart", (_) =>
-        {
-            try
-            {
-                Electron.App.Exit();
-            }
-            catch (Exception ex)
-            {
-                Logger.Error("IPC", $"Failed to restart app: {ex.Message}");
-                GetMainWindow()?.Close();
-            }
-        });
-
-        Electron.IpcMain.On("hyprism:browser:open", (args) =>
-        {
-            var url = ArgsToString(args);
-            if (!string.IsNullOrEmpty(url))
-                Electron.Shell.OpenExternalAsync(url);
-        });
-    }
-    
-    // #endregion
-
-    // #region Mods
-    // @ipc invoke hyprism:mods:list -> InstalledMod[]
-    // @ipc invoke hyprism:mods:search -> ModSearchResult 30000
-    // @ipc invoke hyprism:mods:installed -> InstalledMod[]
-    // @ipc invoke hyprism:mods:uninstall -> boolean
-    // @ipc invoke hyprism:mods:checkUpdates -> InstalledMod[] 30000
-    // @ipc invoke hyprism:mods:install -> boolean 300000
-    // @ipc invoke hyprism:mods:files -> ModFilesResult
-    // @ipc invoke hyprism:mods:info -> ModInfo 30000
-    // @ipc invoke hyprism:mods:changelog -> string
-    // @ipc invoke hyprism:mods:categories -> ModCategory[]
-    // @ipc invoke hyprism:mods:installLocal -> boolean
-    // @ipc invoke hyprism:mods:installBase64 -> boolean
-    // @ipc send hyprism:mods:openFolder
-    // @ipc invoke hyprism:mods:toggle -> boolean
-
-    private void RegisterModHandlers()
-    {
-        var modService = _services.GetRequiredService<IModService>();
-        var instanceService = _services.GetRequiredService<IInstanceService>();
-        var config = _services.GetRequiredService<IConfigService>();
-
-        string? ResolveModInstancePath(string branch, int version, string? instanceId = null)
-        {
-            if (!string.IsNullOrWhiteSpace(instanceId))
-            {
-                var byId = instanceService.GetInstancePathById(instanceId);
-                if (!string.IsNullOrWhiteSpace(byId))
-                    return byId;
-            }
-
-            var existing = instanceService.FindExistingInstancePath(branch, version);
-            if (!string.IsNullOrEmpty(existing))
-                return existing;
-
-            var selected = instanceService.GetSelectedInstance();
-            if (selected != null)
-            {
-                var byId = instanceService.GetInstancePathById(selected.Id);
-                if (!string.IsNullOrEmpty(byId))
-                    return byId;
-
-                var selectedExisting = instanceService.FindExistingInstancePath(selected.Branch, selected.Version);
-                if (!string.IsNullOrEmpty(selectedExisting))
-                    return selectedExisting;
-            }
-
-            return null;
-        }
-
-        Electron.IpcMain.On("hyprism:mods:list", (_) =>
-        {
-            try
-            {
-                var branch = config.Configuration.LauncherBranch ?? "release";
-                var instancePath = ResolveModInstancePath(branch, 0);
-                if (string.IsNullOrEmpty(instancePath))
-                {
-                    Reply("hyprism:mods:list:reply", new List<object>());
-                    return;
-                }
-
-                Reply("hyprism:mods:list:reply", modService.GetInstanceInstalledMods(instancePath));
-            }
-            catch (Exception ex)
-            {
-                Logger.Error("IPC", $"Mods list failed: {ex.Message}");
-            }
-        });
-
-        Electron.IpcMain.On("hyprism:mods:search", async (args) =>
-        {
-            try
-            {
-                var json = ArgsToJson(args);
-                using var doc = JsonDocument.Parse(json);
-                var root = doc.RootElement;
-                
-                var query = root.TryGetProperty("query", out var q) ? q.GetString() ?? "" : "";
-                var page = root.TryGetProperty("page", out var p) ? p.GetInt32() : 0;
-                var pageSize = root.TryGetProperty("pageSize", out var ps) ? ps.GetInt32() : 20;
-                var sortField = root.TryGetProperty("sortField", out var sf) ? sf.GetInt32() : 1;
-                var sortOrder = root.TryGetProperty("sortOrder", out var so) ? so.GetInt32() : 1;
-                
-                var categories = Array.Empty<string>();
-                if (root.TryGetProperty("categories", out var cats) && cats.ValueKind == JsonValueKind.Array)
-                {
-                    categories = cats.EnumerateArray()
-                        .Select(c => c.GetString() ?? "")
-                        .Where(c => !string.IsNullOrEmpty(c))
-                        .ToArray();
-                }
-                
-                var result = await modService.SearchModsAsync(query, page, pageSize, categories, sortField, sortOrder);
-                Reply("hyprism:mods:search:reply", result);
-            }
-            catch (Exception ex)
-            {
-                Logger.Error("IPC", $"Mods search failed: {ex.Message}");
-                Reply("hyprism:mods:search:reply", new { mods = new List<object>(), totalCount = 0 });
-            }
-        });
-
-        // Get installed mods for a specific instance (by branch and version)
-        Electron.IpcMain.On("hyprism:mods:installed", (args) =>
-        {
-            try
-            {
-                var json = ArgsToJson(args);
-                using var doc = JsonDocument.Parse(json);
-                var root = doc.RootElement;
-                var branch = root.GetProperty("branch").GetString() ?? "release";
-                var version = root.GetProperty("version").GetInt32();
-                var instanceId = root.TryGetProperty("instanceId", out var iid) ? iid.GetString() : null;
-                var instancePath = ResolveModInstancePath(branch, version, instanceId);
-                if (string.IsNullOrEmpty(instancePath))
-                {
-                    Logger.Warning("IPC", $"Mods installed skipped: no target instance found for {branch}/{version}");
-                    Reply("hyprism:mods:installed:reply", new List<object>());
-                    return;
-                }
-                
-                var mods = modService.GetInstanceInstalledMods(instancePath);
-                Reply("hyprism:mods:installed:reply", mods);
-            }
-            catch (Exception ex)
-            {
-                Logger.Error("IPC", $"Mods installed failed: {ex.Message}");
-                Reply("hyprism:mods:installed:reply", new List<object>());
-            }
-        });
-
-        // Uninstall a mod from an instance
-        Electron.IpcMain.On("hyprism:mods:uninstall", async (args) =>
-        {
-            try
-            {
-                var json = ArgsToJson(args);
-                using var doc = JsonDocument.Parse(json);
-                var root = doc.RootElement;
-                var modId = root.GetProperty("modId").GetString() ?? "";
-                var branch = root.GetProperty("branch").GetString() ?? "release";
-                var version = root.GetProperty("version").GetInt32();
-                var instanceId = root.TryGetProperty("instanceId", out var iid) ? iid.GetString() : null;
-                var instancePath = ResolveModInstancePath(branch, version, instanceId);
-                if (string.IsNullOrEmpty(instancePath))
-                {
-                    Logger.Warning("IPC", $"Mods uninstall skipped: no target instance found for {branch}/{version}");
-                    Reply("hyprism:mods:uninstall:reply", false);
-                    return;
-                }
-                
-                // Get current mods, remove the one with matching ID, save back
-                var mods = modService.GetInstanceInstalledMods(instancePath);
-                var modToRemove = mods.FirstOrDefault(m => m.Id == modId || m.Name == modId);
-                if (modToRemove != null)
-                {
-                    mods.Remove(modToRemove);
-                    
-                    // Delete the actual mod file if it exists
-                    if (!string.IsNullOrEmpty(modToRemove.FileName))
-                    {
-                        var modsDir = Path.Combine(instancePath, "UserData", "Mods");
-                        var modFilePath = Path.Combine(modsDir, modToRemove.FileName);
-                        var deleted = false;
-                        
-                        // Try original file path first
-                        if (File.Exists(modFilePath))
-                        {
-                            try 
-                            { 
-                                File.Delete(modFilePath); 
-                                deleted = true;
-                                Logger.Info("IPC", $"Deleted mod file: {modToRemove.FileName}");
-                            }
-                            catch (Exception ex) { Logger.Warning("IPC", $"Failed to delete mod file: {ex.Message}"); }
-                        }
-                        
-                        // Also try .disabled version (for disabled mods)
-                        if (!deleted)
-                        {
-                            // Try common disabled file patterns
-                            var disabledPaths = new[]
-                            {
-                                Path.Combine(modsDir, modToRemove.FileName + ".disabled"),
-                                // If FileName already contains original extension stored separately
-                            };
-                            
-                            foreach (var disabledPath in disabledPaths)
-                            {
-                                if (File.Exists(disabledPath))
-                                {
-                                    try 
-                                    { 
-                                        File.Delete(disabledPath); 
-                                        deleted = true;
-                                        Logger.Info("IPC", $"Deleted disabled mod file: {Path.GetFileName(disabledPath)}");
-                                        break;
-                                    }
-                                    catch (Exception ex) { Logger.Warning("IPC", $"Failed to delete disabled mod file: {ex.Message}"); }
-                                }
-                            }
-                        }
-                        
-                        // If still not found, search for any file matching the mod's stem
-                        if (!deleted && Directory.Exists(modsDir))
-                        {
-                            var stem = Path.GetFileNameWithoutExtension(modToRemove.FileName);
-                            // Handle double extension like .jar.disabled
-                            if (stem.EndsWith(".jar", StringComparison.OrdinalIgnoreCase) || 
-                                stem.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
-                            {
-                                stem = Path.GetFileNameWithoutExtension(stem);
-                            }
-                            
-                            try
-                            {
-                                var candidates = Directory.GetFiles(modsDir)
-                                    .Where(f => Path.GetFileName(f).StartsWith(stem, StringComparison.OrdinalIgnoreCase))
-                                    .ToList();
-                                
-                                foreach (var candidate in candidates)
-                                {
-                                    var candidateName = Path.GetFileName(candidate).ToLowerInvariant();
-                                    // Match files like stem.jar, stem.jar.disabled, stem.zip, stem.zip.disabled
-                                    if (candidateName == $"{stem.ToLowerInvariant()}.jar" ||
-                                        candidateName == $"{stem.ToLowerInvariant()}.jar.disabled" ||
-                                        candidateName == $"{stem.ToLowerInvariant()}.zip" ||
-                                        candidateName == $"{stem.ToLowerInvariant()}.zip.disabled" ||
-                                        candidateName == $"{stem.ToLowerInvariant()}.disabled")
-                                    {
-                                        try
-                                        {
-                                            File.Delete(candidate);
-                                            Logger.Info("IPC", $"Deleted mod file by stem match: {Path.GetFileName(candidate)}");
-                                            deleted = true;
-                                            break;
-                                        }
-                                        catch (Exception ex) { Logger.Warning("IPC", $"Failed to delete mod file {Path.GetFileName(candidate)}: {ex.Message}"); }
-                                    }
-                                }
-                            }
-                            catch (Exception ex)
-                            {
-                                Logger.Warning("IPC", $"Failed to search for mod files: {ex.Message}");
-                            }
-                        }
-                        
-                        if (!deleted)
-                        {
-                            Logger.Warning("IPC", $"Could not find mod file to delete: {modToRemove.FileName}");
-                        }
-                    }
-                    
-                    await modService.SaveInstanceModsAsync(instancePath, mods);
-                    Reply("hyprism:mods:uninstall:reply", true);
-                }
-                else
-                {
-                    Reply("hyprism:mods:uninstall:reply", false);
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Error("IPC", $"Mods uninstall failed: {ex.Message}");
-                Reply("hyprism:mods:uninstall:reply", false);
-            }
-        });
-
-        // Check for mod updates (returns mods that have updates available)
-        Electron.IpcMain.On("hyprism:mods:checkUpdates", async (args) =>
-        {
-            try
-            {
-                var json = ArgsToJson(args);
-                using var doc = JsonDocument.Parse(json);
-                var root = doc.RootElement;
-                var branch = root.GetProperty("branch").GetString() ?? "release";
-                var version = root.GetProperty("version").GetInt32();
-                var instanceId = root.TryGetProperty("instanceId", out var iid) ? iid.GetString() : null;
-                var instancePath = ResolveModInstancePath(branch, version, instanceId);
-                if (string.IsNullOrEmpty(instancePath))
-                {
-                    Logger.Warning("IPC", $"Mods check updates skipped: no target instance found for {branch}/{version}");
-                    Reply("hyprism:mods:checkUpdates:reply", new List<object>());
-                    return;
-                }
-                
-                var updates = await modService.CheckInstanceModUpdatesAsync(instancePath);
-                Reply("hyprism:mods:checkUpdates:reply", updates);
-            }
-            catch (Exception ex)
-            {
-                Logger.Error("IPC", $"Mods check updates failed: {ex.Message}");
-                Reply("hyprism:mods:checkUpdates:reply", new List<object>());
-            }
-        });
-        
-        // Install a mod from CurseForge by modId and fileId
-        Electron.IpcMain.On("hyprism:mods:install", async (args) =>
-        {
-            try
-            {
-                var json = ArgsToJson(args);
-                using var doc = JsonDocument.Parse(json);
-                var root = doc.RootElement;
-                var modId = root.GetProperty("modId").GetString() ?? "";
-                var fileId = root.GetProperty("fileId").GetString() ?? "";
-                var branch = root.TryGetProperty("branch", out var b) ? b.GetString() ?? "release" : "release";
-                var version = root.TryGetProperty("version", out var v) ? v.GetInt32() : 0;
-                var instanceId = root.TryGetProperty("instanceId", out var iid) ? iid.GetString() : null;
-
-                var instancePath = ResolveModInstancePath(branch, version, instanceId);
-                if (string.IsNullOrEmpty(instancePath))
-                {
-                    Logger.Warning("IPC", "Mods install failed: no target instance selected");
-                    Reply("hyprism:mods:install:reply", new { success = false, error = "No target instance selected" });
-                    return;
-                }
-                
-                var success = await modService.InstallModFileToInstanceAsync(modId, fileId, instancePath);
-                Reply("hyprism:mods:install:reply", success);
-            }
-            catch (Exception ex)
-            {
-                Logger.Error("IPC", $"Mods install failed: {ex.Message}");
-                Reply("hyprism:mods:install:reply", false);
-            }
-        });
-        
-        // Get available files for a mod
-        Electron.IpcMain.On("hyprism:mods:files", async (args) =>
-        {
-            try
-            {
-                var json = ArgsToJson(args);
-                using var doc = JsonDocument.Parse(json);
-                var root = doc.RootElement;
-                var modId = root.GetProperty("modId").GetString() ?? "";
-                var page = root.TryGetProperty("page", out var p) ? p.GetInt32() : 0;
-                var pageSize = root.TryGetProperty("pageSize", out var ps) ? ps.GetInt32() : 20;
-                
-                var result = await modService.GetModFilesAsync(modId, page, pageSize);
-                Reply("hyprism:mods:files:reply", result);
-            }
-            catch (Exception ex)
-            {
-                Logger.Error("IPC", $"Mods files failed: {ex.Message}");
-                Reply("hyprism:mods:files:reply", new { files = new List<object>(), totalCount = 0 });
-            }
-        });
-
-        // Get single mod metadata (by numeric id or slug)
-        Electron.IpcMain.On("hyprism:mods:info", async (args) =>
-        {
-            try
-            {
-                var json = ArgsToJson(args);
-                using var doc = JsonDocument.Parse(json);
-                var root = doc.RootElement;
-                var modId = root.GetProperty("modId").GetString() ?? "";
-
-                var mod = await modService.GetModAsync(modId);
-                Reply("hyprism:mods:info:reply", mod ?? new ModInfo());
-            }
-            catch (Exception ex)
-            {
-                Logger.Error("IPC", $"Mods info failed: {ex.Message}");
-                Reply("hyprism:mods:info:reply", new ModInfo());
-            }
-        });
-
-        // Get changelog for a mod file
-        Electron.IpcMain.On("hyprism:mods:changelog", async (args) =>
-        {
-            try
-            {
-                var json = ArgsToJson(args);
-                using var doc = JsonDocument.Parse(json);
-                var root = doc.RootElement;
-                var modId = root.GetProperty("modId").GetString() ?? "";
-                var fileId = root.GetProperty("fileId").GetString() ?? "";
-
-                var text = await modService.GetModFileChangelogAsync(modId, fileId);
-                Reply("hyprism:mods:changelog:reply", text ?? "");
-            }
-            catch (Exception ex)
-            {
-                Logger.Error("IPC", $"Mods changelog failed: {ex.Message}");
-                Reply("hyprism:mods:changelog:reply", "");
-            }
-        });
-        
-        // Get mod categories
-        Electron.IpcMain.On("hyprism:mods:categories", async (_) =>
-        {
-            try
-            {
-                var categories = await modService.GetModCategoriesAsync();
-                Reply("hyprism:mods:categories:reply", categories);
-            }
-            catch (Exception ex)
-            {
-                Logger.Error("IPC", $"Mods categories failed: {ex.Message}");
-                Reply("hyprism:mods:categories:reply", new List<object>());
-            }
-        });
-        
-        // Install mod from local file path
-        Electron.IpcMain.On("hyprism:mods:installLocal", async (args) =>
-        {
-            try
-            {
-                var json = ArgsToJson(args);
-                using var doc = JsonDocument.Parse(json);
-                var root = doc.RootElement;
-                var sourcePath = root.GetProperty("sourcePath").GetString() ?? "";
-                var branch = root.TryGetProperty("branch", out var b) ? b.GetString() ?? "release" : "release";
-                var version = root.TryGetProperty("version", out var v) ? v.GetInt32() : 0;
-                var instanceId = root.TryGetProperty("instanceId", out var iid) ? iid.GetString() : null;
-
-                var instancePath = ResolveModInstancePath(branch, version, instanceId);
-                if (string.IsNullOrEmpty(instancePath))
-                {
-                    Logger.Warning("IPC", "Mods install local failed: no target instance selected");
-                    Reply("hyprism:mods:installLocal:reply", false);
-                    return;
-                }
-                
-                var success = await modService.InstallLocalModFile(sourcePath, instancePath);
-                Reply("hyprism:mods:installLocal:reply", success);
-            }
-            catch (Exception ex)
-            {
-                Logger.Error("IPC", $"Mods install local failed: {ex.Message}");
-                Reply("hyprism:mods:installLocal:reply", false);
-            }
-        });
-        
-        // Install mod from base64-encoded content
-        Electron.IpcMain.On("hyprism:mods:installBase64", async (args) =>
-        {
-            try
-            {
-                var json = ArgsToJson(args);
-                using var doc = JsonDocument.Parse(json);
-                var root = doc.RootElement;
-                var fileName = root.GetProperty("fileName").GetString() ?? "";
-                var base64Content = root.GetProperty("base64Content").GetString() ?? "";
-                var branch = root.TryGetProperty("branch", out var b) ? b.GetString() ?? "release" : "release";
-                var version = root.TryGetProperty("version", out var v) ? v.GetInt32() : 0;
-                var instanceId = root.TryGetProperty("instanceId", out var iid) ? iid.GetString() : null;
-
-                var instancePath = ResolveModInstancePath(branch, version, instanceId);
-                if (string.IsNullOrEmpty(instancePath))
-                {
-                    Logger.Warning("IPC", "Mods install base64 failed: no target instance selected");
-                    Reply("hyprism:mods:installBase64:reply", false);
-                    return;
-                }
-                
-                var success = await modService.InstallModFromBase64(fileName, base64Content, instancePath);
-                Reply("hyprism:mods:installBase64:reply", success);
-            }
-            catch (Exception ex)
-            {
-                Logger.Error("IPC", $"Mods install base64 failed: {ex.Message}");
-                Reply("hyprism:mods:installBase64:reply", false);
-            }
-        });
-        
-        // Open the mods folder for an instance
-        Electron.IpcMain.On("hyprism:mods:openFolder", (args) =>
-        {
-            try
-            {
-                var json = ArgsToJson(args);
-                using var doc = JsonDocument.Parse(json);
-                var root = doc.RootElement;
-                var branch = root.TryGetProperty("branch", out var b) ? b.GetString() ?? "release" : "release";
-                var version = root.TryGetProperty("version", out var v) ? v.GetInt32() : 0;
-                var instanceId = root.TryGetProperty("instanceId", out var iid) ? iid.GetString() : null;
-
-                var instancePath = ResolveModInstancePath(branch, version, instanceId);
-                if (string.IsNullOrEmpty(instancePath))
-                {
-                    Logger.Warning("IPC", "Open mods folder skipped: no target instance selected");
-                    return;
-                }
-                
-                var modsPath = Path.Combine(instancePath, "UserData", "Mods");
-                ModService.EnsureModsDirectory(modsPath);
-                Electron.Shell.OpenPathAsync(modsPath);
-            }
-            catch (Exception ex)
-            {
-                Logger.Error("IPC", $"Open mods folder failed: {ex.Message}");
-            }
-        });
-        
-        // Toggle mod enabled/disabled (renames .jar <-> .jar.disabled)
-        Electron.IpcMain.On("hyprism:mods:toggle", async (args) =>
-        {
-            try
-            {
-                var json = ArgsToJson(args);
-                using var doc = JsonDocument.Parse(json);
-                var root = doc.RootElement;
-                var modId = root.GetProperty("modId").GetString() ?? "";
-                var branch = root.GetProperty("branch").GetString() ?? "release";
-                var version = root.GetProperty("version").GetInt32();
-                var instanceId = root.TryGetProperty("instanceId", out var iid) ? iid.GetString() : null;
-                var instancePath = ResolveModInstancePath(branch, version, instanceId);
-                if (string.IsNullOrEmpty(instancePath))
-                {
-                    Logger.Warning("IPC", $"Mods toggle skipped: no target instance found for {branch}/{version}");
-                    Reply("hyprism:mods:toggle:reply", false);
-                    return;
-                }
-                
-                var mods = modService.GetInstanceInstalledMods(instancePath);
-                var mod = mods.FirstOrDefault(m => m.Id == modId || m.Name == modId);
-                if (mod == null || string.IsNullOrEmpty(mod.FileName))
-                {
-                    Reply("hyprism:mods:toggle:reply", false);
-                    return;
-                }
-                
-                var modsDir = Path.Combine(instancePath, "UserData", "Mods");
-                var currentPath = Path.Combine(modsDir, mod.FileName);
-                var fileName = mod.FileName;
-                var sourceExists = File.Exists(currentPath);
-
-                if (!sourceExists)
-                {
-                    // Recover from stale manifest filenames by probing likely variants
-                    var stem = Path.GetFileNameWithoutExtension(fileName);
-                    var candidates = new[]
-                    {
-                        Path.Combine(modsDir, fileName),
-                        Path.Combine(modsDir, $"{stem}.jar"),
-                        Path.Combine(modsDir, $"{stem}.zip"),
-                        Path.Combine(modsDir, $"{stem}.disabled"),
-                        Path.Combine(modsDir, $"{stem}.jar.disabled"),
-                        Path.Combine(modsDir, $"{stem}.zip.disabled"),
-                    };
-
-                    var found = candidates.FirstOrDefault(File.Exists);
-                    if (!string.IsNullOrEmpty(found))
-                    {
-                        currentPath = found;
-                        fileName = Path.GetFileName(found);
-                        mod.FileName = fileName;
-                        sourceExists = true;
-                    }
-                }
-
-                if (!sourceExists)
-                {
-                    Reply("hyprism:mods:toggle:reply", false);
-                    return;
-                }
-                
-                if (mod.Enabled)
-                {
-                    // Disable: rename file.jar/file.zip -> file.disabled
-                    var currentFileName = Path.GetFileName(currentPath);
-                    var baseName = Path.GetFileNameWithoutExtension(currentFileName);
-                    var ext = Path.GetExtension(currentFileName).ToLowerInvariant();
-
-                    if (currentFileName.EndsWith(".disabled", StringComparison.OrdinalIgnoreCase))
-                    {
-                        mod.Enabled = false;
-                        mod.FileName = currentFileName;
-                    }
-                    else
-                    {
-                        if (ext is ".jar" or ".zip")
-                        {
-                            mod.DisabledOriginalExtension = ext;
-                        }
-
-                        var disabledFileName = $"{baseName}.disabled";
-                        var disabledPath = Path.Combine(modsDir, disabledFileName);
-                        File.Move(currentPath, disabledPath, true);
-                        mod.FileName = disabledFileName;
-                        mod.Enabled = false;
-                        Logger.Info("IPC", $"Disabled mod: {mod.Name}");
-                    }
-                }
-                else
-                {
-                    // Enable: rename *.disabled -> *.jar or *.zip (restored)
-                    var currentFileName = Path.GetFileName(currentPath);
-                    var stem = currentFileName.EndsWith(".disabled", StringComparison.OrdinalIgnoreCase)
-                        ? currentFileName[..^".disabled".Length]
-                        : Path.GetFileNameWithoutExtension(currentFileName);
-
-                    string restoreExtension;
-                    if (!string.IsNullOrWhiteSpace(mod.DisabledOriginalExtension))
-                    {
-                        restoreExtension = mod.DisabledOriginalExtension.StartsWith('.')
-                            ? mod.DisabledOriginalExtension
-                            : $".{mod.DisabledOriginalExtension}";
-                    }
-                    else if (stem.EndsWith(".jar", StringComparison.OrdinalIgnoreCase) || stem.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
-                    {
-                        restoreExtension = "";
-                    }
-                    else
-                    {
-                        restoreExtension = ".jar";
-                    }
-
-                    var enabledFileName = string.IsNullOrEmpty(restoreExtension)
-                        ? stem
-                        : $"{stem}{restoreExtension}";
-                    var enabledPath = Path.Combine(modsDir, enabledFileName);
-
-                    File.Move(currentPath, enabledPath, true);
-                    mod.FileName = enabledFileName;
-                    mod.Enabled = true;
-                    mod.DisabledOriginalExtension = "";
-                    Logger.Info("IPC", $"Enabled mod: {mod.Name}");
-                }
-                
-                await modService.SaveInstanceModsAsync(instancePath, mods);
-                Reply("hyprism:mods:toggle:reply", true);
-            }
-            catch (Exception ex)
-            {
-                Logger.Error("IPC", $"Mods toggle failed: {ex.Message}");
-                Reply("hyprism:mods:toggle:reply", false);
-            }
-        });
-    }
-
-    // #region System Info
-    // @ipc invoke hyprism:system:gpuAdapters -> GpuAdapterInfo[]
-    // @ipc invoke hyprism:system:platform -> { os: string; isLinux: boolean; isWindows: boolean; isMacOS: boolean }
-
-    private void RegisterSystemHandlers()
-    {
-        var gpuService = _services.GetRequiredService<GpuDetectionService>();
-
-        Electron.IpcMain.On("hyprism:system:gpuAdapters", (_) =>
-        {
-            try
-            {
-                var adapters = gpuService.GetAdapters();
-                Reply("hyprism:system:gpuAdapters:reply", adapters);
-            }
-            catch (Exception ex)
-            {
-                Logger.Error("IPC", $"Failed to get GPU adapters: {ex.Message}");
-                Reply("hyprism:system:gpuAdapters:reply", new List<object>());
-            }
-        });
-
-        Electron.IpcMain.On("hyprism:system:platform", (_) =>
-        {
-            var isLinux = RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
-            var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
-            var isMacOS = RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
-            var os = isLinux ? "linux" : isWindows ? "windows" : isMacOS ? "macos" : "unknown";
-            
-            Reply("hyprism:system:platform:reply", new { os, isLinux, isWindows, isMacOS });
-        });
-    }
-
-    // #endregion
-
-    // #region Console (Electron renderer → .NET Logger)
-    // @ipc send hyprism:console:log
-    // @ipc send hyprism:console:warn
-    // @ipc send hyprism:console:error
-    // @ipc invoke hyprism:logs:get -> string[]
-
-    private void RegisterConsoleHandlers()
-    {
-        Electron.IpcMain.On("hyprism:console:log", (args) =>
-            Logger.Info("Renderer", ArgsToString(args)));
-
-        Electron.IpcMain.On("hyprism:console:warn", (args) =>
-            Logger.Warning("Renderer", ArgsToString(args)));
-
-        Electron.IpcMain.On("hyprism:console:error", (args) =>
-            Logger.Error("Renderer", ArgsToString(args)));
-
-        // Get recent logs from in-memory buffer
-        Electron.IpcMain.On("hyprism:logs:get", (args) =>
-        {
-            try
-            {
-                int count = 100; // Default to max buffer size
-                if (args != null)
-                {
-                    try
-                    {
-                        var json = ArgsToJson(args);
-                        var data = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(json, JsonOpts);
-                        if (data != null && data.TryGetValue("count", out var countEl))
-                        {
-                            count = countEl.GetInt32();
-                        }
-                    }
-                    catch { /* use default */ }
-                }
-                var logs = Logger.GetRecentLogs(count);
-                Reply("hyprism:logs:get:reply", logs);
-            }
-            catch (Exception ex)
-            {
-                Logger.Error("IPC", $"Failed to get logs: {ex.Message}");
-                Reply("hyprism:logs:get:reply", new List<string>());
-            }
-        });
-    }
-
-    // #endregion
-
-    // #region File Dialog
-    // @ipc invoke hyprism:file:browseFolder -> string | null 300000
-    // @ipc invoke hyprism:file:browseJavaExecutable -> string | null 300000
-    // @ipc invoke hyprism:file:browseModFiles -> string[]
-    // @ipc invoke hyprism:file:exists -> boolean
-    // @ipc invoke hyprism:mods:exportToFolder -> string
-    // @ipc invoke hyprism:mods:importList -> number
-    // @ipc invoke hyprism:settings:launcherPath -> string
-    // @ipc invoke hyprism:settings:defaultInstanceDir -> string
-    // @ipc invoke hyprism:settings:setInstanceDir -> { success: boolean, path: string, noop?: boolean, reason?: string, error?: string } 300000
-
-    private void RegisterFileDialogHandlers()
-    {
-        var fileDialog = _services.GetRequiredService<IFileDialogService>();
-        var appPath = _services.GetRequiredService<AppPathConfiguration>();
-        var config = _services.GetRequiredService<IConfigService>();
-        var instanceService = _services.GetRequiredService<IInstanceService>();
-        var modService = _services.GetRequiredService<IModService>();
-
-        // Browse mod files dialog (jar, zip, json)
-        Electron.IpcMain.On("hyprism:file:browseModFiles", async (_) =>
-        {
-            try
-            {
-                var files = await fileDialog.BrowseModFilesAsync();
-                Reply("hyprism:file:browseModFiles:reply", files ?? Array.Empty<string>());
-            }
-            catch (Exception ex)
-            {
-                Logger.Error("IPC", $"Failed to browse mod files: {ex.Message}");
-                Reply("hyprism:file:browseModFiles:reply", Array.Empty<string>());
-            }
-        });
-
-        // Browse Java executable
-        Electron.IpcMain.On("hyprism:file:browseJavaExecutable", async (_) =>
-        {
-            try
-            {
-                var selected = await fileDialog.BrowseJavaExecutableAsync();
-                Reply("hyprism:file:browseJavaExecutable:reply", selected ?? "");
-            }
-            catch (Exception ex)
-            {
-                Logger.Error("IPC", $"Failed to browse Java executable: {ex.Message}");
-                Reply("hyprism:file:browseJavaExecutable:reply", "");
-            }
-        });
-
-        // Check file existence
-        Electron.IpcMain.On("hyprism:file:exists", (args) =>
-        {
-            try
-            {
-                var path = ArgsToString(args)?.Trim() ?? string.Empty;
-                var exists = !string.IsNullOrWhiteSpace(path) && File.Exists(path);
-                Reply("hyprism:file:exists:reply", exists);
-            }
-            catch (Exception ex)
-            {
-                Logger.Error("IPC", $"Failed to check file existence: {ex.Message}");
-                Reply("hyprism:file:exists:reply", false);
-            }
-        });
-
-        // Export mods to folder (modlist JSON or zip)
-        Electron.IpcMain.On("hyprism:mods:exportToFolder", async (args) =>
-        {
-            try
-            {
-                var json = ArgsToJson(args);
-                using var doc = JsonDocument.Parse(json);
-                var root = doc.RootElement;
-                var branch = root.GetProperty("branch").GetString() ?? "release";
-                var version = root.GetProperty("version").GetInt32();
-                var exportPath = root.GetProperty("exportPath").GetString() ?? "";
-                var exportType = root.TryGetProperty("exportType", out var et) ? et.GetString() ?? "modlist" : "modlist";
-
-                if (string.IsNullOrEmpty(exportPath))
-                {
-                    Reply("hyprism:mods:exportToFolder:reply", "");
-                    return;
-                }
-
-                var instancePath = instanceService.GetInstancePath(branch, version);
-                var mods = modService.GetInstanceInstalledMods(instancePath);
-
-                if (mods.Count == 0)
-                {
-                    Reply("hyprism:mods:exportToFolder:reply", "");
-                    return;
-                }
-
-                // Save last export path to config
-                config.Configuration.LastExportPath = exportPath;
-                config.SaveConfig();
-
-                if (exportType == "zip")
-                {
-                    // Zip the mods folder
-                    var modsDir = Path.Combine(instancePath, "UserData", "Mods");
-                    if (!Directory.Exists(modsDir))
-                    {
-                        Reply("hyprism:mods:exportToFolder:reply", "");
-                        return;
-                    }
-
-                    var zipName = $"HyPrism-Mods-{branch}-v{version}-{DateTime.Now:yyyyMMdd-HHmmss}.zip";
-                    var zipPath = Path.Combine(exportPath, zipName);
-                    System.IO.Compression.ZipFile.CreateFromDirectory(modsDir, zipPath);
-                    Logger.Success("IPC", $"Exported mods zip to: {zipPath}");
-                    Reply("hyprism:mods:exportToFolder:reply", zipPath);
-                }
-                else
-                {
-                    // Export as mod list JSON
-                    var modList = mods
-                        .Where(m => !string.IsNullOrEmpty(m.CurseForgeId))
-                        .Select(m => new ModListEntry
-                        {
-                            CurseForgeId = m.CurseForgeId,
-                            FileId = m.FileId,
-                            Name = m.Name,
-                            Version = m.Version
-                        })
-                        .ToList();
-
-                    if (modList.Count == 0)
-                    {
-                        Reply("hyprism:mods:exportToFolder:reply", "");
-                        return;
-                    }
-
-                    var fileName = $"HyPrism-ModList-{branch}-v{version}-{DateTime.Now:yyyyMMdd-HHmmss}.json";
-                    var filePath = Path.Combine(exportPath, fileName);
-                    var jsonContent = System.Text.Json.JsonSerializer.Serialize(modList, new JsonSerializerOptions { WriteIndented = true });
-                    await File.WriteAllTextAsync(filePath, jsonContent);
-                    Logger.Success("IPC", $"Exported mod list to: {filePath}");
-                    Reply("hyprism:mods:exportToFolder:reply", filePath);
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Error("IPC", $"Failed to export mods: {ex.Message}");
-                Reply("hyprism:mods:exportToFolder:reply", "");
-            }
-        });
-
-        // Import mod list from JSON file
-        Electron.IpcMain.On("hyprism:mods:importList", async (args) =>
-        {
-            try
-            {
-                var json = ArgsToJson(args);
-                using var doc = JsonDocument.Parse(json);
-                var root = doc.RootElement;
-                var filePath = root.GetProperty("filePath").GetString() ?? "";
-                var branch = root.GetProperty("branch").GetString() ?? "release";
-                var version = root.GetProperty("version").GetInt32();
-
-                if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
-                {
-                    Reply("hyprism:mods:importList:reply", 0);
-                    return;
-                }
-
-                var instancePath = instanceService.GetInstancePath(branch, version);
-                var content = await File.ReadAllTextAsync(filePath);
-                var modList = System.Text.Json.JsonSerializer.Deserialize<List<ModListEntry>>(content) ?? new();
-                var successCount = 0;
-
-                foreach (var entry in modList)
-                {
-                    if (string.IsNullOrEmpty(entry.CurseForgeId)) continue;
-                    try
-                    {
-                        var fileId = entry.FileId ?? "";
-                        var success = await modService.InstallModFileToInstanceAsync(entry.CurseForgeId, fileId, instancePath);
-                        if (success) successCount++;
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.Warning("IPC", $"Failed to import mod {entry.Name}: {ex.Message}");
-                    }
-                }
-
-                Logger.Success("IPC", $"Imported {successCount}/{modList.Count} mods from list");
-                Reply("hyprism:mods:importList:reply", successCount);
-            }
-            catch (Exception ex)
-            {
-                Logger.Error("IPC", $"Failed to import mod list: {ex.Message}");
-                Reply("hyprism:mods:importList:reply", 0);
-            }
-        });
-
-        // Browse folder dialog
-        Electron.IpcMain.On("hyprism:file:browseFolder", async (args) =>
-        {
-            try
-            {
-                var initialPath = ArgsToString(args);
-                var selected = await fileDialog.BrowseFolderAsync(string.IsNullOrEmpty(initialPath) ? null : initialPath);
-                Reply("hyprism:file:browseFolder:reply", selected ?? "");
+                progressSvc.ReportGameStateChanged("stopped", 0);
+                return;
             }
-            catch (Exception ex)
-            {
-                Logger.Error("IPC", $"Failed to browse folder: {ex.Message}");
-                Reply("hyprism:file:browseFolder:reply", "");
-            }
-        });
-
-        // Get launcher folder path (app data path)
-        Electron.IpcMain.On("hyprism:settings:launcherPath", (_) =>
-        {
-            Reply("hyprism:settings:launcherPath:reply", appPath.AppDir);
-        });
-
-        // Get default instance directory
-        Electron.IpcMain.On("hyprism:settings:defaultInstanceDir", (_) =>
-        {
-            var defaultDir = Path.Combine(appPath.AppDir, "Instances");
-            Reply("hyprism:settings:defaultInstanceDir:reply", defaultDir);
-        });
-        
-        // Set instance directory - moves all instances to new location
-        Electron.IpcMain.On("hyprism:settings:setInstanceDir", async (args) =>
-        {
-            try
-            {
-                var progressService = _services.GetRequiredService<ProgressNotificationService>();
-                var path = ArgsToString(args);
-                Logger.Info("IPC", $"Setting instance directory to: {path}");
-                var resetToDefault = string.IsNullOrWhiteSpace(path);
-                
-                // Expand and validate path - escape special characters
-                var newPath = resetToDefault
-                    ? Path.Combine(appPath.AppDir, "Instances")
-                    : Environment.ExpandEnvironmentVariables(path.Trim());
-
-                if (!Path.IsPathRooted(newPath))
-                {
-                    newPath = Path.GetFullPath(Path.Combine(appPath.AppDir, newPath));
-                }
-                else
-                {
-                    newPath = Path.GetFullPath(newPath);
-                }
-                
-                // Get current instance root
-                var currentRoot = Path.GetFullPath(instanceService.GetInstanceRoot());
-                
-                // If same directory, just update config
-                if (Path.GetFullPath(currentRoot).Equals(Path.GetFullPath(newPath), StringComparison.OrdinalIgnoreCase))
-                {
-                    Logger.Info("IPC", "New instance directory is same as current, skipping move");
-                    Reply("hyprism:settings:setInstanceDir:reply", new { success = true, path = newPath, noop = true, reason = "already-current-path" });
-                    return;
-                }
-
-                // Prevent recursive move into current directory subtree
-                if (newPath.StartsWith(currentRoot + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
-                {
-                    Reply("hyprism:settings:setInstanceDir:reply", new { success = false, path = "", error = "Target directory cannot be inside current instance directory" });
-                    return;
-                }
-                
-                // Create target directory
-                Directory.CreateDirectory(newPath);
-                
-                // Get all files to move
-                var filesToMove = new List<(string source, string dest)>();
-                if (Directory.Exists(currentRoot))
-                {
-                    await Task.Run(() => CollectFilesRecursive(currentRoot, newPath, currentRoot, filesToMove));
-                }
 
-                // Move larger files first to avoid late progress jumps and stale filename display
-                filesToMove = filesToMove
-                    .OrderByDescending(f =>
-                    {
-                        try { return new FileInfo(f.source).Length; }
-                        catch { return 0; }
-                    })
-                    .ToList();
-                
-                if (filesToMove.Count == 0)
-                {
-                    // No files to move, just update config
-                    if (resetToDefault)
-                    {
-                        var cfg = config.Configuration;
-                        cfg.InstanceDirectory = string.Empty;
-                        config.SaveConfig();
-                        Reply("hyprism:settings:setInstanceDir:reply", new { success = true, path = newPath });
-                    }
-                    else
-                    {
-                        var result = await config.SetInstanceDirectoryAsync(newPath);
-                        Reply("hyprism:settings:setInstanceDir:reply", new { success = result != null, path = result ?? newPath });
-                    }
-                    return;
-                }
-                
-                // Move files with progress
-                long totalSize = 0;
-                long movedSize = 0;
-                foreach (var (source, _) in filesToMove)
-                {
-                    try { totalSize += new FileInfo(source).Length; } catch { /* ignore */ }
-                }
-                
-                progressService.SendProgress("moving-instances", 0, "settings.dataSettings.movingData", null, 0, totalSize);
-                
-                var movedCount = 0;
-                foreach (var (source, dest) in filesToMove)
-                {
-                    try
-                    {
-                        var destDir = Path.GetDirectoryName(dest);
-                        if (!string.IsNullOrEmpty(destDir))
-                            Directory.CreateDirectory(destDir);
-
-                        var preProgress = totalSize > 0
-                            ? (int)Math.Clamp((movedSize * 100) / totalSize, 0, 99)
-                            : (movedCount * 100 / filesToMove.Count);
-                        progressService.SendProgress("moving-instances", preProgress, "settings.dataSettings.movingDataHint", new object[] { Path.GetFileName(source) }, movedSize, totalSize);
-                        
-                        // Copy file (safer than move across volumes)
-                        File.Copy(source, dest, true);
-                        
-                        var fileSize = new FileInfo(dest).Length;
-                        movedSize += fileSize;
-                        movedCount++;
-                        
-                        var progress = totalSize > 0 ? (int)((movedSize * 100) / totalSize) : (movedCount * 100 / filesToMove.Count);
-                        progressService.SendProgress("moving-instances", progress, "settings.dataSettings.movingDataHint", new object[] { Path.GetFileName(source) }, movedSize, totalSize);
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.Warning("IPC", $"Failed to copy file {source}: {ex.Message}");
-                    }
-                }
-                
-                // Update config first
-                bool setSuccess;
-                if (resetToDefault)
-                {
-                    var cfg = config.Configuration;
-                    cfg.InstanceDirectory = string.Empty;
-                    config.SaveConfig();
-                    setSuccess = true;
-                }
-                else
-                {
-                    var setResultPath = await config.SetInstanceDirectoryAsync(newPath);
-                    setSuccess = setResultPath != null;
-                }
-                
-                // Delete old files only if config update succeeded
-                if (setSuccess)
-                {
-                    try
-                    {
-                        // Delete old directory contents (not the directory itself if it's app dir)
-                        if (!currentRoot.Equals(Path.Combine(appPath.AppDir, "Instances"), StringComparison.OrdinalIgnoreCase))
-                        {
-                            Directory.Delete(currentRoot, true);
-                        }
-                        else
-                        {
-                            // Just delete contents for default location
-                            foreach (var dir in Directory.GetDirectories(currentRoot))
-                                Directory.Delete(dir, true);
-                            foreach (var file in Directory.GetFiles(currentRoot))
-                                File.Delete(file);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.Warning("IPC", $"Failed to clean up old instance directory: {ex.Message}");
-                    }
-                }
-                
-                progressService.SendProgress("moving-instances-complete", 100, "settings.dataSettings.moveComplete", null, totalSize, totalSize);
-                Logger.Success("IPC", $"Instance directory moved to: {newPath}");
-                Reply("hyprism:settings:setInstanceDir:reply", new { success = setSuccess, path = newPath });
-            }
-            catch (Exception ex)
-            {
-                Logger.Error("IPC", $"Failed to set instance directory: {ex.Message}");
-                Reply("hyprism:settings:setInstanceDir:reply", new { success = false, path = "", error = ex.Message });
-            }
-        });
-        
-    }
-
-    /// <summary>
-    /// Recursively collects all files from source directory for moving to destination.
-    /// </summary>
-    private static void CollectFilesRecursive(string sourceDir, string destRoot, string originalRoot, List<(string source, string dest)> files)
-    {
-        try
-        {
-            foreach (var file in Directory.GetFiles(sourceDir))
-            {
-                var relativePath = Path.GetRelativePath(originalRoot, file);
-                var destPath = Path.Combine(destRoot, relativePath);
-                files.Add((file, destPath));
-            }
-            
-            foreach (var dir in Directory.GetDirectories(sourceDir))
+            if (!result.Success)
             {
-                CollectFilesRecursive(dir, destRoot, originalRoot, files);
+                progressSvc.ReportError("download", "Failed to install game", result.Error ?? "Unknown error");
+                progressSvc.ReportGameStateChanged("stopped", 1);
             }
         }
         catch (Exception ex)
         {
-            Logger.Warning("IPC", $"Failed to enumerate directory {sourceDir}: {ex.Message}");
+            Logger.Error("IPC", $"Game launch failed: {ex.Message}");
+            progressSvc.ReportError("download", "Failed to install game", ex.ToString());
+            progressSvc.ReportGameStateChanged("stopped", 1);
         }
     }
 
-    /// <summary>
-    /// Parses a custom headers string in the format: header=value header="value with spaces"
-    /// Supports quoted values with spaces.
-    /// </summary>
-    private static Dictionary<string, string> ParseHeadersString(string headersString)
+    private List<SaveInfo> GetInstanceSaves(string instanceId)
     {
-        var headers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        if (string.IsNullOrWhiteSpace(headersString))
-            return headers;
+        var svc = Services.GetRequiredService<IInstanceService>();
+        var path = svc.GetInstancePathById(instanceId);
+        if (string.IsNullOrEmpty(path)) return [];
 
-        // Regex to match: name=value or name="quoted value"
-        // Handles: Authorization="Bearer token" User-Agent="My Agent/1.0" X-Custom=simple
-        var regex = new System.Text.RegularExpressions.Regex(
-            @"([A-Za-z0-9_-]+)=(?:""([^""]*)""|(\S+))",
-            System.Text.RegularExpressions.RegexOptions.Compiled);
+        var savesPath = Path.Combine(path, "UserData", "Saves");
+        if (!Directory.Exists(savesPath)) return [];
 
-        var matches = regex.Matches(headersString);
-        foreach (System.Text.RegularExpressions.Match match in matches)
+        return Directory.GetDirectories(savesPath).Select(saveDir =>
         {
-            var name = match.Groups[1].Value;
-            // Group 2 is quoted value, Group 3 is unquoted value
-            var value = match.Groups[2].Success ? match.Groups[2].Value : match.Groups[3].Value;
-            
-            if (!string.IsNullOrEmpty(name))
+            var di = new DirectoryInfo(saveDir);
+            var preview = Path.Combine(saveDir, "preview.png");
+            long size = 0;
+            try { size = di.EnumerateFiles("*", SearchOption.AllDirectories).Sum(f => f.Length); } catch { /* ignore */ }
+            return new SaveInfo(
+                di.Name,
+                File.Exists(preview) ? $"file://{preview.Replace("\\", "/")}" : null,
+                di.LastWriteTime.ToString("o"),
+                size);
+        }).ToList();
+    }
+
+    private async Task<string> ExportInstanceAsync(string instanceId)
+    {
+        var svc = Services.GetRequiredService<IInstanceService>();
+        var fileDialog = Services.GetRequiredService<IFileDialogService>();
+        var path = svc.GetInstancePathById(instanceId);
+        if (string.IsNullOrEmpty(path) || !Directory.Exists(path)) return "";
+
+        var defaultName = $"HyPrism-{instanceId[..Math.Min(8, instanceId.Length)]}_{DateTime.Now:yyyyMMdd_HHmmss}.zip";
+        var desktop = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+        var savePath = await fileDialog.SaveFileAsync(defaultName, "Zip files|*.zip", desktop);
+
+        if (string.IsNullOrEmpty(savePath)) return "";
+        if (!savePath.EndsWith(".zip", StringComparison.OrdinalIgnoreCase)) savePath += ".zip";
+
+        if (File.Exists(savePath)) File.Delete(savePath);
+        ZipFile.CreateFromDirectory(path, savePath, CompressionLevel.Optimal, false);
+        Logger.Success("IPC", $"Exported instance to: {savePath}");
+        return savePath;
+    }
+
+    private async Task<bool> ImportInstanceAsync()
+    {
+        var svc = Services.GetRequiredService<IInstanceService>();
+        var fileDialog = Services.GetRequiredService<IFileDialogService>();
+        var filePath = await fileDialog.BrowseInstanceArchiveAsync();
+        if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath)) return false;
+
+        var ext = Path.GetExtension(filePath).ToLowerInvariant();
+        if (ext == ".pwr")
+            await ImportPwrFileAsync(filePath, svc);
+        else
+            await svc.ImportFromZipAsync(filePath);
+
+        Logger.Success("IPC", "Instance imported successfully");
+        return true;
+    }
+
+    private static HytaleAuthStatus MapAuthStatus(dynamic status)
+    {
+        // HytaleAuthService.GetAuthStatus() returns an anonymous/dynamic object
+        // We cast it explicitly via JSON round-trip for safety
+        var json = JsonSerializer.Serialize(status, IpcServiceBase.JsonOpts);
+        using var doc = JsonDocument.Parse(json);
+        var root = doc.RootElement;
+        var loggedIn = root.TryGetProperty("loggedIn", out JsonElement li) && li.GetBoolean();
+        var username  = root.TryGetProperty("username",  out JsonElement un)  ? un.GetString()  : null;
+        var uuid      = root.TryGetProperty("uuid",      out JsonElement uid) ? uid.GetString() : null;
+        var error     = root.TryGetProperty("error",     out JsonElement er)  ? er.GetString()  : null;
+        var errorType = root.TryGetProperty("errorType", out JsonElement et)  ? et.GetString()  : null;
+        return new HytaleAuthStatus(loggedIn, username, uuid, error, errorType);
+    }
+
+    private string? ResolveModInstancePath(string? instanceId)
+    {
+        var svc = Services.GetRequiredService<IInstanceService>();
+        if (!string.IsNullOrWhiteSpace(instanceId))
+        {
+            var byId = svc.GetInstancePathById(instanceId);
+            if (!string.IsNullOrWhiteSpace(byId)) return byId;
+        }
+        var selected = svc.GetSelectedInstance();
+        return selected != null ? svc.GetInstancePathById(selected.Id) : null;
+    }
+
+    private async Task<bool> UninstallModAsync(string modId, string? instanceId)
+    {
+        var modSvc = Services.GetRequiredService<IModService>();
+        var instancePath = ResolveModInstancePath(instanceId);
+        if (string.IsNullOrEmpty(instancePath)) return false;
+
+        var mods = modSvc.GetInstanceInstalledMods(instancePath);
+        var mod = mods.FirstOrDefault(m => m.Id == modId || m.Name == modId);
+        if (mod == null) return false;
+
+        mods.Remove(mod);
+
+        if (!string.IsNullOrEmpty(mod.FileName))
+        {
+            var modsDir = Path.Combine(instancePath, "UserData", "Mods");
+            var deleted = TryDeleteModFile(modsDir, mod.FileName);
+            if (!deleted) Logger.Warning("IPC", $"Could not find mod file to delete: {mod.FileName}");
+        }
+
+        await modSvc.SaveInstanceModsAsync(instancePath, mods);
+        return true;
+    }
+
+    private static bool TryDeleteModFile(string modsDir, string fileName)
+    {
+        var candidates = new[]
+        {
+            Path.Combine(modsDir, fileName),
+            Path.Combine(modsDir, fileName + ".disabled"),
+        };
+
+        foreach (var c in candidates)
+        {
+            if (!File.Exists(c)) continue;
+            try { File.Delete(c); return true; } catch { /* ignore */ }
+        }
+
+        // Fuzzy stem search
+        var stem = Path.GetFileNameWithoutExtension(fileName);
+        if (stem.EndsWith(".jar", StringComparison.OrdinalIgnoreCase) ||
+            stem.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
+            stem = Path.GetFileNameWithoutExtension(stem);
+
+        if (!Directory.Exists(modsDir)) return false;
+
+        try
+        {
+            foreach (var f in Directory.GetFiles(modsDir))
             {
-                headers[name] = value;
+                var fn = Path.GetFileName(f).ToLowerInvariant();
+                var s = stem.ToLowerInvariant();
+                if (fn is var n && (n == $"{s}.jar" || n == $"{s}.jar.disabled" ||
+                                    n == $"{s}.zip" || n == $"{s}.zip.disabled" || n == $"{s}.disabled"))
+                {
+                    try { File.Delete(f); return true; } catch { /* ignore */ }
+                }
             }
         }
+        catch { /* ignore */ }
 
-        return headers;
+        return false;
     }
 
-    /// <summary>
-    /// Imports a ZIP file as a new instance.
-    /// </summary>
-    private async Task ImportZipFileAsync(string zipPath, IInstanceService instanceService)
+    private async Task<bool> ToggleModAsync(string modId, string? instanceId)
     {
-        // Extract to a temp location first to check structure
-        var tempDir = Path.Combine(Path.GetTempPath(), $"hyprism-import-{Guid.NewGuid()}");
-        Directory.CreateDirectory(tempDir);
-        
-        await Task.Run(() => ZipFile.ExtractToDirectory(zipPath, tempDir, true));
-        
-        // Determine target path - check if zip has meta.json metadata
-        var metaPath = Path.Combine(tempDir, "meta.json");
-        var branch = "release";
-        var version = 0;
-        string? existingId = null;
+        var modSvc = Services.GetRequiredService<IModService>();
+        var instancePath = ResolveModInstancePath(instanceId);
+        if (string.IsNullOrEmpty(instancePath)) return false;
 
-        if (File.Exists(metaPath))
+        var mods = modSvc.GetInstanceInstalledMods(instancePath);
+        var mod = mods.FirstOrDefault(m => m.Id == modId || m.Name == modId);
+        if (mod == null || string.IsNullOrEmpty(mod.FileName)) return false;
+
+        var modsDir = Path.Combine(instancePath, "UserData", "Mods");
+        var currentPath = Path.Combine(modsDir, mod.FileName);
+
+        if (!File.Exists(currentPath))
         {
-            var meta = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(File.ReadAllText(metaPath), JsonOpts);
-            branch = meta?.TryGetValue("branch", out var b) == true ? b.GetString() ?? "release" : "release";
-            if (meta?.TryGetValue("version", out var v) == true) version = v.GetInt32();
-            if (meta?.TryGetValue("id", out var idEl) == true) existingId = idEl.GetString();
-        }
-        
-        // Check if instance with this ID already exists
-        var existingInstances = instanceService.GetInstalledInstances();
-        var idAlreadyExists = !string.IsNullOrEmpty(existingId) && 
-            existingInstances.Any(i => i.Id == existingId);
-        
-        // Generate new ID if existing one conflicts or doesn't exist
-        var newInstanceId = idAlreadyExists || string.IsNullOrEmpty(existingId) 
-            ? Guid.NewGuid().ToString() 
-            : existingId;
-        
-        var targetPath = instanceService.CreateInstanceDirectory(branch, newInstanceId);
-        
-        // Update meta.json with new ID if it was changed
-        if (File.Exists(metaPath) && (idAlreadyExists || string.IsNullOrEmpty(existingId)))
-        {
-            var metaContent = JsonSerializer.Deserialize<Dictionary<string, object>>(File.ReadAllText(metaPath), JsonOpts);
-            if (metaContent != null)
+            // Recover from stale manifest
+            var stem = Path.GetFileNameWithoutExtension(mod.FileName);
+            var probes = new[]
             {
-                metaContent["id"] = newInstanceId;
-                File.WriteAllText(metaPath, JsonSerializer.Serialize(metaContent, JsonOpts));
-                Logger.Info("IPC", $"Updated instance ID from '{existingId}' to '{newInstanceId}'");
-            }
+                currentPath,
+                Path.Combine(modsDir, $"{stem}.jar"),
+                Path.Combine(modsDir, $"{stem}.zip"),
+                Path.Combine(modsDir, $"{stem}.disabled"),
+                Path.Combine(modsDir, $"{stem}.jar.disabled"),
+                Path.Combine(modsDir, $"{stem}.zip.disabled"),
+            };
+            var found = probes.FirstOrDefault(File.Exists);
+            if (found == null) return false;
+            currentPath = found;
+            mod.FileName = Path.GetFileName(found);
         }
-        
-        // Move contents from temp to target
-        foreach (var file in Directory.GetFiles(tempDir))
+
+        if (mod.Enabled)
         {
-            var destFile = Path.Combine(targetPath, Path.GetFileName(file));
-            File.Move(file, destFile, true);
+            var fn = Path.GetFileName(currentPath);
+            var ext = Path.GetExtension(fn).ToLowerInvariant();
+            if (ext is ".jar" or ".zip") mod.DisabledOriginalExtension = ext;
+            var disabledName = $"{Path.GetFileNameWithoutExtension(fn)}.disabled";
+            var disabledPath = Path.Combine(modsDir, disabledName);
+            File.Move(currentPath, disabledPath, true);
+            mod.FileName = disabledName;
+            mod.Enabled = false;
         }
-        foreach (var dir in Directory.GetDirectories(tempDir))
+        else
         {
-            var destDir = Path.Combine(targetPath, Path.GetFileName(dir));
-            if (Directory.Exists(destDir)) Directory.Delete(destDir, true);
-            Directory.Move(dir, destDir);
+            var fn = Path.GetFileName(currentPath);
+            var stem = fn.EndsWith(".disabled", StringComparison.OrdinalIgnoreCase)
+                ? fn[..^".disabled".Length]
+                : Path.GetFileNameWithoutExtension(fn);
+            var restoreExt = !string.IsNullOrWhiteSpace(mod.DisabledOriginalExtension)
+                ? (mod.DisabledOriginalExtension.StartsWith('.') ? mod.DisabledOriginalExtension : $".{mod.DisabledOriginalExtension}")
+                : (stem.EndsWith(".jar", StringComparison.OrdinalIgnoreCase) || stem.EndsWith(".zip", StringComparison.OrdinalIgnoreCase) ? "" : ".jar");
+            var enabledName = string.IsNullOrEmpty(restoreExt) ? stem : $"{stem}{restoreExt}";
+            File.Move(currentPath, Path.Combine(modsDir, enabledName), true);
+            mod.FileName = enabledName;
+            mod.Enabled = true;
+            mod.DisabledOriginalExtension = "";
         }
-        
-        // Clean up temp directory
-        try { Directory.Delete(tempDir, true); } catch { /* ignore */ }
-        
-        Logger.Success("IPC", $"Imported ZIP instance to: {targetPath}");
+
+        await modSvc.SaveInstanceModsAsync(instancePath, mods);
+        return true;
     }
 
-    /// <summary>
-    /// Imports a PWR file as a new instance using Butler.
-    /// </summary>
+    private async Task<string> ExportModsAsync(string? instanceId, string exportPath, string exportType)
+    {
+        var svc = Services.GetRequiredService<IInstanceService>();
+        var modSvc = Services.GetRequiredService<IModService>();
+        var config = Services.GetRequiredService<IConfigService>();
+
+        if (string.IsNullOrEmpty(exportPath)) return "";
+
+        var instancePath = !string.IsNullOrWhiteSpace(instanceId)
+            ? svc.GetInstancePathById(instanceId)
+            : svc.GetSelectedInstance() is { } sel ? svc.GetInstancePathById(sel.Id) : null;
+
+        if (string.IsNullOrEmpty(instancePath)) return "";
+
+        var meta = svc.GetInstanceMeta(instancePath);
+        var branch = meta?.Branch ?? "release";
+        var version = meta?.Version ?? 0;
+        var mods = modSvc.GetInstanceInstalledMods(instancePath);
+        if (mods.Count == 0) return "";
+
+        config.Configuration.LastExportPath = exportPath;
+        config.SaveConfig();
+
+        if (exportType == "zip")
+        {
+            var modsDir = Path.Combine(instancePath, "UserData", "Mods");
+            if (!Directory.Exists(modsDir)) return "";
+            var zipPath = Path.Combine(exportPath, $"HyPrism-Mods-{branch}-v{version}-{DateTime.Now:yyyyMMdd-HHmmss}.zip");
+            ZipFile.CreateFromDirectory(modsDir, zipPath);
+            return zipPath;
+        }
+
+        var modList = mods
+            .Where(m => !string.IsNullOrEmpty(m.CurseForgeId))
+            .Select(m => new ModListEntry { CurseForgeId = m.CurseForgeId, FileId = m.FileId, Name = m.Name, Version = m.Version })
+            .ToList();
+        if (modList.Count == 0) return "";
+
+        var filePath = Path.Combine(exportPath, $"HyPrism-ModList-{branch}-v{version}-{DateTime.Now:yyyyMMdd-HHmmss}.json");
+        await File.WriteAllTextAsync(filePath, JsonSerializer.Serialize(modList, new JsonSerializerOptions { WriteIndented = true }));
+        return filePath;
+    }
+
+    private async Task<int> ImportModListAsync(string filePath, string? instanceId)
+    {
+        var svc = Services.GetRequiredService<IInstanceService>();
+        var modSvc = Services.GetRequiredService<IModService>();
+
+        if (!File.Exists(filePath)) return 0;
+
+        var instancePath = !string.IsNullOrWhiteSpace(instanceId)
+            ? svc.GetInstancePathById(instanceId)
+            : svc.GetSelectedInstance() is { } sel ? svc.GetInstancePathById(sel.Id) : null;
+        if (string.IsNullOrEmpty(instancePath)) return 0;
+
+        var content = await File.ReadAllTextAsync(filePath);
+        var modList = JsonSerializer.Deserialize<List<ModListEntry>>(content) ?? [];
+        var count = 0;
+        foreach (var entry in modList)
+        {
+            if (string.IsNullOrEmpty(entry.CurseForgeId)) continue;
+            try
+            {
+                if (await modSvc.InstallModFileToInstanceAsync(entry.CurseForgeId, entry.FileId ?? "", instancePath))
+                    count++;
+            }
+            catch (Exception ex) { Logger.Warning("IPC", $"Failed to import mod {entry.Name}: {ex.Message}"); }
+        }
+        return count;
+    }
+
+    private async Task<SetInstanceDirResult> SetInstanceDirAsync(string path)
+    {
+        var config = Services.GetRequiredService<IConfigService>();
+        var instanceSvc = Services.GetRequiredService<IInstanceService>();
+        var appPath = Services.GetRequiredService<AppPathConfiguration>();
+        var progressSvc = Services.GetRequiredService<ProgressNotificationService>();
+
+        Logger.Info("IPC", $"Setting instance directory to: {path}");
+        var resetToDefault = string.IsNullOrWhiteSpace(path);
+        var newPath = resetToDefault
+            ? Path.Combine(appPath.AppDir, "Instances")
+            : Path.GetFullPath(Environment.ExpandEnvironmentVariables(path.Trim()));
+
+        if (!Path.IsPathRooted(newPath))
+            newPath = Path.GetFullPath(Path.Combine(appPath.AppDir, newPath));
+
+        var currentRoot = Path.GetFullPath(instanceSvc.GetInstanceRoot());
+
+        if (Path.GetFullPath(currentRoot).Equals(Path.GetFullPath(newPath), StringComparison.OrdinalIgnoreCase))
+            return new SetInstanceDirResult(true, newPath, Noop: true, Reason: "already-current-path");
+
+        if (newPath.StartsWith(currentRoot + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+            return new SetInstanceDirResult(false, "", Error: "Target directory cannot be inside current instance directory");
+
+        Directory.CreateDirectory(newPath);
+
+        var filesToMove = new List<(string source, string dest)>();
+        if (Directory.Exists(currentRoot))
+            await Task.Run(() => CollectFilesRecursive(currentRoot, newPath, currentRoot, filesToMove));
+
+        filesToMove = filesToMove
+            .OrderByDescending(f => { try { return new FileInfo(f.source).Length; } catch { return 0; } })
+            .ToList();
+
+        if (filesToMove.Count == 0)
+        {
+            if (resetToDefault) { config.Configuration.InstanceDirectory = string.Empty; config.SaveConfig(); }
+            else await config.SetInstanceDirectoryAsync(newPath);
+            return new SetInstanceDirResult(true, newPath);
+        }
+
+        long totalSize = filesToMove.Sum(f => { try { return new FileInfo(f.source).Length; } catch { return 0; } });
+        long movedSize = 0;
+        var movedCount = 0;
+
+        progressSvc.SendProgress("moving-instances", 0, "settings.dataSettings.movingData", null, 0, totalSize);
+
+        foreach (var (source, dest) in filesToMove)
+        {
+            try
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
+                var prePct = totalSize > 0 ? (int)Math.Clamp(movedSize * 100 / totalSize, 0, 99) : movedCount * 100 / filesToMove.Count;
+                progressSvc.SendProgress("moving-instances", prePct, "settings.dataSettings.movingDataHint",
+                    new object[] { Path.GetFileName(source) }, movedSize, totalSize);
+                File.Copy(source, dest, true);
+                movedSize += new FileInfo(dest).Length;
+                movedCount++;
+                var pct = totalSize > 0 ? (int)(movedSize * 100 / totalSize) : movedCount * 100 / filesToMove.Count;
+                progressSvc.SendProgress("moving-instances", pct, "settings.dataSettings.movingDataHint",
+                    new object[] { Path.GetFileName(source) }, movedSize, totalSize);
+            }
+            catch (Exception ex) { Logger.Warning("IPC", $"Failed to copy {source}: {ex.Message}"); }
+        }
+
+        bool ok;
+        if (resetToDefault) { config.Configuration.InstanceDirectory = string.Empty; config.SaveConfig(); ok = true; }
+        else { ok = await config.SetInstanceDirectoryAsync(newPath) != null; }
+
+        if (ok)
+        {
+            try
+            {
+                if (!currentRoot.Equals(Path.Combine(appPath.AppDir, "Instances"), StringComparison.OrdinalIgnoreCase))
+                    Directory.Delete(currentRoot, true);
+                else
+                {
+                    foreach (var d in Directory.GetDirectories(currentRoot)) Directory.Delete(d, true);
+                    foreach (var f in Directory.GetFiles(currentRoot)) File.Delete(f);
+                }
+            }
+            catch (Exception ex) { Logger.Warning("IPC", $"Cleanup failed: {ex.Message}"); }
+        }
+
+        progressSvc.SendProgress("moving-instances-complete", 100, "settings.dataSettings.moveComplete", null, totalSize, totalSize);
+        return new SetInstanceDirResult(ok, newPath);
+    }
+
+    private async Task<AuthServerPingResult> PingAuthServerAsync(string? authDomainOverride)
+    {
+        var s = Services.GetRequiredService<ISettingsService>();
+        var authDomain = !string.IsNullOrWhiteSpace(authDomainOverride)
+            ? authDomainOverride
+            : s.GetAuthDomain();
+        if (string.IsNullOrWhiteSpace(authDomain)) authDomain = "sessions.sanasol.ws";
+
+        if (IsOfficialAuthDomain(authDomain))
+            return new AuthServerPingResult(true, 0, authDomain, DateTime.UtcNow.ToString("o"), true);
+
+        var pingUrl = BuildAuthPingUrl(authDomain);
+        var http = Services.GetRequiredService<HttpClient>();
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        try
+        {
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+            using var response = await http.GetAsync(pingUrl, cts.Token);
+            sw.Stop();
+            var available = response.IsSuccessStatusCode ||
+                (int)response.StatusCode is 404 or 401 or 403;
+            return new AuthServerPingResult(available, sw.ElapsedMilliseconds, authDomain, DateTime.UtcNow.ToString("o"), false);
+        }
+        catch (Exception ex)
+        {
+            sw.Stop();
+            return new AuthServerPingResult(false, sw.ElapsedMilliseconds, authDomain, DateTime.UtcNow.ToString("o"), false, ex.Message);
+        }
+    }
+
     private async Task ImportPwrFileAsync(string pwrPath, IInstanceService instanceService)
     {
-        var butlerService = _services.GetRequiredService<IButlerService>();
-        
-        // Try to parse version info from the filename
-        // Common patterns: v{version}-{os}-{arch}.pwr, 0_to_{version}.pwr, {version}.pwr
+        var butler = Services.GetRequiredService<IButlerService>();
         var fileName = Path.GetFileNameWithoutExtension(pwrPath);
-        var version = TryParseVersionFromPwrFilename(fileName);
-        var branch = "release"; // Default to release branch
-        
-        // Generate a new instance ID
-        var newInstanceId = Guid.NewGuid().ToString();
-        var targetPath = instanceService.CreateInstanceDirectory(branch, newInstanceId);
-        
-        Logger.Info("IPC", $"Importing PWR to new instance: {targetPath} (detected version: {version})");
-        
-        // Apply the PWR file using Butler
-        await butlerService.ApplyPwrAsync(pwrPath, targetPath, (progress, message) =>
-        {
-            Logger.Debug("IPC", $"Import progress: {progress}% - {message}");
-        });
-        
-        // Create meta.json for the new instance
+        var version = InstanceService.TryParseVersionFromPwrFilename(fileName);
+        var branch = "release";
+        var newId = Guid.NewGuid().ToString();
+        var targetPath = instanceService.CreateInstanceDirectory(branch, newId);
+        Logger.Info("IPC", $"Importing PWR to new instance: {targetPath} (version: {version})");
+        await butler.ApplyPwrAsync(pwrPath, targetPath, (p, m) => Logger.Debug("IPC", $"Import {p}% {m}"));
         var meta = new InstanceMeta
         {
-            Id = newInstanceId,
+            Id = newId,
             Name = $"Imported {(version > 0 ? $"v{version}" : "Game")}",
             Branch = branch,
             Version = version,
@@ -3340,39 +1401,96 @@ public class IpcService
             CreatedAt = DateTime.UtcNow,
             IsLatest = false
         };
-        
         instanceService.SaveInstanceMeta(targetPath, meta);
-        
-        Logger.Success("IPC", $"Imported PWR instance to: {targetPath}");
+        Logger.Success("IPC", $"Imported PWR to: {targetPath}");
     }
 
-    /// <summary>
-    /// Tries to parse version number from PWR filename.
-    /// Supports patterns: v{version}-{os}-{arch}, 0_to_{version}, {version}, etc.
-    /// </summary>
-    private static int TryParseVersionFromPwrFilename(string filename)
+    private static bool IsOfficialAuthDomain(string domain)
     {
-        // Pattern: v{version}-{os}-{arch} (e.g., v123-linux-x64)
-        var versionMatch = System.Text.RegularExpressions.Regex.Match(filename, @"^v(\d+)");
-        if (versionMatch.Success && int.TryParse(versionMatch.Groups[1].Value, out var v1))
-            return v1;
-        
-        // Pattern: 0_to_{version} or {from}_to_{version} (e.g., 0_to_456)
-        var patchMatch = System.Text.RegularExpressions.Regex.Match(filename, @"_to_(\d+)");
-        if (patchMatch.Success && int.TryParse(patchMatch.Groups[1].Value, out var v2))
-            return v2;
-        
-        // Pattern: just a number (e.g., 123)
-        if (int.TryParse(filename, out var v3))
-            return v3;
-        
-        // Pattern: number at start (e.g., 123-something)
-        var startMatch = System.Text.RegularExpressions.Regex.Match(filename, @"^(\d+)");
-        if (startMatch.Success && int.TryParse(startMatch.Groups[1].Value, out var v4))
-            return v4;
-        
-        return 0; // Unknown version
+        if (string.IsNullOrWhiteSpace(domain)) return false;
+        var n = domain.Trim().ToLowerInvariant();
+        if (n.StartsWith("https://")) n = n[8..];
+        if (n.StartsWith("http://")) n = n[7..];
+        n = n.TrimEnd('/');
+        return n == "sessions.hytale.com" || n.EndsWith(".hytale.com") || n == "hytale.com";
     }
 
-    // #endregion
+    private static string BuildAuthPingUrl(string authDomain)
+    {
+        var n = authDomain.Trim().TrimEnd('/');
+        if (!n.StartsWith("http://", StringComparison.OrdinalIgnoreCase) &&
+            !n.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+            n = $"https://{n}";
+        return $"{n}/health";
+    }
+
+    private static string GetMirrorHostname(MirrorMeta mirror)
+    {
+        try
+        {
+            if (mirror.SourceType == "json-index" && !string.IsNullOrEmpty(mirror.JsonIndex?.ApiUrl))
+                return new Uri(mirror.JsonIndex.ApiUrl).Host;
+            if (mirror.SourceType == "pattern" && !string.IsNullOrEmpty(mirror.Pattern?.BaseUrl))
+                return new Uri(mirror.Pattern.BaseUrl).Host;
+        }
+        catch { /* ignore */ }
+        return "";
+    }
+
+    private static void ApplySetting(ISettingsService s, string key, JsonElement val)
+    {
+        switch (key)
+        {
+            case "language":                 s.SetLanguage(val.GetString() ?? "en-US"); break;
+            case "musicEnabled":             s.SetMusicEnabled(val.GetBoolean()); break;
+            case "launcherBranch":           s.SetLauncherBranch(val.GetString() ?? "release"); break;
+            case "versionType":              s.SetVersionType(val.GetString() ?? "release"); break;
+            case "selectedVersion":          s.SetSelectedVersion(val.ValueKind == JsonValueKind.Number ? val.GetInt32() : 0); break;
+            case "closeAfterLaunch":         s.SetCloseAfterLaunch(val.GetBoolean()); break;
+            case "launchAfterDownload":      s.SetLaunchAfterDownload(val.GetBoolean()); break;
+            case "showDiscordAnnouncements": s.SetShowDiscordAnnouncements(val.GetBoolean()); break;
+            case "disableNews":              s.SetDisableNews(val.GetBoolean()); break;
+            case "backgroundMode":           s.SetBackgroundMode(val.GetString() ?? "default"); break;
+            case "accentColor":              s.SetAccentColor(val.GetString() ?? "#7C5CFC"); break;
+            case "onlineMode":               s.SetOnlineMode(val.GetBoolean()); break;
+            case "authDomain":               s.SetAuthDomain(val.GetString() ?? ""); break;
+            case "javaArguments":            s.SetJavaArguments(val.GetString() ?? ""); break;
+            case "useCustomJava":            s.SetUseCustomJava(val.GetBoolean()); break;
+            case "customJavaPath":           s.SetCustomJavaPath(val.GetString() ?? ""); break;
+            case "gpuPreference":            s.SetGpuPreference(val.GetString() ?? "dedicated"); break;
+            case "gameEnvironmentVariables": s.SetGameEnvironmentVariables(val.GetString() ?? ""); break;
+            case "useDualAuth":              s.SetUseDualAuth(val.GetBoolean()); break;
+            case "hasCompletedOnboarding":   s.SetHasCompletedOnboarding(val.GetBoolean()); break;
+            case "showAlphaMods":            s.SetShowAlphaMods(val.GetBoolean()); break;
+            default: Logger.Warning("IPC", $"Unknown setting key: {key}"); break;
+        }
+    }
+
+    private static void CollectFilesRecursive(string sourceDir, string destRoot, string originalRoot,
+        List<(string source, string dest)> files)
+    {
+        try
+        {
+            foreach (var file in Directory.GetFiles(sourceDir))
+                files.Add((file, Path.Combine(destRoot, Path.GetRelativePath(originalRoot, file))));
+            foreach (var dir in Directory.GetDirectories(sourceDir))
+                CollectFilesRecursive(dir, destRoot, originalRoot, files);
+        }
+        catch (Exception ex) { Logger.Warning("IPC", $"Failed to enumerate {sourceDir}: {ex.Message}"); }
+    }
+
+    private static Dictionary<string, string> ParseHeadersString(string headersString)
+    {
+        var headers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        if (string.IsNullOrWhiteSpace(headersString)) return headers;
+        var rx = new Regex(@"([A-Za-z0-9_-]+)=(?:""([^""]*)""|(\S+))", RegexOptions.Compiled);
+        foreach (Match m in rx.Matches(headersString))
+        {
+            var name = m.Groups[1].Value;
+            var value = m.Groups[2].Success ? m.Groups[2].Value : m.Groups[3].Value;
+            if (!string.IsNullOrEmpty(name)) headers[name] = value;
+        }
+        return headers;
+    }
+    #endregion
 }

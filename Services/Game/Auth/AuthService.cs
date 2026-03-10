@@ -13,7 +13,7 @@ namespace HyPrism.Services.Game.Auth;
 /// Supports both the /game-session/child and /game-session endpoints
 /// for backwards compatibility with different auth server versions.
 /// </remarks>
-public class AuthService
+public class AuthService : IAuthService
 {
     private readonly HttpClient _httpClient;
     private readonly string[] _authServerUrls;
@@ -125,7 +125,7 @@ public class AuthService
                             continue;
                         }
 
-                        string? token = result.IdentityToken ?? result.Token ?? result.AccessToken ?? result.JwtToken ?? result.SessionToken ?? result.SessionTokenAlt;
+                        string? token = result.IdentityToken ?? result.IdentityTokenAlt ?? result.Token ?? result.AccessToken ?? result.JwtToken ?? result.SessionToken ?? result.SessionTokenAlt;
                         if (string.IsNullOrEmpty(token) && responseBody.StartsWith("eyJ"))
                         {
                             token = responseBody.Trim().Trim('"');
@@ -176,6 +176,81 @@ public class AuthService
     }
 
     /// <summary>
+    /// Requests an offline mode token from the auth server.
+    /// Used when the game client requires HYTALE_OFFLINE_TOKEN for offline/singleplayer mode.
+    /// </summary>
+    /// <param name="uuid">The player's unique identifier.</param>
+    /// <param name="playerName">The player's display name.</param>
+    /// <returns>The offline token string, or null if unavailable.</returns>
+    public async Task<string?> GetOfflineTokenAsync(string uuid, string playerName, CancellationToken ct = default)
+    {
+        try
+        {
+            Logger.Info("Auth", $"Requesting offline token for {playerName} ({uuid})...");
+
+            var requestBody = new GameSessionRequest
+            {
+                UUID = uuid,
+                Name = playerName,
+                Scopes = new[] { "hytale:offline", "hytale:client" }
+            };
+
+            var json = JsonSerializer.Serialize(requestBody, new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            });
+
+            // Use /auth endpoint — lightweight token generation without session creation
+            foreach (var authServerUrl in _authServerUrls)
+            {
+                ct.ThrowIfCancellationRequested();
+                var requestUrl = $"{authServerUrl}/auth";
+                try
+                {
+                    using var content = new StringContent(json, Encoding.UTF8, "application/json");
+                    var response = await _httpClient.PostAsync(requestUrl, content, ct);
+                    var responseBody = await response.Content.ReadAsStringAsync(ct);
+
+                    if (!response.IsSuccessStatusCode)
+                        continue;
+
+                    var result = JsonSerializer.Deserialize<GameSessionResponse>(responseBody, new JsonSerializerOptions
+                    {
+                        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                        PropertyNameCaseInsensitive = true
+                    });
+
+                    string? token = result?.IdentityToken ?? result?.IdentityTokenAlt ?? result?.Token ?? result?.AccessToken;
+                    if (string.IsNullOrEmpty(token) && responseBody.StartsWith("eyJ"))
+                        token = responseBody.Trim().Trim('"');
+
+                    if (!string.IsNullOrEmpty(token))
+                    {
+                        Logger.Success("Auth", "Offline token obtained successfully");
+                        return token;
+                    }
+                }
+                catch (HttpRequestException)
+                {
+                    break;
+                }
+            }
+
+            Logger.Warning("Auth", "Could not obtain offline token from any endpoint");
+            return null;
+        }
+        catch (OperationCanceledException)
+        {
+            throw; // Let caller handle timeout
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning("Auth", $"Error fetching offline token: {ex.Message}");
+            return null;
+        }
+    }
+
+    /// <summary>
     /// Validate an existing token is still valid
     /// </summary>
     public async Task<bool> ValidateTokenAsync(string token)
@@ -218,6 +293,10 @@ public class GameSessionResponse
     // Primary token field (from /game-session/child endpoint)
     [JsonPropertyName("identityToken")]
     public string? IdentityToken { get; set; }
+
+    // Snake_case variant (from /auth endpoint)
+    [JsonPropertyName("identity_token")]
+    public string? IdentityTokenAlt { get; set; }
 
     // Alternative token fields for compatibility
     [JsonPropertyName("token")]

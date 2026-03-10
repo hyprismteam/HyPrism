@@ -190,7 +190,7 @@ export const AboutTab: React.FC<AboutTabProps> = ({
               {otherContributors.length > 0 && (
                 <div className={`p-4 rounded-2xl ${gc}`}>
                   <div className="flex items-center gap-2 mb-1">
-                    <Users size={18} className="text-white/60" />
+                    <Users size={18} className="text-white opacity-60" />
                     <h3 className="text-sm font-semibold text-white">{t('settings.aboutSettings.contributors')}</h3>
                   </div>
                   <p className="text-xs text-white/40 mb-3">{t('settings.aboutSettings.contributorsDescription')}</p>

@@ -239,7 +239,7 @@ export const CreateInstanceModal: React.FC<CreateInstanceModalProps> = ({
                   {iconPreview ? (
                     <img src={iconPreview} alt="Instance icon" className="w-full h-full object-cover" />
                   ) : (
-                    <Image size={18} className="text-white/30" />
+                    <Image size={18} className="text-white opacity-30" />
                   )}
                 </div>
               </div>
@@ -266,7 +266,7 @@ export const CreateInstanceModal: React.FC<CreateInstanceModalProps> = ({
                     maxLength={32}
                   />
                   {isNameLocked && (
-                    <Lock size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30" />
+                    <Lock size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-white opacity-30" />
                   )}
                 </div>
               </div>
@@ -287,7 +287,7 @@ export const CreateInstanceModal: React.FC<CreateInstanceModalProps> = ({
                     style={{ borderColor: isBranchOpen ? `${accentColor}50` : undefined }}
                   >
                     <div className="flex items-center gap-2">
-                      <GitBranch size={14} className="text-white/40" />
+                      <GitBranch size={14} className="text-white opacity-40" />
                       <span className="font-medium">{branchLabel}</span>
                     </div>
                     <ChevronDown 

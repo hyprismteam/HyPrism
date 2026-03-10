@@ -1,7 +1,5 @@
 import React, { Suspense, lazy } from 'react';
 import { motion } from 'framer-motion';
-import { Users } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
 import { PageContainer } from '@/components/ui/PageContainer';
 import { pageVariants } from '@/constants/animations';
 
@@ -12,8 +10,6 @@ interface ProfilesPageProps {
 }
 
 export const ProfilesPage: React.FC<ProfilesPageProps> = ({ onProfileUpdate }) => {
-  const { t } = useTranslation();
-
   return (
     <motion.div
       variants={pageVariants}
@@ -25,13 +21,6 @@ export const ProfilesPage: React.FC<ProfilesPageProps> = ({ onProfileUpdate }) =
     >
       <PageContainer contentClassName="h-full">
       <div className="h-full flex flex-col">
-      {/* Page Header */}
-      <div className="flex items-center justify-between mb-4 flex-shrink-0">
-        <div className="flex items-center gap-3">
-          <Users size={22} className="text-white/80" />
-          <h1 className="text-xl font-bold text-white">{t('profiles.title')}</h1>
-        </div>
-      </div>
       {/* Content */}
       <div className="flex-1 min-h-0">
         <Suspense fallback={

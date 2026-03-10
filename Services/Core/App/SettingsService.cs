@@ -12,16 +12,18 @@ namespace HyPrism.Services.Core.App;
 /// </remarks>
 public class SettingsService : ISettingsService
 {
-    private readonly ConfigService _configService;
-    private readonly LocalizationService _localizationService;
-    
+    #region Fields and Constructor
+
+    private readonly IConfigService _configService;
+    private readonly ILocalizationService _localizationService;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="SettingsService"/> class.
     /// Applies the saved language setting to the localization service on startup.
     /// </summary>
     /// <param name="configService">The configuration service for persisting settings.</param>
     /// <param name="localizationService">The localization service for language management.</param>
-    public SettingsService(ConfigService configService, LocalizationService localizationService)
+    public SettingsService(IConfigService configService, ILocalizationService localizationService)
     {
         _configService = configService;
         _localizationService = localizationService;
@@ -41,9 +43,11 @@ public class SettingsService : ISettingsService
     
     /// <inheritdoc/>
     public event Action<string?>? OnBackgroundChanged;
-    
-    // ========== Localization Settings (Language) ==========
-    
+
+    #endregion
+
+    #region Localization Settings
+
     /// <inheritdoc/>
     public string GetLanguage() => _configService.Configuration.Language;
 
@@ -63,8 +67,10 @@ public class SettingsService : ISettingsService
         return false;
     }
 
-    // ========== Music Settings ==========
-    
+    #endregion
+
+    #region Music Settings
+
     /// <inheritdoc/>
     public bool GetMusicEnabled() => _configService.Configuration.MusicEnabled;
     
@@ -76,8 +82,10 @@ public class SettingsService : ISettingsService
         return true;
     }
 
-    // ========== Launcher Branch (release/beta update channel) ==========
-    
+    #endregion
+
+    #region Launcher Branch
+
     /// <inheritdoc/>
     public string GetLauncherBranch() => _configService.Configuration.LauncherBranch;
     
@@ -101,7 +109,9 @@ public class SettingsService : ISettingsService
         return true;
     }
 
-    // ========== Version & Branch Settings ==========
+    #endregion
+
+    #region Version & Branch Settings
     // NOTE: These methods use deprecated Config fields for backward compatibility
     // They will be removed in a future version when migration to Instances is complete
 
@@ -131,8 +141,10 @@ public class SettingsService : ISettingsService
     }
     #pragma warning restore CS0618
 
-    // ========== Close After Launch Setting ==========
-    
+    #endregion
+
+    #region Close After Launch Setting
+
     /// <inheritdoc/>
     public bool GetCloseAfterLaunch() => _configService.Configuration.CloseAfterLaunch;
     
@@ -145,7 +157,9 @@ public class SettingsService : ISettingsService
         return true;
     }
 
-    // ========== Launch After Download Setting ==========
+    #endregion
+
+    #region Launch After Download Setting
 
     /// <inheritdoc/>
     public bool GetLaunchAfterDownload() => _configService.Configuration.LaunchAfterDownload;
@@ -159,8 +173,10 @@ public class SettingsService : ISettingsService
         return true;
     }
 
-    // ========== Discord Announcements Settings ==========
-    
+    #endregion
+
+    #region Discord Announcements Settings
+
     /// <inheritdoc/>
     public bool GetShowDiscordAnnouncements() => _configService.Configuration.ShowDiscordAnnouncements;
     
@@ -192,8 +208,10 @@ public class SettingsService : ISettingsService
         return true;
     }
 
-    // ========== News Settings ==========
-    
+    #endregion
+
+    #region News Settings
+
     /// <inheritdoc/>
     public bool GetDisableNews() => _configService.Configuration.DisableNews;
     
@@ -206,8 +224,10 @@ public class SettingsService : ISettingsService
         return true;
     }
 
-    // ========== Background Settings ==========
-    
+    #endregion
+
+    #region Background Settings
+
     /// <inheritdoc/>
     public string GetBackgroundMode() => _configService.Configuration.BackgroundMode;
     
@@ -237,8 +257,10 @@ public class SettingsService : ISettingsService
         }).ToList();
     }
 
-    // ========== Accent Color Settings ==========
-    
+    #endregion
+
+    #region Accent Color Settings
+
     /// <inheritdoc/>
     public string GetAccentColor() => _configService.Configuration.AccentColor;
     
@@ -252,8 +274,10 @@ public class SettingsService : ISettingsService
         return true;
     }
 
-    // ========== Onboarding State ==========
-    
+    #endregion
+
+    #region Onboarding State
+
     /// <inheritdoc/>
     public bool GetHasCompletedOnboarding() => _configService.Configuration.HasCompletedOnboarding;
     
@@ -275,8 +299,10 @@ public class SettingsService : ISettingsService
         return true;
     }
 
-    // ========== Online Mode Settings ==========
-    
+    #endregion
+
+    #region Online Mode Settings
+
     /// <inheritdoc/>
     public bool GetOnlineMode() => _configService.Configuration.OnlineMode;
     
@@ -288,9 +314,11 @@ public class SettingsService : ISettingsService
         Logger.Info("Config", $"Online mode set to: {online}");
         return true;
     }
-    
-    // ========== Auth Domain Settings ==========
-    
+
+    #endregion
+
+    #region Auth Domain Settings
+
     /// <inheritdoc/>
     public string GetAuthDomain() => _configService.Configuration.AuthDomain;
 
@@ -340,8 +368,10 @@ public class SettingsService : ISettingsService
         return true;
     }
 
-    // ========== GPU Preference Settings ==========
-    
+    #endregion
+
+    #region GPU Preference Settings
+
     /// <inheritdoc/>
     public string GetGpuPreference() => _configService.Configuration.GpuPreference;
     
@@ -384,6 +414,7 @@ public class SettingsService : ISettingsService
         return true;
     }
 
+    /// <inheritdoc/>
     public string GetInstanceDirectory() => _configService.Configuration.InstanceDirectory;
 
     /// <inheritdoc/>
@@ -396,4 +427,6 @@ public class SettingsService : ISettingsService
         _configService.SaveConfig();
         return true;
     }
+
+    #endregion
 }

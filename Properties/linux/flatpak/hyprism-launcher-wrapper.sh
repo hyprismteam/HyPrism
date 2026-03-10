@@ -191,7 +191,7 @@ version_lt() {
 }
 
 # Try GitHub API: latest → prereleases
-REPO="HyPrismTeam/HyPrism"
+REPO="hyprismteam/HyPrism"
 log "Looking for release asset matching: $ASSET_RE"
 asset_url=""
 

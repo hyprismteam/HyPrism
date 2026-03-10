@@ -1,3 +1,9 @@
+/**
+ * Generates a random display nickname in the format `AdjectiveNoun####` (e.g. `"ZestyShark3466"`).
+ * The adjective is at most 5 characters, the noun at most 6 characters, and the suffix is a
+ * random 4-digit number, keeping the total length at or below 16 characters.
+ * @returns A randomly generated nickname string.
+ */
 export function generateRandomNick(): string {
   // Short adjectives (max 5 chars) + short nouns (max 6 chars) + 4-digit number = max 15 chars
   // Keep the same structure used in ProfileEditor (e.g. "ZestyShark3466").

@@ -22,14 +22,14 @@
 
   <!-- Electron.NET application metadata -->
   <PropertyGroup Label="ElectronNetCommon">
-    <ElectronPackageId>io.github.HyPrismTeam.HyPrism</ElectronPackageId>
+    <ElectronPackageId>io.github.hyprismteam.HyPrism</ElectronPackageId>
     <Title>HyPrism</Title>
     <Version>3.0.1</Version>
     <Description>Cross-platform Hytale launcher</Description>
     <Company>HyPrism</Company>
     <Copyright>Copyright © 2026 HyPrism Team</Copyright>
     <License>GPL-3.0-only</License>
-    <ProjectUrl>https://github.com/HyPrismTeam/HyPrism</ProjectUrl>
+    <ProjectUrl>https://github.com/hyprismteam/HyPrism</ProjectUrl>
     <ElectronVersion>34.2.0</ElectronVersion>
     <ElectronSkipMigrationChecks>true</ElectronSkipMigrationChecks>
   </PropertyGroup>
@@ -69,7 +69,7 @@
 
   <!-- Electron.NET + Core packages -->
   <ItemGroup>
-    <PackageReference Include="ElectronNET.Core" Version="0.4.0" />
+    <PackageReference Include="ElectronNET.Core" Version="0.4.1" />
     <PackageReference Include="DiscordRichPresence" Version="1.143.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.3" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.5-beta1" />
@@ -86,8 +86,19 @@
   </ItemGroup>
 
   <!-- Legacy source retained in tree for reference only; excluded from build -->
+  <!-- Also exclude the IpcGen tool — it's a separate project with its own csproj -->
   <ItemGroup>
     <Compile Remove="Services/Game/Sources/MirrorVersionSource.cs" />
+    <Compile Remove="HyPrism.IpcGen/**/*.cs" />
+    <Compile Remove="HyPrism.Tests/**/*.cs" />
+  </ItemGroup>
+
+  <!-- ElectronNET custom startup hook: IPv6 loopback socket bridge (VPN compatibility) -->
+  <!-- Copied next to main.js in the .electron output directory so ElectronNET picks it up -->
+  <ItemGroup>
+    <Content Include=".electron\custom_main.js">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
   <!-- ================================================================ -->
@@ -101,12 +112,12 @@
     <Exec Command="npm ci --prefer-offline" WorkingDirectory="Frontend" />
   </Target>
 
-  <Target Name="GenerateIpcTs" BeforeTargets="BuildFrontend" DependsOnTargets="NpmInstall" Inputs="Services/Core/IpcService.cs" Outputs="Frontend/src/lib/ipc.ts" Condition="Exists('Scripts/generate-ipc.mjs')">
-    <Message Importance="high" Text="→ Generating ipc.ts from IpcService.cs" />
-    <Exec Command="node Scripts/generate-ipc.mjs" />
+  <Target Name="GenerateIpcTs" BeforeTargets="BuildFrontend" DependsOnTargets="NpmInstall" Condition="Exists('HyPrism.IpcGen/HyPrism.IpcGen.csproj')">
+    <Message Importance="high" Text="→ Generating ipc.ts (Roslyn IpcGen)" />
+    <Exec Command="dotnet run --project HyPrism.IpcGen/HyPrism.IpcGen.csproj -- --project &quot;$(MSBuildProjectFullPath)&quot; --output &quot;$(MSBuildProjectDirectory)/Frontend/src/lib/ipc.ts&quot;" />
   </Target>
 
-  <Target Name="BuildFrontend" BeforeTargets="Build" Inputs="Frontend/src/**/*;Frontend/index.html;Frontend/vite.config.ts;Frontend/tsconfig.json;Frontend/tsconfig.app.json" Outputs="wwwroot/index.html" Condition="Exists('Frontend/package.json')">
+  <Target Name="BuildFrontend" BeforeTargets="Build" Inputs="Frontend/src/**/*;Frontend/index.html;Frontend/vite.config.ts;Frontend/tsconfig.json;Frontend/tsconfig.app.json" Outputs="wwwroot/index.html" Condition="Exists('Frontend/package.json') AND '$(SkipFrontend)' != 'true'">
     <Message Importance="high" Text="→ Building Frontend (Vite)" />
     <Exec Command="npm run build" WorkingDirectory="Frontend" />
   </Target>
@@ -119,7 +130,12 @@
     <Copy SourceFiles="@(FrontendFiles)" DestinationFiles="@(FrontendFiles->'$(OutputPath)/wwwroot/%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
   </Target>
 
-  <Target Name="CopyFrontendDistPublish" AfterTargets="Publish" Condition="Exists('wwwroot/index.html')">
+  <!-- Ensure the compiled frontend is present in the publish directory both
+       before and after the actual Publish target.  Prior to 3.0.1 the copy only
+       ran after publishing, which meant packaging steps that executed as part of
+       the publish could miss the wwwroot folder.  Running beforePublish makes
+       sure electron-builder and other post-publish tooling see the files. -->
+  <Target Name="CopyFrontendDistPublish" BeforeTargets="Publish" AfterTargets="Publish" Condition="Exists('wwwroot/index.html')">
     <ItemGroup>
       <FrontendFilesPublish Include="wwwroot/**/*" />
     </ItemGroup>

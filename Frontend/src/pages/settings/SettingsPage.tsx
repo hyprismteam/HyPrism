@@ -39,7 +39,6 @@ export interface SettingsPageProps {
   onBackgroundModeChange?: (mode: string) => void;
   onInstanceDeleted?: () => void;
   onAuthSettingsChange?: () => void;
-  pageMode?: boolean;
   isGameRunning?: boolean;
   onMovingDataChange?: (isMoving: boolean) => void;
 }
@@ -52,7 +51,6 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
   onBackgroundModeChange,
   onInstanceDeleted,
   onAuthSettingsChange,
-  pageMode: isPageMode = false,
   isGameRunning = false,
   onMovingDataChange,
 }) => {
@@ -107,14 +105,8 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
 
   return (
     <>
-      <div className={isPageMode
-        ? "w-full h-full flex gap-4"
-        : "fixed inset-0 z-[200] flex items-center justify-center bg-[#0a0a0a]/90"
-      }>
-        <div className={isPageMode
-          ? "contents"
-          : "w-full max-w-4xl mx-4 h-[85vh] flex gap-2 relative"
-        }>
+      <div className="w-full h-full flex gap-4">
+        <div className="contents">
           {/* Sidebar */}
           <div className="w-52 h-full min-h-0 flex-shrink-0 flex flex-col py-4 rounded-2xl glass-panel-static-solid">
             <nav className="flex-1 space-y-1 px-2">
@@ -122,9 +114,9 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                 <button
                   key={tab.id}
                   onClick={() => settings.setActiveTab(tab.id)}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${settings.activeTab === tab.id
-                    ? 'bg-white/10 text-white'
-                    : 'text-white/60 hover:text-white hover:bg-white/5'
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-[color,background-color,opacity] ${settings.activeTab === tab.id
+                    ? 'bg-white/10 text-white opacity-100'
+                    : 'text-white opacity-60 hover:opacity-100 hover:bg-white/5'
                   }`}
                   style={settings.activeTab === tab.id ? { backgroundColor: `${settings.accentColor}20`, color: settings.accentColor } : {}}
                 >
@@ -155,7 +147,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
             {settings.activeTab !== 'logs' && (
               <div className="flex items-center justify-between p-4 border-b border-white/[0.06]">
                 <h3 className="text-white font-medium">{tabs.find(tab => tab.id === settings.activeTab)?.label}</h3>
-                {!isPageMode && onClose && (
+                {onClose && (
                   <IconButton variant="ghost" size="sm" onClick={onClose} title={t('common.close')}>
                     <X size={18} />
                   </IconButton>
@@ -213,7 +205,9 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                   onlineMode={settings.onlineMode}
                   authMode={settings.authMode}
                   useDualAuth={settings.useDualAuth}
-                  setUseDualAuth={settings.setUseDualAuth}
+                  handleUseDualAuthChange={settings.handleUseDualAuthChange}
+                  isActiveProfileOfficial={settings.isActiveProfileOfficial}
+                  profileLoaded={settings.profileLoaded}
                 />
               )}
 

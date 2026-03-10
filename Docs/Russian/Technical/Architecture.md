@@ -62,6 +62,35 @@ HyPrism следует архитектурному паттерну **Console +
 - `nodeIntegration: false` — нет `require()` в рендерере
 - `preload.js` предоставляет только `window.electron.ipcRenderer` через `contextBridge`
 
+## Сокетный мост IPC
+
+IPC-мост использует HTTP-сокет для коммуникации .NET ↔ Electron.
+
+### Совместимость с VPN (Windows)
+
+В Windows сокет привязывается к `0.0.0.0` вместо `127.0.0.1` для обхода перехвата VPN.
+
+**Безопасность**: Все подключения фильтруются — принимаются только loopback-адреса:
+- `127.0.0.1` (IPv4 loopback)
+- `::1` (IPv6 loopback)
+- `::ffff:127.0.0.1` (IPv6-mapped IPv4)
+
+**Отключить**: Установите `HYPRISM_VPN_COMPAT=0` для принудительной привязки к `127.0.0.1`.
+
+### Реализация
+
+Сокетный мост патчится в `.electron/custom_main.js` до инициализации Electron.NET:
+
+```javascript
+// Windows по умолчанию использует 0.0.0.0, другие — 127.0.0.1
+const vpnCompatMode = vpnCompatEnv === '1' || (isWindows && vpnCompatEnv !== '0');
+
+// Фильтрация соединений
+if (!isLoopback) {
+    socket.destroy();  // Отклонить не-loopback
+}
+```
+
 ## Внедрение зависимостей
 
 Все сервисы регистрируются как синглтоны в `Bootstrapper.cs`:

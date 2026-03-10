@@ -76,7 +76,7 @@ dotnet publish -c Release -r linux-x64
 
 Упаковка Flatpak теперь генерируется через `Scripts/publish.sh` и Electron Builder.
 Linux-иконки генерируются из `Frontend/public/icon.png` в `Build/icons/` во время публикации.
-Источник AppStream-метаданных остаётся `Properties/linux/io.github.HyPrismTeam.HyPrism.metainfo.xml`.
+Источник AppStream-метаданных остаётся `Properties/linux/io.github.hyprismteam.HyPrism.metainfo.xml`.
 
 Релизный CI (`.github/workflows/release.yml`) публикует Linux-артефакты только для `linux-x64`. Релизные сборки Linux `arm64` не поддерживаются.
 

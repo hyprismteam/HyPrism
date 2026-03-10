@@ -22,9 +22,9 @@ public class SkinService : ISkinService
     private bool _skinProtectionEnabled;
     private readonly object _skinProtectionLock = new object();
 
-    // Delegates to access AppService state - REPLACED BY DI SERVICES
-    private readonly ConfigService _configService;
-    private readonly InstanceService _instanceService;
+    private readonly IConfigService _configService;
+    private readonly IInstanceService _instanceService;
+    private readonly IProfileService _profileService;
     private readonly string _appDir;
 
     /// <summary>
@@ -35,12 +35,14 @@ public class SkinService : ISkinService
     /// <param name="instanceService">The game instance service.</param>
     public SkinService(
         AppPathConfiguration appPath,
-        ConfigService configService,
-        InstanceService instanceService)
+        IConfigService configService,
+        IInstanceService instanceService,
+        IProfileService profileService)
     {
         _appDir = appPath.AppDir;
         _configService = configService;
         _instanceService = instanceService;
+        _profileService = profileService;
     }
 
     #region Skin Protection
@@ -236,7 +238,7 @@ public class SkinService : ISkinService
             
             // Get all existing UUIDs from Profiles
             var knownUuids = new HashSet<string>(
-                (config.Profiles?.Select(p => p.UUID) ?? Enumerable.Empty<string>())
+                _profileService.GetProfiles().Select(p => p.UUID)
                     .Concat(new[] { config.UUID ?? "" })
                     .Where(u => !string.IsNullOrEmpty(u)),
                 StringComparer.OrdinalIgnoreCase
@@ -308,7 +310,7 @@ public class SkinService : ISkinService
             
             // Get all existing UUIDs from Profiles
             var knownUuids = new HashSet<string>(
-                (config.Profiles?.Select(p => p.UUID) ?? Enumerable.Empty<string>())
+                _profileService.GetProfiles().Select(p => p.UUID)
                     .Concat(new[] { config.UUID ?? "" })
                     .Where(u => !string.IsNullOrEmpty(u)),
                 StringComparer.OrdinalIgnoreCase
@@ -448,7 +450,7 @@ public class SkinService : ISkinService
         {
             var config = _configService.Configuration;
             // Find the profile by UUID
-            var profile = config.Profiles?.FirstOrDefault(p => p.UUID == uuid);
+            var profile = _profileService.GetProfiles().FirstOrDefault(p => p.UUID == uuid);
             if (profile == null)
             {
                 return;
@@ -607,32 +609,15 @@ public class SkinService : ISkinService
 
     private string? TryGetCurrentExistingInstancePath()
     {
-        var config = _configService.Configuration;
         var selected = _instanceService.GetSelectedInstance();
         if (selected != null)
         {
-            var selectedPath = _instanceService.GetInstancePathById(selected.Id)
-                               ?? _instanceService.FindExistingInstancePath(selected.Branch, selected.Version);
-            if (!string.IsNullOrWhiteSpace(selectedPath))
-            {
-                return selectedPath;
-            }
+            var path = _instanceService.GetInstancePathById(selected.Id);
+            if (!string.IsNullOrWhiteSpace(path))
+                return path;
         }
 
-        #pragma warning disable CS0618 // Backward compatibility: VersionType kept for migration
-        var branch = UtilityService.NormalizeVersionType(config.VersionType);
-        var configuredVersion = config.SelectedVersion;
-        #pragma warning restore CS0618
-
-        var configuredPath = _instanceService.FindExistingInstancePath(branch, configuredVersion);
-        if (!string.IsNullOrWhiteSpace(configuredPath))
-        {
-            return configuredPath;
-        }
-
-        return _instanceService
-            .GetInstalledInstances()
-            .FirstOrDefault(i => i.Branch.Equals(branch, StringComparison.OrdinalIgnoreCase))
-            ?.Path;
+        // Fall back to any installed instance when nothing is explicitly selected.
+        return _instanceService.GetInstalledInstances().FirstOrDefault()?.Path;
     }
 }

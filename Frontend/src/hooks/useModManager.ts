@@ -1,12 +1,16 @@
 import { useState, useCallback, useRef, useMemo, useEffect } from 'react';
 import { ipc, type ModInfo as CurseForgeModInfo } from '@/lib/ipc';
-import type { InstalledVersionInfo, ModInfo } from '@/types';
+import type { InstalledVersionInfo, InstalledModInfo } from '@/types';
 import { getInstanceInstalledMods, checkInstanceModUpdates, uninstallInstanceMod } from './useInstanceActions';
 
 /**
- * Normalize backend mod payload casing and defaults.
+ * Normalizes raw backend mod payload objects, handling PascalCase and camelCase property names
+ * and converting numeric IDs from strings where needed.
+ *
+ * @param mods - Array of raw mod objects as returned by the IPC layer.
+ * @returns A normalized array of {@link InstalledModInfo} objects.
  */
-export function normalizeInstalledMods(mods: unknown[]): ModInfo[] {
+export function normalizeInstalledMods(mods: unknown[]): InstalledModInfo[] {
   return (mods || []).map((m: unknown) => {
     const mod = m as Record<string, unknown>;
 
@@ -38,10 +42,13 @@ export function normalizeInstalledMods(mods: unknown[]): ModInfo[] {
       fileId: typeof fileId === 'number' && Number.isFinite(fileId) ? fileId : undefined,
       latestVersion: mod.latestVersion as string || mod.LatestVersion as string,
       latestFileId: typeof latestFileId === 'number' && Number.isFinite(latestFileId) ? latestFileId : undefined,
-    } as ModInfo;
+    } as InstalledModInfo;
   });
 }
 
+/**
+ * Options accepted by the {@link useModManager} hook.
+ */
 export interface UseModManagerOptions {
   selectedInstance: InstalledVersionInfo | null;
   setMessage: (msg: { type: 'success' | 'error'; text: string } | null) => void;
@@ -49,13 +56,16 @@ export interface UseModManagerOptions {
 }
 
 /**
- * Hook for managing installed mods state and operations.
- * Extracted from InstancesPage to reduce component complexity.
+ * Manages installed-mod state for the currently selected game instance,
+ * including loading, filtering, selection, update-checking, and deletion.
+ *
+ * @param options - See {@link UseModManagerOptions}.
+ * @returns The complete mod-manager state and handler bag.
  */
 export function useModManager({ selectedInstance, setMessage, t }: UseModManagerOptions) {
-  const [installedMods, setInstalledMods] = useState<ModInfo[]>([]);
+  const [installedMods, setInstalledMods] = useState<InstalledModInfo[]>([]);
   const [isLoadingMods, setIsLoadingMods] = useState(false);
-  const [modsWithUpdates, setModsWithUpdates] = useState<ModInfo[]>([]);
+  const [modsWithUpdates, setModsWithUpdates] = useState<InstalledModInfo[]>([]);
   const [updateCount, setUpdateCount] = useState(0);
   const [modsSearchQuery, setModsSearchQuery] = useState('');
   const [selectedMods, setSelectedMods] = useState<Set<string>>(new Set());
@@ -79,7 +89,7 @@ export function useModManager({ selectedInstance, setMessage, t }: UseModManager
     contentSelectionAnchorRef.current = null;
   }, [selectedInstance?.id]);
 
-  const buildModSignature = useCallback((mods: ModInfo[]): string => {
+  const buildModSignature = useCallback((mods: InstalledModInfo[]): string => {
     return (mods || [])
       .map((m) => {
         const parts = [
@@ -123,7 +133,7 @@ export function useModManager({ selectedInstance, setMessage, t }: UseModManager
     if (!silent) setIsLoadingMods(true);
 
     try {
-      const mods = await getInstanceInstalledMods(currentInstance.branch, currentInstance.version, currentInstance.id);
+      const mods = await getInstanceInstalledMods(currentInstance.id);
       const normalized = normalizeInstalledMods(mods || []);
 
       if (selectedInstanceRef.current?.id === currentInstance.id && modsLoadSeqRef.current === requestSeq) {
@@ -136,7 +146,7 @@ export function useModManager({ selectedInstance, setMessage, t }: UseModManager
         // Check updates in background
         void (async () => {
           try {
-            const updates = await checkInstanceModUpdates(currentInstance.branch, currentInstance.version, currentInstance.id);
+            const updates = await checkInstanceModUpdates(currentInstance.id);
             const normalizedUpdates = normalizeInstalledMods(updates || []);
 
             if (selectedInstanceRef.current?.id === currentInstance.id && modsLoadSeqRef.current === requestSeq) {
@@ -223,10 +233,10 @@ export function useModManager({ selectedInstance, setMessage, t }: UseModManager
   }, []);
 
   // Mod deletion
-  const handleDeleteMod = useCallback(async (mod: ModInfo) => {
+  const handleDeleteMod = useCallback(async (mod: InstalledModInfo) => {
     if (!selectedInstance) return false;
     try {
-      await uninstallInstanceMod(mod.id, selectedInstance.branch, selectedInstance.version, selectedInstance.id);
+      await uninstallInstanceMod(mod.id, selectedInstance.id);
       await loadInstalledMods();
       setMessage({ type: 'success', text: t('modManager.modDeleted') });
       setTimeout(() => setMessage(null), 3000);
@@ -245,7 +255,7 @@ export function useModManager({ selectedInstance, setMessage, t }: UseModManager
 
     try {
       for (const modId of idsToDelete) {
-        await uninstallInstanceMod(modId, selectedInstance.branch, selectedInstance.version, selectedInstance.id);
+        await uninstallInstanceMod(modId, selectedInstance.id);
       }
       setSelectedMods(new Set());
       await loadInstalledMods();
@@ -259,14 +269,12 @@ export function useModManager({ selectedInstance, setMessage, t }: UseModManager
   }, [loadInstalledMods, selectedInstance, selectedMods, setMessage, t]);
 
   // Toggle mod enabled state
-  const handleToggleMod = useCallback(async (mod: ModInfo) => {
+  const handleToggleMod = useCallback(async (mod: InstalledModInfo) => {
     if (!selectedInstance) return;
     try {
       const ok = await ipc.mods.toggle({
         modId: mod.id,
         instanceId: selectedInstance.id,
-        branch: selectedInstance.branch,
-        version: selectedInstance.version,
       });
       if (ok) {
         setInstalledMods(prev =>
@@ -299,8 +307,6 @@ export function useModManager({ selectedInstance, setMessage, t }: UseModManager
         await ipc.mods.toggle({
           modId: mod.id,
           instanceId: selectedInstance.id,
-          branch: selectedInstance.branch,
-          version: selectedInstance.version,
         });
       }
 
@@ -339,8 +345,6 @@ export function useModManager({ selectedInstance, setMessage, t }: UseModManager
           modId: cfId,
           fileId,
           instanceId: selectedInstance.id,
-          branch: selectedInstance.branch,
-          version: selectedInstance.version,
         });
         const ok = typeof result === 'object' && result !== null ? (result as { success: boolean }).success : result;
         if (!ok) failed++;

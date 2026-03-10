@@ -13,7 +13,7 @@ namespace HyPrism.Services.Game.Launch;
 /// Example: hytale.com -> sanasol.ws
 /// This allows the game to connect to custom authentication servers.
 /// </summary>
-public class ClientPatcher
+public class ClientPatcher : IClientPatcher
 {
     private const string OriginalDomain = "hytale.com";
     private const string DefaultNewDomain = "sanasol.ws"; // Must be 10 chars like hytale.com

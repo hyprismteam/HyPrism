@@ -31,7 +31,7 @@ export const WorldsTab: React.FC<WorldsTabProps> = ({
 
   const handleOpenSaveFolder = (saveName: string) => {
     if (!selectedInstance) return;
-    openSaveFolder(selectedInstance.id, selectedInstance.branch, selectedInstance.version, saveName);
+    openSaveFolder(selectedInstance.id, saveName);
   };
 
   const handleDeleteSave = async (e: React.MouseEvent, saveName: string) => {
@@ -39,7 +39,7 @@ export const WorldsTab: React.FC<WorldsTabProps> = ({
     e.stopPropagation();
     if (!selectedInstance) return;
 
-    const ok = await deleteSaveFolder(selectedInstance.id, selectedInstance.branch, selectedInstance.version, saveName);
+    const ok = await deleteSaveFolder(selectedInstance.id, saveName);
     if (ok) {
       setMessage({ type: 'success', text: 'World deleted' });
       await loadSaves();
@@ -73,10 +73,10 @@ export const WorldsTab: React.FC<WorldsTabProps> = ({
             <Loader2 size={32} className="animate-spin" style={{ color: accentColor }} />
           </div>
         ) : saves.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 text-white/30">
-            <Map size={48} className="mb-4 opacity-50" />
-            <p className="text-lg font-medium">{t('instances.noSaves')}</p>
-            <p className="text-sm mt-1">{t('instances.noSavesHint')}</p>
+          <div className="flex flex-col items-center justify-center py-12">
+            <Map size={48} className="mb-4 text-white opacity-50" />
+            <p className="text-lg font-medium text-white/30">{t('instances.noSaves')}</p>
+            <p className="text-sm mt-1 text-white/30">{t('instances.noSavesHint')}</p>
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -100,7 +100,7 @@ export const WorldsTab: React.FC<WorldsTabProps> = ({
                     />
                   ) : null}
                   <div className={`flex items-center justify-center ${save.previewPath ? 'hidden' : ''}`}>
-                    <Image size={32} className="text-white/20" />
+                    <Image size={32} className="text-white opacity-20" />
                   </div>
                 </div>
 

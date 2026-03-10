@@ -20,6 +20,18 @@ public interface IProfileManagementService
     int GetActiveProfileIndex();
 
     /// <summary>
+    /// Gets the ID of the currently active profile.
+    /// </summary>
+    /// <returns>The profile ID string, or empty if no profile is selected.</returns>
+    string GetSelectedProfileId();
+
+    /// <summary>
+    /// Gets the currently active profile object.
+    /// </summary>
+    /// <returns>The active <see cref="Profile"/>, or null if none is selected.</returns>
+    Profile? GetSelectedProfile();
+
+    /// <summary>
     /// Creates a new profile with the specified name and UUID.
     /// </summary>
     /// <param name="name">The profile name (1-16 characters).</param>
@@ -40,6 +52,13 @@ public interface IProfileManagementService
     /// <param name="index">The zero-based index of the profile to switch to.</param>
     /// <returns>True if the switch was successful; otherwise, false.</returns>
     bool SwitchProfile(int index);
+
+    /// <summary>
+    /// Switches to a profile by its unique ID.
+    /// </summary>
+    /// <param name="profileId">The profile ID to switch to.</param>
+    /// <returns>True if the switch was successful; otherwise, false.</returns>
+    bool SwitchProfile(string profileId);
 
     /// <summary>
     /// Updates an existing profile with new name and/or UUID.

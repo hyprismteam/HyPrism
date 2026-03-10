@@ -106,7 +106,7 @@ export const NetworkTab: React.FC<NetworkTabProps> = ({
       {/* Online Mode Toggle */}
       <div className="space-y-3">
         <SettingsToggleCard
-          icon={<Wifi size={16} className="text-white/70" />}
+          icon={<Wifi size={16} className="text-white opacity-70" />}
           title={t('settings.networkSettings.onlineMode')}
           description={t('settings.networkSettings.onlineModeHint')}
           checked={onlineMode}
@@ -230,7 +230,7 @@ export const NetworkTab: React.FC<NetworkTabProps> = ({
                 <XCircle size={18} className="text-red-400" />
               )}
               {authPingStatus === 'idle' && (
-                <Server size={18} className="text-white/40" />
+                <Server size={18} className="text-white opacity-40" />
               )}
               <div>
                 <p className="text-sm font-medium text-white/90">

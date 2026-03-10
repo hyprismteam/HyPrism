@@ -10,7 +10,7 @@ namespace HyPrism.Services.Game.Sources;
 /// Service for automatically discovering mirror configuration from a URL.
 /// Attempts to detect the mirror type (pattern/json-index) and build a MirrorMeta schema.
 /// </summary>
-public class MirrorDiscoveryService
+public class MirrorDiscoveryService : IMirrorDiscoveryService
 {
     private readonly HttpClient _httpClient;
     private const int TimeoutSeconds = 10;
@@ -54,17 +54,6 @@ public class MirrorDiscoveryService
         }
         
         return await _httpClient.SendAsync(request, ct);
-    }
-
-    /// <summary>
-    /// Result of mirror discovery attempt.
-    /// </summary>
-    public class DiscoveryResult
-    {
-        public bool Success { get; set; }
-        public string? Error { get; set; }
-        public MirrorMeta? Mirror { get; set; }
-        public string? DetectedType { get; set; }
     }
 
     /// <summary>
@@ -281,8 +270,8 @@ public class MirrorDiscoveryService
                 Logger.Debug("MirrorDiscovery", $"/latest check failed (non-critical): {ex.Message}");
             }
 
-            var mirrorId = GenerateMirrorId(baseUri);
-            var mirror = CreateInfosApiPatternMirror(baseUri, mirrorId);
+            var mirrorId = MirrorSchemaInferrer.GenerateMirrorId(baseUri);
+            var mirror = MirrorSchemaInferrer.CreateInfosApiPatternMirror(baseUri, mirrorId);
 
             return new DiscoveryResult
             {
@@ -301,68 +290,6 @@ public class MirrorDiscoveryService
         }
 
         return new DiscoveryResult { Success = false };
-    }
-
-    /// <summary>
-    /// Create a MirrorMeta for Infos API pattern.
-    /// Uses /infos for version discovery, /latest for patch steps, /dl/ for downloads.
-    /// </summary>
-    private static MirrorMeta CreateInfosApiPatternMirror(Uri baseUri, string mirrorId)
-    {
-        var baseUrl = baseUri.GetLeftPart(UriPartial.Authority);
-        
-        return new MirrorMeta
-        {
-            SchemaVersion = 1,
-            Id = mirrorId,
-            Name = ExtractMirrorName(baseUri),
-            Description = $"Auto-discovered mirror from {baseUri.Host}",
-            Priority = 100,
-            Enabled = true,
-            SourceType = "pattern",
-            Pattern = new MirrorPatternConfig
-            {
-                // Pattern: /dl/:os/:arch/:version.pwr
-                // OS: "windows", "linux", "darwin" | Arch: "amd64", "arm64"
-                FullBuildUrl = "{base}/dl/{os}/{arch}/{version}.pwr",
-                DiffPatchUrl = "{base}/dl/{os}/{arch}/{version}.pwr",  // Same pattern for diff
-                BaseUrl = baseUrl,
-                VersionDiscovery = new VersionDiscoveryConfig
-                {
-                    // Use /infos endpoint with custom JSON path
-                    Method = "json-api",
-                    Url = "{base}/infos",
-                    // Path format: platform.branch.newest (e.g., linux-amd64.release.newest)
-                    JsonPath = "{os}-{arch}.{branch}.newest"
-                },
-                // No branch mapping needed - uses "release" and "pre-release" directly
-                BranchMapping = new Dictionary<string, string>(),
-                // OS/arch mapping for URL substitution
-                OsMapping = new Dictionary<string, string>
-                {
-                    ["linux"] = "linux",
-                    ["windows"] = "windows",
-                    ["macos"] = "darwin"
-                },
-                ArchMapping = new Dictionary<string, string>
-                {
-                    ["x64"] = "amd64",
-                    ["amd64"] = "amd64",
-                    ["arm64"] = "arm64"
-                },
-                DiffBasedBranches = new List<string>()
-            },
-            SpeedTest = new MirrorSpeedTestConfig
-            {
-                PingUrl = baseUrl + "/infos",
-                PingTimeoutSeconds = 5
-            },
-            Cache = new MirrorCacheConfig
-            {
-                IndexTtlMinutes = 30,
-                SpeedTestTtlMinutes = 60
-            }
-        };
     }
 
     /// <summary>
@@ -469,8 +396,8 @@ public class MirrorDiscoveryService
                 // Build base URL (directory containing manifest.json)
                 var baseUrl = manifestUrl.Substring(0, manifestUrl.LastIndexOf('/'));
 
-                var mirrorId = GenerateMirrorId(baseUri);
-                var mirror = CreateManifestPatternMirror(baseUri, mirrorId, baseUrl, manifestUrl, detectedBranches);
+                var mirrorId = MirrorSchemaInferrer.GenerateMirrorId(baseUri);
+                var mirror = MirrorSchemaInferrer.CreateManifestPatternMirror(baseUri, mirrorId, baseUrl, manifestUrl, detectedBranches);
 
                 return new DiscoveryResult
                 {
@@ -490,64 +417,6 @@ public class MirrorDiscoveryService
         }
 
         return new DiscoveryResult { Success = false };
-    }
-
-    /// <summary>
-    /// Create a MirrorMeta for manifest.json pattern.
-    /// Uses URL pattern: {os}/{arch}/{branch}/{from}_to_{to}.pwr
-    /// </summary>
-    private static MirrorMeta CreateManifestPatternMirror(Uri baseUri, string mirrorId, string baseUrl, string manifestUrl, HashSet<string> branches)
-    {
-        return new MirrorMeta
-        {
-            SchemaVersion = 1,
-            Id = mirrorId,
-            Name = ExtractMirrorName(baseUri),
-            Description = $"Auto-discovered mirror from {baseUri.Host}",
-            Priority = 100,
-            Enabled = true,
-            SourceType = "pattern",
-            Pattern = new MirrorPatternConfig
-            {
-                // Files are stored as: {os}/{arch}/{branch}/{from}_to_{to}.pwr
-                // Full build: 0_to_{version}.pwr
-                FullBuildUrl = "{base}/{os}/{arch}/{branch}/0_to_{version}.pwr",
-                DiffPatchUrl = "{base}/{os}/{arch}/{branch}/{from}_to_{to}.pwr",
-                BaseUrl = baseUrl,
-                VersionDiscovery = new VersionDiscoveryConfig
-                {
-                    // Use manifest method to parse manifest.json
-                    Method = "manifest",
-                    Url = manifestUrl
-                },
-                // Map internal names to manifest names
-                OsMapping = new Dictionary<string, string>
-                {
-                    ["linux"] = "linux",
-                    ["windows"] = "windows",
-                    ["macos"] = "darwin"
-                },
-                ArchMapping = new Dictionary<string, string>
-                {
-                    ["x64"] = "amd64",
-                    ["amd64"] = "amd64",
-                    ["arm64"] = "arm64"
-                },
-                BranchMapping = new Dictionary<string, string>(),
-                // All branches use diff-based patching in manifest format
-                DiffBasedBranches = branches.ToList()
-            },
-            SpeedTest = new MirrorSpeedTestConfig
-            {
-                PingUrl = manifestUrl,
-                PingTimeoutSeconds = 5
-            },
-            Cache = new MirrorCacheConfig
-            {
-                IndexTtlMinutes = 30,
-                SpeedTestTtlMinutes = 60
-            }
-        };
     }
 
     /// <summary>
@@ -614,8 +483,8 @@ public class MirrorDiscoveryService
                     
                     Logger.Debug("MirrorDiscovery", $"Launcher API detected! Status: {response.StatusCode}");
                     
-                    var mirrorId = GenerateMirrorId(baseUri);
-                    var mirror = CreateLauncherApiPatternMirror(baseUri, mirrorId);
+                    var mirrorId = MirrorSchemaInferrer.GenerateMirrorId(baseUri);
+                    var mirror = MirrorSchemaInferrer.CreateLauncherApiPatternMirror(baseUri, mirrorId);
                     
                     return new DiscoveryResult
                     {
@@ -640,48 +509,6 @@ public class MirrorDiscoveryService
         }
 
         return new DiscoveryResult { Success = false };
-    }
-
-    private static MirrorMeta CreateLauncherApiPatternMirror(Uri baseUri, string mirrorId)
-    {
-        var baseUrl = baseUri.GetLeftPart(UriPartial.Authority);
-        
-        return new MirrorMeta
-        {
-            SchemaVersion = 1,
-            Id = mirrorId,
-            Name = ExtractMirrorName(baseUri),
-            Description = $"Auto-discovered mirror from {baseUri.Host}",
-            Priority = 100,
-            Enabled = true,
-            SourceType = "pattern",
-            Pattern = new MirrorPatternConfig
-            {
-                FullBuildUrl = "{base}/launcher/patches/{os}/{arch}/{branch}/0/{version}.pwr",
-                DiffPatchUrl = "{base}/launcher/patches/{os}/{arch}/{branch}/{from}/{to}.pwr",
-                BaseUrl = baseUrl,
-                VersionDiscovery = new VersionDiscoveryConfig
-                {
-                    Method = "json-api",
-                    Url = "{base}/launcher/patches/{branch}/versions?os_name={os}&arch={arch}",
-                    JsonPath = "items[].version"
-                },
-                BranchMapping = new Dictionary<string, string>
-                {
-                    ["pre-release"] = "prerelease"
-                },
-                DiffBasedBranches = new List<string>()
-            },
-            SpeedTest = new MirrorSpeedTestConfig
-            {
-                PingUrl = baseUrl + "/health"
-            },
-            Cache = new MirrorCacheConfig
-            {
-                IndexTtlMinutes = 30,
-                SpeedTestTtlMinutes = 60
-            }
-        };
     }
 
     /// <summary>
@@ -734,9 +561,9 @@ public class MirrorDiscoveryService
                         
                         // Detected HTML autoindex with .pwr files
                         var basePath = pathPrefix.TrimEnd('/');
-                        var mirrorId = GenerateMirrorId(baseUri);
+                        var mirrorId = MirrorSchemaInferrer.GenerateMirrorId(baseUri);
                         
-                        var mirror = CreateStaticFilesPatternMirror(baseUri, mirrorId, basePath);
+                        var mirror = MirrorSchemaInferrer.CreateStaticFilesPatternMirror(baseUri, mirrorId, basePath);
                         
                         return new DiscoveryResult
                         {
@@ -754,47 +581,6 @@ public class MirrorDiscoveryService
         }
 
         return new DiscoveryResult { Success = false };
-    }
-
-    private static MirrorMeta CreateStaticFilesPatternMirror(Uri baseUri, string mirrorId, string basePath)
-    {
-        var baseUrl = baseUri.GetLeftPart(UriPartial.Authority);
-        var pathPart = string.IsNullOrEmpty(basePath) ? "" : basePath;
-        
-        return new MirrorMeta
-        {
-            SchemaVersion = 1,
-            Id = mirrorId,
-            Name = ExtractMirrorName(baseUri),
-            Description = $"Auto-discovered mirror from {baseUri.Host}",
-            Priority = 100,
-            Enabled = true,
-            SourceType = "pattern",
-            Pattern = new MirrorPatternConfig
-            {
-                FullBuildUrl = $"{{base}}{pathPart}/{{os}}/{{arch}}/{{branch}}/0/{{version}}.pwr",
-                DiffPatchUrl = $"{{base}}{pathPart}/{{os}}/{{arch}}/{{branch}}/{{from}}/{{to}}.pwr",
-                SignatureUrl = $"{{base}}{pathPart}/{{os}}/{{arch}}/{{branch}}/0/{{version}}.pwr.sig",
-                BaseUrl = baseUrl,
-                VersionDiscovery = new VersionDiscoveryConfig
-                {
-                    Method = "html-autoindex",
-                    Url = $"{{base}}{pathPart}/{{os}}/{{arch}}/{{branch}}/0/",
-                    HtmlPattern = @"<a\s+href=""(\d+)\.pwr"">\d+\.pwr</a>\s+\S+\s+\S+\s+(\d+)",
-                    MinFileSizeBytes = 1_048_576
-                },
-                DiffBasedBranches = new List<string>()
-            },
-            SpeedTest = new MirrorSpeedTestConfig
-            {
-                PingUrl = baseUrl + pathPart
-            },
-            Cache = new MirrorCacheConfig
-            {
-                IndexTtlMinutes = 30,
-                SpeedTestTtlMinutes = 60
-            }
-        };
     }
 
     /// <summary>
@@ -856,12 +642,12 @@ public class MirrorDiscoveryService
                     Logger.Debug("MirrorDiscovery", "Found 'hytale' root property - JSON index format detected");
                     
                     // Detected JSON index format
-                    var mirrorId = GenerateMirrorId(baseUri);
+                    var mirrorId = MirrorSchemaInferrer.GenerateMirrorId(baseUri);
                     var mirror = new MirrorMeta
                     {
                         SchemaVersion = 1,
                         Id = mirrorId,
-                        Name = ExtractMirrorName(baseUri),
+                        Name = MirrorSchemaInferrer.ExtractMirrorName(baseUri),
                         Description = $"Auto-discovered mirror from {baseUri.Host}",
                         Priority = 100,
                         Enabled = true,
@@ -870,7 +656,7 @@ public class MirrorDiscoveryService
                         {
                             ApiUrl = apiUrl,
                             RootPath = "hytale",
-                            Structure = DetectJsonStructure(hytaleNode),
+                            Structure = MirrorSchemaInferrer.DetectJsonStructure(hytaleNode),
                             PlatformMapping = new Dictionary<string, string>
                             {
                                 ["darwin"] = "mac"
@@ -984,12 +770,12 @@ public class MirrorDiscoveryService
 
                 if (jsonPath != null)
                 {
-                    var mirrorId = GenerateMirrorId(baseUri);
+                    var mirrorId = MirrorSchemaInferrer.GenerateMirrorId(baseUri);
                     var mirror = new MirrorMeta
                     {
                         SchemaVersion = 1,
                         Id = mirrorId,
-                        Name = ExtractMirrorName(baseUri),
+                        Name = MirrorSchemaInferrer.ExtractMirrorName(baseUri),
                         Description = $"Auto-discovered mirror from {baseUri.Host}",
                         Priority = 100,
                         Enabled = true,
@@ -1094,12 +880,12 @@ public class MirrorDiscoveryService
                         ? path.Replace("/linux/x64/release/0/", "").TrimEnd('/') 
                         : path.Replace("/linux/amd64/release/0/", "").TrimEnd('/');
                     
-                    var mirrorId = GenerateMirrorId(baseUri);
+                    var mirrorId = MirrorSchemaInferrer.GenerateMirrorId(baseUri);
                     var mirror = new MirrorMeta
                     {
                         SchemaVersion = 1,
                         Id = mirrorId,
-                        Name = ExtractMirrorName(baseUri),
+                        Name = MirrorSchemaInferrer.ExtractMirrorName(baseUri),
                         Description = $"Auto-discovered mirror from {baseUri.Host}",
                         Priority = 100,
                         Enabled = true,
@@ -1183,12 +969,12 @@ public class MirrorDiscoveryService
                 {
                     Logger.Debug("MirrorDiscovery", "Found OS directories in listing");
                     
-                    var mirrorId = GenerateMirrorId(baseUri);
+                    var mirrorId = MirrorSchemaInferrer.GenerateMirrorId(baseUri);
                     var mirror = new MirrorMeta
                     {
                         SchemaVersion = 1,
                         Id = mirrorId,
-                        Name = ExtractMirrorName(baseUri),
+                        Name = MirrorSchemaInferrer.ExtractMirrorName(baseUri),
                         Description = $"Auto-discovered mirror from {baseUri.Host}",
                         Priority = 100,
                         Enabled = true,
@@ -1230,60 +1016,5 @@ public class MirrorDiscoveryService
         catch { /* Discovery failed */ }
 
         return new DiscoveryResult { Success = false };
-    }
-
-    private static string GenerateMirrorId(Uri uri)
-    {
-        // Create a safe ID from hostname
-        var host = uri.Host.Replace(".", "-").ToLowerInvariant();
-        // Remove common prefixes/suffixes
-        host = host.Replace("www-", "")
-                   .Replace("-com", "")
-                   .Replace("-org", "")
-                   .Replace("-net", "");
-        return host;
-    }
-
-    private static string ExtractMirrorName(Uri uri)
-    {
-        // Extract readable name from hostname
-        var host = uri.Host;
-        // Remove TLD and www
-        var parts = host.Split('.');
-        if (parts.Length >= 2)
-        {
-            var name = parts[^2]; // Second to last part
-            if (name.Equals("www", StringComparison.OrdinalIgnoreCase) && parts.Length >= 3)
-            {
-                name = parts[^3];
-            }
-            // Capitalize first letter
-            return char.ToUpper(name[0]) + name[1..];
-        }
-        return host;
-    }
-
-    private static string DetectJsonStructure(JsonElement hytaleNode)
-    {
-        // Check if structure is "grouped" (has base/patch sub-keys) or "flat"
-        foreach (var branch in hytaleNode.EnumerateObject())
-        {
-            if (branch.Value.ValueKind == JsonValueKind.Object)
-            {
-                foreach (var platform in branch.Value.EnumerateObject())
-                {
-                    if (platform.Value.ValueKind == JsonValueKind.Object)
-                    {
-                        // Check for "base" or "patch" keys
-                        if (platform.Value.TryGetProperty("base", out _) ||
-                            platform.Value.TryGetProperty("patch", out _))
-                        {
-                            return "grouped";
-                        }
-                    }
-                }
-            }
-        }
-        return "flat";
     }
 }

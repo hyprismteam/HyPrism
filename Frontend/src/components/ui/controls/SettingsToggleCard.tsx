@@ -55,7 +55,9 @@ export function SettingsToggleCard({
           {description && <p className="text-xs text-white/40">{description}</p>}
         </div>
       </div>
-      <Switch checked={checked} onCheckedChange={onCheckedChange} disabled={disabled} />
+      <div onClick={(e) => e.stopPropagation()}>
+        <Switch checked={checked} onCheckedChange={onCheckedChange} disabled={disabled} />
+      </div>
     </div>
   );
 }

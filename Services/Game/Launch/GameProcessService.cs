@@ -42,7 +42,7 @@ public class GameProcessService : IGameProcessService
             _gameProcess.Dispose();
             _gameProcess = null;
 
-            // Уведомляем подписчиков о завершении процесса
+            // Notify subscribers that the game process has exited.
             ProcessExited?.Invoke(this, EventArgs.Empty);
         }
     }

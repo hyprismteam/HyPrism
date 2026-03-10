@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, RefreshCw, Check, User, Edit3, Copy, CheckCircle, Plus, Trash2, Dices, FolderOpen, CopyPlus, Lock } from 'lucide-react';
+import { X, RefreshCw, Check, User, Edit3, Copy, CheckCircle, Plus, Trash2, Dices, FolderOpen, CopyPlus, Lock, Globe, Unplug } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAccentColor } from '../contexts/AccentColorContext';
-import { Button, IconButton } from '@/components/ui/Controls';
+import { Button, IconButton, MenuItemButton } from '@/components/ui/Controls';
 
 import { ipc, Profile } from '@/lib/ipc';
 import { DeleteProfileConfirmationModal } from './modals/DeleteProfileConfirmationModal';
@@ -47,8 +47,8 @@ async function DeleteProfile(id: string): Promise<boolean> {
   const r = await ipc.profile.delete(id);
   return r.success;
 }
-async function SwitchProfile(index: number): Promise<boolean> {
-  const r = await ipc.profile.switch({ index });
+async function SwitchProfile(id: string): Promise<boolean> {
+  const r = await ipc.profile.switch({ id });
   return r.success;
 }
 async function SaveCurrentAsProfile(): Promise<void> {
@@ -98,7 +98,9 @@ export const ProfileEditor: React.FC<ProfileEditorProps> = ({ isOpen, onClose, o
     
     // Wizard active = show wizard in right panel instead of profile details
     const [showWizard, setShowWizard] = useState(false);
-    
+    const [wizardInitialStep, setWizardInitialStep] = useState<'choose-type'|'official-auth' | 'unofficial-name'>('choose-type');
+    const [isCreateMenuOpen, setIsCreateMenuOpen] = useState(false);
+
     // Delete confirmation modal state
     const [deleteConfirmation, setDeleteConfirmation] = useState<{ id: string; name: string } | null>(null);
 
@@ -345,7 +347,7 @@ export const ProfileEditor: React.FC<ProfileEditorProps> = ({ isOpen, onClose, o
             const targetAvatar = profileAvatars[targetProfile.uuid ?? ''];
             setLocalAvatar(targetAvatar || null);
             
-            const success = await SwitchProfile(actualIndex);
+            const success = await SwitchProfile(profileId);
             
             if (success) {
                 // Refresh avatar in the background (don't wait)
@@ -412,7 +414,7 @@ export const ProfileEditor: React.FC<ProfileEditorProps> = ({ isOpen, onClose, o
         const updatedProfiles = await GetProfiles();
         const newProfileIndex = updatedProfiles?.findIndex(p => p.id === profile.id);
         if (newProfileIndex !== undefined && newProfileIndex >= 0) {
-            await SwitchProfile(newProfileIndex);
+            await SwitchProfile(profile.id);
             setUsernameState(profile.name);
             setEditUsername(profile.name);
             setUuid(profile.uuid ?? '');
@@ -481,21 +483,21 @@ export const ProfileEditor: React.FC<ProfileEditorProps> = ({ isOpen, onClose, o
                                 return (
                                     <div
                                         key={profile.id}
-                                        className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm transition-colors group ${
-                                            isCurrentProfile 
-                                                ? '' 
+                                        className={`w-full flex items-center justify-between px-2 py-1.5 rounded-lg text-sm transition-colors group relative overflow-hidden ${
+                                            isCurrentProfile
+                                                ? ''
                                                 : 'text-white/60 hover:text-white hover:bg-white/5'
                                         }`}
                                         style={isCurrentProfile ? { backgroundColor: `${accentColor}20`, color: accentColor } : undefined}
                                     >
                                         <button
                                             onClick={() => !isCurrentProfile && handleSwitchProfile(profile.id)}
-                                            className="flex items-center gap-3 flex-1 min-w-0"
+                                            className="flex items-center gap-3 min-w-0 overflow-hidden text-left flex-1"
                                             disabled={isCurrentProfile}
                                         >
-                                            <div 
+                                            <div
                                                 className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center"
-                                                style={isCurrentProfile 
+                                                style={isCurrentProfile
                                                     ? { borderWidth: '2px', borderColor: accentColor, backgroundColor: profileAvatar ? 'transparent' : `${accentColor}20` }
                                                     : { borderWidth: '1px', borderColor: 'rgba(255,255,255,0.2)', backgroundColor: profileAvatar ? 'transparent' : 'rgba(255,255,255,0.05)' }
                                                 }
@@ -507,17 +509,20 @@ export const ProfileEditor: React.FC<ProfileEditorProps> = ({ isOpen, onClose, o
                                                         alt="Avatar"
                                                     />
                                                 ) : (
-                                                    <User size={14} style={isCurrentProfile ? { color: accentColor } : { color: 'rgba(255,255,255,0.4)' }} />
+                                                    <User size={14} style={isCurrentProfile ? { color: accentColor } : { color: '#ffffff', opacity: 0.4 }} />
                                                 )}
                                             </div>
-                                            <span className={`truncate ${isCurrentProfile ? 'font-medium' : ''}`}>
+                                            <span className={`whitespace-nowrap truncate ${isCurrentProfile ? 'font-medium' : ''}`}>
                                                 {profile.name || 'Unnamed'}
                                                 {isDuplicate && (
                                                     <span className="text-white/30 text-xs ml-1">({profile.folderName?.replace(profile.name + ' ', '')})</span>
                                                 )}
                                             </span>
                                         </button>
-                                        <div className="flex items-center gap-0.5 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        
+                                        <div
+                                            className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                                        >
                                             <IconButton
                                                 size="sm"
                                                 onClick={(e) => handleDuplicateProfile(profile.id, e)}
@@ -548,10 +553,49 @@ export const ProfileEditor: React.FC<ProfileEditorProps> = ({ isOpen, onClose, o
                         </nav>
                         
                         {/* Create New Profile Button at Bottom */}
-                        <div className="px-2 pt-4 border-t border-white/[0.04] mx-2">
+                        <div className="px-2 pt-4 border-t border-white/[0.04] mx-2 relative">
+                            <AnimatePresence>
+                            {isCreateMenuOpen && (
+                                <>
+                                    {/* Backdrop to close menu */}
+                                    <div 
+                                        className="fixed inset-0 z-40" 
+                                        onClick={() => setIsCreateMenuOpen(false)}
+                                    />
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 8, scale: 0.96 }}
+                                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                                        exit={{ opacity: 0, y: 8, scale: 0.96 }}
+                                        transition={{ duration: 0.15, ease: [0.4, 0, 0.2, 1] }}
+                                        className="absolute bottom-[calc(100%+8px)] left-2 right-2 bg-[#1c1c1e] border border-white/[0.08] rounded-xl shadow-xl overflow-hidden z-50 py-1"
+                                    >
+                                        <MenuItemButton
+                                            onClick={() => {
+                                                setWizardInitialStep('official-auth');
+                                                setShowWizard(true);
+                                                setIsCreateMenuOpen(false);
+                                            }}
+                                        >
+                                            <Globe size={18} />
+                                            {t('profiles.wizard.official')}
+                                        </MenuItemButton>
+                                        <MenuItemButton
+                                            onClick={() => {
+                                                setWizardInitialStep('unofficial-name');
+                                                setShowWizard(true);
+                                                setIsCreateMenuOpen(false);
+                                            }}
+                                        >
+                                            <Unplug size={18} />
+                                            {t('profiles.wizard.unofficial')}
+                                        </MenuItemButton>
+                                    </motion.div>
+                                </>
+                            )}
+                            </AnimatePresence>
                             <Button
-                                onClick={handleCreateProfile}
-                                className="w-full border-dashed border-white/20 text-white/40 hover:text-white/60 hover:border-white/40"
+                                onClick={() => setIsCreateMenuOpen(!isCreateMenuOpen)}
+                                className="w-full border-dashed border-white/20 text-white/40 hover:text-white/60 hover:border-white/40 !h-auto py-2.5"
                             >
                                 <Plus size={14} />
                                 <span>{t('profiles.createNew')}</span>
@@ -577,6 +621,7 @@ export const ProfileEditor: React.FC<ProfileEditorProps> = ({ isOpen, onClose, o
                         {/* Content: Wizard or Profile Details */}
                         {showWizard ? (
                             <ProfileCreationWizard
+                                initialStep={wizardInitialStep}
                                 onComplete={handleWizardComplete}
                                 onCancel={handleWizardCancel}
                             />
@@ -584,7 +629,7 @@ export const ProfileEditor: React.FC<ProfileEditorProps> = ({ isOpen, onClose, o
                         <div className="flex-1 p-6 overflow-y-auto">
                             {isLoading ? (
                                 <div className="flex items-center justify-center py-12">
-                                    <RefreshCw size={32} className="animate-spin text-white/40" />
+                                    <RefreshCw size={32} className="animate-spin text-white opacity-40" />
                                 </div>
                             ) : (
                                 <div className="space-y-6">

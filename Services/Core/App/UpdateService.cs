@@ -5,10 +5,10 @@ using System.Runtime.InteropServices;
 using System.Text.Json;
 using HyPrism.Models;
 using HyPrism.Services.Core.Infrastructure;
-using HyPrism.Services.Core.Platform;
 using HyPrism.Services.Game;
 using HyPrism.Services.Game.Instance;
 using HyPrism.Services.Game.Version;
+using static HyPrism.Services.Core.App.LauncherPackageExtractor;
 
 namespace HyPrism.Services.Core.App;
 
@@ -22,8 +22,7 @@ namespace HyPrism.Services.Core.App;
 /// </remarks>
 public class UpdateService : IUpdateService
 {
-    private const string GitHubApiUrl = "https://api.github.com/repos/HyPrismTeam/HyPrism/releases";
-    private const string ReleasesPageUrl = "https://github.com/HyPrismTeam/HyPrism/releases/latest";
+    private const string GitHubApiUrl = "https://api.github.com/repos/hyprismteam/HyPrism/releases";
     
     private static readonly Lazy<string> _launcherVersion = new(() =>
     {
@@ -42,12 +41,11 @@ public class UpdateService : IUpdateService
     });
     
     private readonly HttpClient _httpClient;
-    private readonly ConfigService _configService;
-    private readonly VersionService _versionService;
-    private readonly InstanceService _instanceService;
-    private readonly BrowserService _browserService;
-    private readonly ProgressNotificationService _progressNotificationService;
-    
+    private readonly IConfigService _configService;
+    private readonly IVersionService _versionService;
+    private readonly IInstanceService _instanceService;
+    private readonly IProgressNotificationService _progressNotificationService;
+
     /// <summary>
     /// Raised when a launcher update is available.
     /// </summary>
@@ -65,21 +63,18 @@ public class UpdateService : IUpdateService
     /// <param name="configService">The configuration service.</param>
     /// <param name="versionService">The version service for version checks.</param>
     /// <param name="instanceService">The instance service for path management.</param>
-    /// <param name="browserService">The browser service for opening URLs.</param>
     /// <param name="progressNotificationService">The progress notification service.</param>
     public UpdateService(
         HttpClient httpClient,
-        ConfigService configService,
-        VersionService versionService,
-        InstanceService instanceService,
-        BrowserService browserService,
-        ProgressNotificationService progressNotificationService)
+        IConfigService configService,
+        IVersionService versionService,
+        IInstanceService instanceService,
+        IProgressNotificationService progressNotificationService)
     {
         _httpClient = httpClient;
         _configService = configService;
         _versionService = versionService;
         _instanceService = instanceService;
-        _browserService = browserService;
         _progressNotificationService = progressNotificationService;
 
         // GitHub API requires a User-Agent; keep this safe even if DI didn't configure it.
@@ -174,7 +169,7 @@ public class UpdateService : IUpdateService
     #region Public API
 
     /// <summary>
-    /// Возвращает текущую версию лаунчера.
+    /// Returns the current launcher version string.
     /// </summary>
     public string GetLauncherVersion() => _launcherVersion.Value;
 
@@ -184,14 +179,15 @@ public class UpdateService : IUpdateService
     public static string GetCurrentVersion() => _launcherVersion.Value;
 
     /// <summary>
-    /// Возвращает текущий канал обновлений (release/beta).
+    /// Returns the active update channel for the launcher (<c>"release"</c> or <c>"beta"</c>).
+    /// Falls back to <c>"release"</c> when no channel is configured.
     /// </summary>
     public string GetLauncherBranch() => 
         string.IsNullOrWhiteSpace(_config.LauncherBranch) ? "release" : _config.LauncherBranch;
 
     /// <summary>
-    /// Проверяет наличие обновлений лаунчера на GitHub.
-    /// При наличии вызывает событие LauncherUpdateAvailable.
+    /// Checks GitHub for a newer launcher release and raises <c>LauncherUpdateAvailable</c>
+    /// if one is found. Respects the configured update channel (release vs. beta).
     /// </summary>
     public async Task CheckForLauncherUpdatesAsync()
     {
@@ -433,8 +429,11 @@ public class UpdateService : IUpdateService
     }
 
     /// <summary>
-    /// Принудительно сбрасывает версию latest instance для триггера обновления игры.
+    /// Forces a reset of the stored latest instance version for the given branch,
+    /// triggering a game update check on next launch.
     /// </summary>
+    /// <param name="branch">The branch whose latest version entry should be reset (e.g. <c>"release"</c>).</param>
+    /// <returns><c>true</c> if the reset succeeded; <c>false</c> if no versions are available for the branch.</returns>
     public async Task<bool> ForceUpdateLatestAsync(string branch)
     {
         try
@@ -661,45 +660,6 @@ rm -f ""$0""
             throw new Exception("Could not find executable inside update .zip");
 
         await InstallMacOSBinaryUpdateAsync(raw);
-    }
-
-    private static string? ExtractZipAndFindWindowsExe(string zipPath)
-    {
-        var extractDir = Path.Combine(Path.GetTempPath(), "HyPrism", "launcher-update", "extract", Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(extractDir);
-        ZipFile.ExtractToDirectory(zipPath, extractDir, true);
-
-        var currentExe = Environment.ProcessPath;
-        var preferredName = string.IsNullOrWhiteSpace(currentExe) ? null : Path.GetFileName(currentExe);
-        var exes = Directory.GetFiles(extractDir, "*.exe", SearchOption.AllDirectories);
-
-        if (!string.IsNullOrWhiteSpace(preferredName))
-        {
-            var match = exes.FirstOrDefault(e => string.Equals(Path.GetFileName(e), preferredName, StringComparison.OrdinalIgnoreCase));
-            if (!string.IsNullOrWhiteSpace(match)) return match;
-        }
-
-        return exes.FirstOrDefault();
-    }
-
-    private static string? FindExecutableFile(string rootDir)
-    {
-        try
-        {
-            var files = Directory.GetFiles(rootDir, "*", SearchOption.AllDirectories);
-            var direct = files.FirstOrDefault(f => string.Equals(Path.GetFileName(f), "HyPrism", StringComparison.OrdinalIgnoreCase));
-            if (!string.IsNullOrWhiteSpace(direct)) return direct;
-
-            return files.FirstOrDefault(f =>
-                !f.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) &&
-                !f.EndsWith(".json", StringComparison.OrdinalIgnoreCase) &&
-                !f.EndsWith(".pdb", StringComparison.OrdinalIgnoreCase) &&
-                !f.EndsWith(".txt", StringComparison.OrdinalIgnoreCase));
-        }
-        catch
-        {
-            return null;
-        }
     }
 
     private static void TryPickBestAssetForCurrentPlatform(JsonElement release, out string? downloadUrl, out string? assetName)
@@ -1216,7 +1176,7 @@ rm -f ""$0""
             var archivePath = Path.Combine(wrapperDir, assetName);
 
             // Download archive
-            _progressNotificationService.SendProgress("wrapper-install", 0, "Downloading HyPrism...", null, 0, 100);
+            _progressNotificationService.ReportDownloadProgress("wrapper-install", 0, "Downloading HyPrism...", null, 0, 100);
             
             var response = await _httpClient.GetAsync(downloadUrl, HttpCompletionOption.ResponseHeadersRead);
             if (!response.IsSuccessStatusCode)
@@ -1231,7 +1191,7 @@ rm -f ""$0""
                 await contentStream.CopyToAsync(fileStream);
             }
 
-            _progressNotificationService.SendProgress("wrapper-install", 50, "Extracting...", null, 50, 100);
+            _progressNotificationService.ReportDownloadProgress("wrapper-install", 50, "Extracting...", null, 50, 100);
 
             // Extract archive
             if (assetName.EndsWith(".tar.gz"))
@@ -1269,13 +1229,13 @@ rm -f ""$0""
             // Cleanup archive
             File.Delete(archivePath);
 
-            _progressNotificationService.SendProgress("wrapper-install", 100, "Installation complete", null, 100, 100);
+            _progressNotificationService.ReportDownloadProgress("wrapper-install", 100, "Installation complete", null, 100, 100);
             return true;
         }
         catch (Exception ex)
         {
             Console.WriteLine($"WrapperInstallLatest error: {ex.Message}");
-            _progressNotificationService.SendErrorEvent("Wrapper Installation Error", ex.Message, null);
+            _progressNotificationService.ReportError("Wrapper Installation Error", ex.Message, null);
             return false;
         }
     }
@@ -1314,33 +1274,6 @@ rm -f ""$0""
         {
             Console.WriteLine($"WrapperLaunch error: {ex.Message}");
             return false;
-        }
-    }
-
-    /// <summary>
-    /// Helper: Extract .tar.gz archive (for Linux/Mac releases).
-    /// </summary>
-    private static async Task ExtractTarGz(string archivePath, string destinationDir)
-    {
-        var process = new Process
-        {
-            StartInfo = new ProcessStartInfo
-            {
-                FileName = "tar",
-                Arguments = $"-xzf \"{archivePath}\" -C \"{destinationDir}\"",
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true
-            }
-        };
-
-        process.Start();
-        await process.WaitForExitAsync();
-
-        if (process.ExitCode != 0)
-        {
-            var error = await process.StandardError.ReadToEndAsync();
-            throw new Exception($"Failed to extract tar.gz: {error}");
         }
     }
 

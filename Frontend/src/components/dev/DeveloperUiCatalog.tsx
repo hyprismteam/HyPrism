@@ -230,14 +230,14 @@ export function DeveloperUiCatalog() {
 
             <div className="mt-3 space-y-2">
               <SettingsToggleCard
-                icon={<Power size={16} className="text-white/70" />}
+                icon={<Power size={16} className="text-white opacity-70" />}
                 title="Toggle setting"
                 description="Description of the setting"
                 checked={switchOn}
                 onCheckedChange={setSwitchOn}
               />
               <SettingsToggleCard
-                icon={<Wifi size={16} className="text-white/70" />}
+                icon={<Wifi size={16} className="text-white opacity-70" />}
                 title="With badge"
                 description="A toggle card with a badge"
                 badge={
@@ -250,7 +250,7 @@ export function DeveloperUiCatalog() {
                 onCheckedChange={(v) => setSwitchOn(!v)}
               />
               <SettingsToggleCard
-                icon={<Settings size={16} className="text-white/70" />}
+                icon={<Settings size={16} className="text-white opacity-70" />}
                 title="Disabled"
                 description="This setting is disabled"
                 checked={false}

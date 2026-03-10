@@ -34,17 +34,19 @@ public class HytaleVersionSource : IVersionSource
     private readonly HttpClient _httpClient;
     private readonly HytaleAuthService _authService;
     private readonly IConfigService _configService;
+    private readonly IProfileService _profileService;
     private readonly SemaphoreSlim _fetchLock = new(1, 1);
 
     // In-memory cache: cacheKey -> (timestamp, response)
     private readonly Dictionary<string, (DateTime CachedAt, OfficialPatchesResponse Response)> _cache = new();
 
-    public HytaleVersionSource(string appDir, HttpClient httpClient, HytaleAuthService authService, IConfigService configService)
+    public HytaleVersionSource(string appDir, HttpClient httpClient, HytaleAuthService authService, IConfigService configService, IProfileService profileService)
     {
         _appDir = appDir;
         _httpClient = httpClient;
         _authService = authService;
         _configService = configService;
+        _profileService = profileService;
     }
 
     #region IVersionSource Implementation
@@ -71,12 +73,12 @@ public class HytaleVersionSource : IVersionSource
             return true;
 
         // Check config for any official profiles
-        var config = _configService.Configuration;
-        if (config.Profiles == null || config.Profiles.Count == 0)
+        var profiles = _profileService.GetProfiles();
+        if (!profiles.Any(p => p.IsOfficial))
             return false;
 
         // Check if any profile is official and has session file
-        foreach (var profile in config.Profiles.Where(p => p.IsOfficial))
+        foreach (var profile in profiles.Where(p => p.IsOfficial))
         {
             var profileDir = UtilityService.GetProfileFolderPath(_appDir, profile, createIfMissing: false, migrateLegacyByName: true);
             var sessionPath = Path.Combine(profileDir, "hytale_session.json");

@@ -73,8 +73,8 @@ export const DockMenu: React.FC<DockMenuProps> = ({ activePage, onPageChange, is
               <motion.div
                 whileHover={{ scale: 1.15, y: -1 }}
                 whileTap={{ scale: 0.9 }}
-                className="relative z-10 transition-colors duration-200"
-                style={{ color: isActive ? accentColor : 'rgba(255,255,255,0.45)' }}
+                className="relative z-10 transition-[color,opacity] duration-200"
+                style={{ color: isActive ? accentColor : '#ffffff', opacity: isActive ? 1 : 0.45 }}
               >
                 <Icon size={20} />
               </motion.div>

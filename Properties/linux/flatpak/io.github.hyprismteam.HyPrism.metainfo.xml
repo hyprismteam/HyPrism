@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.hyprismteam.HyPrism</id>
+  <launchable type="desktop-id">io.github.hyprismteam.HyPrism.desktop</launchable>
+  <name>HyPrism</name>
+  <summary>Cross-platform Hytale launcher and mod manager</summary>
+  <developer_name>HyPrism Team</developer_name>
+
+  <content_rating type="oars-1.0" />
+    <screenshots>
+    <screenshot type="default">
+      <caption>HyPrism launcher dashboard</caption>
+      <image>https://raw.githubusercontent.com/hyprismteam/HyPrism/refs/heads/dev/Frontend/public/preview_launcher.png</image>
+    </screenshot>
+    <screenshot>
+      <image>
+        https://raw.githubusercontent.com/hyprismteam/HyPrism/refs/heads/dev/Frontend/public/instances.png</image>
+    </screenshot>
+    <screenshot>
+      <image>
+        https://raw.githubusercontent.com/hyprismteam/HyPrism/refs/heads/dev/Frontend/public/news.png</image>
+    </screenshot>
+    <screenshot>
+      <image>
+        https://raw.githubusercontent.com/hyprismteam/HyPrism/refs/heads/dev/Frontend/public/profiles.png</image>
+    </screenshot>
+    <screenshot>
+      <image>
+        https://raw.githubusercontent.com/hyprismteam/HyPrism/refs/heads/dev/Frontend/public/settings.png</image>
+    </screenshot>
+  </screenshots>
+
+  <description>
+    <p>
+      HyPrism is an open-source launcher and mod manager for Hytale with instance management,
+      CurseForge mod integration, and streamlined updates.
+    </p>
+    <ul>
+      <li>Multiple isolated game instances</li>
+      <li>Integrated mod browser and installer</li>
+      <li>Per-instance mods and user data</li>
+      <li>Custom auth support and profile management</li>
+    </ul>
+  </description>
+
+  <branding>
+    <color type="primary" scheme_preference="light">#23b689</color>
+    <color type="primary" scheme_preference="dark">#212122</color>
+  </branding>
+  <project_license>GPL-3.0</project_license>
+  <metadata_license>CC0-1.0</metadata_license>
+
+  <url type="homepage">https://hyprismteam.github.io/hyprism-site/</url>
+  <url type="bugtracker">https://github.com/hyprismteam.HyPrism/HyPrism/issues</url>
+  <developer_name>HyPrism Team</developer_name>
+
+  <categories>
+    <category>Game</category>
+    <category>Utility</category>
+  </categories>
+
+  <keywords>
+    <keyword>hytale</keyword>
+    <keyword>launcher</keyword>
+    <keyword>mods</keyword>
+    <keyword>instances</keyword>
+  </keywords>
+
+  <releases>
+    <release version="v3.0.1" date="2026-02-23">
+      <url>https://github.com/hyprismteam/HyPrism/releases/tag/v3.0.1</url>
+      <description>
+        <p>
+          New Features
+          - Completely redesigned Dashboard with new layout and visual style
+          - Added Instance System replacing the old version-based approach
+          - New Instance Creator modal allowing custom instance names and icons
+          - New Instance Editor modal for renaming and changing instance icons
+          - Smooth wallpaper transitions when changing background modes
+          - Added Browse tab in Instances page for discovering and downloading mods from CurseForge
+          - New Worlds tab for managing game world saves
+          - New Logs tab in setting for viewing instance console output
+          - Added GPU selection dropdown in Settings for choosing preferred graphics adapter
+          - Added instance validation badges showing installation and update status
+          - Play button now dynamically shows Download when instance is not installed
+          - Added warning badge above instance logo for outdated or invalid instances
+          - Browse tab is now disabled for uninstalled instances with appropriate placeholder
+          - Java config menu
+          - Added ram allocation 
+          - Mirror system for archive purposes
+          - Redesign about menu
+          - New redesign icon
+          - We got a new website re design https://hyprismteam.github.io/hyprism-site/ (THANKS AARAV)
+
+          Improvements
+          - Removed unnecessary animations on instance cards for smoother experience
+          - Fixed instance name reactivity when selecting different instances
+          - Added fallback display name for instances with empty names
+          - Improved authentication server cards by removing glass shadows
+          - Fixed empty screen states with proper placeholder messages
+          - Preserved user scroll position when switching between instances
+          - Updated all localization files with new translation keys
+          - Launch game after download option added
+          - Added option for importing pwr
+
+          Features
+          - Added official Hytale Authentication support
+          - Implemented Dual Authentication flow for playing on official servers while using custom auth
+          - Added CurseForge API integration for mod discovery and installation
+          - Added GPU preference system allowing selection between integrated and discrete graphics
+          - Implemented deep instance validation checking all critical game components
+          - Added ability to detect and restore patched client binaries when switching to official servers
+          - Enhanced session management to ensure fresh game tokens before launch
+
+          Instance System
+          - Replaced version-dependent system with instance-dependent architecture
+          - Each instance now maintains its own configuration, mods, and game files
+          - Added per-instance authentication session storage
+          - Implemented instance validation with detailed status reporting
+          - Added support for migrating legacy session files to new profile-based storage
+
+          Nerd news
+          - Added a Developer tab “UI Catalog” (Settings → Developer) that showcases current UI primitives and common launcher button archetypes, with each sample labeled by its primitive name.
+          - Introduced [AccentSegmentedControl](vscode-file://vscode-app/Applications/Visual%20Studio%20Code.app/Contents/Resources/app/out/vs/code/electron-browser/workbench/workbench.html) (accent-reactive segmented tabs) and migrated both Logs filters and Instances tabs to use the shared primitive for consistent styling/behavior.
+          - Migrated from Photino/WebKit to Electron.NET for better cross-platform compatibility
+          - Reorganized backend services into Core, Game, and User subdirectories
+          - Refactored IPC system with dedicated handlers for Auth, Config, Console, FileDialog, Game, Instance, Localization, Mod, News, Profile, Settings, System, and Window operations
+          - Added IpcRouter and IpcHelpers for improved IPC architecture
+          - Created new ProfileService with cleaner separation of concerns
+          - Split monolithic App component into separate page components for better organization
+          - Reorganized frontend structure with dedicated pages, modals, and layout folders
+          - Implemented multi-platform builder for Windows, macOS, and Linux
+          - Added electron-builder configuration for automated packaging
+          - Improved build scripts for cross-platform compilation
+          - Updated flatpak runtime to 25
+        </p>
+      </description>
+    </release>
+  </releases>
+
+</component>

@@ -250,7 +250,7 @@ export const EditInstanceModal: React.FC<EditInstanceModalProps> = ({
                   {iconPreview ? (
                     <img src={iconPreview} alt="Instance icon" className="w-full h-full object-cover" />
                   ) : (
-                    <Image size={22} className="text-white/30" />
+                    <Image size={22} className="text-white opacity-30" />
                   )}
                 </div>
               </div>
@@ -290,7 +290,7 @@ export const EditInstanceModal: React.FC<EditInstanceModalProps> = ({
                     style={{ borderColor: isBranchOpen ? `${accentColor}50` : undefined }}
                   >
                     <div className="flex items-center gap-2">
-                      <GitBranch size={14} className="text-white/40" />
+                      <GitBranch size={14} className="text-white opacity-40" />
                       <span className="font-medium">{branchLabel}</span>
                     </div>
                     <ChevronDown

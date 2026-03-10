@@ -1,9 +1,9 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { 
-  HardDrive, FolderOpen, Trash2, Upload, 
-  Check, Plus, Package, MoreVertical, Play, X, Edit2, 
+import {
+  HardDrive, FolderOpen, Trash2, Upload,
+  Check, Plus, Package, MoreVertical, Play, X, Edit2,
   Download, AlertCircle, AlertTriangle, Loader2
 } from 'lucide-react';
 import { useAccentColor } from '../contexts/AccentColorContext';
@@ -26,39 +26,46 @@ import { ContentTab } from '@/pages/instances/ContentTab';
 import { WorldsTab } from '@/pages/instances/WorldsTab';
 import { BulkUpdateModal, BulkDeleteModal } from '@/pages/instances/BulkOperationModals';
 
-// ============================================================================
-// Props
-// ============================================================================
+// #region Props
 
+/**
+ * Props for the {@link InstancesPage} component.
+ */
 interface InstancesPageProps {
   onInstanceDeleted?: () => void;
   onInstanceSelected?: () => void;
   isGameRunning?: boolean;
-  runningBranch?: string;
-  runningVersion?: number;
+  runningInstanceId?: string;
   onStopGame?: () => void;
   activeTab?: InstanceTab;
   onTabChange?: (tab: InstanceTab) => void;
   isDownloading?: boolean;
-  downloadingBranch?: string;
-  downloadingVersion?: number;
+  downloadingInstanceId?: string;
   downloadState?: 'downloading' | 'extracting' | 'launching';
   progress?: number;
   downloaded?: number;
   total?: number;
+  speed?: number;
   launchState?: string;
   launchDetail?: string;
   canCancel?: boolean;
   onCancelDownload?: () => void;
-  onLaunchInstance?: (branch: string, version: number, instanceId?: string) => void;
+  onLaunchInstance?: (instanceId: string) => void;
   officialServerBlocked?: boolean;
   hasDownloadSources?: boolean;
 }
 
-// ============================================================================
-// Component
-// ============================================================================
+// #endregion
 
+// #region Component
+
+/**
+ * Full-page component that displays the installed Hytale instances list,
+ * mod management tabs (content/browse/worlds), download progress overlays,
+ * and all associated modals.
+ *
+ * @param props - See {@link InstancesPageProps}.
+ */
 export const InstancesPage: React.FC<InstancesPageProps> = (props) => {
   const {
     progress = 0,
@@ -80,26 +87,24 @@ export const InstancesPage: React.FC<InstancesPageProps> = (props) => {
     onInstanceDeleted: props.onInstanceDeleted,
     onInstanceSelected: props.onInstanceSelected,
     isGameRunning: props.isGameRunning,
-    runningBranch: props.runningBranch,
-    runningVersion: props.runningVersion,
+    runningInstanceId: props.runningInstanceId,
     onStopGame: props.onStopGame,
     activeTab: props.activeTab,
     onTabChange: props.onTabChange,
     isDownloading: props.isDownloading,
-    downloadingBranch: props.downloadingBranch,
-    downloadingVersion: props.downloadingVersion,
+    downloadingInstanceId: props.downloadingInstanceId,
     onLaunchInstance: props.onLaunchInstance,
   });
 
   // Render instance icon
   const renderInstanceIcon = (inst: InstalledVersionInfo, size: number = 18) => {
     const customIcon = page.instanceIcons[inst.id];
-    
+
     if (customIcon) {
       return (
-        <img 
-          src={customIcon} 
-          alt="" 
+        <img
+          src={customIcon}
+          alt=""
           className="w-full h-full object-cover rounded-lg"
           onError={() => {
             page.setInstanceIcons(prev => {
@@ -111,7 +116,7 @@ export const InstancesPage: React.FC<InstancesPageProps> = (props) => {
         />
       );
     }
-    
+
     const versionLabel = inst.version > 0 ? `v${inst.version}` : '?';
     return <span className="font-bold" style={{ color: accentColor, fontSize: size * 0.8 }}>{versionLabel}</span>;
   };
@@ -226,9 +231,8 @@ export const InstancesPage: React.FC<InstancesPageProps> = (props) => {
                     <div className="flex items-center gap-2">
                       {/* Play/Stop/Download Button */}
                       {(() => {
-                        const runningIdentityKnown = !!page.runningBranch && page.runningVersion !== undefined;
-                        const isThisRunning = page.isGameRunning && (!runningIdentityKnown || (page.runningBranch === page.selectedInstance?.branch && page.runningVersion === page.selectedInstance?.version));
-                        const isThisDownloading = page.isDownloading && page.downloadingBranch === page.selectedInstance?.branch && page.downloadingVersion === page.selectedInstance?.version;
+                        const isThisRunning = page.isGameRunning && (!page.runningInstanceId || page.runningInstanceId === page.selectedInstance?.id);
+                        const isThisDownloading = page.isDownloading && page.downloadingInstanceId === page.selectedInstance?.id;
                         const isInstalled = page.selectedInstance?.validationStatus === 'Valid';
 
                         if (isThisRunning) {
@@ -249,7 +253,9 @@ export const InstancesPage: React.FC<InstancesPageProps> = (props) => {
                               style={{ background: 'rgba(255,255,255,0.05)' }}
                               onClick={() => canCancel && onCancelDownload?.()}
                             >
-                              <div className="absolute inset-0 transition-all duration-300" style={{ width: `${Math.min(progress, 100)}%`, backgroundColor: `${accentColor}40` }} />
+                              {total > 0 && (
+                                <div className="absolute inset-0 transition-all duration-300" style={{ width: `${Math.min(progress, 100)}%`, backgroundColor: `${accentColor}40` }} />
+                              )}
                               <div className="relative z-10 flex items-center gap-2">
                                 <Loader2 size={14} className="animate-spin text-white" />
                                 <span className="text-sm font-bold text-white">{stateLabel}</span>
@@ -259,7 +265,7 @@ export const InstancesPage: React.FC<InstancesPageProps> = (props) => {
                           );
                         }
 
-                        if (page.isGameRunning && runningIdentityKnown) {
+                        if (page.isGameRunning && !!page.runningInstanceId) {
                           return (
                             <LauncherActionButton variant="play" disabled className="h-10 px-4 text-sm">
                               <Play size={16} fill="currentColor" />
@@ -272,10 +278,10 @@ export const InstancesPage: React.FC<InstancesPageProps> = (props) => {
                           const anotherDownloading = page.isDownloading && !isThisDownloading;
                           const downloadDisabled = anotherDownloading || !hasDownloadSources;
                           return (
-                            <LauncherActionButton 
-                              variant="download" 
-                              onClick={() => page.selectedInstance && !downloadDisabled && page.handleLaunchInstance(page.selectedInstance)} 
-                              disabled={downloadDisabled} 
+                            <LauncherActionButton
+                              variant="download"
+                              onClick={() => page.selectedInstance && !downloadDisabled && page.handleLaunchInstance(page.selectedInstance)}
+                              disabled={downloadDisabled}
                               className="h-10 px-4 rounded-xl text-sm"
                               title={!hasDownloadSources ? t('instances.noDownloadSources') : undefined}
                             >
@@ -352,7 +358,7 @@ export const InstancesPage: React.FC<InstancesPageProps> = (props) => {
 
                   {/* Download Progress */}
                   <AnimatePresence>
-                    {page.isDownloading && page.downloadingBranch === page.selectedInstance?.branch && page.downloadingVersion === page.selectedInstance?.version && launchState !== 'complete' && (
+                    {page.isDownloading && page.downloadingInstanceId === page.selectedInstance?.id && launchState !== 'complete' && (
                       <motion.div
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: 'auto' }}
@@ -361,20 +367,33 @@ export const InstancesPage: React.FC<InstancesPageProps> = (props) => {
                         className={`px-4 py-2 border-b border-white/[0.06] flex-shrink-0 ${canCancel ? 'cursor-pointer' : ''}`}
                         onClick={() => canCancel && onCancelDownload?.()}
                       >
-                        <div className="h-1.5 w-full bg-[#1c1c1e] rounded-full overflow-hidden mb-1.5">
-                          <div className="h-full rounded-full transition-all duration-300" style={{ width: `${Math.min(progress, 100)}%`, backgroundColor: accentColor }} />
-                        </div>
-                        <div className="flex justify-between items-center text-[10px]">
-                          <span className="text-white/60 truncate max-w-[280px]">
-                            {launchDetail ? (t(launchDetail) !== launchDetail ? t(launchDetail).replace('{0}', `${Math.min(Math.round(progress), 100)}`) : launchDetail) : (() => { const k = `launch.state.${launchState}`; const v = t(k); return v !== k ? v : (launchState || t('launch.state.preparing')); })()}
-                          </span>
-                          <div className="flex items-center gap-2">
-                            <span className="text-white/50 font-mono">
-                              {total > 0 ? `${formatBytes(downloaded)} / ${formatBytes(total)}` : `${Math.min(Math.round(progress), 100)}%`}
-                            </span>
-                            {canCancel && <span className="text-red-400 hover:text-red-300 transition-colors text-[9px] font-bold uppercase"><X size={10} className="inline" /> {t('main.cancel')}</span>}
-                          </div>
-                        </div>
+                        {total > 0 ? (
+                          <>
+                            <div className="h-1.5 w-full bg-[#1c1c1e] rounded-full overflow-hidden mb-1.5">
+                              <div className="h-full rounded-full transition-all duration-300" style={{ width: `${Math.min(progress, 100)}%`, backgroundColor: accentColor }} />
+                            </div>
+                            <div className="flex justify-between items-center text-[10px]">
+                              <span className="text-white/60 truncate max-w-[280px]">
+                                {launchDetail ? (t(launchDetail) !== launchDetail ? t(launchDetail).replace('{0}', `${Math.min(Math.round(progress), 100)}`) : launchDetail) : (() => { const k = `launch.state.${launchState}`; const v = t(k); return v !== k ? v : (launchState || t('launch.state.preparing')); })()}
+                              </span>
+                              <div className="flex items-center gap-2">
+                                <span className="text-white/50 font-mono">{`${formatBytes(downloaded)} / ${formatBytes(total)}`}</span>
+                                {canCancel && <span className="text-red-400 hover:text-red-300 transition-colors text-[9px] font-bold uppercase"><X size={10} className="inline" /> {t('main.cancel')}</span>}
+                              </div>
+                            </div>
+                          </>
+                        ) : (
+                            <div className="flex justify-between items-center text-[10px]">
+                              <div className="flex items-center gap-2">
+                                <Loader2 size={12} className="animate-spin text-white opacity-70" />
+                                <span className="text-white/60">{launchDetail ? (t(launchDetail) !== launchDetail ? t(launchDetail) : launchDetail) : (launchState || t('launch.state.preparing'))}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-white/50 font-mono">{props.speed && props.speed > 0 ? `${formatBytes(downloaded)} • ${formatBytes(props.speed)}/s` : `${formatBytes(downloaded)}`}</span>
+                                {canCancel && <span className="text-red-400 hover:text-red-300 transition-colors text-[9px] font-bold uppercase"><X size={10} className="inline" /> {t('main.cancel')}</span>}
+                              </div>
+                            </div>
+                        )}
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -422,8 +441,6 @@ export const InstancesPage: React.FC<InstancesPageProps> = (props) => {
                       {page.selectedInstance && (
                         <InlineModBrowser
                           currentInstanceId={page.selectedInstance.id}
-                          currentBranch={page.selectedInstance.branch}
-                          currentVersion={page.selectedInstance.version}
                           installedModIds={new Set(page.modManager.installedMods.map(m => m.curseForgeId ? `cf-${m.curseForgeId}` : m.id))}
                           installedFileIds={new Set(page.modManager.installedMods.filter(m => m.fileId).map(m => String(m.fileId)))}
                           onModsInstalled={() => page.modManager.loadInstalledMods()}
@@ -460,7 +477,7 @@ export const InstancesPage: React.FC<InstancesPageProps> = (props) => {
               </>
             ) : page.instances.length === 0 ? (
               <div className="flex-1 flex flex-col items-center justify-center rounded-2xl glass-panel-static-solid">
-                <HardDrive size={64} className="mb-4 text-white/20" />
+                <HardDrive size={64} className="mb-4 text-white opacity-20" />
                 <p className="text-xl font-medium text-white/70">{t('instances.noInstances')}</p>
                 <p className="text-sm mt-2 text-white/40 text-center max-w-xs">{t('instances.createInstanceHint')}</p>
                 <Button variant="primary" onClick={() => page.setShowCreateModal(true)} className="mt-6 px-6 py-3 font-bold shadow-lg">
@@ -562,3 +579,5 @@ export const InstancesPage: React.FC<InstancesPageProps> = (props) => {
     </motion.div>
   );
 };
+
+// #endregion

@@ -17,15 +17,7 @@ public class ModService : IModService
 {
     private readonly HttpClient _httpClient;
     private readonly string _appDir;
-    
-    // CurseForge API base URL
-    private const string CfApiBaseUrl = "https://api.curseforge.com";
-    
-    // CF Website Base URL
-    private const string CfBaseUrl = "https://www.curseforge.com";
-
-    // Hytale game ID on CurseForge
-    private const int HytaleGameId = 70216;
+    private readonly CurseForgeClient _cfClient;
 
     // Lock for mod manifest operations to prevent concurrent writes
     private static readonly SemaphoreSlim _modManifestLock = new(1, 1);
@@ -57,157 +49,39 @@ public class ModService : IModService
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase
     };
 
-    private readonly ConfigService _configService;
-    private readonly InstanceService _instanceService;
-    private readonly ProgressNotificationService _progressNotificationService;
-    
-    /// <summary>
-    /// Gets the CurseForge API key from configuration.
-    /// </summary>
-    private string CurseForgeApiKey => _configService.Configuration.CurseForgeKey;
+    private readonly IConfigService _configService;
+    private readonly IInstanceService _instanceService;
+    private readonly IProgressNotificationService _progressNotificationService;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ModService"/> class.
     /// </summary>
     public ModService(
-        HttpClient httpClient, 
+        HttpClient httpClient,
         string appDir,
-        ConfigService configService,
-        InstanceService instanceService,
-        ProgressNotificationService progressNotificationService)
+        IConfigService configService,
+        IInstanceService instanceService,
+        IProgressNotificationService progressNotificationService)
     {
         _httpClient = httpClient;
         _appDir = appDir;
         _configService = configService;
         _instanceService = instanceService;
         _progressNotificationService = progressNotificationService;
-    }
-    
-    /// <summary>
-    /// Creates an HttpRequestMessage for CurseForge API with proper headers.
-    /// </summary>
-    private HttpRequestMessage CreateCurseForgeRequest(HttpMethod method, string endpoint)
-    {
-        var request = new HttpRequestMessage(method, $"{CfApiBaseUrl}{endpoint}");
-        request.Headers.Add("x-api-key", CurseForgeApiKey);
-        request.Headers.Add("Accept", "application/json");
-        return request;
-    }
-    
-    /// <summary>
-    /// Validates that the CurseForge API key is available.
-    /// </summary>
-    private bool HasApiKey()
-    {
-        if (!string.IsNullOrEmpty(CurseForgeApiKey)) return true;
-        Logger.Warning("ModService", "CurseForge API key is not configured");
-        return false;
-    }
-
-    private async Task<CurseForgeFile?> ResolveCurseForgeFileAsync(string modId, string? fileId)
-    {
-        if (!string.IsNullOrWhiteSpace(fileId))
-        {
-            var fileEndpoint = $"/v1/mods/{modId}/files/{fileId}";
-            using var fileRequest = CreateCurseForgeRequest(HttpMethod.Get, fileEndpoint);
-            using var fileResponse = await _httpClient.SendAsync(fileRequest);
-
-            if (fileResponse.IsSuccessStatusCode)
-            {
-                var fileJson = await fileResponse.Content.ReadAsStringAsync();
-                var cfFileResp = JsonSerializer.Deserialize<CurseForgeFileResponse>(fileJson, _jsonOptions);
-                if (cfFileResp?.Data != null)
-                    return cfFileResp.Data;
-            }
-
-            // Specific fileId not found (deleted / expired) — fall back to the latest available file.
-            Logger.Warning("ModService",
-                $"Get file info returned {fileResponse.StatusCode} for mod {modId} file {fileId}, falling back to latest file");
-        }
-
-        // Fetch the most recent file for this mod.
-        var filesEndpoint = $"/v1/mods/{modId}/files?pageSize=1";
-        using var filesRequest = CreateCurseForgeRequest(HttpMethod.Get, filesEndpoint);
-        using var filesResponse = await _httpClient.SendAsync(filesRequest);
-
-        if (!filesResponse.IsSuccessStatusCode)
-        {
-            Logger.Warning("ModService", $"Get latest mod file returned {filesResponse.StatusCode} for mod {modId}");
-            return null;
-        }
-
-        var filesJson = await filesResponse.Content.ReadAsStringAsync();
-        var filesResp = JsonSerializer.Deserialize<CurseForgeFilesResponse>(filesJson, _jsonOptions);
-        var latest = filesResp?.Data?.FirstOrDefault();
-        if (latest != null && !string.IsNullOrWhiteSpace(fileId))
-        {
-            Logger.Info("ModService",
-                $"Resolved mod {modId} to latest file {latest.Id} ('{latest.FileName}') instead of requested file {fileId}");
-        }
-        return latest;
-    }
-
-    private static string? BuildEdgeCdnFallbackUrl(string fileId, string? fileName)
-    {
-        if (!int.TryParse(fileId, out var numericFileId) || numericFileId <= 0)
-            return null;
-
-        if (string.IsNullOrWhiteSpace(fileName))
-            return null;
-
-        var firstPart = numericFileId / 1000;
-        var secondPart = numericFileId % 1000;
-        var encodedFileName = Uri.EscapeDataString(fileName.Trim());
-        return $"https://edge.forgecdn.net/files/{firstPart}/{secondPart}/{encodedFileName}";
-    }
-
-    private async Task<string?> ResolveDownloadUrlAsync(string modId, string fileId, string? directUrl, string? fileName)
-    {
-        if (!string.IsNullOrWhiteSpace(directUrl))
-            return directUrl;
-
-        var endpoint = $"/v1/mods/{modId}/files/{fileId}/download-url";
-        using var request = CreateCurseForgeRequest(HttpMethod.Get, endpoint);
-        using var response = await _httpClient.SendAsync(request);
-
-        if (!response.IsSuccessStatusCode)
-        {
-            var edgeFallbackOnError = BuildEdgeCdnFallbackUrl(fileId, fileName);
-            if (!string.IsNullOrWhiteSpace(edgeFallbackOnError))
-            {
-                Logger.Info("ModService", $"Falling back to deterministic CDN URL for mod {modId} file {fileId}");
-                return edgeFallbackOnError;
-            }
-
-            return null;
-        }
-
-        var json = await response.Content.ReadAsStringAsync();
-        var downloadUrlResp = JsonSerializer.Deserialize<CurseForgeDownloadUrlResponse>(json, _jsonOptions);
-        if (!string.IsNullOrWhiteSpace(downloadUrlResp?.Data))
-            return downloadUrlResp.Data;
-
-        var edgeFallback = BuildEdgeCdnFallbackUrl(fileId, fileName);
-        if (!string.IsNullOrWhiteSpace(edgeFallback))
-        {
-            Logger.Info("ModService", $"Download-url payload missing, using deterministic CDN URL for mod {modId} file {fileId}");
-            return edgeFallback;
-        }
-
-        return null;
+        _cfClient = new CurseForgeClient(httpClient, () => _configService.Configuration.CurseForgeKey);
     }
     
     /// <inheritdoc/>
     public async Task<ModSearchResult> SearchModsAsync(string query, int page, int pageSize, string[] categories, int sortField, int sortOrder)
     {
-        if (!HasApiKey())
+        if (!_cfClient.HasApiKey())
             return new ModSearchResult { Mods = new List<ModInfo>(), TotalCount = 0 };
 
         try
         {
             var index = page * pageSize;
             var sortOrderStr = sortOrder == 0 ? "asc" : "desc";
-            var endpoint = $"/v1/mods/search?gameId={HytaleGameId}" +
+            var endpoint = $"/v1/mods/search?gameId={CurseForgeClient.HytaleGameId}" +
                            $"&searchFilter={Uri.EscapeDataString(query)}" +
                            $"&index={index}&pageSize={pageSize}" +
                            $"&sortField={sortField}&sortOrder={sortOrderStr}";
@@ -219,7 +93,7 @@ public class ModService : IModService
                     endpoint += $"&categoryId={categoryId}";
             }
             
-            using var request = CreateCurseForgeRequest(HttpMethod.Get, endpoint);
+            using var request = _cfClient.CreateRequest(HttpMethod.Get, endpoint);
             using var response = await _httpClient.SendAsync(request);
             
             if (!response.IsSuccessStatusCode)
@@ -252,13 +126,13 @@ public class ModService : IModService
     /// <inheritdoc/>
     public async Task<List<ModCategory>> GetModCategoriesAsync()
     {
-        if (!HasApiKey())
+        if (!_cfClient.HasApiKey())
             return GetFallbackCategories();
         
         try
         {
-            var endpoint = $"/v1/categories?gameId={HytaleGameId}";
-            using var request = CreateCurseForgeRequest(HttpMethod.Get, endpoint);
+            var endpoint = $"/v1/categories?gameId={CurseForgeClient.HytaleGameId}";
+            using var request = _cfClient.CreateRequest(HttpMethod.Get, endpoint);
             using var response = await _httpClient.SendAsync(request);
             
             if (!response.IsSuccessStatusCode)
@@ -335,12 +209,12 @@ public class ModService : IModService
     /// <inheritdoc/>
     public async Task<bool> InstallModFileToInstanceAsync(string slugOrId, string fileIdOrVersion, string instancePath, Action<string, string>? onProgress = null)
     {
-        if (!HasApiKey()) return false;
+        if (!_cfClient.HasApiKey()) return false;
 
         try
         {
             var requestedFileId = string.IsNullOrWhiteSpace(fileIdOrVersion) ? null : fileIdOrVersion.Trim();
-            var cfFile = await ResolveCurseForgeFileAsync(slugOrId, requestedFileId);
+            var cfFile = await _cfClient.ResolveFileAsync(slugOrId, requestedFileId);
 
             if (cfFile == null)
             {
@@ -357,7 +231,7 @@ public class ModService : IModService
                 return false;
             }
 
-            var downloadUrl = await ResolveDownloadUrlAsync(numericModId, resolvedFileId, cfFile.DownloadUrl, cfFile.FileName);
+            var downloadUrl = await _cfClient.ResolveDownloadUrlAsync(numericModId, resolvedFileId, cfFile.DownloadUrl, cfFile.FileName);
             if (string.IsNullOrWhiteSpace(downloadUrl))
             {
                 Logger.Warning("ModService", $"File info missing or no download URL for mod {numericModId} file {resolvedFileId}");
@@ -408,7 +282,7 @@ public class ModService : IModService
             {
                 // Use numeric ID for mod info request
                 var modEndpoint = $"/v1/mods/{numericModId}";
-                using var modRequest = CreateCurseForgeRequest(HttpMethod.Get, modEndpoint);
+                using var modRequest = _cfClient.CreateRequest(HttpMethod.Get, modEndpoint);
                 using var modResponse = await _httpClient.SendAsync(modRequest);
                 if (modResponse.IsSuccessStatusCode)
                 {
@@ -751,14 +625,14 @@ public class ModService : IModService
     /// <inheritdoc/>
     public async Task<ModFilesResult> GetModFilesAsync(string modId, int page, int pageSize)
     {
-        if (!HasApiKey())
+        if (!_cfClient.HasApiKey())
             return new ModFilesResult();
 
         try
         {
             var index = page * pageSize;
             var endpoint = $"/v1/mods/{modId}/files?index={index}&pageSize={pageSize}";
-            using var request = CreateCurseForgeRequest(HttpMethod.Get, endpoint);
+            using var request = _cfClient.CreateRequest(HttpMethod.Get, endpoint);
             using var response = await _httpClient.SendAsync(request);
             
             if (!response.IsSuccessStatusCode)
@@ -801,7 +675,7 @@ public class ModService : IModService
     /// <inheritdoc/>
     public async Task<ModInfo?> GetModAsync(string modIdOrSlug)
     {
-        if (!HasApiKey() || string.IsNullOrWhiteSpace(modIdOrSlug))
+        if (!_cfClient.HasApiKey() || string.IsNullOrWhiteSpace(modIdOrSlug))
             return null;
 
         try
@@ -812,7 +686,7 @@ public class ModService : IModService
             if (int.TryParse(token, out _))
             {
                 var endpoint = $"/v1/mods/{token}";
-                using var request = CreateCurseForgeRequest(HttpMethod.Get, endpoint);
+                using var request = _cfClient.CreateRequest(HttpMethod.Get, endpoint);
                 using var response = await _httpClient.SendAsync(request);
                 if (response.IsSuccessStatusCode)
                 {
@@ -823,8 +697,8 @@ public class ModService : IModService
             }
             else
             {
-                var slugEndpoint = $"/v1/mods/search?gameId={HytaleGameId}&slug={Uri.EscapeDataString(token)}&index=0&pageSize=1";
-                using var slugRequest = CreateCurseForgeRequest(HttpMethod.Get, slugEndpoint);
+                var slugEndpoint = $"/v1/mods/search?gameId={CurseForgeClient.HytaleGameId}&slug={Uri.EscapeDataString(token)}&index=0&pageSize=1";
+                using var slugRequest = _cfClient.CreateRequest(HttpMethod.Get, slugEndpoint);
                 using var slugResponse = await _httpClient.SendAsync(slugRequest);
                 if (slugResponse.IsSuccessStatusCode)
                 {
@@ -835,8 +709,8 @@ public class ModService : IModService
 
                 if (cfMod == null)
                 {
-                    var fallbackEndpoint = $"/v1/mods/search?gameId={HytaleGameId}&searchFilter={Uri.EscapeDataString(token)}&index=0&pageSize=20";
-                    using var fallbackRequest = CreateCurseForgeRequest(HttpMethod.Get, fallbackEndpoint);
+                    var fallbackEndpoint = $"/v1/mods/search?gameId={CurseForgeClient.HytaleGameId}&searchFilter={Uri.EscapeDataString(token)}&index=0&pageSize=20";
+                    using var fallbackRequest = _cfClient.CreateRequest(HttpMethod.Get, fallbackEndpoint);
                     using var fallbackResponse = await _httpClient.SendAsync(fallbackRequest);
                     if (fallbackResponse.IsSuccessStatusCode)
                     {
@@ -861,13 +735,13 @@ public class ModService : IModService
     /// <inheritdoc/>
     public async Task<string> GetModFileChangelogAsync(string modId, string fileId)
     {
-        if (!HasApiKey() || string.IsNullOrWhiteSpace(modId) || string.IsNullOrWhiteSpace(fileId))
+        if (!_cfClient.HasApiKey() || string.IsNullOrWhiteSpace(modId) || string.IsNullOrWhiteSpace(fileId))
             return string.Empty;
 
         try
         {
             var endpoint = $"/v1/mods/{modId}/files/{fileId}/changelog";
-            using var request = CreateCurseForgeRequest(HttpMethod.Get, endpoint);
+            using var request = _cfClient.CreateRequest(HttpMethod.Get, endpoint);
             using var response = await _httpClient.SendAsync(request);
 
             if (!response.IsSuccessStatusCode)
@@ -909,7 +783,7 @@ public class ModService : IModService
     /// <inheritdoc/>
     public async Task<List<InstalledMod>> CheckInstanceModUpdatesAsync(string instancePath)
     {
-        if (!HasApiKey())
+        if (!_cfClient.HasApiKey())
             return new List<InstalledMod>();
             
         var installedMods = GetInstanceInstalledMods(instancePath);
@@ -922,7 +796,7 @@ public class ModService : IModService
             try
             {
                 var endpoint = $"/v1/mods/{mod.CurseForgeId}/files?pageSize=1";
-                using var request = CreateCurseForgeRequest(HttpMethod.Get, endpoint);
+                using var request = _cfClient.CreateRequest(HttpMethod.Get, endpoint);
                 using var response = await _httpClient.SendAsync(request);
                 
                 if (!response.IsSuccessStatusCode) continue;

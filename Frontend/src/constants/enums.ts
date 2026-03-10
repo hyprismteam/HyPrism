@@ -1,3 +1,4 @@
+/** Supported launcher UI language codes (BCP 47 format). */
 export enum Language {
     ENGLISH = 'en-US',
     RUSSIAN = 'ru-RU',
@@ -14,6 +15,7 @@ export enum Language {
     BELARUSIAN = 'be-BY',
 }
 
+/** Available Hytale game update channels. */
 export enum GameBranch {
     RELEASE = 'release',
     PRE_RELEASE = 'pre-release',

@@ -31,14 +31,24 @@ public class InstanceValidationDetails
     public string? ErrorMessage { get; set; }
 }
 
+/// <summary>
+/// Represents a locally installed game instance, including size and validation metadata.
+/// </summary>
 public class InstalledInstance
 {
+    /// <summary>Unique instance identifier (UUID).</summary>
     public string Id { get; set; } = "";
+    /// <summary>Game branch this instance belongs to (e.g. "release" or "pre-release").</summary>
     public string Branch { get; set; } = "";
+    /// <summary>Installed game version number (0 = "latest" rolling instance).</summary>
     public int Version { get; set; }
+    /// <summary>Absolute path to the instance directory on disk.</summary>
     public string Path { get; set; } = "";
+    /// <summary>Whether the instance contains user-generated data (saves, etc.).</summary>
     public bool HasUserData { get; set; }
+    /// <summary>Size in bytes of the user data within the instance.</summary>
     public long UserDataSize { get; set; }
+    /// <summary>Total size in bytes of the entire instance directory.</summary>
     public long TotalSize { get; set; }
     
     /// <summary>
@@ -57,5 +67,6 @@ public class InstalledInstance
     /// </summary>
     public InstanceValidationDetails? ValidationDetails { get; set; }
     
+    /// <summary>Optional user-defined display name for the instance.</summary>
     public string? CustomName { get; set; }
 }

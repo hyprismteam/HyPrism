@@ -78,6 +78,17 @@ class Program
             // Perform async initialization (fetch CurseForge key if needed)
             await Bootstrapper.InitializeAsync(services);
 
+            ElectronNetRuntime.ElectronExtraArguments = string.Join(" ",
+                "--in-process-gpu",
+                "--num-raster-threads=1",
+                "--renderer-process-limit=1",
+                "--disable-features=SpareRendererForSitePerProcess,BackForwardCache,Translate,AutofillServerCommunication",
+                "--disable-background-networking",
+                "--aggressive-cache-discard",
+                "--disable-dev-shm-usage",
+                "--js-flags=--max-old-space-size=256"
+            );
+
             // Start Electron runtime and wait for socket bridge
             Logger.Info("Boot", "Starting Electron runtime...");
             await runtimeController.Start();
@@ -134,10 +145,11 @@ class Program
         var ipcService = services.GetRequiredService<IpcService>();
         ipcService.RegisterAll();
 
-        // Run instance migrations
-        var instanceService = services.GetRequiredService<IInstanceService>();
-        instanceService.MigrateLegacyData();
-        instanceService.MigrateVersionFoldersToIdFolders();
+        // Run instance migrations (delegated to the dedicated migration service)
+        var migrationService = services.GetRequiredService<IInstanceMigrationService>();
+        migrationService.MigrateLegacyData();
+        migrationService.MigrateVersionFoldersToIdFolders();
+        migrationService.MigrateBranchSubdirectoriesToFlat();
 
         // Repair legacy profile mods symlink/junction if present and ensure
         // mods are stored in instance-local UserData/Mods.
@@ -165,7 +177,21 @@ class Program
                 Title = "HyPrism",
                 AutoHideMenuBar = true,
                 BackgroundColor = "#0D0D10",
-                Icon = iconPath ?? string.Empty
+                Icon = iconPath ?? string.Empty,
+                WebPreferences = new WebPreferences
+                {
+                    // DevTools protocol has a persistent overhead even when the panel is
+                    // closed — disable it in production to free that memory.
+                    DevTools = false,
+
+                    // No WebGL usage in the frontend (confirmed — no three.js / pixi / etc.).
+                    // Disabling prevents Chromium from initialising WebGL contexts.
+                    Webgl = false,
+
+                    // Webview tags allow embedding arbitrary web content inside the window.
+                    // Not used; disabling removes the associated process isolation overhead.
+                    WebviewTag = false,
+                }
             },
             $"file://{Path.Combine(wwwroot, "index.html")}"
         );
@@ -221,6 +247,20 @@ class Program
                         new MenuItem { Label = "Instances", Accelerator = "CommandOrControl+2", Click = () => NavigateTo("instances") },
                         new MenuItem { Label = "About HyPrism", Click = () => NavigateTo("settings") },
                         new MenuItem { Label = "Quit HyPrism", Accelerator = "CommandOrControl+Q", Click = () => Electron.App.Quit() }
+                    }
+                },
+                new()
+                {
+                    Label = "Edit",
+                    Submenu = new[]
+                    {
+                        new MenuItem { Role = MenuRole.undo },
+                        new MenuItem { Role = MenuRole.redo },
+                        new MenuItem { Type = MenuType.separator },
+                        new MenuItem { Role = MenuRole.cut },
+                        new MenuItem { Role = MenuRole.copy },
+                        new MenuItem { Role = MenuRole.paste },
+                        new MenuItem { Role = MenuRole.selectAll }
                     }
                 },
                 new()

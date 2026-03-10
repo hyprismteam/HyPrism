@@ -4,26 +4,28 @@ import { ipc, on } from '@/lib/ipc';
 import { useAccentColor } from '@/contexts/AccentColorContext';
 import { changeLanguage } from '@/i18n';
 import { Language } from '@/constants/enums';
+import type { InstalledVersionInfo } from '@/types';
+import {
+  parseJavaHeapMb,
+  upsertJavaHeapArgument,
+  upsertJavaGcMode,
+  detectJavaGcMode,
+  sanitizeAdvancedJavaArguments,
+} from '@/lib/java-utils';
 
-// ============================================================================
-// Types
-// ============================================================================
+// Re-export Java utilities for backward compatibility
+export {
+  parseJavaHeapMb,
+  upsertJavaHeapArgument,
+  removeJavaFlag,
+  upsertJavaGcMode,
+  detectJavaGcMode,
+  sanitizeAdvancedJavaArguments,
+} from '@/lib/java-utils';
 
-export interface InstalledVersionInfo {
-  id?: string;
-  branch: string;
-  version: number;
-  path: string;
-  sizeBytes?: number;
-  isLatest?: boolean;
-  isLatestInstance?: boolean;
-  playTimeSeconds?: number;
-  playTimeFormatted?: string;
-  createdAt?: string;
-  lastPlayedAt?: string;
-  updatedAt?: string;
-}
-
+/**
+ * A GitHub contributor record as returned by the GitHub Contributors API.
+ */
 export interface Contributor {
   login: string;
   avatar_url: string;
@@ -31,6 +33,9 @@ export interface Contributor {
   contributions: number;
 }
 
+/**
+ * Union type of all valid settings page tab identifiers.
+ */
 export type SettingsTab = 
   | 'general' 
   | 'downloads' 
@@ -44,6 +49,9 @@ export type SettingsTab =
   | 'about' 
   | 'developer';
 
+/**
+ * Options accepted by the {@link useSettings} hook.
+ */
 export interface UseSettingsOptions {
   launcherBranch: string;
   onLauncherBranchChange: (branch: string) => void;
@@ -54,9 +62,7 @@ export interface UseSettingsOptions {
   onClose?: () => void;
 }
 
-// ============================================================================
-// IPC Helper Functions
-// ============================================================================
+// #region IPC Helper Functions
 
 async function GetCloseAfterLaunch(): Promise<boolean> { 
   return (await ipc.settings.get()).closeAfterLaunch ?? false; 
@@ -72,6 +78,10 @@ async function GetShowAlphaMods(): Promise<boolean> {
 
 async function SetShowAlphaMods(v: boolean): Promise<void> { 
   await ipc.settings.update({ showAlphaMods: v }); 
+}
+
+async function SetUseDualAuth(v: boolean): Promise<void> {
+  await ipc.settings.update({ useDualAuth: v });
 }
 
 async function GetBackgroundMode(): Promise<string> { 
@@ -150,81 +160,27 @@ async function GetInstalledVersionsDetailed(): Promise<InstalledVersionInfo[]> {
   }));
 }
 
-// ============================================================================
-// Java Arguments Helpers
-// ============================================================================
+// #endregion
 
-export const parseJavaHeapMb = (args: string, flag: 'xmx' | 'xms'): number | null => {
-  const match = args.match(new RegExp(`(?:^|\\s)-${flag}(\\d+(?:\\.\\d+)?)([kKmMgG])(?:\\s|$)`, 'i'));
-  if (!match) return null;
+// #region Environment Variable Helpers
 
-  const value = Number.parseFloat(match[1]);
-  if (!Number.isFinite(value) || value <= 0) return null;
-
-  const unit = match[2].toUpperCase();
-  if (unit === 'G') return Math.round(value * 1024);
-  if (unit === 'K') return Math.max(1, Math.round(value / 1024));
-  return Math.round(value);
-};
-
-export const upsertJavaHeapArgument = (args: string, flag: 'Xmx' | 'Xms', ramMb: number): string => {
-  const pattern = new RegExp(`(?:^|\\s)-${flag}\\S+`, 'gi');
-  const sanitized = args.replace(pattern, ' ').replace(/\s+/g, ' ').trim();
-  const heapArg = `-${flag}${ramMb}M`;
-  return sanitized.length > 0 ? `${heapArg} ${sanitized}` : heapArg;
-};
-
-export const removeJavaFlag = (args: string, pattern: RegExp): string => {
-  return args.replace(pattern, ' ').replace(/\s+/g, ' ').trim();
-};
-
-export const upsertJavaGcMode = (args: string, mode: 'auto' | 'g1'): string => {
-  const withoutGc = removeJavaFlag(args, /(?:^|\s)-XX:[+-]UseG1GC(?:\s|$)/gi);
-  if (mode === 'auto') return withoutGc;
-  return withoutGc.length > 0 ? `-XX:+UseG1GC ${withoutGc}` : '-XX:+UseG1GC';
-};
-
-export const detectJavaGcMode = (args: string): 'auto' | 'g1' => {
-  return /(?:^|\s)-XX:\+UseG1GC(?:\s|$)/i.test(args) ? 'g1' : 'auto';
-};
-
-export const sanitizeAdvancedJavaArguments = (args: string): { sanitized: string; blocked: boolean } => {
-  let result = args;
-
-  const blockedPatterns = [
-    /(?:^|\s)-javaagent:\S+/gi,
-    /(?:^|\s)-agentlib:\S+/gi,
-    /(?:^|\s)-agentpath:\S+/gi,
-    /(?:^|\s)-Xbootclasspath(?::\S+)?/gi,
-    /(?:^|\s)-jar(?:\s+\S+)?/gi,
-    /(?:^|\s)-cp(?:\s+\S+)?/gi,
-    /(?:^|\s)-classpath(?:\s+\S+)?/gi,
-    /(?:^|\s)--class-path(?:\s+\S+)?/gi,
-    /(?:^|\s)--module-path(?:\s+\S+)?/gi,
-    /(?:^|\s)-Djava\.home=\S+/gi,
-  ];
-
-  const hadBlocked = blockedPatterns.some((pattern) => pattern.test(result));
-
-  for (const pattern of blockedPatterns) {
-    result = result.replace(pattern, ' ');
-  }
-
-  result = result.replace(/\s+/g, ' ').trim();
-  return { sanitized: result, blocked: hadBlocked };
-};
-
-// formatRamLabel is exported from useJavaSettings.ts
-
-// ============================================================================
-// Environment Variable Helpers
-// ============================================================================
-
+/**
+ * Predefined environment variable presets for common Linux/graphics configurations.
+ */
 export const ENV_PRESETS = {
   forceX11: 'SDL_VIDEODRIVER=x11',
   disableVkLayers: 'VK_LOADER_LAYERS_DISABLE=all',
 } as const;
 
+/**
+ * Adds or removes a preset environment variable from the given space-separated
+ * env-vars string.
+ *
+ * @param currentVars - The current space-separated `KEY=VALUE` string.
+ * @param preset - The preset string to toggle (e.g. `"SDL_VIDEODRIVER=x11"`).
+ * @param enabled - `true` to add the preset, `false` to remove it.
+ * @returns Updated space-separated env-vars string.
+ */
 export const toggleEnvPreset = (currentVars: string, preset: string, enabled: boolean): string => {
   const vars = currentVars.split(/\s+/).filter(v => v.trim());
   const withoutPreset = vars.filter(v => !v.startsWith(preset.split('=')[0] + '='));
@@ -232,6 +188,13 @@ export const toggleEnvPreset = (currentVars: string, preset: string, enabled: bo
   return withoutPreset.join(' ');
 };
 
+/**
+ * Validates a space-separated list of `KEY=VALUE` environment variable pairs.
+ *
+ * @param value - The raw env-vars string to validate.
+ * @param t - i18next translation function for localized error messages.
+ * @returns `{ valid, error }` — `valid` is `false` and `error` is non-empty if validation fails.
+ */
 export const validateEnvVars = (value: string, t: (key: string) => string): { valid: boolean; error: string } => {
   if (!value.trim()) return { valid: true, error: '' };
 
@@ -246,10 +209,18 @@ export const validateEnvVars = (value: string, t: (key: string) => string): { va
   return { valid: true, error: '' };
 };
 
-// ============================================================================
-// Main Hook
-// ============================================================================
+// #endregion
 
+// #region Main Hook
+
+/**
+ * Manages all launcher settings page state: tab selection, settings loading,
+ * persistence, Java configuration, background, GPU, network, data management,
+ * and all handler callbacks.
+ *
+ * @param options - Hook options. See {@link UseSettingsOptions}.
+ * @returns The complete settings state and handler bag.
+ */
 export function useSettings(options: UseSettingsOptions) {
   const { t, i18n } = useTranslation();
   const { accentColor, accentTextColor, setAccentColor: setAccentColorContext } = useAccentColor();
@@ -269,11 +240,12 @@ export function useSettings(options: UseSettingsOptions) {
   // General settings
   const [hasOfficialAccount, setHasOfficialAccount] = useState(false);
   const [isActiveProfileOfficial, setIsActiveProfileOfficial] = useState(false);
+  const [profileLoaded, setProfileLoaded] = useState(false);
   const [closeAfterLaunch, setCloseAfterLaunch] = useState(false);
   const [showAlphaMods, setShowAlphaMods] = useState(false);
   const [devModeEnabled, setDevModeEnabled] = useState(false);
   const [onlineMode, setOnlineMode] = useState(true);
-  const [useDualAuth, setUseDualAuth] = useState(false);
+  const [useDualAuth, setUseDualAuth] = useState(true);
   const [launchAfterDownload, setLaunchAfterDownload] = useState(true);
 
   // Java settings
@@ -337,9 +309,7 @@ export function useSettings(options: UseSettingsOptions) {
   // Glass control class
   const gc = 'glass-control-solid';
 
-  // ============================================================================
-  // Effects
-  // ============================================================================
+  // #region Effects
 
   // Notify parent about moving state change
   useEffect(() => {
@@ -375,7 +345,7 @@ export function useSettings(options: UseSettingsOptions) {
         const online = settingsSnapshot.onlineMode ?? true;
         setOnlineMode(online);
 
-        setUseDualAuth(settingsSnapshot.useDualAuth ?? false);
+        setUseDualAuth(settingsSnapshot.useDualAuth ?? true);
         setLaunchAfterDownload(settingsSnapshot.launchAfterDownload ?? true);
 
         const loadedJavaArgs = settingsSnapshot.javaArguments;
@@ -467,8 +437,10 @@ export function useSettings(options: UseSettingsOptions) {
 
         const savedDevMode = localStorage.getItem('hyprism_dev_mode');
         setDevModeEnabled(savedDevMode === 'true');
+        setProfileLoaded(true);
       } catch (err) {
         console.error('Failed to load settings:', err);
+        setProfileLoaded(true);
       }
     };
     loadSettings();
@@ -501,7 +473,7 @@ export function useSettings(options: UseSettingsOptions) {
     if (activeTab === 'about' && contributors.length === 0 && !isLoadingContributors) {
       setIsLoadingContributors(true);
       setContributorsError(null);
-      fetch('https://api.github.com/repos/HyPrismTeam/HyPrism/contributors')
+      fetch('https://api.github.com/repos/hyprismteam/HyPrism/contributors')
         .then(res => res.json())
         .then(data => {
           if (Array.isArray(data)) {
@@ -550,9 +522,9 @@ export function useSettings(options: UseSettingsOptions) {
     };
   }, [options.onClose, showAllBackgrounds]);
 
-  // ============================================================================
-  // Handlers
-  // ============================================================================
+  // #endregion
+
+  // #region Handlers
 
   const handleLanguageSelect = useCallback(async (langCode: Language) => {
     setIsLanguageOpen(false);
@@ -580,6 +552,12 @@ export function useSettings(options: UseSettingsOptions) {
     setShowAlphaMods(newValue);
     await SetShowAlphaMods(newValue);
   }, [showAlphaMods]);
+
+  const handleUseDualAuthChange = useCallback(async () => {
+    const newValue = !useDualAuth;
+    setUseDualAuth(newValue);
+    await SetUseDualAuth(newValue);
+  }, [useDualAuth]);
 
   const handleSaveJavaArguments = useCallback(async () => {
     const { sanitized, blocked } = sanitizeAdvancedJavaArguments(javaArguments);
@@ -827,11 +805,11 @@ export function useSettings(options: UseSettingsOptions) {
   }, []);
 
   const openGitHub = useCallback(() => {
-    import('@/utils/openUrl').then(({ openUrl }) => openUrl('https://github.com/HyPrismTeam/HyPrism'));
+    import('@/utils/openUrl').then(({ openUrl }) => openUrl('https://github.com/hyprismteam/HyPrism'));
   }, []);
 
   const openBugReport = useCallback(() => {
-    import('@/utils/openUrl').then(({ openUrl }) => openUrl('https://github.com/HyPrismTeam/HyPrism/issues/new'));
+    import('@/utils/openUrl').then(({ openUrl }) => openUrl('https://github.com/hyprismteam/HyPrism/issues/new'));
   }, []);
 
   const openDiscord = useCallback(async () => {
@@ -864,6 +842,8 @@ export function useSettings(options: UseSettingsOptions) {
     setOnlineMode,
     useDualAuth,
     setUseDualAuth,
+    handleUseDualAuthChange,
+    profileLoaded,
     launchAfterDownload,
     setLaunchAfterDownload,
     javaArguments,
@@ -949,4 +929,6 @@ export function useSettings(options: UseSettingsOptions) {
     t,
     i18n,
   };
+  // #endregion
 }
+// #endregion

@@ -78,11 +78,6 @@ public interface IInstanceService
     void SaveLatestInfo(string branch, int version);
 
     /// <summary>
-    /// Migrates data from legacy installation formats to the current structure.
-    /// </summary>
-    void MigrateLegacyData();
-
-    /// <summary>
     /// Checks if the game client executable is present at the specified path.
     /// </summary>
     /// <param name="versionPath">The path to the game version directory.</param>
@@ -192,6 +187,12 @@ public interface IInstanceService
     void SyncInstancesWithConfig();
 
     /// <summary>
+    /// Returns the in-memory/file-backed instance cache without rescanning the disk.
+    /// Useful for fast lookups when a full sync is not required.
+    /// </summary>
+    List<InstanceInfo> GetCachedInstances();
+
+    /// <summary>
     /// Finds an instance by its ID.
     /// </summary>
     /// <param name="instanceId">The instance ID.</param>
@@ -214,12 +215,6 @@ public interface IInstanceService
     InstanceInfo? FindInstanceByBranchAndVersion(string branch, int version);
 
     /// <summary>
-    /// Migrates instance folders from version-based naming (e.g., release/5) to ID-based naming (e.g., release/{guid}).
-    /// Should be called during startup after MigrateLegacyData.
-    /// </summary>
-    void MigrateVersionFoldersToIdFolders();
-
-    /// <summary>
     /// Creates a new instance directory with the given ID and returns the path.
     /// </summary>
     /// <param name="branch">The game branch.</param>
@@ -238,4 +233,12 @@ public interface IInstanceService
     /// <param name="version">The new version number.</param>
     /// <returns>True if the operation succeeded.</returns>
     bool ChangeInstanceVersion(string instanceId, string branch, int version);
+
+    /// <summary>
+    /// Imports a ZIP archive as a new game instance.
+    /// Extracts the archive, reads meta.json for branch/version/id info,
+    /// deduplicates instance IDs, and moves the contents to the instances directory.
+    /// </summary>
+    /// <param name="zipPath">The path to the ZIP archive to import.</param>
+    Task ImportFromZipAsync(string zipPath);
 }

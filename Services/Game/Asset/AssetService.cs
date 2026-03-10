@@ -16,9 +16,9 @@ namespace HyPrism.Services.Game.Asset;
 /// Cosmetics are parsed from JSON files within Assets.zip and mapped to
 /// category names used by the authentication server.
 /// </remarks>
-public class AssetService
+public class AssetService : IAssetService
 {
-    private readonly InstanceService _instanceService;
+    private readonly IInstanceService _instanceService;
     private readonly string _appDir;
     
     private static readonly JsonSerializerOptions JsonOptions = new()
@@ -57,7 +57,7 @@ public class AssetService
     /// </summary>
     /// <param name="instanceService">The instance service for path resolution.</param>
     /// <param name="appDir">The application data directory path.</param>
-    public AssetService(InstanceService instanceService, string appDir)
+    public AssetService(IInstanceService instanceService, string appDir)
     {
         _instanceService = instanceService;
         _appDir = appDir;

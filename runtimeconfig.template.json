@@ -4,6 +4,7 @@
     "System.GC.Concurrent": true,
     "System.GC.RetainVM": false,
     "System.GC.HeapHardLimit": 314572800,
+    "System.GC.ConserveMemory": 5,
     "System.Runtime.TieredCompilation.QuickJitForLoops": true
   }
 }

@@ -14,3 +14,8 @@ export * from './useOnboarding';
 
 // Mod browser hook
 export * from './useModBrowser';
+
+// App-level hooks
+export * from './useAppInitialization';
+export * from './useGameSession';
+export * from './useLauncherUpdate';

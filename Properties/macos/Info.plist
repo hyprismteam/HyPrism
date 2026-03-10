@@ -9,7 +9,7 @@
     <key>CFBundleIconFile</key>
     <string>icon.icns</string>
     <key>CFBundleIdentifier</key>
-    <string>io.github.HyPrismTeam.HyPrism</string>
+    <string>io.github.hyprismteam.HyPrism</string>
     <key>CFBundleInfoDictionaryVersion</key>
     <string>6.0</string>
     <key>CFBundleName</key>

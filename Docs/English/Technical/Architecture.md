@@ -62,6 +62,35 @@ Examples:       hyprism:game:launch
 - `nodeIntegration: false` — no `require()` in renderer
 - `preload.js` exposes only `window.electron.ipcRenderer` via `contextBridge`
 
+## IPC Socket Bridge
+
+The IPC bridge uses HTTP socket for .NET ↔ Electron communication.
+
+### VPN Compatibility (Windows)
+
+On Windows, the socket binds to `0.0.0.0` instead of `127.0.0.1` to bypass VPN interception.
+
+**Security**: All connections are filtered — only loopback addresses are accepted:
+- `127.0.0.1` (IPv4 loopback)
+- `::1` (IPv6 loopback)  
+- `::ffff:127.0.0.1` (IPv6-mapped IPv4)
+
+**Override**: Set `HYPRISM_VPN_COMPAT=0` to force `127.0.0.1` binding.
+
+### Implementation
+
+The socket bridge is patched in `.electron/custom_main.js` before Electron.NET initializes:
+
+```javascript
+// Windows defaults to 0.0.0.0, others use 127.0.0.1
+const vpnCompatMode = vpnCompatEnv === '1' || (isWindows && vpnCompatEnv !== '0');
+
+// Connection filtering
+if (!isLoopback) {
+    socket.destroy();  // Reject non-loopback
+}
+```
+
 ## Dependency Injection
 
 All services are registered as singletons in `Bootstrapper.cs`:

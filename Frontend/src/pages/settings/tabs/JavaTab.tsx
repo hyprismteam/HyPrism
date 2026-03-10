@@ -131,7 +131,7 @@ export const JavaTab: React.FC<JavaTabProps> = ({
       <div className={`p-4 rounded-2xl ${gc}`}>
         <div className="flex items-center gap-3 mb-3">
           <div className="w-8 h-8 rounded-lg bg-white/[0.06] flex items-center justify-center">
-            <HardDrive size={16} className="text-white/70" />
+            <HardDrive size={16} className="text-white opacity-70" />
           </div>
           <div>
             <span className="text-white text-sm font-medium">{t('settings.javaSettings.ramAllocation')}</span>

@@ -164,7 +164,9 @@
       "showAlphaMods": "Alfa Modları Göster",
       "showAlphaModsHint": "Mod yöneticisinde alfa sürüm tipindeki modları göster",
       "dualAuth": "DualAuth (Deneysel)",
-      "dualAuthHint": "Statik JAR yaması yerine sunucu kimlik doğrulaması için çalışma zamanı Java Ajanı kullanır. Çökmelere veya bağlantı sorunlarına neden olabilir."
+      "dualAuthHint": "Statik JAR yaması yerine sunucu kimlik doğrulaması için çalışma zamanı Java Ajanı kullanır. Çökmelere veya bağlantı sorunlarına neden olabilir.",
+      "legacyPatching": "Eski Yama",
+      "legacyPatchingHint": "DualAuth Java Ajanı yerine sunucu kimlik doğrulaması için statik JAR yaması kullanır. Daha uyumlu ancak daha az esnek."
     },
     "downloads": {
       "title": "İndirmeler",

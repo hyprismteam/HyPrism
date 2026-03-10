@@ -100,44 +100,23 @@ public class GameSessionService : IGameSessionService
         {
             _progressService.ReportDownloadProgress("preparing", 0, "launch.detail.preparing_session", null, 0, 0);
 
-            #pragma warning disable CS0618 // Backward compatibility: VersionType and SelectedVersion kept for migration
-            string branch = UtilityService.NormalizeVersionType(_config.VersionType);
-            bool isLatestInstance = _config.SelectedVersion == 0;
-            int targetVersion = _config.SelectedVersion;
-            #pragma warning restore CS0618
-
-            string versionPath;
-
-            // Strict selected-instance launch path resolution:
-            // if SelectedInstanceId exists, always use that instance path and never
-            // auto-pick another installed instance with the same branch/version.
             var selectedInstance = _instanceService.GetSelectedInstance();
-            if (selectedInstance != null)
+            if (selectedInstance == null)
             {
-                branch = UtilityService.NormalizeVersionType(selectedInstance.Branch);
-                isLatestInstance = selectedInstance.Version == 0;
-                targetVersion = selectedInstance.Version;
-
-                var selectedPath = _instanceService.GetInstancePathById(selectedInstance.Id);
-                if (!string.IsNullOrWhiteSpace(selectedPath))
-                {
-                    versionPath = selectedPath;
-                }
-                else if (isLatestInstance)
-                {
-                    versionPath = _instanceService.GetLatestInstancePath(branch);
-                }
-                else
-                {
-                    versionPath = _instanceService.CreateInstanceDirectory(branch, selectedInstance.Id);
-                }
-
-                Logger.Info("Download", $"Using selected instance path by ID: {selectedInstance.Id} -> {versionPath}", false);
+                Logger.Error("Download", "No instance selected — cannot launch. Select an instance first.");
+                return new DownloadProgress { Error = "No instance selected" };
             }
-            else
-            {
-                versionPath = _instanceService.ResolveInstancePath(branch, isLatestInstance ? 0 : targetVersion, preferExisting: true);
-            }
+
+            var branch = UtilityService.NormalizeVersionType(selectedInstance.Branch);
+            var isLatestInstance = selectedInstance.Version == 0;
+            var targetVersion = selectedInstance.Version;
+
+            // Resolve instance path strictly by ID. Create the directory if it does not exist yet
+            // (first-time launch before any files have been downloaded).
+            var versionPath = _instanceService.GetInstancePathById(selectedInstance.Id)
+                ?? _instanceService.CreateInstanceDirectory(branch, selectedInstance.Id);
+
+            Logger.Info("Download", $"Using instance path: {selectedInstance.Id} -> {versionPath}", false);
 
             Directory.CreateDirectory(versionPath);
 

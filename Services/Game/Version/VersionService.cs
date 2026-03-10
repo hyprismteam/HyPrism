@@ -31,9 +31,9 @@ public class VersionService : IVersionService
     private IVersionSource? _selectedMirror;
 
     /// <summary>
-    /// In-memory cache of the full snapshot.
+    /// In-memory cache of versions and patch data, backed by on-disk files.
     /// </summary>
-    private VersionsCacheSnapshot? _memoryCache;
+    private readonly VersionCache _cache;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="VersionService"/> class.
@@ -70,6 +70,9 @@ public class VersionService : IVersionService
         // Sort by priority
         _sources.Sort((a, b) => a.Priority.CompareTo(b.Priority));
 
+        // Initialise cache (must be done after _mirrorSources is populated)
+        _cache = new VersionCache(appDir, () => _mirrorSources.Select(m => m.SourceId));
+
         foreach (var source in _sources)
         {
             Logger.Debug("Version", $"Source {source.SourceId}: full={source.LayoutInfo.FullBuildLocation}; patch={source.LayoutInfo.PatchLocation}; cache={source.LayoutInfo.CachePolicy}");
@@ -90,8 +93,8 @@ public class VersionService : IVersionService
         var maxAge = TimeSpan.FromMinutes(15);
 
         // Fast path: return from cache if this specific branch is fresh
-        var cachedSnapshot = TryLoadCacheSnapshot(osName, arch);
-        if (cachedSnapshot != null && IsBranchFresh(cachedSnapshot, normalizedBranch, maxAge))
+        var cachedSnapshot = _cache.TryGet(osName, arch);
+        if (cachedSnapshot != null && _cache.IsBranchFresh(cachedSnapshot, normalizedBranch, maxAge))
         {
             var versions = GetMergedVersionList(cachedSnapshot, normalizedBranch);
             if (versions.Count > 0)
@@ -106,8 +109,8 @@ public class VersionService : IVersionService
         try
         {
             // Re-check cache: another caller may have populated it while we waited
-            cachedSnapshot = TryLoadCacheSnapshot(osName, arch);
-            if (cachedSnapshot != null && IsBranchFresh(cachedSnapshot, normalizedBranch, maxAge))
+            cachedSnapshot = _cache.TryGet(osName, arch);
+            if (cachedSnapshot != null && _cache.IsBranchFresh(cachedSnapshot, normalizedBranch, maxAge))
             {
                 var versions = GetMergedVersionList(cachedSnapshot, normalizedBranch);
                 if (versions.Count > 0)
@@ -127,7 +130,7 @@ public class VersionService : IVersionService
     private async Task<List<int>> FetchVersionListCoreAsync(string normalizedBranch, string osName, string arch, CancellationToken ct)
     {
         // Load existing cache or create new
-        var snapshot = LoadCacheSnapshot() ?? new VersionsCacheSnapshot
+        var snapshot = _cache.Load() ?? new VersionsCacheSnapshot
         {
             Os = osName,
             Arch = arch,
@@ -135,15 +138,13 @@ public class VersionService : IVersionService
             Data = new VersionsCacheData()
         };
 
-        snapshot = SanitizeSnapshot(snapshot);
-
-        // Update OS/Arch in case they changed
+        snapshot = _cache.Sanitize(snapshot);
         snapshot.Os = osName;
         snapshot.Arch = arch;
         snapshot.FetchedAtUtc = DateTime.UtcNow;
 
         // Load existing patch cache (same structure, saved alongside versions)
-        var patchSnapshot = LoadPatchCacheSnapshot() ?? new PatchesCacheSnapshot
+        var patchSnapshot = _cache.LoadPatches() ?? new PatchesCacheSnapshot
         {
             Os = osName,
             Arch = arch,
@@ -234,9 +235,9 @@ public class VersionService : IVersionService
         snapshot.BranchFetchedAt[normalizedBranch] = DateTime.UtcNow;
 
         // Save both caches together
-        SaveCacheSnapshot(snapshot);
-        SavePatchCacheSnapshot(patchSnapshot);
-        _memoryCache = snapshot;
+        _cache.Save(snapshot);
+        _cache.SavePatches(patchSnapshot);
+        _cache.Set(snapshot);
 
         // Return merged version list
         var result = GetMergedVersionList(snapshot, normalizedBranch);
@@ -282,8 +283,8 @@ public class VersionService : IVersionService
         string osName = UtilityService.GetOS();
         string arch = UtilityService.GetArch();
 
-        var cached = TryLoadCacheSnapshot(osName, arch);
-        if (cached == null || !IsBranchFresh(cached, normalizedBranch, maxAge))
+        var cached = _cache.TryGet(osName, arch);
+        if (cached == null || !_cache.IsBranchFresh(cached, normalizedBranch, maxAge))
         {
             return false;
         }
@@ -302,7 +303,7 @@ public class VersionService : IVersionService
         // Ensure we have fetched the versions
         await GetVersionListAsync(normalizedBranch, ct);
 
-        var snapshot = _memoryCache ?? LoadCacheSnapshot();
+        var snapshot = _cache.Current ?? _cache.Load();
         
         var response = new VersionListResponse
         {
@@ -369,7 +370,7 @@ public class VersionService : IVersionService
     public VersionSource GetVersionSource(string branch)
     {
         var normalizedBranch = NormalizeBranch(branch);
-        var snapshot = _memoryCache ?? LoadCacheSnapshot();
+        var snapshot = _cache.Current ?? _cache.Load();
         
         if (snapshot?.Data.Hytale?.Branches.TryGetValue(normalizedBranch, out var versions) == true && versions.Count > 0)
         {
@@ -386,7 +387,7 @@ public class VersionService : IVersionService
     public string? GetVersionDownloadUrl(string branch, int version)
     {
         var normalizedBranch = NormalizeBranch(branch);
-        var snapshot = _memoryCache ?? LoadCacheSnapshot();
+        var snapshot = _cache.Current ?? _cache.Load();
         
         if (snapshot == null) return null;
 
@@ -422,7 +423,7 @@ public class VersionService : IVersionService
     public CachedVersionEntry? GetVersionEntry(string branch, int version)
     {
         var normalizedBranch = NormalizeBranch(branch);
-        var snapshot = _memoryCache ?? LoadCacheSnapshot();
+        var snapshot = _cache.Current ?? _cache.Load();
         
         if (snapshot == null) return null;
 
@@ -520,7 +521,7 @@ public class VersionService : IVersionService
         string arch = UtilityService.GetArch();
         
         // Clear memory cache to force re-fetch
-        _memoryCache = null;
+        _cache.Invalidate();
         
         await _versionFetchLock.WaitAsync(ct);
         try
@@ -543,7 +544,7 @@ public class VersionService : IVersionService
     public void InvalidateVersionFromCache(string branch, int version, string? sourceId = null)
     {
         var normalizedBranch = NormalizeBranch(branch);
-        var snapshot = _memoryCache ?? LoadCacheSnapshot();
+        var snapshot = _cache.Current ?? _cache.Load();
         if (snapshot == null) return;
 
         bool modified = false;
@@ -580,7 +581,7 @@ public class VersionService : IVersionService
         }
 
         // Also invalidate from patch cache
-        var patchSnapshot = LoadPatchCacheSnapshot();
+        var patchSnapshot = _cache.LoadPatches();
         if (patchSnapshot != null)
         {
             bool patchModified = false;
@@ -608,14 +609,14 @@ public class VersionService : IVersionService
 
             if (patchModified)
             {
-                SavePatchCacheSnapshot(patchSnapshot);
+                _cache.SavePatches(patchSnapshot);
             }
         }
 
         if (modified)
         {
-            _memoryCache = snapshot;
-            SaveCacheSnapshot(snapshot);
+            _cache.Set(snapshot);
+            _cache.Save(snapshot);
         }
     }
 
@@ -859,7 +860,7 @@ public class VersionService : IVersionService
     public bool IsOfficialServerDown(string branch)
     {
         var normalizedBranch = NormalizeBranch(branch);
-        var snapshot = _memoryCache ?? LoadCacheSnapshot();
+        var snapshot = _cache.Current ?? _cache.Load();
         
         // Official is "down" if we don't have official data for this branch
         return snapshot?.Data.Hytale?.Branches.ContainsKey(normalizedBranch) != true 
@@ -881,240 +882,6 @@ public class VersionService : IVersionService
         };
     }
 
-    private string GetCacheSnapshotPath()
-        => Path.Combine(_appDir, "Cache", "Game", "versions.json");
-
-    /// <summary>
-    /// Checks if a specific branch's data in the cache is fresh (within maxAge).
-    /// </summary>
-    private bool IsBranchFresh(VersionsCacheSnapshot snapshot, string branch, TimeSpan maxAge)
-    {
-        // Check per-branch timestamp first (new format)
-        if (snapshot.BranchFetchedAt.TryGetValue(branch, out var branchFetchedAt))
-        {
-            var branchAge = DateTime.UtcNow - branchFetchedAt;
-            return branchAge <= maxAge;
-        }
-        
-        // Fallback to global FetchedAtUtc for old cache format
-        // But only if this branch actually has data
-        var hasData = (snapshot.Data.Hytale?.Branches.ContainsKey(branch) == true) ||
-                      snapshot.Data.Mirrors.Any(m => m.Branches.ContainsKey(branch));
-        if (!hasData) return false;
-        
-        var globalAge = DateTime.UtcNow - snapshot.FetchedAtUtc;
-        return globalAge <= maxAge;
-    }
-
-    /// <summary>
-    /// Loads cache snapshot if it matches OS/arch, without checking freshness.
-    /// </summary>
-    private VersionsCacheSnapshot? TryLoadCacheSnapshot(string osName, string arch)
-    {
-        try
-        {
-            // Check memory cache first
-            if (_memoryCache != null)
-            {
-                if (string.Equals(_memoryCache.Os, osName, StringComparison.OrdinalIgnoreCase) &&
-                    string.Equals(_memoryCache.Arch, arch, StringComparison.OrdinalIgnoreCase))
-                {
-                    return _memoryCache;
-                }
-            }
-
-            // Load from disk
-            var snapshot = LoadCacheSnapshot();
-            if (snapshot == null) return null;
-
-            if (!string.Equals(snapshot.Os, osName, StringComparison.OrdinalIgnoreCase)) return null;
-            if (!string.Equals(snapshot.Arch, arch, StringComparison.OrdinalIgnoreCase)) return null;
-
-            _memoryCache = snapshot;
-            return snapshot;
-        }
-        catch (Exception ex)
-        {
-            Logger.Warning("Version", $"Failed to load versions cache: {ex.Message}");
-        }
-
-        return null;
-    }
-
-    private VersionsCacheSnapshot? TryLoadFreshCache(string osName, string arch, TimeSpan maxAge)
-    {
-        try
-        {
-            // Check memory cache first
-            if (_memoryCache != null)
-            {
-                if (!string.Equals(_memoryCache.Os, osName, StringComparison.OrdinalIgnoreCase)) return null;
-                if (!string.Equals(_memoryCache.Arch, arch, StringComparison.OrdinalIgnoreCase)) return null;
-                
-                var age = DateTime.UtcNow - _memoryCache.FetchedAtUtc;
-                if (age <= maxAge)
-                {
-                    return _memoryCache;
-                }
-            }
-
-            // Load from disk
-            var snapshot = LoadCacheSnapshot();
-            if (snapshot == null) return null;
-
-            if (!string.Equals(snapshot.Os, osName, StringComparison.OrdinalIgnoreCase)) return null;
-            if (!string.Equals(snapshot.Arch, arch, StringComparison.OrdinalIgnoreCase)) return null;
-
-            var diskAge = DateTime.UtcNow - snapshot.FetchedAtUtc;
-            if (diskAge > maxAge) return null;
-
-            _memoryCache = snapshot;
-            return snapshot;
-        }
-        catch (Exception ex)
-        {
-            Logger.Warning("Version", $"Failed to load versions cache: {ex.Message}");
-        }
-
-        return null;
-    }
-
-    private VersionsCacheSnapshot? LoadCacheSnapshot()
-    {
-        try
-        {
-            var path = GetCacheSnapshotPath();
-            if (!File.Exists(path)) return null;
-
-            var json = File.ReadAllText(path);
-            if (string.IsNullOrWhiteSpace(json)) return null;
-
-            var snapshot = JsonSerializer.Deserialize<VersionsCacheSnapshot>(json);
-            if (snapshot == null)
-            {
-                return null;
-            }
-
-            return SanitizeSnapshot(snapshot);
-        }
-        catch (Exception ex)
-        {
-            Logger.Warning("Version", $"Failed to deserialize versions cache: {ex.Message}");
-            return null;
-        }
-    }
-
-    private void SaveCacheSnapshot(VersionsCacheSnapshot snapshot)
-    {
-        try
-        {
-            snapshot = SanitizeSnapshot(snapshot);
-
-            var path = GetCacheSnapshotPath();
-            var directory = Path.GetDirectoryName(path);
-            if (!string.IsNullOrEmpty(directory))
-            {
-                Directory.CreateDirectory(directory);
-            }
-
-            var json = JsonSerializer.Serialize(snapshot, new JsonSerializerOptions { WriteIndented = true });
-            File.WriteAllText(path, json);
-            
-            Logger.Debug("Version", $"Saved versions cache to {path}");
-        }
-        catch (Exception ex)
-        {
-            Logger.Warning("Version", $"Failed to save versions cache: {ex.Message}");
-        }
-    }
-
-    private VersionsCacheSnapshot SanitizeSnapshot(VersionsCacheSnapshot snapshot)
-    {
-        snapshot.Data ??= new VersionsCacheData();
-        snapshot.Data.Mirrors ??= new List<MirrorSourceCache>();
-
-        var allowedMirrorIds = _mirrorSources
-            .Select(m => m.SourceId)
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
-
-        var filtered = snapshot.Data.Mirrors
-            .Where(m => !string.IsNullOrWhiteSpace(m.MirrorId) && allowedMirrorIds.Contains(m.MirrorId))
-            .GroupBy(m => m.MirrorId, StringComparer.OrdinalIgnoreCase)
-            .Select(g => g.Last())
-            .ToList();
-
-        if (filtered.Count != snapshot.Data.Mirrors.Count)
-        {
-            Logger.Debug("Version", $"Sanitized mirror cache list: {snapshot.Data.Mirrors.Count} -> {filtered.Count}");
-        }
-
-        snapshot.Data.Mirrors = filtered;
-        return snapshot;
-    }
-
-    private string GetPatchCacheSnapshotPath()
-        => Path.Combine(_appDir, "Cache", "Game", "patches.json");
-
-    private PatchesCacheSnapshot? LoadPatchCacheSnapshot()
-    {
-        try
-        {
-            var path = GetPatchCacheSnapshotPath();
-            if (!File.Exists(path)) return null;
-
-            var json = File.ReadAllText(path);
-            if (string.IsNullOrWhiteSpace(json)) return null;
-
-            var snapshot = JsonSerializer.Deserialize<PatchesCacheSnapshot>(json);
-            if (snapshot == null) return null;
-
-            // Sanitize mirrors list: remove mirrors that are no longer registered
-            snapshot.Data ??= new PatchesCacheData();
-            snapshot.Data.Mirrors ??= new List<MirrorPatchCache>();
-
-            var allowedMirrorIds = _mirrorSources
-                .Select(m => m.SourceId)
-                .ToHashSet(StringComparer.OrdinalIgnoreCase);
-
-            snapshot.Data.Mirrors = snapshot.Data.Mirrors
-                .Where(m => !string.IsNullOrWhiteSpace(m.MirrorId) && allowedMirrorIds.Contains(m.MirrorId))
-                .GroupBy(m => m.MirrorId, StringComparer.OrdinalIgnoreCase)
-                .Select(g => g.Last())
-                .ToList();
-
-            return snapshot;
-        }
-        catch (Exception ex)
-        {
-            Logger.Warning("Version", $"Failed to deserialize patches cache: {ex.Message}");
-            return null;
-        }
-    }
-
-    private void SavePatchCacheSnapshot(PatchesCacheSnapshot snapshot)
-    {
-        try
-        {
-            var path = GetPatchCacheSnapshotPath();
-            var directory = Path.GetDirectoryName(path);
-            if (!string.IsNullOrEmpty(directory))
-            {
-                Directory.CreateDirectory(directory);
-            }
-
-            var json = JsonSerializer.Serialize(snapshot, new JsonSerializerOptions { WriteIndented = true });
-            File.WriteAllText(path, json);
-
-            var totalSteps = (snapshot.Data.Hytale?.Values.Sum(v => v.Count) ?? 0)
-                + snapshot.Data.Mirrors.Sum(m => m.Branches.Values.Sum(v => v.Count));
-            Logger.Debug("Version", $"Saved patches cache ({totalSteps} total steps) to {path}");
-        }
-        catch (Exception ex)
-        {
-            Logger.Warning("Version", $"Failed to save patches cache: {ex.Message}");
-        }
-    }
-    
     /// <summary>
     /// Tests the speed and availability of a mirror by ID.
     /// </summary>
@@ -1328,10 +1095,10 @@ public class VersionService : IVersionService
         try
         {
             // Clear in-memory cache
-            _memoryCache = null;
+            _cache.Invalidate();
             
             // Delete versions cache file
-            var versionsPath = GetCacheSnapshotPath();
+            var versionsPath = _cache.GetSnapshotPath();
             if (File.Exists(versionsPath))
             {
                 File.Delete(versionsPath);
@@ -1339,7 +1106,7 @@ public class VersionService : IVersionService
             }
             
             // Delete patches cache file
-            var patchesPath = GetPatchCacheSnapshotPath();
+            var patchesPath = _cache.GetPatchSnapshotPath();
             if (File.Exists(patchesPath))
             {
                 File.Delete(patchesPath);

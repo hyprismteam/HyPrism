@@ -153,7 +153,7 @@ export const AboutStep: React.FC<AboutStepProps> = ({ onboarding }) => {
               {otherContributors.length > 0 && (
                 <div className={`p-3 rounded-xl ${gc}`}>
                   <div className="flex items-center gap-2 mb-2">
-                    <Users size={14} className="text-white/60" />
+                    <Users size={14} className="text-white opacity-60" />
                     <h3 className="text-xs font-semibold text-white">{onboarding.t('settings.aboutSettings.contributors')}</h3>
                   </div>
                   <div className="grid grid-cols-5 sm:grid-cols-6 lg:grid-cols-8 gap-1.5">

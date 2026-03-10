@@ -2,7 +2,7 @@
  * Shared color constants for the application
  */
 
-// Color palette for accent colors (12 colors)
+/** Color palette for accent colors used throughout the UI (12 colors). */
 export const ACCENT_COLORS = [
     '#FFA845', // Orange (default)
     '#FF6B6B', // Red
@@ -18,5 +18,5 @@ export const ACCENT_COLORS = [
     '#FFFFFF', // White
 ];
 
-// Default accent color
+/** Default accent color (orange). Equals the first entry in {@link ACCENT_COLORS}. */
 export const DEFAULT_ACCENT_COLOR = ACCENT_COLORS[0];

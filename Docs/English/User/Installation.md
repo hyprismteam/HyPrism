@@ -43,8 +43,8 @@ HyPrism uses native Linux dialog tools for folder/file selection. Install at lea
 
 #### Flatpak
 ```bash
-flatpak install io.github.HyPrismTeam.HyPrism
-flatpak run io.github.HyPrismTeam.HyPrism
+flatpak install io.github.hyprismteam.HyPrism
+flatpak run io.github.hyprismteam.HyPrism
 ```
 
 Note: the Flatpak includes a small launcher wrapper that checks your per-user data directory (`$XDG_DATA_HOME/HyPrism` or `~/.local/share/HyPrism`) for an installed HyPrism release and runs it if present. If no release is found the wrapper will download the Linux release artifact from GitHub (it tries the `latest` release first, and falls back to the latest prerelease if no suitable asset exists), extract it into the app data directory, and then execute the launcher. Actions and errors are logged to `XDG_DATA_HOME/HyPrism/wrapper.log`. This behavior uses the Flatpak per‑app data area and requires no additional filesystem permissions.

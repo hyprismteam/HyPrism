@@ -1,11 +1,14 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { ipc, type ModInfo, type ModCategory } from '@/lib/ipc';
 
+/** Number of mods fetched per page in search results. */
 const PAGE_SIZE = 20;
 
 /**
- * Hook for managing mod search state and operations.
- * Extracts search, pagination, category/sort selection from InlineModBrowser.
+ * Manages CurseForge mod search state including query, pagination, category
+ * and sort-field selection, and load-more / reset helpers.
+ *
+ * @returns Search state values, setter callbacks, and action handlers.
  */
 export function useModSearch() {
   const [searchQuery, setSearchQuery] = useState('');

@@ -40,7 +40,7 @@ export const VariablesTab: React.FC<VariablesTabProps> = ({
         <div className="space-y-2">
           {/* Force X11 */}
           <SettingsToggleCard
-            icon={<Terminal size={16} className="text-white/70" />}
+            icon={<Terminal size={16} className="text-white opacity-70" />}
             title={t('settings.variablesSettings.forceX11')}
             description={<>{t('settings.variablesSettings.forceX11Hint')}<code className="text-[10px] text-white/30 mt-1 block font-mono">SDL_VIDEODRIVER=x11</code></>}
             checked={envForceX11}
@@ -49,7 +49,7 @@ export const VariablesTab: React.FC<VariablesTabProps> = ({
 
           {/* Disable Vulkan Layers */}
           <SettingsToggleCard
-            icon={<Terminal size={16} className="text-white/70" />}
+            icon={<Terminal size={16} className="text-white opacity-70" />}
             title={t('settings.variablesSettings.disableVkLayers')}
             description={<>{t('settings.variablesSettings.disableVkLayersHint')}<code className="text-[10px] text-white/30 mt-1 block font-mono">VK_LOADER_LAYERS_DISABLE=all</code></>}
             checked={envDisableVkLayers}

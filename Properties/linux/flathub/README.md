@@ -1,3 +1,3 @@
-This README explains the *generated* Flathub manifest — the manifest is created at CI/runtime and should not be edited or checked in to the repository. Use `Properties/linux/flatpak/io.github.HyPrismTeam.HyPrism.yml` as the source of truth.
+This README explains the *generated* Flathub manifest — the manifest is created at CI/runtime and should not be edited or checked in to the repository. Use `Properties/linux/flatpak/io.github.hyprismteam.HyPrism.yml` as the source of truth.
 
 The difference between this manifest and the one located in `Properties/linux/flatpak` is that we cannot build Electron on the Flathub repository; we build here and publish a `flathub-bundle.tar.gz` release artifact which the Flathub manifest references.

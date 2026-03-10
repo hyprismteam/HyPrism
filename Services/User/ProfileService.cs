@@ -1,3 +1,4 @@
+using System.Text.Json;
 using HyPrism.Models;
 using HyPrism.Services.Core.Infrastructure;
 using HyPrism.Services.Game;
@@ -11,8 +12,10 @@ namespace HyPrism.Services.User;
 public class ProfileService : IProfileService
 {
     private readonly string _appDataPath;
-    private readonly ConfigService _configService;
-    private readonly AvatarService? _avatarService;
+    private readonly IConfigService _configService;
+    private readonly IAvatarService? _avatarService;
+
+    private static readonly JsonSerializerOptions JsonOpts = new() { PropertyNameCaseInsensitive = true, WriteIndented = true };
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ProfileService"/> class.
@@ -20,7 +23,7 @@ public class ProfileService : IProfileService
     /// <param name="appDataPath">The application data directory path.</param>
     /// <param name="configService">The configuration service for accessing user settings.</param>
     /// <param name="avatarService">The avatar service for CachedAvatarPreviews lookups.</param>
-    public ProfileService(string appDataPath, ConfigService configService, AvatarService? avatarService = null)
+    public ProfileService(string appDataPath, IConfigService configService, IAvatarService? avatarService = null)
     {
         _appDataPath = appDataPath;
         _configService = configService;
@@ -28,35 +31,34 @@ public class ProfileService : IProfileService
     }
 
     /// <inheritdoc/>
-    public string GetNick() => _configService.Configuration.Nick;
+    public string GetNick()
+    {
+        // Primary: read from active profile
+        var nick = GetActiveProfileField(p => p.Name);
+        if (!string.IsNullOrEmpty(nick)) return nick;
+        // Fallback: legacy config field (kept in sync by SwitchProfile)
+        #pragma warning disable CS0618
+        return _configService.Configuration.Nick;
+        #pragma warning restore CS0618
+    }
 
     /// <inheritdoc/>
     public bool SetNick(string nick)
     {
         if (string.IsNullOrWhiteSpace(nick) || nick.Length > 16)
             return false;
-        
+
         var config = _configService.Configuration;
-        var oldNick = config.Nick;
-        
-        // Update the active config Nick
+        #pragma warning disable CS0618
         config.Nick = nick;
-        
-        // Also update the active profile's Name so we don't create a new profile folder
-        if (config.Profiles != null && config.ActiveProfileIndex >= 0 && config.ActiveProfileIndex < config.Profiles.Count)
-        {
-            var activeProfile = config.Profiles[config.ActiveProfileIndex];
-            if (activeProfile != null && activeProfile.Name == oldNick)
-            {
-                activeProfile.Name = nick;
-                Logger.Info("Profile", $"Updated active profile name from '{oldNick}' to '{nick}'");
-            }
-        }
-        
+        #pragma warning restore CS0618
+
+        // Also update the active profile in profiles.json
+        UpdateActiveProfileField(p => p.Name = nick);
+
         _configService.SaveConfig();
         return true;
     }
-    
 
     /// <inheritdoc/>
     public string GetUUID() => GetCurrentUuid();
@@ -66,24 +68,15 @@ public class ProfileService : IProfileService
     {
         if (string.IsNullOrWhiteSpace(uuid))
             return false;
-        
+
         var config = _configService.Configuration;
-        var oldUuid = config.UUID;
-        
-        // Update the active config UUID
+        #pragma warning disable CS0618
         config.UUID = uuid;
-        
-        // Also update the active profile's UUID so we don't create a new profile
-        if (config.Profiles != null && config.ActiveProfileIndex >= 0 && config.ActiveProfileIndex < config.Profiles.Count)
-        {
-            var activeProfile = config.Profiles[config.ActiveProfileIndex];
-            if (activeProfile != null && activeProfile.UUID == oldUuid)
-            {
-                activeProfile.UUID = uuid;
-                Logger.Info("Profile", $"Updated active profile UUID from {oldUuid} to {uuid}");
-            }
-        }
-        
+        #pragma warning restore CS0618
+
+        // Also update the active profile in profiles.json
+        UpdateActiveProfileField(p => p.UUID = uuid);
+
         _configService.SaveConfig();
         return true;
     }
@@ -91,7 +84,13 @@ public class ProfileService : IProfileService
     /// <inheritdoc/>
     public string GetCurrentUuid()
     {
-        var uuid = _configService.Configuration.UUID;
+        // Primary: read from active profile
+        var uuid = GetActiveProfileField(p => p.UUID);
+        if (!string.IsNullOrEmpty(uuid)) return uuid;
+        // Fallback: legacy config field
+        #pragma warning disable CS0618
+        uuid = _configService.Configuration.UUID;
+        #pragma warning restore CS0618
         if (string.IsNullOrEmpty(uuid))
         {
             uuid = GenerateNewUuid();
@@ -122,7 +121,7 @@ public class ProfileService : IProfileService
                 return null;
 
             // 1. Check profile folder's avatar.png (most reliable, persisted)
-            var profile = _configService.Configuration.Profiles?.FirstOrDefault(p => p.UUID == uuid);
+            var profile = ReadProfilesFromCache().FirstOrDefault(p => p.UUID == uuid);
             if (profile != null)
             {
                 var profileDir = UtilityService.GetProfileFolderPath(_appDataPath, profile);
@@ -222,10 +221,10 @@ public class ProfileService : IProfileService
     {
         var uuid = GetCurrentUuid();
         var skinsPath = Path.Combine(_appDataPath, "skins", uuid);
-        
+
         if (!Directory.Exists(skinsPath))
             Directory.CreateDirectory(skinsPath);
-        
+
         return skinsPath;
     }
 
@@ -235,7 +234,7 @@ public class ProfileService : IProfileService
         try
         {
             var avatarDir = GetAvatarDirectory();
-            
+
             if (OperatingSystem.IsWindows())
             {
                 System.Diagnostics.Process.Start("explorer.exe", avatarDir);
@@ -248,7 +247,7 @@ public class ProfileService : IProfileService
             {
                 System.Diagnostics.Process.Start("open", avatarDir);
             }
-            
+
             return true;
         }
         catch
@@ -257,61 +256,81 @@ public class ProfileService : IProfileService
         }
     }
 
-    /// <inheritdoc/>
-    public List<Profile> GetProfiles()
+    //  ── Profile cache helpers ───────────────────────────────────────────────
+
+    private string GetProfileCachePath()
     {
-        return _configService.Configuration.Profiles ?? new List<Profile>();
+        var root = UtilityService.GetProfilesRoot(_appDataPath);
+        Directory.CreateDirectory(root);
+        return Path.Combine(root, "profiles.json");
     }
+
+    private List<Profile> ReadProfilesFromCache()
+    {
+        var path = GetProfileCachePath();
+        if (!File.Exists(path)) return new();
+        try { return JsonSerializer.Deserialize<List<Profile>>(File.ReadAllText(path), JsonOpts) ?? new(); }
+        catch { return new(); }
+    }
+
+    private void WriteProfilesToCache(List<Profile> profiles)
+    {
+        try { File.WriteAllText(GetProfileCachePath(), JsonSerializer.Serialize(profiles, JsonOpts)); }
+        catch { }
+    }
+
+    /// <summary>Gets a field value from the currently selected profile, or null if none is active.</summary>
+    private string? GetActiveProfileField(Func<Profile, string?> selector)
+    {
+        var id = _configService.Configuration.SelectedProfileId;
+        if (string.IsNullOrEmpty(id)) return null;
+        return selector(ReadProfilesFromCache().FirstOrDefault(p => p.Id == id) ?? new Profile());
+    }
+
+    /// <summary>Mutates the currently selected profile in the cache.</summary>
+    private void UpdateActiveProfileField(Action<Profile> mutate)
+    {
+        var id = _configService.Configuration.SelectedProfileId;
+        if (string.IsNullOrEmpty(id)) return;
+        var profiles = ReadProfilesFromCache();
+        var profile = profiles.FirstOrDefault(p => p.Id == id);
+        if (profile == null) return;
+        mutate(profile);
+        WriteProfilesToCache(profiles);
+    }
+
+
+    /// <inheritdoc/>
+    public List<Profile> GetProfiles() => ReadProfilesFromCache();
 
     /// <inheritdoc/>
     public bool CreateProfile(string name, string? uuid = null)
     {
-        var profiles = GetProfiles();
-        var newUuid = uuid ?? GenerateNewUuid();
-        
-        var profile = new Profile
-        {
-            Id = Guid.NewGuid().ToString(),
-            Name = name,
-            UUID = newUuid,
-            CreatedAt = DateTime.UtcNow
-        };
-        
+        var profiles = ReadProfilesFromCache();
+        var profile = new Profile { Id = Guid.NewGuid().ToString(), Name = name, UUID = uuid ?? GenerateNewUuid(), CreatedAt = DateTime.UtcNow };
         profiles.Add(profile);
-        _configService.Configuration.Profiles = profiles;
-        _configService.SaveConfig();
-        
+        WriteProfilesToCache(profiles);
         return true;
     }
 
     /// <inheritdoc/>
     public bool DeleteProfile(string profileId)
     {
-        var profiles = GetProfiles();
+        var profiles = ReadProfilesFromCache();
         var profile = profiles.FirstOrDefault(p => p.Id == profileId);
-        
-        if (profile == null)
-            return false;
-        
+        if (profile == null) return false;
         profiles.Remove(profile);
-        _configService.Configuration.Profiles = profiles;
-        _configService.SaveConfig();
-        
+        WriteProfilesToCache(profiles);
         return true;
     }
 
     /// <inheritdoc/>
     public bool SwitchProfile(string profileId)
     {
-        var profiles = GetProfiles();
-        var profile = profiles.FirstOrDefault(p => p.Id == profileId);
-        
-        if (profile == null)
-            return false;
-        
+        var profile = ReadProfilesFromCache().FirstOrDefault(p => p.Id == profileId);
+        if (profile == null) return false;
         SetNick(profile.Name);
         SetUUID(profile.UUID);
-        
         return true;
     }
 
@@ -320,36 +339,20 @@ public class ProfileService : IProfileService
     {
         var currentNick = GetNick();
         var currentUuid = GetUUID();
-        
-        var profiles = GetProfiles();
+        var profiles = ReadProfilesFromCache();
         var existing = profiles.FirstOrDefault(p => p.UUID == currentUuid);
-        
         if (existing != null)
         {
-            // Update existing profile
             existing.Name = currentNick;
         }
         else
         {
-            // Create new profile
-            profiles.Add(new Profile
-            {
-                Id = Guid.NewGuid().ToString(),
-                Name = currentNick,
-                UUID = currentUuid,
-                CreatedAt = DateTime.UtcNow
-            });
+            profiles.Add(new Profile { Id = Guid.NewGuid().ToString(), Name = currentNick, UUID = currentUuid, CreatedAt = DateTime.UtcNow });
         }
-        
-        _configService.Configuration.Profiles = profiles;
-        _configService.SaveConfig();
-        
+        WriteProfilesToCache(profiles);
         return true;
     }
 
     /// <inheritdoc/>
-    public string GetProfilePath(Profile profile)
-    {
-        return UtilityService.GetProfileFolderPath(_appDataPath, profile);
-    }
+    public string GetProfilePath(Profile profile) => UtilityService.GetProfileFolderPath(_appDataPath, profile);
 }

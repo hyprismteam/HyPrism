@@ -9,7 +9,7 @@ namespace HyPrism.Services.Core.App;
 /// </summary>
 public class ProgressNotificationService : IProgressNotificationService
 {
-    private readonly DiscordService _discordService;
+    private readonly IDiscordService _discordService;
     
     /// <inheritdoc/>
     public event Action<ProgressUpdateMessage>? DownloadProgressChanged;
@@ -24,7 +24,7 @@ public class ProgressNotificationService : IProgressNotificationService
     /// Initializes a new instance of the <see cref="ProgressNotificationService"/> class.
     /// </summary>
     /// <param name="discordService">The Discord service for Rich Presence updates.</param>
-    public ProgressNotificationService(DiscordService discordService)
+    public ProgressNotificationService(IDiscordService discordService)
     {
         _discordService = discordService;
     }

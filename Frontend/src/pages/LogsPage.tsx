@@ -248,7 +248,7 @@ export const LogsPage: React.FC<LogsPageProps> = ({ embedded = false }) => {
         <div className="p-4 flex-shrink-0">
           <div className="flex items-center gap-3">
             <div className="relative flex-1 max-w-sm">
-              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
+              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-white opacity-40" />
               <input
                 type="text"
                 value={searchQuery}

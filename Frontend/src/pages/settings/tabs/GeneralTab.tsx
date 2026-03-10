@@ -5,7 +5,6 @@ import { Check, ChevronDown, Power, FlaskConical, Server } from 'lucide-react';
 import { SettingsToggleCard } from '@/components/ui/Controls';
 import { LANGUAGE_CONFIG } from '@/constants/languages';
 import { Language } from '@/constants/enums';
-import { ipc } from '@/lib/ipc';
 
 interface GeneralTabProps {
   gc: string;
@@ -29,7 +28,9 @@ interface GeneralTabProps {
   onlineMode: boolean;
   authMode: 'default' | 'official' | 'custom';
   useDualAuth: boolean;
-  setUseDualAuth: (v: boolean) => void;
+  handleUseDualAuthChange: () => void;
+  isActiveProfileOfficial?: boolean;
+  profileLoaded?: boolean;
 }
 
 export const GeneralTab: React.FC<GeneralTabProps> = ({
@@ -51,7 +52,9 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
   onlineMode,
   authMode,
   useDualAuth,
-  setUseDualAuth,
+  handleUseDualAuthChange,
+  isActiveProfileOfficial = false,
+  profileLoaded = true,
 }) => {
   const { i18n, t } = useTranslation();
   const currentLangConfig = LANGUAGE_CONFIG[i18n.language as Language] || LANGUAGE_CONFIG[Language.ENGLISH];
@@ -77,7 +80,7 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
                 <span className="text-white/50 text-sm">({currentLangConfig.name})</span>
               </div>
             </div>
-            <ChevronDown size={16} className={`text-white/40 transition-transform ${isLanguageOpen ? 'rotate-180' : ''}`} />
+            <ChevronDown size={16} className={`text-white opacity-40 transition-transform ${isLanguageOpen ? 'rotate-180' : ''}`} />
           </button>
 
           <AnimatePresence>
@@ -135,7 +138,7 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
                 </span>
               )}
             </div>
-            <ChevronDown size={16} className={`text-white/40 transition-transform ${isBranchOpen ? 'rotate-180' : ''}`} />
+            <ChevronDown size={16} className={`text-white opacity-40 transition-transform ${isBranchOpen ? 'rotate-180' : ''}`} />
           </button>
 
           <AnimatePresence>
@@ -189,7 +192,7 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
       {/* Toggle Settings */}
       <div className="space-y-3">
         <SettingsToggleCard
-          icon={<Power size={16} className="text-white/70" />}
+          icon={<Power size={16} className="text-white opacity-70" />}
           title={t('settings.generalSettings.closeLauncher')}
           description={t('settings.generalSettings.closeLauncherHint')}
           checked={closeAfterLaunch}
@@ -197,29 +200,20 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
         />
 
         <SettingsToggleCard
-          icon={<FlaskConical size={16} className="text-white/70" />}
+          icon={<FlaskConical size={16} className="text-white opacity-70" />}
           title={t('settings.generalSettings.showAlphaMods')}
           description={t('settings.generalSettings.showAlphaModsHint')}
           checked={showAlphaMods}
           onCheckedChange={() => handleShowAlphaModsChange()}
         />
 
-        {onlineMode && authMode !== 'official' && (
+        {onlineMode && profileLoaded && !isActiveProfileOfficial && authMode !== 'official' && (
           <SettingsToggleCard
-            icon={<Server size={16} className="text-white/70" />}
-            title={t('settings.generalSettings.dualAuth')}
-            description={t('settings.generalSettings.dualAuthHint')}
-            badge={
-              <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold tracking-wider uppercase"
-                style={{ backgroundColor: '#ef444420', color: '#ef4444', border: '1px solid #ef444430' }}>
-                BETA
-              </span>
-            }
-            checked={useDualAuth}
-            onCheckedChange={async (v) => {
-              setUseDualAuth(v);
-              await ipc.settings.update({ useDualAuth: v });
-            }}
+            icon={<Server size={16} className="text-white opacity-70" />}
+            title={t('settings.generalSettings.legacyPatching')}
+            description={t('settings.generalSettings.legacyPatchingHint')}
+            checked={!useDualAuth}
+            onCheckedChange={() => handleUseDualAuthChange()}
           />
         )}
       </div>

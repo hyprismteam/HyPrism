@@ -33,7 +33,7 @@ public class HytaleAuthService : IHytaleAuthService
     private readonly HttpClient _httpClient;
     private readonly string _appDir;
     private readonly IBrowserService _browserService;
-    private readonly ConfigService _configService;
+    private readonly IConfigService _configService;
     
     private string? _pendingCodeVerifier;
     private string? _pendingState;
@@ -45,7 +45,7 @@ public class HytaleAuthService : IHytaleAuthService
     /// </summary>
     public HytaleAuthSession? CurrentSession { get; private set; }
 
-    public HytaleAuthService(HttpClient httpClient, string appDir, IBrowserService browserService, ConfigService configService)
+    public HytaleAuthService(HttpClient httpClient, string appDir, IBrowserService browserService, IConfigService configService)
     {
         _httpClient = httpClient;
         _appDir = appDir;
@@ -180,12 +180,7 @@ public class HytaleAuthService : IHytaleAuthService
     public void Logout()
     {
         CurrentSession = null;
-        var path = GetSessionFilePath();
-        if (File.Exists(path))
-        {
-            try { File.Delete(path); }
-            catch (Exception ex) { Logger.Warning("HytaleAuth", $"Failed to delete session file: {ex.Message}"); }
-        }
+        TokenStore.Delete(GetSessionFilePath());
         Logger.Info("HytaleAuth", "Logged out");
     }
     
@@ -551,19 +546,35 @@ public class HytaleAuthService : IHytaleAuthService
     #region Session Persistence
 
     /// <summary>
+    /// Reads all profiles from the profiles.json cache on disk.
+    /// </summary>
+    private List<Profile> ReadProfilesCache()
+    {
+        try
+        {
+            var path = Path.Combine(UtilityService.GetProfilesRoot(_appDir), "profiles.json");
+            if (!File.Exists(path)) return new();
+            var opts = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            return JsonSerializer.Deserialize<List<Profile>>(File.ReadAllText(path), opts) ?? new();
+        }
+        catch { return new(); }
+    }
+
+    /// <summary>
     /// Gets the profile folder path for the current active profile.
     /// Returns null if no profile is active.
     /// </summary>
     private string? GetCurrentProfileFolder()
     {
         var config = _configService.Configuration;
-        if (config.ActiveProfileIndex < 0 || config.Profiles == null ||
-            config.ActiveProfileIndex >= config.Profiles.Count)
-        {
+        var selectedId = config.SelectedProfileId;
+        if (string.IsNullOrEmpty(selectedId))
             return null;
-        }
 
-        var profile = config.Profiles[config.ActiveProfileIndex];
+        var profile = ReadProfilesCache().FirstOrDefault(p => p.Id == selectedId);
+        if (profile == null)
+            return null;
+
         return UtilityService.GetProfileFolderPath(_appDir, profile);
     }
 
@@ -571,22 +582,12 @@ public class HytaleAuthService : IHytaleAuthService
     /// Gets the session file path for the current profile.
     /// Falls back to app root if no profile is active (legacy behavior).
     /// </summary>
-    private string GetSessionFilePath()
-    {
-        var profileFolder = GetCurrentProfileFolder();
-        if (profileFolder != null)
-        {
-            Directory.CreateDirectory(profileFolder);
-            return Path.Combine(profileFolder, "hytale_session.json");
-        }
-        // Fallback to root (for migration or no profile case)
-        return Path.Combine(_appDir, "hytale_session.json");
-    }
+    private string GetSessionFilePath() => TokenStore.GetSessionFilePath(GetCurrentProfileFolder(), _appDir);
 
     /// <summary>
     /// Gets the old (legacy) session file path at app root.
     /// </summary>
-    private string GetLegacySessionFilePath() => Path.Combine(_appDir, "hytale_session.json");
+    private string GetLegacySessionFilePath() => TokenStore.GetLegacySessionFilePath(_appDir);
 
     /// <summary>
     /// Migrates old global session file to current profile folder if needed.
@@ -620,13 +621,29 @@ public class HytaleAuthService : IHytaleAuthService
             if (CurrentSession != null)
             {
                 var config = _configService.Configuration;
-                if (config.ActiveProfileIndex >= 0 && config.Profiles != null &&
-                    config.ActiveProfileIndex < config.Profiles.Count)
+                var selectedId = config.SelectedProfileId;
+                if (!string.IsNullOrEmpty(selectedId))
                 {
-                    var profile = config.Profiles[config.ActiveProfileIndex];
-                    profile.IsOfficial = true;
-                    _configService.SaveConfig();
-                    Logger.Info("HytaleAuth", $"Marked profile '{profile.Name}' as official after migration");
+                    var profilesPath = Path.Combine(UtilityService.GetProfilesRoot(_appDir), "profiles.json");
+                    if (File.Exists(profilesPath))
+                    {
+                        try
+                        {
+                            var opts = new JsonSerializerOptions { PropertyNameCaseInsensitive = true, WriteIndented = true };
+                            var profiles = JsonSerializer.Deserialize<List<Profile>>(File.ReadAllText(profilesPath), opts) ?? new();
+                            var activeProfile = profiles.FirstOrDefault(p => p.Id == selectedId);
+                            if (activeProfile != null)
+                            {
+                                activeProfile.IsOfficial = true;
+                                File.WriteAllText(profilesPath, JsonSerializer.Serialize(profiles, opts));
+                                Logger.Info("HytaleAuth", $"Marked profile '{activeProfile.Name}' as official after migration");
+                            }
+                        }
+                        catch (Exception ex2)
+                        {
+                            Logger.Warning("HytaleAuth", $"Failed to mark profile as official: {ex2.Message}");
+                        }
+                    }
                 }
             }
 
@@ -669,14 +686,7 @@ public class HytaleAuthService : IHytaleAuthService
         }
 
         // If current profile doesn't have a valid session, search all official profiles
-        var config = _configService.Configuration;
-        if (config.Profiles == null || config.Profiles.Count == 0)
-        {
-            return null;
-        }
-
-        // Find official profiles
-        var officialProfiles = config.Profiles.Where(p => p.IsOfficial).ToList();
+        var officialProfiles = ReadProfilesCache().Where(p => p.IsOfficial).ToList();
         if (officialProfiles.Count == 0)
         {
             Logger.Debug("HytaleAuth", "No official profiles found");
@@ -779,33 +789,14 @@ public class HytaleAuthService : IHytaleAuthService
     private void SaveSession()
     {
         if (CurrentSession == null) return;
-        try
-        {
-            var json = JsonSerializer.Serialize(CurrentSession, new JsonSerializerOptions { WriteIndented = true });
-            File.WriteAllText(GetSessionFilePath(), json);
-        }
-        catch (Exception ex)
-        {
-            Logger.Warning("HytaleAuth", $"Failed to save session: {ex.Message}");
-        }
+        TokenStore.Save(GetSessionFilePath(), CurrentSession);
     }
 
     private void LoadSession()
     {
-        var path = GetSessionFilePath();
-        if (!File.Exists(path)) return;
-        try
-        {
-            var json = File.ReadAllText(path);
-            CurrentSession = JsonSerializer.Deserialize<HytaleAuthSession>(json);
-            if (CurrentSession != null)
-                Logger.Info("HytaleAuth", $"Restored session for {CurrentSession.Username}");
-        }
-        catch (Exception ex)
-        {
-            Logger.Warning("HytaleAuth", $"Failed to load session: {ex.Message}");
-            CurrentSession = null;
-        }
+        CurrentSession = TokenStore.Load(GetSessionFilePath());
+        if (CurrentSession != null)
+            Logger.Info("HytaleAuth", $"Restored session for {CurrentSession.Username}");
     }
 
     /// <summary>

@@ -36,10 +36,11 @@ public class GameLauncher : IGameLauncher
     private readonly IDiscordService _discordService;
     private readonly ISkinService _skinService;
     private readonly IUserIdentityService _userIdentityService;
-    private readonly AvatarService _avatarService;
+    private readonly IAvatarService _avatarService;
     private readonly HttpClient _httpClient;
-    private readonly HytaleAuthService _hytaleAuthService;
-    private readonly GpuDetectionService _gpuDetectionService;
+    private readonly IHytaleAuthService _hytaleAuthService;
+    private readonly IGpuDetectionService _gpuDetectionService;
+    private readonly IProfileService _profileService;
     private readonly string _appDir;
     
     private Config _config => _configService.Configuration;
@@ -48,6 +49,11 @@ public class GameLauncher : IGameLauncher
     /// Stores the DualAuth agent path after download, used when building process start info.
     /// </summary>
     private string? _dualAuthAgentPath;
+
+    /// <summary>
+    /// Stores the offline token fetched from auth server, passed as HYTALE_OFFLINE_TOKEN env var.
+    /// </summary>
+    private string? _offlineToken;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GameLauncher"/> class.
@@ -74,11 +80,12 @@ public class GameLauncher : IGameLauncher
         IDiscordService discordService,
         ISkinService skinService,
         IUserIdentityService userIdentityService,
-        AvatarService avatarService,
+        IAvatarService avatarService,
         HttpClient httpClient,
-        HytaleAuthService hytaleAuthService,
-        GpuDetectionService gpuDetectionService,
-        AppPathConfiguration appPath)
+        IHytaleAuthService hytaleAuthService,
+        IGpuDetectionService gpuDetectionService,
+        AppPathConfiguration appPath,
+        IProfileService profileService)
     {
         _configService = configService;
         _launchService = launchService;
@@ -93,6 +100,7 @@ public class GameLauncher : IGameLauncher
         _hytaleAuthService = hytaleAuthService;
         _gpuDetectionService = gpuDetectionService;
         _appDir = appPath.AppDir;
+        _profileService = profileService;
         _gameProcessService.ProcessExited += OnGameProcessExited;
     }
 
@@ -126,7 +134,7 @@ public class GameLauncher : IGameLauncher
 
         // Validate profile/server compatibility before proceeding
         string sessionUuid = _userIdentityService.GetUuidForUser(_config.Nick);
-        var currentProfile = _config.Profiles?.FirstOrDefault(p => p.UUID == sessionUuid);
+        var currentProfile = _profileService.GetProfiles().FirstOrDefault(p => p.UUID == sessionUuid);
         bool isOfficialProfile = currentProfile?.IsOfficial == true;
 
         if (!isOfficialProfile && IsOfficialDomain(_config.AuthDomain) && _config.OnlineMode)
@@ -173,6 +181,13 @@ public class GameLauncher : IGameLauncher
 
         var (identityToken, sessionToken, authPlayerName) = await AuthenticateAsync(sessionUuid);
         string launchPlayerName = ResolveLaunchPlayerName(authPlayerName, identityToken);
+
+        // When launching in offline mode, fetch an offline token for HYTALE_OFFLINE_TOKEN env var
+        bool willLaunchOffline = !_config.OnlineMode || string.IsNullOrEmpty(identityToken) || string.IsNullOrEmpty(sessionToken);
+        if (willLaunchOffline)
+        {
+            await FetchOfflineTokenAsync(sessionUuid, launchPlayerName);
+        }
 
         string javaPath = ResolveJavaPath();
         if (!File.Exists(javaPath)) throw new Exception($"Java not found at {javaPath}");
@@ -248,7 +263,7 @@ public class GameLauncher : IGameLauncher
     private bool IsOfficialServerMode()
     {
         var currentUuid = _userIdentityService.GetUuidForUser(_config.Nick);
-        var currentProfile = _config.Profiles?.FirstOrDefault(p => p.UUID == currentUuid);
+        var currentProfile = _profileService.GetProfiles().FirstOrDefault(p => p.UUID == currentUuid);
         return currentProfile?.IsOfficial == true;
     }
 
@@ -327,7 +342,6 @@ public class GameLauncher : IGameLauncher
 
     private async Task PatchClientIfNeededAsync(string versionPath)
     {
-        // ── Official server mode: restore originals if previously patched ──
         if (IsOfficialServerMode())
         {
             bool clientPatched = ClientPatcher.IsClientPatched(versionPath);
@@ -367,7 +381,6 @@ public class GameLauncher : IGameLauncher
             return;
         }
 
-        // ── Custom / default server mode: patch binaries ──
         var effectiveAuthDomain = GetEffectiveCustomAuthDomain(logFallback: true);
         if (string.IsNullOrWhiteSpace(effectiveAuthDomain)) return;
 
@@ -390,7 +403,6 @@ public class GameLauncher : IGameLauncher
 
             if (useDualAuth)
             {
-                // ── DualAuth mode (experimental): patch client only, use Java Agent for server ──
 
                 // If server JAR was previously patched by legacy mode, restore it first
                 // so DualAuth agent works with the original (unmodified) JAR.
@@ -414,12 +426,14 @@ public class GameLauncher : IGameLauncher
                 });
 
                 // DualAuth agent handles server-side auth flow at runtime.
-                Logger.Info("Game", $"Setting up DualAuth agent for auth domain: {baseDomain}");
+                // Always check for a newer version before launch; falls back to local check
+                // if GitHub API is unreachable.
+                Logger.Info("Game", $"Checking DualAuth agent version for auth domain: {baseDomain}");
                 _progressService.ReportDownloadProgress("patching", 65, "launch.detail.dualauth_setup", null, 0, 0);
 
                 try
                 {
-                    var dualAuthResult = await DualAuthService.EnsureAgentAvailableAsync(_appDir, (msg, progress) =>
+                    var dualAuthResult = await DualAuthService.EnsureAgentUpToDateAsync(_appDir, (msg, progress) =>
                     {
                         Logger.Info("DualAuth", progress.HasValue ? $"{msg} ({progress}%)" : msg);
                         if (progress.HasValue)
@@ -464,7 +478,6 @@ public class GameLauncher : IGameLauncher
             }
             else
             {
-                // ── Legacy mode (default/stable): patch both client binary AND server JAR ──
                 // This is the proven approach — statically modifies the JAR to replace
                 // sessions.hytale.com with sessions.<custom-domain>.
                 // Also clear DualAuth agent path to prevent agent injection.
@@ -527,7 +540,7 @@ public class GameLauncher : IGameLauncher
         string? authPlayerName = null;
 
         // Check if the active profile is an official Hytale account
-        var currentProfile = _config.Profiles?.FirstOrDefault(p => p.UUID == sessionUuid);
+        var currentProfile = _profileService.GetProfiles().FirstOrDefault(p => p.UUID == sessionUuid);
         bool isOfficialProfile = currentProfile?.IsOfficial == true;
 
         if (isOfficialProfile)
@@ -605,6 +618,48 @@ public class GameLauncher : IGameLauncher
         return (identityToken, sessionToken, authPlayerName);
     }
 
+    /// <summary>
+    /// Fetches an offline token from the custom auth server for HYTALE_OFFLINE_TOKEN env var.
+    /// Required by Hytale client v2026.02.26+ for offline/singleplayer mode.
+    /// Only attempts the fetch when a custom auth server is configured and reachable.
+    /// </summary>
+    private async Task FetchOfflineTokenAsync(string uuid, string playerName)
+    {
+        var effectiveAuthDomain = GetEffectiveCustomAuthDomain(logFallback: false);
+        if (string.IsNullOrWhiteSpace(effectiveAuthDomain))
+        {
+            Logger.Info("Game", "Skipping offline token fetch — no custom auth server configured");
+            return;
+        }
+
+        Logger.Info("Game", $"Fetching offline token from {effectiveAuthDomain}...");
+        _progressService.ReportDownloadProgress("launching", 25, "launch.detail.offline_token", null, 0, 0);
+
+        try
+        {
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+            var authService = new AuthService(_httpClient, effectiveAuthDomain);
+            _offlineToken = await authService.GetOfflineTokenAsync(uuid, playerName, cts.Token);
+
+            if (!string.IsNullOrEmpty(_offlineToken))
+            {
+                Logger.Success("Game", "Offline token obtained — will pass as HYTALE_OFFLINE_TOKEN");
+            }
+            else
+            {
+                Logger.Warning("Game", "Could not obtain offline token — game may fail with 'Offline mode requires an offline token'");
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            Logger.Warning("Game", "Offline token fetch timed out (5s) — continuing without it");
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning("Game", $"Error fetching offline token: {ex.Message}");
+        }
+    }
+
     private string ResolveLaunchPlayerName(string? authPlayerName, string? identityToken)
     {
         string? tokenPlayerName = TryExtractPlayerNameFromJwt(identityToken);
@@ -666,7 +721,7 @@ public class GameLauncher : IGameLauncher
 
     private void RestoreProfileSkinData(string sessionUuid, string userDataDir)
     {
-        var currentProfile = _config.Profiles?.FirstOrDefault(p => p.UUID == sessionUuid);
+        var currentProfile = _profileService.GetProfiles().FirstOrDefault(p => p.UUID == sessionUuid);
         if (currentProfile == null) return;
 
         _skinService.RestoreProfileSkinData(currentProfile);
@@ -790,12 +845,7 @@ public class GameLauncher : IGameLauncher
     }
 
     private static string MergeJavaToolOptions(string? existing, string additional)
-    {
-        if (string.IsNullOrWhiteSpace(existing))
-            return additional;
-
-        return $"{existing} {additional}";
-    }
+        => JvmArgumentBuilder.MergeToolOptions(existing, additional);
 
     /// <summary>
     /// Applies user-provided Java arguments via JAVA_TOOL_OPTIONS.
@@ -803,45 +853,12 @@ public class GameLauncher : IGameLauncher
     /// </summary>
     private void ApplyUserJavaArguments(ProcessStartInfo startInfo)
     {
-        var userJavaArgs = _config.JavaArguments?.Trim();
-        if (string.IsNullOrWhiteSpace(userJavaArgs))
-            return;
-
-        var sanitized = SanitizeUserJavaArguments(userJavaArgs);
-        if (string.IsNullOrWhiteSpace(sanitized))
-            return;
-
-        startInfo.Environment.TryGetValue("JAVA_TOOL_OPTIONS", out var current);
-        startInfo.Environment["JAVA_TOOL_OPTIONS"] = MergeJavaToolOptions(current, sanitized);
-        Logger.Info("Game", "Applied custom Java arguments from settings");
+        if (JvmArgumentBuilder.ApplyToProcess(startInfo, _config.JavaArguments))
+            Logger.Info("Game", "Applied custom Java arguments from settings");
     }
 
     private static string SanitizeUserJavaArguments(string args)
-    {
-        var sanitized = args;
-
-        var blockedPatterns = new[]
-        {
-            @"(?:^|\s)-javaagent:\S+",
-            @"(?:^|\s)-agentlib:\S+",
-            @"(?:^|\s)-agentpath:\S+",
-            @"(?:^|\s)-Xbootclasspath(?::\S+)?",
-            @"(?:^|\s)-jar(?:\s+\S+)?",
-            @"(?:^|\s)-cp(?:\s+\S+)?",
-            @"(?:^|\s)-classpath(?:\s+\S+)?",
-            @"(?:^|\s)--class-path(?:\s+\S+)?",
-            @"(?:^|\s)--module-path(?:\s+\S+)?",
-            @"(?:^|\s)-Djava\.home=\S+",
-        };
-
-        foreach (var pattern in blockedPatterns)
-        {
-            sanitized = Regex.Replace(sanitized, pattern, " ", RegexOptions.IgnoreCase);
-        }
-
-        sanitized = Regex.Replace(sanitized, @"\s+", " ").Trim();
-        return sanitized;
-    }
+        => JvmArgumentBuilder.Sanitize(args);
 
     /// <summary>
     /// Applies DualAuth environment variables for custom auth server authentication.
@@ -945,6 +962,13 @@ public class GameLauncher : IGameLauncher
             startInfo.ArgumentList.Add("offline");
             startInfo.ArgumentList.Add("--uuid");
             startInfo.ArgumentList.Add(sessionUuid);
+
+            if (!string.IsNullOrEmpty(_offlineToken))
+            {
+                startInfo.Environment["HYTALE_OFFLINE_TOKEN"] = _offlineToken;
+                Logger.Info("Game", "Set HYTALE_OFFLINE_TOKEN environment variable");
+            }
+
             Logger.Info("Game", $"Using offline mode with UUID: {sessionUuid}");
         }
 
@@ -1022,7 +1046,7 @@ fi
 [[ -n ""$DUALAUTH_AUTH_DOMAIN"" ]] && ENV_ARGS+=(""HYTALE_AUTH_DOMAIN=$DUALAUTH_AUTH_DOMAIN"")
 [[ -n ""$DUALAUTH_TRUST_ALL"" ]] && ENV_ARGS+=(""HYTALE_TRUST_ALL_ISSUERS=$DUALAUTH_TRUST_ALL"")
 [[ -n ""$DUALAUTH_TRUST_OFFICIAL"" ]] && ENV_ARGS+=(""HYTALE_TRUST_OFFICIAL=$DUALAUTH_TRUST_OFFICIAL"")
-
+{BuildOfflineTokenEnvLine()}
 {BuildCustomEnvLines()}
 exec env ""${{ENV_ARGS[@]}}"" ""{executable}"" {argsString}
 ";
@@ -1175,6 +1199,14 @@ export __NV_PRIME_RENDER_OFFLOAD=0
     /// Builds custom environment variable lines for the Unix launch script.
     /// Parses KEY=VALUE pairs from config and adds them to ENV_ARGS.
     /// </summary>
+    private string BuildOfflineTokenEnvLine()
+    {
+        if (string.IsNullOrEmpty(_offlineToken))
+            return "";
+
+        return $"ENV_ARGS+=(HYTALE_OFFLINE_TOKEN=\"{_offlineToken}\")\n";
+    }
+
     private string BuildCustomEnvLines()
     {
         var customEnv = _config.GameEnvironmentVariables?.Trim();
@@ -1283,30 +1315,10 @@ DUALAUTH_TRUST_OFFICIAL=""true""
     }
 
     private string BuildUserJavaEnvLines()
-    {
-        var userJavaArgs = _config.JavaArguments?.Trim();
-        if (string.IsNullOrWhiteSpace(userJavaArgs))
-            return "# No custom user Java args\nUSER_JAVA_TOOL_OPTIONS=\"\"\n\n";
-
-        userJavaArgs = SanitizeUserJavaArguments(userJavaArgs);
-        if (string.IsNullOrWhiteSpace(userJavaArgs))
-            return "# No custom user Java args\nUSER_JAVA_TOOL_OPTIONS=\"\"\n\n";
-
-        var escaped = EscapeForBashDoubleQuoted(userJavaArgs);
-        return $@"# Custom user Java arguments from Settings
-USER_JAVA_TOOL_OPTIONS=""{escaped}""
-
-";
-    }
+        => JvmArgumentBuilder.BuildEnvLine(_config.JavaArguments);
 
     private static string EscapeForBashDoubleQuoted(string value)
-    {
-        return value
-            .Replace("\\", "\\\\")
-            .Replace("\"", "\\\"")
-            .Replace("$", "\\$")
-            .Replace("`", "\\`");
-    }
+        => JvmArgumentBuilder.EscapeForBash(value);
 
     private async Task StartAndMonitorProcessAsync(ProcessStartInfo startInfo, string sessionUuid)
     {

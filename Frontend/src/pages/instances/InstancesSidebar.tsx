@@ -103,7 +103,7 @@ export function InstancesSidebar({
     <div className="w-72 flex-shrink-0 flex flex-col">
       <div className="flex items-center justify-between mb-3 px-3">
         <div className="flex items-center gap-2">
-          <HardDrive size={18} className="text-white/70" />
+          <HardDrive size={18} className="text-white opacity-70" />
           <h2 className="text-sm font-semibold text-white">{title}</h2>
         </div>
 

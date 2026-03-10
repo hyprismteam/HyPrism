@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ipc, InstalledInstance, type ModInfo as CurseForgeModInfo, type SaveInfo } from '@/lib/ipc';
-import type { InstalledVersionInfo, InstanceTab, ModInfo } from '@/types';
+import type { InstalledVersionInfo, InstanceTab, InstalledModInfo } from '@/types';
 import { GameBranch } from '@/constants/enums';
 import { 
   useInstanceActions, 
@@ -11,34 +11,43 @@ import {
   getInstanceIcon as getInstanceIconIpc,
 } from '@/hooks';
 
-// ============================================================================
-// Types
-// ============================================================================
+// #region Types
 
+/**
+ * Options accepted by the {@link useInstancesPage} hook.
+ */
 export interface UseInstancesPageOptions {
   onInstanceDeleted?: () => void;
   onInstanceSelected?: () => void;
   isGameRunning?: boolean;
-  runningBranch?: string;
-  runningVersion?: number;
+  runningInstanceId?: string;
   onStopGame?: () => void;
   activeTab?: InstanceTab;
   onTabChange?: (tab: InstanceTab) => void;
   isDownloading?: boolean;
-  downloadingBranch?: string;
-  downloadingVersion?: number;
-  onLaunchInstance?: (branch: string, version: number, instanceId?: string) => void;
+  downloadingInstanceId?: string;
+  onLaunchInstance?: (instanceId: string) => void;
 }
 
+/**
+ * A transient status message displayed to the user.
+ */
 export interface MessageState {
   type: 'success' | 'error';
   text: string;
 }
 
-// ============================================================================
-// Helper: Convert InstalledInstance to InstalledVersionInfo
-// ============================================================================
+// #endregion
 
+// #region Helpers
+
+/**
+ * Converts a raw {@link InstalledInstance} from the IPC layer into the
+ * UI-friendly {@link InstalledVersionInfo} shape.
+ *
+ * @param inst - The raw installed instance data.
+ * @returns A normalized {@link InstalledVersionInfo} object.
+ */
 export const toVersionInfo = (inst: InstalledInstance): InstalledVersionInfo => ({
   id: inst.id,
   branch: inst.branch,
@@ -53,31 +62,35 @@ export const toVersionInfo = (inst: InstalledInstance): InstalledVersionInfo => 
   customName: inst.customName,
 });
 
-// ============================================================================
-// Main Hook
-// ============================================================================
+// #endregion
 
+// #region Main Hook
+
+/**
+ * Manages all state and business logic for the Instances page, including
+ * instance listing, mod management, saves, icon loading, and download tracking.
+ *
+ * @param options - Configuration options including lifecycle callbacks and
+ *   controlled state for game running / download status.
+ * @returns The complete instances-page state and handler bag.
+ */
 export function useInstancesPage(options: UseInstancesPageOptions) {
   const {
     onInstanceDeleted,
     onInstanceSelected,
     isGameRunning = false,
-    runningBranch,
-    runningVersion,
+    runningInstanceId,
     onStopGame,
     activeTab: controlledTab,
     onTabChange,
     isDownloading = false,
-    downloadingBranch,
-    downloadingVersion,
+    downloadingInstanceId,
     onLaunchInstance,
   } = options;
 
   const { t } = useTranslation();
 
-  // ============================================================================
-  // Core State
-  // ============================================================================
+  // #region Core State
   
   const [instances, setInstances] = useState<InstalledVersionInfo[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -86,9 +99,9 @@ export function useInstancesPage(options: UseInstancesPageOptions) {
   const selectedInstanceRef = useRef<InstalledVersionInfo | null>(null);
   const [message, setMessage] = useState<MessageState | null>(null);
 
-  // ============================================================================
-  // Tab State
-  // ============================================================================
+  // #endregion
+
+  // #region Tab State
   
   const [localTab, setLocalTab] = useState<InstanceTab>(controlledTab ?? 'content');
   const activeTab = controlledTab ?? localTab;
@@ -100,12 +113,12 @@ export function useInstancesPage(options: UseInstancesPageOptions) {
   
   const tabs: InstanceTab[] = ['content', 'browse', 'worlds'];
 
-  // ============================================================================
-  // Modal States
-  // ============================================================================
+  // #endregion
+
+  // #region Modal States
   
   const [instanceToDelete, setInstanceToDelete] = useState<InstalledVersionInfo | null>(null);
-  const [modToDelete, setModToDelete] = useState<ModInfo | null>(null);
+  const [modToDelete, setModToDelete] = useState<InstalledModInfo | null>(null);
   const [showBulkUpdateConfirm, setShowBulkUpdateConfirm] = useState(false);
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -116,45 +129,45 @@ export function useInstancesPage(options: UseInstancesPageOptions) {
   const [isBulkTogglingMods] = useState(false);
   const [isUpdatingMods, setIsUpdatingMods] = useState(false);
 
-  // ============================================================================
-  // Instance Menu State
-  // ============================================================================
+  // #endregion
+
+  // #region Instance Menu State
   
   const [showInstanceMenu, setShowInstanceMenu] = useState(false);
   const instanceMenuRef = useRef<HTMLDivElement>(null);
   const [inlineMenuInstanceId, setInlineMenuInstanceId] = useState<string | null>(null);
   const inlineMenuRef = useRef<HTMLDivElement>(null);
 
-  // ============================================================================
-  // Saves State
-  // ============================================================================
+  // #endregion
+
+  // #region Saves State
   
   const [saves, setSaves] = useState<SaveInfo[]>([]);
   const [isLoadingSaves, setIsLoadingSaves] = useState(false);
 
-  // ============================================================================
-  // Instance Icons
-  // ============================================================================
+  // #endregion
+
+  // #region Instance Icons
   
   const [instanceIcons, setInstanceIcons] = useState<Record<string, string>>({});
   const iconLoadSeqRef = useRef(0);
 
-  // ============================================================================
-  // Browse Tab State
-  // ============================================================================
+  // #endregion
+
+  // #region Browse Tab State
   
   const [browseRefreshSignal, setBrowseRefreshSignal] = useState(0);
   const hasOpenedBrowseRef = useRef(false);
 
-  // ============================================================================
-  // Instance Actions Hook
-  // ============================================================================
+  // #endregion
+
+  // #region Instance Actions Hook
   
   const instanceActions = useInstanceActions(setMessage, loadInstances, t);
 
-  // ============================================================================
-  // Mod Manager Hook
-  // ============================================================================
+  // #endregion
+
+  // #region Mod Manager Hook
   
   const modManager = useModManager({
     selectedInstance,
@@ -162,17 +175,17 @@ export function useInstancesPage(options: UseInstancesPageOptions) {
     t,
   });
 
-  // ============================================================================
-  // Keep Ref in Sync
-  // ============================================================================
+  // #endregion
+
+  // #region Ref Sync
   
   useEffect(() => {
     selectedInstanceRef.current = selectedInstance;
   }, [selectedInstance]);
 
-  // ============================================================================
-  // Load Instances
-  // ============================================================================
+  // #endregion
+
+  // #region Load Instances
   
   // eslint-disable-next-line react-hooks/exhaustive-deps
   function loadInstances() {
@@ -220,9 +233,9 @@ export function useInstancesPage(options: UseInstancesPageOptions) {
     prevDownloadingRef.current = isDownloading;
   }, [isDownloading]);
 
-  // ============================================================================
-  // Load Mods Effect
-  // ============================================================================
+  // #endregion
+
+  // #region Load Mods Effect
   
   useEffect(() => {
     modManager.loadInstalledMods();
@@ -243,9 +256,9 @@ export function useInstancesPage(options: UseInstancesPageOptions) {
     return () => window.clearInterval(intervalId);
   }, [activeTab, instanceToDelete, modToDelete, selectedInstance, showBulkDeleteConfirm, showBulkUpdateConfirm, modManager]);
 
-  // ============================================================================
-  // Load Saves
-  // ============================================================================
+  // #endregion
+
+  // #region Load Saves
   
   const loadSaves = useCallback(async () => {
     if (!selectedInstance) {
@@ -254,7 +267,7 @@ export function useInstancesPage(options: UseInstancesPageOptions) {
     }
     setIsLoadingSaves(true);
     try {
-      const savesData = await getInstanceSaves(selectedInstance.id, selectedInstance.branch, selectedInstance.version);
+      const savesData = await getInstanceSaves(selectedInstance.id);
       setSaves(savesData || []);
     } catch (err) {
       console.error('Failed to load saves:', err);
@@ -274,9 +287,9 @@ export function useInstancesPage(options: UseInstancesPageOptions) {
     modManager.clearSelection();
   }, [activeTab, selectedInstance?.id]);
 
-  // ============================================================================
-  // Load Instance Icons
-  // ============================================================================
+  // #endregion
+
+  // #region Load Instance Icons
   
   const loadAllInstanceIcons = useCallback(async () => {
     const requestSeq = ++iconLoadSeqRef.current;
@@ -307,9 +320,9 @@ export function useInstancesPage(options: UseInstancesPageOptions) {
     loadAllInstanceIcons();
   }, [loadAllInstanceIcons]);
 
-  // ============================================================================
-  // Browse Tab Initialization
-  // ============================================================================
+  // #endregion
+
+  // #region Browse Tab Initialization
   
   useEffect(() => {
     if (activeTab !== 'browse') return;
@@ -318,9 +331,9 @@ export function useInstancesPage(options: UseInstancesPageOptions) {
     setBrowseRefreshSignal((v) => v + 1);
   }, [activeTab]);
 
-  // ============================================================================
-  // Click Outside Handlers
-  // ============================================================================
+  // #endregion
+
+  // #region Click Outside Handlers
   
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -335,9 +348,9 @@ export function useInstancesPage(options: UseInstancesPageOptions) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // ============================================================================
-  // Display Helpers
-  // ============================================================================
+  // #endregion
+
+  // #region Display Helpers
   
   const getInstanceDisplayName = useCallback((inst: InstalledVersionInfo) => {
     if (inst.customName) return inst.customName;
@@ -394,18 +407,18 @@ export function useInstancesPage(options: UseInstancesPageOptions) {
     return t(`instances.tab.${tab}`);
   }, [t]);
 
-  // ============================================================================
-  // Mod Helpers
-  // ============================================================================
+  // #endregion
+
+  // #region Mod Helpers
   
-  const isLocalInstalledMod = useCallback((mod: ModInfo): boolean => {
+  const isLocalInstalledMod = useCallback((mod: InstalledModInfo): boolean => {
     if (typeof mod.id === 'string' && mod.id.startsWith('local-')) return true;
     if (String(mod.version || '').toLowerCase() === 'local') return true;
     if (String(mod.author || '').toLowerCase() === 'local file') return true;
     return false;
   }, []);
 
-  const isTrustedRemoteIdentity = useCallback((mod: ModInfo): boolean => {
+  const isTrustedRemoteIdentity = useCallback((mod: InstalledModInfo): boolean => {
     if (!isLocalInstalledMod(mod)) return true;
     if (mod.curseForgeId != null) return true;
     if (mod.slug && mod.slug.trim()) return true;
@@ -426,7 +439,7 @@ export function useInstancesPage(options: UseInstancesPageOptions) {
     return m?.[1] ?? '';
   }, []);
 
-  const getDisplayVersion = useCallback((mod: ModInfo): string => {
+  const getDisplayVersion = useCallback((mod: InstalledModInfo): string => {
     const v = String(mod.version || '').trim();
     if (!isLocalInstalledMod(mod)) return v || '-';
     if (v && v.toLowerCase() !== 'local') return v;
@@ -442,7 +455,7 @@ export function useInstancesPage(options: UseInstancesPageOptions) {
     return null;
   }, []);
 
-  const getCurseForgeUrl = useCallback((mod: ModInfo): string => {
+  const getCurseForgeUrl = useCallback((mod: InstalledModInfo): string => {
     if (mod.slug) return `https://www.curseforge.com/hytale/mods/${mod.slug}`;
     if (isLocalInstalledMod(mod)) {
       return `https://www.curseforge.com/hytale/mods/search?search=${encodeURIComponent(String(mod.name || ''))}`;
@@ -452,7 +465,7 @@ export function useInstancesPage(options: UseInstancesPageOptions) {
     return `https://www.curseforge.com/hytale/mods/search?search=${encodeURIComponent(String(id || mod.name))}`;
   }, [isLocalInstalledMod]);
 
-  const handleOpenModPage = useCallback((e: React.MouseEvent, mod: ModInfo) => {
+  const handleOpenModPage = useCallback((e: React.MouseEvent, mod: InstalledModInfo) => {
     e.preventDefault();
     e.stopPropagation();
     const cached = modManager.modDetailsCache[mod.id];
@@ -464,17 +477,17 @@ export function useInstancesPage(options: UseInstancesPageOptions) {
     ipc.browser.open(getCurseForgeUrl(mod));
   }, [getCurseForgeUrl, getCurseForgeUrlFromDetails, modManager.modDetailsCache]);
 
-  const getCurseForgeModId = useCallback((mod: ModInfo): string => {
+  const getCurseForgeModId = useCallback((mod: InstalledModInfo): string => {
     if (typeof mod.curseForgeId === 'number' && Number.isFinite(mod.curseForgeId)) return String(mod.curseForgeId);
     if (typeof mod.id === 'string' && mod.id.startsWith('cf-')) return mod.id.replace('cf-', '');
     return mod.id;
   }, []);
 
-  // ============================================================================
-  // Prefetch Mod Details
-  // ============================================================================
+  // #endregion
+
+  // #region Prefetch Mod Details
   
-  const prefetchModDetails = useCallback(async (mods: ModInfo[]) => {
+  const prefetchModDetails = useCallback(async (mods: InstalledModInfo[]) => {
     const toFetch = mods.filter((m) => modManager.modDetailsCache[m.id] === undefined);
     if (toFetch.length === 0) return;
 
@@ -503,24 +516,23 @@ export function useInstancesPage(options: UseInstancesPageOptions) {
     void prefetchModDetails(toEnrich);
   }, [modManager.installedMods, prefetchModDetails]);
 
-  // ============================================================================
-  // Instance Launch Handler
-  // ============================================================================
+  // #endregion
+
+  // #region Instance Launch Handler
   
   const handleLaunchInstance = useCallback((inst: InstalledVersionInfo) => {
-    const runningIdentityKnown = !!runningBranch && runningVersion !== undefined;
-    const isLikelyRunningThis = isGameRunning && (!runningIdentityKnown || (runningBranch === inst.branch && runningVersion === inst.version));
+    const isLikelyRunningThis = isGameRunning && (!runningInstanceId || runningInstanceId === inst.id);
 
     if (isLikelyRunningThis) {
       onStopGame?.();
     } else {
-      onLaunchInstance?.(inst.branch, inst.version, inst.id);
+      onLaunchInstance?.(inst.id);
     }
-  }, [isGameRunning, onLaunchInstance, onStopGame, runningBranch, runningVersion]);
+  }, [isGameRunning, onLaunchInstance, onStopGame, runningInstanceId]);
 
-  // ============================================================================
-  // Delete Mod Handler
-  // ============================================================================
+  // #endregion
+
+  // #region Delete Mod Handler
   
   const handleDeleteMod = useCallback(async () => {
     if (!modToDelete) return;
@@ -530,9 +542,9 @@ export function useInstancesPage(options: UseInstancesPageOptions) {
     setIsDeletingMod(false);
   }, [modManager, modToDelete]);
 
-  // ============================================================================
-  // Drop Import Mods Handler
-  // ============================================================================
+  // #endregion
+
+  // #region Drop Import Mods Handler
   
   const handleDropImportMods = useCallback(async (files: FileList | File[]) => {
     if (!selectedInstance) return;
@@ -586,8 +598,6 @@ export function useInstancesPage(options: UseInstancesPageOptions) {
           fileName: file.name,
           base64Content,
           instanceId: selectedInstance.id,
-          branch: selectedInstance.branch,
-          version: selectedInstance.version,
         });
         if (ok) okCount++;
         else failCount++;
@@ -609,18 +619,18 @@ export function useInstancesPage(options: UseInstancesPageOptions) {
     setTimeout(() => setMessage(null), 3000);
   }, [modManager, selectedInstance]);
 
-  // ============================================================================
-  // Bulk Delete List
-  // ============================================================================
+  // #endregion
+
+  // #region Bulk Delete List
   
   const bulkDeleteList = useMemo(() => {
     if (modManager.selectedMods.size === 0) return [];
     return modManager.filteredMods.filter((m) => modManager.selectedMods.has(m.id));
   }, [modManager.filteredMods, modManager.selectedMods]);
 
-  // ============================================================================
-  // Select Instance Handler
-  // ============================================================================
+  // #endregion
+
+  // #region Select Instance Handler
   
   const handleSelectInstance = useCallback((inst: InstalledVersionInfo) => {
     setSelectedInstance(inst);
@@ -630,20 +640,18 @@ export function useInstancesPage(options: UseInstancesPageOptions) {
     }
   }, [onInstanceSelected]);
 
-  // ============================================================================
-  // Context Menu Handler
-  // ============================================================================
+  // #endregion
+
+  // #region Context Menu Handler
   
   const handleContextMenuInstance = useCallback((inst: InstalledVersionInfo) => {
-    setSelectedInstance(inst);
-    if (inst.id) ipc.instance.select({ id: inst.id }).catch(console.error);
     setInlineMenuInstanceId(inst.id);
     setShowInstanceMenu(false);
   }, []);
 
-  // ============================================================================
-  // Return
-  // ============================================================================
+  // #endregion
+
+  // #region Return
   
   return {
     // Core state
@@ -736,13 +744,15 @@ export function useInstancesPage(options: UseInstancesPageOptions) {
     
     // Passed options for convenience
     isGameRunning,
-    runningBranch,
-    runningVersion,
+    runningInstanceId,
     isDownloading,
-    downloadingBranch,
-    downloadingVersion,
+    downloadingInstanceId,
     onInstanceDeleted,
   };
+  // #endregion
 }
 
+// #endregion
+
+/** Full return type of the {@link useInstancesPage} hook. */
 export type UseInstancesPageReturn = ReturnType<typeof useInstancesPage>;

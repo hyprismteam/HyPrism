@@ -8,93 +8,103 @@ import { Language } from '@/constants/enums';
 import { backgroundImages } from '@/constants/backgrounds';
 import { generateRandomNick } from '@/utils/randomNick';
 import type { Contributor } from './useSettings';
+import type { OnboardingPhase, OnboardingStep, OnboardingState } from '@/types/onboarding';
 
-// ============================================================================
-// Types
-// ============================================================================
+export type { OnboardingPhase, OnboardingStep, OnboardingState };
 
+// #region Types
+
+/**
+ * Represents a GPU adapter detected on the system.
+ */
 export interface GpuAdapter {
   name: string;
   vendor: string;
   type: string;
 }
 
-export type OnboardingPhase = 'splash' | 'auth' | 'warning' | 'setup';
-export type OnboardingStep = 'language' | 'profile' | 'hardware' | 'visual' | 'about';
-
-export interface OnboardingState {
-  phase: OnboardingPhase;
-  currentStep: string;
-  username: string;
-  backgroundMode: string;
-  selectedLanguage: string;
-  isAuthenticated: boolean;
-}
-
+/**
+ * Options accepted by the {@link useOnboarding} hook.
+ */
 export interface UseOnboardingOptions {
   onComplete: () => void;
 }
 
-// ============================================================================
-// Constants
-// ============================================================================
+// #endregion
 
+// #region Constants
+
+/** localStorage key used to persist partial onboarding progress across page reloads. */
 const ONBOARDING_CACHE_KEY = 'hyprism_onboarding_state';
 
-// ============================================================================
-// Stub IPC functions (to be replaced with real IPC)
-// ============================================================================
+// #endregion
 
+// #region Stub IPC Functions
+
+/** @returns The absolute path to the launcher installation folder. */
 async function GetLauncherFolderPath(): Promise<string> { 
   console.warn('[IPC] GetLauncherFolderPath: stub'); 
   return ''; 
 }
 
+/** @returns The user-configured custom instances directory, or an empty string if not set. */
 async function GetCustomInstanceDir(): Promise<string> { 
   return (await ipc.settings.get()).dataDirectory ?? ''; 
 }
 
+/** Persists the chosen instance directory. @param _dir - Absolute path to the directory. */
 async function SetInstanceDirectory(_dir: string): Promise<void> { 
   console.warn('[IPC] SetInstanceDirectory: no channel'); 
 }
 
+/** Opens a native folder picker. @param _initialDir - Optional initial directory. @returns The selected folder path, or empty string if cancelled. */
 async function BrowseFolder(_initialDir?: string): Promise<string> { 
   console.warn('[IPC] BrowseFolder: no channel'); 
   return ''; 
 }
 
+/** Marks onboarding as completed or not in the backend settings. @param v - Whether onboarding is complete. */
 async function SetHasCompletedOnboarding(v: boolean): Promise<void> { 
   await ipc.settings.update({ hasCompletedOnboarding: v }); 
 }
 
+/** @returns A randomly generated username for the offline profile. */
 async function GetRandomUsername(): Promise<string> { 
   return generateRandomNick();
 }
 
+/** @returns The current launcher version string. */
 async function GetLauncherVersion(): Promise<string> { 
   return (await ipc.settings.get()).launcherVersion ?? ''; 
 }
 
+/** Persists the selected background mode to backend settings. @param v - Background mode identifier. */
 async function SetBackgroundModeBackend(v: string): Promise<void> { 
   await ipc.settings.update({ backgroundMode: v }); 
 }
 
+/** @returns The Discord invite URL for the HyPrism community. */
 async function GetDiscordLink(): Promise<string> { 
   return 'https://discord.gg/hyprism'; 
 }
 
-// ============================================================================
-// Main Hook
-// ============================================================================
+// #endregion
 
+// #region Main Hook
+
+/**
+ * Manages all onboarding wizard state, navigation, authentication flow,
+ * and completion logic.
+ *
+ * @param options - Hook options including the {@link UseOnboardingOptions.onComplete} callback.
+ * @returns The complete onboarding state and handler bag.
+ */
 export function useOnboarding(options: UseOnboardingOptions) {
   const { onComplete } = options;
   const { i18n, t } = useTranslation();
   const { accentColor, accentTextColor, setAccentColor } = useAccentColor();
 
-  // ============================================================================
-  // Cache
-  // ============================================================================
+  // #region Cache
 
   const getCachedState = (): Partial<OnboardingState> => {
     try {
@@ -108,18 +118,18 @@ export function useOnboarding(options: UseOnboardingOptions) {
 
   const cachedState = getCachedState();
 
-  // ============================================================================
-  // Phase & Step State
-  // ============================================================================
+  // #endregion
+
+  // #region Phase & Step State
 
   const [phase, setPhase] = useState<OnboardingPhase>(cachedState.phase || 'splash');
   const [currentStep, setCurrentStep] = useState<OnboardingStep>((cachedState.currentStep as OnboardingStep) || 'language');
   const [splashAnimationComplete, setSplashAnimationComplete] = useState(cachedState.phase !== 'splash');
   const [isReady, setIsReady] = useState(false);
 
-  // ============================================================================
-  // Auth State
-  // ============================================================================
+  // #endregion
+
+  // #region Auth State
 
   const [isAuthenticated, setIsAuthenticated] = useState(cachedState.isAuthenticated || false);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
@@ -131,9 +141,9 @@ export function useOnboarding(options: UseOnboardingOptions) {
   // null = not checked yet (or not applicable), number = enabled mirror count.
   const [skipAuthEnabledMirrorCount, setSkipAuthEnabledMirrorCount] = useState<number | null>(null);
 
-  // ============================================================================
-  // Form State
-  // ============================================================================
+  // #endregion
+
+  // #region Form State
 
   const [username, setUsername] = useState(cachedState.username || '');
   const [instanceDir, setInstanceDir] = useState('');
@@ -142,38 +152,38 @@ export function useOnboarding(options: UseOnboardingOptions) {
   const [isGeneratingUsername, setIsGeneratingUsername] = useState(false);
   const [launcherVersion, setLauncherVersion] = useState('2.0.2');
 
-  // ============================================================================
-  // Visual State
-  // ============================================================================
+  // #endregion
+
+  // #region Visual State
 
   const [backgroundMode, setBackgroundMode] = useState(cachedState.backgroundMode || 'slideshow');
   const [currentBackgroundIndex, setCurrentBackgroundIndex] = useState(0);
 
-  // ============================================================================
-  // GPU State
-  // ============================================================================
+  // #endregion
+
+  // #region GPU State
 
   const [gpuAdapters, setGpuAdapters] = useState<GpuAdapter[]>([]);
   const [gpuPreference, setGpuPreference] = useState<string>('auto');
   const [hasMultipleGpus, setHasMultipleGpus] = useState(false);
   const [gpuAlreadyConfigured, setGpuAlreadyConfigured] = useState(false);
 
-  // ============================================================================
-  // Profile State
-  // ============================================================================
+  // #endregion
+
+  // #region Profile State
 
   const [hasExistingProfiles, setHasExistingProfiles] = useState(false);
 
-  // ============================================================================
-  // Contributors State
-  // ============================================================================
+  // #endregion
+
+  // #region Contributors State
 
   const [contributors, setContributors] = useState<Contributor[]>([]);
   const [isLoadingContributors, setIsLoadingContributors] = useState(false);
 
-  // ============================================================================
-  // Dynamic Steps
-  // ============================================================================
+  // #endregion
+
+  // #region Dynamic Steps
 
   const steps = useMemo(() => {
     const allSteps: { id: OnboardingStep; label: string; icon: React.ElementType }[] = [
@@ -200,9 +210,9 @@ export function useOnboarding(options: UseOnboardingOptions) {
 
   const currentStepIndex = steps.findIndex(s => s.id === currentStep);
 
-  // ============================================================================
-  // Cache Management
-  // ============================================================================
+  // #endregion
+
+  // #region Cache Management
 
   const saveToCache = useCallback(() => {
     try {
@@ -228,9 +238,9 @@ export function useOnboarding(options: UseOnboardingOptions) {
     } catch {}
   }, []);
 
-  // ============================================================================
-  // Load Defaults
-  // ============================================================================
+  // #endregion
+
+  // #region Load Defaults
 
   useEffect(() => {
     const loadDefaults = async () => {
@@ -284,9 +294,9 @@ export function useOnboarding(options: UseOnboardingOptions) {
     loadDefaults();
   }, []);
 
-  // ============================================================================
-  // Load Contributors
-  // ============================================================================
+  // #endregion
+
+  // #region Load Contributors
 
   const loadContributors = useCallback(async () => {
     setIsLoadingContributors(true);
@@ -308,9 +318,9 @@ export function useOnboarding(options: UseOnboardingOptions) {
     }
   }, [currentStep, contributors.length, isLoadingContributors, loadContributors]);
 
-  // ============================================================================
-  // Background Slideshow
-  // ============================================================================
+  // #endregion
+
+  // #region Background Slideshow
 
   useEffect(() => {
     if (backgroundMode === 'slideshow') {
@@ -321,9 +331,9 @@ export function useOnboarding(options: UseOnboardingOptions) {
     }
   }, [backgroundMode]);
 
-  // ============================================================================
-  // Splash Animation
-  // ============================================================================
+  // #endregion
+
+  // #region Splash Animation
 
   useEffect(() => {
     if (phase === 'splash' && !splashAnimationComplete) {
@@ -334,9 +344,9 @@ export function useOnboarding(options: UseOnboardingOptions) {
     }
   }, [phase, splashAnimationComplete]);
 
-  // ============================================================================
-  // Handlers
-  // ============================================================================
+  // #endregion
+
+  // #region Handlers
 
   const handleEnterAuth = useCallback(() => {
     if (hasExistingProfiles) {
@@ -406,9 +416,9 @@ export function useOnboarding(options: UseOnboardingOptions) {
     }
   }, []);
 
-  // ============================================================================
-  // Auth Handlers
-  // ============================================================================
+  // #endregion
+
+  // #region Auth Handlers
 
   const handleLogin = useCallback(async () => {
     setIsAuthenticating(true);
@@ -472,9 +482,9 @@ export function useOnboarding(options: UseOnboardingOptions) {
     setPhase('auth');
   }, []);
 
-  // ============================================================================
-  // Complete / Skip
-  // ============================================================================
+  // #endregion
+
+  // #region Complete / Skip
 
   const handleComplete = useCallback(async () => {
     setIsLoading(true);
@@ -526,9 +536,9 @@ export function useOnboarding(options: UseOnboardingOptions) {
     }
   }, [isAuthenticated, username, clearCache, onComplete]);
 
-  // ============================================================================
-  // Social Links
-  // ============================================================================
+  // #endregion
+
+  // #region Social Links
 
   const openGitHub = useCallback(() => openUrl('https://github.com/yyyumeniku/HyPrism'), []);
   
@@ -539,9 +549,9 @@ export function useOnboarding(options: UseOnboardingOptions) {
   
   const openBugReport = useCallback(() => openUrl('https://github.com/yyyumeniku/HyPrism/issues/new'), []);
 
-  // ============================================================================
-  // Helpers
-  // ============================================================================
+  // #endregion
+
+  // #region Helpers
 
   const getCurrentBackground = useCallback(() => {
     if (backgroundMode === 'slideshow') {
@@ -561,9 +571,9 @@ export function useOnboarding(options: UseOnboardingOptions) {
   const maintainer = useMemo(() => contributors.find(c => c.login.toLowerCase() === 'yyyumeniku'), [contributors]);
   const otherContributors = useMemo(() => contributors.filter(c => c.login.toLowerCase() !== 'yyyumeniku').slice(0, 10), [contributors]);
 
-  // ============================================================================
-  // Return
-  // ============================================================================
+  // #endregion
+
+  // #region Return
 
   return {
     // Phase & Step
@@ -642,6 +652,10 @@ export function useOnboarding(options: UseOnboardingOptions) {
     // i18n
     t,
   };
+  // #endregion
 }
 
+/** Full return type of the {@link useOnboarding} hook. */
 export type UseOnboardingReturn = ReturnType<typeof useOnboarding>;
+
+// #endregion

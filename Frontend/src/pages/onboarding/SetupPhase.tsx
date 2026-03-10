@@ -84,7 +84,7 @@ export const SetupPhase: React.FC<SetupPhaseProps> = ({ onboarding }) => {
                   </span>
                 </button>
                 {index < onboarding.steps.length - 1 && (
-                  <ChevronRight size={14} className="text-white/20 flex-shrink-0" />
+                  <ChevronRight size={14} className="text-white opacity-20 flex-shrink-0" />
                 )}
               </React.Fragment>
             ))}

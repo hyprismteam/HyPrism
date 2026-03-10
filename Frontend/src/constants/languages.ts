@@ -1,5 +1,9 @@
+/**
+ * Language configuration metadata for all supported UI languages.
+ */
 import { Language } from './enums';
 
+/** Metadata describing a single supported UI language. */
 export interface LanguageMetadata {
     name: string;
     nativeName: string;
@@ -9,6 +13,7 @@ export interface LanguageMetadata {
     flagCode: string;
 }
 
+/** Map from each supported {@link Language} enum value to its display and configuration metadata. */
 export const LANGUAGE_CONFIG: Record<Language, LanguageMetadata> = {
     [Language.ENGLISH]: {
         name: 'English',

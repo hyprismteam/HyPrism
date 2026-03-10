@@ -20,9 +20,9 @@
 ### Linux packaging icon note
 
 - `Build/` is generated during packaging; source icon is `Frontend/public/icon.png`.
-- For Linux packages (including Flatpak), `Scripts/publish.sh` generates `Build/icons/` with hicolor app-id icons (`io.github.HyPrismTeam.HyPrism`) to ensure icon export works after install.
-- Linux package app ID is `io.github.HyPrismTeam.HyPrism`.
-- AppStream metadata is injected for Linux packaging from `Properties/linux/io.github.HyPrismTeam.HyPrism.metainfo.xml`.
+- For Linux packages (including Flatpak), `Scripts/publish.sh` generates `Build/icons/` with hicolor app-id icons (`io.github.hyprismteam.HyPrism`) to ensure icon export works after install.
+- Linux package app ID is `io.github.hyprismteam.HyPrism`.
+- AppStream metadata is injected for Linux packaging from `Properties/linux/io.github.hyprismteam.HyPrism.metainfo.xml`.
 - RPM repack step intentionally strips `/usr/lib/.build-id` payload and does not own system directories (`/`, `/usr`, `/usr/lib`) to avoid install conflicts on Fedora.
 - Flatpak packaging uses runtime/base `25.08`; CI prepares Flathub remotes at system and user levels so flatpak-builder can install deps, then installs `org.freedesktop.Platform`, `org.freedesktop.Sdk`, and `org.electronjs.Electron2.BaseApp` at system level before build.
 - Linux CI prints Flatpak remotes/runtimes diagnostics to simplify troubleshooting when flatpak-bundler fails.

@@ -50,7 +50,7 @@ export const HardwareStep: React.FC<HardwareStepProps> = ({ onboarding }) => {
                       className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
                       style={{ backgroundColor: isSelected ? `${onboarding.accentColor}25` : 'rgba(255,255,255,0.06)' }}
                     >
-                      <span style={{ color: isSelected ? onboarding.accentColor : 'rgba(255,255,255,0.5)' }}>
+                      <span style={{ color: isSelected ? onboarding.accentColor : '#ffffff', opacity: isSelected ? 1 : 0.5 }}>
                         {icons[option]}
                       </span>
                     </div>

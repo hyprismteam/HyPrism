@@ -1,8 +1,6 @@
 import React, { Suspense, lazy } from 'react';
 import { motion } from 'framer-motion';
-import { useTranslation } from 'react-i18next';
 import { PageContainer } from '@/components/ui/PageContainer';
-import { SettingsHeader } from '@/components/ui/SettingsHeader';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { pageVariants } from '@/constants/animations';
 
@@ -21,8 +19,6 @@ interface SettingsPageProps {
 }
 
 export const SettingsPage: React.FC<SettingsPageProps> = (props) => {
-  const { t } = useTranslation();
-
   return (
     <motion.div
       variants={pageVariants}
@@ -34,9 +30,6 @@ export const SettingsPage: React.FC<SettingsPageProps> = (props) => {
     >
       <PageContainer contentClassName="h-full">
         <div className="h-full flex flex-col">
-          <div className="flex-shrink-0 mb-4">
-            <SettingsHeader title={t('settings.title')} />
-          </div>
           <div className="flex-1 min-h-0">
             <Suspense fallback={
               <div className="flex items-center justify-center h-full">
@@ -44,14 +37,12 @@ export const SettingsPage: React.FC<SettingsPageProps> = (props) => {
               </div>
             }>
               <SettingsPageContent
-                onClose={() => {}}
                 launcherBranch={props.launcherBranch}
                 onLauncherBranchChange={props.onLauncherBranchChange}
                 rosettaWarning={props.rosettaWarning}
                 onBackgroundModeChange={props.onBackgroundModeChange}
                 onInstanceDeleted={props.onInstanceDeleted}
                 onAuthSettingsChange={props.onAuthSettingsChange}
-                pageMode={true}
                 isGameRunning={props.isGameRunning}
                 onMovingDataChange={props.onMovingDataChange}
               />

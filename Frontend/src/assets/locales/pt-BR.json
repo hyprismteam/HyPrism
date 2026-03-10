@@ -164,7 +164,9 @@
       "showAlphaMods": "Mostrar Mods Alpha",
       "showAlphaModsHint": "Mostrar mods com tipo de release alpha no gerenciador de mods",
       "dualAuth": "DualAuth (Experimental)",
-      "dualAuthHint": "Usa um agente Java em tempo de execução para autenticação do servidor em vez de patch estático do JAR. Pode causar falhas ou problemas de conexão."
+      "dualAuthHint": "Usa um agente Java em tempo de execução para autenticação do servidor em vez de patch estático do JAR. Pode causar falhas ou problemas de conexão.",
+      "legacyPatching": "Patch Legado",
+      "legacyPatchingHint": "Usa patch estático do JAR para autenticação do servidor em vez do agente Java DualAuth. Mais compatível mas menos flexível."
     },
     "downloads": {
       "title": "Downloads",

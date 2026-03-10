@@ -10,13 +10,11 @@ namespace HyPrism.Services.Core.Platform;
 /// Works cross-platform: Windows (wmic/powershell), Linux (lspci/glxinfo), macOS (system_profiler).
 /// Results are cached after first detection.
 /// </summary>
-public class GpuDetectionService
+public class GpuDetectionService : IGpuDetectionService
 {
     private List<GpuAdapterInfo>? _cachedAdapters;
 
-    /// <summary>
-    /// Gets the list of detected GPU adapters. Results are cached.
-    /// </summary>
+    /// <inheritdoc/>
     public List<GpuAdapterInfo> GetAdapters()
     {
         if (_cachedAdapters != null) return _cachedAdapters;
@@ -39,9 +37,7 @@ public class GpuDetectionService
         return _cachedAdapters;
     }
 
-    /// <summary>
-    /// Returns true if only a single GPU was detected (no switchable graphics).
-    /// </summary>
+    /// <inheritdoc/>
     public bool HasSingleGpu()
     {
         var adapters = GetAdapters();

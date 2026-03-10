@@ -29,7 +29,7 @@ export const GraphicsTab: React.FC<GraphicsTabProps> = ({
         <p className="text-xs text-white/40 mb-4">{t('settings.graphicsSettings.gpuPreferenceHint')}</p>
         {hasSingleGpu && (
           <div className="mb-3 p-2.5 rounded-lg bg-[#2c2c2e] border border-white/[0.08] text-xs text-white/50 flex items-center gap-2">
-            <Settings size={14} className="flex-shrink-0 text-white/40" />
+            <Settings size={14} className="flex-shrink-0 text-white opacity-40" />
             {t('settings.graphicsSettings.singleGpuNotice')}
           </div>
         )}
@@ -64,7 +64,7 @@ export const GraphicsTab: React.FC<GraphicsTabProps> = ({
                       className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
                       style={{ backgroundColor: isSelected ? `${accentColor}25` : 'rgba(255,255,255,0.06)' }}
                     >
-                      <span style={{ color: isSelected ? accentColor : 'rgba(255,255,255,0.5)' }}>{icons[option]}</span>
+                      <span style={{ color: isSelected ? accentColor : '#ffffff', opacity: isSelected ? 1 : 0.5 }}>{icons[option]}</span>
                     </div>
                     <div>
                       <div className="text-white text-sm font-medium">{t(`settings.graphicsSettings.gpu_${option}`)}</div>

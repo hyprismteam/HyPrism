@@ -5,5 +5,6 @@ namespace HyPrism.Models;
 /// </summary>
 public class LatestVersionInfo
 {
+    /// <summary>Version number of the latest installed instance.</summary>
     public int Version { get; set; }
 }

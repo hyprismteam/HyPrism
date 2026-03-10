@@ -77,7 +77,7 @@ export const ErrorModal: React.FC<ErrorModalProps> = ({ error, onClose }) => {
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.9, opacity: 0 }}
-        className={`w-full max-w-lg overflow-hidden glass-panel-static-solid !border-red-500/20`}
+        className={`w-full max-w-lg h-[700px] flex flex-col overflow-hidden glass-panel-static-solid !border-red-500/20`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -99,7 +99,7 @@ export const ErrorModal: React.FC<ErrorModalProps> = ({ error, onClose }) => {
         </div>
 
         {/* Content */}
-        <div className="p-5 space-y-4">
+        <div className="p-5 space-y-4 flex-1 overflow-y-auto">
           <div>
             <h3 className="text-white font-medium mb-1">{error.message}</h3>
             {error.technical && (

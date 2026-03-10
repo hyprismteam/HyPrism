@@ -164,7 +164,9 @@
       "showAlphaMods": "显示 Alpha 模组",
       "showAlphaModsHint": "在模组管理器中显示 Alpha 发布类型的模组",
       "dualAuth": "DualAuth（实验性）",
-      "dualAuthHint": "使用运行时 Java 代理进行服务器身份验证，而不是静态 JAR 补丁。可能导致崩溃或连接问题。"
+      "dualAuthHint": "使用运行时 Java 代理进行服务器身份验证，而不是静态 JAR 补丁。可能导致崩溃或连接问题。",
+      "legacyPatching": "传统补丁",
+      "legacyPatchingHint": "使用静态 JAR 补丁进行服务器身份验证，而不是 DualAuth Java 代理。兼容性更好但灵活性较低。"
     },
     "downloads": {
       "title": "下载",

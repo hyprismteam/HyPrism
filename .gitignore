@@ -3,6 +3,7 @@
 .AppleDouble
 .LSOverride
 ._*
+.*hidden
 
 # .NET / C# Build outputs
 bin/
@@ -21,6 +22,7 @@ Build/*
 .idea/
 *.swp
 *.swo
+.c*/
 
 # VS Code
 .vscode/
@@ -82,7 +84,7 @@ repo
 build-dir
 flathub-bundle.tar.gz
 # Generated Flathub manifest (do not commit a static copy)
-Properties/linux/flathub/io.github.HyPrismTeam.HyPrism.yml
+Properties/linux/flathub/io.github.hyprismteam.HyPrism.yml
 
 # scripts
 scripts/run.sh
@@ -96,6 +98,7 @@ scripts/build-linux-all-ubuntu.sh
 *.py
 __pycache__/
 *.pyc
+*.hash
 
 # Virtual environments
 .venv/

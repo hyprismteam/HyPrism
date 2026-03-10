@@ -3,14 +3,27 @@ import { useTranslation } from 'react-i18next';
 import { useAccentColor } from '../contexts/AccentColorContext';
 import { ipc, type ModInfo, type ModCategory, type ModFileInfo } from '@/lib/ipc';
 
-// ------- Helpers -------
+// #region Helpers
 
+/**
+ * Formats a download count into a compact human-readable string.
+ * Values ≥ 1 000 000 are shown as `"X.XM"`, values ≥ 1 000 as `"X.XK"`,
+ * and smaller values are returned as-is.
+ * @param count - The raw download count.
+ * @returns A compact string such as `"1.2M"`, `"45.6K"`, or `"999"`.
+ */
 export const formatDownloads = (count: number): string => {
   if (count >= 1_000_000) return `${(count / 1_000_000).toFixed(1)}M`;
   if (count >= 1_000) return `${(count / 1_000).toFixed(1)}K`;
   return count.toString();
 };
 
+/**
+ * Maps a CurseForge release type number to a localized label string.
+ * @param type - CurseForge release type: `1` = Release, `2` = Beta, `3` = Alpha.
+ * @param t - i18next translation function used to resolve the label key.
+ * @returns The localized release type label, or the "unknown" label for unrecognized values.
+ */
 export const getReleaseTypeLabel = (type: number, t: (key: string) => string) => {
   switch (type) {
     case 1: return t('modManager.releaseType.release');
@@ -20,6 +33,13 @@ export const getReleaseTypeLabel = (type: number, t: (key: string) => string) =>
   }
 };
 
+/**
+ * Reads a `File` object and returns its contents as a Base64-encoded string.
+ * Used when Electron's native file path is unavailable and the file must be
+ * transferred to the backend via IPC as a Base64 payload.
+ * @param file - The browser `File` object to encode.
+ * @returns A promise that resolves with the Base64-encoded file contents.
+ */
 export const readFileAsBase64 = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -35,8 +55,13 @@ export const readFileAsBase64 = (file: File): Promise<string> => {
   });
 };
 
-// ------- Types -------
+// #endregion
 
+// #region Types
+
+/**
+ * Represents a single mod download task in the download queue.
+ */
 export type DownloadJob = {
   id: string;
   name: string;
@@ -45,12 +70,16 @@ export type DownloadJob = {
   error?: string;
 };
 
+/**
+ * A CurseForge sort option consisting of an API sort field ID and a display name.
+ */
 export type SortOption = { id: number; name: string };
 
+/**
+ * Configuration options for the {@link useModBrowser} hook.
+ */
 export interface UseModBrowserOptions {
   currentInstanceId?: string;
-  currentBranch: string;
-  currentVersion: number;
   installedModIds?: Set<string>;
   installedFileIds?: Set<string>;
   onModsInstalled?: () => void;
@@ -58,11 +87,19 @@ export interface UseModBrowserOptions {
   refreshSignal?: number;
 }
 
+// #endregion
+
+/**
+ * Manages mod browsing, searching, downloading, and drag-and-drop import for
+ * a specific game instance.
+ *
+ * @param options - Options including the target instance ID, installed-mod sets,
+ *   and lifecycle callbacks.
+ * @returns The complete mod-browser state and handler bag.
+ */
 export const useModBrowser = (options: UseModBrowserOptions) => {
   const {
     currentInstanceId,
-    currentBranch,
-    currentVersion,
     installedModIds,
     installedFileIds,
     onModsInstalled,
@@ -75,7 +112,7 @@ export const useModBrowser = (options: UseModBrowserOptions) => {
   // Normalize ID helper
   const normalizeId = useCallback((value: string | number | null | undefined) => String(value ?? ''), []);
 
-  // ------- Search state -------
+  // #region Search State
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<ModInfo[]>([]);
   const [categories, setCategories] = useState<ModCategory[]>([]);
@@ -92,14 +129,20 @@ export const useModBrowser = (options: UseModBrowserOptions) => {
   const [error, setError] = useState<string | null>(null);
   const browseSelectionAnchorRef = useRef<number | null>(null);
 
-  // ------- Settings -------
+  // #endregion
+
+  // #region Settings
   const [showAlphaMods, setShowAlphaMods] = useState(false);
 
-  // ------- Mod files cache -------
+  // #endregion
+
+  // #region Mod Files Cache
   const [modFilesCache, setModFilesCache] = useState<Map<string, ModFileInfo[]>>(new Map());
   const [selectedVersions, setSelectedVersions] = useState<Map<string, string>>(new Map());
 
-  // ------- Detail panel -------
+  // #endregion
+
+  // #region Detail Panel
   const [selectedMod, setSelectedMod] = useState<ModInfo | null>(null);
   const [selectedModFiles, setSelectedModFiles] = useState<ModFileInfo[]>([]);
   const [isLoadingModFiles, setIsLoadingModFiles] = useState(false);
@@ -107,24 +150,32 @@ export const useModBrowser = (options: UseModBrowserOptions) => {
   const [activeScreenshot, setActiveScreenshot] = useState(0);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
-  // ------- Download -------
+  // #endregion
+
+  // #region Download
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState<{ current: number; total: number; currentMod: string } | null>(null);
   const [downloadJobs, setDownloadJobs] = useState<DownloadJob[]>([]);
 
-  // ------- Import -------
+  // #endregion
+
+  // #region Import
   const [isDragging, setIsDragging] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [importProgress, setImportProgress] = useState<string | null>(null);
 
-  // ------- Refs -------
+  // #endregion
+
+  // #region Refs
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const dragDepthRef = useRef(0);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const categoryDropdownRef = useRef<HTMLDivElement>(null);
   const sortDropdownRef = useRef<HTMLDivElement>(null);
 
-  // ------- Sort options -------
+  // #endregion
+
+  // #region Sort Options
   const sortOptions: SortOption[] = [
     { id: 1, name: t('modManager.sortRelevancy') },
     { id: 2, name: t('modManager.sortPopularity') },
@@ -133,7 +184,9 @@ export const useModBrowser = (options: UseModBrowserOptions) => {
     { id: 6, name: t('modManager.sortTotalDownloads') },
   ];
 
-  // ------- Data loading -------
+  // #endregion
+
+  // #region Data Loading
   useEffect(() => {
     ipc.mods.categories().then(cats => setCategories(cats || [])).catch(() => {});
     ipc.settings.get().then(s => setShowAlphaMods(s.showAlphaMods ?? false)).catch(() => {});
@@ -175,7 +228,9 @@ export const useModBrowser = (options: UseModBrowserOptions) => {
     };
   }, []);
 
-  // ------- Search -------
+  // #endregion
+
+  // #region Search
   const handleSearch = useCallback(async (page = 0, append = false, opts?: { silent?: boolean }) => {
     const silent = opts?.silent === true;
     if (append) {
@@ -239,7 +294,9 @@ export const useModBrowser = (options: UseModBrowserOptions) => {
     }
   }, [isLoadingMore, isSearching, hasMore, currentPage, handleSearch]);
 
-  // ------- Mod files -------
+  // #endregion
+
+  // #region Mod Files
   const loadModFiles = useCallback(async (modId: string): Promise<ModFileInfo[]> => {
     if (modFilesCache.has(modId)) return modFilesCache.get(modId) || [];
 
@@ -325,7 +382,9 @@ export const useModBrowser = (options: UseModBrowserOptions) => {
     ids.forEach((id) => { void loadModFiles(id); });
   }, [searchResults, normalizeId, loadModFiles]);
 
-  // ------- Download -------
+  // #endregion
+
+  // #region Download Queue
   const runDownloadQueue = useCallback(async (items: Array<{ id: string; name: string; fileId: string }>) => {
     const maxRetries = 3;
     setIsDownloading(true);
@@ -337,7 +396,7 @@ export const useModBrowser = (options: UseModBrowserOptions) => {
       for (let attempt = 1; attempt <= maxRetries; attempt++) {
         setDownloadJobs(prev => prev.map(j => j.id === item.id ? { ...j, status: 'running', attempts: attempt } : j));
         try {
-          const result = await ipc.mods.install({ modId: item.id, fileId: item.fileId, branch: currentBranch, version: currentVersion, instanceId: currentInstanceId });
+          const result = await ipc.mods.install({ modId: item.id, fileId: item.fileId, instanceId: currentInstanceId });
           const ok = typeof result === 'object' && result !== null ? (result as { success: boolean }).success : result;
           const errorMsg = typeof result === 'object' && result !== null ? (result as { error?: string }).error : undefined;
           if (!ok) throw new Error(errorMsg || t('modManager.backendRefused'));
@@ -353,7 +412,7 @@ export const useModBrowser = (options: UseModBrowserOptions) => {
       completed++;
       setDownloadProgress({ current: completed, total: items.length, currentMod: item.name });
     }
-  }, [currentBranch, currentVersion, currentInstanceId, t]);
+  }, [currentInstanceId, t]);
 
   const handleDownloadSelected = useCallback(async () => {
     if (selectedMods.size === 0) return;
@@ -397,7 +456,9 @@ export const useModBrowser = (options: UseModBrowserOptions) => {
     onModsInstalled?.();
   }, [runDownloadQueue, onModsInstalled]);
 
-  // ------- Drag & Drop -------
+  // #endregion
+
+  // #region Drag And Drop
   const handleDragEnter = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -439,11 +500,11 @@ export const useModBrowser = (options: UseModBrowserOptions) => {
         setImportProgress(t('modManager.installingMod').replace('{{name}}', file.name));
         const electronFile = file as unknown as { path?: string };
         if (electronFile.path) {
-          const ok = await ipc.mods.installLocal({ sourcePath: electronFile.path, branch: currentBranch, version: currentVersion, instanceId: currentInstanceId });
+          const ok = await ipc.mods.installLocal({ sourcePath: electronFile.path, instanceId: currentInstanceId });
           if (ok) successCount++;
         } else {
           const base64 = await readFileAsBase64(file);
-          const ok = await ipc.mods.installBase64({ fileName: file.name, base64Content: base64, branch: currentBranch, version: currentVersion, instanceId: currentInstanceId });
+          const ok = await ipc.mods.installBase64({ fileName: file.name, base64Content: base64, instanceId: currentInstanceId });
           if (ok) successCount++;
         }
       }
@@ -457,9 +518,11 @@ export const useModBrowser = (options: UseModBrowserOptions) => {
     } finally {
       setIsImporting(false);
     }
-  }, [currentBranch, currentVersion, currentInstanceId, onModsInstalled, t]);
+  }, [currentInstanceId, onModsInstalled, t]);
 
-  // ------- Helpers -------
+  // #endregion
+
+  // #region Helpers
   const getCategoryName = useCallback((id: number) => {
     const cat = categories.find(c => c.id === id);
     if (!cat) return t('modManager.allMods');
@@ -469,6 +532,8 @@ export const useModBrowser = (options: UseModBrowserOptions) => {
   }, [categories, t]);
 
   const getSortName = useCallback((id: number) => sortOptions.find(s => s.id === id)?.name ?? '', [sortOptions]);
+
+  // #endregion
 
   return {
     // Context
@@ -558,4 +623,5 @@ export const useModBrowser = (options: UseModBrowserOptions) => {
   };
 };
 
+/** Full return type of the {@link useModBrowser} hook. */
 export type UseModBrowserReturn = ReturnType<typeof useModBrowser>;

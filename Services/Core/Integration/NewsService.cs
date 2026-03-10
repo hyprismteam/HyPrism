@@ -47,7 +47,7 @@ public class NewsService : INewsService
             _httpClient.DefaultRequestHeaders.Add("User-Agent", "HyPrism/1.0");
         }
     }
-    private const string HytaleNewsUrl = "https://hytale.com/api/blog/post/published";
+    private const string HytaleNewsUrl = "https://hytale.com/news";
     private const string HyPrismReleasesUrl = "https://api.github.com/repos/yyyumeniku/HyPrism/releases";
     
     // Cache for HyPrism news to avoid GitHub API rate limits
@@ -69,33 +69,35 @@ public class NewsService : INewsService
         try
         {
             var allNews = new List<(NewsItemResponse item, DateTime dateTime)>();
-            var tasks = new List<Task<List<NewsItemResponse>>>();
+
+            // Fetch each source independently at its own cap so one source can't crowd out the other.
+            // The merged list is returned sorted by date without a global Take(count).
+            const int perSourceCap = 30;
 
             Task<List<NewsItemResponse>>? hytaleTask = null;
-            if (source == NewsSource.All || source == NewsSource.Hytale)
-            {
-                hytaleTask = GetHytaleNewsAsync(count);
-                tasks.Add(hytaleTask);
-            }
-
             Task<List<NewsItemResponse>>? hyprismTask = null;
-            if (source == NewsSource.All || source == NewsSource.HyPrism)
-            {
-                hyprismTask = GetHyPrismNewsAsync(count);
-                tasks.Add(hyprismTask);
-            }
 
-            await Task.WhenAll(tasks);
+            if (source == NewsSource.All || source == NewsSource.Hytale)
+                hytaleTask = GetHytaleNewsAsync(perSourceCap);
+
+            if (source == NewsSource.All || source == NewsSource.HyPrism)
+                hyprismTask = GetHyPrismNewsAsync(perSourceCap);
+
+            // Await both concurrently
+            var awaitList = new List<Task>();
+            if (hytaleTask != null) awaitList.Add(hytaleTask);
+            if (hyprismTask != null) awaitList.Add(hyprismTask);
+            await Task.WhenAll(awaitList);
 
             if (hytaleTask != null)
                 allNews.AddRange((await hytaleTask).Select(n => (n, ParseDate(n.Date))));
-            
+
             if (hyprismTask != null)
                 allNews.AddRange((await hyprismTask).Select(n => (n, ParseDate(n.Date))));
 
+            // Return all items from all sources sorted by date — no cross-source count cap.
             var sortedNews = allNews
                 .OrderByDescending(x => x.dateTime)
-                .Take(count)
                 .Select(x => x.item)
                 .ToList();
 
@@ -127,6 +129,19 @@ public class NewsService : INewsService
         }
     }
 
+    private static readonly Regex _hytaleCardRegex = new(
+        @"<a\s[^>]*href=""(/news/(\d{4})/(\d+)/([^""]+))""[^>]*>(.*?)</a>",
+        RegexOptions.Singleline | RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex _hytaleThumbnailRegex = new(
+        @"img\s+src=""(https://cdn\.hytale\.com/[^""]+)""",
+        RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex _hytaleTitleRegex = new(
+        @"class=""[^""]*font-[^""]*""[^>]*>([^<]{5,150})<",
+        RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex _hytaleDateTextRegex = new(
+        @"\b(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{1,2}),?\s+(\d{4})\b",
+        RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
     private async Task<List<NewsItemResponse>> GetHytaleNewsInternalAsync(int count)
     {
         try
@@ -139,132 +154,82 @@ public class NewsService : INewsService
                 return _hytaleNewsCache.Take(count).ToList();
             }
 
-            Logger.Info("News", "Fetching news from Hytale API...");
-            var response = await _httpClient.GetStringAsync(HytaleNewsUrl);
-            
-            using var jsonDoc = JsonDocument.Parse(response);
-            
-            JsonElement posts;
-            if (jsonDoc.RootElement.ValueKind == JsonValueKind.Array)
+            Logger.Info("News", "Scraping news from hytale.com/news...");
+            var html = await _httpClient.GetStringAsync(HytaleNewsUrl);
+
+            var news = new List<NewsItemResponse>();
+
+            foreach (Match m in _hytaleCardRegex.Matches(html))
             {
-                posts = jsonDoc.RootElement;
+                if (news.Count >= 30) break; // cap to avoid runaway scraping
+
+                var relPath = m.Groups[1].Value;
+                var year    = m.Groups[2].Value;
+                var month   = m.Groups[3].Value;
+                var slug    = m.Groups[4].Value;
+                var inner   = m.Groups[5].Value;
+
+                // thumbnail — prefer blog_thumb variant embedded in the card
+                string? imageUrl = null;
+                var imgMatch = _hytaleThumbnailRegex.Match(inner);
+                if (imgMatch.Success) imageUrl = imgMatch.Groups[1].Value;
+
+                // title — from the first font-class span; fall back to human-readable slug
+                string title;
+                var titleMatch = _hytaleTitleRegex.Match(inner);
+                if (titleMatch.Success)
+                {
+                    title = HttpUtility.HtmlDecode(titleMatch.Groups[1].Value.Trim());
+                }
+                else
+                {
+                    // Convert slug to title case: "hytale-patch-notes-update-3" → "Hytale Patch Notes Update 3"
+                    title = System.Globalization.CultureInfo.InvariantCulture.TextInfo
+                        .ToTitleCase(slug.Replace("-", " "));
+                }
+
+                // Try to parse actual date from card text; fall back to URL-derived first-of-month
+                string dateStr;
+                var dateTextMatch = _hytaleDateTextRegex.Match(inner);
+                if (dateTextMatch.Success &&
+                    DateTime.TryParse(dateTextMatch.Value, System.Globalization.CultureInfo.InvariantCulture,
+                        System.Globalization.DateTimeStyles.None, out var parsedDate))
+                {
+                    dateStr = parsedDate.ToString("yyyy-MM-dd");
+                }
+                else
+                {
+                    dateStr = $"{year}-{month.PadLeft(2, '0')}-01";
+                }
+
+                news.Add(new NewsItemResponse
+                {
+                    Title    = title,
+                    Excerpt  = "",
+                    Url      = $"https://hytale.com{relPath}",
+                    Date     = dateStr,
+                    Author   = "Hytale Team",
+                    ImageUrl = imageUrl,
+                    Source   = "hytale"
+                });
             }
-            else if (jsonDoc.RootElement.TryGetProperty("data", out var dataProp))
+
+            if (news.Count > 0)
             {
-                posts = dataProp;
+                _hytaleNewsCache = news;
+                _hytaleCacheTime = DateTime.Now;
+                Logger.Success("News", $"Scraped {news.Count} Hytale news posts");
             }
             else
             {
-                Logger.Warning("News", "Unexpected JSON structure from Hytale API");
-                return new List<NewsItemResponse>();
-            }
-            
-            var news = new List<NewsItemResponse>();
-            
-            var itemCount = 0;
-            foreach (var post in posts.EnumerateArray())
-            {
-                if (itemCount >= count) break;
-                
-                try
-                {
-                    var title = post.TryGetProperty("title", out var titleProp) ? titleProp.GetString() : null;
-                    var excerpt = post.TryGetProperty("bodyExcerpt", out var excerptProp) ? excerptProp.GetString() : null;
-                    
-                    if (string.IsNullOrEmpty(excerpt))
-                    {
-                        excerpt = post.TryGetProperty("excerpt", out var excerptProp2) ? excerptProp2.GetString() : null;
-                    }
-                    var slug = post.TryGetProperty("slug", out var slugProp) ? slugProp.GetString() : null;
-                    var publishedAt = post.TryGetProperty("publishedAt", out var pubProp) ? pubProp.GetString() : null;
-                    
-                    string? imageUrl = null;
-                    if (post.TryGetProperty("coverImage", out var img))
-                    {
-                        try
-                        {
-                            if (img.ValueKind == JsonValueKind.Object)
-                            {
-                                // New API uses s3Key to build CDN URL
-                                if (img.TryGetProperty("s3Key", out var s3KeyProp))
-                                {
-                                    var s3Key = s3KeyProp.GetString();
-                                    if (!string.IsNullOrEmpty(s3Key))
-                                    {
-                                        imageUrl = $"https://cdn.hytale.com/{s3Key}";
-                                    }
-                                }
-                                // Fallback: try direct url property (very old API structure)
-                                else if (img.TryGetProperty("url", out var urlProp))
-                                {
-                                    imageUrl = urlProp.GetString();
-                                }
-                            }
-                            else if (img.ValueKind == JsonValueKind.String)
-                            {
-                                // If coverImage is just a string, treat it as s3Key
-                                var s3Key = img.GetString();
-                                if (!string.IsNullOrEmpty(s3Key))
-                                {
-                                    imageUrl = $"https://cdn.hytale.com/{s3Key}";
-                                }
-                            }
-                        }
-                        catch (Exception imgEx)
-                        {
-                            Logger.Warning("News", $"Failed to parse coverImage: {imgEx.Message}");
-                        }
-                    }
-                    
-                    // Build the correct URL format: hytale.com/news/YYYY/M/slug
-                    string newsUrl = "";
-                    if (!string.IsNullOrEmpty(slug) && !string.IsNullOrEmpty(publishedAt))
-                    {
-                        // Parse publishedAt to extract year and month
-                        if (DateTime.TryParse(publishedAt, out var pubDate))
-                        {
-                            newsUrl = $"https://hytale.com/news/{pubDate.Year}/{pubDate.Month}/{slug}";
-                        }
-                        else
-                        {
-                            // Fallback if date parsing fails
-                            newsUrl = $"https://hytale.com/news/{slug}";
-                        }
-                    }
-                    
-                    news.Add(new NewsItemResponse
-                    {
-                        Title = title ?? "",
-                        Excerpt = CleanNewsExcerpt(excerpt, title),
-                        Url = newsUrl,
-                        Date = publishedAt ?? "",
-                        Author = "Hytale Team",
-                        ImageUrl = imageUrl,
-                        Source = "hytale"
-                    });
-                    
-                    itemCount++;
-                }
-                catch (Exception ex)
-                {
-                    Logger.Warning("News", $"Failed to parse news item: {ex.Message}");
-                    continue;
-                }
-            }
-            
-            // Update Cache (only if we fetched enough to be useful for caching, e.g. at least 5)
-            if (news.Count > 0)
-            {
-               _hytaleNewsCache = news;
-               _hytaleCacheTime = DateTime.Now;
-               Logger.Success("News", "Successfully fetched Hytale news");
+                Logger.Warning("News", "Hytale news scraper returned 0 posts");
             }
 
-            return news;
+            return news.Take(count).ToList();
         }
         catch (Exception ex)
         {
-            Logger.Warning("News", $"Failed to fetch Hytale news: {ex.Message}");
+            Logger.Warning("News", $"Failed to scrape Hytale news: {ex.Message}");
             return new List<NewsItemResponse>();
         }
     }

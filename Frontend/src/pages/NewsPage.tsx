@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useCallback, useRef, useMemo, memo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { RefreshCw, ExternalLink, Calendar, User, Newspaper, Github } from 'lucide-react';
 import { useAccentColor } from '../contexts/AccentColorContext';
 import { ipc } from '@/lib/ipc';
 import { PageContainer } from '@/components/ui/PageContainer';
-import { Button, LinkButton } from '@/components/ui/Controls';
+import { Button, LinkButton, AccentSegmentedControl } from '@/components/ui/Controls';
 import { pageVariants } from '@/constants/animations';
 
 type NewsFilter = 'all' | 'hytale' | 'hyprism';
@@ -41,46 +41,42 @@ export const NewsPage: React.FC<NewsPageProps> = memo(({ getNews }) => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<NewsFilter>('all');
-  const [limit, setLimit] = useState(12);
-  const scrollRef = useRef<HTMLDivElement>(null);
 
-  const fetchNews = useCallback(async (count: number, reset = false) => {
+  const fetchNews = useCallback(async (reset = false) => {
     if (news.length === 0) setLoading(true);
     else setIsRefreshing(true);
     setError(null);
     try {
-      const items = await getNews(count);
-      setNews((prev) => {
-        if (reset) return items;
+      const items = await getNews(20);
+      setNews(reset ? (items ?? []) : (() => {
         const seen = new Map<string, EnrichedNewsItem>();
-        prev.forEach((item) => seen.set(item.url || item.title, item));
-        (items || []).forEach((item) => seen.set(item.url || item.title, item));
+        news.forEach((item) => seen.set(item.url || item.title, item));
+        (items ?? []).forEach((item) => seen.set(item.url || item.title, item));
         return Array.from(seen.values());
-      });
+      })());
     } catch (err) {
       if (news.length === 0) setError(err instanceof Error ? err.message : 'Failed to fetch news');
     } finally {
       setLoading(false);
       setIsRefreshing(false);
     }
-  }, [getNews, news.length]);
+  }, [getNews, news]);
 
-  useEffect(() => { fetchNews(limit, limit === 12 && news.length === 0); }, [limit]);
+  // Load once on mount
+  useEffect(() => { fetchNews(true); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const filteredNews = useMemo(
     () => (filter === 'all' ? news : news.filter(item => item.source === filter)),
     [filter, news]
   );
 
-  const handleScroll = useCallback(() => {
-    if (!scrollRef.current || loading || isRefreshing) return;
-    const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
-    if (scrollHeight - scrollTop - clientHeight < 200) {
-      setLimit((prev) => prev + 6);
-    }
-  }, [loading, isRefreshing]);
-
   const openLink = useCallback((url: string) => { ipc.browser.open(url); }, []);
+
+  const filterItems = useMemo(() => [
+    { value: 'all' as NewsFilter,     label: t('news.all') },
+    { value: 'hytale' as NewsFilter,  label: t('news.hytale') },
+    { value: 'hyprism' as NewsFilter, label: t('news.hyprism') },
+  ], [t]);
 
   return (
     <motion.div
@@ -96,33 +92,17 @@ export const NewsPage: React.FC<NewsPageProps> = memo(({ getNews }) => {
       {/* Header */}
       <div className="flex items-center justify-between mb-6 flex-shrink-0">
         <div className="flex items-center gap-3">
-          <Newspaper size={22} className="text-white/80" />
+          <Newspaper size={22} className="text-white opacity-80" />
           <h1 className="text-xl font-bold text-white">{t('news.title')}</h1>
-          {isRefreshing && <RefreshCw size={14} className="animate-spin text-white/40" />}
+          {isRefreshing && <RefreshCw size={14} className="animate-spin text-white opacity-40" />}
         </div>
 
-        {/* Filter Buttons */}
-        <div className="flex gap-2 items-center">
-          {(['all', 'hytale', 'hyprism'] as NewsFilter[]).map((f) => (
-            <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className={`px-4 py-1.5 text-xs rounded-xl font-medium transition-all ${
-                filter === f ? '' : 'text-white/50 hover:text-white/70 hover:bg-white/5'
-              }`}
-              style={filter === f ? {
-                backgroundColor: accentColor,
-                color: accentTextColor,
-                boxShadow: `0 2px 12px ${accentColor}40`,
-              } : {
-                background: 'rgba(255,255,255,0.04)',
-                border: '1px solid rgba(255,255,255,0.06)',
-              }}
-            >
-              {f === 'all' ? t('news.all') : f === 'hytale' ? t('news.hytale') : t('news.hyprism')}
-            </button>
-          ))}
-        </div>
+        {/* Source filter — segmented control with accent slider */}
+        <AccentSegmentedControl<NewsFilter>
+          value={filter}
+          onChange={setFilter}
+          items={filterItems}
+        />
       </div>
       {/* Content */}
       {loading ? (
@@ -133,7 +113,7 @@ export const NewsPage: React.FC<NewsPageProps> = memo(({ getNews }) => {
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <p className="text-red-400 mb-4">{error}</p>
-            <Button onClick={() => fetchNews(limit, true)}>
+            <Button onClick={() => fetchNews(true)}>
               {t('news.tryAgain')}
             </Button>
           </div>
@@ -143,9 +123,7 @@ export const NewsPage: React.FC<NewsPageProps> = memo(({ getNews }) => {
           <p className="text-white/40">{t('news.noNewsFound')}</p>
         </div>
       ) : (
-        <div ref={scrollRef} onScroll={handleScroll}
-          className="flex-1 overflow-y-auto pr-2 -mr-2"
-        >
+        <div className="flex-1 overflow-y-auto pr-2 -mr-2">
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
             <AnimatePresence>
               {filteredNews.map((item, index) => (
@@ -167,7 +145,7 @@ export const NewsPage: React.FC<NewsPageProps> = memo(({ getNews }) => {
                   {/* Background Image or Placeholder */}
                   {item.source === 'hyprism' ? (
                     <div className="absolute inset-0 bg-gradient-to-br from-[#2c2c2e] to-[#1c1c1e] flex items-center justify-center">
-                      <Github size={64} className="text-white/10" />
+                      <Github size={64} className="text-white opacity-10" />
                     </div>
                   ) : item.imageUrl ? (
                     <img

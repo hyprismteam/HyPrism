@@ -33,7 +33,7 @@ jobs:
           ./Scripts/update-flathub-manifest.sh -r README.md
 
           # try to read a release version from metainfo (if present)
-          METAFILE="Properties/linux/flathub/io.github.HyPrismTeam.HyPrism.metainfo.xml"
+          METAFILE="Properties/linux/flathub/io.github.hyprismteam.HyPrism.metainfo.xml"
           RELEASE_VERSION=""
           if [ -f "$METAFILE" ]; then
             RELEASE_VERSION=$(xmlstarlet sel -t -v "//*[local-name()='release']/@version" "$METAFILE" 2>/dev/null || true)
@@ -54,7 +54,7 @@ jobs:
           echo "Listing Properties/linux/flathub"
           ls -lah Properties/linux/flathub || true
           echo "----- manifest (if generated) -----"
-          cat Properties/linux/flathub/io.github.HyPrismTeam.HyPrism.yml || true
+          cat Properties/linux/flathub/io.github.hyprismteam.HyPrism.yml || true
 
       - name: Clone Flathub repo and push
         env:
@@ -74,7 +74,7 @@ jobs:
           git config --global user.email "${GIT_MAIL}"
 
           rm -rf flathub-repo || true
-          git clone "https://x-access-token:${GH_TOKEN}@github.com/flathub/io.github.HyPrismTeam.HyPrism.git" flathub-repo
+          git clone "https://x-access-token:${GH_TOKEN}@github.com/flathub/io.github.hyprismteam.HyPrism.git" flathub-repo
 
           # determine branch name
           source flathub_push_info.env || true
@@ -116,7 +116,7 @@ jobs:
           fi
 
           git push origin HEAD:$BRANCH_NAME --force
-          echo "Pushed to https://github.com/flathub/io.github.HyPrismTeam.HyPrism/tree/$BRANCH_NAME"
+          echo "Pushed to https://github.com/flathub/io.github.hyprismteam.HyPrism/tree/$BRANCH_NAME"
 
   Summary:
     needs: Pushing_branch_to_flathub
@@ -136,7 +136,7 @@ jobs:
           fi
 
           branch_name="$RELEASE_VERSION"
-          flathub_repo="https://github.com/flathub/io.github.HyPrismTeam.HyPrism"
+          flathub_repo="https://github.com/flathub/io.github.hyprismteam.HyPrism"
           branch_url="$flathub_repo/tree/$branch_name"
 
           echo "### Flathub push summary" >> "$GITHUB_STEP_SUMMARY"

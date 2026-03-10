@@ -90,7 +90,7 @@ export const DownloadsTab: React.FC<DownloadsTabProps> = ({
 
       {/* Launch After Download */}
       <SettingsToggleCard
-        icon={<Power size={16} className="text-white/70" />}
+        icon={<Power size={16} className="text-white opacity-70" />}
         title={t('settings.downloads.launchAfterDownload')}
         description={t('settings.downloads.launchAfterDownloadHint')}
         checked={launchAfterDownload}
@@ -121,7 +121,7 @@ export const DownloadsTab: React.FC<DownloadsTabProps> = ({
         <div className="flex items-center justify-between p-4 border-b border-white/[0.06]">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-white/[0.06] flex items-center justify-center">
-              <Globe size={16} className="text-white/70" />
+              <Globe size={16} className="text-white opacity-70" />
             </div>
             <div>
               <h3 className="text-sm font-medium text-white">{t('settings.downloads.communityMirrors', 'Community Mirrors')}</h3>
@@ -247,14 +247,14 @@ export const DownloadsTab: React.FC<DownloadsTabProps> = ({
           {/* Loading State */}
           {isLoading && (
             <div className="flex items-center justify-center py-8">
-              <Loader2 size={24} className="animate-spin text-white/40" />
+              <Loader2 size={24} className="animate-spin text-white opacity-40" />
             </div>
           )}
 
           {/* No Mirrors State */}
           {!isLoading && mirrors.length === 0 && !showAddForm && (
             <div className="py-8 text-center">
-              <Globe size={32} className="mx-auto text-white/20 mb-3" />
+              <Globe size={32} className="mx-auto text-white opacity-20 mb-3" />
               <p className="text-sm text-white/60 mb-1">
                 {t('settings.downloads.noMirrors', 'No mirrors configured')}
               </p>
@@ -284,7 +284,7 @@ export const DownloadsTab: React.FC<DownloadsTabProps> = ({
                             className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
                             style={{ backgroundColor: 'rgba(255,255,255,0.06)' }}
                           >
-                            <Globe size={20} className="text-white/60" />
+                            <Globe size={20} className="text-white opacity-60" />
                           </div>
                           <div>
                             <div className="text-white text-sm font-medium">{mirror.name}</div>
