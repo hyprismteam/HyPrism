@@ -27,6 +27,9 @@
 #                   - Windows: x64 only
 #                   - Linux: x64 and arm64
 #                   - macOS: arm64 only (Apple Silicon)
+#   --sources <url|path>
+#                   Add a NuGet package source when restoring/publishing.
+#                   Can be specified multiple times to pass several sources.
 #
 # Platform restrictions (enforced by Electron.NET):
 #   Linux targets  → must build on Linux
@@ -78,6 +81,18 @@ CURRENT_OS="$(detect_os)"
 # ─── Parse arguments ────────────────────────────────────────────────────────
 TARGETS=()
 ARCH_FILTER=""
+SOURCE_ARGS=()
+SOURCES=()
+
+# Detect whether we're running inside a Flatpak sandbox.  Flatpak sets a
+# few environment variables and creates /run/.flatpak-info.  When sandboxed
+# there is no network access, so we must not let `dotnet` fall back to the
+# default nuget.org feed; instead we will force restore to use only the
+# sources provided via `--sources`.
+IN_FLATPAK=0
+if [[ -n "$FLATPAK_ID" || -f /run/.flatpak-info ]]; then
+    IN_FLATPAK=1
+fi
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -87,6 +102,16 @@ while [[ $# -gt 0 ]]; do
                 exit 1
             fi
             ARCH_FILTER="$2"
+            shift 2
+            ;;
+        --sources)
+            if [[ -z "${2:-}" ]]; then
+                log_error "--sources requires an argument (URL or path)"
+                exit 1
+            fi
+            # keep a separate list of source values for MSBuild property
+            SOURCES+=("$2")
+            SOURCE_ARGS+=("--source" "$2")
             shift 2
             ;;
         --help|-h)
@@ -103,7 +128,7 @@ done
 if [[ ${#TARGETS[@]} -eq 0 ]]; then
     log_error "No targets specified."
     echo ""
-    echo "Usage: $0 <target> [<target>...] [--arch x64|arm64]"
+    echo "Usage: $0 <target> [<target>...] [--arch x64|arm64] [--sources <url|path>]"
     echo ""
     echo "Targets: all linux win mac appimage deb rpm tar flatpak dmg zip exe clean"
     echo ""
@@ -111,6 +136,7 @@ if [[ ${#TARGETS[@]} -eq 0 ]]; then
     echo "  $0 all                  # All formats, both arches"
     echo "  $0 appimage --arch x64  # AppImage x64 only"
     echo "  $0 deb rpm              # deb + rpm, both arches"
+    echo "  $0 --sources ./nuget-sources all"
     exit 1
 fi
 
@@ -514,7 +540,15 @@ do_publish() {
     cd "$PROJECT_ROOT"
     local exit_code=0
     # Use -p: instead of /p: for cross-platform compatibility (MSYS/Git Bash on Windows converts /p: to a path)
-    dotnet publish -c Release -p:RuntimeIdentifier="$rid" || exit_code=$?
+    local msbuild_args=""
+    if [[ $IN_FLATPAK -eq 1 && ${#SOURCES[@]} -gt 0 ]]; then
+        # override restore sources so only user-provided locations are used
+        local joined
+        joined=$(IFS=';'; echo "${SOURCES[*]}")
+        msbuild_args="-p:RestoreSources=\"$joined\""
+        log_info "Running inside Flatpak; restricting nuget sources to: $joined"
+    fi
+    dotnet publish -c Release -p:RuntimeIdentifier="$rid" $msbuild_args ${SOURCE_ARGS[@]} || exit_code=$?
 
     if [[ $exit_code -ne 0 ]]; then
         log_error "Build failed for $label ($rid) — exit code $exit_code"
@@ -666,7 +700,15 @@ do_flatpak_publish() {
     mkdir -p "$PROJECT_ROOT/.tmp"
     export TMPDIR="$PROJECT_ROOT/.tmp"
 
-    if ! dotnet publish -c Release -p:RuntimeIdentifier="$rid"; then
+    local msbuild_args=""
+    if [[ $IN_FLATPAK -eq 1 && ${#SOURCES[@]} -gt 0 ]]; then
+        local joined
+        joined=$(IFS=';'; echo "${SOURCES[*]}")
+        msbuild_args="-p:RestoreSources=\"$joined\""
+        log_info "(flatpak) restricting nuget sources to: $joined"
+    fi
+
+    if ! dotnet publish -c Release -p:RuntimeIdentifier="$rid" $msbuild_args ${SOURCE_ARGS[@]}; then
         log_error "dotnet publish failed for $rid"
         FAIL_COUNT=$((FAIL_COUNT + 1))
         return 1
