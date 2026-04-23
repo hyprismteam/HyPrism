@@ -24,7 +24,7 @@
   <PropertyGroup Label="ElectronNetCommon">
     <ElectronPackageId>io.github.hyprismteam.HyPrism</ElectronPackageId>
     <Title>HyPrism</Title>
-    <Version>3.0.1</Version>
+    <Version>3.0.2</Version>
     <Description>Cross-platform Hytale launcher</Description>
     <Company>HyPrism</Company>
     <Copyright>Copyright © 2026 HyPrism Team</Copyright>
