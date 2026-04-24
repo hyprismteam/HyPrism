@@ -1,0 +1,55 @@
+name: Feature Request
+description: Suggest a new feature or enhancement for HyPrism
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Have an idea to improve HyPrism? We'd love to hear it!
+        Please describe your suggestion in as much detail as possible
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / Motivation
+      description: Is your feature request related to a problem? What are you trying to accomplish?
+      placeholder: I'm always frustrated when... / I wish HyPrism could...
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: Describe the feature or change you'd like to see
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      description: Which part of HyPrism does this affect?
+      options:
+        - Launcher / Game Launch
+        - Mod Manager
+        - UI / Frontend
+        - Settings
+        - Flatpak / Linux packaging
+        - Build system
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Are there other ways to achieve the same result? Why is your approach better?
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Any mockups, links, or extra context that might help

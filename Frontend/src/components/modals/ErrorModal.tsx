@@ -56,7 +56,7 @@ export const ErrorModal: React.FC<ErrorModalProps> = ({ error, onClose }) => {
 <!-- Add any other context about the problem here -->
 `
     );
-    const url = `https://github.com/yyyumeniku/HyPrism/issues/new?title=${title}&body=${body}&labels=bug`;
+    const url = `https://github.com/hyprismteam/HyPrism/issues/new?title=${title}&body=${body}&labels=bug`;
     ipc.browser.open(url);
   };
 

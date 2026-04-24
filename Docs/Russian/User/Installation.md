@@ -14,7 +14,7 @@
 
 ## Загрузка
 
-Скачайте последний релиз со страницы [GitHub Releases](https://github.com/yyyumeniku/HyPrism/releases).
+Скачайте последний релиз со страницы [GitHub Releases](https://github.com/hyprismteam/HyPrism/releases).
 
 ### Windows
 

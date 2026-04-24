@@ -48,7 +48,7 @@ public class NewsService : INewsService
         }
     }
     private const string HytaleNewsUrl = "https://hytale.com/news";
-    private const string HyPrismReleasesUrl = "https://api.github.com/repos/yyyumeniku/HyPrism/releases";
+    private const string HyPrismReleasesUrl = "https://api.github.com/repos/hyprismteam/HyPrism/releases";
     
     // Cache for HyPrism news to avoid GitHub API rate limits
     private List<NewsItemResponse>? _hyprismNewsCache;
@@ -302,7 +302,7 @@ public class NewsService : INewsService
                     {
                         Title = $"HyPrism {title} release",
                         Excerpt = excerpt,
-                        Url = htmlUrl ?? "https://github.com/yyyumeniku/HyPrism/releases",
+                        Url = htmlUrl ?? "https://github.com/hyprismteam/HyPrism/releases",
                         Date = publishedAt ?? DateTime.Now.ToString("o"),
                         Author = "HyPrism",
                         ImageUrl = _appIconPath,

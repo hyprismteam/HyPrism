@@ -1,0 +1,40 @@
+name: Question / Support
+description: Ask a question or get help with HyPrism
+title: "[Question]: "
+labels: ["question"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before asking, please check the [documentation](https://github.com/hyprismteam/HyPrism/tree/main/Docs)
+        and existing issues. You can also join our [Discord](https://discord.com/invite/ekZqTtynjp) for faster support
+
+  - type: textarea
+    id: question
+    attributes:
+      label: Your Question
+      description: What would you like to know or what are you having trouble with?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating System
+      options:
+        - Windows
+        - Linux
+        - macOS
+        - Not relevant
+
+  - type: input
+    id: hyprism_version
+    attributes:
+      label: HyPrism Version
+      placeholder: e.g. v1.2.0 (or "built from source")
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Any extra information that might help answer your question

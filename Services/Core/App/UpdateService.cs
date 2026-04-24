@@ -1172,7 +1172,7 @@ rm -f ""$0""
                 return false;
             }
 
-            var downloadUrl = $"https://github.com/yyyumeniku/HyPrism/releases/download/{latestVersion}/{assetName}";
+            var downloadUrl = $"https://github.com/hyprismteam/HyPrism/releases/download/{latestVersion}/{assetName}";
             var archivePath = Path.Combine(wrapperDir, assetName);
 
             // Download archive
@@ -1284,7 +1284,7 @@ rm -f ""$0""
     {
         try
         {
-            var response = await _httpClient.GetStringAsync("https://api.github.com/repos/yyyumeniku/HyPrism/releases/latest");
+            var response = await _httpClient.GetStringAsync("https://api.github.com/repos/hyprismteam/HyPrism/releases/latest");
             var doc = JsonDocument.Parse(response);
             if (doc.RootElement.TryGetProperty("tag_name", out var tagName))
             {

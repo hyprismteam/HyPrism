@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Discord Community
+    url: https://discord.com/invite/ekZqTtynjp
+    about: For quick support and general discussion, join our Discord server
+  - name: Documentation
+    url: https://github.com/hyprismteam/HyPrism/tree/main/Docs
+    about: Check the docs before opening an issue — your answer might already be there

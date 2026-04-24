@@ -301,7 +301,7 @@ export function useOnboarding(options: UseOnboardingOptions) {
   const loadContributors = useCallback(async () => {
     setIsLoadingContributors(true);
     try {
-      const response = await fetch('https://api.github.com/repos/yyyumeniku/HyPrism/contributors');
+      const response = await fetch('https://api.github.com/repos/hyprismteam/HyPrism/contributors');
       if (response.ok) {
         const data = await response.json();
         setContributors(data);
@@ -540,14 +540,14 @@ export function useOnboarding(options: UseOnboardingOptions) {
 
   // #region Social Links
 
-  const openGitHub = useCallback(() => openUrl('https://github.com/yyyumeniku/HyPrism'), []);
+  const openGitHub = useCallback(() => openUrl('https://github.com/hyprismteam/HyPrism'), []);
   
   const openDiscord = useCallback(async () => {
     const link = await GetDiscordLink();
     openUrl(link);
   }, []);
   
-  const openBugReport = useCallback(() => openUrl('https://github.com/yyyumeniku/HyPrism/issues/new'), []);
+  const openBugReport = useCallback(() => openUrl('https://github.com/hyprismteam/HyPrism/issues/new'), []);
 
   // #endregion
 

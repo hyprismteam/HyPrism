@@ -518,7 +518,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = memo((props) => {
           </IconButton>
           <IconButton
             variant="ghost"
-            onClick={() => ipc.browser.open('https://github.com/yyyumeniku/HyPrism')}
+            onClick={() => ipc.browser.open('https://github.com/hyprismteam/HyPrism')}
             className="rounded-xl"
             title={t('main.gitHubRepository')}
           >
