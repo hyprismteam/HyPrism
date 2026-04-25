@@ -549,7 +549,7 @@ do_publish() {
         msbuild_args="-p:RestoreSources=\"$joined\""
         log_info "Running inside Flatpak; restricting nuget sources to: $joined"
     fi
-    dotnet publish -c Release -p:RuntimeIdentifier="$rid" $msbuild_args ${SOURCE_ARGS[@]} || exit_code=$?
+    dotnet publish -c Release -p:RuntimeIdentifier="$rid" $msbuild_args ${SOURCE_ARGS[@]:-} || exit_code=$?
 
     if [[ $exit_code -ne 0 ]]; then
         log_error "Build failed for $label ($rid) — exit code $exit_code"
