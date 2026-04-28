@@ -135,4 +135,5 @@ All services are registered as singletons in `Bootstrapper.cs` and injected via 
 - **Mods storage policy:** profile switching does not redirect `UserData/Mods` to `Profiles/.../Mods`; mods remain instance-local.
 - **Profile folder format:** profile folders are stored under `Profiles/{profileId}` (GUID).
 - **Legacy migration:** launcher attempts to migrate legacy name-based profile folders in `Profiles/` to ID-based layout at startup (best-effort, non-destructive merge when both folders exist).
-- **Official profile auth routing:** switching to an official profile automatically sets auth domain to `sessionserver.hytale.com`.
+- **Official profile creation:** `hyprism:profile:create` passes the `isOfficial` flag into `ProfileManagementService.CreateProfile` before `Profiles/profiles.json` is written.
+- **Official profile auth routing:** switching to an official profile automatically sets auth domain to `sessions.hytale.com`.

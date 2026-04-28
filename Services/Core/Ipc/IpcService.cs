@@ -408,10 +408,8 @@ public class IpcService(IServiceProvider services) : IpcServiceBase(services)
     public IpcProfile? CreateProfile(CreateProfileRequest req)
     {
         var mgmt = Services.GetRequiredService<IProfileManagementService>();
-        var profile = mgmt.CreateProfile(req.Name, req.Uuid);
+        var profile = mgmt.CreateProfile(req.Name, req.Uuid, req.IsOfficial ?? false);
         if (profile == null) return null;
-        profile.IsOfficial = req.IsOfficial ?? false;
-        Services.GetRequiredService<ConfigService>().SaveConfig();
         if (profile.IsOfficial)
             Services.GetRequiredService<IHytaleAuthService>().SaveSessionToProfile(profile);
         return new IpcProfile(profile.Id, profile.Name, profile.UUID, profile.IsOfficial);

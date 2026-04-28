@@ -2,6 +2,7 @@ using HyPrism.Models;
 using HyPrism.Services.Core.Infrastructure;
 using HyPrism.Services.Game.Instance;
 using HyPrism.Services.User;
+using System.Text.Json;
 
 namespace HyPrism.Tests.User;
 
@@ -67,6 +68,23 @@ public class ProfileManagementServiceTests : IDisposable
 
         var profiles = _svc.GetProfiles();
         Assert.Contains(profiles, p => p.Name == "Visible");
+    }
+
+    [Fact]
+    public void CreateProfile_OfficialProfile_PersistsIsOfficialInProfilesJson()
+    {
+        var uuid = Guid.NewGuid().ToString();
+        var profile = _svc.CreateProfile("OfficialUser", uuid, isOfficial: true);
+
+        Assert.NotNull(profile);
+        Assert.True(profile!.IsOfficial);
+        Assert.Contains(_svc.GetProfiles(), p => p.Id == profile.Id && p.IsOfficial);
+
+        var profilesPath = Path.Combine(_svc.GetProfilesFolder(), "profiles.json");
+        var savedProfiles = JsonSerializer.Deserialize<List<Profile>>(File.ReadAllText(profilesPath));
+
+        Assert.NotNull(savedProfiles);
+        Assert.Contains(savedProfiles!, p => p.Id == profile.Id && p.IsOfficial);
     }
 
     [Fact]

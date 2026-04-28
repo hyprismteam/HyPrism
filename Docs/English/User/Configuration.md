@@ -130,8 +130,10 @@ HyPrism supports multiple player profiles. Switch between profiles via the sideb
 Each profile stores:
 - **Nickname** — Display name in-game
 - **UUID** — Unique player identifier
+- **Official account status** — Hytale OAuth profiles are saved with `IsOfficial: true` in `Profiles/profiles.json`
 - **Avatar** — Profile picture (optional)
 - **Skin backup** — Saved skin data
+- **Hytale session** — Official account tokens are stored in the profile folder as `hytale_session.json`
 
 ### Skin Backup
 
@@ -141,6 +143,7 @@ Profiles can back up your Hytale skin. Backups are stored in:
 Profiles/
 ├── {ProfileUUID}/
 │   ├── profile.json    # Profile metadata
+│   ├── hytale_session.json  # Official account session, when present
 │   └── skin.png        # Backed up skin
 └── ...
 ```

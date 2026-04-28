@@ -120,4 +120,5 @@
 - **Политика хранения модов:** переключение профиля не перенаправляет `UserData/Mods` в `Profiles/.../Mods`; моды остаются в папке выбранного экземпляра.
 - **Формат папок профилей:** профили хранятся в `Profiles/{profileId}` (GUID).
 - **Миграция legacy-формата:** при старте лаунчер пытается мигрировать старые name-based папки в `Profiles/` в ID-based формат (best-effort, неразрушающее объединение при наличии обеих папок).
+- **Создание official-профиля:** `hyprism:profile:create` передаёт флаг `isOfficial` в `ProfileManagementService.CreateProfile` до записи `Profiles/profiles.json`.
 - **Маршрутизация auth для official-профиля:** при переключении на официальный профиль домен аутентификации автоматически устанавливается в `sessions.hytale.com`.

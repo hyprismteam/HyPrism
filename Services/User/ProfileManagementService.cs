@@ -200,7 +200,7 @@ public class ProfileManagementService : IProfileManagementService
 
     /// <inheritdoc/>
     /// <remarks>Validates name length (1-16 characters) and UUID format before creation.</remarks>
-    public Profile? CreateProfile(string name, string uuid)
+    public Profile? CreateProfile(string name, string uuid, bool isOfficial = false)
     {
         try
         {
@@ -230,6 +230,7 @@ public class ProfileManagementService : IProfileManagementService
                 Id = Guid.NewGuid().ToString(),
                 UUID = parsedUuid.ToString(),
                 Name = trimmedName,
+                IsOfficial = isOfficial,
                 CreatedAt = DateTime.UtcNow
             };
             
