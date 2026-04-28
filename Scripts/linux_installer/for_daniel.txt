@@ -1,0 +1,10 @@
+Если ты хочешь можешь скомпилировать через nuitk-у. Только там больше головной боли с компилятором.
+Я думаю лучшее pyinstaler, все равно это OSS и декомпилция только подтвердит что тут всё окей.
+
+так что:
+# только для линукса
+python3 -m venv .venv
+source ./.venv/bin/activate
+pip install pyinstaller
+pyinstaller main.spec
+
