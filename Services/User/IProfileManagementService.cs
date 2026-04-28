@@ -32,12 +32,13 @@ public interface IProfileManagementService
     Profile? GetSelectedProfile();
 
     /// <summary>
-    /// Creates a new profile with the specified name and UUID.
+    /// Creates a new profile with the specified name, UUID, and account type.
     /// </summary>
     /// <param name="name">The profile name (1-16 characters).</param>
     /// <param name="uuid">The UUID for the profile.</param>
+    /// <param name="isOfficial">Whether the profile is linked to an official Hytale account.</param>
     /// <returns>The created profile, or null if creation failed.</returns>
-    Profile? CreateProfile(string name, string uuid);
+    Profile? CreateProfile(string name, string uuid, bool isOfficial = false);
 
     /// <summary>
     /// Deletes a profile by its unique identifier.
