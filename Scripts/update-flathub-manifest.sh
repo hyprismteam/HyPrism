@@ -78,7 +78,7 @@ echo "Extracted runtime: $runtime"
 echo "Extracted dotnet extension id: $raw_dotnet"
 echo "Using dotnet version: $dotnet"
 
-flatpak install -y --user org.freedesktop.Sdk.Extension.dotnet$dotnet/x86_64/$runtime_version
+flatpak install -y --user runtime/org.freedesktop.Sdk.Extension.dotnet$dotnet/x86_64/$runtime_version
 
 # When invoking the generator we also need to tell it which freedesktop runtime
 # version to use; otherwise it defaults to 24.08 and will restore packages inside
