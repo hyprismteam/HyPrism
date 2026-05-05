@@ -78,10 +78,11 @@ echo "Extracted runtime: $runtime"
 echo "Extracted dotnet extension id: $raw_dotnet"
 echo "Using dotnet version: $dotnet"
 
-# Use the flathub remote explicitly to resolve runtime refs correctly.
-if ! flatpak install -y --user flathub runtime/org.freedesktop.Sdk.Extension.dotnet$dotnet/x86_64/$runtime_version; then
-  echo "Warning: runtime ref install failed, retrying with classic extension ref format"
-  flatpak install -y --user flathub org.freedesktop.Sdk.Extension.dotnet$dotnet//$runtime_version
+flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+
+if ! flatpak install -y --user flathub org.freedesktop.Sdk.Extension.dotnet$dotnet//$runtime_version; then
+  echo "Warning: extension install failed, retrying with runtime ref format"
+  flatpak install -y --user flathub runtime/org.freedesktop.Sdk.Extension.dotnet$dotnet/x86_64/$runtime_version
 fi
 
 # When invoking the generator we also need to tell it which freedesktop runtime
