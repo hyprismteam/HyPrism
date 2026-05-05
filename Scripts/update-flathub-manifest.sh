@@ -102,6 +102,23 @@ python3 Properties/linux/flathub/flatpak-dotnet-generator.py \
     --dotnet "$dotnet" \
     Properties/linux/flathub/nuget-sources.json "$project_file"
 
-pipx install git+https://github.com/flatpak/flatpak-builder-tools.git#subdirectory=node
+if ! command -v pipx >/dev/null 2>&1; then
+  echo "pipx not found; installing via python3 -m pip install --user pipx"
+  python3 -m pip install --user pipx
+  export PATH="$HOME/.local/bin:$PATH"
+fi
+
+pipx install --force git+https://github.com/flatpak/flatpak-builder-tools.git#subdirectory=node
+
+if ! command -v flatpak-node-generator >/dev/null 2>&1; then
+  echo "error: flatpak-node-generator not found after installation" >&2
+  exit 1
+fi
 
 flatpak-node-generator --output "Properties/linux/flathub/generated-sources.json" npm Frontend/package-lock.json
+
+if [ ! -f Properties/linux/flathub/nuget-sources.json ] || [ ! -f Properties/linux/flathub/generated-sources.json ]; then
+  echo "error: failed to generate required Flathub source JSON files" >&2
+  ls -lah Properties/linux/flathub || true
+  exit 1
+fi

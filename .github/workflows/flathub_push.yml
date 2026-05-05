@@ -18,19 +18,31 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Install xmlstarlet
+      - name: Install Flathub generation dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y xmlstarlet
+          sudo apt-get install -y xmlstarlet flatpak python3-pip
           xmlstarlet --version || true
+          flatpak --version || true
 
       - name: Prepare Flathub content (copy + optional manifest patch)
         id: prepare
         run: |
           set -euo pipefail
 
+          # ensure pipx is available for the node sources generator
+          python3 -m pip install --user pipx
+          export PATH="$HOME/.local/bin:$PATH"
+          pipx --version || true
+
           # prepare flathub folder and replace README (manifest is generated from Properties/linux/flatpak)
           ./Scripts/update-flathub-manifest.sh -r README.md
+
+          if [ ! -f Properties/linux/flathub/generated-sources.json ] || [ ! -f Properties/linux/flathub/nuget-sources.json ]; then
+            echo "ERROR: required generated Flathub sources are missing" >&2
+            ls -lah Properties/linux/flathub || true
+            exit 1
+          fi
 
           # try to read a release version from metainfo (if present)
           METAFILE="Properties/linux/flathub/io.github.hyprismteam.HyPrism.metainfo.xml"

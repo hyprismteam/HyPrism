@@ -28,10 +28,16 @@ which will satisfy the runtime dependency when testing the manifest locally.
 
 ## NuGet sources and runtime packages
 
-The `update-flathub-manifest.sh` helper populates `nuget-sources.json` by
-restoring the project inside a Flatpak container.  Builds inside the Flathub
-sandbox restrict `dotnet restore` to this offline feed.  The upstream tool does
-not include the Microsoft runtime packages (e.g. `Microsoft.NETCore.App.Runtime.linux-x64`) because
+The `update-flathub-manifest.sh` helper populates both `nuget-sources.json` and
+`generated-sources.json` when regenerating the Flathub manifest.  `nuget-sources.json`
+contains the offline NuGet feed configuration for the .NET build, while
+`generated-sources.json` tracks the offline Node sources needed by the
+`HyPrism-node` module.
+
+The script restores the project inside a Flatpak container and writes the
+offline feed configuration accordingly.  Builds inside the Flathub sandbox
+restrict `dotnet restore` to this offline feed.  The upstream tool does not
+include the Microsoft runtime packages (e.g. `Microsoft.NETCore.App.Runtime.linux-x64`) because
 those are provided by the SDK itself, but the offline build still needs them.
 
 To avoid `NU1101` errors, the script now detects the installed runtime version and
