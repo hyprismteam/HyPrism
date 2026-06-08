@@ -55,6 +55,13 @@ Special thanks to **Sanasol** for maintaining and creating the [auth server](htt
   <img src="https://contrib.rocks/image?repo=hyprismteam/HyPrism" alt="Contributors" />
 </a>
 
+## Donate
+
+We support the launcher **solely with our free time** and **community feedback**. Financial support will help us continue active development in the world of Hytale!
+
+- BuyMeACoffe [(Click)](https://buymeacoffee.com/yyyumeniku)
+- DonationAlerts [(Click)](https://www.donationalerts.com/r/danielfreak)
+
 ## Legal Notice & Licenses
 
 HyPrism is licensed under the **GNU General Public License v3.0 (GPL-3.0)**
