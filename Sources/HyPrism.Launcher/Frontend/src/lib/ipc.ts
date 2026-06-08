@@ -105,6 +105,11 @@ export interface InstalledInstance {
   customName?: string | null;
 }
 
+export interface InstanceStatusResponse {
+  playable: boolean;
+  reason: string;
+}
+
 export interface GetVersionsRequest {
   branch?: string | null;
 }
@@ -589,6 +594,7 @@ const _i18n = {
 };
 
 const _instance = {
+  status: (data: string) => invoke<InstanceStatusResponse>('hyprism:instance:status', data),
   create: (data: CreateInstanceRequest) => invoke<InstanceInfo | null>('hyprism:instance:create', data),
   delete: (data: InstanceIdRequest) => invoke<boolean>('hyprism:instance:delete', data),
   select: (data: SelectInstanceRequest) => invoke<boolean>('hyprism:instance:select', data),
