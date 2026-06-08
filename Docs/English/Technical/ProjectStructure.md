@@ -2,86 +2,114 @@
 
 ```
 HyPrism/
-├── Program.cs                  # Entry point: Console → Electron bootstrap
-├── Bootstrapper.cs             # DI container setup
-├── HyPrism.csproj              # Project file with MSBuild pipeline
-├── HyPrism.sln                 # Solution file
+├── HyPrism.sln                 # Solution file (contains Sources/ folder)
 │
-├── Frontend/                   # React SPA (Vite + TypeScript)
-│   ├── src/
-│   │   ├── components/         # Reusable React components
-│   │   │   ├── modals/         # Modal dialogs (Settings, OnboardingModal, etc.)
-│   │   │   ├── ProfileEditor.tsx  # Profile management UI
-│   │   │   └── ...
-│   │   ├── pages/              # Route-level page components
-│   │   │   ├── DashboardPage.tsx  # Main dashboard (game launch)
-│   │   │   ├── NewsPage.tsx       # News feed page
-│   │   │   ├── InstancesPage.tsx  # Game instances manager
-│   │   │   └── ModsPage.tsx       # Mod browser/manager
-│   │   ├── contexts/           # React Context providers
-│   │   │   └── AccentColorContext.tsx  # Theme accent color
-│   │   ├── lib/                # Utilities
-│   │   │   └── ipc.ts          # AUTO-GENERATED IPC bridge (do not edit)
-│   │   ├── assets/             # Frontend static assets
-│   │   │   ├── locales/        # JSON localization files (12 languages)
-│   │   │   ├── images/         # Images and icons
-│   │   │   └── backgrounds/    # Dashboard backgrounds
-│   │   ├── App.tsx             # Root component with routing
-│   │   ├── main.tsx            # React entry point
-│   │   └── index.css           # Global styles + Tailwind
-│   ├── index.html              # Vite entry HTML
-│   ├── vite.config.ts          # Vite config (Tailwind, base: './')
-│   ├── tsconfig*.json          # TypeScript configs
-│   └── package.json            # Frontend dependencies
+└── Sources/                    # Main source directory
+    ├── HyPrism.Launcher/       # Main launcher application (.NET 10 + Electron.NET)
+    │   ├── Program.cs          # Entry point: Console → Electron bootstrap
+    │   ├── Bootstrapper.cs     # DI container setup
+    │   ├── HyPrism.Launcher.csproj  # Project file with MSBuild pipeline
+    │   │
+    │   ├── Frontend/           # React SPA (Vite + TypeScript)
+    │   │   ├── src/
+    │   │   │   ├── components/     # Reusable React components
+    │   │   │   │   ├── layout/    # Layout components (DockMenu, MusicPlayer, etc.)
+    │   │   │   │   ├── modals/    # Modal dialogs
+    │   │   │   │   ├── ui/        # UI primitives and controls
+    │   │   │   │   │   └── controls/  # Button, Switch, ScrollArea, etc.
+    │   │   │   │   ├── icons/     # Custom icon components
+    │   │   │   │   └── dev/       # Developer tools
+    │   │   │   ├── pages/          # Route-level page components
+    │   │   │   │   ├── instances/  # Instance management (with tabs)
+    │   │   │   │   ├── settings/   # Settings page (with separate tabs)
+    │   │   │   │   │   └── tabs/   # Individual settings tab components
+    │   │   │   │   ├── onboarding/ # First-launch wizard
+    │   │   │   │   │   └── steps/  # Individual onboarding steps
+    │   │   │   │   ├── DashboardPage.tsx  # Main dashboard (game launch)
+    │   │   │   │   ├── NewsPage.tsx       # News feed page
+    │   │   │   │   ├── InstancesPage.tsx  # Game instances manager
+    │   │   │   │   ├── ProfilesPage.tsx    # Profile management
+    │   │   │   │   └── LogsPage.tsx        # Log viewer
+    │   │   │   ├── contexts/       # React Context providers
+    │   │   │   │   └── AccentColorContext.tsx  # Theme accent color
+    │   │   │   ├── lib/            # Utilities
+    │   │   │   │   └── ipc.ts      # AUTO-GENERATED IPC bridge (do not edit)
+    │   │   │   ├── assets/         # Frontend static assets
+    │   │   │   │   ├── locales/    # JSON localization files (12 languages)
+    │   │   │   │   ├── images/     # Images and icons
+    │   │   │   │   └── backgrounds/ # Dashboard backgrounds
+    │   │   │   ├── App.tsx         # Root component with routing
+    │   │   │   ├── main.tsx        # React entry point
+    │   │   │   └── index.css       # Global styles + Tailwind
+    │   │   ├── index.html          # Vite entry HTML
+    │   │   ├── vite.config.ts      # Vite config (Tailwind, base: './')
+    │   │   ├── tsconfig*.json      # TypeScript configs
+    │   │   └── package.json        # Frontend dependencies
+    │   │
+    │   ├── Services/               # .NET Service Layer
+    │   │   ├── Core/               # Infrastructure services
+    │   │   │   ├── App/            # Application services (Config, Settings, Update)
+    │   │   │   ├── Infrastructure/ # Logger, ConfigService, LocalizationService
+    │   │   │   ├── Integration/    # External integrations (Discord RPC, News, GitHub)
+    │   │   │   ├── Ipc/            # IpcService - Central IPC channel registry
+    │   │   │   └── Platform/       # Platform-specific utilities
+    │   │   ├── Game/               # Game logic services
+    │   │   │   ├── Instance/       # Instance management (InstanceService)
+    │   │   │   ├── Launch/         # Game launching (GameLauncher, LaunchService)
+    │   │   │   ├── Download/       # Download management
+    │   │   │   ├── Mod/            # Mod management
+    │   │   │   ├── Auth/           # Hytale authentication
+    │   │   │   ├── Butler/         # Butler patching tool
+    │   │   │   ├── Asset/          # Game assets and avatars
+    │   │   │   └── Version/        # Version management
+    │   │   └── User/               # User-related services
+    │   │       ├── ProfileService.cs   # Player profiles (nick, UUID)
+    │   │       ├── ProfileManagementService.cs  # Profile operations
+    │   │       ├── SkinService.cs      # Skin management and backup
+    │   │       └── HytaleAuthService.cs # Hytale account authentication
+    │   │
+    │   ├── Models/                 # Data models (POCOs)
+    │   │   ├── Config.cs           # Configuration model
+    │   │   ├── Profile.cs          # Player profile model
+    │   │   ├── InstanceMeta.cs     # Instance metadata
+    │   │   └── ...
+    │   │
+    │   ├── Properties/             # Build/package metadata and platform assets
+    │   │   ├── linux/              # Linux metainfo + flatpak metadata
+    │   │   ├── macos/              # macOS Info.plist and assets
+    │   │   └── windows/            # Windows icon/assets
+    │   │
+    │   └── wwwroot/                # Compiled frontend (generated by build)
+    │       ├── index.html          # Production entry point
+    │       └── assets/             # Compiled JS/CSS bundles
+    │
+    ├── HyPrism.IpcGen/             # IPC code generator (Roslyn-based)
+    │   ├── Program.cs              # Codegen entry point
+    │   ├── HyPrism.IpcGen.csproj   # Codegen project file
+    │   └── ...                     # Roslyn analysis logic
+    │
+    └── HyPrism.Tests/              # Test project
+        └── HyPrism.Tests.csproj
 │
-├── Services/                   # .NET Service Layer
-│   ├── Core/                   # Infrastructure services
-│   │   ├── App/                # Application services (Config, Settings, Update)
-│   │   ├── Infrastructure/     # Logger, ConfigService, LocalizationService
-│   │   ├── Integration/        # External integrations (Discord RPC)
-│   │   ├── Ipc/                # IpcService - Central IPC channel registry
-│   │   └── Platform/           # Platform-specific utilities
-│   ├── Game/                   # Game logic services
-│   │   ├── Instance/           # Instance management (InstanceService)
-│   │   ├── Launch/             # Game launching (GameSessionService)
-│   │   ├── Download/           # Download management
-│   │   ├── Mod/                # Mod management
-│   │   ├── Auth/               # Hytale authentication
-│   │   ├── Butler/             # Butler patching tool
-│   │   └── Version/            # Version management
-│   └── User/                   # User-related services
-│       ├── ProfileService.cs   # Player profiles (nick, UUID)
-│       ├── SkinService.cs      # Skin management and backup
-│       └── HytaleAuthService.cs # Hytale account authentication
+├── Scripts/                      # Build and utility scripts
+│   ├── publish.sh                # Platform publish script
+│   └── update-flathub-manifest.sh  # Flatpak metadata update
 │
-├── Models/                     # Data models (POCOs)
-│   ├── Config.cs               # Configuration model
-│   ├── Profile.cs              # Player profile model
-│   ├── InstanceMeta.cs         # Instance metadata
-│   └── ...
+├── .github/                      # GitHub workflows
+│   └── workflows/
+│       ├── build.yml              # CI build pipeline
+│       ├── release.yml           # Release automation
+│       └── flathub_push.yml      # Flathub integration
 │
-├── Scripts/                    # Build and utility scripts
-│   ├── generate-ipc.mjs        # IPC codegen: C# annotations → ipc.ts
-│   └── publish.sh              # Build script
-│
-├── Properties/                 # Build/package metadata and platform assets
-│   ├── linux/                  # Linux metainfo + flatpak metadata
-│   ├── macos/                  # macOS Info.plist and assets
-│   └── windows/                # Windows icon/assets
-│
-├── Docs/                       # Documentation
-│   ├── English/                # English documentation
-│   └── Russian/                # Russian documentation
-│
-└── wwwroot/                    # Compiled frontend (generated by build)
-    ├── index.html              # Production entry point
-    └── assets/                 # Compiled JS/CSS bundles
+└── Docs/                         # Documentation
+    ├── English/                   # English documentation
+    └── Russian/                   # Russian documentation
 ```
 
 ## Important Notes
 
-- **`Frontend/src/lib/ipc.ts`** is auto-generated by `Scripts/generate-ipc.mjs` — never edit manually
-- **`Frontend/src/assets/`** contains all frontend static resources (images, locales, backgrounds)
-- **`wwwroot/`** is generated during build — do not edit manually
+- **`Sources/HyPrism.Launcher/Frontend/src/lib/ipc.ts`** is auto-generated by the `HyPrism.IpcGen` project — never edit manually
+- **`Sources/HyPrism.Launcher/Frontend/src/assets/`** contains all frontend static resources (images, locales, backgrounds)
+- **`Sources/HyPrism.Launcher/wwwroot/`** is generated during build — do not edit manually
 - **Instance folders** are stored as `{branch}/{guid}` (e.g., `release/abc123-...`)
 - **Placeholder folders** (for example `latest/` without client binaries) are ignored during instance discovery and are not turned into real instances automatically

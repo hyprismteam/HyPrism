@@ -89,8 +89,8 @@
   <!-- Also exclude the IpcGen tool — it's a separate project with its own csproj -->
   <ItemGroup>
     <Compile Remove="Services/Game/Sources/MirrorVersionSource.cs" />
-    <Compile Remove="HyPrism.IpcGen/**/*.cs" />
-    <Compile Remove="HyPrism.Tests/**/*.cs" />
+    <Compile Remove="../HyPrism.IpcGen/**/*.cs" />
+    <Compile Remove="../HyPrism.Tests/**/*.cs" />
   </ItemGroup>
 
   <!-- ElectronNET custom startup hook: IPv6 loopback socket bridge (VPN compatibility) -->
@@ -112,9 +112,9 @@
     <Exec Command="npm ci --prefer-offline" WorkingDirectory="Frontend" />
   </Target>
 
-  <Target Name="GenerateIpcTs" BeforeTargets="BuildFrontend" DependsOnTargets="NpmInstall" Condition="Exists('HyPrism.IpcGen/HyPrism.IpcGen.csproj')">
+  <Target Name="GenerateIpcTs" BeforeTargets="BuildFrontend" DependsOnTargets="NpmInstall" Condition="Exists('../HyPrism.IpcGen/HyPrism.IpcGen.csproj')">
     <Message Importance="high" Text="→ Generating ipc.ts (Roslyn IpcGen)" />
-    <Exec Command="dotnet run --project HyPrism.IpcGen/HyPrism.IpcGen.csproj -- --project &quot;$(MSBuildProjectFullPath)&quot; --output &quot;$(MSBuildProjectDirectory)/Frontend/src/lib/ipc.ts&quot;" />
+    <Exec Command="dotnet run --project ../HyPrism.IpcGen/HyPrism.IpcGen.csproj -- --project &quot;$(MSBuildProjectFullPath)&quot; --output &quot;$(MSBuildProjectDirectory)/Frontend/src/lib/ipc.ts&quot;" />
   </Target>
 
   <Target Name="BuildFrontend" BeforeTargets="Build" Inputs="Frontend/src/**/*;Frontend/index.html;Frontend/vite.config.ts;Frontend/tsconfig.json;Frontend/tsconfig.app.json" Outputs="wwwroot/index.html" Condition="Exists('Frontend/package.json') AND '$(SkipFrontend)' != 'true'">

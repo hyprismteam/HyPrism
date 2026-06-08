@@ -14,7 +14,7 @@ Runtime note:
 
 ## Download
 
-Download the latest release from the [GitHub Releases](https://github.com/yyyumeniku/HyPrism/releases) page.
+Download the latest release from the [GitHub Releases](https://github.com/hyprismteam/HyPrism/releases) page.
 
 ### Windows
 

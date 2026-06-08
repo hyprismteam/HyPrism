@@ -3,7 +3,7 @@
 IPC-мост между рендерером Electron (React/TypeScript) и бэкендом .NET в HyPrism
 **полностью типобезопасен и генерируется автоматически**. Разработчик пишет типизированные
 C#-методы; Roslyn CLI-инструмент `HyPrism.IpcGen` читает их во время сборки и создаёт
-`Frontend/src/lib/ipc.ts`.
+`Sources/HyPrism.Launcher/Frontend/src/lib/ipc.ts`.
 
 ---
 
@@ -125,11 +125,11 @@ ipc.game.onProgress((data: ProgressUpdate) => { … })
 
 ## Request- и Response-записи
 
-Входные типы находятся в `Services/Core/Ipc/Requests/` (по одному файлу на домен);
-ответные типы — в `Services/Core/Ipc/Responses/`.
+Входные типы находятся в `Sources/HyPrism.Launcher/Services/Core/Ipc/Requests/` (по одному файлу на домен);
+ответные типы — в `Sources/HyPrism.Launcher/Services/Core/Ipc/Responses/`.
 
 ```
-Services/Core/Ipc/
+Sources/HyPrism.Launcher/Services/Core/Ipc/
 ├── Attributes/
 │   ├── IpcInvokeAttribute.cs
 │   ├── IpcSendAttribute.cs
@@ -157,12 +157,12 @@ Services/Core/Ipc/
 
 ## Интеграция с MSBuild
 
-`HyPrism.csproj` запускает `HyPrism.IpcGen` автоматически перед сборкой Vite-фронтенда:
+`Sources/HyPrism.Launcher/HyPrism.Launcher.csproj` запускает `HyPrism.IpcGen` автоматически перед сборкой Vite-фронтенда:
 
 ```xml
 <Target Name="GenerateIpcTs" BeforeTargets="BuildFrontend" DependsOnTargets="NpmInstall"
-        Condition="Exists('HyPrism.IpcGen/HyPrism.IpcGen.csproj')">
-  <Exec Command="dotnet run --project HyPrism.IpcGen/HyPrism.IpcGen.csproj
+        Condition="Exists('../HyPrism.IpcGen/HyPrism.IpcGen.csproj')">
+  <Exec Command="dotnet run --project ../HyPrism.IpcGen/HyPrism.IpcGen.csproj
                  -- --project &quot;$(MSBuildProjectFullPath)&quot;
                     --output &quot;$(MSBuildProjectDirectory)/Frontend/src/lib/ipc.ts&quot;" />
 </Target>
@@ -175,7 +175,7 @@ Services/Core/Ipc/
 
 ## Добавление нового канала
 
-1. **Определите типы** (при необходимости) — добавьте record в `Requests/` или `Responses/`:
+1. **Определите типы** (при необходимости) — добавьте record в `Sources/HyPrism.Launcher/Services/Core/Ipc/Requests/` или `Responses/`:
    ```csharp
    // Requests/GameRequests.cs
    public record MyActionRequest(string Param, int Count);
@@ -184,7 +184,7 @@ Services/Core/Ipc/
    public record MyActionResult(bool Success, string? Message = null);
    ```
 
-2. **Добавьте обработчик** в `IpcService.cs` внутри нужного `#region`:
+2. **Добавьте обработчик** в `Sources/HyPrism.Launcher/Services/Core/Ipc/IpcService.cs` внутри нужного `#region`:
    ```csharp
    [IpcInvoke("hyprism:game:myAction")]
    public async Task<MyActionResult> MyAction(MyActionRequest req)

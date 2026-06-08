@@ -755,7 +755,7 @@ do_flatpak_publish() {
 
     # Version from project file
     local version
-    version=$(grep -oP '<Version>\K[^<]+' "$PROJECT_ROOT/HyPrism.csproj" || echo "0.0.0")
+    version=$(grep -oP '<Version>\K[^<]+' "$PROJECT_ROOT/Sources/HyPrism.Launcher/HyPrism.Launcher.csproj" || echo "0.0.0")
 
     local flatpak_arch
     flatpak_arch=$(arch_to_flatpak_arch "$arch")

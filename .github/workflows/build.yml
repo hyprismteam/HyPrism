@@ -95,7 +95,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
-          cache-dependency-path: Frontend/package-lock.json
+          cache-dependency-path: Sources/HyPrism.Launcher/Frontend/package-lock.json
 
       - name: Install Electron.NET CLI
         run: dotnet tool install --global ElectronNET.CLI
@@ -166,7 +166,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
-          cache-dependency-path: Frontend/package-lock.json
+          cache-dependency-path: Sources/HyPrism.Launcher/Frontend/package-lock.json
 
       - name: Install Electron.NET CLI
         run: dotnet tool install --global ElectronNET.CLI
@@ -176,7 +176,7 @@ jobs:
         run: |
           mkdir -p Build
           if command -v magick >/dev/null 2>&1; then
-            magick Frontend/src/assets/images/appicon.png -define icon:auto-resize=16,24,32,48,64,128,256 Build/icon.ico
+            magick Sources/HyPrism.Launcher/Frontend/src/assets/images/appicon.png -define icon:auto-resize=16,24,32,48,64,128,256 Build/icon.ico
             echo "Generated Build/icon.ico from appicon.png"
           else
             echo "magick not found; using existing Build/icon.ico"
@@ -219,7 +219,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
-          cache-dependency-path: Frontend/package-lock.json
+          cache-dependency-path: Sources/HyPrism.Launcher/Frontend/package-lock.json
 
       - name: Install Electron.NET CLI
         run: dotnet tool install --global ElectronNET.CLI
@@ -229,10 +229,10 @@ jobs:
           # Generate ICNS from PNG using iconutil (macOS native tool)
           mkdir -p HyPrism.iconset
           for size in 16 32 64 128 256 512; do
-            sips -z $size $size Frontend/src/assets/images/appicon.png --out HyPrism.iconset/icon_${size}x${size}.png
+            sips -z $size $size Sources/HyPrism.Launcher/Frontend/src/assets/images/appicon.png --out HyPrism.iconset/icon_${size}x${size}.png
             size2=$((size * 2))
             if [ $size2 -le 1024 ]; then
-              sips -z $size2 $size2 Frontend/src/assets/images/appicon.png --out HyPrism.iconset/icon_${size}x${size}@2x.png
+              sips -z $size2 $size2 Sources/HyPrism.Launcher/Frontend/src/assets/images/appicon.png --out HyPrism.iconset/icon_${size}x${size}@2x.png
             fi
           done
           mkdir -p Build

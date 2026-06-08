@@ -43,7 +43,7 @@ jobs:
           set -euo pipefail
           
           # Try to get version from csproj
-          VERSION=$(grep -oP '<Version>\K[^<]+' HyPrism.csproj || echo "")
+          VERSION=$(grep -oP '<Version>\K[^<]+' Sources/HyPrism.Launcher/HyPrism.Launcher.csproj || echo "")
           
           # Override with input if provided
           if [ -n "${{ github.event.inputs.version }}" ]; then

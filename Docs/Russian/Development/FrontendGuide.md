@@ -2,40 +2,45 @@
 
 ## Обзор
 
-Фронтенд — это React 19 SPA, собранный с помощью Vite 7 и TypeScript 5.9. Он запускается внутри Electron BrowserWindow, загружаемого из `file://wwwroot/index.html`.
+Фронтенд — это React 18 SPA, собранный с помощью Vite 5 и TypeScript 5.3. Он запускается внутри Electron BrowserWindow, загружаемого из `file://wwwroot/index.html`.
 
 ## Стек
 
 | Библиотека | Назначение |
 |------------|-----------|
-| React 19 | UI-фреймворк |
-| TypeScript 5.9 | Типобезопасность |
-| Vite 7 | Инструмент сборки |
-| TailwindCSS v4 | Утилитарный CSS |
-| GSAP 3 + @gsap/react | Анимации |
-| Lucide React | Иконки |
+| React 18.2.0 | UI-фреймворк |
+| TypeScript 5.3.0 | Типобезопасность |
+| Vite 5.0.0 | Инструмент сборки |
+| TailwindCSS 3.4.0 | Утилитарный CSS |
+| Framer Motion 11.0.0 | Анимации |
+| Lucide React 0.300.0 | Иконки |
 | React Router DOM | Клиентская маршрутизация |
+| i18next / react-i18next | Интернационализация |
 
 ## Страницы
 
 | Страница | Файл | Маршрут | Описание |
 |----------|------|---------|----------|
-| Панель управления | `pages/Dashboard.tsx` | `/` | Запуск игры, прогресс, статус |
-| Новости | `pages/News.tsx` | `/news` | Лента новостей Hytale |
-| Настройки | `pages/Settings.tsx` | `/settings` | Настройки приложения |
-| Менеджер модов | `pages/ModManager.tsx` | `/mods` | Просмотр и управление модами |
+| Панель управления | `pages/DashboardPage.tsx` | `/` | Запуск игры, прогресс, статус |
+| Новости | `pages/NewsPage.tsx` | `/news` | Лента новостей Hytale |
+| Экземпляры | `pages/InstancesPage.tsx` | `/instances` | Менеджер экземпляров с вкладками (Контент, Миры) |
+| Профили | `pages/ProfilesPage.tsx` | `/profiles` | Управление профилями |
+| Настройки | `pages/settings/SettingsPage.tsx` | `/settings` | Настройки с вкладками |
+| Логи | `pages/LogsPage.tsx` | `/logs` | Просмотр логов |
+| Онбординг | `pages/onboarding/OnboardingPage.tsx` | Мастер первого запуска |
 
 ## Компоненты
 
 | Компонент | Файл | Описание |
 |-----------|------|----------|
-| TitleBar | `components/TitleBar.tsx` | Заголовок безрамочного окна с кнопками управления |
-| Sidebar | `components/Sidebar.tsx` | Боковая панель навигации с иконками |
-| GlassCard | `components/GlassCard.tsx` | Обёртка карточки в стиле glass-morphism |
+| DockMenu | `components/layout/DockMenu.tsx` | Панель навигации/dock меню |
+| BackgroundImage | `components/layout/BackgroundImage.tsx` | Обработчик динамического фона |
+| MusicPlayer | `components/layout/MusicPlayer.tsx` | Плеер фоновой музыки |
+| UpdateOverlay | `components/layout/UpdateOverlay.tsx` | Оверлей доступного обновления |
 
 ## UI-примитивы
 
-Чтобы интерфейс оставался единообразным и поддерживаемым, используйте общие примитивы из `Frontend/src/components/ui/`:
+Чтобы интерфейс оставался единообразным и поддерживаемым, используйте общие примитивы из `Sources/HyPrism.Launcher/Frontend/src/components/ui/`:
 
 - **PageContainer** (`components/ui/PageContainer.tsx`) — единая максимальная ширина, центрирование и адаптивные отступы для основных страниц
 - **SettingsHeader** (`components/ui/SettingsHeader.tsx`) — унифицированный заголовок секции/страницы (title + опциональное описание, опциональный слот для действий)
@@ -135,24 +140,23 @@ export function ProfileCard({ profileId }: Props) {
 - CSS-переменные для цветов темы: `style={{ color: 'var(--accent)' }}`
 - Никогда не используйте захардкоженные hex-цвета — всегда CSS-переменные
 
-## Анимации (GSAP)
+## Анимации (Framer Motion)
 
-Переходы между страницами и микровзаимодействия используют GSAP:
+Переходы между страницами и микровзаимодействия используют Framer Motion:
 
 ```tsx
-import { useGSAP } from '@gsap/react';
-import gsap from 'gsap';
+import { motion } from 'framer-motion';
 
 export function MyPage() {
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useGSAP(() => {
-    gsap.from(containerRef.current, {
-      opacity: 0, y: 20, duration: 0.5, ease: 'power2.out'
-    });
-  }, []);
-
-  return <div ref={containerRef}>...</div>;
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, ease: 'easeOut' }}
+    >
+      ...
+    </motion.div>
+  );
 }
 ```
 
@@ -184,7 +188,7 @@ ipc.browser.open('https://example.com');
 const { isPlaying, launch, cancel } = useGame();
 ```
 
-Добавляйте новые контексты в `Frontend/src/contexts/` для состояния других доменов.
+Добавляйте новые контексты в `Sources/HyPrism.Launcher/Frontend/src/contexts/` для состояния других доменов.
 
 ## Иконки
 

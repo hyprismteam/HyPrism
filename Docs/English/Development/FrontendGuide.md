@@ -2,40 +2,45 @@
 
 ## Overview
 
-The frontend is a React 19 SPA built with Vite 7 and TypeScript 5.9. It runs inside an Electron BrowserWindow loaded from `file://wwwroot/index.html`.
+The frontend is a React 18 SPA built with Vite 5 and TypeScript 5.3. It runs inside an Electron BrowserWindow loaded from `file://wwwroot/index.html`.
 
 ## Stack
 
 | Library | Purpose |
 |---------|---------|
-| React 19 | UI framework |
-| TypeScript 5.9 | Type safety |
-| Vite 7 | Build tool |
-| TailwindCSS v4 | Utility-first CSS |
-| GSAP 3 + @gsap/react | Animations |
-| Lucide React | Icons |
+| React 18.2.0 | UI framework |
+| TypeScript 5.3.0 | Type safety |
+| Vite 5.0.0 | Build tool |
+| TailwindCSS 3.4.0 | Utility-first CSS |
+| Framer Motion 11.0.0 | Animations |
+| Lucide React 0.300.0 | Icons |
 | React Router DOM | Client-side routing |
+| i18next / react-i18next | Internationalization |
 
 ## Pages
 
 | Page | File | Route | Description |
 |------|------|-------|-------------|
-| Dashboard | `pages/Dashboard.tsx` | `/` | Game launch, progress, status |
-| News | `pages/News.tsx` | `/news` | Hytale news feed |
-| Settings | `pages/Settings.tsx` | `/settings` | App settings |
-| Mod Manager | `pages/ModManager.tsx` | `/mods` | Browse and manage mods |
+| Dashboard | `pages/DashboardPage.tsx` | `/` | Game launch, progress, status |
+| News | `pages/NewsPage.tsx` | `/news` | Hytale news feed |
+| Instances | `pages/InstancesPage.tsx` | `/instances` | Game instance manager with tabs (Content, Worlds) |
+| Profiles | `pages/ProfilesPage.tsx` | `/profiles` | Profile management |
+| Settings | `pages/settings/SettingsPage.tsx` | `/settings` | App settings with tabs |
+| Logs | `pages/LogsPage.tsx` | `/logs` | Log viewer |
+| Onboarding | `pages/onboarding/OnboardingPage.tsx` | First-launch wizard |
 
 ## Components
 
 | Component | File | Description |
 |-----------|------|-------------|
-| TitleBar | `components/TitleBar.tsx` | Frameless window title bar with controls |
-| Sidebar | `components/Sidebar.tsx` | Navigation sidebar with icons |
-| GlassCard | `components/GlassCard.tsx` | Glass-morphism card wrapper |
+| DockMenu | `components/layout/DockMenu.tsx` | Navigation dock/menu |
+| BackgroundImage | `components/layout/BackgroundImage.tsx` | Dynamic background handler |
+| MusicPlayer | `components/layout/MusicPlayer.tsx` | Background music player |
+| UpdateOverlay | `components/layout/UpdateOverlay.tsx` | Update available overlay |
 
 ## UI Primitives
 
-To keep pages consistent and maintainable, prefer the shared primitives in `Frontend/src/components/ui/`:
+To keep pages consistent and maintainable, prefer the shared primitives in `Sources/HyPrism.Launcher/Frontend/src/components/ui/`:
 
 - **PageContainer** (`components/ui/PageContainer.tsx`) — consistent max-width, centered layout, and responsive padding for all main pages
 - **SettingsHeader** (`components/ui/SettingsHeader.tsx`) — unified section/page header (title + optional description, optional actions slot)
@@ -129,24 +134,23 @@ All theme colors are CSS custom properties defined in `Frontend/src/index.css`:
 - CSS vars for theme colors: `style={{ color: 'var(--accent)' }}`
 - Never hardcode hex colors — always use CSS variables
 
-## Animations (GSAP)
+## Animations (Framer Motion)
 
-Page transitions and micro-interactions use GSAP:
+Page transitions and micro-interactions use Framer Motion:
 
 ```tsx
-import { useGSAP } from '@gsap/react';
-import gsap from 'gsap';
+import { motion } from 'framer-motion';
 
 export function MyPage() {
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useGSAP(() => {
-    gsap.from(containerRef.current, {
-      opacity: 0, y: 20, duration: 0.5, ease: 'power2.out'
-    });
-  }, []);
-
-  return <div ref={containerRef}>...</div>;
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, ease: 'easeOut' }}
+    >
+      ...
+    </motion.div>
+  );
 }
 ```
 
@@ -184,7 +188,7 @@ Game state is managed via `GameContext`:
 const { isPlaying, launch, cancel } = useGame();
 ```
 
-Add new contexts in `Frontend/src/contexts/` for other domain state.
+Add new contexts in `Sources/HyPrism.Launcher/Frontend/src/contexts/` for other domain state.
 
 ## Icons
 

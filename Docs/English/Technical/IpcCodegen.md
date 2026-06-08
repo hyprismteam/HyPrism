@@ -123,11 +123,11 @@ with camelCase property names.
 
 ## Request and Response Records
 
-Input types live in `Services/Core/Ipc/Requests/` (one file per domain);
-response types live in `Services/Core/Ipc/Responses/`.
+Input types live in `Sources/HyPrism.Launcher/Services/Core/Ipc/Requests/` (one file per domain);
+response types live in `Sources/HyPrism.Launcher/Services/Core/Ipc/Responses/`.
 
 ```
-Services/Core/Ipc/
+Sources/HyPrism.Launcher/Services/Core/Ipc/
 ├── Attributes/
 │   ├── IpcInvokeAttribute.cs
 │   ├── IpcSendAttribute.cs
@@ -155,12 +155,12 @@ Services/Core/Ipc/
 
 ## MSBuild Integration
 
-`HyPrism.csproj` runs `HyPrism.IpcGen` automatically before the Vite frontend build:
+`Sources/HyPrism.Launcher/HyPrism.Launcher.csproj` runs `HyPrism.IpcGen` automatically before the Vite frontend build:
 
 ```xml
 <Target Name="GenerateIpcTs" BeforeTargets="BuildFrontend" DependsOnTargets="NpmInstall"
-        Condition="Exists('HyPrism.IpcGen/HyPrism.IpcGen.csproj')">
-  <Exec Command="dotnet run --project HyPrism.IpcGen/HyPrism.IpcGen.csproj
+        Condition="Exists('../HyPrism.IpcGen/HyPrism.IpcGen.csproj')">
+  <Exec Command="dotnet run --project ../HyPrism.IpcGen/HyPrism.IpcGen.csproj
                  -- --project &quot;$(MSBuildProjectFullPath)&quot;
                     --output &quot;$(MSBuildProjectDirectory)/Frontend/src/lib/ipc.ts&quot;" />
 </Target>
@@ -173,7 +173,7 @@ If the file has not changed since the last run, codegen is skipped entirely.
 
 ## Adding a New IPC Channel
 
-1. **Define types** (if needed) — add a record in `Requests/` or `Responses/`:
+1. **Define types** (if needed) — add a record in `Sources/HyPrism.Launcher/Services/Core/Ipc/Requests/` or `Responses/`:
    ```csharp
    // Requests/GameRequests.cs
    public record MyActionRequest(string Param, int Count);
@@ -182,7 +182,7 @@ If the file has not changed since the last run, codegen is skipped entirely.
    public record MyActionResult(bool Success, string? Message = null);
    ```
 
-2. **Add a handler** in `IpcService.cs` inside the appropriate `#region`:
+2. **Add a handler** in `Sources/HyPrism.Launcher/Services/Core/Ipc/IpcService.cs` inside the appropriate `#region`:
    ```csharp
    [IpcInvoke("hyprism:game:myAction")]
    public async Task<MyActionResult> MyAction(MyActionRequest req)
@@ -214,7 +214,7 @@ Domains named `window` or `console` are aliased to avoid shadowing JavaScript gl
 
 ---
 
-## Roslyn Tool — `HyPrism.IpcGen/`
+## Roslyn Tool — `Sources/HyPrism.IpcGen/`
 
 | File | Responsibility |
 |------|---------------|

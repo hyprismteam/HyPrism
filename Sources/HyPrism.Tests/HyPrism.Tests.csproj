@@ -27,7 +27,7 @@
       Remove RuntimeIdentifier from the referenced EXE project to avoid
       platform-specific build artifacts breaking test discovery.
     -->
-    <ProjectReference Include="..\HyPrism.csproj">
+    <ProjectReference Include="..\HyPrism.Launcher\HyPrism.Launcher.csproj">
       <GlobalPropertiesToRemove>RuntimeIdentifier</GlobalPropertiesToRemove>
       <SetTargetFramework>TargetFramework=net10.0</SetTargetFramework>
       <Properties>SkipFrontend=true</Properties>
