@@ -230,6 +230,7 @@ export interface HytaleAuthStatus {
   uuid?: string | null;
   error?: string | null;
   errorType?: string | null;
+  accountProfiles?: HytaleAccountProfile[] | null;
 }
 
 export interface SettingsSnapshot {
@@ -509,6 +510,11 @@ export interface VersionInfo {
   version: number;
   source: 'Official' | 'Mirror';
   isLatest: boolean;
+}
+
+export interface HytaleAccountProfile {
+  username: string;
+  uuid: string;
 }
 
 export interface JsonElement {

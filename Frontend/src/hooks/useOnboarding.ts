@@ -427,15 +427,21 @@ export function useOnboarding(options: UseOnboardingOptions) {
 
     try {
       const result = await ipc.auth.login();
-      if (result?.loggedIn && result.username && result.uuid) {
-        const profile = await ipc.profile.create({
-          name: result.username,
-          uuid: result.uuid,
-          isOfficial: true,
-        });
-        if (profile && profile.id) {
-          setIsAuthenticated(true);
-          setAuthenticatedUsername(result.username);
+      if (result?.loggedIn && result.accountProfiles?.length) {
+        let created = false;
+        for (const ap of result.accountProfiles) {
+          const profile = await ipc.profile.create({
+            name: ap.username,
+            uuid: ap.uuid,
+            isOfficial: true,
+          });
+          if (!created && profile?.id) {
+            created = true;
+            setIsAuthenticated(true);
+            setAuthenticatedUsername(ap.username);
+          }
+        }
+        if (created) {
           setPhase('setup');
           setCurrentStep('language');
         } else {

@@ -6,7 +6,10 @@ public record HytaleAuthStatus(
     string? Username = null,
     string? Uuid = null,
     string? Error = null,
-    string? ErrorType = null);
+    string? ErrorType = null,
+    List<HytaleAccountProfile>? AccountProfiles = null);
+
+public record HytaleAccountProfile(string Username, string Uuid);
 
 /// <summary>Result of a ping to the auth server.</summary>
 public record AuthServerPingResult(

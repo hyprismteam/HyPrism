@@ -1039,8 +1039,6 @@ public class IpcService(IServiceProvider services) : IpcServiceBase(services)
 
     private static HytaleAuthStatus MapAuthStatus(dynamic status)
     {
-        // HytaleAuthService.GetAuthStatus() returns an anonymous/dynamic object
-        // We cast it explicitly via JSON round-trip for safety
         var json = JsonSerializer.Serialize(status, IpcServiceBase.JsonOpts);
         using var doc = JsonDocument.Parse(json);
         var root = doc.RootElement;
@@ -1049,7 +1047,21 @@ public class IpcService(IServiceProvider services) : IpcServiceBase(services)
         var uuid      = root.TryGetProperty("uuid",      out JsonElement uid) ? uid.GetString() : null;
         var error     = root.TryGetProperty("error",     out JsonElement er)  ? er.GetString()  : null;
         var errorType = root.TryGetProperty("errorType", out JsonElement et)  ? et.GetString()  : null;
-        return new HytaleAuthStatus(loggedIn, username, uuid, error, errorType);
+
+        List<HytaleAccountProfile>? accountProfiles = null;
+        if (root.TryGetProperty("accountProfiles", out JsonElement ap) && ap.ValueKind == JsonValueKind.Array)
+        {
+            accountProfiles = new();
+            foreach (JsonElement entry in ap.EnumerateArray())
+            {
+                string? u = entry.TryGetProperty("username", out JsonElement uEl) ? uEl.GetString() : null;
+                string? id = entry.TryGetProperty("uuid", out JsonElement idEl) ? idEl.GetString() : null;
+                if (u != null && id != null)
+                    accountProfiles.Add(new HytaleAccountProfile(u, id));
+            }
+        }
+
+        return new HytaleAuthStatus(loggedIn, username, uuid, error, errorType, accountProfiles);
     }
 
     private string? ResolveModInstancePath(string? instanceId)

@@ -74,15 +74,18 @@ export const ProfileCreationWizard: React.FC<ProfileCreationWizardProps> = ({ on
         try {
             // This will open the browser and wait for callback (up to 15 min)
             const result = await ipc.auth.login();
-            if (result?.loggedIn && result.username && result.uuid) {
-                // Create official profile from Hytale account data
-                const profile = await ipc.profile.create({
-                    name: result.username,
-                    uuid: result.uuid,
-                    isOfficial: true,
-                });
-                if (profile && profile.id) {
-                    onComplete(profile);
+            if (result?.loggedIn && result.accountProfiles?.length) {
+                let firstProfile: Awaited<ReturnType<typeof ipc.profile.create>> | null = null;
+                for (const ap of result.accountProfiles) {
+                    const profile = await ipc.profile.create({
+                        name: ap.username,
+                        uuid: ap.uuid,
+                        isOfficial: true,
+                    });
+                    if (!firstProfile && profile?.id) firstProfile = profile;
+                }
+                if (firstProfile) {
+                    onComplete(firstProfile);
                 } else {
                     setError(t('profiles.wizard.createFailed'));
                     setErrorLevel('error');
