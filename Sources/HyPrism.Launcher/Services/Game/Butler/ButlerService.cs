@@ -11,7 +11,6 @@ namespace HyPrism.Services.Game.Butler;
 /// </summary>
 public class ButlerService : IButlerService
 {
-    private const string ButlerVersion = "15.21.0";
     private const string BrothUrlTemplate = "https://broth.itch.zone/butler/{0}-{1}/LATEST/archive/default";
     
     private readonly string _butlerDir;
@@ -83,11 +82,6 @@ public class ButlerService : IButlerService
 
         string osName = UtilityService.GetOS();
         string arch = UtilityService.GetArch();
-
-        if (osName == "darwin")
-        {
-            arch = "amd64";
-        }
 
         string url = string.Format(BrothUrlTemplate, osName, arch);
         Logger.Info("Butler", $"Downloading from: {url}");

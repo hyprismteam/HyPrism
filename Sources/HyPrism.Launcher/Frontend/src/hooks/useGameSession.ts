@@ -212,7 +212,7 @@ export function useGameSession({
         const exitCode = data.exitCode;
         if (exitCode !== undefined && exitCode !== null && exitCode !== 0) {
           try {
-            const logs = await ipc.logs.get();
+            const logs = await ipc.logs.get(null);
             setError(null);
             setLaunchTimeoutError({
               message: t('app.gameCrashed', { code: exitCode }),
@@ -293,7 +293,7 @@ export function useGameSession({
     setIsDownloading(true);
     setDownloadState('downloading');
     try {
-      ipc.game.launch();
+      ipc.game.launch(null);
       await refreshInstances();
     } catch {
       clearDownloadState();

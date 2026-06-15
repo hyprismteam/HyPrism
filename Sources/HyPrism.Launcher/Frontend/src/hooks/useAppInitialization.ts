@@ -2,20 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { ipc } from '@/lib/ipc';
 
 /**
- * Checks whether Rosetta 2 needs to be installed (macOS only).
- * This is a stub — no IPC channel exists yet; always resolves to `null` on non-macOS platforms.
- * @returns Rosetta install instructions, or `null` if not needed / not applicable.
- */
-const CheckRosettaStatus = async (): Promise<{
-  NeedsInstall: boolean;
-  Message: string;
-  Command: string;
-  TutorialUrl?: string;
-} | null> => null;
-
-/**
  * Performs application initialization on first mount: loads settings, profile,
- * checks onboarding status, parses Rosetta warnings, and hydrates launcher-level state.
+checks onboarding status and hydrates launcher-level state.
  *
  * @returns Application-level state including profile info, background mode, mute state,
  *   onboarding visibility, and reload/refresh helpers.
@@ -30,11 +18,6 @@ export function useAppInitialization() {
   const [backgroundMode, setBackgroundMode] = useState<string | null>(null);
   const [isMuted, setIsMuted] = useState(false);
   const [launcherBranch, setLauncherBranch] = useState('release');
-  const [rosettaWarning, setRosettaWarning] = useState<{
-    message: string;
-    command: string;
-    tutorialUrl?: string;
-  } | null>(null);
   const [enabledMirrorCount, setEnabledMirrorCount] = useState(0);
   const [hasOfficialAccount, setHasOfficialAccount] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -136,20 +119,6 @@ export function useAppInitialization() {
         setIsMuted(!(settings.musicEnabled ?? true));
         setLauncherBranch(settings.launcherBranch ?? 'release');
 
-        // Rosetta status (macOS only — stub returns null on other platforms)
-        try {
-          const rosetta = await CheckRosettaStatus();
-          if (rosetta?.NeedsInstall) {
-            setRosettaWarning({
-              message: rosetta.Message,
-              command: rosetta.Command,
-              tutorialUrl: rosetta.TutorialUrl,
-            });
-          }
-        } catch {
-          // not macOS
-        }
-
         await Promise.all([refreshOfficialStatus(), refreshDownloadSources()]);
       } catch (e) {
         console.error('[App] Initialization failed:', e);
@@ -175,7 +144,6 @@ export function useAppInitialization() {
     isMuted,
     handleToggleMute,
     launcherBranch, setLauncherBranch,
-    rosettaWarning,
     hasDownloadSources,
     showOnboarding, setShowOnboarding,
     onboardingChecked,
@@ -185,3 +153,4 @@ export function useAppInitialization() {
     refreshDownloadSources,
   };
 }
+

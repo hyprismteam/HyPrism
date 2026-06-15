@@ -127,7 +127,7 @@ async function SetInstanceDirectory(path: string): Promise<{ success: boolean, p
 }
 
 async function BrowseFolder(initialPath?: string): Promise<string> { 
-  return (await ipc.file.browseFolder(initialPath)) ?? ''; 
+  return (await ipc.file.browseFolder(initialPath ?? '')) ?? ''; 
 }
 
 async function BrowseJavaExecutable(): Promise<string> { 

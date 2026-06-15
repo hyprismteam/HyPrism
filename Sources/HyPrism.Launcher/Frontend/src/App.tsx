@@ -23,7 +23,7 @@ const ErrorModal = lazy(() => import('./components/modals/ErrorModal').then(m =>
 const DeleteConfirmationModal = lazy(() => import('./components/modals/DeleteConfirmationModal').then(m => ({ default: m.DeleteConfirmationModal })));
 const OnboardingModal = lazy(() => import('./pages/onboarding').then(m => ({ default: m.OnboardingModal })));
 
-const GetNews = (_count: number): Promise<NewsItem[]> => ipc.news.get();
+const GetNews = async (_count: number): Promise<NewsItem[]> => (await ipc.news.get()) as NewsItem[];
 
 // Stubs for wrapper mode (no IPC channels yet)
 const stub = <T,>(name: string, fallback: T) => async (..._args: unknown[]): Promise<T> => {
@@ -398,7 +398,6 @@ const App: React.FC = () => {
                 key="settings"
                 launcherBranch={init.launcherBranch}
                 onLauncherBranchChange={handleLauncherBranchChange}
-                rosettaWarning={init.rosettaWarning}
                 onBackgroundModeChange={mode => init.setBackgroundMode(mode)}
                 onInstanceDeleted={handleInstanceDeleted}
                 onAuthSettingsChange={async () => {

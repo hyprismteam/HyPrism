@@ -9,7 +9,6 @@ const SettingsPageContent = lazy(() => import('./settings/SettingsPage').then(m 
 interface SettingsPageProps {
   launcherBranch: string;
   onLauncherBranchChange: (branch: string) => void;
-  rosettaWarning?: { message: string; command: string; tutorialUrl?: string } | null;
   onBackgroundModeChange?: (mode: string) => void;
   onInstanceDeleted?: () => void;
   onNavigateToMods?: () => void;
@@ -39,7 +38,6 @@ export const SettingsPage: React.FC<SettingsPageProps> = (props) => {
               <SettingsPageContent
                 launcherBranch={props.launcherBranch}
                 onLauncherBranchChange={props.onLauncherBranchChange}
-                rosettaWarning={props.rosettaWarning}
                 onBackgroundModeChange={props.onBackgroundModeChange}
                 onInstanceDeleted={props.onInstanceDeleted}
                 onAuthSettingsChange={props.onAuthSettingsChange}

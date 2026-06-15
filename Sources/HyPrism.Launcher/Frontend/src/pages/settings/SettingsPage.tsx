@@ -2,9 +2,8 @@ import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  X, Settings, Download, Coffee, Image, Wifi, Monitor, 
-  Terminal, FileText, Database, Globe, Code, AlertTriangle, 
-  Trash2, ExternalLink,
+  X, Settings, Download, Coffee, Image, Wifi, Monitor,
+  Terminal, FileText, Database, Globe, Code, Trash2,
   type LucideIcon
 } from 'lucide-react';
 import { openUrl } from '@/utils/openUrl';
@@ -35,7 +34,6 @@ export interface SettingsPageProps {
   onClose?: () => void;
   launcherBranch: string;
   onLauncherBranchChange: (branch: string) => void;
-  rosettaWarning?: { message: string; command: string; tutorialUrl?: string } | null;
   onBackgroundModeChange?: (mode: string) => void;
   onInstanceDeleted?: () => void;
   onAuthSettingsChange?: () => void;
@@ -47,7 +45,6 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
   onClose,
   launcherBranch,
   onLauncherBranchChange,
-  rosettaWarning,
   onBackgroundModeChange,
   onInstanceDeleted,
   onAuthSettingsChange,
@@ -157,33 +154,6 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
 
             {/* Scrollable Content */}
             <div className={settings.activeTab === 'logs' ? 'flex-1 min-h-0' : 'flex-1 overflow-y-auto p-6 space-y-6'}>
-              {/* Rosetta Warning */}
-              {rosettaWarning && settings.activeTab !== 'logs' && (
-                <div className="p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-xl">
-                  <div className="flex items-start gap-3">
-                    <AlertTriangle size={20} className="text-yellow-500 flex-shrink-0 mt-0.5" />
-                    <div className="flex-1">
-                      <p className="text-yellow-500 text-sm font-medium mb-2">{rosettaWarning.message}</p>
-                      <div className="flex flex-col gap-2">
-                        <code className="text-xs text-white/70 bg-[#1c1c1e] px-2 py-1 rounded font-mono break-all">
-                          {rosettaWarning.command}
-                        </code>
-                        {rosettaWarning.tutorialUrl && (
-                          <button
-                            onClick={() => openUrl(rosettaWarning.tutorialUrl!)}
-                            className="text-xs w-fit flex items-center gap-1"
-                            style={{ color: settings.accentColor }}
-                          >
-                            <ExternalLink size={12} />
-                            {t('settings.generalSettings.watchTutorial')}
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
               {/* Tab Content */}
               {settings.activeTab === 'general' && (
                 <GeneralTab

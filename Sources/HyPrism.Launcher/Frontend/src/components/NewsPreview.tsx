@@ -1,19 +1,12 @@
 import { Calendar, RefreshCw, User, ChevronDown, ChevronUp, Newspaper } from 'lucide-react';
+import type { NewsItem } from '@/lib/ipc';
 import React, { useState, useEffect, useRef, memo, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ipc } from '@/lib/ipc';
 import { useAccentColor } from '../contexts/AccentColorContext';
 import { Button, IconButton, LinkButton } from '@/components/ui/Controls';
 
-interface NewsItem {
-    title: string;
-    excerpt?: string;
-    url?: string;
-    date?: string;
-    author?: string;
-    imageUrl?: string;
-    source?: 'hytale' | 'hyprism';
-}
+
 
 interface NewsPreviewProps {
     getNews: (count: number) => Promise<NewsItem[]>

@@ -256,9 +256,6 @@ public static class Bootstrapper
                 new ProgressNotificationService(sp.GetRequiredService<IDiscordService>()));
             services.AddSingleton<IProgressNotificationService>(sp => sp.GetRequiredService<ProgressNotificationService>());
 
-            services.AddSingleton<RosettaService>();
-            services.AddSingleton<IRosettaService>(sp => sp.GetRequiredService<RosettaService>());
-
             services.AddSingleton<FileDialogService>();
             services.AddSingleton<IFileDialogService>(sp => sp.GetRequiredService<FileDialogService>());
 

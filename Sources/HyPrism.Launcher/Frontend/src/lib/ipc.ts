@@ -269,9 +269,7 @@ export interface SettingsSnapshot {
   minimizeToTray?: boolean | null;
 }
 
-export interface UpdateSettingsRequest {
-  updates: Record<string, JsonElement>;
-}
+export type UpdateSettingsRequest = Record<string, any>;
 
 export interface MirrorSpeedTestResult {
   mirrorId: string;

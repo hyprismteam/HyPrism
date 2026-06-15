@@ -399,10 +399,6 @@ export const ProfileEditor: React.FC<ProfileEditorProps> = ({ isOpen, onClose, o
         setDeleteConfirmation(null);
     };
     
-    const handleCreateProfile = async () => {
-        // Show the profile creation wizard in the right panel
-        setShowWizard(true);
-    };
 
     const handleWizardComplete = async (profile: Profile) => {
         setShowWizard(false);

@@ -58,8 +58,8 @@ export const toVersionInfo = (inst: InstalledInstance): InstalledVersionInfo => 
   isLatestInstance: inst.version === 0,
   iconPath: undefined,
   validationStatus: inst.validationStatus,
-  validationDetails: inst.validationDetails,
-  customName: inst.customName,
+  validationDetails: inst.validationDetails ?? undefined,
+  customName: inst.customName ?? undefined,
 });
 
 // #endregion

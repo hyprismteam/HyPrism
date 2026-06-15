@@ -475,8 +475,8 @@ export const InlineModBrowser: React.FC<InlineModBrowserProps> = (props) => {
                 <div className="relative px-4 pt-3">
                   <div className="aspect-video bg-[#0a0a0a] rounded-xl overflow-hidden">
                     <img
-                      src={selectedMod.screenshots[activeScreenshot]?.url || selectedMod.screenshots[activeScreenshot]?.thumbnailUrl}
-                      alt={selectedMod.screenshots[activeScreenshot]?.title}
+                      src={selectedMod.screenshots[activeScreenshot]?.url ?? selectedMod.screenshots[activeScreenshot]?.thumbnailUrl ?? ''}
+                      alt={selectedMod.screenshots[activeScreenshot]?.title ?? ''}
                       className="w-full h-full object-cover cursor-pointer"
                       onClick={() => setLightboxIndex(activeScreenshot)}
                       draggable={false}
@@ -492,7 +492,7 @@ export const InlineModBrowser: React.FC<InlineModBrowserProps> = (props) => {
                             i === activeScreenshot ? 'border-white/40' : 'border-transparent opacity-60 hover:opacity-100'
                           }`}
                         >
-                          <img src={ss.thumbnailUrl} alt="" className="w-full h-full object-cover" loading="lazy" draggable={false} />
+                          <img src={ss.thumbnailUrl ?? ''} alt="" className="w-full h-full object-cover" loading="lazy" draggable={false} />
                         </button>
                       ))}
                     </div>
@@ -625,7 +625,7 @@ export const InlineModBrowser: React.FC<InlineModBrowserProps> = (props) => {
       <ImageLightbox
         isOpen={lightboxIndex !== null}
         title={selectedMod?.name}
-        images={(selectedMod?.screenshots ?? []).map((ss) => ({ url: ss.url, title: ss.title }))}
+        images={(selectedMod?.screenshots ?? []).map((ss) => ({ url: ss.url ?? '', title: ss.title ?? undefined }))}
         index={lightboxIndex ?? 0}
         onIndexChange={(next) => setLightboxIndex(next)}
         onClose={() => setLightboxIndex(null)}
