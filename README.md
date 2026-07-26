@@ -83,3 +83,7 @@ HyPrism depends on third-party libraries distributed under licenses including MI
 <div align="center">
   <sub>Made with ❤️ by the HyPrism Community</sub>
 </div>
+
+## Related Hytale Resources
+
+- [Hytale Character Recipes](https://hytalecharacter.com/) - fan-made character recipe references, screenshots, and manual recreation notes for players and avatar creators.
