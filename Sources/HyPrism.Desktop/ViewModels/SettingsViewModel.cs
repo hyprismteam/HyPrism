@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 using System.Collections.ObjectModel;
+using Avalonia.Media.Imaging;
+using Avalonia.Platform;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using HyPrism.Desktop.Localization;
@@ -28,6 +30,7 @@ public sealed partial class SettingsViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(IsData))]
     [NotifyPropertyChangedFor(nameof(IsAbout))]
     [NotifyPropertyChangedFor(nameof(IsDeveloper))]
+    [NotifyPropertyChangedFor(nameof(ActiveCategoryTitle))]
     private string _selectedCategory = "general";
 
     [ObservableProperty] private SettingChoiceViewModel _selectedLanguage;
@@ -48,6 +51,7 @@ public sealed partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private string _javaArguments;
     [ObservableProperty] private string _gameEnvironmentVariables;
     [ObservableProperty] private string _statusMessage = string.Empty;
+    [ObservableProperty] private bool _isCompactLayout;
 
     public SettingsViewModel(
         ISettingsService settings,
@@ -62,16 +66,16 @@ public sealed partial class SettingsViewModel : ObservableObject
 
         Categories = new ObservableCollection<SettingCategoryViewModel>(
         [
-            new("general", localizer["settings.general"]),
-            new("downloads", localizer["settings.downloads.title"]),
-            new("java", localizer["settings.java"]),
-            new("visual", localizer["settings.visual"]),
-            new("network", localizer["settings.network"]),
-            new("graphics", localizer["settings.graphics"]),
-            new("variables", localizer["settings.variables"]),
-            new("data", localizer["settings.data"]),
-            new("about", localizer["settings.about"]),
-            new("developer", localizer["settings.developer"])
+            new("general", localizer["settings.general"], "general.png"),
+            new("downloads", localizer["settings.downloads.title"], "downloads.png"),
+            new("java", localizer["settings.java"], "java.png"),
+            new("visual", localizer["settings.visual"], "visual.png"),
+            new("network", localizer["settings.network"], "network.png"),
+            new("graphics", localizer["settings.graphics"], "graphics.png"),
+            new("variables", localizer["settings.variables"], "variables.png"),
+            new("data", localizer["settings.data"], "data.png"),
+            new("about", localizer["settings.about"], "avares://HyPrism.Desktop/Assets/Images/appicon.png", true),
+            new("developer", localizer["settings.developer"], "developer.png")
         ]);
         Categories[0].IsSelected = true;
 
@@ -135,6 +139,7 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     public string PageTitle { get; private set; } = string.Empty;
     public string PageDescription { get; private set; } = string.Empty;
+    public string BackLabel { get; private set; } = string.Empty;
     public string GeneralTitle { get; private set; } = string.Empty;
     public string DownloadsTitle { get; private set; } = string.Empty;
     public string JavaTitle { get; private set; } = string.Empty;
@@ -190,6 +195,20 @@ public sealed partial class SettingsViewModel : ObservableObject
     public string ReplayIntroLabel { get; private set; } = string.Empty;
     public string DeveloperWarning { get; private set; } = string.Empty;
 
+    public string ActiveCategoryTitle => SelectedCategory switch
+    {
+        "downloads" => DownloadsTitle,
+        "java" => JavaTitle,
+        "visual" => VisualTitle,
+        "network" => NetworkTitle,
+        "graphics" => GraphicsTitle,
+        "variables" => VariablesTitle,
+        "data" => DataTitle,
+        "about" => AboutTitle,
+        "developer" => DeveloperTitle,
+        _ => GeneralTitle
+    };
+
     public bool IsGeneral => SelectedCategory == "general";
     public bool IsDownloads => SelectedCategory == "downloads";
     public bool IsJava => SelectedCategory == "java";
@@ -205,6 +224,7 @@ public sealed partial class SettingsViewModel : ObservableObject
     {
         PageTitle = _localizer["dock.settings"];
         PageDescription = _localizer["desktopSettings.description"];
+        BackLabel = _localizer["common.back"];
         GeneralTitle = _localizer["settings.generalSettings.title"];
         DownloadsTitle = _localizer["settings.downloads.title"];
         JavaTitle = _localizer["settings.java"];
@@ -272,6 +292,16 @@ public sealed partial class SettingsViewModel : ObservableObject
         UpdateCategoryLabel("data", _localizer["settings.data"]);
         UpdateCategoryLabel("about", _localizer["settings.about"]);
         UpdateCategoryLabel("developer", _localizer["settings.developer"]);
+        UpdateCategoryDescription("general", _localizer["settings.categoryDescriptions.general"]);
+        UpdateCategoryDescription("downloads", _localizer["settings.categoryDescriptions.downloads"]);
+        UpdateCategoryDescription("java", _localizer["settings.categoryDescriptions.java"]);
+        UpdateCategoryDescription("visual", _localizer["settings.categoryDescriptions.visual"]);
+        UpdateCategoryDescription("network", _localizer["settings.categoryDescriptions.network"]);
+        UpdateCategoryDescription("graphics", _localizer["settings.categoryDescriptions.graphics"]);
+        UpdateCategoryDescription("variables", _localizer["settings.categoryDescriptions.variables"]);
+        UpdateCategoryDescription("data", _localizer["settings.categoryDescriptions.data"]);
+        UpdateCategoryDescription("about", _localizer["settings.categoryDescriptions.about"]);
+        UpdateCategoryDescription("developer", _localizer["settings.categoryDescriptions.developer"]);
         UpdateChoiceDisplay(LauncherBranches, "release", _localizer["settings.generalSettings.updateChannelStable"]);
         UpdateChoiceDisplay(LauncherBranches, "beta", _localizer["settings.generalSettings.updateChannelBeta"]);
         UpdateChoiceDisplay(Backgrounds, "auto", _localizer["settings.visualSettings.autoShuffle"]);
@@ -350,6 +380,7 @@ public sealed partial class SettingsViewModel : ObservableObject
     [RelayCommand] private void OpenGitHub() => _browser.OpenURL("https://github.com/HyPrismTeam/HyPrism");
     [RelayCommand] private void OpenDiscord() => _browser.OpenURL("https://discord.gg/hyprism");
     [RelayCommand] private void OpenBugReport() => _browser.OpenURL("https://github.com/HyPrismTeam/HyPrism/issues/new");
+    [RelayCommand] private void OpenIcons8() => _browser.OpenURL("https://icons8.com");
 
     private void ShowSaved() => StatusMessage = "✓";
 
@@ -362,6 +393,9 @@ public sealed partial class SettingsViewModel : ObservableObject
     private void UpdateCategoryLabel(string id, string label)
         => Categories.First(category => category.Id == id).Label = label;
 
+    private void UpdateCategoryDescription(string id, string description)
+        => Categories.First(category => category.Id == id).Description = description;
+
     private static void UpdateChoiceDisplay(
         IEnumerable<SettingChoiceViewModel> choices,
         string value,
@@ -371,14 +405,25 @@ public sealed partial class SettingsViewModel : ObservableObject
 
 public sealed partial class SettingCategoryViewModel : ObservableObject
 {
-    public SettingCategoryViewModel(string id, string label)
+    public SettingCategoryViewModel(
+        string id,
+        string label,
+        string icon,
+        bool isAbsoluteIconUri = false)
     {
         Id = id;
+        var iconUri = isAbsoluteIconUri
+            ? icon
+            : $"avares://HyPrism.Desktop/Assets/Fluent/{icon}";
+        using var iconStream = AssetLoader.Open(new Uri(iconUri));
+        Icon = new Bitmap(iconStream);
         _label = label;
     }
 
     public string Id { get; }
+    public Bitmap Icon { get; }
     [ObservableProperty] private string _label;
+    [ObservableProperty] private string _description = string.Empty;
     [ObservableProperty] private bool _isSelected;
 }
 

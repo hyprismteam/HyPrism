@@ -107,6 +107,18 @@
     "instances": "インスタンス",
     "about": "情報",
     "developer": "開発者",
+    "categoryDescriptions": {
+      "general": "言語、アップデート、ランチャーの動作",
+      "downloads": "ダウンロード元、接続確認、ゲーム起動",
+      "java": "ランタイム、Java のパス、JVM 引数",
+      "visual": "背景、音楽、ニュース、お知らせ",
+      "network": "オンラインモードと認証設定",
+      "graphics": "Hytale の起動に使用する GPU",
+      "variables": "Hytale に渡す環境変数",
+      "data": "ランチャーのファイル、ゲームバージョン、キャッシュ",
+      "about": "バージョン、プロジェクトリンク、不具合報告",
+      "developer": "実験的機能とオンボーディングツール"
+    },
     "close": "閉じる",
     "browse": "参照",
     "devMode": "開発モード",

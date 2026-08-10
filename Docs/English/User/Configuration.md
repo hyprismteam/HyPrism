@@ -14,7 +14,9 @@ Access settings through the **Settings** page (gear icon in sidebar).
 ### Native Settings page (Avalonia preview)
 
 - The native page groups all currently supported launcher preferences into General, Downloads, Java, Visual, Network, Graphics, Variables, Data, About, and Developer categories.
-- Category navigation stays in a compact wrapping row. The active category uses two dense columns when space allows and automatically collapses to one column on compact windows.
+- Like the News reader, wide windows use a darker category feed beside an independent content pane. Compact windows first show the full category list and slide horizontally to the selected section; **Back** returns to the list.
+- Compact category rows use the same dark surface, white-title/secondary-description hierarchy, and subtle full-row hover transition as News cards. Each row also has a category-specific icon and a concise localized summary of the whole section instead of reusing a hint from one individual option; they deliberately have no preselected highlight. Resizing an open wide section into compact mode keeps that section open instead of returning to the category list.
+- Related options are arranged as dense setting rows inside a small number of grouped surfaces. Selectors stay aligned with their labels, while longer values and explicit-save editors use the full content width; this keeps both large and minimum-size windows useful without oversized cards.
 - Switches and selectors are persisted immediately through `ISettingsService`. Changing the interface language reloads native labels and culture-sensitive dates without restarting the launcher. Text settings such as the authentication domain, custom Java path/JVM arguments, and game environment variables use an explicit **Save** action.
 - The Avalonia visual theme keeps its fixed white accent; the Visual category exposes the background, music, and news visibility controls without reintroducing a conflicting accent picker.
 

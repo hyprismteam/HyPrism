@@ -131,6 +131,18 @@
     "about": "Hakkında",
     "network": "Ağ",
     "developer": "Geliştirici",
+    "categoryDescriptions": {
+      "general": "Dil, güncellemeler ve başlatıcı davranışı",
+      "downloads": "İndirme kaynakları, bağlantı denetimi ve oyun başlatma",
+      "java": "Çalışma zamanı, Java yolu ve JVM argümanları",
+      "visual": "Arka plan, müzik, haberler ve duyurular",
+      "network": "Çevrimiçi mod ve kimlik doğrulama ayarları",
+      "graphics": "Hytale'ı başlatmak için GPU seçimi",
+      "variables": "Hytale'a aktarılan ortam değişkenleri",
+      "data": "Başlatıcı dosyaları, oyun sürümleri ve önbellek",
+      "about": "Sürüm, proje bağlantıları ve hata bildirimleri",
+      "developer": "Deneysel özellikler ve başlangıç araçları"
+    },
     "close": "Kapat",
     "browse": "Gözat",
     "devMode": "Geliştirici Modu",

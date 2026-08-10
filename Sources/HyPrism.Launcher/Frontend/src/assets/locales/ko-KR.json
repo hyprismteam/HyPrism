@@ -131,6 +131,18 @@
     "about": "정보",
     "network": "네트워크",
     "developer": "개발자",
+    "categoryDescriptions": {
+      "general": "언어, 업데이트 및 런처 동작",
+      "downloads": "다운로드 소스, 연결 확인 및 게임 실행",
+      "java": "런타임, Java 경로 및 JVM 인수",
+      "visual": "배경, 음악, 뉴스 및 공지",
+      "network": "온라인 모드 및 인증 설정",
+      "graphics": "Hytale 실행에 사용할 GPU",
+      "variables": "Hytale에 전달할 환경 변수",
+      "data": "런처 파일, 게임 버전 및 캐시",
+      "about": "버전, 프로젝트 링크 및 버그 신고",
+      "developer": "실험적 기능 및 온보딩 도구"
+    },
     "close": "닫기",
     "browse": "찾아보기",
     "devMode": "개발자 모드",

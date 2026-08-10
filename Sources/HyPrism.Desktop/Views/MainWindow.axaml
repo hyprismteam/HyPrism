@@ -543,7 +543,7 @@ SPDX-License-Identifier: GPL-3.0-only
           <Border Classes="windowMinimize"
                   Width="11"
                   Height="1.5"
-                  Margin="0,0,0,7"
+                  Margin="0,0,0,10"
                   VerticalAlignment="Bottom" />
         </Button>
         <Button x:Name="MaximizeWindowButton"

@@ -479,6 +479,15 @@ public sealed class MainWindowRenderTests
         Assert.Equal("Настройки", viewModel.Settings.PageTitle);
         Assert.Equal("Офлайн-аккаунт", viewModel.AccountType);
         Assert.Equal("Загрузить ещё", viewModel.LoadMoreLabel);
+        Assert.Equal(
+            "Фон, музыка, новости и объявления",
+            viewModel.Settings.Categories.Single(category => category.Id == "visual").Description);
+        Assert.Equal(
+            "Среда выполнения, путь к Java и аргументы JVM",
+            viewModel.Settings.Categories.Single(category => category.Id == "java").Description);
+        Assert.All(
+            viewModel.Settings.Categories,
+            category => Assert.False(category.Description.EndsWith('.')));
         settings.Verify(service => service.SetLanguage("ru-RU"), Times.Once);
         window.Close();
     }
@@ -1530,13 +1539,83 @@ public sealed class MainWindowRenderTests
 
         var settingsView = window.GetVisualDescendants().OfType<SettingsView>().Single();
         var settingsScroll = settingsView.FindControl<ScrollViewer>("SettingsContent");
+        var settingsRail = settingsView.FindControl<Border>("SettingsCategoryRail");
+        var compactSettingsToolbar = settingsView.FindControl<Border>("CompactSettingsToolbar");
+        var settingsMain = settingsView.FindControl<Grid>("SettingsMain");
         Assert.NotNull(settingsScroll);
-        var visibleSettingsColumns = settingsView.GetVisualDescendants()
-            .OfType<UniformGrid>()
-            .Single(panel => panel.IsEffectivelyVisible && panel.Classes.Contains("settingsColumns"));
-        Assert.Equal(settingsScroll!.Bounds.Width >= 900 ? 2 : 1, visibleSettingsColumns.Columns);
+        Assert.NotNull(settingsRail);
+        Assert.NotNull(compactSettingsToolbar);
+        Assert.NotNull(settingsMain);
+        var compactSettingsLayout = settingsView.Bounds.Width < 940;
+        Assert.True(settingsRail!.IsEffectivelyVisible);
+        Assert.Equal(compactSettingsLayout, compactSettingsToolbar!.IsVisible);
+        Assert.Equal(!compactSettingsLayout, settingsMain!.IsHitTestVisible);
+        var categoryIcons = settingsView.GetVisualDescendants()
+            .OfType<Image>()
+            .Where(image => image.Classes.Contains("settingsCategoryIcon"))
+            .ToArray();
+        Assert.Equal(10, categoryIcons.Length);
+        Assert.All(categoryIcons, icon => Assert.NotNull(icon.Source));
+        Assert.Equal(
+            compactSettingsLayout ? 10 : 0,
+            categoryIcons.Count(icon => icon.IsEffectivelyVisible));
+        var categoryDescriptions = settingsView.GetVisualDescendants()
+            .OfType<TextBlock>()
+            .Where(text => text.Classes.Contains("settingsCategoryDescription"))
+            .ToArray();
+        Assert.Equal(10, categoryDescriptions.Length);
+        Assert.Equal(
+            compactSettingsLayout ? 10 : 0,
+            categoryDescriptions.Count(description => description.IsEffectivelyVisible));
+        if (compactSettingsLayout)
+        {
+            window.MouseMove(new Point(0, 0));
+            await Task.Delay(220);
+            Dispatcher.UIThread.RunJobs();
+            Assert.Equal(
+                Color.Parse("#0D0E10"),
+                Assert.IsAssignableFrom<ISolidColorBrush>(settingsRail.Background).Color);
+            var selectedCategoryButton = settingsView.GetVisualDescendants()
+                .OfType<Button>()
+                .Single(button => button.Classes.Contains("settingsRailCategory") &&
+                                  button.Classes.Contains("selected"));
+            Assert.Equal(
+                0,
+                Assert.IsAssignableFrom<ISolidColorBrush>(selectedCategoryButton.Background).Color.A);
+            var selectedCategoryPoint = selectedCategoryButton.TranslatePoint(
+                new Point(
+                    selectedCategoryButton.Bounds.Width / 2,
+                    selectedCategoryButton.Bounds.Height / 2),
+                window);
+            Assert.NotNull(selectedCategoryPoint);
+            window.MouseMove(selectedCategoryPoint!.Value);
+            await Task.Delay(220);
+            Dispatcher.UIThread.RunJobs();
+            Assert.Equal(
+                8,
+                Assert.IsAssignableFrom<ISolidColorBrush>(selectedCategoryButton.Background).Color.A);
+            AssertNoPressScale(selectedCategoryButton);
+            window.MouseMove(new Point(0, 0));
+            await Task.Delay(220);
+            Dispatcher.UIThread.RunJobs();
+            Assert.Equal(
+                0,
+                Assert.IsAssignableFrom<ISolidColorBrush>(selectedCategoryButton.Background).Color.A);
+        }
+        else
+        {
+            Assert.Equal(276, settingsRail.Bounds.Width);
+        }
+        Assert.Contains(
+            settingsView.GetVisualDescendants().OfType<Border>(),
+            border => border.IsEffectivelyVisible && border.Classes.Contains("settingsGroup"));
         Assert.Equal(10, viewModel.Settings.Categories.Count);
         Assert.True(viewModel.Settings.IsGeneral);
+        Assert.All(
+            settingsView.GetVisualDescendants()
+                .OfType<Button>()
+                .Where(button => button.Classes.Contains("settingsRailCategory")),
+            AssertNoPressScale);
 
         var settingsPreviewPath = Environment.GetEnvironmentVariable("HYPRISM_SETTINGS_RENDER_OUTPUT");
         if (!string.IsNullOrWhiteSpace(settingsPreviewPath) && width == 1280)
@@ -1545,6 +1624,94 @@ public sealed class MainWindowRenderTests
             Assert.NotNull(settingsFrame);
             settingsFrame!.Save(settingsPreviewPath, PngBitmapEncoderOptions.Default);
             Assert.True(File.Exists(settingsPreviewPath));
+        }
+
+        var compactSettingsPreviewPath = Environment.GetEnvironmentVariable(
+            "HYPRISM_SETTINGS_COMPACT_RENDER_OUTPUT");
+        if (!string.IsNullOrWhiteSpace(compactSettingsPreviewPath) && width == 1024)
+        {
+            var settingsFrame = window.CaptureRenderedFrame();
+            Assert.NotNull(settingsFrame);
+            settingsFrame!.Save(compactSettingsPreviewPath, PngBitmapEncoderOptions.Default);
+            Assert.True(File.Exists(compactSettingsPreviewPath));
+        }
+
+        var wideSettingsPreviewPath = Environment.GetEnvironmentVariable(
+            "HYPRISM_SETTINGS_WIDE_RENDER_OUTPUT");
+        if (!string.IsNullOrWhiteSpace(wideSettingsPreviewPath) && width == 1920)
+        {
+            var settingsFrame = window.CaptureRenderedFrame();
+            Assert.NotNull(settingsFrame);
+            settingsFrame!.Save(wideSettingsPreviewPath, PngBitmapEncoderOptions.Default);
+            Assert.True(File.Exists(wideSettingsPreviewPath));
+        }
+
+        if (width == 1920)
+        {
+            window.Width = 1024;
+            Dispatcher.UIThread.RunJobs();
+            Assert.True(compactSettingsToolbar.IsVisible);
+            Assert.True(settingsMain.IsHitTestVisible);
+            Assert.Equal(0, Assert.IsType<TranslateTransform>(settingsMain.RenderTransform).X);
+
+            window.Width = width;
+            Dispatcher.UIThread.RunJobs();
+            Assert.False(compactSettingsToolbar.IsVisible);
+        }
+
+        if (compactSettingsLayout)
+        {
+            var downloadsCategory = settingsView.GetVisualDescendants()
+                .OfType<Button>()
+                .Single(button => button.Classes.Contains("settingsRailCategory") &&
+                                  button.DataContext is SettingCategoryViewModel { Id: "downloads" });
+            var categoryPoint = downloadsCategory.TranslatePoint(
+                new Point(downloadsCategory.Bounds.Width / 2, downloadsCategory.Bounds.Height / 2),
+                window);
+            Assert.NotNull(categoryPoint);
+            window.MouseDown(categoryPoint!.Value, MouseButton.Left);
+            window.MouseUp(categoryPoint.Value, MouseButton.Left);
+            await Task.Delay(340);
+            Dispatcher.UIThread.RunJobs();
+            Assert.True(settingsMain.IsHitTestVisible);
+            Assert.Equal(0, Assert.IsType<TranslateTransform>(settingsMain.RenderTransform).X);
+
+            var compactSettingsContentPreviewPath = Environment.GetEnvironmentVariable(
+                "HYPRISM_SETTINGS_COMPACT_CONTENT_RENDER_OUTPUT");
+            if (!string.IsNullOrWhiteSpace(compactSettingsContentPreviewPath) && width == 1024)
+            {
+                var settingsContentFrame = window.CaptureRenderedFrame();
+                Assert.NotNull(settingsContentFrame);
+                settingsContentFrame!.Save(
+                    compactSettingsContentPreviewPath,
+                    PngBitmapEncoderOptions.Default);
+                Assert.True(File.Exists(compactSettingsContentPreviewPath));
+            }
+
+            var settingsBack = settingsView.GetVisualDescendants()
+                .OfType<Button>()
+                .Single(button => button.IsEffectivelyVisible && button.Classes.Contains("articleBack"));
+            var backPoint = settingsBack.TranslatePoint(
+                new Point(settingsBack.Bounds.Width / 2, settingsBack.Bounds.Height / 2),
+                window);
+            Assert.NotNull(backPoint);
+            window.MouseDown(backPoint!.Value, MouseButton.Left);
+            window.MouseUp(backPoint.Value, MouseButton.Left);
+            await Task.Delay(340);
+            Dispatcher.UIThread.RunJobs();
+            Assert.False(settingsMain.IsHitTestVisible);
+            Assert.True(Assert.IsType<TranslateTransform>(settingsMain.RenderTransform).X > 0);
+        }
+
+        foreach (var category in viewModel.Settings.Categories)
+        {
+            viewModel.Settings.SelectCategoryCommand.Execute(category);
+            Dispatcher.UIThread.RunJobs();
+            Assert.Equal(category.Id, viewModel.Settings.SelectedCategory);
+            Assert.Same(category, Assert.Single(viewModel.Settings.Categories, item => item.IsSelected));
+            Assert.Contains(
+                settingsView.GetVisualDescendants().OfType<Border>(),
+                border => border.IsEffectivelyVisible && border.Classes.Contains("settingsGroup"));
         }
 
         window.Close();

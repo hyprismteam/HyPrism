@@ -131,6 +131,18 @@
     "about": "Sobre",
     "network": "Rede",
     "developer": "Desenvolvedor",
+    "categoryDescriptions": {
+      "general": "Idioma, atualizações e comportamento do launcher",
+      "downloads": "Fontes de download, teste de conexão e inicialização do jogo",
+      "java": "Ambiente de execução, caminho do Java e argumentos da JVM",
+      "visual": "Plano de fundo, música, notícias e anúncios",
+      "network": "Modo online e configurações de autenticação",
+      "graphics": "Seleção de GPU para iniciar o Hytale",
+      "variables": "Variáveis de ambiente enviadas ao Hytale",
+      "data": "Arquivos do launcher, versões do jogo e cache",
+      "about": "Versão, links do projeto e relatórios de erros",
+      "developer": "Recursos experimentais e ferramentas de integração"
+    },
     "close": "Fechar",
     "browse": "Procurar",
     "devMode": "Modo Dev",

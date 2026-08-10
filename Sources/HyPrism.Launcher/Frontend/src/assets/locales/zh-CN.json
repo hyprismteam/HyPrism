@@ -131,6 +131,18 @@
     "about": "关于",
     "network": "网络",
     "developer": "开发者",
+    "categoryDescriptions": {
+      "general": "语言、更新和启动器行为",
+      "downloads": "下载源、连接检测和游戏启动",
+      "java": "运行环境、Java 路径和 JVM 参数",
+      "visual": "背景、音乐、新闻和公告",
+      "network": "在线模式和身份验证设置",
+      "graphics": "启动 Hytale 时使用的 GPU",
+      "variables": "传递给 Hytale 的环境变量",
+      "data": "启动器文件、游戏版本和缓存",
+      "about": "版本、项目链接和问题反馈",
+      "developer": "实验性功能和新手引导工具"
+    },
     "close": "关闭",
     "browse": "浏览",
     "devMode": "开发模式",
