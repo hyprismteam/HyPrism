@@ -1,3 +1,6 @@
+// Copyright (C) 2026 HyPrism Launcher
+// SPDX-License-Identifier: GPL-3.0-only
+
 import { useState, useEffect } from 'react';
 import { on } from '@/lib/ipc';
 

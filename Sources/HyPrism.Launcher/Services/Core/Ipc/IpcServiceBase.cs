@@ -1,3 +1,6 @@
+// Copyright (C) 2026 HyPrism Launcher
+// SPDX-License-Identifier: GPL-3.0-only
+
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;

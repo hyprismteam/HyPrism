@@ -1,13 +1,17 @@
+<!--
+Copyright (C) 2026 HyPrism Launcher
+SPDX-License-Identifier: GPL-3.0-only
+-->
+
 # Структура проекта
 
 ```
 HyPrism/
 ├── HyPrism.sln                 # Файл решения (содержит папку Sources/)
 │
-└── Sources/                    # Основная директория с исходным кодом
+├── Sources/                    # Проекты с production-кодом
     ├── HyPrism.Launcher/       # Главное приложение лаунчера (.NET 10 + Electron.NET)
     │   ├── Program.cs          # Точка входа: Console → Electron bootstrap
-    │   ├── Bootstrapper.cs     # Настройка DI-контейнера
     │   ├── HyPrism.Launcher.csproj  # Файл проекта с конвейером MSBuild
     │   │
     │   ├── Frontend/           # React SPA (Vite + TypeScript)
@@ -46,33 +50,9 @@ HyPrism/
     │   │   ├── tsconfig*.json      # Конфигурации TypeScript
     │   │   └── package.json        # Зависимости фронтенда
     │   │
-    │   ├── Services/               # Слой сервисов .NET
-    │   │   ├── Core/               # Инфраструктурные сервисы
-    │   │   │   ├── App/            # Сервисы приложения (Config, Settings, Update)
-    │   │   │   ├── Infrastructure/ # Logger, ConfigService, LocalizationService
-    │   │   │   ├── Integration/    # Внешние интеграции (Discord RPC, News, GitHub)
-    │   │   │   ├── Ipc/            # IpcService - Центральный реестр IPC-каналов
-    │   │   │   └── Platform/       # Платформозависимые утилиты
-    │   │   ├── Game/               # Сервисы игровой логики
-    │   │   │   ├── Instance/       # Управление экземплярами (InstanceService)
-    │   │   │   ├── Launch/         # Запуск игры (GameLauncher, LaunchService)
-    │   │   │   ├── Download/       # Управление загрузками
-    │   │   │   ├── Mod/            # Управление модами
-    │   │   │   ├── Auth/           # Аутентификация Hytale
-    │   │   │   ├── Butler/         # Инструмент патчинга Butler
-    │   │   │   ├── Asset/          # Ассеты игры и аватары
-    │   │   │   └── Version/        # Управление версиями
-    │   │   └── User/               # Сервисы, связанные с пользователем
-    │   │       ├── ProfileService.cs   # Профили игроков (ник, UUID)
-    │   │       ├── ProfileManagementService.cs  # Операции с профилями
-    │   │       ├── SkinService.cs      # Управление скинами и резервное копирование
-    │   │       └── HytaleAuthService.cs # Аутентификация аккаунта Hytale
-    │   │
-    │   ├── Models/                 # Модели данных (POCO)
-    │   │   ├── Config.cs           # Модель конфигурации
-    │   │   ├── Profile.cs          # Модель профиля игрока
-    │   │   ├── InstanceMeta.cs     # Метаданные экземпляра
-    │   │   └── ...
+    │   ├── Services/Core/          # Только Electron-специфичные адаптеры
+    │   │   ├── Ipc/                # IPC-атрибуты, контракты и мост
+    │   │   └── Platform/           # Electron-реализация буфера обмена
     │   │
     │   ├── Properties/             # Метаданные сборки/пакета и платформенные ресурсы
     │   │   ├── linux/              # Metainfo Linux + метаданные flatpak
@@ -83,13 +63,30 @@ HyPrism/
     │       ├── index.html          # Точка входа для продакшена
     │       └── assets/             # Скомпилированные JS/CSS бандлы
     │
-    ├── HyPrism.IpcGen/             # Генератор IPC (на базе Roslyn)
+    ├── HyPrism.Core/               # Core-логика лаунчера без зависимости от Electron
+    │   ├── Bootstrapper.cs         # Общий DI-граф с точкой расширения для host
+    │   ├── Models/                 # Модели конфигурации, профилей, инстансов, новостей и игры
+    │   ├── Core/                   # App, infrastructure, integration и platform abstractions
+    │   ├── Game/                   # Auth, assets, downloads, instances, launch, mods и versions
+    │   ├── User/                   # Профили, identity, скины, токены и Hytale auth
+    │   └── HyPrism.Core.csproj
+    │
+    ├── HyPrism.Desktop/            # Нативный desktop-хост на Avalonia 12
+    │   ├── Views/                   # AXAML-представления и оболочка окна
+    │   ├── ViewModels/              # MVVM-состояние, новости и оркестрация сервисов
+    │   ├── Themes/                  # Общие стили Avalonia и палитра
+    │   ├── Localization/            # Адаптер существующих JSON-локализаций
+    │   ├── Assets/Fonts/            # Встроенные файлы Google Sans
+    │   └── Assets/Icons/            # Зафиксированные AXAML-геометрии Material Symbols
+    │
+    └── HyPrism.IpcGen/             # Генератор IPC (на базе Roslyn)
     │   ├── Program.cs              # Точка входа генератора
     │   ├── HyPrism.IpcGen.csproj   # Файл проекта генератора
     │   └── ...                     # Логика анализа Roslyn
-    │
-    └── HyPrism.Tests/              # Тестовый проект
-        └── HyPrism.Tests.csproj
+│
+├── Tests/                        # Тестовые проекты вне production-исходников
+│   ├── HyPrism.Core.Tests/       # Unit-тесты общей логики лаунчера
+│   └── HyPrism.Desktop.Tests/    # Headless-тесты Avalonia layout/render
 │
 ├── Scripts/                      # Скрипты сборки и утилиты
 │   ├── publish.sh                # Скрипт публикации для платформ
@@ -108,6 +105,11 @@ HyPrism/
 
 ## Важные замечания
 
+- **`HyPrism.Core`** владеет общими моделями, сервисами и DI-графом лаунчера и не зависит от Electron
+- **`HyPrism.Core`** хранит домены сервисов прямо в корне проекта (`Core/`, `Game/` и `User/`), без промежуточной директории `Services/`
+- **`HyPrism.Launcher`** теперь является тонким legacy-host с запуском Electron, IPC-транспортом/контрактами и Electron-адаптером буфера обмена
+- **`Tests/`** содержит `HyPrism.Core.Tests` и `HyPrism.Desktop.Tests`; production-проекты остаются в `Sources/`
+- **`HyPrism.Desktop`** содержит нативную оболочку, вертикальный срез запуска/установки с Dashboard, подключённый к сервису раздел «Новости» с адаптивным reader и адаптивный service-backed раздел Settings; Instances, Mods и Profiles пока остаются заглушками
 - **`Sources/HyPrism.Launcher/Frontend/src/lib/ipc.ts`** автоматически генерируется проектом `HyPrism.IpcGen` — никогда не редактируйте вручную
 - **`Sources/HyPrism.Launcher/Frontend/src/assets/`** содержит все статические ресурсы фронтенда (изображения, локализации, фоны)
 - **`Sources/HyPrism.Launcher/wwwroot/`** генерируется во время сборки — не редактируйте вручную

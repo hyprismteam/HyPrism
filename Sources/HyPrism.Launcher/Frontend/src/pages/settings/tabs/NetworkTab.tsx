@@ -1,3 +1,6 @@
+// Copyright (C) 2026 HyPrism Launcher
+// SPDX-License-Identifier: GPL-3.0-only
+
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Wifi, Server, Globe, Edit3, CheckCircle, XCircle, Loader2, AlertTriangle, RefreshCw } from 'lucide-react';

@@ -1,3 +1,8 @@
+<!--
+Copyright (C) 2026 HyPrism Launcher
+SPDX-License-Identifier: GPL-3.0-only
+-->
+
 # Документация HyPrism
 
 > Кроссплатформенный лаунчер Hytale — .NET 10 + Electron.NET + React

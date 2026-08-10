@@ -1,3 +1,8 @@
+<!--
+Copyright (C) 2026 HyPrism Launcher
+SPDX-License-Identifier: GPL-3.0-only
+-->
+
 # Руководство по тестированию
 
 Данный документ описывает подход к юнит-тестированию HyPrism: структуру проекта, запуск тестов и соглашения о написании новых тестов.
@@ -7,8 +12,8 @@
 ## Структура проекта
 
 ```
-HyPrism.Tests/
-├── HyPrism.Tests.csproj
+Tests/HyPrism.Core.Tests/
+├── HyPrism.Core.Tests.csproj
 ├── GlobalUsings.cs
 ├── Core/
 │   ├── Infrastructure/
@@ -32,6 +37,8 @@ HyPrism.Tests/
     └── ProfileServiceTests.cs
 ```
 
+Headless- и render-тесты Avalonia находятся рядом в `Tests/HyPrism.Desktop.Tests/`.
+
 ---
 
 ## Используемый стек
@@ -49,16 +56,16 @@ HyPrism.Tests/
 
 ```bash
 # Запустить все тесты
-dotnet test HyPrism.Tests/
+dotnet test Tests/HyPrism.Core.Tests/
 
 # Запустить с подробным выводом
-dotnet test HyPrism.Tests/ --logger "console;verbosity=detailed"
+dotnet test Tests/HyPrism.Core.Tests/ --logger "console;verbosity=detailed"
 
 # Запустить конкретный класс тестов
-dotnet test HyPrism.Tests/ --filter "FullyQualifiedName~UtilityServiceTests"
+dotnet test Tests/HyPrism.Core.Tests/ --filter "FullyQualifiedName~UtilityServiceTests"
 
 # Запустить со сбором покрытия кода
-dotnet test HyPrism.Tests/ --collect:"XPlat Code Coverage"
+dotnet test Tests/HyPrism.Core.Tests/ --collect:"XPlat Code Coverage"
 ```
 
 ---
@@ -97,7 +104,7 @@ dotnet test HyPrism.Tests/ --collect:"XPlat Code Coverage"
 | Сервис | Интерфейс |
 |--------|-----------|
 | `BrowserService` | `IBrowserService` |
-| `ClipboardService` | `IClipboardService` |
+| Electron `ClipboardService` (адаптер legacy-host) | `IClipboardService` (контракт Core) |
 | `FileDialogService` | `IFileDialogService` |
 | `GpuDetectionService` | `IGpuDetectionService` |
 | `RosettaService` | `IRosettaService` |
@@ -147,18 +154,18 @@ dotnet test HyPrism.Tests/ --collect:"XPlat Code Coverage"
 Зеркально повторяет пространство имён продакшн-кода:
 
 ```
-Services/Game/Auth/AuthService.cs
+Sources/HyPrism.Core/Game/Auth/AuthService.cs
   ↓
-HyPrism.Tests/Game/Auth/AuthServiceTests.cs
+Tests/HyPrism.Core.Tests/Game/Auth/AuthServiceTests.cs
 ```
 
 ### Структура класса
 
 ```csharp
-// HyPrism.Tests/Game/Example/MyServiceTests.cs
+// Tests/HyPrism.Core.Tests/Game/Example/MyServiceTests.cs
 using HyPrism.Services.Game.Example;
 
-namespace HyPrism.Tests.Game.Example;
+namespace HyPrism.Core.Tests.Game.Example;
 
 public class MyServiceTests : IDisposable
 {

@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+
+# Copyright (C) 2026 HyPrism Launcher
+# SPDX-License-Identifier: GPL-3.0-only
+
 # ============================================================================
 # HyPrism Publish Script
 # Packages the Electron.NET application for distribution.

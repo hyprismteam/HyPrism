@@ -1,0 +1,839 @@
+<!--
+Copyright (C) 2026 HyPrism Launcher
+SPDX-License-Identifier: GPL-3.0-only
+-->
+
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:HyPrism.Desktop.ViewModels"
+        xmlns:controls="using:HyPrism.Desktop.Controls"
+        xmlns:views="using:HyPrism.Desktop.Views"
+        xmlns:animation="using:Avalonia.Animation"
+        xmlns:easing="using:Avalonia.Animation.Easings"
+        x:Class="HyPrism.Desktop.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Title="HyPrism"
+        Width="1280"
+        Height="800"
+        MinWidth="1024"
+        MinHeight="700"
+        CanResize="True"
+        Background="{DynamicResource AppBackgroundBrush}"
+        WindowStartupLocation="CenterScreen"
+        WindowDecorations="None">
+
+  <Window.Resources>
+    <DataTemplate x:Key="NewsArticleListItemTemplate"
+                  x:DataType="vm:NewsArticleListItemViewModel">
+      <StackPanel Spacing="6">
+        <Grid ColumnDefinitions="28,*">
+          <Ellipse IsVisible="{Binding IsBullet}"
+                   Width="5"
+                   Height="5"
+                   Margin="1,11.5,0,0"
+                   HorizontalAlignment="Left"
+                   VerticalAlignment="Top"
+                   Fill="{DynamicResource TextSecondaryBrush}" />
+          <TextBlock IsVisible="{Binding IsOrdered}"
+                     Text="{Binding Marker}"
+                     Foreground="{DynamicResource TextSecondaryBrush}"
+                     FontSize="15"
+                     FontWeight="SemiBold"
+                     LineHeight="28"
+                     VerticalAlignment="Top" />
+          <controls:NewsRichTextBlock Grid.Column="1"
+                                      Nodes="{Binding Nodes}"
+                                      LinkCommand="{Binding LinkCommand}"
+                                      Classes="articleParagraph"
+                                      TextWrapping="Wrap" />
+        </Grid>
+
+        <ItemsControl ItemsSource="{Binding Children}"
+                      ItemTemplate="{StaticResource NewsArticleListItemTemplate}"
+                      Margin="28,0,0,0">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <StackPanel Spacing="6" />
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+        </ItemsControl>
+      </StackPanel>
+    </DataTemplate>
+
+    <DataTemplate x:Key="NewsArticleBlockTemplate" x:DataType="vm:NewsArticleBlockViewModel">
+      <Grid Margin="0,0,0,22">
+        <controls:NewsRichTextBlock IsVisible="{Binding IsParagraph}"
+                                    Nodes="{Binding Nodes}"
+                                    InlineImages="{Binding InlineImages}"
+                                    LinkCommand="{Binding LinkCommand}"
+                                    Classes="articleParagraph"
+                                    TextWrapping="Wrap" />
+
+        <StackPanel IsVisible="{Binding IsStickerParagraph}" Spacing="8">
+          <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
+            <Image Width="64"
+                   Height="64"
+                   Source="{Binding StickerImage.Image}"
+                   VerticalAlignment="Center"
+                   Stretch="Uniform" />
+            <controls:NewsRichTextBlock Grid.Column="1"
+                                        Nodes="{Binding StickerLeadNodes}"
+                                        InlineImages="{Binding InlineImages}"
+                                        LinkCommand="{Binding LinkCommand}"
+                                        Classes="articleParagraph"
+                                        VerticalAlignment="Center"
+                                        TextWrapping="Wrap" />
+          </Grid>
+          <controls:NewsRichTextBlock Nodes="{Binding StickerBodyNodes}"
+                                      InlineImages="{Binding InlineImages}"
+                                      LinkCommand="{Binding LinkCommand}"
+                                      Classes="articleParagraph"
+                                      TextWrapping="Wrap" />
+        </StackPanel>
+
+        <controls:NewsRichTextBlock IsVisible="{Binding IsHeading}"
+                                    Nodes="{Binding Nodes}"
+                                    InlineImages="{Binding InlineImages}"
+                                    LinkCommand="{Binding LinkCommand}"
+                                    Classes="articleHeading"
+                                    FontSize="{Binding HeadingSize}"
+                                    TextWrapping="Wrap" />
+
+        <Border IsVisible="{Binding IsQuote}"
+                Classes="articleQuote">
+          <controls:NewsRichTextBlock Nodes="{Binding Nodes}"
+                                      InlineImages="{Binding InlineImages}"
+                                      LinkCommand="{Binding LinkCommand}"
+                                      Classes="articleParagraph"
+                                      FontStyle="Italic"
+                                      TextWrapping="Wrap" />
+        </Border>
+
+        <Border IsVisible="{Binding IsDetails}"
+                Classes="articleDetails">
+          <StackPanel>
+            <Button Classes="articleDetailsHeader"
+                    HorizontalAlignment="Stretch"
+                    Cursor="Hand"
+                    Command="{Binding ToggleDetailsCommand}">
+              <Grid ColumnDefinitions="18,*" ColumnSpacing="8">
+                <Path IsVisible="{Binding IsDetailsCollapsed}"
+                      Width="7"
+                      Height="11"
+                      HorizontalAlignment="Center"
+                      VerticalAlignment="Center"
+                      Fill="#FFC54D"
+                      Stretch="Uniform"
+                      Data="M 2,1 L 8,6 L 2,11 Z" />
+                <Path IsVisible="{Binding IsDetailsExpanded}"
+                      Width="11"
+                      Height="7"
+                      HorizontalAlignment="Center"
+                      VerticalAlignment="Center"
+                      Fill="#FFC54D"
+                      Stretch="Uniform"
+                      Data="M 1,2 L 6,8 L 11,2 Z" />
+                <StackPanel Grid.Column="1"
+                            Orientation="Horizontal"
+                            Spacing="7"
+                            VerticalAlignment="Center">
+                  <controls:NewsRichTextBlock Nodes="{Binding DetailsSummaryTextNodes}"
+                                              LinkCommand="{Binding LinkCommand}"
+                                              Classes="articleDetailsSummary"
+                                              MaxWidth="560"
+                                              VerticalAlignment="Center"
+                                              TextWrapping="Wrap" />
+                  <ItemsControl ItemsSource="{Binding DetailsSummaryImages}"
+                                VerticalAlignment="Center">
+                    <ItemsControl.ItemsPanel>
+                      <ItemsPanelTemplate>
+                        <StackPanel Orientation="Horizontal" Spacing="4" />
+                      </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="vm:NewsInlineImageViewModel">
+                        <Image Width="{Binding DisplaySize}"
+                               Height="{Binding DisplaySize}"
+                               Source="{Binding Image}"
+                               VerticalAlignment="Center"
+                               Stretch="Uniform" />
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </StackPanel>
+              </Grid>
+            </Button>
+
+            <Border IsVisible="{Binding IsDetailsExpanded}"
+                    Classes="articleDetailsBody">
+              <ItemsControl ItemsSource="{Binding VisibleDetailsBlocks}"
+                            ItemTemplate="{StaticResource NewsArticleBlockTemplate}" />
+            </Border>
+          </StackPanel>
+        </Border>
+
+        <ItemsControl IsVisible="{Binding IsList}"
+                      ItemsSource="{Binding ListItems}"
+                      ItemTemplate="{StaticResource NewsArticleListItemTemplate}">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <StackPanel Spacing="10" />
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+        </ItemsControl>
+
+        <Border IsVisible="{Binding IsImage}"
+                Classes="articleImage"
+                MaxHeight="520">
+          <Grid>
+            <Image IsVisible="{Binding HasImage}"
+                   Source="{Binding Image}"
+                   Stretch="Uniform" />
+            <TextBlock IsVisible="{Binding HasNoImage}"
+                       Text="{Binding AltText}"
+                       Classes="muted"
+                       Margin="24"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"
+                       TextAlignment="Center"
+                       TextWrapping="Wrap" />
+          </Grid>
+        </Border>
+
+        <Border IsVisible="{Binding IsCode}"
+                Classes="articleCode">
+          <TextBlock Text="{Binding PlainText}"
+                     FontFamily="{DynamicResource JetBrainsMonoFont}"
+                     FontSize="13"
+                     LineHeight="21"
+                     Foreground="#DDD8F2"
+                     TextWrapping="Wrap" />
+        </Border>
+
+        <Border IsVisible="{Binding IsDivider}"
+                Height="1"
+                Background="{DynamicResource StrokeStrongBrush}"
+                Margin="0,8" />
+
+        <controls:NewsRichTextBlock IsVisible="{Binding IsCaption}"
+                                    Nodes="{Binding Nodes}"
+                                    InlineImages="{Binding InlineImages}"
+                                    LinkCommand="{Binding LinkCommand}"
+                                    Classes="articleCaption"
+                                    TextWrapping="Wrap" />
+      </Grid>
+    </DataTemplate>
+
+    <DataTemplate x:Key="NewsListItemTemplate" x:DataType="vm:NewsItemViewModel">
+      <Button Classes="newsListItem"
+              Classes.selected="{Binding IsSelected}"
+              Command="{Binding OpenCommand}">
+        <Grid ColumnDefinitions="124,*" ColumnSpacing="15">
+          <Border Classes="newsThumbnail">
+            <Grid>
+              <Image IsVisible="{Binding HasImage}"
+                     Source="{Binding Image}"
+                     Stretch="UniformToFill" />
+              <Path IsVisible="{Binding HasNoImage}"
+                    Width="34"
+                    Height="34"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Fill="#1AFFFFFF"
+                    Stretch="Uniform"
+                    Data="{StaticResource NewsFilledIcon}" />
+            </Grid>
+          </Border>
+
+          <Grid Grid.Column="1" RowDefinitions="*,Auto">
+            <!-- Keep room for exactly three text lines. The title consumes one or two
+                 according to its measured width; the excerpt naturally receives the rest. -->
+            <StackPanel VerticalAlignment="Top"
+                        Height="55"
+                        ClipToBounds="True"
+                        Spacing="3">
+              <TextBlock Text="{Binding Title}"
+                         FontSize="15"
+                         LineHeight="19"
+                         FontWeight="SemiBold"
+                         MaxLines="2"
+                         TextTrimming="CharacterEllipsis" />
+              <TextBlock IsVisible="{Binding HasExcerpt}"
+                         Text="{Binding Excerpt}"
+                         Foreground="#9FA1A8"
+                         FontSize="11"
+                         LineHeight="14"
+                         MaxLines="2"
+                         TextTrimming="CharacterEllipsis" />
+            </StackPanel>
+
+            <TextBlock Grid.Row="1"
+                       Text="{Binding Date}"
+                       Foreground="{DynamicResource TextSecondaryBrush}"
+                       FontSize="10" />
+          </Grid>
+        </Grid>
+      </Button>
+    </DataTemplate>
+
+    <DataTemplate x:Key="NewsFeedTemplate" x:DataType="vm:MainWindowViewModel">
+      <Grid Background="Transparent">
+        <StackPanel IsVisible="{Binding IsNewsLoading}"
+                    Margin="24,28"
+                    Spacing="12">
+          <Grid Height="88" ColumnDefinitions="116,*" ColumnSpacing="16">
+            <Border Classes="skeleton" CornerRadius="12" />
+            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="9">
+              <Border Classes="skeleton" Height="15" Width="210" HorizontalAlignment="Left" />
+              <Border Classes="skeleton" Height="11" HorizontalAlignment="Stretch" />
+              <Border Classes="skeleton" Height="10" Width="92" HorizontalAlignment="Left" />
+            </StackPanel>
+          </Grid>
+          <Grid Height="88" ColumnDefinitions="116,*" ColumnSpacing="16" Opacity="0.82">
+            <Border Classes="skeleton" CornerRadius="12" />
+            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="9">
+              <Border Classes="skeleton" Height="15" Width="245" HorizontalAlignment="Left" />
+              <Border Classes="skeleton" Height="11" HorizontalAlignment="Stretch" />
+              <Border Classes="skeleton" Height="10" Width="86" HorizontalAlignment="Left" />
+            </StackPanel>
+          </Grid>
+          <Grid Height="88" ColumnDefinitions="116,*" ColumnSpacing="16" Opacity="0.66">
+            <Border Classes="skeleton" CornerRadius="12" />
+            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="9">
+              <Border Classes="skeleton" Height="15" Width="185" HorizontalAlignment="Left" />
+              <Border Classes="skeleton" Height="11" HorizontalAlignment="Stretch" />
+              <Border Classes="skeleton" Height="10" Width="98" HorizontalAlignment="Left" />
+            </StackPanel>
+          </Grid>
+        </StackPanel>
+
+        <TextBlock IsVisible="{Binding HasNewsError}"
+                   Text="{Binding NewsError}"
+                   Foreground="#FF9696"
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Center"
+                   MaxWidth="420"
+                   TextAlignment="Center" />
+
+        <TextBlock IsVisible="{Binding IsNewsEmpty}"
+                   Classes="muted"
+                   Text="{Binding NewsEmptyLabel}"
+                   FontSize="16"
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Center" />
+
+        <controls:SmoothScrollViewer IsVisible="{Binding IsNewsLandingVisible}"
+                                     Classes="newsFeedScroll"
+                                     HorizontalScrollBarVisibility="Disabled"
+                                     VerticalScrollBarVisibility="Auto">
+          <StackPanel Margin="24">
+            <ContentControl Content="{Binding FeaturedNews}"
+                            ContentTemplate="{StaticResource NewsListItemTemplate}" />
+
+            <ItemsControl ItemsSource="{Binding LatestNews}"
+                          ItemTemplate="{StaticResource NewsListItemTemplate}">
+              <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                  <StackPanel />
+                </ItemsPanelTemplate>
+              </ItemsControl.ItemsPanel>
+            </ItemsControl>
+
+            <Button Classes="newsLoadMore"
+                    IsVisible="{Binding CanShowLoadMore}"
+                    IsEnabled="{Binding HasMoreNews}"
+                    HorizontalAlignment="Center"
+                    Margin="0,12,0,8"
+                    Command="{Binding LoadMoreNewsCommand}">
+              <TextBlock Text="{Binding LoadMoreLabel}" FontWeight="SemiBold" />
+            </Button>
+          </StackPanel>
+        </controls:SmoothScrollViewer>
+      </Grid>
+    </DataTemplate>
+
+    <DataTemplate x:Key="NewsReaderTemplate" x:DataType="vm:MainWindowViewModel">
+      <Grid Background="{DynamicResource SurfaceBrush}" RowDefinitions="Auto,*">
+        <Border Classes="articleToolbar"
+                Classes.compact="{Binding IsCompactNewsLayout}"
+                Classes.scrolled="{Binding IsNewsArticleScrolled}"
+                IsVisible="{Binding IsCompactNewsLayout}">
+          <Grid ColumnDefinitions="*,Auto,*">
+            <Button Classes="articleBack"
+                    HorizontalAlignment="Left"
+                    Command="{Binding CloseNewsArticleCommand}">
+              <StackPanel Orientation="Horizontal" Spacing="9">
+                <Path Width="12"
+                      Height="12"
+                      Stretch="Uniform"
+                      RenderTransformOrigin="50%,50%"
+                      Data="{StaticResource NextIcon}">
+                  <Path.RenderTransform>
+                    <RotateTransform Angle="180" />
+                  </Path.RenderTransform>
+                </Path>
+                <TextBlock Text="{Binding BackLabel}" VerticalAlignment="Center" />
+              </StackPanel>
+            </Button>
+
+            <TextBlock Grid.Column="1"
+                       Classes="articleToolbarTitle"
+                       Text="{Binding SelectedNewsArticle.Title}"
+                       Margin="12,0"
+                       MaxWidth="280"
+                       MaxLines="1"
+                       TextTrimming="CharacterEllipsis"
+                       TextWrapping="NoWrap"
+                       FontSize="16"
+                       FontWeight="SemiBold"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"
+                       IsHitTestVisible="False" />
+
+            <Button Grid.Column="2"
+                    Classes="articleAction"
+                    HorizontalAlignment="Right"
+                    Command="{Binding SelectedNewsItem.OpenExternalCommand}">
+              <StackPanel Orientation="Horizontal" Spacing="9">
+                <TextBlock Text="{Binding OpenOriginalLabel}" />
+                <Path Width="14" Height="14" Stretch="Uniform" Data="{StaticResource OpenIcon}" />
+              </StackPanel>
+            </Button>
+          </Grid>
+        </Border>
+
+        <StackPanel Grid.Row="1"
+                    IsVisible="{Binding IsNewsArticleEmpty}"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    MaxWidth="320"
+                    Spacing="12">
+          <Path Width="42"
+                Height="42"
+                HorizontalAlignment="Center"
+                Fill="#24FFFFFF"
+                Stretch="Uniform"
+                Data="{StaticResource NewsFilledIcon}" />
+          <TextBlock Text="{Binding SelectArticleLabel}"
+                     Classes="muted"
+                     TextAlignment="Center" />
+        </StackPanel>
+
+        <Grid Grid.Row="1"
+              IsVisible="{Binding IsNewsArticleStatusVisible}"
+              Margin="24,18,24,24">
+          <StackPanel IsVisible="{Binding IsNewsArticleSkeletonVisible}"
+                      MaxWidth="820"
+                      HorizontalAlignment="Stretch"
+                      Spacing="18">
+            <Border Classes="skeleton" Height="260" CornerRadius="18" />
+            <Border Classes="skeleton" Height="30" Width="480" HorizontalAlignment="Left" />
+            <StackPanel Orientation="Horizontal" Spacing="9">
+              <Border Classes="skeleton" Height="12" Width="88" />
+              <Border Classes="skeleton" Height="12" Width="68" />
+              <Border Classes="skeleton" Height="12" Width="92" />
+            </StackPanel>
+            <StackPanel Margin="0,12,0,0" Spacing="11">
+              <Border Classes="skeleton" Height="12" HorizontalAlignment="Stretch" />
+              <Border Classes="skeleton" Height="12" HorizontalAlignment="Stretch" />
+              <Border Classes="skeleton" Height="12" Width="520" HorizontalAlignment="Left" />
+            </StackPanel>
+            <StackPanel Margin="0,8,0,0" Spacing="11">
+              <Border Classes="skeleton" Height="12" HorizontalAlignment="Stretch" />
+              <Border Classes="skeleton" Height="12" Width="580" HorizontalAlignment="Left" />
+            </StackPanel>
+          </StackPanel>
+
+          <StackPanel IsVisible="{Binding HasNewsArticleError}"
+                      HorizontalAlignment="Center"
+                      VerticalAlignment="Center"
+                      MaxWidth="420"
+                      Spacing="12">
+            <TextBlock Text="{Binding NewsArticleError}"
+                       Foreground="#FF9696"
+                       TextAlignment="Center" />
+          </StackPanel>
+        </Grid>
+
+        <controls:SmoothScrollViewer Grid.Row="1"
+                                     IsVisible="{Binding IsNewsArticleVisible}"
+                                     IsPastTop="{Binding IsNewsArticleScrolled, Mode=TwoWay}"
+                                     ScrollContextKey="{Binding SelectedNewsItem.Url}"
+                                     Background="{DynamicResource SurfaceBrush}"
+                                     Classes="newsArticleScroll"
+                                     HorizontalScrollBarVisibility="Disabled"
+                                     VerticalScrollBarVisibility="Auto">
+          <StackPanel MaxWidth="820"
+                      Margin="24,18,24,64"
+                      HorizontalAlignment="Stretch">
+            <Border Height="260" Classes="newsArticleHeader">
+              <Grid>
+                <Border Background="#191A1D" />
+                <Image IsVisible="{Binding SelectedNewsItem.HasImage}"
+                       Source="{Binding SelectedNewsItem.Image}"
+                       Stretch="UniformToFill" />
+                <Path IsVisible="{Binding SelectedNewsItem.HasNoImage}"
+                      Width="72"
+                      Height="72"
+                      Margin="28"
+                      HorizontalAlignment="Right"
+                      VerticalAlignment="Top"
+                      Fill="#14FFFFFF"
+                      Stretch="Uniform"
+                      Data="{StaticResource NewsFilledIcon}" />
+                <Border Classes="articleHeaderMask">
+                  <Border.Background>
+                    <LinearGradientBrush StartPoint="50%,0%" EndPoint="50%,100%">
+                      <GradientStop Color="#20000000" Offset="0" />
+                      <GradientStop Color="#7C000000" Offset="0.48" />
+                      <GradientStop Color="#F20A0B0D" Offset="1" />
+                    </LinearGradientBrush>
+                  </Border.Background>
+                </Border>
+
+                <StackPanel Margin="24" VerticalAlignment="Bottom" Spacing="8">
+                  <Button IsVisible="{Binding IsWideNewsLayout}"
+                          Classes="articleAction articleHeaderAction"
+                          HorizontalAlignment="Left"
+                          Command="{Binding SelectedNewsItem.OpenExternalCommand}">
+                    <StackPanel Orientation="Horizontal" Spacing="9">
+                      <TextBlock Text="{Binding OpenOriginalLabel}" />
+                      <Path Width="14" Height="14" Stretch="Uniform" Data="{StaticResource OpenIcon}" />
+                    </StackPanel>
+                  </Button>
+                  <TextBlock Text="{Binding SelectedNewsArticle.Title}"
+                             FontSize="32"
+                             FontWeight="Bold"
+                             MaxLines="3"
+                             TextTrimming="CharacterEllipsis" />
+                  <TextBlock Text="{Binding SelectedNewsArticle.Metadata}"
+                             Foreground="#D1D2D6"
+                             FontSize="12"
+                             FontWeight="SemiBold"
+                             TextWrapping="Wrap" />
+                </StackPanel>
+              </Grid>
+            </Border>
+
+            <StackPanel Margin="4,30,4,0"
+                        Classes="articleBody"
+                        Classes.revealed="{Binding IsNewsArticleBodyVisible}">
+              <ItemsControl ItemsSource="{Binding SelectedNewsArticle.RenderedBlocks}"
+                            ItemTemplate="{StaticResource NewsArticleBlockTemplate}" />
+            </StackPanel>
+          </StackPanel>
+        </controls:SmoothScrollViewer>
+      </Grid>
+    </DataTemplate>
+  </Window.Resources>
+
+  <Grid RowDefinitions="30,*">
+    <Grid Grid.Row="0" ColumnDefinitions="*,Auto">
+      <Border Grid.Column="0"
+              Background="Transparent"
+              PointerPressed="OnTitleBarPointerPressed"
+              WindowDecorationProperties.ElementRole="TitleBar" />
+
+      <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="0">
+        <Button x:Name="MinimizeWindowButton"
+                Classes="window"
+                VerticalContentAlignment="Stretch"
+                Click="OnMinimizeClicked"
+                WindowDecorationProperties.ElementRole="MinimizeButton">
+          <Border Classes="windowMinimize"
+                  Width="11"
+                  Height="1.5"
+                  Margin="0,0,0,7"
+                  VerticalAlignment="Bottom" />
+        </Button>
+        <Button x:Name="MaximizeWindowButton"
+                Classes="window"
+                Click="OnMaximizeClicked"
+                WindowDecorationProperties.ElementRole="MaximizeButton">
+          <Path Classes="windowIcon"
+                Width="11"
+                Height="11"
+                Stretch="Uniform"
+                Data="{StaticResource MaximizeIcon}" />
+        </Button>
+        <Button x:Name="CloseWindowButton"
+                Classes="window"
+                Click="OnCloseClicked"
+                WindowDecorationProperties.ElementRole="CloseButton">
+          <Path Classes="windowIcon"
+                Width="11"
+                Height="11"
+                Stretch="Uniform"
+                Data="{StaticResource CloseIcon}" />
+        </Button>
+      </StackPanel>
+    </Grid>
+
+    <Grid Grid.Row="1"
+          ColumnDefinitions="238,*"
+          ColumnSpacing="18"
+          Margin="18,2,18,18">
+
+      <Grid Grid.Column="0" RowDefinitions="Auto,*,Auto">
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="12" Margin="10,12,10,30">
+          <Image Width="48"
+                 Height="48"
+                 Source="avares://HyPrism.Desktop/Assets/Images/logo.png"
+                 Stretch="Uniform" />
+          <StackPanel VerticalAlignment="Center" Spacing="-3">
+            <TextBlock Text="HyPrism" FontSize="25" FontWeight="Bold" />
+            <TextBlock Text="LAUNCHER"
+                       Foreground="{DynamicResource TextSecondaryBrush}"
+                       FontSize="10"
+                       FontWeight="Bold"
+                       LetterSpacing="2" />
+          </StackPanel>
+        </StackPanel>
+
+        <StackPanel Grid.Row="1" Spacing="2">
+          <Button Classes="nav"
+                  Classes.selected="{Binding IsDashboard}"
+                  Command="{Binding NavigateCommand}"
+                  CommandParameter="dashboard">
+            <StackPanel Orientation="Horizontal" Spacing="14">
+              <Grid Width="21" Height="21">
+                <Path Classes="navIconOutline" Stretch="Uniform" Data="{StaticResource HomeIcon}" />
+                <Path Classes="navIconFilled" Stretch="Uniform" Data="{StaticResource HomeFilledIcon}" />
+              </Grid>
+              <TextBlock VerticalAlignment="Center" Text="{Binding DashboardLabel}" />
+            </StackPanel>
+          </Button>
+
+          <Button x:Name="InstancesNavButton"
+                  Classes="nav"
+                  Classes.selected="{Binding IsInstances}"
+                  Command="{Binding NavigateCommand}"
+                  CommandParameter="instances">
+            <StackPanel Orientation="Horizontal" Spacing="14">
+              <Grid Width="21" Height="21">
+                <Path Classes="navIconOutline" Stretch="Uniform" Data="{StaticResource InstancesIcon}" />
+                <Path Classes="navIconFilled" Stretch="Uniform" Data="{StaticResource InstancesFilledIcon}" />
+              </Grid>
+              <TextBlock VerticalAlignment="Center" Text="{Binding InstancesLabel}" />
+            </StackPanel>
+          </Button>
+
+          <Button Classes="nav"
+                  Classes.selected="{Binding IsMods}"
+                  Command="{Binding NavigateCommand}"
+                  CommandParameter="mods">
+            <StackPanel Orientation="Horizontal" Spacing="14">
+              <Grid Width="21" Height="21">
+                <Path Classes="navIconOutline" Stretch="Uniform" Data="{StaticResource ModsIcon}" />
+                <Path Classes="navIconFilled" Stretch="Uniform" Data="{StaticResource ModsFilledIcon}" />
+              </Grid>
+              <TextBlock VerticalAlignment="Center" Text="{Binding ModsLabel}" />
+            </StackPanel>
+          </Button>
+
+          <Button Classes="nav"
+                  Classes.selected="{Binding IsNews}"
+                  Command="{Binding NavigateCommand}"
+                  CommandParameter="news">
+            <StackPanel Orientation="Horizontal" Spacing="14">
+              <Grid Width="21" Height="21">
+                <Path Classes="navIconOutline" Stretch="Uniform" Data="{StaticResource NewsIcon}" />
+                <Path Classes="navIconFilled" Stretch="Uniform" Data="{StaticResource NewsFilledIcon}" />
+              </Grid>
+              <TextBlock VerticalAlignment="Center" Text="{Binding NewsLabel}" />
+            </StackPanel>
+          </Button>
+
+          <Button Classes="nav"
+                  Classes.selected="{Binding IsProfiles}"
+                  Command="{Binding NavigateCommand}"
+                  CommandParameter="profiles">
+            <StackPanel Orientation="Horizontal" Spacing="14">
+              <Grid Width="21" Height="21">
+                <Path Classes="navIconOutline" Stretch="Uniform" Data="{StaticResource ProfilesIcon}" />
+                <Path Classes="navIconFilled" Stretch="Uniform" Data="{StaticResource ProfilesFilledIcon}" />
+              </Grid>
+              <TextBlock VerticalAlignment="Center" Text="{Binding ProfilesLabel}" />
+            </StackPanel>
+          </Button>
+
+          <Button Classes="nav"
+                  Classes.selected="{Binding IsSettings}"
+                  Command="{Binding NavigateCommand}"
+                  CommandParameter="settings">
+            <StackPanel Orientation="Horizontal" Spacing="14">
+              <Grid Width="21" Height="21">
+                <Path Classes="navIconOutline" Stretch="Uniform" Data="{StaticResource SettingsIcon}" />
+                <Path Classes="navIconFilled" Stretch="Uniform" Data="{StaticResource SettingsFilledIcon}" />
+              </Grid>
+              <TextBlock VerticalAlignment="Center" Text="{Binding SettingsLabel}" />
+            </StackPanel>
+          </Button>
+        </StackPanel>
+
+        <Grid Grid.Row="2"
+              ColumnDefinitions="44,*"
+              ColumnSpacing="11"
+              Margin="10,36,0,2">
+          <Border Width="44"
+                  Height="44"
+                  CornerRadius="22"
+                  Background="{DynamicResource AccentSoftBrush}"
+                  BorderBrush="{DynamicResource StrokeStrongBrush}"
+                  BorderThickness="1">
+            <TextBlock HorizontalAlignment="Center"
+                       VerticalAlignment="Center"
+                       Foreground="{DynamicResource TextPrimaryBrush}"
+                       FontWeight="Bold"
+                       Text="{Binding UserInitial}" />
+          </Border>
+          <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="1">
+            <TextBlock Text="{Binding UserName}"
+                       FontWeight="SemiBold"
+                       TextTrimming="CharacterEllipsis"
+                       TextWrapping="NoWrap" />
+            <TextBlock Classes="muted"
+                       Text="{Binding AccountType}"
+                       FontSize="12"
+                       TextWrapping="NoWrap" />
+          </StackPanel>
+        </Grid>
+      </Grid>
+
+      <Border Grid.Column="1"
+              Background="{DynamicResource SurfaceBrush}"
+              BorderBrush="{DynamicResource MainCardStrokeBrush}"
+              BorderThickness="1"
+              CornerRadius="24"
+              ClipToBounds="True">
+        <Grid>
+          <views:DashboardView IsVisible="{Binding IsDashboard}" />
+
+          <Grid x:Name="NewsResponsiveLayout"
+                IsVisible="{Binding IsNews}"
+                SizeChanged="OnNewsResponsiveSizeChanged"
+                Background="{DynamicResource SurfaceBrush}">
+            <Grid IsVisible="{Binding IsCompactNewsLayout}">
+              <Carousel x:Name="CompactNewsShell"
+                        SelectedIndex="{Binding CompactNewsPageIndex, Mode=OneWay}">
+                <Carousel.PageTransition>
+                  <animation:PageSlide Duration="0:0:0.3" Orientation="Horizontal">
+                    <animation:PageSlide.SlideInEasing>
+                      <easing:CubicEaseInOut />
+                    </animation:PageSlide.SlideInEasing>
+                    <animation:PageSlide.SlideOutEasing>
+                      <easing:CubicEaseInOut />
+                    </animation:PageSlide.SlideOutEasing>
+                  </animation:PageSlide>
+                </Carousel.PageTransition>
+                <ContentControl Content="{Binding}"
+                                ContentTemplate="{StaticResource NewsFeedTemplate}" />
+                <ContentControl x:Name="CompactArticleHost"
+                                Content="{Binding}"
+                                ContentTemplate="{StaticResource NewsReaderTemplate}" />
+              </Carousel>
+
+              <Border IsVisible="{Binding IsCompactNewsTransitionActive}"
+                      Classes="newsTransitionEdgeFade"
+                      Width="38"
+                      HorizontalAlignment="Left"
+                      IsHitTestVisible="False">
+                <Border.Background>
+                  <LinearGradientBrush StartPoint="0%,50%" EndPoint="100%,50%">
+                    <GradientStop Color="#FF0D0E10" Offset="0" />
+                    <GradientStop Color="#000D0E10" Offset="1" />
+                  </LinearGradientBrush>
+                </Border.Background>
+              </Border>
+              <Border IsVisible="{Binding IsCompactNewsTransitionActive}"
+                      Classes="newsTransitionEdgeFade"
+                      Width="38"
+                      HorizontalAlignment="Right"
+                      IsHitTestVisible="False">
+                <Border.Background>
+                  <LinearGradientBrush StartPoint="0%,50%" EndPoint="100%,50%">
+                    <GradientStop Color="#000D0E10" Offset="0" />
+                    <GradientStop Color="#FF0D0E10" Offset="1" />
+                  </LinearGradientBrush>
+                </Border.Background>
+              </Border>
+            </Grid>
+
+            <Grid x:Name="WideNewsShell"
+                  IsVisible="False"
+                  ColumnDefinitions="420,*">
+              <Border x:Name="WideNewsFeedBackground"
+                      Background="{DynamicResource StrokeBrush}">
+                <ContentControl Content="{Binding}"
+                                ContentTemplate="{StaticResource NewsFeedTemplate}" />
+              </Border>
+              <ContentControl x:Name="WideArticleHost"
+                              Grid.Column="1"
+                              Content="{Binding}"
+                              ContentTemplate="{StaticResource NewsReaderTemplate}">
+                <ContentControl.Transitions>
+                  <Transitions>
+                    <DoubleTransition Property="Opacity" Duration="0:0:0.14" />
+                  </Transitions>
+                </ContentControl.Transitions>
+              </ContentControl>
+            </Grid>
+          </Grid>
+
+          <ContentControl IsVisible="{Binding IsSettings}"
+                          Content="{Binding Settings}">
+            <ContentControl.ContentTemplate>
+              <DataTemplate x:DataType="vm:SettingsViewModel">
+                <views:SettingsView />
+              </DataTemplate>
+            </ContentControl.ContentTemplate>
+          </ContentControl>
+
+          <Grid IsVisible="{Binding IsPlaceholderPage}" Margin="28">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="10">
+              <TextBlock Text="{Binding CurrentPageTitle}"
+                         HorizontalAlignment="Center"
+                         FontSize="25"
+                         FontWeight="Bold" />
+            </StackPanel>
+          </Grid>
+
+          <Border Classes="card"
+                  IsVisible="{Binding IsGlobalActivityVisible}"
+                  Width="390"
+                  HorizontalAlignment="Right"
+                  VerticalAlignment="Bottom"
+                  Margin="0,0,22,22"
+                  Padding="18">
+            <StackPanel Spacing="10">
+              <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Text="{Binding ActivityTitle}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
+                <TextBlock Grid.Column="1"
+                           Text="{Binding ActivityProgressText}"
+                           Foreground="{DynamicResource TextPrimaryBrush}"
+                           FontWeight="SemiBold"
+                           TextWrapping="NoWrap" />
+              </Grid>
+              <TextBlock Classes="muted" Text="{Binding ActivityDetail}" FontSize="12" MaxLines="2" TextTrimming="CharacterEllipsis" />
+              <ProgressBar Minimum="0"
+                           Maximum="100"
+                           Height="5"
+                           Foreground="{DynamicResource TextPrimaryBrush}"
+                           Value="{Binding ActivityProgress}" />
+            </StackPanel>
+          </Border>
+        </Grid>
+      </Border>
+    </Grid>
+
+    <!-- Explicit resize zones keep borderless windows resizable on X11 and Wayland. -->
+    <Border x:Name="ResizeNorth" Grid.RowSpan="2" Height="6" VerticalAlignment="Top" Background="Transparent" Cursor="SizeNorthSouth" PointerPressed="OnResizeNorth" />
+    <Border x:Name="ResizeSouth" Grid.RowSpan="2" Height="6" VerticalAlignment="Bottom" Background="Transparent" Cursor="SizeNorthSouth" PointerPressed="OnResizeSouth" />
+    <Border x:Name="ResizeWest" Grid.RowSpan="2" Width="6" HorizontalAlignment="Left" Background="Transparent" Cursor="SizeWestEast" PointerPressed="OnResizeWest" />
+    <Border x:Name="ResizeEast" Grid.RowSpan="2" Width="6" HorizontalAlignment="Right" Background="Transparent" Cursor="SizeWestEast" PointerPressed="OnResizeEast" />
+    <Border x:Name="ResizeNorthWest" Grid.RowSpan="2" Width="10" Height="10" HorizontalAlignment="Left" VerticalAlignment="Top" Background="Transparent" Cursor="TopLeftCorner" PointerPressed="OnResizeNorthWest" />
+    <Border x:Name="ResizeNorthEast" Grid.RowSpan="2" Width="10" Height="10" HorizontalAlignment="Right" VerticalAlignment="Top" Background="Transparent" Cursor="TopRightCorner" PointerPressed="OnResizeNorthEast" />
+    <Border x:Name="ResizeSouthWest" Grid.RowSpan="2" Width="10" Height="10" HorizontalAlignment="Left" VerticalAlignment="Bottom" Background="Transparent" Cursor="BottomLeftCorner" PointerPressed="OnResizeSouthWest" />
+    <Border x:Name="ResizeSouthEast" Grid.RowSpan="2" Width="10" Height="10" HorizontalAlignment="Right" VerticalAlignment="Bottom" Background="Transparent" Cursor="BottomRightCorner" PointerPressed="OnResizeSouthEast" />
+  </Grid>
+</Window>

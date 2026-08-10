@@ -1,3 +1,8 @@
+<!--
+Copyright (C) 2026 HyPrism Launcher
+SPDX-License-Identifier: GPL-3.0-only
+-->
+
 # Adding a Built-in Mirror
 
 This guide is for contributors who want to add a new community mirror to HyPrism's **default set** — the mirrors auto-generated on first launch via `MirrorLoaderService.GetDefaultMirrors()`.
@@ -31,9 +36,9 @@ VersionService.cs               ← Orchestrates all sources, caches results
 
 | File | Purpose |
 |------|---------|
-| `Services/Game/Sources/MirrorLoaderService.cs` | Default mirror definitions (`GetDefaultMirrors()`), loading logic |
-| `Services/Game/Sources/JsonMirrorSource.cs` | Handles both `pattern` and `json-index` sources |
-| `Services/Game/Sources/IVersionSource.cs` | Interface + supporting types |
+| `Sources/HyPrism.Core/Game/Sources/MirrorLoaderService.cs` | Default mirror definitions (`GetDefaultMirrors()`), loading logic |
+| `Sources/HyPrism.Core/Game/Sources/JsonMirrorSource.cs` | Handles both `pattern` and `json-index` sources |
+| `Sources/HyPrism.Core/Game/Sources/IVersionSource.cs` | Interface + supporting types |
 | `Models/MirrorMeta.cs` | Data model for `.mirror.json` schema |
 
 You do **not** need to create a new C# class per mirror. All mirrors use `JsonMirrorSource`.
@@ -57,7 +62,7 @@ Determine:
 
 ### 2. Add the `MirrorMeta` entry
 
-Open `Services/Game/Sources/MirrorLoaderService.cs` and add a new entry to the list returned by `GetDefaultMirrors()`.
+Open `Sources/HyPrism.Core/Game/Sources/MirrorLoaderService.cs` and add a new entry to the list returned by `GetDefaultMirrors()`.
 
 **For a pattern-based mirror:**
 

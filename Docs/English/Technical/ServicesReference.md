@@ -1,11 +1,16 @@
+<!--
+Copyright (C) 2026 HyPrism Launcher
+SPDX-License-Identifier: GPL-3.0-only
+-->
+
 # Services Reference
 
 All services are registered as singletons in `Bootstrapper.cs` and injected via constructor.
 
-## Core Services (`Services/Core/`)
+## Core Services (`Sources/HyPrism.Core/Core/`)
 
 ### IpcService
-- **File:** `Services/Core/Ipc/IpcService.cs`
+- **File:** `Sources/HyPrism.Launcher/Services/Core/Ipc/IpcService.cs` (legacy Electron adapter)
 - **Purpose:** Central IPC channel registry — single source of truth for all React ↔ .NET communication
 - **Key method:** `RegisterAll()` — registers all IPC handlers
 - **Annotations:** Contains `@type` and `@ipc` doc comments used by code generator
@@ -24,7 +29,7 @@ All services are registered as singletons in `Bootstrapper.cs` and injected via 
   - `hyprism:update:install` (invoke) — downloads and applies the update (self-replace + restart).
 
 ### ConfigService
-- **File:** `Services/Core/ConfigService.cs`
+- **File:** `Sources/HyPrism.Core/Core/Infrastructure/ConfigService.cs`
 - **Type:** Singleton
 - **Purpose:** Application configuration (persisted to JSON)
 - **Config paths:**
@@ -33,39 +38,46 @@ All services are registered as singletons in `Bootstrapper.cs` and injected via 
   - macOS: `~/Library/Application Support/HyPrism/config.json`
 
 ### Logger
-- **File:** `Services/Core/Logger.cs`
+- **File:** `Sources/HyPrism.Core/Core/Infrastructure/Logger.cs`
 - **Type:** Static class
 - **Purpose:** Structured logging (Serilog backend + colored console + in-memory buffer)
 - **Methods:** `Info()`, `Success()`, `Warning()`, `Error()`, `Debug()`, `Progress()`
 - **Log files:** `{appDir}/Logs/{timestamp}.log`
 
 ### LocalizationService
-- **File:** `Services/Core/LocalizationService.cs`
+- **File:** `Sources/HyPrism.Core/Core/App/LocalizationService.cs`
 - **Type:** Singleton (Instance pattern)
 - **Purpose:** Runtime language switching with nested key support
 - **Locale files:** `Assets/Locales/{code}.json`
 
 ### BrowserService
-- **File:** `Services/Core/BrowserService.cs`
+- **File:** `Sources/HyPrism.Core/Core/Platform/BrowserService.cs`
 - **Purpose:** Opens URLs in the system default browser
 
 ### DiscordService
-- **File:** `Services/Core/DiscordService.cs`
+- **File:** `Sources/HyPrism.Core/Core/Integration/DiscordService.cs`
 - **Purpose:** Discord Rich Presence integration
 
 ### GitHubService
-- **File:** `Services/Core/GitHubService.cs`
+- **File:** `Sources/HyPrism.Core/Core/Integration/GitHubService.cs`
 - **Purpose:** Release checking and self-update functionality
 
+### NewsService
+- **File:** `Sources/HyPrism.Core/Core/Integration/NewsService.cs`
+- **Purpose:** Loads the official Hytale feed and lazily loads full articles.
+- **Parsing:** AngleSharp reads the server-rendered DOM; no browser automation or regular-expression HTML parsing is used.
+- **Article model:** `GetNewsArticleAsync` returns a sanitized recursive content tree and accepts only official HTTPS Hytale news URLs.
+- **Cache:** Feed and article results are retained for 30 minutes.
+
 ### UpdateService
-- **File:** `Services/Core/App/UpdateService.cs`
+- **File:** `Sources/HyPrism.Core/Core/App/UpdateService.cs`
 - **Purpose:** Checks GitHub Releases for a newer launcher version and applies a self-update.
 - **Update source:** `yyyumeniku/TEST` (GitHub Releases API)
 - **User flow:** on startup, if a newer version exists, the dashboard shows an update indicator. Installing the update downloads quietly in-app (with progress), replaces the launcher executable/app, and restarts.
 - **Fallback:** update assets are downloaded into the user **Downloads** folder when available, so users can manually install if auto-update fails.
 - **Windows portable updates:** when updating from a `.zip`, the updater copies the extracted app folder (including side-by-side runtime files like `ffmpeg.dll`) into the install directory.
 
-## Game Services (`Services/Game/`)
+## Game Services (`Sources/HyPrism.Core/Game/`)
 
 ### GameSessionService
 - **Purpose:** Manages game lifecycle — download, install, patch, launch
@@ -88,7 +100,7 @@ All services are registered as singletons in `Bootstrapper.cs` and injected via 
 - **Linux NVIDIA EGL fix:** in dedicated GPU mode, launcher exports `__EGL_VENDOR_LIBRARY_FILENAMES` to detected NVIDIA GLVND vendor JSON (e.g. `/usr/share/glvnd/egl_vendor.d/10_nvidia.json`) to avoid fallback to `llvmpipe` on affected systems.
 
 ### ClientPatcher ⚠️
-- **File:** `Services/Game/ClientPatcher.cs`
+- **File:** `Sources/HyPrism.Core/Game/Launch/ClientPatcher.cs`
 - **CRITICAL:** Binary manipulation for game integrity
 - **Rule:** NEVER modify without explicit instruction
 
@@ -101,7 +113,7 @@ All services are registered as singletons in `Bootstrapper.cs` and injected via 
 - **Release download policy:** For mirror `release`, launcher prefers full standalone builds; patch metadata remains cached for future update flows
 
 ### IVersionSource
-- **File:** `Services/Game/Sources/IVersionSource.cs`
+- **File:** `Sources/HyPrism.Core/Game/Sources/IVersionSource.cs`
 - **Diagnostic layout info:** Each source exposes `LayoutInfo` with three explicit fields:
   - where full builds are downloaded (`FullBuildLocation`)
   - where diff patches are downloaded (`PatchLocation`)
@@ -109,25 +121,26 @@ All services are registered as singletons in `Bootstrapper.cs` and injected via 
 - **Goal:** Reduce ambiguity in mirror patch/full behavior and speed up troubleshooting of wrong URL assumptions
 
 ### JsonMirrorSource
-- **File:** `Services/Game/Sources/JsonMirrorSource.cs`
+- **File:** `Sources/HyPrism.Core/Game/Sources/JsonMirrorSource.cs`
 - **Purpose:** Universal mirror implementation driven by JSON meta descriptors (`Mirrors/*.mirror.json`)
 - **Source types:** `pattern` (URL templates + version discovery) and `json-index` (single API endpoint)
 - **Patch chain:** `GetPatchChainAsync` builds a full patch chain from known versions + URL templates, enabling VersionService to cache mirror patches alongside official data
 - **Speed test:** Supports mirror speed testing with ping and download speed measurement
 
 ### HytaleVersionSource
-- **File:** `Services/Game/Sources/HytaleVersionSource.cs`
+- **File:** `Sources/HyPrism.Core/Game/Sources/HytaleVersionSource.cs`
 - **Purpose:** Official authenticated version source (`account-data.hytale.com/patches`)
 - **Patch chain:** `GetPatchChainAsync` fetches patch steps via `from_build=1` API call
 - **Header compatibility:** Sends launcher-compatible headers (`User-Agent`, `x-hytale-launcher-version`, `x-hytale-launcher-branch`) and keeps token-refresh retries for 401/403
 
 ### ModService
 - **Purpose:** Mod listing, searching, and management (CurseForge integration)
+- **Directory contract:** `IModService.GetOrCreateModsDirectory` returns a usable instance-local `UserData/Mods` path and removes the conflicting regular file that some game builds create at that location.
 - **Instance mods source:** Reads from `UserData/Mods` and falls back to file-system discovery (`.jar`, `.zip`, `.disabled`) when manifest entries are missing
 - **Download URL fallback:** if CurseForge returns no `downloadUrl` and `/download-url` is forbidden/empty, the service derives a deterministic CDN URL from `fileId + fileName`.
 - **Version compatibility:** Mods with a specific `ServerVersion` in their JAR `manifest.json` (format: `YYYY.MM.DD-<hash>`) are automatically quarantined if the installed server's version doesn't match. Mods with `ServerVersion: "*"` (wildcard) are always compatible.
 
-## User Services (`Services/User/`)
+## User Services (`Sources/HyPrism.Core/User/`)
 
 ### ProfileService
 - **Purpose:** Player profile CRUD operations

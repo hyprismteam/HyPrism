@@ -1,3 +1,8 @@
+<!--
+Copyright (C) 2026 HyPrism Launcher
+SPDX-License-Identifier: GPL-3.0-only
+-->
+
 <img src="https://raw.githubusercontent.com/hyprismteam/HyPrism/refs/heads/main/Frontend/src/assets/images/preview_logo.png" alt="HyPrism Logo" height="128" />
 
   *A multiplatform Hytale launcher with mod manager and more!*
@@ -26,7 +31,7 @@ Downloads are available in [Releases](https://github.com/hyprismteam/HyPrism/rel
 
 **Requirements:**
 - .NET 10.0 SDK
-- Node.JS 20+
+- Node.JS 20+ (legacy Electron UI only)
 
 **Build:**
 ```bash
@@ -34,12 +39,19 @@ Downloads are available in [Releases](https://github.com/hyprismteam/HyPrism/rel
 git clone https://github.com/hyprismteam/HyPrism.git
 cd HyPrism
 
-# Build the project
-dotnet build
+# Build the native Avalonia preview
+dotnet build Sources/HyPrism.Desktop/HyPrism.Desktop.csproj
 
-# Run the launcher
-dotnet run
+# Run the native launcher
+dotnet run --project Sources/HyPrism.Desktop/HyPrism.Desktop.csproj
+
+# Run the legacy Electron launcher during the migration
+dotnet run --project Sources/HyPrism.Launcher/HyPrism.Launcher.csproj
 ```
+
+The Avalonia 12 interface is being developed alongside the existing Electron UI
+Both hosts use the same .NET services; Electron remains the release host until
+feature and packaging parity is reached
 
 ## Docs
 
@@ -66,7 +78,8 @@ We support the launcher **solely with our free time** and **community feedback**
 
 HyPrism is licensed under the **GNU General Public License v3.0 (GPL-3.0)**
 - Full license text: [LICENSE](LICENSE)
-- Third-party licenses: [Licenses/COPYING.md](Licenses/COPYING.md)
+- License texts used by project assets: [Licenses](Licenses)
+- Machine-readable licensing and CI compliance: [REUSE.toml](REUSE.toml)
 
 ### Unofficial Product
 **HyPrism** is an unofficial, open-source launcher for Hytale. This project is **not** affiliated with, endorsed by, sponsored by, or approved by **Hypixel Studios**, **Riot Games**, or any of their affiliates

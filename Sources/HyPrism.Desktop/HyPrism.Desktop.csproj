@@ -1,0 +1,41 @@
+<!--
+Copyright (C) 2026 HyPrism Launcher
+SPDX-License-Identifier: GPL-3.0-only
+-->
+
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" Version="12.1.0" />
+    <PackageReference Include="Avalonia.Desktop" Version="12.1.0" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.0" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.10" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../HyPrism.Core/HyPrism.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AvaloniaResource Include="Assets/**" />
+    <AvaloniaResource Include="../HyPrism.Launcher/Frontend/src/assets/backgrounds/bg_26.jpg"
+                      Link="Assets/Backgrounds/bg_26.jpg" />
+    <AvaloniaResource Include="../HyPrism.Launcher/Frontend/src/assets/images/logo.png"
+                      Link="Assets/Images/logo.png" />
+    <AvaloniaResource Include="../HyPrism.Launcher/Frontend/src/assets/images/appicon.png"
+                      Link="Assets/Images/appicon.png" />
+    <EmbeddedResource Include="../HyPrism.Launcher/Frontend/src/assets/locales/*.json"
+                      Link="Assets/Locales/%(Filename)%(Extension)"
+                      LogicalName="HyPrism.Desktop.Assets.Locales.%(Filename)%(Extension)" />
+  </ItemGroup>
+
+</Project>

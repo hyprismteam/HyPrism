@@ -1,6 +1,11 @@
+// Copyright (C) 2026 HyPrism Launcher
+// SPDX-License-Identifier: GPL-3.0-only
+
 using Microsoft.Build.Locator;
 using Microsoft.CodeAnalysis.MSBuild;
 using HyPrism.IpcGen;
+using System.Security.Cryptography;
+using System.Text;
 
 // MSBuildLocator must be called before any Roslyn MSBuild API is touched.
 MSBuildLocator.RegisterDefaults();
@@ -24,16 +29,11 @@ if (projectPath is null || outputPath is null)
 #endregion
 
 #region Hash-based cache
-var ipcServicePath = Path.Combine(Path.GetDirectoryName(projectPath)!,
-    "Services", "Core", "Ipc", "IpcService.cs");
-
 var hashFile = Path.Combine(Path.GetDirectoryName(outputPath)!, ".ipcgen.hash");
+var currentHash = ComputeProjectHash(projectPath);
 
-if (File.Exists(ipcServicePath) && File.Exists(outputPath))
+if (File.Exists(outputPath))
 {
-    var currentHash = Convert.ToHexString(
-        System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(ipcServicePath)));
-
     if (File.Exists(hashFile) && File.ReadAllText(hashFile).Trim() == currentHash)
     {
         Console.WriteLine("[IpcGen] ipc.ts is up-to-date — skipping.");
@@ -94,15 +94,35 @@ var ts = TypeScriptEmitter.Emit(methods, mapper.Interfaces);
 Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
 File.WriteAllText(outputPath, ts);
 
-// Update hash cache
-if (File.Exists(ipcServicePath))
-{
-    var newHash = Convert.ToHexString(
-        System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(ipcServicePath)));
-    File.WriteAllText(hashFile, newHash);
-}
+// Update hash cache after a successful generation.
+File.WriteAllText(hashFile, currentHash);
 
 Console.WriteLine("[IpcGen] Done.");
 return 0;
 
 #endregion
+
+static string ComputeProjectHash(string projectPath)
+{
+    var projectDirectory = Path.GetDirectoryName(projectPath)!;
+    var inputs = Directory.EnumerateFiles(projectDirectory, "*.cs", SearchOption.AllDirectories)
+        .Append(projectPath)
+        .Where(path => !Path.GetRelativePath(projectDirectory, path)
+            .Split(
+                [Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar],
+                StringSplitOptions.RemoveEmptyEntries)
+            .Any(segment => segment.Equals("bin", StringComparison.OrdinalIgnoreCase) ||
+                            segment.Equals("obj", StringComparison.OrdinalIgnoreCase)))
+        .OrderBy(path => path, StringComparer.OrdinalIgnoreCase);
+
+    using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
+    foreach (var input in inputs)
+    {
+        var relativePath = Path.GetRelativePath(projectDirectory, input)
+            .Replace(Path.DirectorySeparatorChar, '/');
+        hash.AppendData(Encoding.UTF8.GetBytes(relativePath));
+        hash.AppendData(File.ReadAllBytes(input));
+    }
+
+    return Convert.ToHexString(hash.GetHashAndReset());
+}

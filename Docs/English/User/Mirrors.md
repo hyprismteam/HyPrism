@@ -1,3 +1,8 @@
+<!--
+Copyright (C) 2026 HyPrism Launcher
+SPDX-License-Identifier: GPL-3.0-only
+-->
+
 # Mirrors Guide
 
 HyPrism uses a **data-driven mirror system** for downloading game files. Instead of hardcoding download URLs, the launcher reads mirror definitions from `.mirror.json` files in the `Mirrors/` directory. This guide explains how the system works, how to add mirrors, and how to configure them.

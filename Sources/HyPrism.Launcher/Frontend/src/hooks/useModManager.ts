@@ -1,3 +1,6 @@
+// Copyright (C) 2026 HyPrism Launcher
+// SPDX-License-Identifier: GPL-3.0-only
+
 import { useState, useCallback, useRef, useMemo, useEffect } from 'react';
 import { ipc, type ModInfo as CurseForgeModInfo } from '@/lib/ipc';
 import type { InstalledVersionInfo, InstalledModInfo } from '@/types';

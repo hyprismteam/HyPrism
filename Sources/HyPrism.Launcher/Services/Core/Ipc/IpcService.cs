@@ -1,3 +1,6 @@
+// Copyright (C) 2026 HyPrism Launcher
+// SPDX-License-Identifier: GPL-3.0-only
+
 using System.IO.Compression;
 using System.Runtime.InteropServices;
 using System.Text.Json;
@@ -46,15 +49,6 @@ namespace HyPrism.Services.Core.Ipc;
 /// </remarks>
 public class IpcService(IServiceProvider services) : IpcServiceBase(services)
 {
-    // Game exit codes for specific error scenarios
-    private const int EXIT_SUCCESS = 0;
-    private const int ERROR_GENERIC_LAUNCH = 1;
-    private const int ERROR_NO_INSTANCE = 10;
-    private const int ERROR_NOT_INSTALLED = 11;
-    private const int ERROR_DOWNLOAD_FAILED = 12;
-    private const int ERROR_LAUNCH_FAILED = 13;
-    private const int ERROR_MIRROR_UNREACHABLE = 14;
-
     #region Launcher Update
 
     /// <summary>Triggers an asynchronous check for available launcher updates.</summary>
@@ -138,7 +132,8 @@ public class IpcService(IServiceProvider services) : IpcServiceBase(services)
     /// <summary>Starts the game download and/or launch sequence for the currently selected instance.</summary>
     [IpcSend("hyprism:game:launch")]
     public void LaunchGame(LaunchGameRequest? req)
-        => _ = LaunchGameAsync(req);
+        => _ = Services.GetRequiredService<IGameLaunchCoordinator>()
+            .LaunchAsync(req?.InstanceId, req?.LaunchAfterDownload);
 
     /// <summary>Cancels an in-progress game download.</summary>
     [IpcSend("hyprism:game:cancel")]
@@ -311,8 +306,7 @@ public class IpcService(IServiceProvider services) : IpcServiceBase(services)
         var svc = Services.GetRequiredService<IInstanceService>();
         var path = svc.GetInstancePathById(req.InstanceId);
         if (string.IsNullOrEmpty(path)) return;
-        var modsPath = Path.Combine(path, "UserData", "Mods");
-        ModService.EnsureModsDirectory(modsPath);
+        var modsPath = Services.GetRequiredService<IModService>().GetOrCreateModsDirectory(path);
         Services.GetRequiredService<IFileService>().OpenFolder(modsPath);
     }
 
@@ -388,6 +382,11 @@ public class IpcService(IServiceProvider services) : IpcServiceBase(services)
     [IpcInvoke("hyprism:news:get")]
     public async Task<List<NewsItemResponse>> GetNews()
         => await Services.GetRequiredService<INewsService>().GetNewsAsync(count: 20);
+
+    /// <summary>Fetches and sanitizes one complete Hytale article for the renderer.</summary>
+    [IpcInvoke("hyprism:news:getArticle")]
+    public async Task<NewsArticleResponse?> GetNewsArticle(string url)
+        => await Services.GetRequiredService<INewsService>().GetNewsArticleAsync(url);
 
     #endregion
 
@@ -856,8 +855,7 @@ public class IpcService(IServiceProvider services) : IpcServiceBase(services)
     {
         var path = ResolveModInstancePath(req.InstanceId);
         if (string.IsNullOrEmpty(path)) return;
-        var modsPath = Path.Combine(path, "UserData", "Mods");
-        ModService.EnsureModsDirectory(modsPath);
+        var modsPath = Services.GetRequiredService<IModService>().GetOrCreateModsDirectory(path);
         Electron.Shell.OpenPathAsync(modsPath);
     }
 
@@ -946,100 +944,6 @@ public class IpcService(IServiceProvider services) : IpcServiceBase(services)
     #endregion
 
     #region Private helpers
-
-    private async Task LaunchGameAsync(LaunchGameRequest? req)
-    {
-        var gameSession    = Services.GetRequiredService<IGameSessionService>();
-        var processService = Services.GetRequiredService<IGameProcessService>();
-        var instanceSvc    = Services.GetRequiredService<IInstanceService>();
-        var configSvc      = Services.GetRequiredService<IConfigService>();
-        var progressSvc    = Services.GetRequiredService<ProgressNotificationService>();
-
-        if (processService.IsGameRunning())
-        {
-            Logger.Warning("IPC", "Game launch request ignored - game already running");
-            return;
-        }
-
-        var launchAfterDownload = configSvc.Configuration.LaunchAfterDownload;
-
-        if (req != null)
-        {
-            if (!string.IsNullOrWhiteSpace(req.InstanceId))
-                instanceSvc.SetSelectedInstance(req.InstanceId);
-            if (req.LaunchAfterDownload.HasValue)
-                launchAfterDownload = req.LaunchAfterDownload.Value;
-        }
-
-        // Pre-launch validation: check if instance has game client installed
-        var selectedInstance = instanceSvc.GetSelectedInstance();
-        if (selectedInstance != null)
-        {
-            var versionPath = instanceSvc.GetInstancePathById(selectedInstance.Id);
-            if (!string.IsNullOrEmpty(versionPath) && !instanceSvc.IsClientPresent(versionPath))
-            {
-                Logger.Warning("IPC", $"Instance {selectedInstance.Id} has no game client installed");
-                progressSvc.ReportError("launch", "Game not installed",
-                    $"Instance '{selectedInstance.Name}' has no game installed. Click UPDATE to install.");
-                return;
-            }
-        }
-
-        Logger.Info("IPC", "Game launch requested");
-        try
-        {
-            var result = await gameSession.DownloadAndLaunchAsync(() => launchAfterDownload);
-
-            if (result.Cancelled || string.Equals(result.Error, "Cancelled", StringComparison.OrdinalIgnoreCase))
-            {
-                progressSvc.ReportGameStateChanged("stopped", EXIT_SUCCESS);
-                return;
-            }
-
-            if (result.Success && !launchAfterDownload)
-            {
-                progressSvc.ReportGameStateChanged("stopped", EXIT_SUCCESS);
-                return;
-            }
-
-            if (!result.Success)
-            {
-                // Determine specific error code based on error message
-                int exitCode = DetermineExitCodeForError(result.Error);
-                progressSvc.ReportError("download", "Failed to install game", result.Error ?? "Unknown error");
-                progressSvc.ReportGameStateChanged("stopped", exitCode);
-            }
-        }
-        catch (Exception ex)
-        {
-            Logger.Error("IPC", $"Game launch failed: {ex.Message}");
-            progressSvc.ReportError("download", "Failed to install game", ex.ToString());
-            progressSvc.ReportGameStateChanged("stopped", ERROR_LAUNCH_FAILED);
-        }
-    }
-
-    /// <summary>Determines the appropriate exit code based on the error message.</summary>
-    private static int DetermineExitCodeForError(string? error)
-    {
-        if (string.IsNullOrEmpty(error))
-            return ERROR_DOWNLOAD_FAILED;
-
-        var lower = error.ToLowerInvariant();
-
-        if (lower.Contains("not installed") || lower.Contains("no game client"))
-            return ERROR_NOT_INSTALLED;
-
-        if (lower.Contains("mirror") && (lower.Contains("unreachable") || lower.Contains("failed")))
-            return ERROR_MIRROR_UNREACHABLE;
-
-        if (lower.Contains("launch"))
-            return ERROR_LAUNCH_FAILED;
-
-        if (lower.Contains("download"))
-            return ERROR_DOWNLOAD_FAILED;
-
-        return ERROR_GENERIC_LAUNCH;
-    }
 
     private List<SaveInfo> GetInstanceSaves(string instanceId)
     {

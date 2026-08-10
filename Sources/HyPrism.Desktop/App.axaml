@@ -1,0 +1,38 @@
+<!--
+Copyright (C) 2026 HyPrism Launcher
+SPDX-License-Identifier: GPL-3.0-only
+-->
+
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="HyPrism.Desktop.App"
+             RequestedThemeVariant="Dark">
+  <Application.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.MergedDictionaries>
+        <ResourceInclude Source="avares://HyPrism.Desktop/Assets/Icons/MaterialSymbols.axaml" />
+      </ResourceDictionary.MergedDictionaries>
+
+      <FontFamily x:Key="GoogleSansFont">avares://HyPrism.Desktop/Assets/Fonts#Google Sans</FontFamily>
+      <FontFamily x:Key="JetBrainsMonoFont">avares://HyPrism.Desktop/Assets/Fonts#JetBrains Mono</FontFamily>
+
+      <SolidColorBrush x:Key="AppBackgroundBrush" Color="#08090A" />
+      <SolidColorBrush x:Key="SurfaceBrush" Color="#0D0E10" />
+      <SolidColorBrush x:Key="SurfaceElevatedBrush" Color="#D9141517" />
+      <SolidColorBrush x:Key="SurfaceHoverBrush" Color="#1A1B1E" />
+      <SolidColorBrush x:Key="StrokeBrush" Color="#16FFFFFF" />
+      <SolidColorBrush x:Key="StrokeStrongBrush" Color="#24FFFFFF" />
+      <SolidColorBrush x:Key="MainCardStrokeBrush" Color="#101114" />
+      <SolidColorBrush x:Key="TextPrimaryBrush" Color="#F7F7F8" />
+      <SolidColorBrush x:Key="TextSecondaryBrush" Color="#A8A9AE" />
+      <SolidColorBrush x:Key="TextMutedBrush" Color="#73757D" />
+      <SolidColorBrush x:Key="AccentBrush" Color="#F5F5F6" />
+      <SolidColorBrush x:Key="AccentSoftBrush" Color="#18FFFFFF" />
+    </ResourceDictionary>
+  </Application.Resources>
+
+  <Application.Styles>
+    <FluentTheme />
+    <StyleInclude Source="avares://HyPrism.Desktop/Themes/HyPrismTheme.axaml" />
+  </Application.Styles>
+</Application>

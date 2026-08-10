@@ -1,4 +1,8 @@
 #!/bin/sh
+
+# Copyright (C) 2026 HyPrism Launcher
+# SPDX-License-Identifier: GPL-3.0-only
+
 #
 # Launcher wrapper for Flatpak — prefers zypak when available to support chrome-sandbox.
 # When zypak is present the wrapper runs the Electron binary via `zypak-wrapper` and

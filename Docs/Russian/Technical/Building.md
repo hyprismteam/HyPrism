@@ -1,14 +1,51 @@
+<!--
+Copyright (C) 2026 HyPrism Launcher
+SPDX-License-Identifier: GPL-3.0-only
+-->
+
 # Сборка
 
 ## Предварительные требования
 
 - **.NET 10 SDK**
-- **Node.js 20+** (включает npm)
+- **Node.js 20+** (включает npm; требуется только для прежнего Electron-хоста)
 - **Git**
 
 ## Разработка
 
-### Полная сборка (Backend + Frontend)
+### Нативная Avalonia-версия
+
+Первый нативный вертикальный срез можно собрать, запустить и протестировать без Node.js:
+
+```bash
+dotnet build Sources/HyPrism.Desktop/HyPrism.Desktop.csproj
+dotnet run --project Sources/HyPrism.Desktop/HyPrism.Desktop.csproj
+dotnet test Tests/HyPrism.Desktop.Tests/HyPrism.Desktop.Tests.csproj
+```
+
+Окно открывается в размере 1280×800 (минимум 1024×700), Google Sans и JetBrains Mono встроены как ресурсы Avalonia,
+а профиль, экземпляры, загрузка, прогресс и запуск игры используют существующие .NET-сервисы напрямую.
+
+Material Symbols хранятся напрямую как weight-400 ресурсы `StreamGeometry` в
+`Sources/HyPrism.Desktop/Assets/Icons/MaterialSymbols.axaml`. Сборка Avalonia использует
+этот зафиксированный словарь и не требует Node.js или отдельного toolchain для иконок.
+
+Метаданные лицензий оформляются по спецификации REUSE. Читаемые тексты хранятся в
+`Licenses/`; поскольку REUSE требует стандартное имя в верхнем регистре, для локальной
+проверки временно выполните `mv Licenses LICENSES`, затем `reuse lint` и
+`mv LICENSES Licenses`. `.github/workflows/reuse.yml` делает это переименование
+автоматически перед официальным action. Google Sans и JetBrains Mono отмечены как `OFL-1.1`.
+
+Все файлы проекта, формат которых поддерживает комментарии, содержат явный заголовок
+`Copyright (C) 2026 HyPrism Launcher` и SPDX-заголовок GPL-3.0-only. JSON,
+шрифты, изображения, аудио и другие форматы без безопасных комментариев покрываются
+аннотациями `REUSE.toml`. Проверить заголовки можно командой
+`python3 Scripts/license_headers.py --check`, а механически добавить отсутствующие —
+`python3 Scripts/license_headers.py --write`. CI запускает эту проверку перед `reuse lint`;
+генератор IPC также добавляет корректный заголовок в результат, а зафиксированный словарь
+Material Symbols сохраняет upstream-метаданные Apache-2.0.
+
+### Сборка прежнего Electron-хоста (Backend + Frontend)
 
 ```bash
 dotnet build
@@ -22,7 +59,7 @@ dotnet build
 4. `CopyFrontendDist` — копирует `Sources/HyPrism.Launcher/Frontend/dist/` → `bin/.../wwwroot/`
 5. Стандартная компиляция .NET
 
-### Запуск
+### Запуск прежнего Electron-хоста
 
 ```bash
 dotnet run --project Sources/HyPrism.Launcher/HyPrism.Launcher.csproj

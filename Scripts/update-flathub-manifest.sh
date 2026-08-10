@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 
+# Copyright (C) 2026 HyPrism Launcher
+# SPDX-License-Identifier: GPL-3.0-only
+
+
 # This script fetches the latest Linux x64 tarball from the
 # HyPrism GitHub releases, computes its sha256 checksum and
 # updates the Flathub manifest at

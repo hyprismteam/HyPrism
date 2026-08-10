@@ -1,3 +1,8 @@
+<!--
+Copyright (C) 2026 HyPrism Launcher
+SPDX-License-Identifier: GPL-3.0-only
+-->
+
 # Configuration
 
 HyPrism stores its configuration in `config.json` inside the data directory.
@@ -5,6 +10,20 @@ HyPrism stores its configuration in `config.json` inside the data directory.
 ## Settings
 
 Access settings through the **Settings** page (gear icon in sidebar).
+
+### Native Settings page (Avalonia preview)
+
+- The native page groups all currently supported launcher preferences into General, Downloads, Java, Visual, Network, Graphics, Variables, Data, About, and Developer categories.
+- Category navigation stays in a compact wrapping row. The active category uses two dense columns when space allows and automatically collapses to one column on compact windows.
+- Switches and selectors are persisted immediately through `ISettingsService`. Changing the interface language reloads native labels and culture-sensitive dates without restarting the launcher. Text settings such as the authentication domain, custom Java path/JVM arguments, and game environment variables use an explicit **Save** action.
+- The Avalonia visual theme keeps its fixed white accent; the Visual category exposes the background, music, and news visibility controls without reintroducing a conflicting accent picker.
+
+### Native Dashboard (Avalonia preview)
+
+- The native home page is a focused launch screen rather than a statistics dashboard. The selected instance, its branch/version and readiness state sit directly over a masked full-surface background.
+- One white primary action changes between Select, Download, Play, Cancel and Stop. Installation progress is rendered inside the same launch area; activity notifications only fall back to the global overlay while another page is open.
+- The compact instance button opens instance management. On wider content areas, up to three instances also appear in a flat quick-switch strip along the bottom. Selecting one updates the launch target immediately; the strip disappears below 900 px of dashboard width so the launch action retains enough space.
+- Dashboard controls use explicit Avalonia templates without Fluent press scaling. Hover and selected states change only color and restrained surface opacity.
 
 ### General
 
@@ -23,6 +42,16 @@ Access settings through the **Settings** page (gear icon in sidebar).
 | Animations | Enable UI animations | true |
 | Transparency | Glass-morphism effects | true |
 | Background mode | Dashboard background style | default |
+
+### Native News page (Avalonia preview)
+
+- Open **News** in the sidebar to see the newest official Hytale posts. GitHub releases are excluded.
+- News uses the same dark-gray surface as the other native pages. Every fetched post, including the newest one, uses the same flat list row without a section heading, redundant source badge, edge arrow, or hover/selection outline. Rows gain only a subtle animated hover surface and a persistent selected surface; repeated clicks on the selected row are ignored. Short titles allow a two-line summary, while wrapped titles reserve more room for the headline. The feed column has its own slim scrollbar. **Load More** at the end requests the next page without adding a hover background; only its text color changes smoothly.
+- Covers, summaries, authors, dates, and categories are read from the official Hytale page. The feed is stored for 30 minutes and parsed articles for seven days under `Cache/News`; in-memory article view models and already decoded images are reused during the process lifetime. The reader waits briefly before showing its skeleton, so memory and file-cache hits do not flash a loading state; the opaque article surface also prevents a retired skeleton frame from showing through ready content. Network, AngleSharp parsing, article-model construction, and high-quality bitmap decoding run away from the UI thread. Large formatting trees are attached to Avalonia in small dispatcher batches so a long patch-notes post cannot monopolize an animation frame. Pending feed-cover work is cancelled during the compact transition. Different article URLs can load concurrently and duplicate requests for the same URL are coalesced.
+- On compact windows, selecting a row slides an opaque reader over the single-column feed with cubic easing and temporary edge-fade masks. The lightweight reader shell is prepared before the slide; heavy rich content and media start after it, while the outgoing article remains intact until the Back animation has finished. This prevents both an opening hitch on long posts and an empty-reader flash. After the slide, the text below the hero fades in as soon as its first batch is ready. A taller borderless toolbar above the cover uses balanced top/bottom spacing and always matches the cover width and inset. Its **Back** and **Link** actions remain fixed while the larger current title fades into the exact center after scrolling. Escape also returns to the list.
+- On wide windows, the feed stays on a subtly tinted left surface and the selected article opens in the right column without a separate divider line or redundant **Back** button. The borderless **Link** action is part of the hero cover and sits immediately above the article title. Article changes use a single short fade after the new cover and its dark mask are ready, so the hero never flashes unmasked.
+- The feed and reader use eased wheel scrolling without an immediate first-frame jump. Their slim scrollbars expose only the track and thumb, without line-step arrow buttons. Middle-click enables browser-style vertical auto-scroll: acceleration and deceleration are interpolated, the native cursor starts as four-way, changes to up/down for the current direction, and returns to four-way in the dead zone. Another middle click, a regular click, or Escape stops it. The reader also preserves headings, emphasis, compact quotes, nested ordered and unordered lists, collapsible technical sections, code and lazy-loaded media. Inline code is presented as a restrained translucent chip; full code blocks use a padded dark surface and subtle purple-gray border. Both use the bundled JetBrains Mono font. Collapsible headers use their full width for hover and click feedback, while trailing emotes remain centered beside the label. Headings use the font's natural line metrics so descenders remain visible. Paragraph-wrapped and plain list items use the same compact spacing. The cover metadata reads author, article type, and date; the site's generic SEO description is omitted from the article. Links inside an article are light purple without a permanent underline; they use a hand pointer, smoothly reveal the underline on hover, and open in the system browser. Blog emotes remain inline at their original relative sizes, while gallery images use full content width.
+- The borderless window remains resizable from every edge and corner; the pointer indicates the active resize direction. Its compact minimize, maximize and close controls smoothly brighten on hover, with the minimize bar aligned to the lower part of its button.
 
 ### Game
 
@@ -124,6 +153,8 @@ Instances/
 ## Profiles
 
 HyPrism supports multiple player profiles. Switch between profiles via the sidebar profile selector.
+The native sidebar labels the selected identity as `Hytale Account` when its profile has
+`IsOfficial: true`; all other selected profiles are shown as `Offline Account`.
 
 ### Profile Data
 

@@ -1,3 +1,6 @@
+// Copyright (C) 2026 HyPrism Launcher
+// SPDX-License-Identifier: GPL-3.0-only
+
 /// <reference types="vite/client" />
 
 // IPC layer: auto-generated from IpcService.cs by Scripts/generate-ipc.mjs

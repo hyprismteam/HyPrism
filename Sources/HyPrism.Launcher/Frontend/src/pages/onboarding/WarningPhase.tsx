@@ -1,3 +1,6 @@
+// Copyright (C) 2026 HyPrism Launcher
+// SPDX-License-Identifier: GPL-3.0-only
+
 import React from 'react';
 import { AlertTriangle, ArrowRight, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/Controls';

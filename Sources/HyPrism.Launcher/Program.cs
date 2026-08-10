@@ -1,8 +1,12 @@
-﻿using ElectronNET;
+﻿// Copyright (C) 2026 HyPrism Launcher
+// SPDX-License-Identifier: GPL-3.0-only
+
+using ElectronNET;
 using ElectronNET.API;
 using ElectronNET.API.Entities;
 using HyPrism.Services.Core.Infrastructure;
 using HyPrism.Services.Core.Ipc;
+using HyPrism.Services.Core.Platform;
 using HyPrism.Services.Game.Instance;
 using HyPrism.Services.User;
 using Microsoft.Extensions.DependencyInjection;
@@ -73,7 +77,12 @@ class Program
             Logger.Info("Boot", $"App Directory: {appDir}");
 
             // Initialize DI container
-            var services = Bootstrapper.Initialize();
+            var services = Bootstrapper.Initialize(services =>
+            {
+                services.AddSingleton<ClipboardService>();
+                services.AddSingleton<IClipboardService>(sp => sp.GetRequiredService<ClipboardService>());
+                services.AddSingleton<IpcService>();
+            });
             
             // Perform async initialization (fetch CurseForge key if needed)
             await Bootstrapper.InitializeAsync(services);

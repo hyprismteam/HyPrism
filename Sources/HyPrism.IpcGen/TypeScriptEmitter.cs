@@ -1,3 +1,6 @@
+// Copyright (C) 2026 HyPrism Launcher
+// SPDX-License-Identifier: GPL-3.0-only
+
 using System.Text;
 
 namespace HyPrism.IpcGen;
@@ -40,7 +43,13 @@ internal static class TypeScriptEmitter
 
     private static void EmitHeader(StringBuilder sb)
     {
+        // REUSE-IgnoreStart
         sb.AppendLine("""
+            /*
+            Copyright (C) 2026 HyPrism Launcher
+            SPDX-License-Identifier: GPL-3.0-only
+            */
+
             /*
              .-..-.      .---.       _
              : :; :      : .; :     :_;
@@ -56,6 +65,7 @@ internal static class TypeScriptEmitter
             */
 
             """);
+        // REUSE-IgnoreEnd
     }
 
     private static void EmitCoreHelpers(StringBuilder sb)

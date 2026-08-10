@@ -1,3 +1,8 @@
+<!--
+Copyright (C) 2026 HyPrism Launcher
+SPDX-License-Identifier: GPL-3.0-only
+-->
+
 # Introduction
 
 **HyPrism** is a cross-platform Hytale game launcher built with modern technologies.

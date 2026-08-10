@@ -1,3 +1,6 @@
+// Copyright (C) 2026 HyPrism Launcher
+// SPDX-License-Identifier: GPL-3.0-only
+
 import React, { useState, useEffect, useRef, memo } from 'react';
 
 // Import all bg_*.jpg and bg_*.png backgrounds

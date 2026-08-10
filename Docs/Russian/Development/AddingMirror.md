@@ -1,3 +1,8 @@
+<!--
+Copyright (C) 2026 HyPrism Launcher
+SPDX-License-Identifier: GPL-3.0-only
+-->
+
 # Добавление встроенного зеркала
 
 Это руководство для контрибьюторов, которые хотят добавить новое зеркало в **стандартный набор** HyPrism — зеркала, автоматически генерируемые при первом запуске через `MirrorLoaderService.GetDefaultMirrors()`.
@@ -31,9 +36,9 @@ VersionService.cs               ← Оркестрирует все источн
 
 | Файл | Назначение |
 |------|-----------|
-| `Services/Game/Sources/MirrorLoaderService.cs` | Определения дефолтных зеркал (`GetDefaultMirrors()`), логика загрузки |
-| `Services/Game/Sources/JsonMirrorSource.cs` | Обрабатывает оба типа: `pattern` и `json-index` |
-| `Services/Game/Sources/IVersionSource.cs` | Интерфейс + вспомогательные типы |
+| `Sources/HyPrism.Core/Game/Sources/MirrorLoaderService.cs` | Определения дефолтных зеркал (`GetDefaultMirrors()`), логика загрузки |
+| `Sources/HyPrism.Core/Game/Sources/JsonMirrorSource.cs` | Обрабатывает оба типа: `pattern` и `json-index` |
+| `Sources/HyPrism.Core/Game/Sources/IVersionSource.cs` | Интерфейс + вспомогательные типы |
 | `Models/MirrorMeta.cs` | Модель данных для схемы `.mirror.json` |
 
 Создавать новый C#-класс для каждого зеркала **не нужно**. Все зеркала используют `JsonMirrorSource`.
@@ -57,7 +62,7 @@ VersionService.cs               ← Оркестрирует все источн
 
 ### 2. Добавьте запись `MirrorMeta`
 
-Откройте `Services/Game/Sources/MirrorLoaderService.cs` и добавьте новую запись в список, возвращаемый `GetDefaultMirrors()`.
+Откройте `Sources/HyPrism.Core/Game/Sources/MirrorLoaderService.cs` и добавьте новую запись в список, возвращаемый `GetDefaultMirrors()`.
 
 **Для pattern-зеркала:**
 

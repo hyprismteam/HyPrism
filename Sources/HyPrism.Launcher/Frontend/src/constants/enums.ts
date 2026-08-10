@@ -1,3 +1,6 @@
+// Copyright (C) 2026 HyPrism Launcher
+// SPDX-License-Identifier: GPL-3.0-only
+
 /** Supported launcher UI language codes (BCP 47 format). */
 export enum Language {
     ENGLISH = 'en-US',

@@ -1,3 +1,6 @@
+// Copyright (C) 2026 HyPrism Launcher
+// SPDX-License-Identifier: GPL-3.0-only
+
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import { Language } from './constants/enums';

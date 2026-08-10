@@ -1,3 +1,8 @@
+<!--
+Copyright (C) 2026 HyPrism Launcher
+SPDX-License-Identifier: GPL-3.0-only
+-->
+
 # Testing Guide
 
 This document describes the unit testing approach for HyPrism, including project structure, how to run tests, and conventions for writing new tests.
@@ -7,8 +12,8 @@ This document describes the unit testing approach for HyPrism, including project
 ## Project Layout
 
 ```
-HyPrism.Tests/
-├── HyPrism.Tests.csproj
+Tests/HyPrism.Core.Tests/
+├── HyPrism.Core.Tests.csproj
 ├── GlobalUsings.cs
 ├── Core/
 │   ├── Infrastructure/
@@ -32,6 +37,8 @@ HyPrism.Tests/
     └── ProfileServiceTests.cs
 ```
 
+Avalonia headless and render tests live beside it in `Tests/HyPrism.Desktop.Tests/`.
+
 ---
 
 ## Stack
@@ -49,16 +56,16 @@ HyPrism.Tests/
 
 ```bash
 # Run all tests
-dotnet test HyPrism.Tests/
+dotnet test Tests/HyPrism.Core.Tests/
 
 # Run with verbose output
-dotnet test HyPrism.Tests/ --logger "console;verbosity=detailed"
+dotnet test Tests/HyPrism.Core.Tests/ --logger "console;verbosity=detailed"
 
 # Run a specific test class
-dotnet test HyPrism.Tests/ --filter "FullyQualifiedName~UtilityServiceTests"
+dotnet test Tests/HyPrism.Core.Tests/ --filter "FullyQualifiedName~UtilityServiceTests"
 
 # Run with code coverage
-dotnet test HyPrism.Tests/ --collect:"XPlat Code Coverage"
+dotnet test Tests/HyPrism.Core.Tests/ --collect:"XPlat Code Coverage"
 ```
 
 ---
@@ -97,7 +104,7 @@ All injectable services expose an interface. The table below lists every service
 | Service | Interface |
 |---------|-----------|
 | `BrowserService` | `IBrowserService` |
-| `ClipboardService` | `IClipboardService` |
+| Electron `ClipboardService` (legacy host adapter) | `IClipboardService` (Core contract) |
 | `FileDialogService` | `IFileDialogService` |
 | `GpuDetectionService` | `IGpuDetectionService` |
 | `RosettaService` | `IRosettaService` |
@@ -146,18 +153,18 @@ All injectable services expose an interface. The table below lists every service
 
 Mirror the production namespace, e.g.:
 ```
-Services/Game/Auth/AuthService.cs
+Sources/HyPrism.Core/Game/Auth/AuthService.cs
   ↓
-HyPrism.Tests/Game/Auth/AuthServiceTests.cs
+Tests/HyPrism.Core.Tests/Game/Auth/AuthServiceTests.cs
 ```
 
 ### Class structure
 
 ```csharp
-// HyPrism.Tests/Game/Example/MyServiceTests.cs
+// Tests/HyPrism.Core.Tests/Game/Example/MyServiceTests.cs
 using HyPrism.Services.Game.Example;
 
-namespace HyPrism.Tests.Game.Example;
+namespace HyPrism.Core.Tests.Game.Example;
 
 public class MyServiceTests : IDisposable
 {

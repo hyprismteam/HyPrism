@@ -416,7 +416,11 @@
     "hytale": "Hytale",
     "hyprism": "HyPrism",
     "loading": "Loading news...",
-    "readMore": "Read more on hytale.com",
+    "articleLoading": "Loading article...",
+    "selectArticle": "Select a news item to read it here.",
+    "articleLoadFailed": "The article could not be loaded. You can still open it on hytale.com.",
+    "readMore": "Link",
+    "loadMore": "Load More",
     "tryAgain": "Try Again",
     "disabled": "News is disabled",
     "enableInSettings": "Enable news in Settings",
@@ -920,6 +924,15 @@
     "previous": "Previous",
     "next": "Next",
     "segmentedControl": "Segmented control"
+  },
+  "desktopSettings": {
+    "description": "Launcher, game and system preferences",
+    "music": "Background music",
+    "musicHint": "Play launcher music while browsing",
+    "discordAnnouncementsHint": "Show launcher announcements received from Discord",
+    "defaultLocation": "Default system location",
+    "accountOffline": "Offline Account",
+    "accountHytale": "Hytale Account"
   },
   "social": {
     "github": "GitHub",

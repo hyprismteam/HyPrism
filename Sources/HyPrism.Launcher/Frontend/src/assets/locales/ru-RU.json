@@ -416,7 +416,11 @@
     "hytale": "Hytale",
     "hyprism": "HyPrism",
     "loading": "Загрузка...",
-    "readMore": "Читать на hytale.com",
+    "articleLoading": "Загрузка статьи...",
+    "selectArticle": "Выберите новость, чтобы прочитать её здесь.",
+    "articleLoadFailed": "Не удалось загрузить статью. Её всё ещё можно открыть на hytale.com.",
+    "readMore": "Ссылка",
+    "loadMore": "Загрузить ещё",
     "tryAgain": "Повторить",
     "disabled": "Новости отключены",
     "enableInSettings": "Включите новости в Настройках",
@@ -920,6 +924,15 @@
     "previous": "Предыдущий",
     "next": "Следующий",
     "segmentedControl": "Сегментный контрол"
+  },
+  "desktopSettings": {
+    "description": "Настройки лаунчера, игры и системы",
+    "music": "Фоновая музыка",
+    "musicHint": "Воспроизводить музыку в интерфейсе лаунчера",
+    "discordAnnouncementsHint": "Показывать в лаунчере объявления из Discord",
+    "defaultLocation": "Системная папка по умолчанию",
+    "accountOffline": "Офлайн-аккаунт",
+    "accountHytale": "Аккаунт Hytale"
   },
   "social": {
     "github": "GitHub",

@@ -1,3 +1,6 @@
+// Copyright (C) 2026 HyPrism Launcher
+// SPDX-License-Identifier: GPL-3.0-only
+
 import React from 'react';
 import { Check, Cpu, Monitor, HardDrive, Settings } from 'lucide-react';
 import type { UseOnboardingReturn } from '@/hooks/useOnboarding';

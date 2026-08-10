@@ -1,3 +1,6 @@
+// Copyright (C) 2026 HyPrism Launcher
+// SPDX-License-Identifier: GPL-3.0-only
+
 import { HardDrive, Loader2, Wifi } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAccentColor } from '@/contexts/AccentColorContext';

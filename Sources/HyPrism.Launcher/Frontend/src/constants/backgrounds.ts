@@ -1,3 +1,6 @@
+// Copyright (C) 2026 HyPrism Launcher
+// SPDX-License-Identifier: GPL-3.0-only
+
 /**
  * Background images for slideshow/wallpaper functionality.
  * Shared between SettingsModal, OnboardingModal, and other components.

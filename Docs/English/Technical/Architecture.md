@@ -1,4 +1,82 @@
+<!--
+Copyright (C) 2026 HyPrism Launcher
+SPDX-License-Identifier: GPL-3.0-only
+-->
+
 # Architecture
+
+## Avalonia migration status
+
+HyPrism is transitioning from Electron.NET to a native Avalonia 12 desktop host.
+During the transition both hosts remain available:
+
+```
+HyPrism.Core       shared .NET 10 models and services (no Electron dependency)
+       ↑                              ↑
+HyPrism.Desktop                 HyPrism.Launcher
+Avalonia 12 + MVVM              Electron.NET + React + IPC
+```
+
+`HyPrism.Core` physically owns the launcher models, dependency-registration bootstrapper,
+and the platform-neutral App, Infrastructure, Integration, Game, and User services.
+`HyPrism.Launcher` references that assembly and contains only the legacy Electron host,
+IPC transport/contracts, and Electron clipboard adapter. `HyPrism.Desktop` references the
+same Core assembly directly, so shared logic is compiled exactly once.
+
+The native shell uses compiled Avalonia bindings, `CommunityToolkit.Mvvm`, the
+existing JSON locale files, and locally bundled Google Sans fonts. It currently
+provides the application shell, real profile/instance data, launch/install action,
+progress/game-state notifications, and a native news feed backed by `INewsService`.
+The native Settings route is also service-backed; Instances, Mods, and Profiles remain migration placeholders.
+Its visual foundation uses a fixed white accent and rounded Material Symbols stored
+directly as weight-400 AXAML geometries. Navigation cross-fades between the
+package's outline/filled paths without Fluent hover or press effects. Explicit native
+move/resize zones support the custom window chrome and expose matching directional cursors.
+
+The Avalonia Dashboard is isolated in `DashboardView` and keeps launch orchestration in
+`MainWindowViewModel`. It presents the selected instance and a single stateful action over the
+background instead of duplicating Instances, Mods, and News as metric cards. Download activity is
+embedded in the launch surface, while a derived visibility state keeps the shared activity overlay
+available on other routes. A width state hides the three-item quick switcher below 900 px; selecting
+an item updates `IInstanceService` before rebuilding the presentation state.
+
+The native News route requests only official Hytale posts from the shared service;
+GitHub releases are not included in this page. The feed initially presents twelve posts as a uniform flat
+vertical list and pages forward in groups of eight up to the service limit. Below 1180 px of content width,
+an Avalonia `Carousel` and eased horizontal `PageSlide` transition between the feed and an opaque reader; temporary gradient masks soften content at both viewport edges. At 1180 px and above,
+the page becomes a master/detail grid with a fixed 420 px tinted feed surface and a scrollable article pane.
+The surface color itself separates the panes. Feed rows have animated hover/selected fills but no outline, permanent
+card fill, section label, arrow, or Hytale source badge. The compact reader toolbar observes the article offset through
+`SmoothScrollViewer`, always shares the hero's constrained width and horizontal inset, and fades in a larger, exactly
+centered title after leaving the top without moving either action.
+Wide readers omit Back and render the external action inside the hero above its title. Both actions remain transparent
+and borderless in every pointer state.
+Cover images load asynchronously, while the article text remains constrained for readability.
+`NewsService` parses the server-rendered Hytale HTML with AngleSharp instead of matching markup
+with regular expressions. The feed costs one request; a full article is fetched only on demand and converted into a sanitized formatting tree (paragraphs, headings,
+links, images, inline images, quotes, collapsible details, hierarchical lists, emphasis and code). Native list view models
+preserve nested ordered and unordered levels instead of flattening child lists into the parent row. Link
+interaction is hit-tested against each rendered text range, including wrapped ranges. Block media wrapped by Hytale in
+paragraph or formatting elements is normalized into first-class image blocks. Hytale `emote` and
+`emote-sticker` classes remain inline nodes rendered at 1.5 em and 4 em respectively. A paragraph
+that starts with a sticker is composed as a sticker-and-lead row followed by a full-width continuation,
+matching the source blog without line overlap. Avalonia renders that tree without executing remote HTML
+or JavaScript. Formatting-only whitespace around paragraph-wrapped list items is discarded so their
+vertical rhythm matches ordinary list items. The article header combines author, post categories and date;
+the site's generic SEO description is not rendered as article content. Sanitized `http` and `https` inline links and the explicit original-post action use the
+platform browser service, so navigation opens in the operating system's default browser. `NewsRichTextBlock` realizes inline code as a compact rounded `InlineUIContainer` chip and preserves text-layout positions for adjacent link hit testing. Its child text uses an explicit compact line height instead of inheriting the article paragraph metric, preventing chips from enlarging or overlapping wrapped lines. Both that chip and block-code controls use the bundled JetBrains Mono face; block code has its own padded, rounded surface. Theme selectors hide the Fluent `PART_LineUpButton` and `PART_LineDownButton` template parts on both news scroll viewers while retaining thumb dragging, wheel input and auto-scroll.
+AngleSharp parsing, article view-model construction, and bitmap decoding run outside the UI dispatcher; pending feed-cover work is cancelled while the compact transition starts. The feed is persisted for 30 minutes and article trees for seven days below `Cache/News`. Per-URL in-flight tasks coalesce duplicate opens without serializing different articles, while repeated selection of the active row is ignored. The reader delays its pulsing skeleton long enough for fast cache hits and makes the ready surface opaque, retains completed view models and decoded bitmaps, and adds rich content controls to the dispatcher in small batches rather than blocking one frame with the entire tree. Compact selection publishes the lightweight incoming reader state before changing the `Carousel` index; rich-block realization and image loading wait until the slide has finished, then yield a full compositor frame between small batches. Once the first text batch exists, only the body below the hero fades in; the toolbar and hero remain stable. Collapsed details expose no child item source until expanded, avoiding hidden control-tree construction. Back navigation keeps the outgoing model alive through the slide. Wide selection hides the old host without animating it, lets the new hero image and gradient mask render together, and only then performs a short fade-in; this avoids the previous double-fade and unmasked first frame. `SmoothScrollViewer` uses eased wheel targets and interpolates middle-click velocity rather than applying movement from pointer events; it selects native four-way, upward, or downward cursors from the current target direction.
+
+The Avalonia Settings route uses a compact category strip and responsive one/two-column content grid.
+It binds existing preference switches and selectors directly to `ISettingsService`; editable text fields
+are persisted by explicit save commands. Language selection reloads `JsonLocalizer`, the current cultures,
+top-level labels, settings data, account text, and news dates without recreating the window or the settings
+view model. The existing selectors receive refreshed display strings in place, preventing binding-driven
+selection changes from writing the language again. This keeps configuration ownership in the shared service layer.
+
+`IGameLaunchCoordinator` is the first transport-neutral application entry point.
+Both the Electron `hyprism:game:launch` channel and the Avalonia ViewModel call it,
+so launch orchestration no longer lives inside the IPC adapter.
 
 ## Overview
 
@@ -7,9 +85,8 @@ HyPrism follows a **Console + IPC + React SPA** architecture pattern:
 ```
 ┌─────────────────────────────────────────────────────┐
 │  .NET Console App  (Program.cs)                     │
-│  ├── Bootstrapper.cs (DI container)                 │
-│  ├── Services/ (business logic)                     │
-│  └── IpcService.cs (IPC channel registry)           │
+│  ├── HyPrism.Core (models, DI, launcher services)   │
+│  └── IpcService.cs (Electron IPC adapter)           │
 │         ↕ Electron.NET socket bridge                │
 │  ┌─────────────────────────────────────────────┐    │
 │  │  Electron Main Process                      │    │
@@ -93,17 +170,19 @@ if (!isLoopback) {
 
 ## Dependency Injection
 
-All services are registered as singletons in `Bootstrapper.cs`:
+Shared services are registered as singletons in `Sources/HyPrism.Core/Bootstrapper.cs`.
+Each host may append its own adapters before the service provider is built:
 
 ```csharp
-var services = new ServiceCollection();
-services.AddSingleton<ConfigService>();
-services.AddSingleton<IpcService>();
-// ... etc
-return services.BuildServiceProvider();
+var provider = Bootstrapper.Initialize(services =>
+{
+    services.AddSingleton<ClipboardService>();
+    services.AddSingleton<IpcService>();
+});
 ```
 
-`IpcService` receives all other services through constructor injection and acts as the central bridge between React and .NET.
+The Electron host supplies `IpcService` and its clipboard implementation; neither is a dependency of Core.
+`IpcService` resolves shared contracts such as `IModService`, rather than reaching into internal Core implementations.
 
 ## Log Interception
 

@@ -1,3 +1,8 @@
+<!--
+Copyright (C) 2026 HyPrism Launcher
+SPDX-License-Identifier: GPL-3.0-only
+-->
+
 # Введение
 
 **HyPrism** — это кроссплатформенный лаунчер игры Hytale, созданный с использованием современных технологий.

@@ -1,3 +1,6 @@
+// Copyright (C) 2026 HyPrism Launcher
+// SPDX-License-Identifier: GPL-3.0-only
+
 import React, { useMemo } from 'react';
 import { Github, Bug, Sparkles, Users } from 'lucide-react';
 import { openUrl } from '@/utils/openUrl';

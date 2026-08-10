@@ -1,3 +1,6 @@
+// Copyright (C) 2026 HyPrism Launcher
+// SPDX-License-Identifier: GPL-3.0-only
+
 /**
  * Generates a random display nickname in the format `AdjectiveNoun####` (e.g. `"ZestyShark3466"`).
  * The adjective is at most 5 characters, the noun at most 6 characters, and the suffix is a

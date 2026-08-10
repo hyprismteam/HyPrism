@@ -1,14 +1,50 @@
+<!--
+Copyright (C) 2026 HyPrism Launcher
+SPDX-License-Identifier: GPL-3.0-only
+-->
+
 # Building
 
 ## Prerequisites
 
 - **.NET 10 SDK**
-- **Node.js 20+** (includes npm)
+- **Node.js 20+** (includes npm; required only for the legacy Electron host)
 - **Git**
 
 ## Development
 
-### Full Build (Backend + Frontend)
+### Native Avalonia Preview
+
+The first native vertical slice can be built, run, and tested without Node.js:
+
+```bash
+dotnet build Sources/HyPrism.Desktop/HyPrism.Desktop.csproj
+dotnet run --project Sources/HyPrism.Desktop/HyPrism.Desktop.csproj
+dotnet test Tests/HyPrism.Desktop.Tests/HyPrism.Desktop.Tests.csproj
+```
+
+The preview opens at 1280×800 (minimum 1024×700), embeds Google Sans and JetBrains Mono as Avalonia resources,
+and uses the existing .NET profile, instance, download, progress, and launch services directly.
+
+Material Symbols are stored directly as weight-400 `StreamGeometry` resources in
+`Sources/HyPrism.Desktop/Assets/Icons/MaterialSymbols.axaml`. Avalonia builds consume
+this checked-in dictionary and do not require Node.js or a separate icon toolchain.
+
+License metadata follows the REUSE specification. Human-facing texts live in `Licenses/`;
+because the REUSE tool requires the conventional uppercase name, temporarily rename it
+before a local check (`mv Licenses LICENSES`, run `reuse lint`, then `mv LICENSES Licenses`).
+`.github/workflows/reuse.yml` performs that compatibility rename automatically before
+the official REUSE action. Google Sans and JetBrains Mono are both annotated as `OFL-1.1`.
+
+Comment-capable project files carry an explicit `Copyright (C) 2026 HyPrism Launcher`
+and GPL-3.0-only SPDX header. JSON, fonts, images, audio, and other
+formats that cannot safely contain comments are covered by `REUSE.toml` annotations.
+Check existing headers with `python3 Scripts/license_headers.py --check`, or add missing headers
+mechanically with `python3 Scripts/license_headers.py --write`. CI runs the check before
+`reuse lint`; generated IPC output emits its appropriate header, while the checked-in
+Material Symbols dictionary retains the upstream Apache-2.0 metadata.
+
+### Legacy Electron Build (Backend + Frontend)
 
 ```bash
 dotnet build
@@ -22,7 +58,7 @@ This single command runs the entire MSBuild pipeline:
 4. `CopyFrontendDist` — copies `Sources/HyPrism.Launcher/Frontend/dist/` → `bin/.../wwwroot/`
 5. Standard .NET compilation
 
-### Run
+### Run the Legacy Electron Host
 
 ```bash
 dotnet run --project Sources/HyPrism.Launcher/HyPrism.Launcher.csproj

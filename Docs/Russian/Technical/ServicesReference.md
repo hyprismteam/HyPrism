@@ -1,11 +1,16 @@
+<!--
+Copyright (C) 2026 HyPrism Launcher
+SPDX-License-Identifier: GPL-3.0-only
+-->
+
 # Справочник сервисов
 
 Все сервисы регистрируются как синглтоны в `Bootstrapper.cs` и внедряются через конструктор.
 
-## Основные сервисы (`Services/Core/`)
+## Основные сервисы (`Sources/HyPrism.Core/Core/`)
 
 ### IpcService
-- **Файл:** `Services/Core/IpcService.cs`
+- **Файл:** `Sources/HyPrism.Launcher/Services/Core/Ipc/IpcService.cs` (legacy Electron-адаптер)
 - **Назначение:** Центральный реестр IPC-каналов — единый источник истины для всего взаимодействия React ↔ .NET
 - **Ключевой метод:** `RegisterAll()` — регистрирует все IPC-обработчики
 - **Аннотации:** Содержит XML-комментарии `@type` и `@ipc`, используемые генератором кода
@@ -20,7 +25,7 @@
 - **Правило загрузки иконок на фронтенде:** в списке инстансов запросы иконок выполняются последовательно (не параллельно), чтобы исключить смешивание ответов в общем IPC reply-канале.
 
 ### ConfigService
-- **Файл:** `Services/Core/ConfigService.cs`
+- **Файл:** `Sources/HyPrism.Core/Core/Infrastructure/ConfigService.cs`
 - **Тип:** Singleton
 - **Назначение:** Конфигурация приложения (сохраняется в JSON)
 - **Пути конфигурации:**
@@ -29,31 +34,38 @@
   - macOS: `~/Library/Application Support/HyPrism/config.json`
 
 ### Logger
-- **Файл:** `Services/Core/Logger.cs`
+- **Файл:** `Sources/HyPrism.Core/Core/Infrastructure/Logger.cs`
 - **Тип:** Статический класс
 - **Назначение:** Структурированное логирование (бэкенд Serilog + цветной вывод в консоль + буфер в памяти)
 - **Методы:** `Info()`, `Success()`, `Warning()`, `Error()`, `Debug()`, `Progress()`
 - **Файлы логов:** `{appDir}/Logs/{timestamp}.log`
 
 ### LocalizationService
-- **Файл:** `Services/Core/LocalizationService.cs`
+- **Файл:** `Sources/HyPrism.Core/Core/App/LocalizationService.cs`
 - **Тип:** Singleton (паттерн Instance)
 - **Назначение:** Переключение языков в реальном времени с поддержкой вложенных ключей
 - **Файлы локалей:** `Assets/Locales/{code}.json`
 
 ### BrowserService
-- **Файл:** `Services/Core/BrowserService.cs`
+- **Файл:** `Sources/HyPrism.Core/Core/Platform/BrowserService.cs`
 - **Назначение:** Открытие URL в системном браузере по умолчанию
 
 ### DiscordService
-- **Файл:** `Services/Core/DiscordService.cs`
+- **Файл:** `Sources/HyPrism.Core/Core/Integration/DiscordService.cs`
 - **Назначение:** Интеграция с Discord Rich Presence
 
 ### GitHubService
-- **Файл:** `Services/Core/GitHubService.cs`
+- **Файл:** `Sources/HyPrism.Core/Core/Integration/GitHubService.cs`
 - **Назначение:** Проверка релизов и функция самообновления
 
-## Игровые сервисы (`Services/Game/`)
+### NewsService
+- **Файл:** `Sources/HyPrism.Core/Core/Integration/NewsService.cs`
+- **Назначение:** Загружает официальную ленту Hytale и лениво получает полные материалы.
+- **Парсинг:** AngleSharp читает серверный DOM; browser automation и регулярные выражения для разбора HTML не используются.
+- **Модель статьи:** `GetNewsArticleAsync` возвращает безопасное рекурсивное дерево контента и принимает только официальные HTTPS-ссылки новостей Hytale.
+- **Кэш:** Лента и полные статьи сохраняются на 30 минут.
+
+## Игровые сервисы (`Sources/HyPrism.Core/Game/`)
 
 ### GameSessionService
 - **Назначение:** Управление жизненным циклом игры — загрузка, установка, патчинг, запуск
@@ -74,7 +86,7 @@
 - **Linux NVIDIA EGL fix:** в режиме dedicated launcher экспортирует `__EGL_VENDOR_LIBRARY_FILENAMES` в обнаруженный NVIDIA GLVND vendor JSON (например, `/usr/share/glvnd/egl_vendor.d/10_nvidia.json`), чтобы исключить fallback в `llvmpipe` на затронутых системах.
 
 ### ClientPatcher ⚠️
-- **Файл:** `Services/Game/ClientPatcher.cs`
+- **Файл:** `Sources/HyPrism.Core/Game/Launch/ClientPatcher.cs`
 - **КРИТИЧЕСКИЙ:** Бинарные манипуляции для целостности игры
 - **Правило:** НИКОГДА не изменяйте без явных инструкций
 
@@ -87,7 +99,7 @@
 - **Политика release-загрузок:** Для mirror `release` лаунчер предпочитает полные standalone-сборки; метаданные патчей остаются в кэше для будущих сценариев обновления
 
 ### IVersionSource
-- **Файл:** `Services/Game/Sources/IVersionSource.cs`
+- **Файл:** `Sources/HyPrism.Core/Game/Sources/IVersionSource.cs`
 - **Диагностический layout:** Каждый источник отдает `LayoutInfo` с тремя явными полями:
   - где загружаются полные сборки (`FullBuildLocation`)
   - где загружаются diff-патчи (`PatchLocation`)
@@ -95,24 +107,25 @@
 - **Цель:** Снизить неоднозначность в поведении mirror patch/full и ускорить диагностику ошибочных URL
 
 ### JsonMirrorSource
-- **Файл:** `Services/Game/Sources/JsonMirrorSource.cs`
+- **Файл:** `Sources/HyPrism.Core/Game/Sources/JsonMirrorSource.cs`
 - **Назначение:** Универсальная реализация зеркал на основе JSON мета-дескрипторов (`Mirrors/*.mirror.json`)
 - **Типы источников:** `pattern` (шаблоны URL + обнаружение версий) и `json-index` (единый API endpoint)
 - **Цепочка патчей:** `GetPatchChainAsync` строит полную цепочку патчей из известных версий + URL-шаблонов, позволяя VersionService кэшировать патчи зеркал наравне с official
 - **Тест скорости:** Поддерживает тестирование скорости зеркала с измерением пинга и скорости загрузки
 
 ### HytaleVersionSource
-- **Файл:** `Services/Game/Sources/HytaleVersionSource.cs`
+- **Файл:** `Sources/HyPrism.Core/Game/Sources/HytaleVersionSource.cs`
 - **Назначение:** Официальный аутентифицированный источник версий (`account-data.hytale.com/patches`)
 - **Цепочка патчей:** `GetPatchChainAsync` получает шаги патчей через API-запрос `from_build=1`
 - **Совместимость заголовков:** Отправляет launcher-совместимые заголовки (`User-Agent`, `x-hytale-launcher-version`, `x-hytale-launcher-branch`) и сохраняет retry с обновлением токена при 401/403
 
 ### ModService
 - **Назначение:** Просмотр, поиск и управление модами (интеграция с CurseForge)
+- **Контракт директории:** `IModService.GetOrCreateModsDirectory` возвращает пригодный instance-local путь `UserData/Mods` и удаляет конфликтующий обычный файл, который некоторые сборки игры создают по этому пути.
 - **Fallback для URL загрузки:** если CurseForge возвращает пустой `downloadUrl`, а `/download-url` отвечает `403` или пустым payload, сервис вычисляет детерминированный CDN URL по `fileId + fileName`.
 - **Совместимость версий:** Моды с конкретным `ServerVersion` в `manifest.json` JAR (формат: `YYYY.MM.DD-<hash>`) автоматически помещаются в карантин, если версия установленного сервера не совпадает. Моды с `ServerVersion: "*"` (wildcard) всегда совместимы.
 
-## Пользовательские сервисы (`Services/User/`)
+## Пользовательские сервисы (`Sources/HyPrism.Core/User/`)
 
 ### ProfileService
 - **Назначение:** CRUD-операции с профилями игроков

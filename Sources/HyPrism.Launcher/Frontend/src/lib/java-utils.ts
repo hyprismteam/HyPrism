@@ -1,3 +1,6 @@
+// Copyright (C) 2026 HyPrism Launcher
+// SPDX-License-Identifier: GPL-3.0-only
+
 /**
  * Shared Java argument utility functions.
  * Used by useSettings and useJavaSettings hooks.

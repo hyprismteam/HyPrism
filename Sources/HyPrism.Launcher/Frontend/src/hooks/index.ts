@@ -1,3 +1,6 @@
+// Copyright (C) 2026 HyPrism Launcher
+// SPDX-License-Identifier: GPL-3.0-only
+
 // Instance hooks
 export * from './useInstanceActions';
 export * from './useModManager';

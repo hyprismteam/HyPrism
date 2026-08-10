@@ -1,4 +1,9 @@
 /*
+Copyright (C) 2026 HyPrism Launcher
+SPDX-License-Identifier: GPL-3.0-only
+*/
+
+/*
  .-..-.      .---.       _
  : :; :      : .; :     :_;
  :    :.-..-.:  _.'.--. .-. .--. ,-.,-.,-.
@@ -201,7 +206,19 @@ export interface NewsItemResponse {
   publishedAt: string;
   author: string;
   imageUrl?: string | null;
+  categories: string[];
   source: string;
+}
+
+export interface NewsArticleResponse {
+  title: string;
+  excerpt: string;
+  url: string;
+  publishedAt: string;
+  author: string;
+  imageUrl?: string | null;
+  categories: string[];
+  content: NewsContentNode[];
 }
 
 export interface ProfileSnapshot {
@@ -269,7 +286,9 @@ export interface SettingsSnapshot {
   minimizeToTray?: boolean | null;
 }
 
-export type UpdateSettingsRequest = Record<string, any>;
+export interface UpdateSettingsRequest {
+  updates: Record<string, JsonElement>;
+}
 
 export interface MirrorSpeedTestResult {
   mirrorId: string;
@@ -515,6 +534,17 @@ export interface VersionInfo {
   isLatest: boolean;
 }
 
+export interface NewsContentNode {
+  kind: string;
+  text?: string | null;
+  url?: string | null;
+  imageUrl?: string | null;
+  altText?: string | null;
+  imagePresentation?: string | null;
+  level?: number | null;
+  children: NewsContentNode[];
+}
+
 export interface HytaleAccountProfile {
   username: string;
   uuid: string;
@@ -639,6 +669,7 @@ const _network = {
 
 const _news = {
   get: () => invoke<NewsItemResponse[]>('hyprism:news:get', {}),
+  getArticle: (data: string) => invoke<NewsArticleResponse | null>('hyprism:news:getArticle', data),
 };
 
 const _profile = {

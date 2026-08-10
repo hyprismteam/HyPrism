@@ -1,13 +1,17 @@
+<!--
+Copyright (C) 2026 HyPrism Launcher
+SPDX-License-Identifier: GPL-3.0-only
+-->
+
 # Project Structure
 
 ```
 HyPrism/
 ├── HyPrism.sln                 # Solution file (contains Sources/ folder)
 │
-└── Sources/                    # Main source directory
+├── Sources/                    # Production projects
     ├── HyPrism.Launcher/       # Main launcher application (.NET 10 + Electron.NET)
     │   ├── Program.cs          # Entry point: Console → Electron bootstrap
-    │   ├── Bootstrapper.cs     # DI container setup
     │   ├── HyPrism.Launcher.csproj  # Project file with MSBuild pipeline
     │   │
     │   ├── Frontend/           # React SPA (Vite + TypeScript)
@@ -46,33 +50,9 @@ HyPrism/
     │   │   ├── tsconfig*.json      # TypeScript configs
     │   │   └── package.json        # Frontend dependencies
     │   │
-    │   ├── Services/               # .NET Service Layer
-    │   │   ├── Core/               # Infrastructure services
-    │   │   │   ├── App/            # Application services (Config, Settings, Update)
-    │   │   │   ├── Infrastructure/ # Logger, ConfigService, LocalizationService
-    │   │   │   ├── Integration/    # External integrations (Discord RPC, News, GitHub)
-    │   │   │   ├── Ipc/            # IpcService - Central IPC channel registry
-    │   │   │   └── Platform/       # Platform-specific utilities
-    │   │   ├── Game/               # Game logic services
-    │   │   │   ├── Instance/       # Instance management (InstanceService)
-    │   │   │   ├── Launch/         # Game launching (GameLauncher, LaunchService)
-    │   │   │   ├── Download/       # Download management
-    │   │   │   ├── Mod/            # Mod management
-    │   │   │   ├── Auth/           # Hytale authentication
-    │   │   │   ├── Butler/         # Butler patching tool
-    │   │   │   ├── Asset/          # Game assets and avatars
-    │   │   │   └── Version/        # Version management
-    │   │   └── User/               # User-related services
-    │   │       ├── ProfileService.cs   # Player profiles (nick, UUID)
-    │   │       ├── ProfileManagementService.cs  # Profile operations
-    │   │       ├── SkinService.cs      # Skin management and backup
-    │   │       └── HytaleAuthService.cs # Hytale account authentication
-    │   │
-    │   ├── Models/                 # Data models (POCOs)
-    │   │   ├── Config.cs           # Configuration model
-    │   │   ├── Profile.cs          # Player profile model
-    │   │   ├── InstanceMeta.cs     # Instance metadata
-    │   │   └── ...
+    │   ├── Services/Core/          # Electron-specific adapters only
+    │   │   ├── Ipc/                # IPC attributes, contracts, and bridge
+    │   │   └── Platform/           # Electron clipboard implementation
     │   │
     │   ├── Properties/             # Build/package metadata and platform assets
     │   │   ├── linux/              # Linux metainfo + flatpak metadata
@@ -83,13 +63,30 @@ HyPrism/
     │       ├── index.html          # Production entry point
     │       └── assets/             # Compiled JS/CSS bundles
     │
-    ├── HyPrism.IpcGen/             # IPC code generator (Roslyn-based)
+    ├── HyPrism.Core/               # Electron-free launcher logic
+    │   ├── Bootstrapper.cs         # Shared DI graph with host extension point
+    │   ├── Models/                 # Configuration, profile, instance, news, and game models
+    │   ├── Core/                   # App, infrastructure, integration, and platform abstractions
+    │   ├── Game/                   # Auth, assets, downloads, instances, launch, mods, and versions
+    │   ├── User/                   # Profiles, identities, skins, tokens, and Hytale auth
+    │   └── HyPrism.Core.csproj
+    │
+    ├── HyPrism.Desktop/            # Native Avalonia 12 desktop host
+    │   ├── Views/                   # AXAML views and native window shell
+    │   ├── ViewModels/              # MVVM state, news presentation, and service orchestration
+    │   ├── Themes/                  # Shared Avalonia styles and palette
+    │   ├── Localization/            # Adapter for the existing locale JSON files
+    │   ├── Assets/Fonts/            # Embedded Google Sans font files
+    │   └── Assets/Icons/            # Checked-in Material Symbols AXAML geometries
+    │
+    └── HyPrism.IpcGen/             # IPC code generator (Roslyn-based)
     │   ├── Program.cs              # Codegen entry point
     │   ├── HyPrism.IpcGen.csproj   # Codegen project file
     │   └── ...                     # Roslyn analysis logic
-    │
-    └── HyPrism.Tests/              # Test project
-        └── HyPrism.Tests.csproj
+│
+├── Tests/                        # Test projects kept outside production sources
+│   ├── HyPrism.Core.Tests/       # Unit tests for shared launcher logic
+│   └── HyPrism.Desktop.Tests/    # Avalonia headless layout/render tests
 │
 ├── Scripts/                      # Build and utility scripts
 │   ├── publish.sh                # Platform publish script
@@ -108,6 +105,11 @@ HyPrism/
 
 ## Important Notes
 
+- **`HyPrism.Core`** owns the shared launcher models, services, and dependency graph; it has no Electron dependency
+- **`HyPrism.Core`** keeps its service domains directly at project root (`Core/`, `Game/`, and `User/`); there is no intermediate `Services/` directory
+- **`HyPrism.Launcher`** is now a thin legacy host containing Electron startup, IPC transport/contracts, and the Electron clipboard adapter
+- **`Tests/`** contains `HyPrism.Core.Tests` and `HyPrism.Desktop.Tests`; production projects remain under `Sources/`
+- **`HyPrism.Desktop`** currently contains the native shell, dashboard launch/install vertical slice, a service-backed News route with an adaptive in-app article reader, and a responsive service-backed Settings route; Instances, Mods, and Profiles remain migration placeholders
 - **`Sources/HyPrism.Launcher/Frontend/src/lib/ipc.ts`** is auto-generated by the `HyPrism.IpcGen` project — never edit manually
 - **`Sources/HyPrism.Launcher/Frontend/src/assets/`** contains all frontend static resources (images, locales, backgrounds)
 - **`Sources/HyPrism.Launcher/wwwroot/`** is generated during build — do not edit manually

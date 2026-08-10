@@ -1,3 +1,6 @@
+// Copyright (C) 2026 HyPrism Launcher
+// SPDX-License-Identifier: GPL-3.0-only
+
 import { useCallback } from 'react';
 import { ipc, invoke, type SaveInfo } from '@/lib/ipc';
 import type { InstalledVersionInfo } from '@/types';

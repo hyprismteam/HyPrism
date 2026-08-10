@@ -1,3 +1,6 @@
+# Copyright (C) 2026 HyPrism Launcher
+# SPDX-License-Identifier: GPL-3.0-only
+
 name: Bug Report
 description: Report a bug or unexpected behavior in HyPrism
 title: "[Bug]: "

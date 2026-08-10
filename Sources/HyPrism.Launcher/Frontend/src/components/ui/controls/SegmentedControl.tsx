@@ -1,3 +1,6 @@
+// Copyright (C) 2026 HyPrism Launcher
+// SPDX-License-Identifier: GPL-3.0-only
+
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 export function SegmentedControl<TValue extends string>({

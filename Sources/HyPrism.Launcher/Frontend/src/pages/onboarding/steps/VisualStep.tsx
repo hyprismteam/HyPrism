@@ -1,3 +1,6 @@
+// Copyright (C) 2026 HyPrism Launcher
+// SPDX-License-Identifier: GPL-3.0-only
+
 import React from 'react';
 import { Check, Palette, Image } from 'lucide-react';
 import { ACCENT_COLORS } from '@/constants/colors';

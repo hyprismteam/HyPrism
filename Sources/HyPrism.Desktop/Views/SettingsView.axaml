@@ -1,0 +1,344 @@
+<!--
+Copyright (C) 2026 HyPrism Launcher
+SPDX-License-Identifier: GPL-3.0-only
+-->
+
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:HyPrism.Desktop.ViewModels"
+             x:Class="HyPrism.Desktop.Views.SettingsView"
+             x:Name="SettingsRoot"
+             x:DataType="vm:SettingsViewModel">
+  <UserControl.Resources>
+    <DataTemplate x:Key="SettingChoiceTemplate" x:DataType="vm:SettingChoiceViewModel">
+      <TextBlock Text="{Binding Display}" TextWrapping="NoWrap" />
+    </DataTemplate>
+    <DataTemplate x:Key="SettingCategoryTemplate" x:DataType="vm:SettingCategoryViewModel">
+      <Button Classes="settingsCategory"
+              Classes.selected="{Binding IsSelected}"
+              Command="{Binding DataContext.SelectCategoryCommand, ElementName=SettingsRoot}"
+              CommandParameter="{Binding}">
+        <TextBlock Text="{Binding Label}" TextWrapping="NoWrap" />
+      </Button>
+    </DataTemplate>
+  </UserControl.Resources>
+
+  <Grid RowDefinitions="Auto,Auto,*" Background="{DynamicResource SurfaceBrush}">
+    <Grid Margin="28,24,28,14" ColumnDefinitions="*,Auto">
+      <StackPanel Spacing="3">
+        <TextBlock Text="{Binding PageTitle}" FontSize="28" FontWeight="Bold" />
+        <TextBlock Text="{Binding PageDescription}" Classes="muted" FontSize="13" />
+      </StackPanel>
+      <TextBlock Grid.Column="1"
+                 Text="{Binding StatusMessage}"
+                 FontSize="20"
+                 VerticalAlignment="Center"
+                 Foreground="#A9E8BE" />
+    </Grid>
+
+    <ScrollViewer Grid.Row="1"
+                  Margin="24,0,24,12"
+                  HorizontalScrollBarVisibility="Hidden"
+                  VerticalScrollBarVisibility="Disabled">
+      <ItemsControl ItemsSource="{Binding Categories}"
+                    ItemTemplate="{StaticResource SettingCategoryTemplate}">
+        <ItemsControl.ItemsPanel>
+          <ItemsPanelTemplate>
+            <WrapPanel Orientation="Horizontal" ItemHeight="38" />
+          </ItemsPanelTemplate>
+        </ItemsControl.ItemsPanel>
+      </ItemsControl>
+    </ScrollViewer>
+
+    <ScrollViewer x:Name="SettingsContent"
+                  Grid.Row="2"
+                  Classes="settingsScroll"
+                  SizeChanged="OnSettingsContentSizeChanged"
+                  HorizontalScrollBarVisibility="Disabled"
+                  VerticalScrollBarVisibility="Auto">
+      <Grid Margin="24,0,24,40" MaxWidth="1240" HorizontalAlignment="Stretch">
+        <UniformGrid Classes="settingsColumns" Columns="2" IsVisible="{Binding IsGeneral}">
+          <StackPanel Margin="0,0,7,0" Spacing="12">
+            <TextBlock Text="{Binding GeneralTitle}" Classes="settingsSectionTitle" />
+            <Border Classes="settingsCard">
+              <StackPanel Spacing="10">
+                <TextBlock Text="{Binding LanguageLabel}" FontWeight="SemiBold" />
+                <TextBlock Text="{Binding LanguageHint}" Classes="muted" FontSize="12" />
+                <ComboBox ItemsSource="{Binding Languages}"
+                          ItemTemplate="{StaticResource SettingChoiceTemplate}"
+                          SelectedItem="{Binding SelectedLanguage}" />
+              </StackPanel>
+            </Border>
+            <Border Classes="settingsCard">
+              <StackPanel Spacing="10">
+                <TextBlock Text="{Binding UpdateChannelLabel}" FontWeight="SemiBold" />
+                <TextBlock Text="{Binding UpdateChannelHint}" Classes="muted" FontSize="12" />
+                <ComboBox ItemsSource="{Binding LauncherBranches}"
+                          ItemTemplate="{StaticResource SettingChoiceTemplate}"
+                          SelectedItem="{Binding SelectedLauncherBranch}" />
+              </StackPanel>
+            </Border>
+          </StackPanel>
+          <StackPanel Margin="7,0,0,0" Spacing="12">
+            <TextBlock Text=" " Classes="settingsSectionTitle" />
+            <Border Classes="settingsCard">
+              <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                <StackPanel Spacing="3">
+                  <TextBlock Text="{Binding CloseAfterLaunchLabel}" FontWeight="SemiBold" />
+                  <TextBlock Text="{Binding CloseAfterLaunchHint}" Classes="muted" FontSize="12" />
+                </StackPanel>
+                <ToggleSwitch Grid.Column="1" IsChecked="{Binding CloseAfterLaunch}" />
+              </Grid>
+            </Border>
+            <Border Classes="settingsCard">
+              <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                <StackPanel Spacing="3">
+                  <TextBlock Text="{Binding AlphaModsLabel}" FontWeight="SemiBold" />
+                  <TextBlock Text="{Binding AlphaModsHint}" Classes="muted" FontSize="12" />
+                </StackPanel>
+                <ToggleSwitch Grid.Column="1" IsChecked="{Binding ShowAlphaMods}" />
+              </Grid>
+            </Border>
+            <Border Classes="settingsCard">
+              <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                <StackPanel Spacing="3">
+                  <TextBlock Text="{Binding DiscordAnnouncementsLabel}" FontWeight="SemiBold" />
+                  <TextBlock Text="{Binding DiscordAnnouncementsHint}" Classes="muted" FontSize="12" />
+                </StackPanel>
+                <ToggleSwitch Grid.Column="1" IsChecked="{Binding ShowDiscordAnnouncements}" />
+              </Grid>
+            </Border>
+          </StackPanel>
+        </UniformGrid>
+
+        <UniformGrid Classes="settingsColumns" Columns="2" IsVisible="{Binding IsDownloads}">
+          <StackPanel Margin="0,0,7,0" Spacing="12">
+            <TextBlock Text="{Binding DownloadsTitle}" Classes="settingsSectionTitle" />
+            <Border Classes="settingsCard">
+              <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                <StackPanel Spacing="3">
+                  <TextBlock Text="{Binding LaunchAfterDownloadLabel}" FontWeight="SemiBold" />
+                  <TextBlock Text="{Binding LaunchAfterDownloadHint}" Classes="muted" FontSize="12" />
+                </StackPanel>
+                <ToggleSwitch Grid.Column="1" IsChecked="{Binding LaunchAfterDownload}" />
+              </Grid>
+            </Border>
+          </StackPanel>
+          <StackPanel Margin="7,0,0,0" Spacing="12">
+            <TextBlock Text=" " Classes="settingsSectionTitle" />
+            <Border Classes="settingsInfoCard">
+              <TextBlock Text="{Binding DownloadsInfo}" Classes="muted" FontSize="13" />
+            </Border>
+          </StackPanel>
+        </UniformGrid>
+
+        <UniformGrid Classes="settingsColumns" Columns="2" IsVisible="{Binding IsJava}">
+          <StackPanel Margin="0,0,7,0" Spacing="12">
+            <TextBlock Text="{Binding JavaTitle}" Classes="settingsSectionTitle" />
+            <Border Classes="settingsCard">
+              <StackPanel Spacing="12">
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                  <StackPanel Spacing="3">
+                    <TextBlock Text="{Binding CustomJavaLabel}" FontWeight="SemiBold" />
+                    <TextBlock Text="{Binding JavaRuntimeHint}" Classes="muted" FontSize="12" />
+                  </StackPanel>
+                  <ToggleSwitch Grid.Column="1" IsChecked="{Binding UseCustomJava}" />
+                </Grid>
+                <TextBox Text="{Binding CustomJavaPath}"
+                         PlaceholderText="{Binding CustomJavaPathPlaceholder}"
+                         IsEnabled="{Binding UseCustomJava}" />
+              </StackPanel>
+            </Border>
+          </StackPanel>
+          <StackPanel Margin="7,0,0,0" Spacing="12">
+            <TextBlock Text=" " Classes="settingsSectionTitle" />
+            <Border Classes="settingsCard">
+              <StackPanel Spacing="9">
+                <TextBlock Text="{Binding JavaArgumentsLabel}" FontWeight="SemiBold" />
+                <TextBlock Text="{Binding JavaArgumentsHint}" Classes="muted" FontSize="12" />
+                <TextBox Text="{Binding JavaArguments}" AcceptsReturn="True" MinHeight="86" />
+                <Button Classes="settingsAction" Command="{Binding SaveJavaCommand}" HorizontalAlignment="Right">
+                  <TextBlock Text="{Binding SaveLabel}" />
+                </Button>
+              </StackPanel>
+            </Border>
+          </StackPanel>
+        </UniformGrid>
+
+        <UniformGrid Classes="settingsColumns" Columns="2" IsVisible="{Binding IsVisual}">
+          <StackPanel Margin="0,0,7,0" Spacing="12">
+            <TextBlock Text="{Binding VisualTitle}" Classes="settingsSectionTitle" />
+            <Border Classes="settingsCard">
+              <StackPanel Spacing="10">
+                <TextBlock Text="{Binding BackgroundLabel}" FontWeight="SemiBold" />
+                <ComboBox ItemsSource="{Binding Backgrounds}"
+                          ItemTemplate="{StaticResource SettingChoiceTemplate}"
+                          SelectedItem="{Binding SelectedBackground}" />
+              </StackPanel>
+            </Border>
+            <Border Classes="settingsCard">
+              <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                <StackPanel Spacing="3">
+                  <TextBlock Text="{Binding MusicLabel}" FontWeight="SemiBold" />
+                  <TextBlock Text="{Binding MusicHint}" Classes="muted" FontSize="12" />
+                </StackPanel>
+                <ToggleSwitch Grid.Column="1" IsChecked="{Binding MusicEnabled}" />
+              </Grid>
+            </Border>
+          </StackPanel>
+          <StackPanel Margin="7,0,0,0" Spacing="12">
+            <TextBlock Text=" " Classes="settingsSectionTitle" />
+            <Border Classes="settingsCard">
+              <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                <StackPanel Spacing="3">
+                  <TextBlock Text="{Binding HideNewsLabel}" FontWeight="SemiBold" />
+                  <TextBlock Text="{Binding HideNewsHint}" Classes="muted" FontSize="12" />
+                </StackPanel>
+                <ToggleSwitch Grid.Column="1" IsChecked="{Binding DisableNews}" />
+              </Grid>
+            </Border>
+            <Border Classes="settingsCard">
+              <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                <StackPanel Spacing="3">
+                  <TextBlock Text="{Binding AccentLabel}" FontWeight="SemiBold" />
+                  <TextBlock Text="White" Classes="muted" FontSize="12" />
+                </StackPanel>
+                <Border Grid.Column="1" Width="28" Height="28" CornerRadius="14" Background="White" BorderBrush="#32FFFFFF" BorderThickness="1" />
+              </Grid>
+            </Border>
+          </StackPanel>
+        </UniformGrid>
+
+        <UniformGrid Classes="settingsColumns" Columns="2" IsVisible="{Binding IsNetwork}">
+          <StackPanel Margin="0,0,7,0" Spacing="12">
+            <TextBlock Text="{Binding NetworkTitle}" Classes="settingsSectionTitle" />
+            <Border Classes="settingsCard">
+              <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                <StackPanel Spacing="3">
+                  <TextBlock Text="{Binding OnlineModeLabel}" FontWeight="SemiBold" />
+                  <TextBlock Text="{Binding OnlineModeHint}" Classes="muted" FontSize="12" />
+                </StackPanel>
+                <ToggleSwitch Grid.Column="1" IsChecked="{Binding OnlineMode}" />
+              </Grid>
+            </Border>
+            <Border Classes="settingsCard">
+              <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                <StackPanel Spacing="3">
+                  <TextBlock Text="{Binding DualAuthLabel}" FontWeight="SemiBold" />
+                  <TextBlock Text="{Binding DualAuthHint}" Classes="muted" FontSize="12" />
+                </StackPanel>
+                <ToggleSwitch Grid.Column="1" IsChecked="{Binding UseDualAuth}" />
+              </Grid>
+            </Border>
+          </StackPanel>
+          <StackPanel Margin="7,0,0,0" Spacing="12">
+            <TextBlock Text=" " Classes="settingsSectionTitle" />
+            <Border Classes="settingsCard">
+              <StackPanel Spacing="9">
+                <TextBlock Text="{Binding AuthServerLabel}" FontWeight="SemiBold" />
+                <TextBlock Text="{Binding AuthServerHint}" Classes="muted" FontSize="12" />
+                <TextBox Text="{Binding AuthDomain}" />
+                <Button Classes="settingsAction" Command="{Binding SaveNetworkCommand}" HorizontalAlignment="Right">
+                  <TextBlock Text="{Binding SaveLabel}" />
+                </Button>
+              </StackPanel>
+            </Border>
+          </StackPanel>
+        </UniformGrid>
+
+        <UniformGrid Classes="settingsColumns" Columns="2" IsVisible="{Binding IsGraphics}">
+          <StackPanel Margin="0,0,7,0" Spacing="12">
+            <TextBlock Text="{Binding GraphicsTitle}" Classes="settingsSectionTitle" />
+            <Border Classes="settingsCard">
+              <StackPanel Spacing="10">
+                <TextBlock Text="{Binding GpuLabel}" FontWeight="SemiBold" />
+                <TextBlock Text="{Binding GpuHint}" Classes="muted" FontSize="12" />
+                <ComboBox ItemsSource="{Binding GpuPreferences}"
+                          ItemTemplate="{StaticResource SettingChoiceTemplate}"
+                          SelectedItem="{Binding SelectedGpuPreference}" />
+              </StackPanel>
+            </Border>
+          </StackPanel>
+        </UniformGrid>
+
+        <UniformGrid Classes="settingsColumns" Columns="2" IsVisible="{Binding IsVariables}">
+          <StackPanel Margin="0,0,7,0" Spacing="12">
+            <TextBlock Text="{Binding VariablesTitle}" Classes="settingsSectionTitle" />
+            <Border Classes="settingsInfoCard">
+              <StackPanel Spacing="6">
+                <TextBlock Text="{Binding EnvPresetsLabel}" FontWeight="SemiBold" />
+                <TextBlock Text="SDL_VIDEODRIVER=x11" FontFamily="monospace" Classes="muted" />
+                <TextBlock Text="VK_LOADER_LAYERS_DISABLE=all" FontFamily="monospace" Classes="muted" />
+              </StackPanel>
+            </Border>
+          </StackPanel>
+          <StackPanel Margin="7,0,0,0" Spacing="12">
+            <TextBlock Text=" " Classes="settingsSectionTitle" />
+            <Border Classes="settingsCard">
+              <StackPanel Spacing="9">
+                <TextBlock Text="{Binding EnvLabel}" FontWeight="SemiBold" />
+                <TextBlock Text="{Binding EnvHint}" Classes="muted" FontSize="12" />
+                <TextBox Text="{Binding GameEnvironmentVariables}" AcceptsReturn="True" MinHeight="132" FontFamily="monospace" />
+                <Button Classes="settingsAction" Command="{Binding SaveVariablesCommand}" HorizontalAlignment="Right">
+                  <TextBlock Text="{Binding SaveLabel}" />
+                </Button>
+              </StackPanel>
+            </Border>
+          </StackPanel>
+        </UniformGrid>
+
+        <UniformGrid Classes="settingsColumns" Columns="2" IsVisible="{Binding IsData}">
+          <StackPanel Margin="0,0,7,0" Spacing="12">
+            <TextBlock Text="{Binding DataTitle}" Classes="settingsSectionTitle" />
+            <Border Classes="settingsCard">
+              <StackPanel Spacing="7">
+                <TextBlock Text="{Binding InstanceFolderLabel}" FontWeight="SemiBold" />
+                <TextBlock Text="{Binding InstanceFolder}" Classes="muted" FontSize="12" TextWrapping="Wrap" />
+              </StackPanel>
+            </Border>
+          </StackPanel>
+        </UniformGrid>
+
+        <UniformGrid Classes="settingsColumns" Columns="2" IsVisible="{Binding IsAbout}">
+          <StackPanel Margin="0,0,7,0" Spacing="12">
+            <TextBlock Text="{Binding AboutTitle}" Classes="settingsSectionTitle" />
+            <Border Classes="settingsCard">
+              <StackPanel Spacing="8">
+                <TextBlock Text="HyPrism Launcher" FontSize="21" FontWeight="Bold" />
+                <TextBlock Text="{Binding AboutDescription}" Classes="muted" />
+                <TextBlock Text="{Binding AboutDisclaimer}" Classes="muted" FontSize="12" />
+              </StackPanel>
+            </Border>
+          </StackPanel>
+          <StackPanel Margin="7,0,0,0" Spacing="12">
+            <TextBlock Text=" " Classes="settingsSectionTitle" />
+            <Border Classes="settingsCard">
+              <StackPanel Spacing="8">
+                <Button Classes="settingsLink" Command="{Binding OpenGitHubCommand}"><TextBlock Text="GitHub" /></Button>
+                <Button Classes="settingsLink" Command="{Binding OpenDiscordCommand}"><TextBlock Text="Discord" /></Button>
+                <Button Classes="settingsLink" Command="{Binding OpenBugReportCommand}"><TextBlock Text="{Binding BugReportLabel}" /></Button>
+              </StackPanel>
+            </Border>
+          </StackPanel>
+        </UniformGrid>
+
+        <UniformGrid Classes="settingsColumns" Columns="2" IsVisible="{Binding IsDeveloper}">
+          <StackPanel Margin="0,0,7,0" Spacing="12">
+            <TextBlock Text="{Binding DeveloperTitle}" Classes="settingsSectionTitle" />
+            <Border Classes="settingsWarningCard">
+              <TextBlock Text="{Binding DeveloperWarning}" />
+            </Border>
+            <Border Classes="settingsCard">
+              <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                <TextBlock Text="{Binding ReplayIntroLabel}" VerticalAlignment="Center" FontWeight="SemiBold" />
+                <Button Grid.Column="1" Classes="settingsAction" Command="{Binding ResetOnboardingCommand}">
+                  <TextBlock Text="{Binding ReplayIntroLabel}" />
+                </Button>
+              </Grid>
+            </Border>
+          </StackPanel>
+        </UniformGrid>
+      </Grid>
+    </ScrollViewer>
+  </Grid>
+</UserControl>

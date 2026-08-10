@@ -1,3 +1,6 @@
+// Copyright (C) 2026 HyPrism Launcher
+// SPDX-License-Identifier: GPL-3.0-only
+
 import { useState, useCallback, useEffect } from 'react';
 import { ipc, MirrorInfo, MirrorSpeedTestResult } from '@/lib/ipc';
 

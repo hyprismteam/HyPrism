@@ -1,9 +1,16 @@
+<!--
+Copyright (C) 2026 HyPrism Launcher
+SPDX-License-Identifier: GPL-3.0-only
+-->
+
 # Генерация IPC-кода
 
 IPC-мост между рендерером Electron (React/TypeScript) и бэкендом .NET в HyPrism
 **полностью типобезопасен и генерируется автоматически**. Разработчик пишет типизированные
 C#-методы; Roslyn CLI-инструмент `HyPrism.IpcGen` читает их во время сборки и создаёт
 `Sources/HyPrism.Launcher/Frontend/src/lib/ipc.ts`.
+Инкрементальный кэш учитывает файл проекта и все C#-исходники лаунчера, поэтому изменение
+свойства DTO обновляет TypeScript-контракт даже без изменений в `IpcService.cs`.
 
 ---
 
@@ -20,6 +27,10 @@ IpcService.cs                    HyPrism.IpcGen/          Frontend/src/lib/
 Во время выполнения `IpcServiceBase.RegisterAll()` обнаруживает все методы с атрибутами
 через рефлексию и регистрирует их в `Electron.IpcMain` автоматически — ручной вызов
 `Electron.IpcMain.On(...)` не нужен.
+
+Во время миграции на Avalonia IPC остаётся адаптером прежнего хоста. Общие операции приложения
+должны находиться вне `IpcService`: например, `hyprism:game:launch` делегирует работу
+`IGameLaunchCoordinator`, который нативная ViewModel вызывает напрямую.
 
 ---
 
@@ -51,6 +62,18 @@ ipc.settings.get()          // Promise<SettingsSnapshot>
 ipc.instance.create(data)   // Promise<InstanceInfo | null>
 ipc.update.install()        // Promise<boolean>
 ```
+
+Домен News также предоставляет ленивую загрузку полного материала:
+
+```typescript
+ipc.news.getArticle(articleUrl) // Promise<NewsArticleResponse | null>
+```
+
+`NewsArticleResponse.content` содержит безопасное рекурсивное дерево `NewsContentNode[]`,
+а не сырой сторонний HTML. Благодаря этому оба UI-host могут сохранять форматирование статьи,
+не исполняя скрипты и не доверяя удалённой разметке. Узел изображения может содержать
+опциональную подсказку renderer `imagePresentation` (`emote` или `sticker`): inline-смайлики
+используют kind `inline-image`, а обычные медиа статьи — `image`.
 
 ---
 

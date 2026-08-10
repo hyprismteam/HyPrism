@@ -1,8 +1,15 @@
+<!--
+Copyright (C) 2026 HyPrism Launcher
+SPDX-License-Identifier: GPL-3.0-only
+-->
+
 # IPC Code Generation
 
 HyPrism's IPC bridge between the Electron renderer (React/TypeScript) and the .NET backend is
 **fully type-safe and 100% auto-generated**. Developers write typed C# methods; the Roslyn CLI
 tool `HyPrism.IpcGen` reads them at build time and produces `Frontend/src/lib/ipc.ts`.
+Its incremental cache hashes the launcher project file and all C# sources, so changing a
+referenced DTO property regenerates the TypeScript contract even when `IpcService.cs` is unchanged.
 
 ---
 
@@ -18,6 +25,10 @@ IpcService.cs                    HyPrism.IpcGen/          Frontend/src/lib/
 
 At runtime, `IpcServiceBase.RegisterAll()` discovers all attributed methods via reflection
 and registers them on `Electron.IpcMain` automatically — no manual wiring needed.
+
+During the Avalonia migration, IPC remains an adapter for the legacy host. Shared application
+operations must live outside `IpcService`; for example, `hyprism:game:launch` delegates to
+`IGameLaunchCoordinator`, which the native ViewModel also calls directly.
 
 ---
 
@@ -49,6 +60,18 @@ ipc.settings.get()                    // Promise<SettingsSnapshot>
 ipc.instance.create(data)             // Promise<InstanceInfo | null>
 ipc.update.install()                  // Promise<boolean>
 ```
+
+The News domain also exposes lazy full-article loading:
+
+```typescript
+ipc.news.getArticle(articleUrl) // Promise<NewsArticleResponse | null>
+```
+
+`NewsArticleResponse.content` is a sanitized recursive `NewsContentNode[]` tree rather than
+raw third-party HTML. This lets both renderer implementations preserve article formatting
+without executing scripts or trusting remote markup. Image nodes may include the optional
+`imagePresentation` renderer hint (`emote` or `sticker`); inline emotes use the `inline-image`
+kind, while normal article media uses `image`.
 
 ---
 

@@ -1,0 +1,928 @@
+<!--
+Copyright (C) 2026 HyPrism Launcher
+SPDX-License-Identifier: GPL-3.0-only
+-->
+
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="using:HyPrism.Desktop.Controls"
+        xmlns:views="using:HyPrism.Desktop.Views">
+  <Style Selector="Window">
+    <Setter Property="FontFamily" Value="{DynamicResource GoogleSansFont}" />
+    <Setter Property="FontSize" Value="15" />
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+  </Style>
+
+  <Style Selector="TextBlock">
+    <Setter Property="FontFamily" Value="{DynamicResource GoogleSansFont}" />
+    <Setter Property="TextWrapping" Value="Wrap" />
+  </Style>
+
+  <Style Selector="TextBlock.muted">
+    <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+  </Style>
+
+  <Style Selector="TextBlock.eyebrow">
+    <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="TextWrapping" Value="NoWrap" />
+  </Style>
+
+  <Style Selector="Button">
+    <Setter Property="FontFamily" Value="{DynamicResource GoogleSansFont}" />
+  </Style>
+
+  <Style Selector="Button.nav">
+    <Setter Property="Height" Value="48" />
+    <Setter Property="Padding" Value="14,0" />
+    <Setter Property="Margin" Value="0,2" />
+    <Setter Property="HorizontalContentAlignment" Value="Left" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="CornerRadius" Value="13" />
+    <Setter Property="RenderTransform" Value="{x:Null}" />
+    <Setter Property="FontSize" Value="15" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Transitions">
+      <Transitions>
+        <BrushTransition Property="Foreground" Duration="0:0:0.16" />
+      </Transitions>
+    </Setter>
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Background="{TemplateBinding Background}"
+                BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="{TemplateBinding BorderThickness}"
+                CornerRadius="{TemplateBinding CornerRadius}"
+                Padding="{TemplateBinding Padding}">
+          <ContentPresenter Content="{TemplateBinding Content}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}"
+                            HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                            VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
+        </Border>
+      </ControlTemplate>
+    </Setter>
+  </Style>
+
+  <Style Selector="Button.nav:pointerover">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+    <Setter Property="RenderTransform" Value="{x:Null}" />
+  </Style>
+
+  <Style Selector="Button.nav:pressed">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="RenderTransform" Value="{x:Null}" />
+  </Style>
+
+  <Style Selector="Button.nav.selected">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+  </Style>
+
+  <Style Selector="Button.nav Path.navIconOutline">
+    <Setter Property="Fill" Value="{DynamicResource TextSecondaryBrush}" />
+    <Setter Property="StrokeThickness" Value="0" />
+    <Setter Property="Opacity" Value="1" />
+    <Setter Property="Transitions">
+      <Transitions>
+        <BrushTransition Property="Fill" Duration="0:0:0.16" />
+        <DoubleTransition Property="Opacity" Duration="0:0:0.12" />
+      </Transitions>
+    </Setter>
+  </Style>
+
+  <Style Selector="Button.nav:pointerover Path.navIconOutline">
+    <Setter Property="Fill" Value="{DynamicResource TextPrimaryBrush}" />
+  </Style>
+
+  <Style Selector="Button.nav.selected Path.navIconOutline">
+    <Setter Property="Fill" Value="{DynamicResource TextPrimaryBrush}" />
+    <Setter Property="Opacity" Value="0" />
+  </Style>
+
+  <Style Selector="Button.nav Path.navIconFilled">
+    <Setter Property="Fill" Value="{DynamicResource TextSecondaryBrush}" />
+    <Setter Property="StrokeThickness" Value="0" />
+    <Setter Property="Opacity" Value="0" />
+    <Setter Property="Transitions">
+      <Transitions>
+        <BrushTransition Property="Fill" Duration="0:0:0.16" />
+        <DoubleTransition Property="Opacity" Duration="0:0:0.12" />
+      </Transitions>
+    </Setter>
+  </Style>
+
+  <Style Selector="Button.nav:pointerover Path.navIconFilled">
+    <Setter Property="Fill" Value="{DynamicResource TextPrimaryBrush}" />
+  </Style>
+
+  <Style Selector="Button.nav.selected Path.navIconFilled">
+    <Setter Property="Fill" Value="{DynamicResource TextPrimaryBrush}" />
+    <Setter Property="Opacity" Value="1" />
+  </Style>
+
+  <Style Selector="Button.primary">
+    <Setter Property="MinWidth" Value="142" />
+    <Setter Property="Height" Value="52" />
+    <Setter Property="Padding" Value="24,0" />
+    <Setter Property="CornerRadius" Value="16" />
+    <Setter Property="Background" Value="{DynamicResource TextPrimaryBrush}" />
+    <Setter Property="Foreground" Value="#111111" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="FontWeight" Value="Bold" />
+    <Setter Property="FontSize" Value="15" />
+    <Setter Property="RenderTransform" Value="{x:Null}" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Background="{TemplateBinding Background}"
+                BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="{TemplateBinding BorderThickness}"
+                CornerRadius="{TemplateBinding CornerRadius}"
+                Padding="{TemplateBinding Padding}">
+          <ContentPresenter Content="{TemplateBinding Content}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}"
+                            HorizontalContentAlignment="Center"
+                            VerticalContentAlignment="Center" />
+        </Border>
+      </ControlTemplate>
+    </Setter>
+  </Style>
+
+  <Style Selector="Button.primary:pointerover">
+    <Setter Property="Background" Value="{DynamicResource TextPrimaryBrush}" />
+    <Setter Property="RenderTransform" Value="{x:Null}" />
+  </Style>
+
+  <Style Selector="Button.primary:pressed">
+    <Setter Property="Background" Value="{DynamicResource TextPrimaryBrush}" />
+    <Setter Property="RenderTransform" Value="{x:Null}" />
+  </Style>
+
+  <Style Selector="Button.primary Path.actionIcon">
+    <Setter Property="Fill" Value="#111111" />
+    <Setter Property="StrokeThickness" Value="0" />
+  </Style>
+
+  <Style Selector="Button.dashboardPrimary">
+    <Setter Property="MinWidth" Value="176" />
+    <Setter Property="Height" Value="56" />
+    <Setter Property="Padding" Value="28,0" />
+    <Setter Property="CornerRadius" Value="18" />
+    <Setter Property="FontSize" Value="16" />
+  </Style>
+
+  <Style Selector="Button.dashboardInstance">
+    <Setter Property="Width" Value="56" />
+    <Setter Property="Height" Value="56" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="Background" Value="#1C000000" />
+    <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="CornerRadius" Value="18" />
+    <Setter Property="Cursor" Value="Hand" />
+    <Setter Property="RenderTransform" Value="{x:Null}" />
+    <Setter Property="Transitions">
+      <Transitions>
+        <BrushTransition Property="Background" Duration="0:0:0.18" />
+        <BrushTransition Property="Foreground" Duration="0:0:0.18" />
+      </Transitions>
+    </Setter>
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Background="{TemplateBinding Background}"
+                CornerRadius="{TemplateBinding CornerRadius}">
+          <ContentPresenter Content="{TemplateBinding Content}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}"
+                            HorizontalContentAlignment="Center"
+                            VerticalContentAlignment="Center" />
+        </Border>
+      </ControlTemplate>
+    </Setter>
+  </Style>
+
+  <Style Selector="Button.dashboardInstance:pointerover">
+    <Setter Property="Background" Value="#2A000000" />
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+    <Setter Property="RenderTransform" Value="{x:Null}" />
+  </Style>
+
+  <Style Selector="Button.dashboardInstance:pressed">
+    <Setter Property="RenderTransform" Value="{x:Null}" />
+  </Style>
+
+  <Style Selector="Button.dashboardInstance Path">
+    <Setter Property="Fill" Value="{Binding $parent[Button].Foreground}" />
+  </Style>
+
+  <Style Selector="Border.dashboardStatus">
+    <Setter Property="Background" Value="#26000000" />
+    <Setter Property="CornerRadius" Value="10" />
+    <Setter Property="Padding" Value="10,5" />
+  </Style>
+
+  <Style Selector="Border.dashboardActivity">
+    <Setter Property="Background" Value="#C9141517" />
+    <Setter Property="BorderBrush" Value="#14FFFFFF" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="14" />
+    <Setter Property="Padding" Value="16,13" />
+  </Style>
+
+  <Style Selector="TextBlock.dashboardTitle">
+    <Setter Property="FontSize" Value="40" />
+  </Style>
+
+  <Style Selector="Button.dashboardQuickInstance">
+    <Setter Property="Height" Value="64" />
+    <Setter Property="Margin" Value="0,0,8,0" />
+    <Setter Property="Padding" Value="10" />
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="CornerRadius" Value="14" />
+    <Setter Property="Cursor" Value="Hand" />
+    <Setter Property="RenderTransform" Value="{x:Null}" />
+    <Setter Property="Transitions">
+      <Transitions>
+        <BrushTransition Property="Background" Duration="0:0:0.18" />
+        <BrushTransition Property="Foreground" Duration="0:0:0.18" />
+      </Transitions>
+    </Setter>
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Background="{TemplateBinding Background}"
+                CornerRadius="{TemplateBinding CornerRadius}"
+                Padding="{TemplateBinding Padding}">
+          <ContentPresenter Content="{TemplateBinding Content}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}"
+                            HorizontalContentAlignment="Stretch"
+                            VerticalContentAlignment="Center" />
+        </Border>
+      </ControlTemplate>
+    </Setter>
+  </Style>
+
+  <Style Selector="Button.dashboardQuickInstance:pointerover">
+    <Setter Property="Background" Value="#0AFFFFFF" />
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+    <Setter Property="RenderTransform" Value="{x:Null}" />
+  </Style>
+
+  <Style Selector="Button.dashboardQuickInstance:pressed">
+    <Setter Property="RenderTransform" Value="{x:Null}" />
+  </Style>
+
+  <Style Selector="Button.dashboardQuickInstance.selected">
+    <Setter Property="Background" Value="#12FFFFFF" />
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+  </Style>
+
+  <Style Selector="Button.dashboardLink">
+    <Setter Property="Padding" Value="4,7" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Cursor" Value="Hand" />
+    <Setter Property="RenderTransform" Value="{x:Null}" />
+    <Setter Property="Transitions">
+      <Transitions>
+        <BrushTransition Property="Foreground" Duration="0:0:0.18" />
+      </Transitions>
+    </Setter>
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Background="Transparent" Padding="{TemplateBinding Padding}">
+          <ContentPresenter Content="{TemplateBinding Content}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}"
+                            HorizontalContentAlignment="Center"
+                            VerticalContentAlignment="Center" />
+        </Border>
+      </ControlTemplate>
+    </Setter>
+  </Style>
+
+  <Style Selector="Button.dashboardLink:pointerover">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+    <Setter Property="RenderTransform" Value="{x:Null}" />
+  </Style>
+
+  <Style Selector="Button.dashboardLink:pressed">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="RenderTransform" Value="{x:Null}" />
+  </Style>
+
+  <Style Selector="Button.dashboardLink Path">
+    <Setter Property="Fill" Value="{Binding $parent[Button].Foreground}" />
+  </Style>
+
+  <Style Selector="views|DashboardView.compact TextBlock.dashboardTitle">
+    <Setter Property="FontSize" Value="34" />
+  </Style>
+
+  <Style Selector="Button.window">
+    <Setter Property="Width" Value="34" />
+    <Setter Property="Height" Value="30" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="CornerRadius" Value="0" />
+    <Setter Property="RenderTransform" Value="{x:Null}" />
+    <Setter Property="Transitions">
+      <Transitions>
+        <BrushTransition Property="Foreground" Duration="0:0:0.16" />
+      </Transitions>
+    </Setter>
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Background="{TemplateBinding Background}">
+          <ContentPresenter Content="{TemplateBinding Content}"
+                            HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                            VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
+        </Border>
+      </ControlTemplate>
+    </Setter>
+  </Style>
+
+  <Style Selector="Button.window:pointerover">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+  </Style>
+
+  <Style Selector="Button.window:pressed">
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+
+  <Style Selector="Button.window Path.windowIcon">
+    <Setter Property="Fill" Value="{DynamicResource TextSecondaryBrush}" />
+    <Setter Property="StrokeThickness" Value="0" />
+    <Setter Property="Transitions">
+      <Transitions>
+        <BrushTransition Property="Fill" Duration="0:0:0.16" />
+      </Transitions>
+    </Setter>
+  </Style>
+
+  <Style Selector="Button.window:pointerover Path.windowIcon">
+    <Setter Property="Fill" Value="{DynamicResource TextPrimaryBrush}" />
+  </Style>
+
+  <Style Selector="Button.window Border.windowMinimize">
+    <Setter Property="Background" Value="{DynamicResource TextSecondaryBrush}" />
+    <Setter Property="CornerRadius" Value="1" />
+    <Setter Property="Transitions">
+      <Transitions>
+        <BrushTransition Property="Background" Duration="0:0:0.16" />
+      </Transitions>
+    </Setter>
+  </Style>
+
+  <Style Selector="Button.window:pointerover Border.windowMinimize">
+    <Setter Property="Background" Value="{DynamicResource TextPrimaryBrush}" />
+  </Style>
+
+  <Style Selector="Path.cardIcon">
+    <Setter Property="Fill" Value="{DynamicResource TextPrimaryBrush}" />
+    <Setter Property="StrokeThickness" Value="0" />
+  </Style>
+
+  <Style Selector="Border.card">
+    <Setter Property="Background" Value="{DynamicResource SurfaceElevatedBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource StrokeBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="18" />
+  </Style>
+
+  <Style Selector="Border.skeleton">
+    <Setter Property="Background" Value="#18FFFFFF" />
+    <Setter Property="CornerRadius" Value="7" />
+    <Setter Property="Opacity" Value="0.38" />
+    <Style.Animations>
+      <Animation Duration="0:0:1.15" IterationCount="Infinite">
+        <KeyFrame Cue="0%">
+          <Setter Property="Opacity" Value="0.32" />
+        </KeyFrame>
+        <KeyFrame Cue="50%">
+          <Setter Property="Opacity" Value="0.78" />
+        </KeyFrame>
+        <KeyFrame Cue="100%">
+          <Setter Property="Opacity" Value="0.32" />
+        </KeyFrame>
+      </Animation>
+    </Style.Animations>
+  </Style>
+
+  <Style Selector="Border.tag">
+    <Setter Property="Background" Value="#2A000000" />
+    <Setter Property="BorderBrush" Value="#24FFFFFF" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="10" />
+    <Setter Property="Padding" Value="10,5" />
+  </Style>
+
+  <Style Selector="Button.newsListItem">
+    <Setter Property="Height" Value="104" />
+    <Setter Property="Padding" Value="10,10,4,10" />
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Setter Property="VerticalContentAlignment" Value="Stretch" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="CornerRadius" Value="12" />
+    <Setter Property="RenderTransform" Value="{x:Null}" />
+    <Setter Property="Transitions">
+      <Transitions>
+        <BrushTransition Property="Background" Duration="0:0:0.18" />
+        <BrushTransition Property="Foreground" Duration="0:0:0.18" />
+      </Transitions>
+    </Setter>
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Background="{TemplateBinding Background}"
+                BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="{TemplateBinding BorderThickness}"
+                CornerRadius="{TemplateBinding CornerRadius}"
+                Padding="{TemplateBinding Padding}">
+          <ContentPresenter Content="{TemplateBinding Content}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}"
+                            HorizontalContentAlignment="Stretch"
+                            VerticalContentAlignment="Stretch" />
+        </Border>
+      </ControlTemplate>
+    </Setter>
+  </Style>
+
+  <Style Selector="Button.newsListItem:pointerover">
+    <Setter Property="Background" Value="#08FFFFFF" />
+    <Setter Property="Foreground" Value="#FFFFFFFF" />
+    <Setter Property="RenderTransform" Value="{x:Null}" />
+  </Style>
+
+  <Style Selector="Button.newsListItem:pressed">
+    <Setter Property="RenderTransform" Value="{x:Null}" />
+  </Style>
+
+  <Style Selector="Button.newsListItem.selected">
+    <Setter Property="Background" Value="#12FFFFFF" />
+    <Setter Property="Foreground" Value="#FFFFFFFF" />
+  </Style>
+
+  <Style Selector="Button.newsLoadMore">
+    <Setter Property="Padding" Value="12,8" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+    <Setter Property="Cursor" Value="Hand" />
+    <Setter Property="RenderTransform" Value="{x:Null}" />
+    <Setter Property="Transitions">
+      <Transitions>
+        <BrushTransition Property="Foreground" Duration="0:0:0.18" />
+      </Transitions>
+    </Setter>
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Background="Transparent"
+                Padding="{TemplateBinding Padding}">
+          <ContentPresenter Content="{TemplateBinding Content}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}"
+                            HorizontalContentAlignment="Center"
+                            VerticalContentAlignment="Center" />
+        </Border>
+      </ControlTemplate>
+    </Setter>
+  </Style>
+
+  <Style Selector="Button.newsLoadMore:pointerover">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+    <Setter Property="RenderTransform" Value="{x:Null}" />
+  </Style>
+
+  <Style Selector="Button.newsLoadMore:pressed">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="RenderTransform" Value="{x:Null}" />
+  </Style>
+
+  <Style Selector="Border.newsThumbnail">
+    <Setter Property="Background" Value="#1B1C20" />
+    <Setter Property="CornerRadius" Value="10" />
+    <Setter Property="ClipToBounds" Value="True" />
+  </Style>
+
+  <Style Selector="Border.newsArticleHeader">
+    <Setter Property="Background" Value="#17181B" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="CornerRadius" Value="18" />
+    <Setter Property="ClipToBounds" Value="True" />
+  </Style>
+
+  <Style Selector="StackPanel.articleBody">
+    <Setter Property="Opacity" Value="0" />
+    <Setter Property="Transitions">
+      <Transitions>
+        <DoubleTransition Property="Opacity" Duration="0:0:0.24" />
+      </Transitions>
+    </Setter>
+  </Style>
+
+  <Style Selector="StackPanel.articleBody.revealed">
+    <Setter Property="Opacity" Value="1" />
+  </Style>
+
+  <Style Selector="Border.articleToolbar">
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+  </Style>
+
+  <Style Selector="Border.articleToolbar.compact">
+    <Setter Property="Margin" Value="24,18,24,12" />
+    <Setter Property="MaxWidth" Value="820" />
+    <Setter Property="MinHeight" Value="56" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+  </Style>
+
+  <Style Selector="TextBlock.articleToolbarTitle">
+    <Setter Property="Opacity" Value="0" />
+    <Setter Property="Transitions">
+      <Transitions>
+        <DoubleTransition Property="Opacity" Duration="0:0:0.18" />
+      </Transitions>
+    </Setter>
+  </Style>
+
+  <Style Selector="Border.articleToolbar.compact.scrolled TextBlock.articleToolbarTitle">
+    <Setter Property="Opacity" Value="1" />
+  </Style>
+
+  <Style Selector="Button.articleBack">
+    <Setter Property="Padding" Value="0,8" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="RenderTransform" Value="{x:Null}" />
+    <Setter Property="Transitions">
+      <Transitions>
+        <BrushTransition Property="Foreground" Duration="0:0:0.18" />
+      </Transitions>
+    </Setter>
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Background="{TemplateBinding Background}"
+                Padding="{TemplateBinding Padding}">
+          <ContentPresenter Content="{TemplateBinding Content}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}"
+                            HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                            VerticalContentAlignment="Center" />
+        </Border>
+      </ControlTemplate>
+    </Setter>
+  </Style>
+
+  <Style Selector="Button.articleBack:pointerover">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+    <Setter Property="RenderTransform" Value="{x:Null}" />
+  </Style>
+
+  <Style Selector="Button.articleBack:pressed">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="RenderTransform" Value="{x:Null}" />
+  </Style>
+
+  <Style Selector="Button.articleBack Path">
+    <Setter Property="Fill" Value="{Binding $parent[Button].Foreground}" />
+  </Style>
+
+  <Style Selector="ScrollViewer.newsArticleScroll /template/ ScrollBar:vertical">
+    <Setter Property="Width" Value="8" />
+    <Setter Property="Margin" Value="0,12,5,12" />
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+
+  <Style Selector="ScrollViewer.newsArticleScroll /template/ ScrollBar:vertical /template/ Thumb">
+    <Setter Property="MinHeight" Value="40" />
+    <Setter Property="Background" Value="#52FFFFFF" />
+    <Setter Property="CornerRadius" Value="4" />
+  </Style>
+
+  <Style Selector="ScrollViewer.newsArticleScroll /template/ ScrollBar:vertical /template/ Thumb:pointerover">
+    <Setter Property="Background" Value="#80FFFFFF" />
+  </Style>
+
+  <Style Selector="ScrollViewer.newsArticleScroll /template/ ScrollBar:vertical /template/ RepeatButton#PART_LineUpButton">
+    <Setter Property="IsVisible" Value="False" />
+  </Style>
+
+  <Style Selector="ScrollViewer.newsArticleScroll /template/ ScrollBar:vertical /template/ RepeatButton#PART_LineDownButton">
+    <Setter Property="IsVisible" Value="False" />
+  </Style>
+
+  <Style Selector="ScrollViewer.newsFeedScroll /template/ ScrollBar:vertical">
+    <Setter Property="Width" Value="8" />
+    <Setter Property="Margin" Value="0,12,5,12" />
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+
+  <Style Selector="ScrollViewer.newsFeedScroll /template/ ScrollBar:vertical /template/ Thumb">
+    <Setter Property="MinHeight" Value="40" />
+    <Setter Property="Background" Value="#42FFFFFF" />
+    <Setter Property="CornerRadius" Value="4" />
+  </Style>
+
+  <Style Selector="ScrollViewer.newsFeedScroll /template/ ScrollBar:vertical /template/ Thumb:pointerover">
+    <Setter Property="Background" Value="#70FFFFFF" />
+  </Style>
+
+  <Style Selector="ScrollViewer.newsFeedScroll /template/ ScrollBar:vertical /template/ RepeatButton#PART_LineUpButton">
+    <Setter Property="IsVisible" Value="False" />
+  </Style>
+
+  <Style Selector="ScrollViewer.newsFeedScroll /template/ ScrollBar:vertical /template/ RepeatButton#PART_LineDownButton">
+    <Setter Property="IsVisible" Value="False" />
+  </Style>
+
+  <Style Selector="Button.articleAction">
+    <Setter Property="Padding" Value="0,8" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="RenderTransform" Value="{x:Null}" />
+    <Setter Property="Transitions">
+      <Transitions>
+        <BrushTransition Property="Foreground" Duration="0:0:0.18" />
+      </Transitions>
+    </Setter>
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Background="{TemplateBinding Background}"
+                Padding="{TemplateBinding Padding}">
+          <ContentPresenter Content="{TemplateBinding Content}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}"
+                            HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                            VerticalContentAlignment="Center" />
+        </Border>
+      </ControlTemplate>
+    </Setter>
+  </Style>
+
+  <Style Selector="Button.articleAction:pointerover">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+    <Setter Property="RenderTransform" Value="{x:Null}" />
+  </Style>
+
+  <Style Selector="Button.articleAction:pressed">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="RenderTransform" Value="{x:Null}" />
+  </Style>
+
+  <Style Selector="Button.articleAction Path">
+    <Setter Property="Fill" Value="{Binding $parent[Button].Foreground}" />
+  </Style>
+
+  <Style Selector="controls|NewsRichTextBlock.articleParagraph">
+    <Setter Property="Foreground" Value="#E1E2E5" />
+    <Setter Property="FontSize" Value="16" />
+    <Setter Property="LineHeight" Value="28" />
+  </Style>
+
+  <Style Selector="controls|NewsRichTextBlock.articleHeading">
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+    <Setter Property="FontWeight" Value="Bold" />
+  </Style>
+
+  <Style Selector="controls|NewsRichTextBlock.articleCaption">
+    <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="TextAlignment" Value="Center" />
+  </Style>
+
+  <Style Selector="Border.articleQuote">
+    <Setter Property="Background" Value="#0FFFFFFF" />
+    <Setter Property="BorderBrush" Value="#66FFFFFF" />
+    <Setter Property="BorderThickness" Value="3,0,0,0" />
+    <Setter Property="Padding" Value="20,16" />
+    <Setter Property="CornerRadius" Value="3,12,12,3" />
+  </Style>
+
+  <Style Selector="Border.articleDetails">
+    <Setter Property="Background" Value="#101A2230" />
+    <Setter Property="BorderBrush" Value="#26FFFFFF" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="8" />
+    <Setter Property="ClipToBounds" Value="True" />
+  </Style>
+
+  <Style Selector="Button.articleDetailsHeader">
+    <Setter Property="Padding" Value="16,11" />
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="CornerRadius" Value="0" />
+    <Setter Property="RenderTransform" Value="{x:Null}" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Background="{TemplateBinding Background}"
+                HorizontalAlignment="Stretch"
+                Padding="{TemplateBinding Padding}">
+          <ContentPresenter Content="{TemplateBinding Content}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}"
+                            HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                            VerticalContentAlignment="Center" />
+        </Border>
+      </ControlTemplate>
+    </Setter>
+  </Style>
+
+  <Style Selector="Button.articleDetailsHeader:pointerover">
+    <Setter Property="Background" Value="#08FFFFFF" />
+    <Setter Property="RenderTransform" Value="{x:Null}" />
+  </Style>
+
+  <Style Selector="Button.articleDetailsHeader:pressed">
+    <Setter Property="Background" Value="#0CFFFFFF" />
+    <Setter Property="RenderTransform" Value="{x:Null}" />
+  </Style>
+
+  <Style Selector="controls|NewsRichTextBlock.articleDetailsSummary">
+    <Setter Property="Foreground" Value="#FFC54D" />
+    <Setter Property="FontSize" Value="16" />
+    <Setter Property="FontWeight" Value="Bold" />
+  </Style>
+
+  <Style Selector="Border.articleDetailsBody">
+    <Setter Property="BorderBrush" Value="#20FFFFFF" />
+    <Setter Property="BorderThickness" Value="0,1,0,0" />
+    <Setter Property="Padding" Value="16,10,16,0" />
+  </Style>
+
+  <Style Selector="Border.articleImage">
+    <Setter Property="Background" Value="#16000000" />
+    <Setter Property="BorderBrush" Value="#20FFFFFF" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="16" />
+    <Setter Property="ClipToBounds" Value="True" />
+    <Setter Property="MinHeight" Value="120" />
+  </Style>
+
+  <Style Selector="Border.articleCode">
+    <Setter Property="Background" Value="#E615151B" />
+    <Setter Property="BorderBrush" Value="#456F63A3" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="10" />
+    <Setter Property="Padding" Value="18,14" />
+  </Style>
+
+  <Style Selector="TextBlock.settingsSectionTitle">
+    <Setter Property="FontSize" Value="19" />
+    <Setter Property="FontWeight" Value="Bold" />
+    <Setter Property="Margin" Value="2,4,0,2" />
+  </Style>
+
+  <Style Selector="Border.settingsCard">
+    <Setter Property="Background" Value="#111214" />
+    <Setter Property="BorderBrush" Value="#14FFFFFF" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="14" />
+    <Setter Property="Padding" Value="16" />
+  </Style>
+
+  <Style Selector="Border.settingsInfoCard">
+    <Setter Property="Background" Value="#0DFFFFFF" />
+    <Setter Property="BorderBrush" Value="#18FFFFFF" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="14" />
+    <Setter Property="Padding" Value="16" />
+  </Style>
+
+  <Style Selector="Border.settingsWarningCard">
+    <Setter Property="Background" Value="#14FFC04A" />
+    <Setter Property="BorderBrush" Value="#30FFC04A" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="14" />
+    <Setter Property="Padding" Value="16" />
+  </Style>
+
+  <Style Selector="Button.settingsCategory">
+    <Setter Property="Height" Value="36" />
+    <Setter Property="Margin" Value="0,0,6,6" />
+    <Setter Property="Padding" Value="13,0" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+    <Setter Property="BorderBrush" Value="#18FFFFFF" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="18" />
+    <Setter Property="RenderTransform" Value="{x:Null}" />
+    <Setter Property="Transitions">
+      <Transitions>
+        <BrushTransition Property="Foreground" Duration="0:0:0.16" />
+        <BrushTransition Property="Background" Duration="0:0:0.16" />
+        <BrushTransition Property="BorderBrush" Duration="0:0:0.16" />
+      </Transitions>
+    </Setter>
+  </Style>
+
+  <Style Selector="Button.settingsCategory:pointerover">
+    <Setter Property="Background" Value="#08FFFFFF" />
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+    <Setter Property="RenderTransform" Value="{x:Null}" />
+  </Style>
+
+  <Style Selector="Button.settingsCategory:pressed">
+    <Setter Property="RenderTransform" Value="{x:Null}" />
+  </Style>
+
+  <Style Selector="Button.settingsCategory.selected">
+    <Setter Property="Background" Value="#12FFFFFF" />
+    <Setter Property="BorderBrush" Value="#38FFFFFF" />
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+  </Style>
+
+  <Style Selector="Button.settingsAction">
+    <Setter Property="Height" Value="36" />
+    <Setter Property="Padding" Value="16,0" />
+    <Setter Property="Background" Value="{DynamicResource TextPrimaryBrush}" />
+    <Setter Property="Foreground" Value="#111214" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="CornerRadius" Value="10" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="RenderTransform" Value="{x:Null}" />
+  </Style>
+
+  <Style Selector="Button.settingsAction:pointerover">
+    <Setter Property="Background" Value="#E1E2E5" />
+    <Setter Property="RenderTransform" Value="{x:Null}" />
+  </Style>
+
+  <Style Selector="Button.settingsAction:pressed">
+    <Setter Property="RenderTransform" Value="{x:Null}" />
+  </Style>
+
+  <Style Selector="Button.settingsLink">
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="HorizontalContentAlignment" Value="Left" />
+    <Setter Property="Padding" Value="12,9" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Foreground" Value="#C9BCFF" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="CornerRadius" Value="9" />
+    <Setter Property="RenderTransform" Value="{x:Null}" />
+  </Style>
+
+  <Style Selector="Button.settingsLink:pointerover">
+    <Setter Property="Background" Value="#0AFFFFFF" />
+    <Setter Property="Foreground" Value="#DED6FF" />
+    <Setter Property="RenderTransform" Value="{x:Null}" />
+  </Style>
+
+  <Style Selector="views|SettingsView TextBox">
+    <Setter Property="Background" Value="#0D0E10" />
+    <Setter Property="BorderBrush" Value="#20FFFFFF" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="10" />
+    <Setter Property="Padding" Value="12,9" />
+  </Style>
+
+  <Style Selector="views|SettingsView ComboBox">
+    <Setter Property="Background" Value="#0D0E10" />
+    <Setter Property="BorderBrush" Value="#20FFFFFF" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="10" />
+    <Setter Property="MinHeight" Value="40" />
+  </Style>
+
+  <Style Selector="ScrollViewer.settingsScroll /template/ ScrollBar:vertical">
+    <Setter Property="Width" Value="7" />
+    <Setter Property="Margin" Value="0,4,4,8" />
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+
+  <Style Selector="ScrollViewer.settingsScroll /template/ ScrollBar:vertical /template/ Thumb">
+    <Setter Property="MinHeight" Value="38" />
+    <Setter Property="Background" Value="#3AFFFFFF" />
+    <Setter Property="CornerRadius" Value="4" />
+  </Style>
+</Styles>

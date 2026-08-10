@@ -1,3 +1,6 @@
+// Copyright (C) 2026 HyPrism Launcher
+// SPDX-License-Identifier: GPL-3.0-only
+
 export * from './Button';
 export * from './LinkButton';
 export * from './DropdownTriggerButton';
