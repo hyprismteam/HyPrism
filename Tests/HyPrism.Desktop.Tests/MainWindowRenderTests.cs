@@ -321,7 +321,7 @@ public sealed class MainWindowRenderTests
             news.Object,
             browser.Object,
             new HttpClient(),
-            new JsonLocalizer("en-US"));
+            new LocalizationService("en-US"));
         var window = new MainWindow
         {
             Width = 1024,
@@ -444,7 +444,7 @@ public sealed class MainWindowRenderTests
             news.Object,
             browser.Object,
             new HttpClient(),
-            new JsonLocalizer("en-US"));
+            new LocalizationService("en-US"));
 
         viewModel.NavigateCommand.Execute("news");
         Dispatcher.UIThread.RunJobs();
@@ -849,7 +849,7 @@ public sealed class MainWindowRenderTests
             news.Object,
             browser.Object,
             new HttpClient(),
-            new JsonLocalizer("en-US"));
+            new LocalizationService("en-US"));
 
         Assert.Equal(
             isOfficialProfile ? "Hytale Account" : "Offline Account",

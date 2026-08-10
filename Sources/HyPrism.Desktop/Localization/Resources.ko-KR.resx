@@ -1,0 +1,2424 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+Copyright (C) 2026 HyPrism Launcher
+SPDX-License-Identifier: GPL-3.0-only
+-->
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+  <data name="_langName" xml:space="preserve">
+    <value>한국어</value>
+  </data>
+  <data name="accessibility.next" xml:space="preserve">
+    <value>다음</value>
+  </data>
+  <data name="accessibility.previous" xml:space="preserve">
+    <value>이전</value>
+  </data>
+  <data name="accessibility.segmentedControl" xml:space="preserve">
+    <value>세그먼트 컨트롤</value>
+  </data>
+  <data name="app.downloadedUpdate" xml:space="preserve">
+    <value>최신 HyPrism을 다운로드 폴더에 다운로드했습니다.</value>
+  </data>
+  <data name="app.downloadedUpdateHint" xml:space="preserve">
+    <value>설치를 위해 파일을 열려고 시도했습니다. 열리지 않으면 다운로드로 이동하여 수동으로 실행하세요.</value>
+  </data>
+  <data name="app.enterInstancePath" xml:space="preserve">
+    <value>HyPrism 인스턴스를 저장할 전체 경로를 입력하세요:</value>
+  </data>
+  <data name="app.failedChangeDir" xml:space="preserve">
+    <value>인스턴스 디렉토리 변경 실패</value>
+  </data>
+  <data name="app.failedUpdate" xml:space="preserve">
+    <value>런처 업데이트 실패</value>
+  </data>
+  <data name="app.gameCrashed" xml:space="preserve">
+    <value>게임이 종료 코드 {{code}}로 충돌했습니다</value>
+  </data>
+  <data name="app.instanceDirUpdated" xml:space="preserve">
+    <value>인스턴스 디렉토리 업데이트됨</value>
+  </data>
+  <data name="app.instanceDirUpdatedDetail" xml:space="preserve">
+    <value>게임 인스턴스가 이제 다음 위치에 저장됩니다:
+{{dir}}
+
+참고: 다음은 AppData에 남아있습니다:
+• Java Runtime (JRE)
+• Butler 도구
+• 캐시 파일
+• 로그
+• 런처 설정
+• WebView2 (EBWebView 폴더)
+
+드라이브를 전환하는 경우 게임을 다시 설치해야 할 수 있습니다.</value>
+  </data>
+  <data name="app.invalidNickname" xml:space="preserve">
+    <value>잘못된 닉네임</value>
+  </data>
+  <data name="app.nicknameLengthError" xml:space="preserve">
+    <value>닉네임은 1-16자 사이여야 합니다</value>
+  </data>
+  <data name="app.pathError" xml:space="preserve">
+    <value>경로를 사용할 수 없습니다. 경로가 존재하고 쓰기 권한이 있는지 확인하세요.</value>
+  </data>
+  <data name="app.title" xml:space="preserve">
+    <value>HyPrism</value>
+  </data>
+  <data name="app.version" xml:space="preserve">
+    <value>HyPrism {0}</value>
+  </data>
+  <data name="common.all" xml:space="preserve">
+    <value>전체</value>
+  </data>
+  <data name="common.back" xml:space="preserve">
+    <value>뒤로</value>
+  </data>
+  <data name="common.branch" xml:space="preserve">
+    <value>브랜치</value>
+  </data>
+  <data name="common.browse" xml:space="preserve">
+    <value>찾아보기</value>
+  </data>
+  <data name="common.cancel" xml:space="preserve">
+    <value>취소</value>
+  </data>
+  <data name="common.clear" xml:space="preserve">
+    <value>지우기</value>
+  </data>
+  <data name="common.close" xml:space="preserve">
+    <value>닫기</value>
+  </data>
+  <data name="common.continue" xml:space="preserve">
+    <value>계속</value>
+  </data>
+  <data name="common.copied" xml:space="preserve">
+    <value>복사됨!</value>
+  </data>
+  <data name="common.copy" xml:space="preserve">
+    <value>복사</value>
+  </data>
+  <data name="common.delete" xml:space="preserve">
+    <value>삭제</value>
+  </data>
+  <data name="common.dismiss" xml:space="preserve">
+    <value>닫기</value>
+  </data>
+  <data name="common.download" xml:space="preserve">
+    <value>다운로드</value>
+  </data>
+  <data name="common.edit" xml:space="preserve">
+    <value>편집</value>
+  </data>
+  <data name="common.export" xml:space="preserve">
+    <value>내보내기</value>
+  </data>
+  <data name="common.exporting" xml:space="preserve">
+    <value>내보내는 중...</value>
+  </data>
+  <data name="common.import" xml:space="preserve">
+    <value>가져오기</value>
+  </data>
+  <data name="common.importing" xml:space="preserve">
+    <value>가져오는 중...</value>
+  </data>
+  <data name="common.latest" xml:space="preserve">
+    <value>최신</value>
+  </data>
+  <data name="common.loading" xml:space="preserve">
+    <value>로딩 중...</value>
+  </data>
+  <data name="common.never" xml:space="preserve">
+    <value>없음</value>
+  </data>
+  <data name="common.ok" xml:space="preserve">
+    <value>확인</value>
+  </data>
+  <data name="common.open" xml:space="preserve">
+    <value>열기</value>
+  </data>
+  <data name="common.openFolder" xml:space="preserve">
+    <value>폴더 열기</value>
+  </data>
+  <data name="common.preRelease" xml:space="preserve">
+    <value>사전 릴리스</value>
+  </data>
+  <data name="common.refresh" xml:space="preserve">
+    <value>새로고침</value>
+  </data>
+  <data name="common.release" xml:space="preserve">
+    <value>릴리스</value>
+  </data>
+  <data name="common.reload" xml:space="preserve">
+    <value>새로고침</value>
+  </data>
+  <data name="common.reset" xml:space="preserve">
+    <value>초기화</value>
+  </data>
+  <data name="common.save" xml:space="preserve">
+    <value>저장</value>
+  </data>
+  <data name="common.select" xml:space="preserve">
+    <value>선택</value>
+  </data>
+  <data name="common.skip" xml:space="preserve">
+    <value>건너뛰기</value>
+  </data>
+  <data name="common.unknown" xml:space="preserve">
+    <value>알 수 없음</value>
+  </data>
+  <data name="common.update" xml:space="preserve">
+    <value>업데이트</value>
+  </data>
+  <data name="common.version" xml:space="preserve">
+    <value>버전</value>
+  </data>
+  <data name="deleteGame.cacheFiles" xml:space="preserve">
+    <value>캐시 파일</value>
+  </data>
+  <data name="deleteGame.downloadedPatches" xml:space="preserve">
+    <value>다운로드된 패치</value>
+  </data>
+  <data name="deleteGame.gameInstallation" xml:space="preserve">
+    <value>게임 설치</value>
+  </data>
+  <data name="deleteGame.preserveNote" xml:space="preserve">
+    <value>사용자 데이터 및 스킨 프리셋은 보존됩니다.</value>
+  </data>
+  <data name="deleteGame.title" xml:space="preserve">
+    <value>게임을 삭제하시겠습니까?</value>
+  </data>
+  <data name="deleteGame.warning" xml:space="preserve">
+    <value>다음을 포함한 모든 게임 파일이 영구적으로 삭제됩니다:</value>
+  </data>
+  <data name="deleteProfile.avatarData" xml:space="preserve">
+    <value>아바타 및 스킨 데이터</value>
+  </data>
+  <data name="deleteProfile.cancel" xml:space="preserve">
+    <value>취소</value>
+  </data>
+  <data name="deleteProfile.cannotUndo" xml:space="preserve">
+    <value>이 작업은 되돌릴 수 없습니다.</value>
+  </data>
+  <data name="deleteProfile.delete" xml:space="preserve">
+    <value>프로필 삭제</value>
+  </data>
+  <data name="deleteProfile.gameData" xml:space="preserve">
+    <value>게임 진행 상황</value>
+  </data>
+  <data name="deleteProfile.installedMods" xml:space="preserve">
+    <value>설치된 모드</value>
+  </data>
+  <data name="deleteProfile.message" xml:space="preserve">
+    <value>정말 삭제하시겠습니까</value>
+  </data>
+  <data name="deleteProfile.profile" xml:space="preserve">
+    <value>프로필:</value>
+  </data>
+  <data name="deleteProfile.profileSettings" xml:space="preserve">
+    <value>프로필 설정 및 기본 설정</value>
+  </data>
+  <data name="deleteProfile.savedGameData" xml:space="preserve">
+    <value>저장된 게임 데이터</value>
+  </data>
+  <data name="deleteProfile.settings" xml:space="preserve">
+    <value>프로필 설정</value>
+  </data>
+  <data name="deleteProfile.skinAndAvatar" xml:space="preserve">
+    <value>스킨 및 아바타</value>
+  </data>
+  <data name="deleteProfile.title" xml:space="preserve">
+    <value>프로필을 삭제하시겠습니까?</value>
+  </data>
+  <data name="deleteProfile.warning" xml:space="preserve">
+    <value>다음을 포함한 모든 프로필 데이터가 영구적으로 삭제됩니다:</value>
+  </data>
+  <data name="discord.announcement" xml:space="preserve">
+    <value>공지</value>
+  </data>
+  <data name="discord.bugReport" xml:space="preserve">
+    <value>버그 보고</value>
+  </data>
+  <data name="discord.showAnnouncements" xml:space="preserve">
+    <value>공지 표시</value>
+  </data>
+  <data name="dock.dashboard" xml:space="preserve">
+    <value>대시보드</value>
+  </data>
+  <data name="dock.instances" xml:space="preserve">
+    <value>인스턴스</value>
+  </data>
+  <data name="dock.logs" xml:space="preserve">
+    <value>로그</value>
+  </data>
+  <data name="dock.mods" xml:space="preserve">
+    <value>모드</value>
+  </data>
+  <data name="dock.news" xml:space="preserve">
+    <value>뉴스</value>
+  </data>
+  <data name="dock.profiles" xml:space="preserve">
+    <value>프로필</value>
+  </data>
+  <data name="dock.settings" xml:space="preserve">
+    <value>설정</value>
+  </data>
+  <data name="error.copyError" xml:space="preserve">
+    <value>오류 복사</value>
+  </data>
+  <data name="error.dismiss" xml:space="preserve">
+    <value>닫기</value>
+  </data>
+  <data name="error.noLogEntries" xml:space="preserve">
+    <value>로그 항목이 없습니다</value>
+  </data>
+  <data name="error.occurredAt" xml:space="preserve">
+    <value>발생 시간:</value>
+  </data>
+  <data name="error.ok" xml:space="preserve">
+    <value>확인</value>
+  </data>
+  <data name="error.reportIssue" xml:space="preserve">
+    <value>문제 보고</value>
+  </data>
+  <data name="error.somethingWrong" xml:space="preserve">
+    <value>문제가 발생했습니다</value>
+  </data>
+  <data name="error.technicalDetails" xml:space="preserve">
+    <value>기술 세부 정보</value>
+  </data>
+  <data name="error.title" xml:space="preserve">
+    <value>오류 발생</value>
+  </data>
+  <data name="instances.addInstance" xml:space="preserve">
+    <value>인스턴스 추가</value>
+  </data>
+  <data name="instances.create" xml:space="preserve">
+    <value>생성</value>
+  </data>
+  <data name="instances.createInstance" xml:space="preserve">
+    <value>인스턴스 생성</value>
+  </data>
+  <data name="instances.createInstanceHint" xml:space="preserve">
+    <value>새 게임 인스턴스를 다운로드하고 설정합니다</value>
+  </data>
+  <data name="instances.creating" xml:space="preserve">
+    <value>생성 중...</value>
+  </data>
+  <data name="instances.deleteConfirm" xml:space="preserve">
+    <value>정말 삭제하시겠습니까</value>
+  </data>
+  <data name="instances.deleteFailed" xml:space="preserve">
+    <value>인스턴스 삭제 실패</value>
+  </data>
+  <data name="instances.deleteTitle" xml:space="preserve">
+    <value>인스턴스 삭제</value>
+  </data>
+  <data name="instances.deleted" xml:space="preserve">
+    <value>인스턴스 삭제됨</value>
+  </data>
+  <data name="instances.downloadFromDashboard" xml:space="preserve">
+    <value>대시보드에서 게임 버전 다운로드</value>
+  </data>
+  <data name="instances.editInstance" xml:space="preserve">
+    <value>인스턴스 편집</value>
+  </data>
+  <data name="instances.editInstanceHint" xml:space="preserve">
+    <value>이 인스턴스의 이름 또는 아이콘을 변경합니다</value>
+  </data>
+  <data name="instances.exportFailed" xml:space="preserve">
+    <value>인스턴스 내보내기 실패</value>
+  </data>
+  <data name="instances.exportedSuccess" xml:space="preserve">
+    <value>인스턴스가 성공적으로 내보내졌습니다</value>
+  </data>
+  <data name="instances.import" xml:space="preserve">
+    <value>가져오기</value>
+  </data>
+  <data name="instances.importFailed" xml:space="preserve">
+    <value>인스턴스 가져오기 실패</value>
+  </data>
+  <data name="instances.importedSuccess" xml:space="preserve">
+    <value>인스턴스가 성공적으로 가져와졌습니다</value>
+  </data>
+  <data name="instances.installContent" xml:space="preserve">
+    <value>콘텐츠 설치</value>
+  </data>
+  <data name="instances.instanceName" xml:space="preserve">
+    <value>인스턴스 이름</value>
+  </data>
+  <data name="instances.instanceNamePlaceholder" xml:space="preserve">
+    <value>이 인스턴스의 이름을 입력하세요</value>
+  </data>
+  <data name="instances.instanceNotInstalled" xml:space="preserve">
+    <value>인스턴스가 설치되어 있지 않습니다</value>
+  </data>
+  <data name="instances.instanceNotInstalledHint" xml:space="preserve">
+    <value>콘텐츠를 관리하려면 이 인스턴스를 다운로드하세요</value>
+  </data>
+  <data name="instances.lastPlayed" xml:space="preserve">
+    <value>마지막 플레이</value>
+  </data>
+  <data name="instances.logsComingSoon" xml:space="preserve">
+    <value>로그 뷰어 곧 출시</value>
+  </data>
+  <data name="instances.noInstances" xml:space="preserve">
+    <value>설치된 인스턴스 없음</value>
+  </data>
+  <data name="instances.noSaves" xml:space="preserve">
+    <value>세이브를 찾을 수 없습니다</value>
+  </data>
+  <data name="instances.noSavesHint" xml:space="preserve">
+    <value>게임을 플레이하여 첫 번째 세이브를 생성하세요</value>
+  </data>
+  <data name="instances.rename" xml:space="preserve">
+    <value>이름 변경</value>
+  </data>
+  <data name="instances.saves" xml:space="preserve">
+    <value>세이브</value>
+  </data>
+  <data name="instances.selectIcon" xml:space="preserve">
+    <value>아이콘 선택</value>
+  </data>
+  <data name="instances.selectInstance" xml:space="preserve">
+    <value>인스턴스 선택</value>
+  </data>
+  <data name="instances.selectInstanceHint" xml:space="preserve">
+    <value>왼쪽에서 인스턴스를 선택하여 내용을 보고 관리하세요</value>
+  </data>
+  <data name="instances.status.corrupted" xml:space="preserve">
+    <value>손상됨</value>
+  </data>
+  <data name="instances.status.incomplete" xml:space="preserve">
+    <value>불완전</value>
+  </data>
+  <data name="instances.status.notInstalled" xml:space="preserve">
+    <value>설치되지 않음</value>
+  </data>
+  <data name="instances.status.ready" xml:space="preserve">
+    <value>준비됨</value>
+  </data>
+  <data name="instances.status.unknown" xml:space="preserve">
+    <value>알 수 없음</value>
+  </data>
+  <data name="instances.storage" xml:space="preserve">
+    <value>저장소</value>
+  </data>
+  <data name="instances.tab.browse" xml:space="preserve">
+    <value>모드 둘러보기</value>
+  </data>
+  <data name="instances.tab.content" xml:space="preserve">
+    <value>설치된 모드</value>
+  </data>
+  <data name="instances.tab.logs" xml:space="preserve">
+    <value>로그</value>
+  </data>
+  <data name="instances.tab.worlds" xml:space="preserve">
+    <value>월드</value>
+  </data>
+  <data name="instances.title" xml:space="preserve">
+    <value>인스턴스</value>
+  </data>
+  <data name="instances.uploadIcon" xml:space="preserve">
+    <value>아이콘 업로드</value>
+  </data>
+  <data name="instances.versionChangeWarning" xml:space="preserve">
+    <value>Changing version will remove game files</value>
+  </data>
+  <data name="instances.versionChangeWarningHint" xml:space="preserve">
+    <value>The game client will be deleted and you will need to re-download this version. User data (saves, mods) will be kept.</value>
+  </data>
+  <data name="languageSelector.changeLanguage" xml:space="preserve">
+    <value>언어 변경</value>
+  </data>
+  <data name="languageSelector.dontAskAgain" xml:space="preserve">
+    <value>다시 묻지 않기</value>
+  </data>
+  <data name="languageSelector.installTranslation" xml:space="preserve">
+    <value>번역 설치?</value>
+  </data>
+  <data name="languageSelector.no" xml:space="preserve">
+    <value>아니요</value>
+  </data>
+  <data name="languageSelector.searchTranslationMods" xml:space="preserve">
+    <value>{{lang}} 번역 모드를 검색하시겠습니까?</value>
+  </data>
+  <data name="languageSelector.yesSearch" xml:space="preserve">
+    <value>예, 검색</value>
+  </data>
+  <data name="launch.detail.applying_patch" xml:space="preserve">
+    <value>패치 {0}/{1} 적용 중...</value>
+  </data>
+  <data name="launch.detail.authenticating" xml:space="preserve">
+    <value>{0}(으)로 인증 중...</value>
+  </data>
+  <data name="launch.detail.authenticating_generic" xml:space="preserve">
+    <value>인증 중...</value>
+  </data>
+  <data name="launch.detail.butler_install" xml:space="preserve">
+    <value>Butler 설치 중...</value>
+  </data>
+  <data name="launch.detail.butler_ready" xml:space="preserve">
+    <value>Butler 준비 완료</value>
+  </data>
+  <data name="launch.detail.checking_install" xml:space="preserve">
+    <value>설치 확인 중...</value>
+  </data>
+  <data name="launch.detail.checking_versions" xml:space="preserve">
+    <value>사용 가능한 버전 확인 중...</value>
+  </data>
+  <data name="launch.detail.client_already_patched" xml:space="preserve">
+    <value>클라이언트는 이미 패치됨</value>
+  </data>
+  <data name="launch.detail.creating_backup" xml:space="preserve">
+    <value>백업 생성 중...</value>
+  </data>
+  <data name="launch.detail.done" xml:space="preserve">
+    <value>완료</value>
+  </data>
+  <data name="launch.detail.download_complete" xml:space="preserve">
+    <value>다운로드 완료!</value>
+  </data>
+  <data name="launch.detail.downloading_butler" xml:space="preserve">
+    <value>Butler 다운로드 중...</value>
+  </data>
+  <data name="launch.detail.downloading_generic" xml:space="preserve">
+    <value>Hytale 다운로드 중... {0}%</value>
+  </data>
+  <data name="launch.detail.downloading_mirror" xml:space="preserve">
+    <value>미러에서 다운로드 중... {0}%</value>
+  </data>
+  <data name="launch.detail.downloading_official" xml:space="preserve">
+    <value>Hytale에서 다운로드 중... {0}%</value>
+  </data>
+  <data name="launch.detail.downloading_patch" xml:space="preserve">
+    <value>패치 {0}/{1} 다운로드 중 ({2}%)</value>
+  </data>
+  <data name="launch.detail.dualauth_setup" xml:space="preserve">
+    <value>인증 에이전트 설정 중...</value>
+  </data>
+  <data name="launch.detail.game_installed" xml:space="preserve">
+    <value>게임이 이미 설치되어 있습니다</value>
+  </data>
+  <data name="launch.detail.installing_butler" xml:space="preserve">
+    <value>다운로드 엔진 설정 중...</value>
+  </data>
+  <data name="launch.detail.installing_butler_pwr" xml:space="preserve">
+    <value>Butler로 게임 설치 중...</value>
+  </data>
+  <data name="launch.detail.installing_game" xml:space="preserve">
+    <value>게임 설치 중...</value>
+  </data>
+  <data name="launch.detail.java_check" xml:space="preserve">
+    <value>Java Runtime 확인 중...</value>
+  </data>
+  <data name="launch.detail.java_install" xml:space="preserve">
+    <value>Java Runtime 설치 중...</value>
+  </data>
+  <data name="launch.detail.launching_game" xml:space="preserve">
+    <value>게임 실행 중...</value>
+  </data>
+  <data name="launch.detail.patch_applied" xml:space="preserve">
+    <value>패치 {0}가 성공적으로 적용되었습니다</value>
+  </data>
+  <data name="launch.detail.patching_class_files" xml:space="preserve">
+    <value>class 파일 패치 중...</value>
+  </data>
+  <data name="launch.detail.patching_client" xml:space="preserve">
+    <value>클라이언트 바이너리 패치 중...</value>
+  </data>
+  <data name="launch.detail.patching_complete" xml:space="preserve">
+    <value>패치 완료</value>
+  </data>
+  <data name="launch.detail.patching_domain_refs" xml:space="preserve">
+    <value>도메인 참조 패치 중...</value>
+  </data>
+  <data name="launch.detail.patching_init" xml:space="preserve">
+    <value>패처 초기화 중...</value>
+  </data>
+  <data name="launch.detail.patching_server" xml:space="preserve">
+    <value>서버 JAR 패치 중...</value>
+  </data>
+  <data name="launch.detail.preparing_download" xml:space="preserve">
+    <value>다운로드 준비 중...</value>
+  </data>
+  <data name="launch.detail.preparing_session" xml:space="preserve">
+    <value>게임 세션 준비 중...</value>
+  </data>
+  <data name="launch.detail.reading_client_binary" xml:space="preserve">
+    <value>클라이언트 바이너리 읽는 중...</value>
+  </data>
+  <data name="launch.detail.reading_server_jar" xml:space="preserve">
+    <value>서버 JAR 읽는 중...</value>
+  </data>
+  <data name="launch.detail.replacing_original_jar" xml:space="preserve">
+    <value>원본 JAR 교체 중...</value>
+  </data>
+  <data name="launch.detail.resigning" xml:space="preserve">
+    <value>바이너리 재서명 중...</value>
+  </data>
+  <data name="launch.detail.server_already_patched" xml:space="preserve">
+    <value>서버는 이미 패치됨</value>
+  </data>
+  <data name="launch.detail.server_jar_patched" xml:space="preserve">
+    <value>서버 JAR 패치됨</value>
+  </data>
+  <data name="launch.detail.started" xml:space="preserve">
+    <value>게임이 시작되었습니다!</value>
+  </data>
+  <data name="launch.detail.starting_process" xml:space="preserve">
+    <value>게임 프로세스 시작 중...</value>
+  </data>
+  <data name="launch.detail.update_check" xml:space="preserve">
+    <value>업데이트 확인 중...</value>
+  </data>
+  <data name="launch.detail.using_cached_installer" xml:space="preserve">
+    <value>캐시된 설치 프로그램 사용 중...</value>
+  </data>
+  <data name="launch.detail.vc_redist" xml:space="preserve">
+    <value>Visual C++ Runtime 확인 중...</value>
+  </data>
+  <data name="launch.detail.waiting_for_window" xml:space="preserve">
+    <value>게임 창 대기 중...</value>
+  </data>
+  <data name="launch.detail.writing_patched_binary" xml:space="preserve">
+    <value>패치된 바이너리 쓰는 중...</value>
+  </data>
+  <data name="launch.option.cancel" xml:space="preserve">
+    <value>게임 실행/다운로드 취소</value>
+  </data>
+  <data name="launch.option.runAfterDownload" xml:space="preserve">
+    <value>다운로드 후 게임 실행</value>
+  </data>
+  <data name="launch.state.complete" xml:space="preserve">
+    <value>완료</value>
+  </data>
+  <data name="launch.state.download" xml:space="preserve">
+    <value>다운로드 중</value>
+  </data>
+  <data name="launch.state.install" xml:space="preserve">
+    <value>설치 중</value>
+  </data>
+  <data name="launch.state.launching" xml:space="preserve">
+    <value>실행 중</value>
+  </data>
+  <data name="launch.state.patching" xml:space="preserve">
+    <value>패치 중</value>
+  </data>
+  <data name="launch.state.preparing" xml:space="preserve">
+    <value>준비 중</value>
+  </data>
+  <data name="launch.state.update" xml:space="preserve">
+    <value>업데이트 중</value>
+  </data>
+  <data name="logs.auto" xml:space="preserve">
+    <value>자동</value>
+  </data>
+  <data name="logs.clear" xml:space="preserve">
+    <value>지우기</value>
+  </data>
+  <data name="logs.copy" xml:space="preserve">
+    <value>모두 복사</value>
+  </data>
+  <data name="logs.copySelected" xml:space="preserve">
+    <value>선택 항목 복사</value>
+  </data>
+  <data name="logs.empty" xml:space="preserve">
+    <value>아직 로그가 없습니다</value>
+  </data>
+  <data name="logs.export" xml:space="preserve">
+    <value>내보내기</value>
+  </data>
+  <data name="logs.filter.all" xml:space="preserve">
+    <value>전체</value>
+  </data>
+  <data name="logs.filter.debug" xml:space="preserve">
+    <value>디버그</value>
+  </data>
+  <data name="logs.filter.error" xml:space="preserve">
+    <value>오류</value>
+  </data>
+  <data name="logs.filter.info" xml:space="preserve">
+    <value>정보</value>
+  </data>
+  <data name="logs.filter.success" xml:space="preserve">
+    <value>성공</value>
+  </data>
+  <data name="logs.filter.warning" xml:space="preserve">
+    <value>경고</value>
+  </data>
+  <data name="logs.loading" xml:space="preserve">
+    <value>로그 로딩 중...</value>
+  </data>
+  <data name="logs.noResults" xml:space="preserve">
+    <value>필터와 일치하는 로그가 없습니다</value>
+  </data>
+  <data name="logs.refresh" xml:space="preserve">
+    <value>새로고침</value>
+  </data>
+  <data name="logs.searchPlaceholder" xml:space="preserve">
+    <value>로그 검색...</value>
+  </data>
+  <data name="logs.selected" xml:space="preserve">
+    <value>{{count}}개 선택됨</value>
+  </data>
+  <data name="logs.showing" xml:space="preserve">
+    <value>{{total}}개 중 {{count}}개 표시</value>
+  </data>
+  <data name="logs.title" xml:space="preserve">
+    <value>로그</value>
+  </data>
+  <data name="main.buyIt" xml:space="preserve">
+    <value>구매하기</value>
+  </data>
+  <data name="main.buyMeA" xml:space="preserve">
+    <value>커피 한 잔</value>
+  </data>
+  <data name="main.cancel" xml:space="preserve">
+    <value>취소</value>
+  </data>
+  <data name="main.checking" xml:space="preserve">
+    <value>확인 중</value>
+  </data>
+  <data name="main.download" xml:space="preserve">
+    <value>다운로드</value>
+  </data>
+  <data name="main.duplicate" xml:space="preserve">
+    <value>복제</value>
+  </data>
+  <data name="main.editProfile" xml:space="preserve">
+    <value>프로필 편집</value>
+  </data>
+  <data name="main.educational" xml:space="preserve">
+    <value>교육 목적입니다. 마음에 드시나요?</value>
+  </data>
+  <data name="main.educationalOnly" xml:space="preserve">
+    <value>교육 목적 전용.</value>
+  </data>
+  <data name="main.exit" xml:space="preserve">
+    <value>종료</value>
+  </data>
+  <data name="main.gitHubRepository" xml:space="preserve">
+    <value>GitHub 저장소</value>
+  </data>
+  <data name="main.joinDiscord" xml:space="preserve">
+    <value>Discord 참여</value>
+  </data>
+  <data name="main.latest" xml:space="preserve">
+    <value>최신</value>
+  </data>
+  <data name="main.likeIt" xml:space="preserve">
+    <value>마음에 드시나요?</value>
+  </data>
+  <data name="main.mirror" xml:space="preserve">
+    <value>미러</value>
+  </data>
+  <data name="main.modManager" xml:space="preserve">
+    <value>모드 관리자</value>
+  </data>
+  <data name="main.noVersions" xml:space="preserve">
+    <value>버전 없음</value>
+  </data>
+  <data name="main.officialServerBlocked" xml:space="preserve">
+    <value>공식 서버는 구매한 게임과 Hytale 계정이 필요합니다</value>
+  </data>
+  <data name="main.openInstanceFolder" xml:space="preserve">
+    <value>인스턴스 폴더 열기</value>
+  </data>
+  <data name="main.play" xml:space="preserve">
+    <value>플레이</value>
+  </data>
+  <data name="main.preRelease" xml:space="preserve">
+    <value>프리릴리즈</value>
+  </data>
+  <data name="main.release" xml:space="preserve">
+    <value>릴리즈</value>
+  </data>
+  <data name="main.running" xml:space="preserve">
+    <value>실행 중</value>
+  </data>
+  <data name="main.selectInstance" xml:space="preserve">
+    <value>인스턴스 선택</value>
+  </data>
+  <data name="main.settings" xml:space="preserve">
+    <value>설정</value>
+  </data>
+  <data name="main.sourceMirror" xml:space="preserve">
+    <value>커뮤니티 미러에서 다운로드</value>
+  </data>
+  <data name="main.sourceOfficial" xml:space="preserve">
+    <value>공식 Hytale 서버에서 다운로드</value>
+  </data>
+  <data name="main.stop" xml:space="preserve">
+    <value>중지</value>
+  </data>
+  <data name="main.update" xml:space="preserve">
+    <value>업데이트</value>
+  </data>
+  <data name="main.updateAvailable" xml:space="preserve">
+    <value>업데이트 가능</value>
+  </data>
+  <data name="modManager.addMods" xml:space="preserve">
+    <value>모드 추가</value>
+  </data>
+  <data name="modManager.allCategories" xml:space="preserve">
+    <value>모든 카테고리</value>
+  </data>
+  <data name="modManager.allMods" xml:space="preserve">
+    <value>모든 모드</value>
+  </data>
+  <data name="modManager.allUpToDate" xml:space="preserve">
+    <value>모든 모드가 최신입니다!</value>
+  </data>
+  <data name="modManager.author" xml:space="preserve">
+    <value>제작자</value>
+  </data>
+  <data name="modManager.backendRefused" xml:space="preserve">
+    <value>백엔드가 이 모드 설치를 거부했습니다. 다시 시도하세요.</value>
+  </data>
+  <data name="modManager.browse" xml:space="preserve">
+    <value>모드 찾아보기</value>
+  </data>
+  <data name="modManager.browseMods" xml:space="preserve">
+    <value>모드 찾아보기</value>
+  </data>
+  <data name="modManager.category.all_mods" xml:space="preserve">
+    <value>모든 모드</value>
+  </data>
+  <data name="modManager.category.blocks" xml:space="preserve">
+    <value>블록</value>
+  </data>
+  <data name="modManager.category.cosmetics_armor" xml:space="preserve">
+    <value>코스메틱 / 방어구</value>
+  </data>
+  <data name="modManager.category.food_farming" xml:space="preserve">
+    <value>음식 / 농업</value>
+  </data>
+  <data name="modManager.category.furniture" xml:space="preserve">
+    <value>가구</value>
+  </data>
+  <data name="modManager.category.gameplay" xml:space="preserve">
+    <value>게임플레이</value>
+  </data>
+  <data name="modManager.category.library" xml:space="preserve">
+    <value>라이브러리</value>
+  </data>
+  <data name="modManager.category.miscellaneous" xml:space="preserve">
+    <value>기타</value>
+  </data>
+  <data name="modManager.category.mobs_characters" xml:space="preserve">
+    <value>몹 / 캐릭터</value>
+  </data>
+  <data name="modManager.category.prefab" xml:space="preserve">
+    <value>프리팹</value>
+  </data>
+  <data name="modManager.category.quality_of_life" xml:space="preserve">
+    <value>편의 기능</value>
+  </data>
+  <data name="modManager.category.resource_packs" xml:space="preserve">
+    <value>리소스 팩</value>
+  </data>
+  <data name="modManager.category.utility" xml:space="preserve">
+    <value>유틸리티</value>
+  </data>
+  <data name="modManager.category.world_gen" xml:space="preserve">
+    <value>월드 생성</value>
+  </data>
+  <data name="modManager.checkForUpdates" xml:space="preserve">
+    <value>업데이트 확인</value>
+  </data>
+  <data name="modManager.clickInstallContent" xml:space="preserve">
+    <value>모드를 추가하려면 '콘텐츠 설치'를 클릭하세요</value>
+  </data>
+  <data name="modManager.clickToClose" xml:space="preserve">
+    <value>아무 곳이나 클릭하여 닫기</value>
+  </data>
+  <data name="modManager.clickToViewImage" xml:space="preserve">
+    <value>클릭하여 전체 이미지 보기</value>
+  </data>
+  <data name="modManager.close" xml:space="preserve">
+    <value>닫기</value>
+  </data>
+  <data name="modManager.confirmDelete" xml:space="preserve">
+    <value>{{count}}개 모드를 삭제하시겠습니까? 이 작업은 취소할 수 없습니다.</value>
+  </data>
+  <data name="modManager.confirmDownload" xml:space="preserve">
+    <value>{{count}}개 모드를 다운로드하시겠습니까?</value>
+  </data>
+  <data name="modManager.delete" xml:space="preserve">
+    <value>삭제</value>
+  </data>
+  <data name="modManager.deleteCount" xml:space="preserve">
+    <value>{{count}}개 모드 삭제</value>
+  </data>
+  <data name="modManager.deleteFailed" xml:space="preserve">
+    <value>모드 삭제 실패</value>
+  </data>
+  <data name="modManager.deleteModConfirm" xml:space="preserve">
+    <value>이 모드를 정말 삭제하시겠습니까?</value>
+  </data>
+  <data name="modManager.deleteModTitle" xml:space="preserve">
+    <value>모드 삭제</value>
+  </data>
+  <data name="modManager.deleteMods" xml:space="preserve">
+    <value>모드 삭제</value>
+  </data>
+  <data name="modManager.deleteSelected" xml:space="preserve">
+    <value>선택 항목 삭제</value>
+  </data>
+  <data name="modManager.description" xml:space="preserve">
+    <value>설명</value>
+  </data>
+  <data name="modManager.disableSelected" xml:space="preserve">
+    <value>Disable Selected</value>
+  </data>
+  <data name="modManager.download" xml:space="preserve">
+    <value>다운로드</value>
+  </data>
+  <data name="modManager.downloadCount" xml:space="preserve">
+    <value>{{count}}개 모드 다운로드</value>
+  </data>
+  <data name="modManager.downloadFailed" xml:space="preserve">
+    <value>다운로드 실패</value>
+  </data>
+  <data name="modManager.downloadMods" xml:space="preserve">
+    <value>모드 다운로드</value>
+  </data>
+  <data name="modManager.downloadSelected" xml:space="preserve">
+    <value>선택 항목 다운로드</value>
+  </data>
+  <data name="modManager.downloading" xml:space="preserve">
+    <value>다운로드 중</value>
+  </data>
+  <data name="modManager.downloadingMods" xml:space="preserve">
+    <value>모드 다운로드 중</value>
+  </data>
+  <data name="modManager.downloads" xml:space="preserve">
+    <value>다운로드</value>
+  </data>
+  <data name="modManager.dragModFiles" xml:space="preserve">
+    <value>모드 파일 또는 모드 목록을 드래그하세요</value>
+  </data>
+  <data name="modManager.dropModsHere" xml:space="preserve">
+    <value>여기에 모드를 드롭하세요</value>
+  </data>
+  <data name="modManager.enableSelected" xml:space="preserve">
+    <value>Enable Selected</value>
+  </data>
+  <data name="modManager.enabled" xml:space="preserve">
+    <value>활성화됨</value>
+  </data>
+  <data name="modManager.exportFailed" xml:space="preserve">
+    <value>모드 내보내기 실패</value>
+  </data>
+  <data name="modManager.exportMods" xml:space="preserve">
+    <value>모드 내보내기</value>
+  </data>
+  <data name="modManager.exportType.exportFolder" xml:space="preserve">
+    <value>내보내기 폴더</value>
+  </data>
+  <data name="modManager.exportType.modList" xml:space="preserve">
+    <value>모드 목록</value>
+  </data>
+  <data name="modManager.exportType.modListHint" xml:space="preserve">
+    <value>다시 다운로드용 JSON 파일</value>
+  </data>
+  <data name="modManager.exportType.selectFolder" xml:space="preserve">
+    <value>내보내기 폴더 선택...</value>
+  </data>
+  <data name="modManager.exportType.title" xml:space="preserve">
+    <value>내보내기 유형</value>
+  </data>
+  <data name="modManager.exportType.zipArchive" xml:space="preserve">
+    <value>ZIP 아카이브</value>
+  </data>
+  <data name="modManager.exportType.zipArchiveHint" xml:space="preserve">
+    <value>모든 모드 파일 묶음</value>
+  </data>
+  <data name="modManager.exportedList" xml:space="preserve">
+    <value>모드 목록이 {{path}}에 내보내졌습니다</value>
+  </data>
+  <data name="modManager.exportedZip" xml:space="preserve">
+    <value>모드가 ZIP으로 {{path}}에 내보내졌습니다</value>
+  </data>
+  <data name="modManager.importFailed" xml:space="preserve">
+    <value>모드 가져오기 실패</value>
+  </data>
+  <data name="modManager.importedCount" xml:space="preserve">
+    <value>{{count}}개 모드를 가져왔습니다</value>
+  </data>
+  <data name="modManager.importingList" xml:space="preserve">
+    <value>모드 목록 가져오는 중...</value>
+  </data>
+  <data name="modManager.installFailed" xml:space="preserve">
+    <value>모드 설치 실패. 다시 시도하세요.</value>
+  </data>
+  <data name="modManager.installSelected" xml:space="preserve">
+    <value>선택 항목 설치</value>
+  </data>
+  <data name="modManager.installed" xml:space="preserve">
+    <value>설치된 모드</value>
+  </data>
+  <data name="modManager.installedBadge" xml:space="preserve">
+    <value>설치됨</value>
+  </data>
+  <data name="modManager.installedCount" xml:space="preserve">
+    <value>{{count}}개 모드가 설치되었습니다</value>
+  </data>
+  <data name="modManager.installingMod" xml:space="preserve">
+    <value>{{name}} 설치 중...</value>
+  </data>
+  <data name="modManager.loadingVersions" xml:space="preserve">
+    <value>버전 로딩 중...</value>
+  </data>
+  <data name="modManager.modDeleted" xml:space="preserve">
+    <value>모드가 성공적으로 삭제되었습니다</value>
+  </data>
+  <data name="modManager.mods" xml:space="preserve">
+    <value>모드</value>
+  </data>
+  <data name="modManager.modsDeleted" xml:space="preserve">
+    <value>모드가 성공적으로 삭제되었습니다</value>
+  </data>
+  <data name="modManager.modsDisabled" xml:space="preserve">
+    <value>Mods disabled</value>
+  </data>
+  <data name="modManager.modsEnabled" xml:space="preserve">
+    <value>Mods enabled</value>
+  </data>
+  <data name="modManager.modsInstalled" xml:space="preserve">
+    <value>개 모드 설치됨</value>
+  </data>
+  <data name="modManager.modsSelected" xml:space="preserve">
+    <value>개 모드 선택됨</value>
+  </data>
+  <data name="modManager.name" xml:space="preserve">
+    <value>이름</value>
+  </data>
+  <data name="modManager.noCurseForge" xml:space="preserve">
+    <value>내보낼 CurseForge 모드가 없습니다</value>
+  </data>
+  <data name="modManager.noDescription" xml:space="preserve">
+    <value>설명 없음</value>
+  </data>
+  <data name="modManager.noDownloadableFiles" xml:space="preserve">
+    <value>선택한 모드에 다운로드 가능한 파일이 없습니다.</value>
+  </data>
+  <data name="modManager.noFilesAvailable" xml:space="preserve">
+    <value>사용 가능한 파일 없음</value>
+  </data>
+  <data name="modManager.noMatch" xml:space="preserve">
+    <value>검색과 일치하는 모드 없음</value>
+  </data>
+  <data name="modManager.noModFiles" xml:space="preserve">
+    <value>내보낼 모드 파일이 없습니다</value>
+  </data>
+  <data name="modManager.noModsFound" xml:space="preserve">
+    <value>모드를 찾을 수 없습니다</value>
+  </data>
+  <data name="modManager.noModsInstalled" xml:space="preserve">
+    <value>설치된 모드 없음</value>
+  </data>
+  <data name="modManager.noVersionsAvailable" xml:space="preserve">
+    <value>사용 가능한 버전 없음</value>
+  </data>
+  <data name="modManager.of" xml:space="preserve">
+    <value>/</value>
+  </data>
+  <data name="modManager.openCurseforge" xml:space="preserve">
+    <value>CurseForge 페이지 열기</value>
+  </data>
+  <data name="modManager.openModsFolder" xml:space="preserve">
+    <value>모드 폴더 열기</value>
+  </data>
+  <data name="modManager.profile" xml:space="preserve">
+    <value>프로필</value>
+  </data>
+  <data name="modManager.redownloadCount" xml:space="preserve">
+    <value>{{count}}개 모드 재다운로드</value>
+  </data>
+  <data name="modManager.releaseType.alpha" xml:space="preserve">
+    <value>알파</value>
+  </data>
+  <data name="modManager.releaseType.beta" xml:space="preserve">
+    <value>베타</value>
+  </data>
+  <data name="modManager.releaseType.release" xml:space="preserve">
+    <value>릴리스</value>
+  </data>
+  <data name="modManager.releaseType.unknown" xml:space="preserve">
+    <value>알 수 없음</value>
+  </data>
+  <data name="modManager.screenshots" xml:space="preserve">
+    <value>스크린샷</value>
+  </data>
+  <data name="modManager.search" xml:space="preserve">
+    <value>모드 검색...</value>
+  </data>
+  <data name="modManager.searchFailed" xml:space="preserve">
+    <value>모드 검색 실패</value>
+  </data>
+  <data name="modManager.searchInstalled" xml:space="preserve">
+    <value>설치된 모드 검색...</value>
+  </data>
+  <data name="modManager.searchMods" xml:space="preserve">
+    <value>모드 검색...</value>
+  </data>
+  <data name="modManager.selectCountForDownload" xml:space="preserve">
+    <value>{{count}}개 모드 다운로드 선택</value>
+  </data>
+  <data name="modManager.selectCountMods" xml:space="preserve">
+    <value>{{count}}개 모드 선택</value>
+  </data>
+  <data name="modManager.selectExportFolder" xml:space="preserve">
+    <value>내보내기 폴더를 선택하세요</value>
+  </data>
+  <data name="modManager.selectForDownload" xml:space="preserve">
+    <value>다운로드 선택 (Shift+클릭으로 범위 선택)</value>
+  </data>
+  <data name="modManager.selectForInstall" xml:space="preserve">
+    <value>설치 선택 (Shift+클릭으로 범위 선택)</value>
+  </data>
+  <data name="modManager.selectMod" xml:space="preserve">
+    <value>모드 선택</value>
+  </data>
+  <data name="modManager.selectModForDownload" xml:space="preserve">
+    <value>모드 다운로드 선택</value>
+  </data>
+  <data name="modManager.selectModToView" xml:space="preserve">
+    <value>세부 정보를 보려면 모드를 선택하세요</value>
+  </data>
+  <data name="modManager.selectModsToDelete" xml:space="preserve">
+    <value>삭제할 모드 선택</value>
+  </data>
+  <data name="modManager.selectModsToDownload" xml:space="preserve">
+    <value>다운로드할 모드 선택</value>
+  </data>
+  <data name="modManager.selectShift" xml:space="preserve">
+    <value>선택 (Shift+클릭으로 범위 선택)</value>
+  </data>
+  <data name="modManager.selectVersion" xml:space="preserve">
+    <value>버전 선택</value>
+  </data>
+  <data name="modManager.selected" xml:space="preserve">
+    <value>선택됨</value>
+  </data>
+  <data name="modManager.selectedForDownload" xml:space="preserve">
+    <value>다운로드 선택됨</value>
+  </data>
+  <data name="modManager.selectedForInstall" xml:space="preserve">
+    <value>설치 선택됨</value>
+  </data>
+  <data name="modManager.sortBy" xml:space="preserve">
+    <value>정렬 기준</value>
+  </data>
+  <data name="modManager.sortCreationDate" xml:space="preserve">
+    <value>생성일</value>
+  </data>
+  <data name="modManager.sortLatestUpdate" xml:space="preserve">
+    <value>최근 업데이트</value>
+  </data>
+  <data name="modManager.sortPopularity" xml:space="preserve">
+    <value>인기도</value>
+  </data>
+  <data name="modManager.sortRelevancy" xml:space="preserve">
+    <value>관련성</value>
+  </data>
+  <data name="modManager.sortTotalDownloads" xml:space="preserve">
+    <value>총 다운로드</value>
+  </data>
+  <data name="modManager.title" xml:space="preserve">
+    <value>모드 관리자</value>
+  </data>
+  <data name="modManager.toggleFailed" xml:space="preserve">
+    <value>Failed to update mod state</value>
+  </data>
+  <data name="modManager.unknownAuthor" xml:space="preserve">
+    <value>알 수 없는 제작자</value>
+  </data>
+  <data name="modManager.unselectAllCount" xml:space="preserve">
+    <value>모두 선택 해제 ({{count}})</value>
+  </data>
+  <data name="modManager.unselectCountMods" xml:space="preserve">
+    <value>{{count}}개 모드 선택 해제</value>
+  </data>
+  <data name="modManager.unselectMod" xml:space="preserve">
+    <value>모드 선택 해제</value>
+  </data>
+  <data name="modManager.update" xml:space="preserve">
+    <value>업데이트</value>
+  </data>
+  <data name="modManager.updateAll" xml:space="preserve">
+    <value>모두 업데이트</value>
+  </data>
+  <data name="modManager.updateBadge" xml:space="preserve">
+    <value>업데이트</value>
+  </data>
+  <data name="modManager.updatesAvailable" xml:space="preserve">
+    <value>{{count}}개 모드에 업데이트가 있습니다:</value>
+  </data>
+  <data name="modManager.updatesAvailableCount" xml:space="preserve">
+    <value>{{count}}개 업데이트 가능</value>
+  </data>
+  <data name="modManager.updatesAvailableShort" xml:space="preserve">
+    <value>업데이트</value>
+  </data>
+  <data name="modManager.updating" xml:space="preserve">
+    <value>업데이트 중...</value>
+  </data>
+  <data name="modManager.version" xml:space="preserve">
+    <value>버전</value>
+  </data>
+  <data name="modManager.versionSelected" xml:space="preserve">
+    <value>선택된 버전:</value>
+  </data>
+  <data name="modManager.viewChangelog" xml:space="preserve">
+    <value>변경 로그 보기</value>
+  </data>
+  <data name="music.mute" xml:space="preserve">
+    <value>음소거</value>
+  </data>
+  <data name="music.mutedWhilePlaying" xml:space="preserve">
+    <value>게임 실행 중 음악 음소거</value>
+  </data>
+  <data name="music.on" xml:space="preserve">
+    <value>음악</value>
+  </data>
+  <data name="music.unmute" xml:space="preserve">
+    <value>음소거 해제</value>
+  </data>
+  <data name="news.all" xml:space="preserve">
+    <value>전체</value>
+  </data>
+  <data name="news.disabled" xml:space="preserve">
+    <value>뉴스가 비활성화되었습니다</value>
+  </data>
+  <data name="news.enableInSettings" xml:space="preserve">
+    <value>설정에서 뉴스 활성화</value>
+  </data>
+  <data name="news.expand" xml:space="preserve">
+    <value>확장</value>
+  </data>
+  <data name="news.hyprism" xml:space="preserve">
+    <value>HyPrism</value>
+  </data>
+  <data name="news.hytale" xml:space="preserve">
+    <value>Hytale</value>
+  </data>
+  <data name="news.loading" xml:space="preserve">
+    <value>뉴스 로딩 중...</value>
+  </data>
+  <data name="news.minimize" xml:space="preserve">
+    <value>최소화</value>
+  </data>
+  <data name="news.noNewsFound" xml:space="preserve">
+    <value>뉴스를 찾을 수 없습니다</value>
+  </data>
+  <data name="news.readMore" xml:space="preserve">
+    <value>링크</value>
+  </data>
+  <data name="news.title" xml:space="preserve">
+    <value>뉴스</value>
+  </data>
+  <data name="news.tryAgain" xml:space="preserve">
+    <value>다시 시도</value>
+  </data>
+  <data name="onboarding.about" xml:space="preserve">
+    <value>정보</value>
+  </data>
+  <data name="onboarding.aboutHyPrism" xml:space="preserve">
+    <value>HyPrism 정보</value>
+  </data>
+  <data name="onboarding.accentColor" xml:space="preserve">
+    <value>강조 색상</value>
+  </data>
+  <data name="onboarding.allSet" xml:space="preserve">
+    <value>모든 준비가 완료되었습니다! 런처에 대한 정보입니다</value>
+  </data>
+  <data name="onboarding.auth.authenticating" xml:space="preserve">
+    <value>인증 중...</value>
+  </data>
+  <data name="onboarding.auth.createFailed" xml:space="preserve">
+    <value>Hytale 계정에서 프로필을 생성하지 못했습니다.</value>
+  </data>
+  <data name="onboarding.auth.description" xml:space="preserve">
+    <value>Hytale 계정으로 로그인하세요. 게임을 아직 구매하지 않은 경우 건너뛰기를 클릭하세요.</value>
+  </data>
+  <data name="onboarding.auth.error" xml:space="preserve">
+    <value>인증 중 오류가 발생했습니다.</value>
+  </data>
+  <data name="onboarding.auth.failed" xml:space="preserve">
+    <value>인증 실패. 다시 시도하세요.</value>
+  </data>
+  <data name="onboarding.auth.login" xml:space="preserve">
+    <value>Hytale로 로그인</value>
+  </data>
+  <data name="onboarding.auth.noHytaleProfile" xml:space="preserve">
+    <value>계정에 아직 Hytale 액세스 권한이 없습니다. 공식 웹사이트에서 게임을 구매할 수 있습니다.</value>
+  </data>
+  <data name="onboarding.auth.skip" xml:space="preserve">
+    <value>건너뛰기</value>
+  </data>
+  <data name="onboarding.auth.title" xml:space="preserve">
+    <value>인증</value>
+  </data>
+  <data name="onboarding.authServerCreator" xml:space="preserve">
+    <value>인증 서버 제작자</value>
+  </data>
+  <data name="onboarding.background" xml:space="preserve">
+    <value>배경</value>
+  </data>
+  <data name="onboarding.bugReport" xml:space="preserve">
+    <value>버그 보고</value>
+  </data>
+  <data name="onboarding.changeInSettings" xml:space="preserve">
+    <value>나중에 설정 &gt; 데이터에서 이 위치를 변경할 수 있습니다</value>
+  </data>
+  <data name="onboarding.chooseAccentAndBg" xml:space="preserve">
+    <value>강조 색상 및 배경 선택</value>
+  </data>
+  <data name="onboarding.chooseLanguage" xml:space="preserve">
+    <value>언어를 선택하세요</value>
+  </data>
+  <data name="onboarding.chooseLocation" xml:space="preserve">
+    <value>인스턴스 위치 선택</value>
+  </data>
+  <data name="onboarding.chooseUsername" xml:space="preserve">
+    <value>게임용 사용자명을 선택하세요</value>
+  </data>
+  <data name="onboarding.customizeAppearance" xml:space="preserve">
+    <value>모양 사용자 정의</value>
+  </data>
+  <data name="onboarding.disclaimer" xml:space="preserve">
+    <value>HyPrism은 Hytale의 비공식 런처입니다. 이 프로젝트는 Hypixel Studios와 관련이 없습니다.</value>
+  </data>
+  <data name="onboarding.enterLauncher" xml:space="preserve">
+    <value>런처 시작</value>
+  </data>
+  <data name="onboarding.enterUsername" xml:space="preserve">
+    <value>사용자명을 입력하세요</value>
+  </data>
+  <data name="onboarding.filesStoredHere" xml:space="preserve">
+    <value>게임 파일이 여기에 저장됩니다</value>
+  </data>
+  <data name="onboarding.generateUsername" xml:space="preserve">
+    <value>무작위 사용자명 생성</value>
+  </data>
+  <data name="onboarding.getStarted" xml:space="preserve">
+    <value>시작하기</value>
+  </data>
+  <data name="onboarding.gpuHint" xml:space="preserve">
+    <value>게임 실행 시 사용할 그래픽 카드를 선택하세요</value>
+  </data>
+  <data name="onboarding.gpuPreference" xml:space="preserve">
+    <value>GPU 선호도</value>
+  </data>
+  <data name="onboarding.gpu_auto" xml:space="preserve">
+    <value>자동</value>
+  </data>
+  <data name="onboarding.gpu_autoHint" xml:space="preserve">
+    <value>시스템이 결정하도록 합니다</value>
+  </data>
+  <data name="onboarding.gpu_dedicated" xml:space="preserve">
+    <value>전용 GPU</value>
+  </data>
+  <data name="onboarding.gpu_dedicatedHint" xml:space="preserve">
+    <value>전용 그래픽 카드 사용</value>
+  </data>
+  <data name="onboarding.gpu_integrated" xml:space="preserve">
+    <value>내장 GPU</value>
+  </data>
+  <data name="onboarding.gpu_integratedHint" xml:space="preserve">
+    <value>내장 그래픽 사용</value>
+  </data>
+  <data name="onboarding.hardware" xml:space="preserve">
+    <value>하드웨어</value>
+  </data>
+  <data name="onboarding.hardwareSettings" xml:space="preserve">
+    <value>하드웨어 설정</value>
+  </data>
+  <data name="onboarding.instanceFolder" xml:space="preserve">
+    <value>인스턴스 폴더</value>
+  </data>
+  <data name="onboarding.language" xml:space="preserve">
+    <value>언어</value>
+  </data>
+  <data name="onboarding.letsSetUp" xml:space="preserve">
+    <value>런처를 설정해 봅시다</value>
+  </data>
+  <data name="onboarding.location" xml:space="preserve">
+    <value>위치</value>
+  </data>
+  <data name="onboarding.locationHint" xml:space="preserve">
+    <value>게임 인스턴스를 저장할 위치를 선택하세요. 기본값으로 두거나 사용자 정의 위치를 선택할 수 있습니다.</value>
+  </data>
+  <data name="onboarding.maintainerRole" xml:space="preserve">
+    <value>관리자 및 개발자</value>
+  </data>
+  <data name="onboarding.profile" xml:space="preserve">
+    <value>프로필</value>
+  </data>
+  <data name="onboarding.selectLanguageHint" xml:space="preserve">
+    <value>런처 인터페이스에 선호하는 언어를 선택하세요</value>
+  </data>
+  <data name="onboarding.setupProfile" xml:space="preserve">
+    <value>프로필 설정</value>
+  </data>
+  <data name="onboarding.skip" xml:space="preserve">
+    <value>건너뛰기</value>
+  </data>
+  <data name="onboarding.slideshow" xml:space="preserve">
+    <value>슬라이드쇼</value>
+  </data>
+  <data name="onboarding.slideshowHint" xml:space="preserve">
+    <value>모든 배경을 순환합니다</value>
+  </data>
+  <data name="onboarding.staticBackground" xml:space="preserve">
+    <value>또는 정적 배경 선택:</value>
+  </data>
+  <data name="onboarding.unofficial" xml:space="preserve">
+    <value>비공식 Hytale 런처</value>
+  </data>
+  <data name="onboarding.username" xml:space="preserve">
+    <value>사용자명</value>
+  </data>
+  <data name="onboarding.usernameHint" xml:space="preserve">
+    <value>1-16자</value>
+  </data>
+  <data name="onboarding.visual" xml:space="preserve">
+    <value>비주얼</value>
+  </data>
+  <data name="onboarding.welcome" xml:space="preserve">
+    <value>HyPrism에 오신 것을 환영합니다</value>
+  </data>
+  <data name="onboarding.welcomeBack" xml:space="preserve">
+    <value>다시 오신 것을 환영합니다, {{name}}님!</value>
+  </data>
+  <data name="onlineToggle.offline" xml:space="preserve">
+    <value>오프라인 모드</value>
+  </data>
+  <data name="onlineToggle.offlineClickEnable" xml:space="preserve">
+    <value>오프라인 모드 (클릭하여 온라인 활성화)</value>
+  </data>
+  <data name="onlineToggle.online" xml:space="preserve">
+    <value>온라인 모드</value>
+  </data>
+  <data name="onlineToggle.onlineClickDisable" xml:space="preserve">
+    <value>온라인 모드 (클릭하여 비활성화)</value>
+  </data>
+  <data name="profileEditor.avatar" xml:space="preserve">
+    <value>아바타</value>
+  </data>
+  <data name="profileEditor.cancel" xml:space="preserve">
+    <value>취소</value>
+  </data>
+  <data name="profileEditor.copy" xml:space="preserve">
+    <value>복사</value>
+  </data>
+  <data name="profileEditor.dropSkin" xml:space="preserve">
+    <value>스킨 파일을 여기에 드롭하거나 아래 버튼을 사용하세요</value>
+  </data>
+  <data name="profileEditor.openAvatarFolder" xml:space="preserve">
+    <value>아바타 폴더 열기</value>
+  </data>
+  <data name="profileEditor.randomize" xml:space="preserve">
+    <value>무작위</value>
+  </data>
+  <data name="profileEditor.refreshPreview" xml:space="preserve">
+    <value>미리보기 새로고침</value>
+  </data>
+  <data name="profileEditor.save" xml:space="preserve">
+    <value>저장</value>
+  </data>
+  <data name="profileEditor.title" xml:space="preserve">
+    <value>프로필 편집기</value>
+  </data>
+  <data name="profileEditor.username" xml:space="preserve">
+    <value>사용자명</value>
+  </data>
+  <data name="profileEditor.usernameHint" xml:space="preserve">
+    <value>1-16자여야 합니다</value>
+  </data>
+  <data name="profileEditor.uuid" xml:space="preserve">
+    <value>UUID</value>
+  </data>
+  <data name="profileEditor.uuidHint" xml:space="preserve">
+    <value>프로필의 고유 식별자</value>
+  </data>
+  <data name="profiles.copyUuid" xml:space="preserve">
+    <value>UUID 복사</value>
+  </data>
+  <data name="profiles.createNew" xml:space="preserve">
+    <value>새 프로필 생성</value>
+  </data>
+  <data name="profiles.deleteProfile" xml:space="preserve">
+    <value>프로필 삭제</value>
+  </data>
+  <data name="profiles.duplicateProfile" xml:space="preserve">
+    <value>프로필 복제</value>
+  </data>
+  <data name="profiles.editUsername" xml:space="preserve">
+    <value>사용자명 편집</value>
+  </data>
+  <data name="profiles.editUuid" xml:space="preserve">
+    <value>UUID 편집</value>
+  </data>
+  <data name="profiles.editor" xml:space="preserve">
+    <value>프로필 편집기</value>
+  </data>
+  <data name="profiles.enterName" xml:space="preserve">
+    <value>프로필 이름 입력...</value>
+  </data>
+  <data name="profiles.enterNewName" xml:space="preserve">
+    <value>새 프로필의 이름을 입력하거나 Escape를 눌러 무작위 이름을 사용하세요</value>
+  </data>
+  <data name="profiles.generateName" xml:space="preserve">
+    <value>무작위 이름 생성</value>
+  </data>
+  <data name="profiles.noProfiles" xml:space="preserve">
+    <value>아직 저장된 프로필 없음</value>
+  </data>
+  <data name="profiles.officialLocked" xml:space="preserve">
+    <value>공식 Hytale 프로필은 편집할 수 없습니다</value>
+  </data>
+  <data name="profiles.openFolder" xml:space="preserve">
+    <value>프로필 폴더 열기</value>
+  </data>
+  <data name="profiles.playerUuid" xml:space="preserve">
+    <value>플레이어 UUID</value>
+  </data>
+  <data name="profiles.randomUuid" xml:space="preserve">
+    <value>무작위 UUID 생성</value>
+  </data>
+  <data name="profiles.saveUuid" xml:space="preserve">
+    <value>UUID 저장</value>
+  </data>
+  <data name="profiles.saved" xml:space="preserve">
+    <value>프로필 저장됨!</value>
+  </data>
+  <data name="profiles.savedProfiles" xml:space="preserve">
+    <value>저장된 프로필</value>
+  </data>
+  <data name="profiles.title" xml:space="preserve">
+    <value>프로필</value>
+  </data>
+  <data name="profiles.wizard.authDesc" xml:space="preserve">
+    <value>브라우저에서 Hytale 로그인 페이지로 리디렉션됩니다. 로그인 후 프로필이 자동으로 생성됩니다.</value>
+  </data>
+  <data name="profiles.wizard.authError" xml:space="preserve">
+    <value>로그인 중 오류가 발생했습니다. 다시 시도하세요.</value>
+  </data>
+  <data name="profiles.wizard.authFailed" xml:space="preserve">
+    <value>로그인이 완료되지 않았습니다. 다시 시도하세요.</value>
+  </data>
+  <data name="profiles.wizard.authTitle" xml:space="preserve">
+    <value>Hytale로 로그인</value>
+  </data>
+  <data name="profiles.wizard.browserHint" xml:space="preserve">
+    <value>브라우저에서 로그인을 완료하세요. 이 창은 자동으로 업데이트됩니다.</value>
+  </data>
+  <data name="profiles.wizard.characters" xml:space="preserve">
+    <value>자</value>
+  </data>
+  <data name="profiles.wizard.chooseType" xml:space="preserve">
+    <value>프로필 생성 방법 선택</value>
+  </data>
+  <data name="profiles.wizard.create" xml:space="preserve">
+    <value>프로필 생성</value>
+  </data>
+  <data name="profiles.wizard.createError" xml:space="preserve">
+    <value>프로필 생성 중 오류가 발생했습니다.</value>
+  </data>
+  <data name="profiles.wizard.createFailed" xml:space="preserve">
+    <value>프로필 생성에 실패했습니다. 다시 시도하세요.</value>
+  </data>
+  <data name="profiles.wizard.loginHytale" xml:space="preserve">
+    <value>Hytale로 로그인</value>
+  </data>
+  <data name="profiles.wizard.nameDesc" xml:space="preserve">
+    <value>오프라인 프로필의 이름을 선택하세요 (3-16자, 영문, 숫자, -와 _)</value>
+  </data>
+  <data name="profiles.wizard.namePlaceholder" xml:space="preserve">
+    <value>닉네임 입력...</value>
+  </data>
+  <data name="profiles.wizard.nameTitle" xml:space="preserve">
+    <value>닉네임 선택</value>
+  </data>
+  <data name="profiles.wizard.nickInvalid" xml:space="preserve">
+    <value>닉네임은 3-16자여야 합니다: 영문, 숫자, 대시 또는 밑줄.</value>
+  </data>
+  <data name="profiles.wizard.nickRules" xml:space="preserve">
+    <value>A-Z, 0-9, -와 _만 가능</value>
+  </data>
+  <data name="profiles.wizard.noHytaleProfile" xml:space="preserve">
+    <value>Hytale 계정에 아직 게임 프로필이 없습니다. 처음 게임에 접속할 때 프로필이 생성됩니다.</value>
+  </data>
+  <data name="profiles.wizard.official" xml:space="preserve">
+    <value>공식 Hytale 계정</value>
+  </data>
+  <data name="profiles.wizard.officialDesc" xml:space="preserve">
+    <value>Hytale 계정으로 로그인하여 공식 서버에서 플레이</value>
+  </data>
+  <data name="profiles.wizard.title" xml:space="preserve">
+    <value>새 프로필 생성</value>
+  </data>
+  <data name="profiles.wizard.unofficial" xml:space="preserve">
+    <value>오프라인 프로필</value>
+  </data>
+  <data name="profiles.wizard.unofficialDesc" xml:space="preserve">
+    <value>사용자 정의 이름과 UUID로 로컬 프로필 생성</value>
+  </data>
+  <data name="profiles.wizard.waitingAuth" xml:space="preserve">
+    <value>로그인 대기 중...</value>
+  </data>
+  <data name="profiles.yourAvatar" xml:space="preserve">
+    <value>플레이어 아바타</value>
+  </data>
+  <data name="settings.about" xml:space="preserve">
+    <value>정보</value>
+  </data>
+  <data name="settings.aboutSettings.authRole" xml:space="preserve">
+    <value>인증 서버 제작자</value>
+  </data>
+  <data name="settings.aboutSettings.bugReport" xml:space="preserve">
+    <value>버그 보고</value>
+  </data>
+  <data name="settings.aboutSettings.cicdRole" xml:space="preserve">
+    <value>CI/CD 배포자</value>
+  </data>
+  <data name="settings.aboutSettings.codevRole" xml:space="preserve">
+    <value>런처 공동 리더</value>
+  </data>
+  <data name="settings.aboutSettings.contributorRole" xml:space="preserve">
+    <value>기여자</value>
+  </data>
+  <data name="settings.aboutSettings.contributors" xml:space="preserve">
+    <value>기여자</value>
+  </data>
+  <data name="settings.aboutSettings.contributorsDescription" xml:space="preserve">
+    <value>이 런처 제작에 도움을 준 훌륭한 분들</value>
+  </data>
+  <data name="settings.aboutSettings.coreTeam" xml:space="preserve">
+    <value>핵심 팀</value>
+  </data>
+  <data name="settings.aboutSettings.coreTeamDescription" xml:space="preserve">
+    <value>HyPrism 개발의 핵심 멤버들</value>
+  </data>
+  <data name="settings.aboutSettings.creatorRole" xml:space="preserve">
+    <value>프로젝트 창시자</value>
+  </data>
+  <data name="settings.aboutSettings.description" xml:space="preserve">
+    <value>Hytale을 위한 현대적인 런처</value>
+  </data>
+  <data name="settings.aboutSettings.disclaimer" xml:space="preserve">
+    <value>HyPrism은 Hytale의 비공식 런처입니다. 이 프로젝트는 Hypixel Studios와 관련이 없습니다.</value>
+  </data>
+  <data name="settings.aboutSettings.installerRole" xml:space="preserve">
+    <value>설치 프로그램 제작자</value>
+  </data>
+  <data name="settings.aboutSettings.maintainerRole" xml:space="preserve">
+    <value>관리자 &amp; 개발자</value>
+  </data>
+  <data name="settings.aboutSettings.others" xml:space="preserve">
+    <value>그 외</value>
+  </data>
+  <data name="settings.aboutSettings.replayIntro" xml:space="preserve">
+    <value>소개 다시 보기</value>
+  </data>
+  <data name="settings.aboutSettings.testerRole" xml:space="preserve">
+    <value>수석 테스터</value>
+  </data>
+  <data name="settings.aboutSettings.title" xml:space="preserve">
+    <value>HyPrism 런처</value>
+  </data>
+  <data name="settings.aboutSettings.unofficial" xml:space="preserve">
+    <value>비공식 Hytale 런처</value>
+  </data>
+  <data name="settings.aboutSettings.version" xml:space="preserve">
+    <value>버전 {0}</value>
+  </data>
+  <data name="settings.browse" xml:space="preserve">
+    <value>찾아보기</value>
+  </data>
+  <data name="settings.categoryDescriptions.about" xml:space="preserve">
+    <value>버전, 프로젝트 링크 및 버그 신고</value>
+  </data>
+  <data name="settings.categoryDescriptions.data" xml:space="preserve">
+    <value>런처 파일, 게임 버전 및 캐시</value>
+  </data>
+  <data name="settings.categoryDescriptions.developer" xml:space="preserve">
+    <value>실험적 기능 및 온보딩 도구</value>
+  </data>
+  <data name="settings.categoryDescriptions.downloads" xml:space="preserve">
+    <value>다운로드 소스, 연결 확인 및 게임 실행</value>
+  </data>
+  <data name="settings.categoryDescriptions.general" xml:space="preserve">
+    <value>언어, 업데이트 및 런처 동작</value>
+  </data>
+  <data name="settings.categoryDescriptions.graphics" xml:space="preserve">
+    <value>Hytale 실행에 사용할 GPU</value>
+  </data>
+  <data name="settings.categoryDescriptions.java" xml:space="preserve">
+    <value>런타임, Java 경로 및 JVM 인수</value>
+  </data>
+  <data name="settings.categoryDescriptions.network" xml:space="preserve">
+    <value>온라인 모드 및 인증 설정</value>
+  </data>
+  <data name="settings.categoryDescriptions.variables" xml:space="preserve">
+    <value>Hytale에 전달할 환경 변수</value>
+  </data>
+  <data name="settings.categoryDescriptions.visual" xml:space="preserve">
+    <value>배경, 음악, 뉴스 및 공지</value>
+  </data>
+  <data name="settings.close" xml:space="preserve">
+    <value>닫기</value>
+  </data>
+  <data name="settings.data" xml:space="preserve">
+    <value>데이터</value>
+  </data>
+  <data name="settings.dataSettings.deleteAllData" xml:space="preserve">
+    <value>모든 런처 데이터 삭제</value>
+  </data>
+  <data name="settings.dataSettings.gameDirectory" xml:space="preserve">
+    <value>게임 디렉토리</value>
+  </data>
+  <data name="settings.dataSettings.gameDirectoryHint" xml:space="preserve">
+    <value>설치된 게임 인스턴스가 저장되는 위치입니다.</value>
+  </data>
+  <data name="settings.dataSettings.gameRunningWarning" xml:space="preserve">
+    <value>게임이 실행 중일 때 일부 옵션을 사용할 수 없습니다. 이 설정을 변경하려면 게임을 종료하세요.</value>
+  </data>
+  <data name="settings.dataSettings.instanceFolder" xml:space="preserve">
+    <value>인스턴스 폴더</value>
+  </data>
+  <data name="settings.dataSettings.launcherData" xml:space="preserve">
+    <value>런처 데이터</value>
+  </data>
+  <data name="settings.dataSettings.launcherDataFolder" xml:space="preserve">
+    <value>런처 데이터 폴더</value>
+  </data>
+  <data name="settings.dataSettings.launcherDataHint" xml:space="preserve">
+    <value>런처 구성 및 자산이 저장되는 위치입니다.</value>
+  </data>
+  <data name="settings.dataSettings.movingData" xml:space="preserve">
+    <value>데이터 이동 중...</value>
+  </data>
+  <data name="settings.dataSettings.movingDataHint" xml:space="preserve">
+    <value>이동 중: {{file}}</value>
+  </data>
+  <data name="settings.dataSettings.open" xml:space="preserve">
+    <value>열기</value>
+  </data>
+  <data name="settings.dataSettings.openLauncherFolder" xml:space="preserve">
+    <value>런처 폴더 열기</value>
+  </data>
+  <data name="settings.dataSettings.resetToDefault" xml:space="preserve">
+    <value>기본값으로 재설정</value>
+  </data>
+  <data name="settings.dataSettings.title" xml:space="preserve">
+    <value>데이터 관리</value>
+  </data>
+  <data name="settings.deleteAllData.message" xml:space="preserve">
+    <value>설정, 캐시, 다운로드한 파일을 포함한 모든 런처 데이터가 삭제됩니다. 이 작업은 취소할 수 없습니다.</value>
+  </data>
+  <data name="settings.deleteAllData.title" xml:space="preserve">
+    <value>모든 데이터를 삭제하시겠습니까?</value>
+  </data>
+  <data name="settings.deleteInstance.message" xml:space="preserve">
+    <value>{{branch}} {{version}} 인스턴스와 모든 데이터가 삭제됩니다. 이 작업은 취소할 수 없습니다.</value>
+  </data>
+  <data name="settings.deleteInstance.title" xml:space="preserve">
+    <value>인스턴스를 삭제하시겠습니까?</value>
+  </data>
+  <data name="settings.devMode" xml:space="preserve">
+    <value>개발자 모드</value>
+  </data>
+  <data name="settings.developer" xml:space="preserve">
+    <value>개발자</value>
+  </data>
+  <data name="settings.developerSettings.debugInfo" xml:space="preserve">
+    <value>디버그 정보:</value>
+  </data>
+  <data name="settings.developerSettings.introRestart" xml:space="preserve">
+    <value>다음 실행 시 소개가 표시됩니다. 런처를 다시 시작하세요.</value>
+  </data>
+  <data name="settings.developerSettings.onboarding" xml:space="preserve">
+    <value>온보딩</value>
+  </data>
+  <data name="settings.developerSettings.showIntro" xml:space="preserve">
+    <value>다음 실행 시 소개 표시</value>
+  </data>
+  <data name="settings.developerSettings.title" xml:space="preserve">
+    <value>개발자 설정</value>
+  </data>
+  <data name="settings.developerSettings.warning" xml:space="preserve">
+    <value>개발자 옵션은 테스트 전용입니다</value>
+  </data>
+  <data name="settings.downloads.addMirror" xml:space="preserve">
+    <value>미러 추가</value>
+  </data>
+  <data name="settings.downloads.addMirrorBtn" xml:space="preserve">
+    <value>미러 추가</value>
+  </data>
+  <data name="settings.downloads.communityMirrors" xml:space="preserve">
+    <value>커뮤니티 미러</value>
+  </data>
+  <data name="settings.downloads.deleteMirror" xml:space="preserve">
+    <value>미러 삭제</value>
+  </data>
+  <data name="settings.downloads.disable" xml:space="preserve">
+    <value>비활성화</value>
+  </data>
+  <data name="settings.downloads.enable" xml:space="preserve">
+    <value>활성화</value>
+  </data>
+  <data name="settings.downloads.headersHint" xml:space="preserve">
+    <value>형식: header=value 또는 header="공백이 있는 값". 공식 User-Agent에는 {hytaleAgent}를 사용하세요.</value>
+  </data>
+  <data name="settings.downloads.headersPlaceholder" xml:space="preserve">
+    <value>사용자 정의 헤더 (선택사항): Authorization="Bearer token" User-Agent="{hytaleAgent}"</value>
+  </data>
+  <data name="settings.downloads.howDownloadsWork" xml:space="preserve">
+    <value>다운로드 작동 방식</value>
+  </data>
+  <data name="settings.downloads.howDownloadsWorkDescription" xml:space="preserve">
+    <value>HyPrism은 게임 파일을 다운로드하기 위해 가장 빠른 소스를 자동으로 선택합니다. "속도 테스트"를 눌러 연결을 확인하세요.</value>
+  </data>
+  <data name="settings.downloads.launchAfterDownload" xml:space="preserve">
+    <value>다운로드 후 게임 시작</value>
+  </data>
+  <data name="settings.downloads.launchAfterDownloadHint" xml:space="preserve">
+    <value>활성화하면 선택한 인스턴스 설치 후 런처가 자동으로 게임을 시작합니다.</value>
+  </data>
+  <data name="settings.downloads.mirrorUrlHint" xml:space="preserve">
+    <value>Hytale 미러의 기본 URL을 입력하세요. 런처가 구성을 자동으로 감지합니다.</value>
+  </data>
+  <data name="settings.downloads.mirrors" xml:space="preserve">
+    <value>커뮤니티 미러</value>
+  </data>
+  <data name="settings.downloads.mirrorsDescription" xml:space="preserve">
+    <value>게임 파일의 대체 다운로드 소스</value>
+  </data>
+  <data name="settings.downloads.mirrorsHint" xml:space="preserve">
+    <value>커뮤니티의 대체 소스</value>
+  </data>
+  <data name="settings.downloads.noMirrors" xml:space="preserve">
+    <value>미러가 구성되지 않음</value>
+  </data>
+  <data name="settings.downloads.noMirrorsHint" xml:space="preserve">
+    <value>공식 계정 없이 게임 파일을 다운로드하려면 미러를 추가하세요</value>
+  </data>
+  <data name="settings.downloads.officialSource" xml:space="preserve">
+    <value>공식 소스</value>
+  </data>
+  <data name="settings.downloads.officialSourceHint" xml:space="preserve">
+    <value>공식 Hytale 서버에서 다운로드</value>
+  </data>
+  <data name="settings.downloads.refreshMirrors" xml:space="preserve">
+    <value>미러 새로고침</value>
+  </data>
+  <data name="settings.downloads.testSpeed" xml:space="preserve">
+    <value>속도 테스트</value>
+  </data>
+  <data name="settings.downloads.testing" xml:space="preserve">
+    <value>테스트 중...</value>
+  </data>
+  <data name="settings.downloads.title" xml:space="preserve">
+    <value>다운로드</value>
+  </data>
+  <data name="settings.downloads.unavailable" xml:space="preserve">
+    <value>사용 불가</value>
+  </data>
+  <data name="settings.exportInstance.exportFolder" xml:space="preserve">
+    <value>내보내기 폴더</value>
+  </data>
+  <data name="settings.exportInstance.exportType" xml:space="preserve">
+    <value>내보내기 유형</value>
+  </data>
+  <data name="settings.exportInstance.selectExportFolder" xml:space="preserve">
+    <value>내보내기 폴더 선택...</value>
+  </data>
+  <data name="settings.exportInstance.title" xml:space="preserve">
+    <value>인스턴스 내보내기</value>
+  </data>
+  <data name="settings.exportInstance.zipArchive" xml:space="preserve">
+    <value>ZIP 아카이브</value>
+  </data>
+  <data name="settings.exportInstance.zipArchiveHint" xml:space="preserve">
+    <value>모든 인스턴스 데이터 묶음</value>
+  </data>
+  <data name="settings.general" xml:space="preserve">
+    <value>일반</value>
+  </data>
+  <data name="settings.generalSettings.closeLauncher" xml:space="preserve">
+    <value>실행 후 닫기</value>
+  </data>
+  <data name="settings.generalSettings.closeLauncherHint" xml:space="preserve">
+    <value>게임 시작 시 런처 종료</value>
+  </data>
+  <data name="settings.generalSettings.dualAuth" xml:space="preserve">
+    <value>DualAuth (실험적)</value>
+  </data>
+  <data name="settings.generalSettings.dualAuthHint" xml:space="preserve">
+    <value>정적 JAR 패치 대신 런타임 Java 에이전트를 사용하여 서버 인증을 수행합니다. 충돌이나 연결 문제가 발생할 수 있습니다.</value>
+  </data>
+  <data name="settings.generalSettings.launcherStorage" xml:space="preserve">
+    <value>런처 저장소</value>
+  </data>
+  <data name="settings.generalSettings.launcherStorageHint" xml:space="preserve">
+    <value>런처 데이터와 게임 파일이 저장되는 위치입니다.</value>
+  </data>
+  <data name="settings.generalSettings.legacyPatching" xml:space="preserve">
+    <value>레거시 패칭</value>
+  </data>
+  <data name="settings.generalSettings.legacyPatchingHint" xml:space="preserve">
+    <value>DualAuth Java 에이전트 대신 정적 JAR 패치를 사용하여 서버 인증을 수행합니다. 더 호환되지만 덜 유연합니다.</value>
+  </data>
+  <data name="settings.generalSettings.showAlphaMods" xml:space="preserve">
+    <value>알파 모드 표시</value>
+  </data>
+  <data name="settings.generalSettings.showAlphaModsHint" xml:space="preserve">
+    <value>모드 관리자에서 알파 릴리스 유형의 모드 표시</value>
+  </data>
+  <data name="settings.generalSettings.title" xml:space="preserve">
+    <value>일반 설정</value>
+  </data>
+  <data name="settings.generalSettings.updateChannel" xml:space="preserve">
+    <value>업데이트 채널</value>
+  </data>
+  <data name="settings.generalSettings.updateChannelBeta" xml:space="preserve">
+    <value>베타</value>
+  </data>
+  <data name="settings.generalSettings.updateChannelBetaHint" xml:space="preserve">
+    <value>새로운 기능에 조기 액세스</value>
+  </data>
+  <data name="settings.generalSettings.updateChannelBetaWarning" xml:space="preserve">
+    <value>불안정할 수 있는 베타 업데이트를 받게 됩니다.</value>
+  </data>
+  <data name="settings.generalSettings.updateChannelExperimental" xml:space="preserve">
+    <value>실험적</value>
+  </data>
+  <data name="settings.generalSettings.updateChannelHint" xml:space="preserve">
+    <value>안정 버전만 받습니다.</value>
+  </data>
+  <data name="settings.generalSettings.updateChannelStable" xml:space="preserve">
+    <value>안정</value>
+  </data>
+  <data name="settings.generalSettings.updateChannelStableHint" xml:space="preserve">
+    <value>대부분의 사용자에게 권장</value>
+  </data>
+  <data name="settings.generalSettings.watchTutorial" xml:space="preserve">
+    <value>튜토리얼 보기</value>
+  </data>
+  <data name="settings.graphics" xml:space="preserve">
+    <value>그래픽</value>
+  </data>
+  <data name="settings.graphicsSettings.enableOptimizationMods" xml:space="preserve">
+    <value>최적화 모드 활성화</value>
+  </data>
+  <data name="settings.graphicsSettings.gpuPreference" xml:space="preserve">
+    <value>GPU 선호도</value>
+  </data>
+  <data name="settings.graphicsSettings.gpuPreferenceHint" xml:space="preserve">
+    <value>게임 실행에 사용할 GPU를 선택하세요. 내장 및 전용 그래픽이 모두 있는 노트북에 유용합니다.</value>
+  </data>
+  <data name="settings.graphicsSettings.gpu_auto" xml:space="preserve">
+    <value>자동</value>
+  </data>
+  <data name="settings.graphicsSettings.gpu_autoHint" xml:space="preserve">
+    <value>시스템이 결정하도록 합니다</value>
+  </data>
+  <data name="settings.graphicsSettings.gpu_dedicated" xml:space="preserve">
+    <value>전용</value>
+  </data>
+  <data name="settings.graphicsSettings.gpu_dedicatedHint" xml:space="preserve">
+    <value>별도 GPU 사용 (NVIDIA/AMD)</value>
+  </data>
+  <data name="settings.graphicsSettings.gpu_integrated" xml:space="preserve">
+    <value>내장</value>
+  </data>
+  <data name="settings.graphicsSettings.gpu_integratedHint" xml:space="preserve">
+    <value>내장 GPU 사용 (Intel/AMD)</value>
+  </data>
+  <data name="settings.graphicsSettings.installOptModsAction" xml:space="preserve">
+    <value>모든 프로필에 8개의 성능 모드 설치</value>
+  </data>
+  <data name="settings.graphicsSettings.installingOptMods" xml:space="preserve">
+    <value>최적화 모드 설치 중...</value>
+  </data>
+  <data name="settings.graphicsSettings.optModsFailed" xml:space="preserve">
+    <value>최적화 모드 설치 실패</value>
+  </data>
+  <data name="settings.graphicsSettings.optModsInstalled" xml:space="preserve">
+    <value>최적화 모드가 설치되었습니다!</value>
+  </data>
+  <data name="settings.graphicsSettings.optimizationMods" xml:space="preserve">
+    <value>최적화 모드</value>
+  </data>
+  <data name="settings.graphicsSettings.optimizationModsHint" xml:space="preserve">
+    <value>게임 성능 향상을 위한 최적화 모드 다운로드 및 설치</value>
+  </data>
+  <data name="settings.graphicsSettings.singleGpuNotice" xml:space="preserve">
+    <value>GPU가 하나만 감지됨 — 자동 모드로 잠김.</value>
+  </data>
+  <data name="settings.graphicsSettings.title" xml:space="preserve">
+    <value>그래픽 설정</value>
+  </data>
+  <data name="settings.importInstance.importing" xml:space="preserve">
+    <value>가져오는 중</value>
+  </data>
+  <data name="settings.importInstance.importingProgress" xml:space="preserve">
+    <value>가져오는 중...</value>
+  </data>
+  <data name="settings.importInstance.selectInstance" xml:space="preserve">
+    <value>UserData를 가져올 인스턴스를 선택하세요:</value>
+  </data>
+  <data name="settings.importInstance.title" xml:space="preserve">
+    <value>인스턴스 가져오기</value>
+  </data>
+  <data name="settings.instanceSettings.clickToRefresh" xml:space="preserve">
+    <value>클릭하여 새로고침</value>
+  </data>
+  <data name="settings.instanceSettings.created" xml:space="preserve">
+    <value>생성일</value>
+  </data>
+  <data name="settings.instanceSettings.delete" xml:space="preserve">
+    <value>인스턴스 삭제</value>
+  </data>
+  <data name="settings.instanceSettings.description" xml:space="preserve">
+    <value>설치된 게임 버전을 관리합니다.</value>
+  </data>
+  <data name="settings.instanceSettings.dropZipImport" xml:space="preserve">
+    <value>ZIP 또는 PWR을 드롭하여 인스턴스 가져오기</value>
+  </data>
+  <data name="settings.instanceSettings.empty" xml:space="preserve">
+    <value>아직 아무것도 다운로드하지 않은 것 같습니다</value>
+  </data>
+  <data name="settings.instanceSettings.exportFailed" xml:space="preserve">
+    <value>인스턴스 내보내기 실패</value>
+  </data>
+  <data name="settings.instanceSettings.exportInstance" xml:space="preserve">
+    <value>인스턴스 내보내기</value>
+  </data>
+  <data name="settings.instanceSettings.exportedSuccess" xml:space="preserve">
+    <value>다음으로 내보냄</value>
+  </data>
+  <data name="settings.instanceSettings.installHytale" xml:space="preserve">
+    <value>Hytale을 설치하여 인스턴스 생성</value>
+  </data>
+  <data name="settings.instanceSettings.lastPlayed" xml:space="preserve">
+    <value>마지막 플레이</value>
+  </data>
+  <data name="settings.instanceSettings.launchBranch" xml:space="preserve">
+    <value>실행 브랜치</value>
+  </data>
+  <data name="settings.instanceSettings.never" xml:space="preserve">
+    <value>없음</value>
+  </data>
+  <data name="settings.instanceSettings.noInstances" xml:space="preserve">
+    <value>설치된 인스턴스 없음</value>
+  </data>
+  <data name="settings.instanceSettings.noUserData" xml:space="preserve">
+    <value>내보낼 UserData 폴더 없음</value>
+  </data>
+  <data name="settings.instanceSettings.notPlayed" xml:space="preserve">
+    <value>플레이하지 않음</value>
+  </data>
+  <data name="settings.instanceSettings.openFolder" xml:space="preserve">
+    <value>폴더 열기</value>
+  </data>
+  <data name="settings.instanceSettings.playtime" xml:space="preserve">
+    <value>플레이 시간</value>
+  </data>
+  <data name="settings.instanceSettings.title" xml:space="preserve">
+    <value>인스턴스 관리</value>
+  </data>
+  <data name="settings.instanceSettings.updated" xml:space="preserve">
+    <value>업데이트일</value>
+  </data>
+  <data name="settings.instanceSettings.userData" xml:space="preserve">
+    <value>사용자 데이터</value>
+  </data>
+  <data name="settings.instanceSettings.version" xml:space="preserve">
+    <value>버전</value>
+  </data>
+  <data name="settings.instances" xml:space="preserve">
+    <value>인스턴스</value>
+  </data>
+  <data name="settings.javaSettings.customJavaPathNotFound" xml:space="preserve">
+    <value>선택한 Java 실행 파일을 찾을 수 없습니다</value>
+  </data>
+  <data name="settings.javaSettings.customJavaPathPlaceholder" xml:space="preserve">
+    <value>/path/to/java 또는 C:\Java\bin\java.exe</value>
+  </data>
+  <data name="settings.javaSettings.customJavaPathRequired" xml:space="preserve">
+    <value>Java 실행 파일 경로를 지정하세요</value>
+  </data>
+  <data name="settings.javaSettings.detectedMemory" xml:space="preserve">
+    <value>감지된 시스템 메모리: {{value}}</value>
+  </data>
+  <data name="settings.javaSettings.gcMode" xml:space="preserve">
+    <value>가비지 컬렉터</value>
+  </data>
+  <data name="settings.javaSettings.gcModeHint" xml:space="preserve">
+    <value>플래그를 수동으로 작성하지 않고 간단한 GC 프로필 선택</value>
+  </data>
+  <data name="settings.javaSettings.gc_auto" xml:space="preserve">
+    <value>자동 (기본값)</value>
+  </data>
+  <data name="settings.javaSettings.gc_autoHint" xml:space="preserve">
+    <value>특정 컬렉터를 강제하지 않음</value>
+  </data>
+  <data name="settings.javaSettings.gc_g1" xml:space="preserve">
+    <value>G1GC</value>
+  </data>
+  <data name="settings.javaSettings.gc_g1Hint" xml:space="preserve">
+    <value>-XX:+UseG1GC를 추가하여 더 부드러운 프레임 페이싱</value>
+  </data>
+  <data name="settings.javaSettings.initialRam" xml:space="preserve">
+    <value>초기 RAM (-Xms)</value>
+  </data>
+  <data name="settings.javaSettings.javaRuntime" xml:space="preserve">
+    <value>Java 런타임</value>
+  </data>
+  <data name="settings.javaSettings.javaRuntimeHint" xml:space="preserve">
+    <value>싱글플레이어 서버 실행에 사용할 Java 실행 파일을 선택</value>
+  </data>
+  <data name="settings.javaSettings.jvmArguments" xml:space="preserve">
+    <value>서버 고급 JVM 인수</value>
+  </data>
+  <data name="settings.javaSettings.jvmArgumentsBlocked" xml:space="preserve">
+    <value>일부 안전하지 않거나 관리되는 JVM 플래그가 저장 전에 제거되었습니다</value>
+  </data>
+  <data name="settings.javaSettings.jvmArgumentsHint" xml:space="preserve">
+    <value>싱글플레이어 서버용 추가 플래그. JAVA_TOOL_OPTIONS에 저장</value>
+  </data>
+  <data name="settings.javaSettings.jvmArgumentsPlaceholder" xml:space="preserve">
+    <value>-Dfile.encoding=UTF-8 -XX:+UnlockExperimentalVMOptions</value>
+  </data>
+  <data name="settings.javaSettings.maxRam" xml:space="preserve">
+    <value>최대 RAM (-Xmx)</value>
+  </data>
+  <data name="settings.javaSettings.maxRecommended" xml:space="preserve">
+    <value>권장 최대값: {{value}}</value>
+  </data>
+  <data name="settings.javaSettings.ramAllocation" xml:space="preserve">
+    <value>서버 RAM 할당</value>
+  </data>
+  <data name="settings.javaSettings.ramAllocationHint" xml:space="preserve">
+    <value>싱글플레이어 서버의 Java 최대 힙 (-Xmx) 설정</value>
+  </data>
+  <data name="settings.javaSettings.useBundledJava" xml:space="preserve">
+    <value>번들 Java 사용</value>
+  </data>
+  <data name="settings.javaSettings.useBundledJavaHint" xml:space="preserve">
+    <value>권장: HyPrism과 함께 제공되는 Java 사용</value>
+  </data>
+  <data name="settings.javaSettings.useCustomJava" xml:space="preserve">
+    <value>사용자 지정 Java 사용</value>
+  </data>
+  <data name="settings.javaSettings.useCustomJavaHint" xml:space="preserve">
+    <value>사용자 지정 Java 실행 파일 경로 지정 (java/java.exe)</value>
+  </data>
+  <data name="settings.language" xml:space="preserve">
+    <value>언어</value>
+  </data>
+  <data name="settings.languageChanged.dontAskAgain" xml:space="preserve">
+    <value>다시 묻지 않기</value>
+  </data>
+  <data name="settings.languageChanged.message" xml:space="preserve">
+    <value>{{language}} 번역 모드를 검색하시겠습니까?</value>
+  </data>
+  <data name="settings.languageChanged.noThanks" xml:space="preserve">
+    <value>아니요</value>
+  </data>
+  <data name="settings.languageChanged.searchMods" xml:space="preserve">
+    <value>모드 검색</value>
+  </data>
+  <data name="settings.languageChanged.title" xml:space="preserve">
+    <value>언어가 변경되었습니다</value>
+  </data>
+  <data name="settings.languageSettings.interfaceLanguage" xml:space="preserve">
+    <value>인터페이스 언어</value>
+  </data>
+  <data name="settings.languageSettings.interfaceLanguageHint" xml:space="preserve">
+    <value>런처 인터페이스에 선호하는 언어를 선택하세요</value>
+  </data>
+  <data name="settings.languageSettings.note" xml:space="preserve">
+    <value>참고: 전체 현지화가 완료될 때까지 일부 텍스트는 영어로 유지될 수 있습니다. 개발자들이 모든 사용자가 즐겁게 사용할 수 있도록 런처를 적극적으로 현지화하고 있습니다.</value>
+  </data>
+  <data name="settings.languageSettings.selectLanguage" xml:space="preserve">
+    <value>언어 선택</value>
+  </data>
+  <data name="settings.languageSettings.title" xml:space="preserve">
+    <value>언어 설정</value>
+  </data>
+  <data name="settings.myProfile" xml:space="preserve">
+    <value>내 프로필</value>
+  </data>
+  <data name="settings.network" xml:space="preserve">
+    <value>네트워크</value>
+  </data>
+  <data name="settings.networkSettings.authCustom" xml:space="preserve">
+    <value>사용자 정의</value>
+  </data>
+  <data name="settings.networkSettings.authCustomHint" xml:space="preserve">
+    <value>자체 인증 서버 주소 입력</value>
+  </data>
+  <data name="settings.networkSettings.authDefault" xml:space="preserve">
+    <value>기본</value>
+  </data>
+  <data name="settings.networkSettings.authOfficial" xml:space="preserve">
+    <value>공식</value>
+  </data>
+  <data name="settings.networkSettings.authOfficialHint" xml:space="preserve">
+    <value>Hytale 서버</value>
+  </data>
+  <data name="settings.networkSettings.authServer" xml:space="preserve">
+    <value>인증 서버</value>
+  </data>
+  <data name="settings.networkSettings.authServerHint" xml:space="preserve">
+    <value>온라인 플레이에 사용되는 인증 서버를 선택하세요.</value>
+  </data>
+  <data name="settings.networkSettings.currentServer" xml:space="preserve">
+    <value>현재 서버</value>
+  </data>
+  <data name="settings.networkSettings.onlineMode" xml:space="preserve">
+    <value>온라인 모드</value>
+  </data>
+  <data name="settings.networkSettings.onlineModeHint" xml:space="preserve">
+    <value>멀티플레이어를 위해 인증 서버에 연결합니다.</value>
+  </data>
+  <data name="settings.profile.avatar" xml:space="preserve">
+    <value>아바타</value>
+  </data>
+  <data name="settings.profile.copy" xml:space="preserve">
+    <value>복사</value>
+  </data>
+  <data name="settings.profile.displayName" xml:space="preserve">
+    <value>표시 이름</value>
+  </data>
+  <data name="settings.profile.displayNameHint" xml:space="preserve">
+    <value>게임 내 이름 (1-16자).</value>
+  </data>
+  <data name="settings.profile.nameWarning" xml:space="preserve">
+    <value>Hytale에는 특정 닉네임 패턴이 있습니다. 특수 기호와 공백을 피하고 영어 문자와 숫자(0-9)만 사용하십시오 (예외: '-', '_')</value>
+  </data>
+  <data name="settings.profile.randomize" xml:space="preserve">
+    <value>무작위</value>
+  </data>
+  <data name="settings.profile.title" xml:space="preserve">
+    <value>내 프로필</value>
+  </data>
+  <data name="settings.profile.uploadSkin" xml:space="preserve">
+    <value>스킨 업로드</value>
+  </data>
+  <data name="settings.profile.uuid" xml:space="preserve">
+    <value>UUID</value>
+  </data>
+  <data name="settings.profile.uuidWarning" xml:space="preserve">
+    <value>고유 ID입니다. 변경 시 스킨이 초기화됩니다!</value>
+  </data>
+  <data name="settings.title" xml:space="preserve">
+    <value>설정</value>
+  </data>
+  <data name="settings.variables" xml:space="preserve">
+    <value>변수</value>
+  </data>
+  <data name="settings.variablesSettings.commonPresets" xml:space="preserve">
+    <value>일반 프리셋</value>
+  </data>
+  <data name="settings.variablesSettings.commonPresetsHint" xml:space="preserve">
+    <value>일반적인 환경 변수를 위한 빠른 토글. 사용자 지정 변수에 자동으로 추가됩니다</value>
+  </data>
+  <data name="settings.variablesSettings.customEnvVars" xml:space="preserve">
+    <value>사용자 지정 환경 변수</value>
+  </data>
+  <data name="settings.variablesSettings.customEnvVarsHint" xml:space="preserve">
+    <value>공백으로 구분된 KEY=VALUE 쌍. 예: MY_VAR=value ANOTHER=123</value>
+  </data>
+  <data name="settings.variablesSettings.customEnvVarsPlaceholder" xml:space="preserve">
+    <value>MY_VAR=value ANOTHER_VAR=123</value>
+  </data>
+  <data name="settings.variablesSettings.disableVkLayers" xml:space="preserve">
+    <value>Vulkan 레이어 비활성화</value>
+  </data>
+  <data name="settings.variablesSettings.disableVkLayersHint" xml:space="preserve">
+    <value>실험적 드라이버에서 충돌을 일으킬 수 있는 Vulkan 검증 레이어를 비활성화합니다</value>
+  </data>
+  <data name="settings.variablesSettings.envVarsInvalidFormat" xml:space="preserve">
+    <value>형식이 잘못되었습니다. 공백으로 구분된 KEY=VALUE 쌍을 사용하세요</value>
+  </data>
+  <data name="settings.variablesSettings.forceAmdVulkan" xml:space="preserve">
+    <value>AMD RADV 드라이버 강제</value>
+  </data>
+  <data name="settings.variablesSettings.forceAmdVulkanHint" xml:space="preserve">
+    <value>AMD GPU용 오픈소스 RADV Vulkan 드라이버 사용을 강제합니다</value>
+  </data>
+  <data name="settings.variablesSettings.forceX11" xml:space="preserve">
+    <value>X11 강제 (SDL_VIDEODRIVER)</value>
+  </data>
+  <data name="settings.variablesSettings.forceX11Hint" xml:space="preserve">
+    <value>게임이 Wayland 대신 X11을 사용하도록 강제합니다. 일부 GPU/드라이버 호환성 문제에 도움이 됩니다</value>
+  </data>
+  <data name="settings.variablesSettings.linuxOnlyNotice" xml:space="preserve">
+    <value>환경 변수는 Linux에서만 적용됩니다</value>
+  </data>
+  <data name="settings.variablesSettings.title" xml:space="preserve">
+    <value>환경 변수</value>
+  </data>
+  <data name="settings.visual" xml:space="preserve">
+    <value>비주얼</value>
+  </data>
+  <data name="settings.visualSettings.accentColor" xml:space="preserve">
+    <value>강조 색상</value>
+  </data>
+  <data name="settings.visualSettings.autoShuffle" xml:space="preserve">
+    <value>자동 / 셔플</value>
+  </data>
+  <data name="settings.visualSettings.background" xml:space="preserve">
+    <value>배경</value>
+  </data>
+  <data name="settings.visualSettings.chooseBackground" xml:space="preserve">
+    <value>배경 선택</value>
+  </data>
+  <data name="settings.visualSettings.current" xml:space="preserve">
+    <value>현재</value>
+  </data>
+  <data name="settings.visualSettings.hideNews" xml:space="preserve">
+    <value>뉴스 숨기기</value>
+  </data>
+  <data name="settings.visualSettings.hideNewsHint" xml:space="preserve">
+    <value>뉴스 패널 완전히 숨기기</value>
+  </data>
+  <data name="settings.visualSettings.images" xml:space="preserve">
+    <value>이미지</value>
+  </data>
+  <data name="settings.visualSettings.slideshow" xml:space="preserve">
+    <value>슬라이드쇼</value>
+  </data>
+  <data name="settings.visualSettings.slideshowHint" xml:space="preserve">
+    <value>모든 배경을 순환합니다</value>
+  </data>
+  <data name="settings.visualSettings.solidColors" xml:space="preserve">
+    <value>단색</value>
+  </data>
+  <data name="settings.visualSettings.staticBackground" xml:space="preserve">
+    <value>또는 정적 배경 선택:</value>
+  </data>
+  <data name="settings.visualSettings.title" xml:space="preserve">
+    <value>시각 설정</value>
+  </data>
+  <data name="settings.visuals" xml:space="preserve">
+    <value>시각</value>
+  </data>
+  <data name="social.discord" xml:space="preserve">
+    <value>Discord</value>
+  </data>
+  <data name="social.github" xml:space="preserve">
+    <value>GitHub</value>
+  </data>
+  <data name="update.autoLaunch" xml:space="preserve">
+    <value>게임이 준비되면 자동으로 실행됩니다.</value>
+  </data>
+  <data name="update.downloading" xml:space="preserve">
+    <value>다운로드 중...</value>
+  </data>
+  <data name="update.extracting" xml:space="preserve">
+    <value>추출 중...</value>
+  </data>
+  <data name="update.launching" xml:space="preserve">
+    <value>실행 중...</value>
+  </data>
+  <data name="update.pleaseWait" xml:space="preserve">
+    <value>게임 파일을 다운로드하고 설치하는 동안 기다려 주세요.</value>
+  </data>
+  <data name="updateConfirmation.copyDataQuestion" xml:space="preserve">
+    <value>저장된 데이터를 새 버전으로 복사하시겠습니까?</value>
+  </data>
+  <data name="updateConfirmation.currentVersion" xml:space="preserve">
+    <value>현재 버전</value>
+  </data>
+  <data name="updateConfirmation.hasDataMessage" xml:space="preserve">
+    <value>새 게임 버전을 사용할 수 있습니다. 현재 버전에는 저장된 데이터(설정, 모드 등)가 있습니다.</value>
+  </data>
+  <data name="updateConfirmation.newVersion" xml:space="preserve">
+    <value>새 버전</value>
+  </data>
+  <data name="updateConfirmation.readyMessage" xml:space="preserve">
+    <value>새 게임 버전을 사용할 수 있습니다. 업데이트할 준비가 되었습니까?</value>
+  </data>
+  <data name="updateConfirmation.title" xml:space="preserve">
+    <value>게임 업데이트 사용 가능</value>
+  </data>
+  <data name="updateConfirmation.updateCopyData" xml:space="preserve">
+    <value>업데이트 및 데이터 복사</value>
+  </data>
+  <data name="updateConfirmation.updateNow" xml:space="preserve">
+    <value>지금 업데이트</value>
+  </data>
+  <data name="updateConfirmation.updateWithoutCopy" xml:space="preserve">
+    <value>복사 없이 업데이트</value>
+  </data>
+  <data name="updateOverlay.autoRestart" xml:space="preserve">
+    <value>업데이트가 완료되면 런처가 자동으로 다시 시작됩니다.</value>
+  </data>
+  <data name="updateOverlay.failed" xml:space="preserve">
+    <value>업데이트 실패</value>
+  </data>
+  <data name="updateOverlay.installing" xml:space="preserve">
+    <value>설치 중</value>
+  </data>
+  <data name="updateOverlay.message" xml:space="preserve">
+    <value>HyPrism의 최신 버전을 다운로드하고 설치하는 동안 기다려 주세요.</value>
+  </data>
+  <data name="updateOverlay.title" xml:space="preserve">
+    <value>런처 업데이트 중</value>
+  </data>
+  <data name="wrapper.checkForUpdates" xml:space="preserve">
+    <value>업데이트 확인</value>
+  </data>
+  <data name="wrapper.description" xml:space="preserve">
+    <value>래퍼 모드 — HyPrism 정식 버전을 다운로드하고 실행하세요</value>
+  </data>
+  <data name="wrapper.downloadInstall" xml:space="preserve">
+    <value>다운로드 및 설치</value>
+  </data>
+  <data name="wrapper.installFailed" xml:space="preserve">
+    <value>설치 실패 - 로그를 확인하세요</value>
+  </data>
+  <data name="wrapper.installed" xml:space="preserve">
+    <value>설치됨:</value>
+  </data>
+  <data name="wrapper.latest" xml:space="preserve">
+    <value>최신:</value>
+  </data>
+  <data name="wrapper.launch" xml:space="preserve">
+    <value>실행</value>
+  </data>
+  <data name="wrapper.launchFailed" xml:space="preserve">
+    <value>HyPrism 실행 실패</value>
+  </data>
+  <data name="wrapper.loadingNews" xml:space="preserve">
+    <value>뉴스 로드 중…</value>
+  </data>
+  <data name="wrapper.none" xml:space="preserve">
+    <value>없음</value>
+  </data>
+  <data name="wrapper.upToDate" xml:space="preserve">
+    <value>최신 상태</value>
+  </data>
+  <data name="wrapper.updateAvailable" xml:space="preserve">
+    <value>업데이트 사용 가능</value>
+  </data>
+</root>

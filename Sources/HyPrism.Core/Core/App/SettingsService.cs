@@ -9,36 +9,19 @@ namespace HyPrism.Services.Core.App;
 /// Manages all launcher settings (preferences, UI config, behavior options).
 /// Provides centralized access to configuration properties with automatic persistence.
 /// </summary>
-/// <remarks>
-/// This service acts as a facade over <see cref="ConfigService"/> and <see cref="LocalizationService"/>,
-/// exposing settings through a clean interface while handling persistence internally.
-/// </remarks>
 public class SettingsService : ISettingsService
 {
     #region Fields and Constructor
 
     private readonly IConfigService _configService;
-    private readonly ILocalizationService _localizationService;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SettingsService"/> class.
-    /// Applies the saved language setting to the localization service on startup.
     /// </summary>
     /// <param name="configService">The configuration service for persisting settings.</param>
-    /// <param name="localizationService">The localization service for language management.</param>
-    public SettingsService(IConfigService configService, ILocalizationService localizationService)
+    public SettingsService(IConfigService configService)
     {
         _configService = configService;
-        _localizationService = localizationService;
-        
-        // Apply initial language override from config
-        var savedLang = _configService.Configuration.Language;
-        Logger.Info("Settings", $"SettingsService init - Config language: '{savedLang}', LocalizationService current: '{_localizationService.CurrentLanguage}'");
-        if (!string.IsNullOrEmpty(savedLang))
-        {
-            _localizationService.CurrentLanguage = savedLang;
-            Logger.Info("Settings", $"Applied language to LocalizationService: '{_localizationService.CurrentLanguage}'");
-        }
     }
     
     /// <inheritdoc/>
@@ -57,17 +40,13 @@ public class SettingsService : ISettingsService
     /// <inheritdoc/>
     public bool SetLanguage(string languageCode)
     {
-        var availableLanguages = LocalizationService.GetAvailableLanguages();
-        if (availableLanguages.ContainsKey(languageCode))
-        {
-            _configService.Configuration.Language = languageCode;
-            // Update the localization service which drives the UI
-            _localizationService.CurrentLanguage = languageCode;
-            _configService.SaveConfig();
-            Logger.Info("Config", $"Language changed to: {languageCode}");
-            return true;
-        }
-        return false;
+        if (string.IsNullOrWhiteSpace(languageCode))
+            return false;
+
+        _configService.Configuration.Language = languageCode;
+        _configService.SaveConfig();
+        Logger.Info("Config", $"Language preference changed to: {languageCode}");
+        return true;
     }
 
     #endregion

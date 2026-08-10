@@ -69,10 +69,10 @@ AngleSharp parsing, article view-model construction, and bitmap decoding run out
 
 The Avalonia Settings route mirrors the News master/detail structure: a narrow `StrokeBrush` category feed and independent content pane above its compact breakpoint, then a clipped cubic horizontal slide between the full category list and selected content below it. Compact rows expose localized descriptions but suppress the persisted category selection visually. Reader visibility is tracked separately, so crossing the breakpoint from an open wide pane preserves the content page. Dense grouped rows remain service-backed and the compact reader returns through an explicit Back action.
 It binds existing preference switches and selectors directly to `ISettingsService`; editable text fields
-are persisted by explicit save commands. Language selection reloads `JsonLocalizer`, the current cultures,
+are persisted by explicit save commands. Language selection updates the Desktop-owned ResX `LocalizationService`, the current cultures,
 top-level labels, settings data, account text, and news dates without recreating the window or the settings
 view model. The existing selectors receive refreshed display strings in place, preventing binding-driven
-selection changes from writing the language again. This keeps configuration ownership in the shared service layer.
+selection changes from writing the language again. Core only persists the normalized language tag and has no locale catalog, resource lookup, culture, or notification responsibilities.
 
 `IGameLaunchCoordinator` is the first transport-neutral application entry point.
 Both the Electron `hyprism:game:launch` channel and the Avalonia ViewModel call it,

@@ -41,10 +41,11 @@ SPDX-License-Identifier: GPL-3.0-only
 - **Файлы логов:** `{appDir}/Logs/{timestamp}.log`
 
 ### LocalizationService
-- **Файл:** `Sources/HyPrism.Core/Core/App/LocalizationService.cs`
-- **Тип:** Singleton (паттерн Instance)
-- **Назначение:** Переключение языков в реальном времени с поддержкой вложенных ключей
-- **Файлы локалей:** `Assets/Locales/{code}.json`
+- **Файл:** `Sources/HyPrism.Desktop/Localization/LocalizationService.cs`
+- **Владелец:** presentation-слой desktop-приложения Avalonia
+- **Назначение:** ResX-переводы, выбор культуры, fallback и уведомления о смене языка
+- **Файлы локалей:** `Sources/HyPrism.Desktop/Localization/Resources*.resx`
+- **Граница Core:** Core сохраняет выбранный языковой тег, но не интерпретирует его
 
 ### BrowserService
 - **Файл:** `Sources/HyPrism.Core/Core/Platform/BrowserService.cs`

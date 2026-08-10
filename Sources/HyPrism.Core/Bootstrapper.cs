@@ -248,9 +248,6 @@ public static class Bootstrapper
 
             #region Localization & UI Support
 
-            services.AddSingleton<LocalizationService>();
-            services.AddSingleton<ILocalizationService>(sp => sp.GetRequiredService<LocalizationService>());
-
             services.AddSingleton<BrowserService>();
             services.AddSingleton<IBrowserService>(sp => sp.GetRequiredService<BrowserService>());
 
@@ -272,9 +269,7 @@ public static class Bootstrapper
             services.AddSingleton<IGpuDetectionService>(sp => sp.GetRequiredService<GpuDetectionService>());
 
             services.AddSingleton(sp =>
-                new SettingsService(
-                    sp.GetRequiredService<IConfigService>(),
-                    sp.GetRequiredService<ILocalizationService>()));
+                new SettingsService(sp.GetRequiredService<IConfigService>()));
             services.AddSingleton<ISettingsService>(sp => sp.GetRequiredService<SettingsService>());
 
             services.AddSingleton<ThemeService>();

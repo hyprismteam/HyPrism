@@ -127,7 +127,7 @@ public class ConfigServiceTests : IDisposable
 
 
     [Fact]
-    public void Constructor_InvalidLanguage_FallsBackToEnUS()
+    public void Constructor_UnknownLanguage_PreservesPresentationPreference()
     {
         var cfg = new Config { UUID = Guid.NewGuid().ToString(), Nick = "Player", Language = "xx-XX" };
         File.WriteAllText(
@@ -136,8 +136,7 @@ public class ConfigServiceTests : IDisposable
 
         var svc = new ConfigService(_tempDir);
 
-        // Invalid language code should fall back to "en-US"
-        Assert.Equal("en-US", svc.Configuration.Language);
+        Assert.Equal("xx-XX", svc.Configuration.Language);
     }
 
 

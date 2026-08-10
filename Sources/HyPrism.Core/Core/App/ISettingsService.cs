@@ -20,16 +20,16 @@ public interface ISettingsService
     event Action<string>? OnAccentColorChanged;
     
     /// <summary>
-    /// Gets the current UI language code (e.g., "en-US", "ru-RU").
+    /// Gets the persisted language preference without interpreting UI locale availability.
     /// </summary>
     /// <returns>The current language code.</returns>
     string GetLanguage();
     
     /// <summary>
-    /// Sets the UI language and persists the change.
+    /// Persists a language preference. The presentation host validates and applies it.
     /// </summary>
     /// <param name="language">The language code to set (e.g., "en-US").</param>
-    /// <returns><c>true</c> if the language was changed; <c>false</c> if unchanged.</returns>
+    /// <returns><c>true</c> if the non-empty preference was persisted; otherwise, <c>false</c>.</returns>
     bool SetLanguage(string language);
     
     /// <summary>

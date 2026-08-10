@@ -40,7 +40,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     private readonly INewsService _newsService;
     private readonly IBrowserService _browserService;
     private readonly HttpClient _httpClient;
-    private readonly JsonLocalizer _localizer;
+    private readonly LocalizationService _localizer;
     private InstanceInfo? _selectedInstance;
     private readonly List<NewsItemViewModel> _allNews = [];
     private readonly Dictionary<string, NewsArticleViewModel> _articleViewModelCache =
@@ -186,7 +186,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         INewsService newsService,
         IBrowserService browserService,
         HttpClient httpClient,
-        JsonLocalizer localizer)
+        LocalizationService localizer)
     {
         _instanceService = instanceService;
         _gameLaunchCoordinator = gameLaunchCoordinator;
@@ -198,6 +198,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         _browserService = browserService;
         _httpClient = httpClient;
         _localizer = localizer;
+        _localizer.LanguageChanged += ApplyLanguage;
         _settings = CreateSettingsViewModel();
 
         UserName = profileService.GetNick();
@@ -848,13 +849,10 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     }
 
     private SettingsViewModel CreateSettingsViewModel()
-        => new(_settingsService, _browserService, _localizer, ApplyLanguage);
+        => new(_settingsService, _browserService, _localizer);
 
     private void ApplyLanguage(string language)
     {
-        if (!_localizer.SetLanguage(language))
-            return;
-
         Settings.RefreshLocalization();
         AccountType = _isOfficialProfile
             ? _localizer["desktopSettings.accountHytale"]
@@ -973,5 +971,6 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         _progressService.DownloadProgressChanged -= OnDownloadProgressChanged;
         _progressService.GameStateChanged -= OnGameStateChanged;
         _progressService.ErrorOccurred -= OnErrorOccurred;
+        _localizer.LanguageChanged -= ApplyLanguage;
     }
 }

@@ -11,7 +11,6 @@ public class SettingsServiceTests : IDisposable
 {
     private readonly string _tempDir;
     private readonly ConfigService _config;
-    private readonly LocalizationService _localization;
     private readonly SettingsService _svc;
 
     public SettingsServiceTests()
@@ -19,8 +18,7 @@ public class SettingsServiceTests : IDisposable
         _tempDir = Path.Combine(Path.GetTempPath(), "HyPrismSettingsTests_" + Guid.NewGuid());
         Directory.CreateDirectory(_tempDir);
         _config = new ConfigService(_tempDir);
-        _localization = new LocalizationService();
-        _svc = new SettingsService(_config, _localization);
+        _svc = new SettingsService(_config);
     }
 
     public void Dispose()
@@ -46,10 +44,19 @@ public class SettingsServiceTests : IDisposable
     }
 
     [Fact]
-    public void SetLanguage_InvalidCode_ReturnsFalse()
+    public void SetLanguage_UnknownCode_PersistsOpaquePreference()
     {
         var result = _svc.SetLanguage("xx-XX");
+        Assert.True(result);
+        Assert.Equal("xx-XX", _svc.GetLanguage());
+    }
+
+    [Fact]
+    public void SetLanguage_EmptyValue_ReturnsFalse()
+    {
+        var result = _svc.SetLanguage(" ");
         Assert.False(result);
+        Assert.Equal("en-US", _svc.GetLanguage());
     }
 
 

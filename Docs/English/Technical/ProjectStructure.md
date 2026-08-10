@@ -5,12 +5,14 @@ SPDX-License-Identifier: GPL-3.0-only
 
 # Project Structure
 
+`HyPrism.sln` contains the active Avalonia Desktop, Core, and test projects. The Electron host and `HyPrism.IpcGen` remain in the repository as obsolete reference implementations and are intentionally excluded from the active solution and normal build.
+
 ```
 HyPrism/
-├── HyPrism.sln                 # Solution file (contains Sources/ folder)
+├── HyPrism.sln                 # Active Core, Avalonia Desktop, and test projects
 │
 ├── Sources/                    # Production projects
-    ├── HyPrism.Launcher/       # Main launcher application (.NET 10 + Electron.NET)
+    ├── HyPrism.Launcher/       # Obsolete Electron reference implementation
     │   ├── Program.cs          # Entry point: Console → Electron bootstrap
     │   ├── HyPrism.Launcher.csproj  # Project file with MSBuild pipeline
     │   │
@@ -39,7 +41,6 @@ HyPrism/
     │   │   │   ├── lib/            # Utilities
     │   │   │   │   └── ipc.ts      # AUTO-GENERATED IPC bridge (do not edit)
     │   │   │   ├── assets/         # Frontend static assets
-    │   │   │   │   ├── locales/    # JSON localization files (12 languages)
     │   │   │   │   ├── images/     # Images and icons
     │   │   │   │   └── backgrounds/ # Dashboard backgrounds
     │   │   │   ├── App.tsx         # Root component with routing
@@ -77,11 +78,13 @@ HyPrism/
     │   ├── Styles/                  # Shared Avalonia visual system
     │   │   ├── Tokens.axaml         # Color palette and control color tokens
     │   │   └── Styles.axaml         # Shared selectors, templates, and transitions
-    │   ├── Localization/            # Adapter for the existing locale JSON files
+    │   ├── Localization/            # Desktop-owned .NET localization
+    │   │   ├── LocalizationService.cs  # ResourceManager lookup and runtime switching
+    │   │   └── Resources*.resx      # English fallback and 12 translated locales
     │   ├── Assets/Fonts/            # Embedded Google Sans font files
     │   └── Assets/Icons/            # Checked-in Material Symbols AXAML geometries
     │
-    └── HyPrism.IpcGen/             # IPC code generator (Roslyn-based)
+    └── HyPrism.IpcGen/             # Obsolete Electron IPC generator reference
     │   ├── Program.cs              # Codegen entry point
     │   ├── HyPrism.IpcGen.csproj   # Codegen project file
     │   └── ...                     # Roslyn analysis logic

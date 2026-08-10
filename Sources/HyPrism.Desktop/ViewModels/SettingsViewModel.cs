@@ -16,8 +16,7 @@ public sealed partial class SettingsViewModel : ObservableObject
 {
     private readonly ISettingsService _settings;
     private readonly IBrowserService _browser;
-    private readonly JsonLocalizer _localizer;
-    private readonly Action<string>? _languageChanged;
+    private readonly LocalizationService _localizer;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsGeneral))]
@@ -56,13 +55,11 @@ public sealed partial class SettingsViewModel : ObservableObject
     public SettingsViewModel(
         ISettingsService settings,
         IBrowserService browser,
-        JsonLocalizer localizer,
-        Action<string>? languageChanged = null)
+        LocalizationService localizer)
     {
         _settings = settings;
         _browser = browser;
         _localizer = localizer;
-        _languageChanged = languageChanged;
 
         Categories = new ObservableCollection<SettingCategoryViewModel>(
         [
@@ -80,21 +77,8 @@ public sealed partial class SettingsViewModel : ObservableObject
         Categories[0].IsSelected = true;
 
         Languages = new ObservableCollection<SettingChoiceViewModel>(
-        [
-            new("en-US", "English"),
-            new("ru-RU", "Русский"),
-            new("uk-UA", "Українська"),
-            new("be-BY", "Беларуская"),
-            new("de-DE", "Deutsch"),
-            new("fr-FR", "Français"),
-            new("es-ES", "Español"),
-            new("it-IT", "Italiano"),
-            new("pt-BR", "Português"),
-            new("tr-TR", "Türkçe"),
-            new("ja-JP", "日本語"),
-            new("ko-KR", "한국어"),
-            new("zh-CN", "简体中文")
-        ]);
+            localizer.AvailableLanguages.Select(language =>
+                new SettingChoiceViewModel(language.Key, language.Value)));
         LauncherBranches = new ObservableCollection<SettingChoiceViewModel>(
         [
             new("release", localizer["settings.generalSettings.updateChannelStable"]),
@@ -320,8 +304,8 @@ public sealed partial class SettingsViewModel : ObservableObject
             return;
         }
 
-        if (_settings.SetLanguage(value.Value))
-            _languageChanged?.Invoke(value.Value);
+        if (_localizer.SetLanguage(value.Value))
+            _settings.SetLanguage(_localizer.CurrentLanguage);
     }
     partial void OnSelectedLauncherBranchChanged(SettingChoiceViewModel value) => _settings.SetLauncherBranch(value.Value);
     partial void OnSelectedBackgroundChanged(SettingChoiceViewModel value) => _settings.SetBackgroundMode(value.Value);

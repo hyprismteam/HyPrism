@@ -21,8 +21,7 @@ Tests/HyPrism.Core.Tests/
 │   │   ├── FileServiceTests.cs
 │   │   └── UtilityServiceTests.cs
 │   └── App/
-│       ├── LocalizationServiceTests.cs
-│       ├── ProgressNotificationServiceTests.cs
+    │       ├── ProgressNotificationServiceTests.cs
 │       └── SettingsServiceTests.cs
 ├── Game/
 │   ├── Auth/
@@ -37,7 +36,7 @@ Tests/HyPrism.Core.Tests/
     └── ProfileServiceTests.cs
 ```
 
-Headless- и render-тесты Avalonia находятся рядом в `Tests/HyPrism.Desktop.Tests/`.
+Headless- и render-тесты Avalonia находятся рядом в `Tests/HyPrism.Desktop.Tests/`. `LocalizationServiceTests.cs` проверяет ResX-каталог, fallback, смену культуры и runtime-уведомления в presentation-слое.
 
 ---
 
@@ -85,7 +84,6 @@ dotnet test Tests/HyPrism.Core.Tests/ --collect:"XPlat Code Coverage"
 
 | Сервис | Интерфейс |
 |--------|-----------|
-| `LocalizationService` | `ILocalizationService` |
 | `ProgressNotificationService` | `IProgressNotificationService` |
 | `SettingsService` | `ISettingsService` |
 | `ThemeService` | `IThemeService` |

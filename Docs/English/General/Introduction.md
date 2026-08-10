@@ -20,7 +20,7 @@ SPDX-License-Identifier: GPL-3.0-only
 | Routing | React Router DOM |
 | DI | Microsoft.Extensions.DependencyInjection |
 | Logging | Serilog |
-| Localization | i18next (12 languages) |
+| Localization | .NET ResX (13 languages) |
 
 ## How It Works
 
@@ -53,7 +53,7 @@ This is **NOT** a web server — there is no ASP.NET, no HTTP, no REST. The fron
 
 ## Supported Languages
 
-HyPrism supports 12 languages with runtime switching:
+HyPrism supports 13 languages with runtime switching:
 
 | Code | Language |
 |------|----------|
@@ -62,6 +62,7 @@ HyPrism supports 12 languages with runtime switching:
 | de-DE | German |
 | es-ES | Spanish |
 | fr-FR | French |
+| it-IT | Italian |
 | ja-JP | Japanese |
 | ko-KR | Korean |
 | pt-BR | Portuguese (Brazil) |

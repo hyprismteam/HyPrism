@@ -33,7 +33,9 @@ public sealed partial class App : Application
             var services = DesktopRuntime.Services;
             var settings = services.GetRequiredService<ISettingsService>();
 
-            var localizer = new JsonLocalizer(settings.GetLanguage());
+            var localizer = new LocalizationService(settings.GetLanguage());
+            if (!string.Equals(settings.GetLanguage(), localizer.CurrentLanguage, StringComparison.OrdinalIgnoreCase))
+                settings.SetLanguage(localizer.CurrentLanguage);
             _mainWindowViewModel = new MainWindowViewModel(
                 services.GetRequiredService<IInstanceService>(),
                 services.GetRequiredService<IProfileService>(),

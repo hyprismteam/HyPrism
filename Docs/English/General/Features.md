@@ -67,12 +67,13 @@ SPDX-License-Identifier: GPL-3.0-only
 
 ## Internationalization
 
-- **12 languages supported:**
+- **13 languages supported through .NET ResX:**
   - English (en-US)
   - Russian (ru-RU)
   - German (de-DE)
   - Spanish (es-ES)
   - French (fr-FR)
+  - Italian (it-IT)
   - Japanese (ja-JP)
   - Korean (ko-KR)
   - Portuguese (pt-BR)
@@ -80,6 +81,8 @@ SPDX-License-Identifier: GPL-3.0-only
   - Ukrainian (uk-UA)
   - Chinese Simplified (zh-CN)
   - Belarusian (be-BY)
+- **Runtime switching** — Change language without restarting the launcher
+- **Standard fallback** — `ResourceManager` falls back to the English ResX resource
 - **Runtime switching** — Change language without restart
 - **Nested keys** — Structured localization with placeholder support
 

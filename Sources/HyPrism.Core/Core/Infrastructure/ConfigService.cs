@@ -3,7 +3,6 @@
 
 using System.Text.Json;
 using HyPrism.Models;
-using HyPrism.Services.Core.App;
 
 namespace HyPrism.Services.Core.Infrastructure;
 
@@ -60,24 +59,6 @@ public class ConfigService : IConfigService
           Logger.Info("Config", $"Generated UUID during migration: {config.UUID}");
         }
 
-        // Validate language code exists in available languages
-        var availableLanguages = LocalizationService.GetAvailableLanguages();
-        if (!string.IsNullOrEmpty(config.Language) && !availableLanguages.ContainsKey(config.Language))
-        {
-          // Basic fallback for legacy short codes (e.g. "ru" -> "ru-RU") only if exact match fails
-          var bestMatch = availableLanguages.Keys.FirstOrDefault(k => k.StartsWith(config.Language + "-"));
-          if (bestMatch != null)
-          {
-            config.Language = bestMatch;
-          }
-          else
-          {
-            // Final fallback if totally invalid
-            config.Language = "en-US";
-          }
-          needsSave = true;
-        }
-
         // Default nick to random name if empty or placeholder
 
         // Migration: Migrate legacy "latest" branch to release
@@ -122,13 +103,6 @@ public class ConfigService : IConfigService
     if (string.IsNullOrWhiteSpace(config.Nick) || config.Nick == "Player")
     {
       config.Nick = UtilityService.GenerateRandomUsername();
-    }
-
-    // Validate default language
-    var defaultAvailableLanguages = LocalizationService.GetAvailableLanguages();
-    if (!defaultAvailableLanguages.ContainsKey(config.Language))
-    {
-      config.Language = "en-US";
     }
 
     _config = config;

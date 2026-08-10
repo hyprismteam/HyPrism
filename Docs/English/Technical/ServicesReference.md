@@ -45,10 +45,11 @@ All services are registered as singletons in `Bootstrapper.cs` and injected via 
 - **Log files:** `{appDir}/Logs/{timestamp}.log`
 
 ### LocalizationService
-- **File:** `Sources/HyPrism.Core/Core/App/LocalizationService.cs`
-- **Type:** Singleton (Instance pattern)
-- **Purpose:** Runtime language switching with nested key support
-- **Locale files:** `Assets/Locales/{code}.json`
+- **File:** `Sources/HyPrism.Desktop/Localization/LocalizationService.cs`
+- **Owner:** Avalonia desktop presentation layer
+- **Purpose:** ResX lookup, culture selection, fallback, and runtime language-change notifications
+- **Locale files:** `Sources/HyPrism.Desktop/Localization/Resources*.resx`
+- **Core boundary:** Core persists the selected language tag but does not interpret it
 
 ### BrowserService
 - **File:** `Sources/HyPrism.Core/Core/Platform/BrowserService.cs`

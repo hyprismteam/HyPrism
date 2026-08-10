@@ -5,82 +5,75 @@ SPDX-License-Identifier: GPL-3.0-only
 
 # Локализация
 
-HyPrism поддерживает 12 языков с переключением в реальном времени.
+Локализацией интерфейса владеет desktop-приложение Avalonia. `HyPrism.Core` только сохраняет выбранный языковой тег в `Config.Language`: Core не загружает переводы, не содержит каталог локалей и не меняет культуру процесса.
 
 ## Файлы локалей
 
-**Расположение:** `Assets/Locales/{code}.json`
+Локали используют стандартную систему .NET ResX и находятся в `Sources/HyPrism.Desktop/Localization/`:
 
-**Поддерживаемые языки:**
+- `Resources.resx` — английский fallback-ресурс
+- `Resources.{тег BCP-47}.resx` — переведённая локаль, например `Resources.ru-RU.resx`
 
-| Код | Язык |
-|-----|------|
-| en-US | Английский |
+MSBuild автоматически преобразует переводы в satellite assemblies.
+
+Сейчас приложение содержит 13 локалей:
+
+| Код | Нативное название |
+|-----|-------------------|
+| be-BY | Беларуская |
+| de-DE | Deutsch |
+| en-US | English |
+| es-ES | Español |
+| fr-FR | Français |
+| it-IT | Italiano |
+| ja-JP | 日本語 |
+| ko-KR | 한국어 |
+| pt-BR | Português (Brasil) |
 | ru-RU | Русский |
-| de-DE | Немецкий |
-| es-ES | Испанский |
-| fr-FR | Французский |
-| ja-JP | Японский |
-| ko-KR | Корейский |
-| pt-BR | Португальский (Бразилия) |
-| tr-TR | Турецкий |
-| uk-UA | Украинский |
-| zh-CN | Китайский (упрощённый) |
-| be-BY | Белорусский |
+| tr-TR | Türkçe |
+| uk-UA | Українська |
+| zh-CN | 简体中文 |
+
+## Ответственность во время выполнения
+
+`Sources/HyPrism.Desktop/Localization/LocalizationService.cs`:
+
+- использует `ResourceManager` для стандартного поиска ресурсов и fallback;
+- читает каталог культур из `_supportedCultures` в основном ресурсе;
+- читает `_langName` каждой локали для селектора в настройках;
+- использует `en-US` для отсутствующих переводов и неподдерживаемых сохранённых тегов;
+- преобразует старые короткие теги наподобие `ru` в доступную локаль `ru-RU`;
+- устанавливает `CurrentCulture` и `CurrentUICulture`;
+- вызывает `LanguageChanged` после переключения языка во время работы.
+
+Страница настроек сохраняет нормализованный тег через `ISettingsService`. Сервис относится к нему как к непрозрачному значению: проверка и применение языка остаются ответственностью Desktop.
 
 ## Формат файла
 
-```json
-{
-  "_langName": "English",
-  "_langCode": "en-US",
-  "button": {
-    "play": "Play",
-    "settings": "Settings"
-  },
-  "dashboard": {
-    "welcome": "Welcome, {0}!"
-  }
-}
+```xml
+<data name="_langName" xml:space="preserve">
+  <value>Русский</value>
+</data>
+<data name="button.play" xml:space="preserve">
+  <value>Играть</value>
+</data>
+<data name="dashboard.welcome" xml:space="preserve">
+  <value>Добро пожаловать, {0}!</value>
+</data>
 ```
 
-**Правила:**
-- Вложенные ключи: `dashboard.welcome`
-- Подстановки: `{0}`, `{1}` и т.д.
-- Метаданные с префиксом `_` (например, `_langName`, `_langCode`)
+- Имена ресурсов используют ключи с точками, например `dashboard.welcome`
+- Подстановки используют составное форматирование .NET: `{0}`, `{1}` и так далее
+- `_langName` задаёт нативное название языка в селекторе
+- `_supportedCultures` в `Resources.resx` содержит разделённый точками с запятой каталог локалей
+- При отсутствии ключа `ResourceManager` использует английский перевод, а затем сам ключ
 
-## IPC-каналы
+## Добавление локали
 
-| Канал | Тип | Описание |
-|-------|-----|----------|
-| `hyprism:i18n:get` | invoke | Получить все переводы для текущего языка |
-| `hyprism:i18n:current` | invoke | Получить код текущего языка |
-| `hyprism:i18n:set` | invoke | Сменить язык (принимает `{ language: "code" }`) |
-| `hyprism:i18n:languages` | invoke | Получить список доступных языков |
+1. Добавьте полный файл `Resources.{тег BCP-47}.resx` в `Sources/HyPrism.Desktop/Localization/`
+2. Укажите в `_langName` нативное название языка
+3. Добавьте тег в `_supportedCultures` файла `Resources.resx`
+4. Сохраните тот же набор имён ресурсов, что и в fallback-файле
+5. Запустите `dotnet test Tests/HyPrism.Desktop.Tests/`
 
-## Использование на бэкенде
-
-```csharp
-// Получить перевод
-var text = LocalizationService.Instance.Translate("button.play");
-
-// Сменить язык
-_configService.Configuration.Language = "ru-RU";
-LocalizationService.Instance.LoadLanguage("ru-RU");
-```
-
-## Использование на фронтенде
-
-```typescript
-import { ipc } from '../lib/ipc';
-
-// Получить все переводы
-const translations = await ipc.i18n.get();
-
-// Сменить язык
-await ipc.i18n.set({ language: 'ru-RU' });
-
-// Получить доступные языки
-const langs = await ipc.i18n.languages();
-// → [{ code: 'en-US', name: 'English' }, ...]
-```
+Обновлять Core-сервис или регистрацию DI не требуется.

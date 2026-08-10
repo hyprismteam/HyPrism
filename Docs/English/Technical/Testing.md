@@ -21,8 +21,7 @@ Tests/HyPrism.Core.Tests/
 │   │   ├── FileServiceTests.cs
 │   │   └── UtilityServiceTests.cs
 │   └── App/
-│       ├── LocalizationServiceTests.cs
-│       ├── ProgressNotificationServiceTests.cs
+    │       ├── ProgressNotificationServiceTests.cs
 │       └── SettingsServiceTests.cs
 ├── Game/
 │   ├── Auth/
@@ -37,7 +36,7 @@ Tests/HyPrism.Core.Tests/
     └── ProfileServiceTests.cs
 ```
 
-Avalonia headless and render tests live beside it in `Tests/HyPrism.Desktop.Tests/`.
+Avalonia headless and render tests live beside it in `Tests/HyPrism.Desktop.Tests/`. `LocalizationServiceTests.cs` verifies the ResX catalog, fallback, culture changes, and runtime notifications in the presentation layer.
 
 ---
 
@@ -85,7 +84,6 @@ All injectable services expose an interface. The table below lists every service
 
 | Service | Interface |
 |---------|-----------|
-| `LocalizationService` | `ILocalizationService` |
 | `ProgressNotificationService` | `IProgressNotificationService` |
 | `SettingsService` | `ISettingsService` |
 | `ThemeService` | `IThemeService` |
