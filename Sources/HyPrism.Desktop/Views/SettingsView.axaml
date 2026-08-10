@@ -6,6 +6,7 @@ SPDX-License-Identifier: GPL-3.0-only
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:HyPrism.Desktop.ViewModels"
+             xmlns:controls="using:HyPrism.Desktop.Controls"
              xmlns:easing="clr-namespace:Avalonia.Animation.Easings;assembly=Avalonia.Base"
              x:Class="HyPrism.Desktop.Views.SettingsView"
              x:Name="SettingsRoot"
@@ -13,7 +14,22 @@ SPDX-License-Identifier: GPL-3.0-only
              SizeChanged="OnSettingsViewSizeChanged">
   <UserControl.Resources>
     <DataTemplate x:Key="SettingChoiceTemplate" x:DataType="vm:SettingChoiceViewModel">
-      <TextBlock Text="{Binding Display}" TextWrapping="NoWrap" />
+      <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
+        <Border Width="24"
+                Height="16"
+                CornerRadius="3"
+                ClipToBounds="True"
+                VerticalAlignment="Center"
+                IsVisible="{Binding HasIcon}">
+          <Image Source="{Binding Icon}"
+                 Stretch="UniformToFill"
+                 IsHitTestVisible="False" />
+        </Border>
+        <TextBlock Grid.Column="1"
+                   Text="{Binding Display}"
+                   TextWrapping="NoWrap"
+                   VerticalAlignment="Center" />
+      </Grid>
     </DataTemplate>
 
     <ControlTheme x:Key="SettingsComboBoxItemTheme" TargetType="ComboBoxItem">
@@ -222,11 +238,11 @@ SPDX-License-Identifier: GPL-3.0-only
                       <TextBlock Text="{Binding LanguageLabel}" Classes="settingsLabel" />
                       <TextBlock Text="{Binding LanguageHint}" Classes="settingsHint" />
                     </StackPanel>
-                    <ComboBox Grid.Column="1"
-                              ItemsSource="{Binding Languages}"
-                              ItemTemplate="{StaticResource SettingChoiceTemplate}"
-                              ItemContainerTheme="{StaticResource SettingsComboBoxItemTheme}"
-                              SelectedItem="{Binding SelectedLanguage}" />
+                    <controls:FadingComboBox Grid.Column="1"
+                                             ItemsSource="{Binding Languages}"
+                                             ItemTemplate="{StaticResource SettingChoiceTemplate}"
+                                             ItemContainerTheme="{StaticResource SettingsComboBoxItemTheme}"
+                                             SelectedItem="{Binding SelectedLanguage}" />
                   </Grid>
                 </Border>
               </StackPanel>
@@ -319,11 +335,11 @@ SPDX-License-Identifier: GPL-3.0-only
                 <Border Classes="settingsRow">
                   <Grid ColumnDefinitions="*,220" ColumnSpacing="24">
                     <TextBlock Text="{Binding BackgroundLabel}" Classes="settingsLabel" VerticalAlignment="Center" />
-                    <ComboBox Grid.Column="1"
-                              ItemsSource="{Binding Backgrounds}"
-                              ItemTemplate="{StaticResource SettingChoiceTemplate}"
-                              ItemContainerTheme="{StaticResource SettingsComboBoxItemTheme}"
-                              SelectedItem="{Binding SelectedBackground}" />
+                    <controls:FadingComboBox Grid.Column="1"
+                                             ItemsSource="{Binding Backgrounds}"
+                                             ItemTemplate="{StaticResource SettingChoiceTemplate}"
+                                             ItemContainerTheme="{StaticResource SettingsComboBoxItemTheme}"
+                                             SelectedItem="{Binding SelectedBackground}" />
                   </Grid>
                 </Border>
                 <Border Classes="settingsRow">
@@ -391,11 +407,11 @@ SPDX-License-Identifier: GPL-3.0-only
                     <TextBlock Text="{Binding GpuLabel}" Classes="settingsLabel" />
                     <TextBlock Text="{Binding GpuHint}" Classes="settingsHint" />
                   </StackPanel>
-                  <ComboBox Grid.Column="1"
-                            ItemsSource="{Binding GpuPreferences}"
-                            ItemTemplate="{StaticResource SettingChoiceTemplate}"
-                            ItemContainerTheme="{StaticResource SettingsComboBoxItemTheme}"
-                            SelectedItem="{Binding SelectedGpuPreference}" />
+                  <controls:FadingComboBox Grid.Column="1"
+                                           ItemsSource="{Binding GpuPreferences}"
+                                           ItemTemplate="{StaticResource SettingChoiceTemplate}"
+                                           ItemContainerTheme="{StaticResource SettingsComboBoxItemTheme}"
+                                           SelectedItem="{Binding SelectedGpuPreference}" />
                 </Grid>
               </Border>
             </Border>

@@ -91,7 +91,7 @@ HyPrism/
 On first launch, HyPrism guides you through setup with an onboarding wizard:
 
 1. **Splash Screen** — Welcome to HyPrism
-2. **Language Selection** — Choose your preferred language (12 available)
+2. **Language Selection** — Choose your preferred language (13 available)
 3. **Hytale Authentication** — Log in with your Hytale account
 4. **Profile Setup** — Create your first player profile (nickname, avatar)
 5. **Initial Settings** — Configure GPU preference and other options

@@ -26,7 +26,7 @@ SPDX-License-Identifier: GPL-3.0-only
 
 - **First-launch wizard** — Guided setup experience on initial run:
   1. **Splash** — Welcome screen with branding
-  2. **Language selection** — Choose from 12 supported languages
+  2. **Language selection** — Choose from 13 supported languages
   3. **Authentication** — Hytale account login
   4. **Profile setup** — Create your first player profile
   5. **Settings** — Configure GPU preference and other options

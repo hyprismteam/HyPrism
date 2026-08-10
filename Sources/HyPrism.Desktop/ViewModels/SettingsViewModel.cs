@@ -77,7 +77,7 @@ public sealed partial class SettingsViewModel : ObservableObject
 
         Languages = new ObservableCollection<SettingChoiceViewModel>(
             localizer.AvailableLanguages.Select(language =>
-                new SettingChoiceViewModel(language.Key, language.Value)));
+                new SettingChoiceViewModel(language.Key, language.Value, GetFlagCountryCode(language.Key))));
         Backgrounds = new ObservableCollection<SettingChoiceViewModel>(
             [new("auto", localizer["settings.visualSettings.autoShuffle"]),
              .. (settings.GetAvailableBackgrounds() ?? []).Select(name => new SettingChoiceViewModel(name, name))]);
@@ -368,6 +368,14 @@ public sealed partial class SettingsViewModel : ObservableObject
         string value,
         string display)
         => choices.First(choice => choice.Value == value).Display = display;
+
+    private static string GetFlagCountryCode(string cultureName)
+    {
+        var separatorIndex = cultureName.LastIndexOf('-');
+        return separatorIndex >= 0
+            ? cultureName[(separatorIndex + 1)..].ToUpperInvariant()
+            : cultureName.ToUpperInvariant();
+    }
 }
 
 public sealed partial class SettingCategoryViewModel : ObservableObject
@@ -390,12 +398,21 @@ public sealed partial class SettingCategoryViewModel : ObservableObject
 
 public sealed partial class SettingChoiceViewModel : ObservableObject
 {
-    public SettingChoiceViewModel(string value, string display)
+    public SettingChoiceViewModel(string value, string display, string? flagCountryCode = null)
     {
         Value = value;
         _display = display;
+
+        if (!string.IsNullOrWhiteSpace(flagCountryCode))
+        {
+            var iconUri = $"avares://HyPrism.Desktop/Assets/Flags/{flagCountryCode}.png";
+            using var iconStream = AssetLoader.Open(new Uri(iconUri));
+            Icon = new Bitmap(iconStream);
+        }
     }
 
     public string Value { get; }
+    public Bitmap? Icon { get; }
+    public bool HasIcon => Icon is not null;
     [ObservableProperty] private string _display;
 }

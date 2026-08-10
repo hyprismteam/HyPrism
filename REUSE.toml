@@ -40,3 +40,9 @@ path = "Sources/HyPrism.Desktop/Assets/Fluent/*.png"
 precedence = "override"
 SPDX-FileCopyrightText = "Icons8 LLC"
 SPDX-License-Identifier = "LicenseRef-Icons8"
+
+[[annotations]]
+path = "Sources/HyPrism.Desktop/Assets/Flags/*.png"
+precedence = "override"
+SPDX-FileCopyrightText = "2020 @catamphetamine <purecatamphetamine@gmail.com>"
+SPDX-License-Identifier = "MIT"

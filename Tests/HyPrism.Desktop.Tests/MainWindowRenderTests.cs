@@ -469,6 +469,54 @@ public sealed class MainWindowRenderTests
         var languageComboBox = window.GetVisualDescendants()
             .OfType<ComboBox>()
             .Single(comboBox => ReferenceEquals(comboBox.ItemsSource, viewModel.Settings.Languages));
+        var fadingLanguageComboBox = Assert.IsType<FadingComboBox>(languageComboBox);
+        Assert.All(viewModel.Settings.Languages, choice =>
+        {
+            Assert.True(choice.HasIcon);
+            Assert.NotNull(choice.Icon);
+            Assert.Equal(new PixelSize(72, 48), choice.Icon!.PixelSize);
+        });
+        Assert.Contains(
+            languageComboBox.GetVisualDescendants().OfType<Image>(),
+            image => ReferenceEquals(image.Source, viewModel.Settings.SelectedLanguage.Icon));
+
+        fadingLanguageComboBox.IsDropDownOpen = true;
+        Dispatcher.UIThread.RunJobs();
+        Assert.True(fadingLanguageComboBox.IsPopupVisible);
+        var languagePopup = fadingLanguageComboBox.GetVisualDescendants().OfType<Popup>().Single();
+        var languagePopupBorder = Assert.IsType<Border>(languagePopup.Child);
+        Assert.Equal(8, languagePopup.VerticalOffset);
+        Assert.False(languagePopup.IsLightDismissEnabled);
+        Assert.Equal(new CornerRadius(18), languagePopupBorder.CornerRadius);
+        Assert.Equal(
+            Color.Parse("#1D1E21"),
+            Assert.IsAssignableFrom<ISolidColorBrush>(languagePopupBorder.Background).Color);
+        Assert.Equal(
+            byte.MaxValue,
+            Assert.IsAssignableFrom<ISolidColorBrush>(languagePopupBorder.Background).Color.A);
+        var languageDropDownGlyph = fadingLanguageComboBox.GetVisualDescendants()
+            .OfType<PathIcon>()
+            .Single(icon => icon.Name == "DropDownGlyph");
+        Assert.Equal(14, languageDropDownGlyph.Width);
+        Assert.Equal(14, languageDropDownGlyph.Height);
+        fadingLanguageComboBox.IsDropDownOpen = false;
+        Dispatcher.UIThread.RunJobs();
+        Assert.True(fadingLanguageComboBox.IsPopupVisible);
+        Assert.Contains(":dropdownclosing", fadingLanguageComboBox.Classes);
+        Assert.Contains(
+            languagePopupBorder.Transitions!,
+            transition => transition is DoubleTransition { Property: { } property } &&
+                          property == Visual.OpacityProperty);
+        await Task.Delay(90);
+        Dispatcher.UIThread.RunJobs();
+        Assert.NotNull(window.CaptureRenderedFrame());
+        Assert.True(fadingLanguageComboBox.IsPopupVisible);
+        Assert.Equal(0, languagePopupBorder.Opacity);
+        await Task.Delay(150);
+        Dispatcher.UIThread.RunJobs();
+        Assert.False(fadingLanguageComboBox.IsPopupVisible);
+        Assert.DoesNotContain(":dropdownclosing", fadingLanguageComboBox.Classes);
+
         var russian = viewModel.Settings.Languages.Single(choice => choice.Value == "ru-RU");
         languageComboBox.SelectedItem = russian;
         Dispatcher.UIThread.RunJobs();

@@ -73,6 +73,7 @@ are persisted by explicit save commands. Language selection updates the Desktop-
 top-level labels, settings data, account text, and news dates without recreating the window or the settings
 view model. The existing selectors receive refreshed display strings in place, preventing binding-driven
 selection changes from writing the language again. Core only persists the normalized language tag and has no locale catalog, resource lookup, culture, or notification responsibilities.
+Settings selectors use `FadingComboBox`, which separates the logical open state from popup visibility so the popup stays rendered for the close transition. The language choices load the 3:2 country bitmaps bundled under `Assets/Flags`; only the 13 regions represented by the locale catalog are shipped.
 
 `IGameLaunchCoordinator` is the first transport-neutral application entry point.
 Both the Electron `hyprism:game:launch` channel and the Avalonia ViewModel call it,

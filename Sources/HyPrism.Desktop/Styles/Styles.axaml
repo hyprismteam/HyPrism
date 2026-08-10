@@ -6,6 +6,7 @@ SPDX-License-Identifier: GPL-3.0-only
 <Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:controls="using:HyPrism.Desktop.Controls"
+        xmlns:easing="using:Avalonia.Animation.Easings"
         xmlns:views="using:HyPrism.Desktop.Views">
   <Style Selector="Window">
     <Setter Property="FontFamily" Value="{DynamicResource GoogleSansFont}" />
@@ -1059,7 +1060,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="BorderThickness" Value="0" />
   </Style>
 
-  <Style Selector="views|SettingsView ComboBox">
+  <Style Selector="views|SettingsView :is(ComboBox)">
     <Setter Property="HorizontalAlignment" Value="Stretch" />
     <Setter Property="VerticalAlignment" Value="Center" />
     <Setter Property="HorizontalContentAlignment" Value="Left" />
@@ -1072,7 +1073,65 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="Padding" Value="14,6,42,6" />
   </Style>
 
-  <Style Selector="views|SettingsView ComboBox /template/ Border#Background">
+  <Style Selector="views|SettingsView controls|FadingComboBox">
+    <Setter Property="Template">
+      <ControlTemplate>
+        <DataValidationErrors>
+          <Grid ColumnDefinitions="*,32">
+            <Border x:Name="Background"
+                    Grid.ColumnSpan="2"
+                    Background="{TemplateBinding Background}"
+                    BorderBrush="{TemplateBinding BorderBrush}"
+                    BorderThickness="{TemplateBinding BorderThickness}"
+                    CornerRadius="{TemplateBinding CornerRadius}" />
+            <Border x:Name="HighlightBackground"
+                    Grid.ColumnSpan="2"
+                    Background="Transparent"
+                    BorderBrush="Transparent"
+                    BorderThickness="0"
+                    CornerRadius="{TemplateBinding CornerRadius}"
+                    IsVisible="False" />
+            <ContentControl x:Name="ContentPresenter"
+                            Grid.Column="0"
+                            Content="{TemplateBinding SelectionBoxItem}"
+                            ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                            Margin="{TemplateBinding Padding}"
+                            HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                            VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
+            <PathIcon x:Name="DropDownGlyph"
+                      Grid.Column="1"
+                      IsHitTestVisible="False"
+                      HorizontalAlignment="Right"
+                      VerticalAlignment="Center" />
+            <Popup x:Name="PART_Popup"
+                   WindowManagerAddShadowHint="False"
+                   IsOpen="{Binding IsPopupVisible, RelativeSource={RelativeSource TemplatedParent}}"
+                   MinWidth="{Binding Bounds.Width, RelativeSource={RelativeSource TemplatedParent}}"
+                   MaxHeight="{TemplateBinding MaxDropDownHeight}"
+                   PlacementTarget="Background"
+                   VerticalOffset="8"
+                   IsLightDismissEnabled="False"
+                   IsHitTestVisible="{TemplateBinding IsDropDownOpen}"
+                   InheritsTransform="True">
+              <Border x:Name="PopupBorder"
+                      Background="#1D1E21"
+                      HorizontalAlignment="Stretch"
+                      IsHitTestVisible="{TemplateBinding IsDropDownOpen}">
+                <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+                              VerticalScrollBarVisibility="Auto"
+                              IsScrollChainingEnabled="False">
+                  <ItemsPresenter x:Name="PART_ItemsPresenter"
+                                  ItemsPanel="{TemplateBinding ItemsPanel}" />
+                </ScrollViewer>
+              </Border>
+            </Popup>
+          </Grid>
+        </DataValidationErrors>
+      </ControlTemplate>
+    </Setter>
+  </Style>
+
+  <Style Selector="views|SettingsView :is(ComboBox) /template/ Border#Background">
     <Setter Property="Background" Value="#141517" />
     <Setter Property="BorderBrush" Value="Transparent" />
     <Setter Property="BorderThickness" Value="0" />
@@ -1083,25 +1142,25 @@ SPDX-License-Identifier: GPL-3.0-only
     </Setter>
   </Style>
 
-  <Style Selector="views|SettingsView ComboBox:pointerover /template/ Border#Background">
+  <Style Selector="views|SettingsView :is(ComboBox):pointerover /template/ Border#Background">
     <Setter Property="Background" Value="#1A1B1E" />
     <Setter Property="BorderBrush" Value="Transparent" />
   </Style>
 
-  <Style Selector="views|SettingsView ComboBox:dropdownopen /template/ Border#Background">
+  <Style Selector="views|SettingsView :is(ComboBox):dropdownopen /template/ Border#Background">
     <Setter Property="Background" Value="#1D1E21" />
   </Style>
 
-  <Style Selector="views|SettingsView ComboBox:focus-visible /template/ Border#HighlightBackground">
+  <Style Selector="views|SettingsView :is(ComboBox):focus-visible /template/ Border#HighlightBackground">
     <Setter Property="IsVisible" Value="False" />
     <Setter Property="BorderThickness" Value="0" />
   </Style>
 
-  <Style Selector="views|SettingsView ComboBox /template/ PathIcon#DropDownGlyph">
+  <Style Selector="views|SettingsView :is(ComboBox) /template/ PathIcon#DropDownGlyph">
     <Setter Property="Data" Value="{StaticResource ExpandMoreIcon}" />
-    <Setter Property="Width" Value="18" />
-    <Setter Property="Height" Value="18" />
-    <Setter Property="Margin" Value="0,0,12,0" />
+    <Setter Property="Width" Value="14" />
+    <Setter Property="Height" Value="14" />
+    <Setter Property="Margin" Value="0,0,14,0" />
     <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
     <Setter Property="RenderTransform" Value="rotate(0deg)" />
     <Setter Property="RenderTransformOrigin" Value="50%,50%" />
@@ -1113,35 +1172,32 @@ SPDX-License-Identifier: GPL-3.0-only
     </Setter>
   </Style>
 
-  <Style Selector="views|SettingsView ComboBox:pointerover /template/ PathIcon#DropDownGlyph">
+  <Style Selector="views|SettingsView :is(ComboBox):pointerover /template/ PathIcon#DropDownGlyph">
     <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
   </Style>
 
-  <Style Selector="views|SettingsView ComboBox:dropdownopen /template/ PathIcon#DropDownGlyph">
+  <Style Selector="views|SettingsView :is(ComboBox):dropdownopen /template/ PathIcon#DropDownGlyph">
     <Setter Property="RenderTransform" Value="rotate(180deg)" />
     <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
   </Style>
 
-  <Style Selector="views|SettingsView ComboBox /template/ Border#PopupBorder">
-    <Setter Property="Background" Value="#F218191C" />
+  <Style Selector="views|SettingsView :is(ComboBox) /template/ Border#PopupBorder">
+    <Setter Property="Background" Value="#1D1E21" />
     <Setter Property="BorderBrush" Value="Transparent" />
     <Setter Property="BorderThickness" Value="0" />
-    <Setter Property="CornerRadius" Value="14" />
-    <Setter Property="Padding" Value="5" />
+    <Setter Property="CornerRadius" Value="18" />
+    <Setter Property="Padding" Value="6" />
+    <Setter Property="Opacity" Value="1" />
     <Setter Property="BoxShadow" Value="0 12 36 0 #80000000" />
-  </Style>
-
-  <Style Selector="views|SettingsView ComboBox:dropdownopen /template/ Border#PopupBorder">
-    <Style.Animations>
-      <Animation Duration="0:0:0.16" FillMode="Forward">
-        <KeyFrame Cue="0%">
-          <Setter Property="Opacity" Value="0" />
-        </KeyFrame>
-        <KeyFrame Cue="100%">
-          <Setter Property="Opacity" Value="1" />
-        </KeyFrame>
-      </Animation>
-    </Style.Animations>
+    <Setter Property="Transitions">
+      <Transitions>
+        <DoubleTransition Property="Opacity" Duration="0:0:0.19">
+          <DoubleTransition.Easing>
+            <easing:CubicEaseInOut />
+          </DoubleTransition.Easing>
+        </DoubleTransition>
+      </Transitions>
+    </Setter>
   </Style>
 
   <Style Selector="views|SettingsView ToggleSwitch">
