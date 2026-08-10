@@ -17,7 +17,6 @@ public record SettingsSnapshot(
     bool DisableNews,
     string BackgroundMode,
     List<string> AvailableBackgrounds,
-    string AccentColor,
     bool HasCompletedOnboarding,
     bool OnlineMode,
     string AuthDomain,

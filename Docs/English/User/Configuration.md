@@ -40,10 +40,11 @@ Access settings through the **Settings** page (gear icon in sidebar).
 
 | Setting | Description | Default |
 |---------|-------------|---------|
-| Accent color | Theme accent color | Purple (#7C5CFC) |
 | Animations | Enable UI animations | true |
 | Transparency | Glass-morphism effects | true |
 | Background mode | Dashboard background style | default |
+
+Settings use borderless controls throughout the native UI. Switches show state through a gray or green track without separate On/Off labels; drop-downs and text fields use smooth hover feedback without focus outlines.
 
 ### Native News page (Avalonia preview)
 

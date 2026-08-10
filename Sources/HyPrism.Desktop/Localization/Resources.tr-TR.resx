@@ -1239,9 +1239,6 @@ Sürücü değiştirirseniz oyunu yeniden yüklemeniz gerekebilir.</value>
   <data name="onboarding.aboutHyPrism" xml:space="preserve">
     <value>HyPrism Hakkında</value>
   </data>
-  <data name="onboarding.accentColor" xml:space="preserve">
-    <value>Vurgu Rengi</value>
-  </data>
   <data name="onboarding.allSet" xml:space="preserve">
     <value>Hazırsınız! İşte başlatıcı hakkında bazı bilgiler</value>
   </data>
@@ -1283,9 +1280,6 @@ Sürücü değiştirirseniz oyunu yeniden yüklemeniz gerekebilir.</value>
   </data>
   <data name="onboarding.changeInSettings" xml:space="preserve">
     <value>Bu konumu daha sonra Ayarlar &gt; Veri'den değiştirebilirsiniz</value>
-  </data>
-  <data name="onboarding.chooseAccentAndBg" xml:space="preserve">
-    <value>Vurgu renginizi ve arka planınızı seçin</value>
   </data>
   <data name="onboarding.chooseLanguage" xml:space="preserve">
     <value>Dilinizi seçin</value>
@@ -2255,9 +2249,6 @@ Sürücü değiştirirseniz oyunu yeniden yüklemeniz gerekebilir.</value>
   </data>
   <data name="settings.visual" xml:space="preserve">
     <value>Görsel</value>
-  </data>
-  <data name="settings.visualSettings.accentColor" xml:space="preserve">
-    <value>Vurgu Rengi</value>
   </data>
   <data name="settings.visualSettings.autoShuffle" xml:space="preserve">
     <value>Otomatik / Karışık</value>

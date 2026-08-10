@@ -87,7 +87,6 @@ dotnet test Tests/HyPrism.Core.Tests/ --collect:"XPlat Code Coverage"
 |--------|-----------|
 | `ProgressNotificationService` | `IProgressNotificationService` |
 | `SettingsService` | `ISettingsService` |
-| `ThemeService` | `IThemeService` |
 | `UpdateService` | `IUpdateService` |
 
 ### Core — Integration

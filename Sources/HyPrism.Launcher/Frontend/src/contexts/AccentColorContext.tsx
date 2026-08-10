@@ -1,13 +1,11 @@
 // Copyright (C) 2026 HyPrism Launcher
 // SPDX-License-Identifier: GPL-3.0-only
 
-import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode } from 'react';
-import { ipc } from '@/lib/ipc';
+import React, { createContext, useContext, useEffect, ReactNode } from 'react';
 
 interface AccentColorContextType {
   accentColor: string;
   accentTextColor: string; // Color for text on accent background (white or black)
-  setAccentColor: (color: string) => Promise<void>;
 }
 
 const AccentColorContext = createContext<AccentColorContextType | undefined>(undefined);
@@ -59,36 +57,15 @@ const updateCssVariables = (color: string) => {
 };
 
 export const AccentColorProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [accentColor, setAccentColorState] = useState<string>('#FFA845');
+  const accentColor = '#F5F5F6';
+  const accentTextColor = '#111214';
 
-  // Load accent color on mount and set CSS variables
   useEffect(() => {
-    // Set default CSS variables immediately
-    updateCssVariables('#FFA845');
-    
-    ipc.settings.get().then(s => {
-      if (s.accentColor) {
-        setAccentColorState(s.accentColor);
-        updateCssVariables(s.accentColor);
-      }
-    }).catch(console.error);
+    updateCssVariables(accentColor);
   }, []);
-
-  const setAccentColor = useCallback(async (color: string) => {
-    setAccentColorState(color);
-    updateCssVariables(color);
-    try {
-      await ipc.settings.update({ accentColor: color });
-    } catch (err) {
-      console.error('Failed to save accent color:', err);
-    }
-  }, []);
-
-  // Memoize the contrast text color to avoid recalculating on every render
-  const accentTextColor = useMemo(() => getContrastTextColor(accentColor), [accentColor]);
 
   return (
-    <AccentColorContext.Provider value={{ accentColor, accentTextColor, setAccentColor }}>
+    <AccentColorContext.Provider value={{ accentColor, accentTextColor }}>
       {children}
     </AccentColorContext.Provider>
   );

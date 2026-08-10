@@ -87,11 +87,6 @@ public class Config
     public bool DisableNews { get; set; } = false;
 
     /// <summary>
-    /// Accent color for the UI (HEX code). Default is Hytale Orange (#FFA845).
-    /// </summary>
-    public string AccentColor { get; set; } = "#FFA845"; 
-    
-    /// <summary>
     /// Background mode: "auto" for rotating backgrounds, or a specific background filename.
     /// Changed from "slideshow" to "auto" in v2.0.4.
     /// </summary>

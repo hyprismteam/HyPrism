@@ -15,11 +15,6 @@ public interface ISettingsService
     event Action<string?>? OnBackgroundChanged;
     
     /// <summary>
-    /// Raised when the accent color setting changes.
-    /// </summary>
-    event Action<string>? OnAccentColorChanged;
-    
-    /// <summary>
     /// Gets the persisted language preference without interpreting UI locale availability.
     /// </summary>
     /// <returns>The current language code.</returns>
@@ -146,19 +141,6 @@ public interface ISettingsService
     /// </summary>
     /// <returns>A list of background image identifiers.</returns>
     List<string> GetAvailableBackgrounds();
-    
-    /// <summary>
-    /// Gets the current accent color in hexadecimal format.
-    /// </summary>
-    /// <returns>The accent color hex string (e.g., "#FF5500").</returns>
-    string GetAccentColor();
-    
-    /// <summary>
-    /// Sets the application accent color.
-    /// </summary>
-    /// <param name="color">The accent color in hexadecimal format.</param>
-    /// <returns><c>true</c> if the setting was successfully saved.</returns>
-    bool SetAccentColor(string color);
     
     /// <summary>
     /// Gets whether the user has completed the initial onboarding flow.

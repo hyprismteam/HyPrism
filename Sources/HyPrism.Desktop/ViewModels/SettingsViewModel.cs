@@ -139,7 +139,6 @@ public sealed partial class SettingsViewModel : ObservableObject
     public string MusicLabel { get; private set; } = string.Empty;
     public string MusicHint { get; private set; } = string.Empty;
     public string BackgroundLabel { get; private set; } = string.Empty;
-    public string AccentLabel { get; private set; } = string.Empty;
     public string HideNewsLabel { get; private set; } = string.Empty;
     public string HideNewsHint { get; private set; } = string.Empty;
     public string DiscordAnnouncementsLabel { get; private set; } = string.Empty;
@@ -222,7 +221,6 @@ public sealed partial class SettingsViewModel : ObservableObject
         MusicLabel = _localizer["desktopSettings.music"];
         MusicHint = _localizer["desktopSettings.musicHint"];
         BackgroundLabel = _localizer["settings.visualSettings.background"];
-        AccentLabel = _localizer["settings.visualSettings.accentColor"];
         HideNewsLabel = _localizer["settings.visualSettings.hideNews"];
         HideNewsHint = _localizer["settings.visualSettings.hideNewsHint"];
         DiscordAnnouncementsLabel = _localizer["discord.showAnnouncements"];

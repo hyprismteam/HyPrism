@@ -16,6 +16,47 @@ SPDX-License-Identifier: GPL-3.0-only
       <TextBlock Text="{Binding Display}" TextWrapping="NoWrap" />
     </DataTemplate>
 
+    <ControlTheme x:Key="SettingsComboBoxItemTheme" TargetType="ComboBoxItem">
+      <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="CornerRadius" Value="9" />
+      <Setter Property="Margin" Value="0,2" />
+      <Setter Property="Padding" Value="12,9" />
+      <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <ContentPresenter x:Name="PART_ContentPresenter"
+                            Content="{TemplateBinding Content}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}"
+                            Foreground="{TemplateBinding Foreground}"
+                            Background="{TemplateBinding Background}"
+                            BorderThickness="0"
+                            CornerRadius="{TemplateBinding CornerRadius}"
+                            Padding="{TemplateBinding Padding}"
+                            HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}">
+            <ContentPresenter.Transitions>
+              <Transitions>
+                <BrushTransition Property="Background" Duration="0:0:0.16" />
+                <BrushTransition Property="Foreground" Duration="0:0:0.16" />
+              </Transitions>
+            </ContentPresenter.Transitions>
+          </ContentPresenter>
+        </ControlTemplate>
+      </Setter>
+      <Style Selector="^:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="#10FFFFFF" />
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+      </Style>
+      <Style Selector="^:selected /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="#1DFFFFFF" />
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+      </Style>
+      <Style Selector="^:selected:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="#27FFFFFF" />
+      </Style>
+    </ControlTheme>
+
     <DataTemplate x:Key="SettingRailCategoryTemplate" x:DataType="vm:SettingCategoryViewModel">
       <Button Classes="settingsRailCategory"
               Classes.compact="{Binding DataContext.IsCompactLayout, ElementName=SettingsRoot}"
@@ -184,6 +225,7 @@ SPDX-License-Identifier: GPL-3.0-only
                     <ComboBox Grid.Column="1"
                               ItemsSource="{Binding Languages}"
                               ItemTemplate="{StaticResource SettingChoiceTemplate}"
+                              ItemContainerTheme="{StaticResource SettingsComboBoxItemTheme}"
                               SelectedItem="{Binding SelectedLanguage}" />
                   </Grid>
                 </Border>
@@ -280,6 +322,7 @@ SPDX-License-Identifier: GPL-3.0-only
                     <ComboBox Grid.Column="1"
                               ItemsSource="{Binding Backgrounds}"
                               ItemTemplate="{StaticResource SettingChoiceTemplate}"
+                              ItemContainerTheme="{StaticResource SettingsComboBoxItemTheme}"
                               SelectedItem="{Binding SelectedBackground}" />
                   </Grid>
                 </Border>
@@ -292,28 +335,13 @@ SPDX-License-Identifier: GPL-3.0-only
                     <ToggleSwitch Grid.Column="1" IsChecked="{Binding MusicEnabled}" />
                   </Grid>
                 </Border>
-                <Border Classes="settingsRow">
+                <Border Classes="settingsRow last">
                   <Grid ColumnDefinitions="*,Auto" ColumnSpacing="24">
                     <StackPanel Spacing="3">
                       <TextBlock Text="{Binding HideNewsLabel}" Classes="settingsLabel" />
                       <TextBlock Text="{Binding HideNewsHint}" Classes="settingsHint" />
                     </StackPanel>
                     <ToggleSwitch Grid.Column="1" IsChecked="{Binding DisableNews}" />
-                  </Grid>
-                </Border>
-                <Border Classes="settingsRow last">
-                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="24">
-                    <StackPanel Spacing="3">
-                      <TextBlock Text="{Binding AccentLabel}" Classes="settingsLabel" />
-                      <TextBlock Text="White" Classes="settingsHint" />
-                    </StackPanel>
-                    <Border Grid.Column="1"
-                            Width="22"
-                            Height="22"
-                            CornerRadius="11"
-                            Background="White"
-                            BorderBrush="#32FFFFFF"
-                            BorderThickness="1" />
                   </Grid>
                 </Border>
               </StackPanel>
@@ -366,6 +394,7 @@ SPDX-License-Identifier: GPL-3.0-only
                   <ComboBox Grid.Column="1"
                             ItemsSource="{Binding GpuPreferences}"
                             ItemTemplate="{StaticResource SettingChoiceTemplate}"
+                            ItemContainerTheme="{StaticResource SettingsComboBoxItemTheme}"
                             SelectedItem="{Binding SelectedGpuPreference}" />
                 </Grid>
               </Border>

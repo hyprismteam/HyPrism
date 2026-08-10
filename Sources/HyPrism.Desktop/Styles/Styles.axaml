@@ -1028,19 +1028,200 @@ SPDX-License-Identifier: GPL-3.0-only
   </Style>
 
   <Style Selector="views|SettingsView TextBox">
-    <Setter Property="Background" Value="#0D0E10" />
-    <Setter Property="BorderBrush" Value="#20FFFFFF" />
-    <Setter Property="BorderThickness" Value="1" />
-    <Setter Property="CornerRadius" Value="10" />
+    <Setter Property="Background" Value="#141517" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="FocusAdorner" Value="{x:Null}" />
+    <Setter Property="CornerRadius" Value="11" />
     <Setter Property="Padding" Value="12,9" />
   </Style>
 
+  <Style Selector="views|SettingsView TextBox /template/ Border#PART_BorderElement">
+    <Setter Property="Background" Value="#141517" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Transitions">
+      <Transitions>
+        <BrushTransition Property="Background" Duration="0:0:0.18" />
+      </Transitions>
+    </Setter>
+  </Style>
+
+  <Style Selector="views|SettingsView TextBox:pointerover /template/ Border#PART_BorderElement">
+    <Setter Property="Background" Value="#1A1B1E" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+  </Style>
+
+  <Style Selector="views|SettingsView TextBox:focus /template/ Border#PART_BorderElement">
+    <Setter Property="Background" Value="#1D1E21" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+  </Style>
+
   <Style Selector="views|SettingsView ComboBox">
-    <Setter Property="Background" Value="#0D0E10" />
-    <Setter Property="BorderBrush" Value="#20FFFFFF" />
-    <Setter Property="BorderThickness" Value="1" />
-    <Setter Property="CornerRadius" Value="10" />
-    <Setter Property="MinHeight" Value="40" />
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="HorizontalContentAlignment" Value="Left" />
+    <Setter Property="Background" Value="#141517" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="FocusAdorner" Value="{x:Null}" />
+    <Setter Property="CornerRadius" Value="11" />
+    <Setter Property="MinHeight" Value="44" />
+    <Setter Property="Padding" Value="14,6,42,6" />
+  </Style>
+
+  <Style Selector="views|SettingsView ComboBox /template/ Border#Background">
+    <Setter Property="Background" Value="#141517" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Transitions">
+      <Transitions>
+        <BrushTransition Property="Background" Duration="0:0:0.18" />
+      </Transitions>
+    </Setter>
+  </Style>
+
+  <Style Selector="views|SettingsView ComboBox:pointerover /template/ Border#Background">
+    <Setter Property="Background" Value="#1A1B1E" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+  </Style>
+
+  <Style Selector="views|SettingsView ComboBox:dropdownopen /template/ Border#Background">
+    <Setter Property="Background" Value="#1D1E21" />
+  </Style>
+
+  <Style Selector="views|SettingsView ComboBox:focus-visible /template/ Border#HighlightBackground">
+    <Setter Property="IsVisible" Value="False" />
+    <Setter Property="BorderThickness" Value="0" />
+  </Style>
+
+  <Style Selector="views|SettingsView ComboBox /template/ PathIcon#DropDownGlyph">
+    <Setter Property="Data" Value="{StaticResource ExpandMoreIcon}" />
+    <Setter Property="Width" Value="18" />
+    <Setter Property="Height" Value="18" />
+    <Setter Property="Margin" Value="0,0,12,0" />
+    <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+    <Setter Property="RenderTransform" Value="rotate(0deg)" />
+    <Setter Property="RenderTransformOrigin" Value="50%,50%" />
+    <Setter Property="Transitions">
+      <Transitions>
+        <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.2" />
+        <BrushTransition Property="Foreground" Duration="0:0:0.18" />
+      </Transitions>
+    </Setter>
+  </Style>
+
+  <Style Selector="views|SettingsView ComboBox:pointerover /template/ PathIcon#DropDownGlyph">
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+  </Style>
+
+  <Style Selector="views|SettingsView ComboBox:dropdownopen /template/ PathIcon#DropDownGlyph">
+    <Setter Property="RenderTransform" Value="rotate(180deg)" />
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+  </Style>
+
+  <Style Selector="views|SettingsView ComboBox /template/ Border#PopupBorder">
+    <Setter Property="Background" Value="#F218191C" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="CornerRadius" Value="14" />
+    <Setter Property="Padding" Value="5" />
+    <Setter Property="BoxShadow" Value="0 12 36 0 #80000000" />
+  </Style>
+
+  <Style Selector="views|SettingsView ComboBox:dropdownopen /template/ Border#PopupBorder">
+    <Style.Animations>
+      <Animation Duration="0:0:0.16" FillMode="Forward">
+        <KeyFrame Cue="0%">
+          <Setter Property="Opacity" Value="0" />
+        </KeyFrame>
+        <KeyFrame Cue="100%">
+          <Setter Property="Opacity" Value="1" />
+        </KeyFrame>
+      </Animation>
+    </Style.Animations>
+  </Style>
+
+  <Style Selector="views|SettingsView ToggleSwitch">
+    <Setter Property="Width" Value="48" />
+    <Setter Property="Height" Value="28" />
+    <Setter Property="MinWidth" Value="48" />
+    <Setter Property="HorizontalAlignment" Value="Right" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="FocusAdorner" Value="{x:Null}" />
+    <Setter Property="Cursor" Value="Hand" />
+    <Setter Property="OnContent" Value="{x:Null}" />
+    <Setter Property="OffContent" Value="{x:Null}" />
+    <Setter Property="KnobTransitions">
+      <Transitions>
+        <DoubleTransition Property="Canvas.Left" Duration="0:0:0.2" />
+      </Transitions>
+    </Setter>
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Grid Width="48" Height="28" Background="Transparent">
+          <Border x:Name="SettingsSwitchTrack"
+                  Width="46"
+                  Height="26"
+                  HorizontalAlignment="Center"
+                  VerticalAlignment="Center"
+                  Background="#303237"
+                  BorderThickness="0"
+                  CornerRadius="13">
+            <Border.Transitions>
+              <Transitions>
+                <BrushTransition Property="Background" Duration="0:0:0.18" />
+              </Transitions>
+            </Border.Transitions>
+          </Border>
+          <Canvas x:Name="PART_SwitchKnob"
+                  Width="22"
+                  Height="28"
+                  Margin="2,0,0,0"
+                  HorizontalAlignment="Left"
+                  VerticalAlignment="Center">
+            <Grid x:Name="PART_MovingKnobs" Width="22" Height="28">
+              <Ellipse x:Name="SettingsSwitchKnob"
+                       Width="18"
+                       Height="18"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"
+                       Fill="#F4F5F6">
+                <Ellipse.Transitions>
+                  <Transitions>
+                    <BrushTransition Property="Fill" Duration="0:0:0.18" />
+                  </Transitions>
+                </Ellipse.Transitions>
+              </Ellipse>
+            </Grid>
+          </Canvas>
+        </Grid>
+      </ControlTemplate>
+    </Setter>
+  </Style>
+
+  <Style Selector="views|SettingsView ToggleSwitch:pointerover /template/ Border#SettingsSwitchTrack">
+    <Setter Property="Background" Value="#3B3E43" />
+  </Style>
+
+  <Style Selector="views|SettingsView ToggleSwitch:checked /template/ Border#SettingsSwitchTrack">
+    <Setter Property="Background" Value="#35A85B" />
+  </Style>
+
+  <Style Selector="views|SettingsView ToggleSwitch:checked:pointerover /template/ Border#SettingsSwitchTrack">
+    <Setter Property="Background" Value="#43BC6B" />
+  </Style>
+
+  <Style Selector="views|SettingsView ToggleSwitch:pointerover /template/ Ellipse#SettingsSwitchKnob">
+    <Setter Property="Fill" Value="#FFFFFF" />
+  </Style>
+
+  <Style Selector="views|SettingsView ToggleSwitch:disabled">
+    <Setter Property="Opacity" Value="0.45" />
   </Style>
 
 </Styles>

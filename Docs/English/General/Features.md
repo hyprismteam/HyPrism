@@ -57,7 +57,6 @@ SPDX-License-Identifier: GPL-3.0-only
 - **Modern dark UI** — Custom frameless window with glass-morphism design
 - **Framer Motion animations** — Smooth page transitions and micro-interactions
 - **Responsive layout** — Sidebar navigation, dashboard, news feed, settings, mod manager
-- **Accent color customization** — Personalize the theme color
 - **Settings-integrated logs** — Read launcher logs directly from the Settings sidebar Logs tab
 - **Dashboard action clarity** — Educational badge and instance switcher controls use solid styling for better readability
 

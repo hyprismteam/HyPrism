@@ -272,9 +272,6 @@ public static class Bootstrapper
                 new SettingsService(sp.GetRequiredService<IConfigService>()));
             services.AddSingleton<ISettingsService>(sp => sp.GetRequiredService<SettingsService>());
 
-            services.AddSingleton<ThemeService>();
-            services.AddSingleton<IThemeService>(sp => sp.GetRequiredService<ThemeService>());
-
             #endregion
 
             // Platform hosts add their adapters after the shared launcher graph.

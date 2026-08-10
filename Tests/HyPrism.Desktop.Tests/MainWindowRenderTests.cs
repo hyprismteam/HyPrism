@@ -1552,6 +1552,62 @@ public sealed class MainWindowRenderTests
         Assert.NotNull(settingsMain);
         AssertUsesApplicationScrollBar(categoryScroll!);
         AssertUsesApplicationScrollBar(settingsScroll!);
+        var settingsToggles = settingsView.GetVisualDescendants().OfType<ToggleSwitch>().ToArray();
+        Assert.NotEmpty(settingsToggles);
+        Assert.All(settingsToggles, toggle =>
+        {
+            Assert.Null(toggle.OnContent);
+            Assert.Null(toggle.OffContent);
+            Assert.Equal(new Thickness(0), toggle.BorderThickness);
+            Assert.Equal(48, toggle.Width);
+        });
+        Assert.All(settingsToggles.Where(toggle => toggle.IsEffectivelyVisible), toggle =>
+        {
+            var track = toggle.GetVisualDescendants()
+                .OfType<Border>()
+                .Single(border => border.Name == "SettingsSwitchTrack");
+            var knob = toggle.GetVisualDescendants()
+                .OfType<Avalonia.Controls.Shapes.Ellipse>()
+                .Single(ellipse => ellipse.Name == "SettingsSwitchKnob");
+            Assert.Equal(new Thickness(0), track.BorderThickness);
+            Assert.Equal(new CornerRadius(13), track.CornerRadius);
+            Assert.Equal(18, knob.Width);
+            Assert.Equal(18, knob.Height);
+        });
+        if (width == 1280)
+        {
+            var toggle = settingsToggles.First(item => item.IsEffectivelyVisible);
+            var track = toggle.GetVisualDescendants()
+                .OfType<Border>()
+                .Single(border => border.Name == "SettingsSwitchTrack");
+            Assert.Equal(
+                Color.Parse("#303237"),
+                Assert.IsAssignableFrom<ISolidColorBrush>(track.Background).Color);
+            toggle.IsChecked = true;
+            await Task.Delay(240);
+            Dispatcher.UIThread.RunJobs();
+            Assert.Equal(
+                Color.Parse("#35A85B"),
+                Assert.IsAssignableFrom<ISolidColorBrush>(track.Background).Color);
+            toggle.IsChecked = false;
+        }
+        var settingsComboBoxes = settingsView.GetVisualDescendants().OfType<ComboBox>().ToArray();
+        Assert.NotEmpty(settingsComboBoxes);
+        Assert.All(settingsComboBoxes, comboBox =>
+        {
+            Assert.Equal(Avalonia.Layout.HorizontalAlignment.Stretch, comboBox.HorizontalAlignment);
+            Assert.Equal(new Thickness(0), comboBox.BorderThickness);
+            Assert.Equal(new CornerRadius(11), comboBox.CornerRadius);
+            Assert.NotNull(comboBox.ItemContainerTheme);
+        });
+        var settingsTextBoxes = settingsView.GetVisualDescendants().OfType<TextBox>().ToArray();
+        Assert.NotEmpty(settingsTextBoxes);
+        Assert.All(settingsTextBoxes, textBox =>
+        {
+            Assert.Equal(new Thickness(0), textBox.BorderThickness);
+            Assert.Equal(new CornerRadius(11), textBox.CornerRadius);
+            Assert.Null(textBox.FocusAdorner);
+        });
         var compactSettingsLayout = settingsView.Bounds.Width < 940;
         Assert.True(settingsRail!.IsEffectivelyVisible);
         Assert.Equal(compactSettingsLayout, compactSettingsToolbar!.IsVisible);

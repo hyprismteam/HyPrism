@@ -37,7 +37,7 @@ HyPrism/
     │   │   │   │   ├── ProfilesPage.tsx    # Управление профилями
     │   │   │   │   └── LogsPage.tsx        # Просмотр логов
     │   │   │   ├── contexts/       # Провайдеры React Context
-    │   │   │   │   └── AccentColorContext.tsx  # Акцентный цвет темы
+    │   │   │   │   └── AccentColorContext.tsx  # Фиксированный токен акцента legacy UI
     │   │   │   ├── lib/            # Утилиты
     │   │   │   │   └── ipc.ts      # АВТОГЕНЕРИРУЕМЫЙ IPC-мост (не редактировать)
     │   │   │   ├── assets/         # Статические ресурсы фронтенда

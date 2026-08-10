@@ -1239,9 +1239,6 @@ Es posible que necesites reinstalar el juego si cambias de unidad.</value>
   <data name="onboarding.aboutHyPrism" xml:space="preserve">
     <value>Acerca de HyPrism</value>
   </data>
-  <data name="onboarding.accentColor" xml:space="preserve">
-    <value>Color de Acento</value>
-  </data>
   <data name="onboarding.allSet" xml:space="preserve">
     <value>¡Todo listo! Aquí tienes información sobre el launcher</value>
   </data>
@@ -1283,9 +1280,6 @@ Es posible que necesites reinstalar el juego si cambias de unidad.</value>
   </data>
   <data name="onboarding.changeInSettings" xml:space="preserve">
     <value>Puedes cambiar esta ubicación más tarde en Ajustes &gt; Datos</value>
-  </data>
-  <data name="onboarding.chooseAccentAndBg" xml:space="preserve">
-    <value>Elige tu color de acento y fondo</value>
   </data>
   <data name="onboarding.chooseLanguage" xml:space="preserve">
     <value>Elige tu idioma</value>
@@ -2255,9 +2249,6 @@ Es posible que necesites reinstalar el juego si cambias de unidad.</value>
   </data>
   <data name="settings.visual" xml:space="preserve">
     <value>Visual</value>
-  </data>
-  <data name="settings.visualSettings.accentColor" xml:space="preserve">
-    <value>Color de Acento</value>
   </data>
   <data name="settings.visualSettings.autoShuffle" xml:space="preserve">
     <value>Auto / Aleatorio</value>

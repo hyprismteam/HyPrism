@@ -2,8 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 import React from 'react';
-import { Check, Palette, Image } from 'lucide-react';
-import { ACCENT_COLORS } from '@/constants/colors';
+import { Check, Image } from 'lucide-react';
 import { backgroundImages } from '@/constants/backgrounds';
 import type { UseOnboardingReturn } from '@/hooks/useOnboarding';
 
@@ -16,39 +15,6 @@ export const VisualStep: React.FC<VisualStepProps> = ({ onboarding }) => {
     <div className="space-y-6">
       <div>
         <h2 className="text-xl font-semibold text-white mb-2">{onboarding.t('onboarding.customizeAppearance')}</h2>
-        <p className="text-sm text-white/60">{onboarding.t('onboarding.chooseAccentAndBg')}</p>
-      </div>
-      
-      {/* Accent Color */}
-      <div>
-        <label className="text-sm text-white/60 mb-3 flex items-center gap-2">
-          <Palette size={14} />
-          {onboarding.t('onboarding.accentColor')}
-        </label>
-        <div className="flex flex-wrap gap-3">
-          {ACCENT_COLORS.map((color) => (
-            <button
-              key={color}
-              onClick={() => onboarding.setAccentColor(color)}
-              className={`w-10 h-10 rounded-full transition-all ${
-                onboarding.accentColor === color 
-                  ? 'ring-2 ring-white ring-offset-2 ring-offset-[#111111]' 
-                  : 'hover:scale-110'
-              }`}
-              style={{ backgroundColor: color }}
-            >
-              {onboarding.accentColor === color && (
-                <div className="w-full h-full flex items-center justify-center">
-                  <Check 
-                    size={18} 
-                    className={color === '#FFFFFF' ? 'text-black' : 'text-white'} 
-                    strokeWidth={3} 
-                  />
-                </div>
-              )}
-            </button>
-          ))}
-        </div>
       </div>
       
       {/* Background Chooser */}

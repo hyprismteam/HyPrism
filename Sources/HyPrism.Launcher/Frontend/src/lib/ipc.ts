@@ -266,7 +266,6 @@ export interface SettingsSnapshot {
   disableNews: boolean;
   backgroundMode: string;
   availableBackgrounds: string[];
-  accentColor: string;
   hasCompletedOnboarding: boolean;
   onlineMode: boolean;
   authDomain: string;

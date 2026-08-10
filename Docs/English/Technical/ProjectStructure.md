@@ -37,7 +37,7 @@ HyPrism/
     │   │   │   │   ├── ProfilesPage.tsx    # Profile management
     │   │   │   │   └── LogsPage.tsx        # Log viewer
     │   │   │   ├── contexts/       # React Context providers
-    │   │   │   │   └── AccentColorContext.tsx  # Theme accent color
+    │   │   │   │   └── AccentColorContext.tsx  # Fixed legacy UI accent token
     │   │   │   ├── lib/            # Utilities
     │   │   │   │   └── ipc.ts      # AUTO-GENERATED IPC bridge (do not edit)
     │   │   │   ├── assets/         # Frontend static assets

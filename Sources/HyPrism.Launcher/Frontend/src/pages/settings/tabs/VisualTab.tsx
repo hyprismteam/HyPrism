@@ -4,19 +4,16 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Check } from 'lucide-react';
-import { ACCENT_COLORS } from '@/constants/colors';
 import { backgroundImages } from '@/constants/backgrounds';
 
 interface VisualTabProps {
   accentColor: string;
-  handleAccentColorChange: (color: string) => void;
   backgroundMode: string;
   handleBackgroundModeChange: (mode: string) => void;
 }
 
 export const VisualTab: React.FC<VisualTabProps> = ({
   accentColor,
-  handleAccentColorChange,
   backgroundMode,
   handleBackgroundModeChange,
 }) => {
@@ -24,21 +21,6 @@ export const VisualTab: React.FC<VisualTabProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Accent Color Chooser */}
-      <div>
-        <label className="block text-sm text-white/60 mb-3">{t('settings.visualSettings.accentColor')}</label>
-        <div className="flex flex-wrap gap-2">
-          {ACCENT_COLORS.map((color) => (
-            <button
-              key={color}
-              onClick={() => handleAccentColorChange(color)}
-              className={`w-8 h-8 rounded-full transition-all ${accentColor === color ? 'ring-2 ring-white ring-offset-2 ring-offset-[#1a1a1a]' : 'hover:scale-110'}`}
-              style={{ backgroundColor: color }}
-            />
-          ))}
-        </div>
-      </div>
-
       {/* Background Chooser */}
       <div>
         <label className="block text-sm text-white/60 mb-3">{t('settings.visualSettings.background')}</label>

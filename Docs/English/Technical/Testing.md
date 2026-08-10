@@ -87,7 +87,6 @@ All injectable services expose an interface. The table below lists every service
 |---------|-----------|
 | `ProgressNotificationService` | `IProgressNotificationService` |
 | `SettingsService` | `ISettingsService` |
-| `ThemeService` | `IThemeService` |
 | `UpdateService` | `IUpdateService` |
 
 ### Core — Integration

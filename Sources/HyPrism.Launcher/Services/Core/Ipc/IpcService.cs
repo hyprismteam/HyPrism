@@ -534,7 +534,6 @@ public class IpcService(IServiceProvider services) : IpcServiceBase(services)
             DisableNews: s.GetDisableNews(),
             BackgroundMode: s.GetBackgroundMode(),
             AvailableBackgrounds: s.GetAvailableBackgrounds(),
-            AccentColor: s.GetAccentColor(),
             HasCompletedOnboarding: s.GetHasCompletedOnboarding(),
             OnlineMode: s.GetOnlineMode(),
             AuthDomain: s.GetAuthDomain(),
@@ -1420,7 +1419,6 @@ public class IpcService(IServiceProvider services) : IpcServiceBase(services)
             case "showDiscordAnnouncements": s.SetShowDiscordAnnouncements(val.GetBoolean()); break;
             case "disableNews":              s.SetDisableNews(val.GetBoolean()); break;
             case "backgroundMode":           s.SetBackgroundMode(val.GetString() ?? "default"); break;
-            case "accentColor":              s.SetAccentColor(val.GetString() ?? "#7C5CFC"); break;
             case "onlineMode":               s.SetOnlineMode(val.GetBoolean()); break;
             case "authDomain":               s.SetAuthDomain(val.GetString() ?? ""); break;
             case "javaArguments":            s.SetJavaArguments(val.GetString() ?? ""); break;

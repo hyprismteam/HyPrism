@@ -1239,9 +1239,6 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="onboarding.aboutHyPrism" xml:space="preserve">
     <value>Про HyPrism</value>
   </data>
-  <data name="onboarding.accentColor" xml:space="preserve">
-    <value>Колір акценту</value>
-  </data>
   <data name="onboarding.allSet" xml:space="preserve">
     <value>Все готово! Ось деяка інформація про лаунчер</value>
   </data>
@@ -1283,9 +1280,6 @@ SPDX-License-Identifier: GPL-3.0-only
   </data>
   <data name="onboarding.changeInSettings" xml:space="preserve">
     <value>Ви можете змінити це розташування пізніше в Налаштування &gt; Дані</value>
-  </data>
-  <data name="onboarding.chooseAccentAndBg" xml:space="preserve">
-    <value>Виберіть колір акценту та фон</value>
   </data>
   <data name="onboarding.chooseLanguage" xml:space="preserve">
     <value>Оберіть мову</value>
@@ -2255,9 +2249,6 @@ SPDX-License-Identifier: GPL-3.0-only
   </data>
   <data name="settings.visual" xml:space="preserve">
     <value>Візуал</value>
-  </data>
-  <data name="settings.visualSettings.accentColor" xml:space="preserve">
-    <value>Колір акценту</value>
   </data>
   <data name="settings.visualSettings.autoShuffle" xml:space="preserve">
     <value>Авто / Перемішати</value>

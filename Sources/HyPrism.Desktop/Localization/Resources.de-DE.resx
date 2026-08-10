@@ -1239,9 +1239,6 @@ Bei Laufwerkswechsel muss das Spiel möglicherweise neu installiert werden.</val
   <data name="onboarding.aboutHyPrism" xml:space="preserve">
     <value>Über HyPrism</value>
   </data>
-  <data name="onboarding.accentColor" xml:space="preserve">
-    <value>Akzentfarbe</value>
-  </data>
   <data name="onboarding.allSet" xml:space="preserve">
     <value>Alles bereit! Hier sind einige Informationen über den Launcher</value>
   </data>
@@ -1283,9 +1280,6 @@ Bei Laufwerkswechsel muss das Spiel möglicherweise neu installiert werden.</val
   </data>
   <data name="onboarding.changeInSettings" xml:space="preserve">
     <value>Du kannst diesen Speicherort später in Einstellungen &gt; Daten ändern</value>
-  </data>
-  <data name="onboarding.chooseAccentAndBg" xml:space="preserve">
-    <value>Wähle deine Akzentfarbe und deinen Hintergrund</value>
   </data>
   <data name="onboarding.chooseLanguage" xml:space="preserve">
     <value>Wähle deine Sprache</value>
@@ -2255,9 +2249,6 @@ Bei Laufwerkswechsel muss das Spiel möglicherweise neu installiert werden.</val
   </data>
   <data name="settings.visual" xml:space="preserve">
     <value>Visuell</value>
-  </data>
-  <data name="settings.visualSettings.accentColor" xml:space="preserve">
-    <value>Akzentfarbe</value>
   </data>
   <data name="settings.visualSettings.autoShuffle" xml:space="preserve">
     <value>Auto / Zufällig</value>

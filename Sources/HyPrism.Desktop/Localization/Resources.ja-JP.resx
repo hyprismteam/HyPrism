@@ -1239,9 +1239,6 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="onboarding.aboutHyPrism" xml:space="preserve">
     <value>HyPrismについて</value>
   </data>
-  <data name="onboarding.accentColor" xml:space="preserve">
-    <value>アクセントカラー</value>
-  </data>
   <data name="onboarding.allSet" xml:space="preserve">
     <value>準備完了です！ランチャーについての情報をご覧ください</value>
   </data>
@@ -1283,9 +1280,6 @@ SPDX-License-Identifier: GPL-3.0-only
   </data>
   <data name="onboarding.changeInSettings" xml:space="preserve">
     <value>この場所は後から「設定 &gt; データ」で変更できます</value>
-  </data>
-  <data name="onboarding.chooseAccentAndBg" xml:space="preserve">
-    <value>アクセントカラーと背景を選択</value>
   </data>
   <data name="onboarding.chooseLanguage" xml:space="preserve">
     <value>言語を選択</value>
@@ -2255,9 +2249,6 @@ SPDX-License-Identifier: GPL-3.0-only
   </data>
   <data name="settings.visual" xml:space="preserve">
     <value>外観</value>
-  </data>
-  <data name="settings.visualSettings.accentColor" xml:space="preserve">
-    <value>アクセント色</value>
   </data>
   <data name="settings.visualSettings.autoShuffle" xml:space="preserve">
     <value>自動 / シャッフル</value>

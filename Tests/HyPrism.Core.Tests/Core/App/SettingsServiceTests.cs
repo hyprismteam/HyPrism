@@ -111,19 +111,6 @@ public class SettingsServiceTests : IDisposable
 
 
     [Fact]
-    public void SetAccentColor_PersistsAndFiresEvent()
-    {
-        string? received = null;
-        _svc.OnAccentColorChanged += c => received = c;
-
-        _svc.SetAccentColor("#FF0000");
-
-        Assert.Equal("#FF0000", _svc.GetAccentColor());
-        Assert.Equal("#FF0000", received);
-    }
-
-
-    [Fact]
     public void DismissAnnouncement_MarksAsDismissed()
     {
         _svc.DismissAnnouncement("ann-001");

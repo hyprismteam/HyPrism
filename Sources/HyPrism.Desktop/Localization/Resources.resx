@@ -1281,9 +1281,6 @@ You may need to reinstall the game if switching drives.</value>
   <data name="onboarding.aboutHyPrism" xml:space="preserve">
     <value>About HyPrism</value>
   </data>
-  <data name="onboarding.accentColor" xml:space="preserve">
-    <value>Accent Color</value>
-  </data>
   <data name="onboarding.allSet" xml:space="preserve">
     <value>You're all set! Here's some info about the launcher</value>
   </data>
@@ -1325,9 +1322,6 @@ You may need to reinstall the game if switching drives.</value>
   </data>
   <data name="onboarding.changeInSettings" xml:space="preserve">
     <value>You can change this location later in Settings &gt; Data</value>
-  </data>
-  <data name="onboarding.chooseAccentAndBg" xml:space="preserve">
-    <value>Choose your accent color and background</value>
   </data>
   <data name="onboarding.chooseLanguage" xml:space="preserve">
     <value>Choose your language</value>
@@ -2366,9 +2360,6 @@ You may need to reinstall the game if switching drives.</value>
   </data>
   <data name="settings.visual" xml:space="preserve">
     <value>Visual</value>
-  </data>
-  <data name="settings.visualSettings.accentColor" xml:space="preserve">
-    <value>Accent Color</value>
   </data>
   <data name="settings.visualSettings.autoShuffle" xml:space="preserve">
     <value>Auto / Shuffle</value>

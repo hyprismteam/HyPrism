@@ -1239,9 +1239,6 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="onboarding.aboutHyPrism" xml:space="preserve">
     <value>HyPrism 정보</value>
   </data>
-  <data name="onboarding.accentColor" xml:space="preserve">
-    <value>강조 색상</value>
-  </data>
   <data name="onboarding.allSet" xml:space="preserve">
     <value>모든 준비가 완료되었습니다! 런처에 대한 정보입니다</value>
   </data>
@@ -1283,9 +1280,6 @@ SPDX-License-Identifier: GPL-3.0-only
   </data>
   <data name="onboarding.changeInSettings" xml:space="preserve">
     <value>나중에 설정 &gt; 데이터에서 이 위치를 변경할 수 있습니다</value>
-  </data>
-  <data name="onboarding.chooseAccentAndBg" xml:space="preserve">
-    <value>강조 색상 및 배경 선택</value>
   </data>
   <data name="onboarding.chooseLanguage" xml:space="preserve">
     <value>언어를 선택하세요</value>
@@ -2255,9 +2249,6 @@ SPDX-License-Identifier: GPL-3.0-only
   </data>
   <data name="settings.visual" xml:space="preserve">
     <value>비주얼</value>
-  </data>
-  <data name="settings.visualSettings.accentColor" xml:space="preserve">
-    <value>강조 색상</value>
   </data>
   <data name="settings.visualSettings.autoShuffle" xml:space="preserve">
     <value>자동 / 셔플</value>

@@ -224,7 +224,7 @@ export const validateEnvVars = (value: string, t: (key: string) => string): { va
  */
 export function useSettings(options: UseSettingsOptions) {
   const { t, i18n } = useTranslation();
-  const { accentColor, accentTextColor, setAccentColor: setAccentColorContext } = useAccentColor();
+  const { accentColor, accentTextColor } = useAccentColor();
 
   // Tab state
   const [activeTab, setActiveTab] = useState<SettingsTab>('general');
@@ -769,10 +769,6 @@ export function useSettings(options: UseSettingsOptions) {
     }
   }, [options.onClose]);
 
-  const handleAccentColorChange = useCallback(async (color: string) => {
-    await setAccentColorContext(color);
-  }, [setAccentColorContext]);
-
   const handleDevModeToggle = useCallback(() => {
     const newValue = !devModeEnabled;
     setDevModeEnabled(newValue);
@@ -899,7 +895,6 @@ export function useSettings(options: UseSettingsOptions) {
     handleBrowseInstanceDir,
     handleResetInstanceDir,
     handleDeleteLauncherData,
-    handleAccentColorChange,
     handleDevModeToggle,
     loadInstances,
     openGitHub,

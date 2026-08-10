@@ -227,7 +227,6 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
               {settings.activeTab === 'visual' && (
                 <VisualTab
                   accentColor={settings.accentColor}
-                  handleAccentColorChange={settings.handleAccentColorChange}
                   backgroundMode={settings.backgroundMode}
                   handleBackgroundModeChange={settings.handleBackgroundModeChange}
                 />

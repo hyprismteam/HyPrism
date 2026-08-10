@@ -105,7 +105,7 @@ async function GetDiscordLink(): Promise<string> {
 export function useOnboarding(options: UseOnboardingOptions) {
   const { onComplete } = options;
   const { i18n, t } = useTranslation();
-  const { accentColor, accentTextColor, setAccentColor } = useAccentColor();
+  const { accentColor, accentTextColor } = useAccentColor();
 
   // #region Cache
 
@@ -617,8 +617,6 @@ export function useOnboarding(options: UseOnboardingOptions) {
     currentBackgroundIndex,
     accentColor,
     accentTextColor,
-    setAccentColor,
-
     // GPU
     gpuAdapters,
     gpuPreference,

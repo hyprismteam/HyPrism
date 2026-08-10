@@ -1239,9 +1239,6 @@ Vous devrez peut-être réinstaller le jeu si vous changez de lecteur.</value>
   <data name="onboarding.aboutHyPrism" xml:space="preserve">
     <value>À propos de HyPrism</value>
   </data>
-  <data name="onboarding.accentColor" xml:space="preserve">
-    <value>Couleur d'Accent</value>
-  </data>
   <data name="onboarding.allSet" xml:space="preserve">
     <value>C'est prêt ! Voici quelques infos sur le lanceur</value>
   </data>
@@ -1283,9 +1280,6 @@ Vous devrez peut-être réinstaller le jeu si vous changez de lecteur.</value>
   </data>
   <data name="onboarding.changeInSettings" xml:space="preserve">
     <value>Tu peux changer cet emplacement plus tard dans Paramètres &gt; Données</value>
-  </data>
-  <data name="onboarding.chooseAccentAndBg" xml:space="preserve">
-    <value>Choisis ta couleur d'accent et ton arrière-plan</value>
   </data>
   <data name="onboarding.chooseLanguage" xml:space="preserve">
     <value>Choisis ta langue</value>
@@ -2255,9 +2249,6 @@ Vous devrez peut-être réinstaller le jeu si vous changez de lecteur.</value>
   </data>
   <data name="settings.visual" xml:space="preserve">
     <value>Visuel</value>
-  </data>
-  <data name="settings.visualSettings.accentColor" xml:space="preserve">
-    <value>Couleur d'Accent</value>
   </data>
   <data name="settings.visualSettings.autoShuffle" xml:space="preserve">
     <value>Auto / Aléatoire</value>

@@ -25,9 +25,6 @@ public class SettingsService : ISettingsService
     }
     
     /// <inheritdoc/>
-    public event Action<string>? OnAccentColorChanged;
-    
-    /// <inheritdoc/>
     public event Action<string?>? OnBackgroundChanged;
 
     #endregion
@@ -210,23 +207,6 @@ public class SettingsService : ISettingsService
             var num = int.Parse(System.Text.RegularExpressions.Regex.Match(x, @"\d+").Value);
             return num;
         }).ToList();
-    }
-
-    #endregion
-
-    #region Accent Color Settings
-
-    /// <inheritdoc/>
-    public string GetAccentColor() => _configService.Configuration.AccentColor;
-    
-    /// <inheritdoc/>
-    public bool SetAccentColor(string color)
-    {
-        _configService.Configuration.AccentColor = color;
-        _configService.SaveConfig();
-        OnAccentColorChanged?.Invoke(color);
-        Logger.Info("Config", $"Accent color set to: {color}");
-        return true;
     }
 
     #endregion
