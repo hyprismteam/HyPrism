@@ -1045,12 +1045,13 @@ public sealed class MainWindowRenderTests
             textBlock => string.Equals(textBlock.Text, "Hytale", StringComparison.Ordinal) ||
                          string.Equals(textBlock.Text, "Latest", StringComparison.Ordinal));
         Assert.Equal(
-            0x16,
-            Assert.IsAssignableFrom<ISolidColorBrush>(wideNewsFeedBackground!.Background).Color.A);
+            Color.Parse("#18191B"),
+            Assert.IsAssignableFrom<ISolidColorBrush>(wideNewsFeedBackground!.Background).Color);
         var feedScrollViewer = activeNewsShell.GetVisualDescendants()
             .OfType<ScrollViewer>()
             .Single(scrollViewer => scrollViewer.Classes.Contains("newsFeedScroll"));
         Assert.Equal(ScrollBarVisibility.Auto, feedScrollViewer.VerticalScrollBarVisibility);
+        AssertUsesApplicationScrollBar(feedScrollViewer);
 
         await viewModel.FeaturedNews!.OpenCommand.ExecuteAsync(null);
         Dispatcher.UIThread.RunJobs();
@@ -1104,12 +1105,7 @@ public sealed class MainWindowRenderTests
             .OfType<ScrollViewer>()
             .Single(scrollViewer => scrollViewer.Classes.Contains("newsArticleScroll"));
         Assert.Equal(ScrollBarVisibility.Auto, articleScrollViewer.VerticalScrollBarVisibility);
-        var articleArrowButtons = articleScrollViewer.GetVisualDescendants()
-            .OfType<RepeatButton>()
-            .Where(button => button.Name is "PART_LineUpButton" or "PART_LineDownButton")
-            .ToArray();
-        Assert.Equal(2, articleArrowButtons.Length);
-        Assert.All(articleArrowButtons, button => Assert.False(button.IsVisible));
+        AssertUsesApplicationScrollBar(articleScrollViewer);
         Assert.Equal(
             usesWideLayout ? 0 : 1,
             activeArticleHost.GetVisualDescendants()
@@ -1542,15 +1538,25 @@ public sealed class MainWindowRenderTests
         var categoryScroll = settingsView.FindControl<ScrollViewer>("SettingsCategoryScroll");
         var settingsRail = settingsView.FindControl<Border>("SettingsCategoryRail");
         var compactSettingsToolbar = settingsView.FindControl<Border>("CompactSettingsToolbar");
+        var compactSettingsTitle = settingsView.FindControl<TextBlock>("CompactSettingsTitle");
+        var settingsHeader = settingsView.FindControl<Grid>("SettingsHeader");
+        var settingsPageSubtitle = settingsView.FindControl<TextBlock>("SettingsPageSubtitle");
         var settingsMain = settingsView.FindControl<Grid>("SettingsMain");
         Assert.NotNull(settingsScroll);
         Assert.NotNull(categoryScroll);
         Assert.NotNull(settingsRail);
         Assert.NotNull(compactSettingsToolbar);
+        Assert.NotNull(compactSettingsTitle);
+        Assert.NotNull(settingsHeader);
+        Assert.NotNull(settingsPageSubtitle);
         Assert.NotNull(settingsMain);
+        AssertUsesApplicationScrollBar(categoryScroll!);
+        AssertUsesApplicationScrollBar(settingsScroll!);
         var compactSettingsLayout = settingsView.Bounds.Width < 940;
         Assert.True(settingsRail!.IsEffectivelyVisible);
         Assert.Equal(compactSettingsLayout, compactSettingsToolbar!.IsVisible);
+        Assert.Equal(!compactSettingsLayout, settingsHeader!.IsVisible);
+        Assert.Equal(!compactSettingsLayout, settingsPageSubtitle!.IsEffectivelyVisible);
         Assert.Equal(!compactSettingsLayout, settingsMain!.IsHitTestVisible);
         var categoryIcons = settingsView.GetVisualDescendants()
             .OfType<Image>()
@@ -1565,6 +1571,16 @@ public sealed class MainWindowRenderTests
             .ToArray();
         Assert.Equal(10, categoryDescriptions.Length);
         Assert.Equal(10, categoryDescriptions.Count(description => description.IsEffectivelyVisible));
+        var categoryTitles = settingsView.GetVisualDescendants()
+            .OfType<TextBlock>()
+            .Where(text => text.Classes.Contains("settingsCategoryTitle"))
+            .ToArray();
+        Assert.Equal(10, categoryTitles.Length);
+        Assert.All(
+            categoryTitles,
+            title => Assert.Equal(
+                Color.Parse("#F7F7F8"),
+                Assert.IsAssignableFrom<ISolidColorBrush>(title.Foreground).Color));
         var categoryButtons = settingsView.GetVisualDescendants()
             .OfType<Button>()
             .Where(button => button.Classes.Contains("settingsRailCategory"))
@@ -1610,10 +1626,50 @@ public sealed class MainWindowRenderTests
             Assert.Equal(
                 0,
                 Assert.IsAssignableFrom<ISolidColorBrush>(selectedCategoryButton.Background).Color.A);
+
+            var categoryScrollBar = categoryScroll.GetVisualDescendants()
+                .OfType<ScrollBar>()
+                .Single(scrollBar => scrollBar.Orientation == Avalonia.Layout.Orientation.Vertical);
+            Assert.True(categoryScrollBar.IsVisible);
+            var categoryScrollThumb = categoryScrollBar.GetVisualDescendants().OfType<Thumb>().Single();
+            var scrollBarPoint = categoryScrollThumb.TranslatePoint(
+                new Point(categoryScrollThumb.Bounds.Width / 2, categoryScrollThumb.Bounds.Height / 2),
+                window);
+            Assert.NotNull(scrollBarPoint);
+            window.MouseMove(scrollBarPoint!.Value);
+            await Task.Delay(700);
+            Dispatcher.UIThread.RunJobs();
+            Assert.True(categoryScrollBar.IsExpanded);
+            var expandedThumb = categoryScrollBar.GetVisualDescendants().OfType<Thumb>().Single();
+            Assert.Equal(6, expandedThumb.Width);
+            Assert.InRange(expandedThumb.Bounds.Width, 5.5, 6.5);
+            var expandedThumbCenter = expandedThumb.TranslatePoint(
+                new Point(expandedThumb.Bounds.Width / 2, expandedThumb.Bounds.Height / 2),
+                categoryScrollBar);
+            Assert.NotNull(expandedThumbCenter);
+            Assert.InRange(
+                Math.Abs(expandedThumbCenter!.Value.X - (categoryScrollBar.Bounds.Width / 2)),
+                0,
+                1);
+
+            var expandedScrollBarPreviewPath = Environment.GetEnvironmentVariable(
+                "HYPRISM_SETTINGS_SCROLLBAR_RENDER_OUTPUT");
+            if (!string.IsNullOrWhiteSpace(expandedScrollBarPreviewPath) && width == 1024)
+            {
+                var settingsFrame = window.CaptureRenderedFrame();
+                Assert.NotNull(settingsFrame);
+                settingsFrame!.Save(expandedScrollBarPreviewPath, PngBitmapEncoderOptions.Default);
+                Assert.True(File.Exists(expandedScrollBarPreviewPath));
+            }
+
+            window.MouseMove(new Point(0, 0));
         }
         else
         {
             Assert.Equal(276, settingsRail.Bounds.Width);
+            Assert.Equal(
+                Color.Parse("#18191B"),
+                Assert.IsAssignableFrom<ISolidColorBrush>(settingsRail.Background).Color);
         }
         Assert.Contains(
             settingsView.GetVisualDescendants().OfType<Border>(),
@@ -1658,6 +1714,16 @@ public sealed class MainWindowRenderTests
             Assert.True(compactSettingsToolbar.IsVisible);
             Assert.True(settingsMain.IsHitTestVisible);
             Assert.Equal(0, Assert.IsType<TranslateTransform>(settingsMain.RenderTransform).X);
+            Assert.True(compactSettingsTitle!.IsEffectivelyVisible);
+            Assert.Equal(viewModel.Settings.ActiveCategoryTitle, compactSettingsTitle.Text);
+            var compactTitleCenter = compactSettingsTitle.TranslatePoint(
+                new Point(compactSettingsTitle.Bounds.Width / 2, compactSettingsTitle.Bounds.Height / 2),
+                compactSettingsToolbar);
+            Assert.NotNull(compactTitleCenter);
+            Assert.InRange(
+                Math.Abs(compactTitleCenter!.Value.X - (compactSettingsToolbar.Bounds.Width / 2)),
+                0,
+                1);
 
             window.Width = width;
             Dispatcher.UIThread.RunJobs();
@@ -1680,6 +1746,16 @@ public sealed class MainWindowRenderTests
             Dispatcher.UIThread.RunJobs();
             Assert.True(settingsMain.IsHitTestVisible);
             Assert.Equal(0, Assert.IsType<TranslateTransform>(settingsMain.RenderTransform).X);
+            Assert.True(compactSettingsTitle!.IsEffectivelyVisible);
+            Assert.Equal(viewModel.Settings.DownloadsTitle, compactSettingsTitle.Text);
+            var compactTitleCenter = compactSettingsTitle.TranslatePoint(
+                new Point(compactSettingsTitle.Bounds.Width / 2, compactSettingsTitle.Bounds.Height / 2),
+                compactSettingsToolbar);
+            Assert.NotNull(compactTitleCenter);
+            Assert.InRange(
+                Math.Abs(compactTitleCenter!.Value.X - (compactSettingsToolbar.Bounds.Width / 2)),
+                0,
+                1);
 
             var compactSettingsContentPreviewPath = Environment.GetEnvironmentVariable(
                 "HYPRISM_SETTINGS_COMPACT_CONTENT_RENDER_OUTPUT");
@@ -1729,6 +1805,54 @@ public sealed class MainWindowRenderTests
             Assert.Equal(1, scale.ScaleX);
             Assert.Equal(1, scale.ScaleY);
         }
+    }
+
+    private static void AssertUsesApplicationScrollBar(ScrollViewer scrollViewer)
+    {
+        var contentPresenter = scrollViewer.GetVisualDescendants()
+            .OfType<Avalonia.Controls.Presenters.ScrollContentPresenter>()
+            .Single(control => control.Name == "PART_ContentPresenter");
+        Assert.Equal(1, Grid.GetColumnSpan(contentPresenter));
+
+        var scrollBar = scrollViewer.GetVisualDescendants()
+            .OfType<ScrollBar>()
+            .Single(control => control.Orientation == Avalonia.Layout.Orientation.Vertical);
+        Assert.Equal(12, scrollBar.Width);
+        Assert.Equal(0, Assert.IsAssignableFrom<ISolidColorBrush>(scrollBar.Background).Color.A);
+
+        var thumbs = scrollBar.GetVisualDescendants().OfType<Thumb>().ToArray();
+        if (thumbs.Length == 0)
+        {
+            Assert.False(scrollBar.IsVisible);
+            return;
+        }
+
+        var thumb = Assert.Single(thumbs);
+        Assert.Equal(scrollBar.IsExpanded ? 6 : 3, thumb.Width);
+        Assert.Equal(Avalonia.Layout.HorizontalAlignment.Center, thumb.HorizontalAlignment);
+        Assert.True(thumb.CornerRadius.TopLeft >= 999);
+        Assert.False(thumb.RenderTransform is ScaleTransform);
+        Assert.Contains(
+            thumb.Transitions!,
+            transition => transition is DoubleTransition { Property.Name: "Width" });
+
+        var thumbBorder = thumb.GetVisualDescendants().OfType<Border>().Single();
+        Assert.True(thumbBorder.CornerRadius.TopLeft >= 999);
+        Assert.Contains(
+            thumbBorder.Transitions!,
+            transition => transition is BrushTransition { Property.Name: "Background" });
+
+        var track = scrollBar.GetVisualDescendants()
+            .OfType<Avalonia.Controls.Shapes.Rectangle>()
+            .Single(rectangle => rectangle.Name == "TrackRect");
+        Assert.Equal(0, track.Opacity);
+
+        var arrowButtons = scrollBar.GetVisualDescendants()
+            .OfType<RepeatButton>()
+            .Where(button => button.Name is "PART_LineUpButton" or "PART_LineDownButton")
+            .ToArray();
+        Assert.Equal(2, arrowButtons.Length);
+        Assert.All(arrowButtons, button => Assert.False(button.IsVisible));
     }
 
     private sealed class CultureRestoreScope : IDisposable

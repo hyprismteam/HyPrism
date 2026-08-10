@@ -33,6 +33,8 @@ SPDX-License-Identifier: GPL-3.0-only
           </Border>
           <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="4">
             <TextBlock Text="{Binding Label}"
+                       Classes="settingsCategoryTitle"
+                       Foreground="{DynamicResource TextPrimaryBrush}"
                        FontSize="15"
                        FontWeight="SemiBold"
                        TextTrimming="CharacterEllipsis" />
@@ -92,25 +94,50 @@ SPDX-License-Identifier: GPL-3.0-only
       </Grid.RenderTransform>
 
       <Border x:Name="CompactSettingsToolbar"
+              Classes="articleToolbar compact scrolled"
               IsVisible="False"
-              Margin="24,17,24,4"
-              MinHeight="48">
-        <Button Classes="articleBack"
-                HorizontalAlignment="Left"
-                Click="OnCompactSettingsBackClicked">
-          <StackPanel Orientation="Horizontal" Spacing="9">
-            <Path Width="12"
-                  Height="12"
-                  Stretch="Uniform"
-                  RenderTransformOrigin="50%,50%"
-                  Data="{StaticResource NextIcon}">
-              <Path.RenderTransform>
-                <RotateTransform Angle="180" />
-              </Path.RenderTransform>
-            </Path>
-            <TextBlock Text="{Binding BackLabel}" VerticalAlignment="Center" />
-          </StackPanel>
-        </Button>
+              IsHitTestVisible="True">
+        <Grid ColumnDefinitions="*,Auto,*">
+          <Button Classes="articleBack"
+                  HorizontalAlignment="Left"
+                  Click="OnCompactSettingsBackClicked">
+            <StackPanel Orientation="Horizontal" Spacing="9">
+              <Path Width="12"
+                    Height="12"
+                    Stretch="Uniform"
+                    RenderTransformOrigin="50%,50%"
+                    Data="{StaticResource NextIcon}">
+                <Path.RenderTransform>
+                  <RotateTransform Angle="180" />
+                </Path.RenderTransform>
+              </Path>
+              <TextBlock Text="{Binding BackLabel}" VerticalAlignment="Center" />
+            </StackPanel>
+          </Button>
+
+          <TextBlock x:Name="CompactSettingsTitle"
+                     Grid.Column="1"
+                     Classes="articleToolbarTitle"
+                     Text="{Binding ActiveCategoryTitle}"
+                     Margin="12,0"
+                     MaxWidth="280"
+                     MaxLines="1"
+                     TextTrimming="CharacterEllipsis"
+                     TextWrapping="NoWrap"
+                     FontSize="16"
+                     FontWeight="SemiBold"
+                     HorizontalAlignment="Center"
+                     VerticalAlignment="Center"
+                     IsHitTestVisible="False" />
+
+          <TextBlock Grid.Column="2"
+                     Text="{Binding StatusMessage}"
+                     Margin="12,0,0,0"
+                     FontSize="20"
+                     HorizontalAlignment="Right"
+                     VerticalAlignment="Center"
+                     Foreground="#A9E8BE" />
+        </Grid>
       </Border>
 
       <Grid x:Name="SettingsHeader"
@@ -123,7 +150,8 @@ SPDX-License-Identifier: GPL-3.0-only
           <TextBlock Text="{Binding ActiveCategoryTitle}"
                      FontSize="28"
                      FontWeight="Bold" />
-          <TextBlock Text="{Binding PageDescription}"
+          <TextBlock x:Name="SettingsPageSubtitle"
+                     Text="{Binding PageDescription}"
                      Classes="muted"
                      FontSize="13" />
         </StackPanel>

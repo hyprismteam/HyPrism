@@ -763,7 +763,7 @@ SPDX-License-Identifier: GPL-3.0-only
                   IsVisible="False"
                   ColumnDefinitions="420,*">
               <Border x:Name="WideNewsFeedBackground"
-                      Background="{DynamicResource StrokeBrush}">
+                      Background="{DynamicResource NavigationPaneBrush}">
                 <ContentControl Content="{Binding}"
                                 ContentTemplate="{StaticResource NewsFeedTemplate}" />
               </Border>

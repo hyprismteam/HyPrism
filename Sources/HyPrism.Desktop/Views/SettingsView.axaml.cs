@@ -53,6 +53,7 @@ public sealed partial class SettingsView : UserControl
             viewModel.IsCompactLayout = compact;
 
         CompactSettingsToolbar.IsVisible = compact;
+        SettingsHeader.IsVisible = !compact;
         if (compact)
         {
             SettingsLayout.ColumnDefinitions[0].Width = new GridLength(1, GridUnitType.Star);

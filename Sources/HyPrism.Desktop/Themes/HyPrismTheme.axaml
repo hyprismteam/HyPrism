@@ -552,7 +552,7 @@ SPDX-License-Identifier: GPL-3.0-only
   </Style>
 
   <Style Selector="Border.articleToolbar.compact">
-    <Setter Property="Margin" Value="24,18,24,12" />
+    <Setter Property="Margin" Value="24,18,40,12" />
     <Setter Property="MaxWidth" Value="820" />
     <Setter Property="MinHeight" Value="56" />
     <Setter Property="Padding" Value="0" />
@@ -614,51 +614,70 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="Fill" Value="{Binding $parent[Button].Foreground}" />
   </Style>
 
-  <Style Selector="ScrollViewer.newsArticleScroll /template/ ScrollBar:vertical">
-    <Setter Property="Width" Value="8" />
-    <Setter Property="Margin" Value="0,12,5,12" />
+  <!-- Keep one stable gutter and animate only the centered thumb width. This avoids
+       Fluent's overlay span and its edge-anchored scale transform for every page. -->
+  <Style Selector="ScrollViewer[AllowAutoHide=True] /template/ ScrollContentPresenter#PART_ContentPresenter">
+    <Setter Property="Grid.ColumnSpan" Value="1" />
+  </Style>
+
+  <Style Selector="ScrollViewer /template/ ScrollBar:vertical">
+    <Setter Property="Width" Value="12" />
+    <Setter Property="Margin" Value="0,12,4,12" />
     <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderBrush" Value="Transparent" />
   </Style>
 
-  <Style Selector="ScrollViewer.newsArticleScroll /template/ ScrollBar:vertical /template/ Thumb">
+  <Style Selector="ScrollViewer /template/ ScrollBar:vertical /template/ Rectangle#TrackRect">
+    <Setter Property="Fill" Value="Transparent" />
+    <Setter Property="Stroke" Value="Transparent" />
+    <Setter Property="Opacity" Value="0" />
+  </Style>
+
+  <Style Selector="ScrollViewer /template/ ScrollBar:vertical /template/ Thumb">
+    <Setter Property="Width" Value="3" />
+    <Setter Property="MinWidth" Value="3" />
     <Setter Property="MinHeight" Value="40" />
-    <Setter Property="Background" Value="#52FFFFFF" />
-    <Setter Property="CornerRadius" Value="4" />
+    <Setter Property="HorizontalAlignment" Value="Center" />
+    <Setter Property="Background" Value="{DynamicResource ScrollBarPanningThumbBackground}" />
+    <Setter Property="CornerRadius" Value="999" />
+    <Setter Property="RenderTransform" Value="none" />
+    <Setter Property="RenderTransformOrigin" Value="50%,50%" />
+    <Setter Property="Transitions">
+      <Transitions>
+        <DoubleTransition Property="Width" Duration="0:0:0.16" />
+        <BrushTransition Property="Background" Duration="0:0:0.18" />
+      </Transitions>
+    </Setter>
   </Style>
 
-  <Style Selector="ScrollViewer.newsArticleScroll /template/ ScrollBar:vertical /template/ Thumb:pointerover">
-    <Setter Property="Background" Value="#80FFFFFF" />
+  <Style Selector="ScrollViewer /template/ ScrollBar:vertical[IsExpanded=true] /template/ Thumb">
+    <Setter Property="Width" Value="6" />
+    <Setter Property="Background" Value="{DynamicResource ScrollBarThumbBackgroundColor}" />
+    <Setter Property="RenderTransform" Value="none" />
   </Style>
 
-  <Style Selector="ScrollViewer.newsArticleScroll /template/ ScrollBar:vertical /template/ RepeatButton#PART_LineUpButton">
+  <Style Selector="ScrollViewer /template/ ScrollBar:vertical /template/ Thumb:pointerover">
+    <Setter Property="Background" Value="{DynamicResource ScrollBarThumbFillPointerOver}" />
+  </Style>
+
+  <Style Selector="ScrollViewer /template/ ScrollBar:vertical /template/ Thumb:pressed">
+    <Setter Property="Background" Value="{DynamicResource ScrollBarThumbFillPressed}" />
+  </Style>
+
+  <Style Selector="ScrollViewer /template/ ScrollBar:vertical /template/ Thumb /template/ Border">
+    <Setter Property="CornerRadius" Value="999" />
+    <Setter Property="Transitions">
+      <Transitions>
+        <BrushTransition Property="Background" Duration="0:0:0.18" />
+      </Transitions>
+    </Setter>
+  </Style>
+
+  <Style Selector="ScrollViewer /template/ ScrollBar:vertical /template/ RepeatButton#PART_LineUpButton">
     <Setter Property="IsVisible" Value="False" />
   </Style>
 
-  <Style Selector="ScrollViewer.newsArticleScroll /template/ ScrollBar:vertical /template/ RepeatButton#PART_LineDownButton">
-    <Setter Property="IsVisible" Value="False" />
-  </Style>
-
-  <Style Selector="ScrollViewer.newsFeedScroll /template/ ScrollBar:vertical">
-    <Setter Property="Width" Value="8" />
-    <Setter Property="Margin" Value="0,12,5,12" />
-    <Setter Property="Background" Value="Transparent" />
-  </Style>
-
-  <Style Selector="ScrollViewer.newsFeedScroll /template/ ScrollBar:vertical /template/ Thumb">
-    <Setter Property="MinHeight" Value="40" />
-    <Setter Property="Background" Value="#42FFFFFF" />
-    <Setter Property="CornerRadius" Value="4" />
-  </Style>
-
-  <Style Selector="ScrollViewer.newsFeedScroll /template/ ScrollBar:vertical /template/ Thumb:pointerover">
-    <Setter Property="Background" Value="#70FFFFFF" />
-  </Style>
-
-  <Style Selector="ScrollViewer.newsFeedScroll /template/ ScrollBar:vertical /template/ RepeatButton#PART_LineUpButton">
-    <Setter Property="IsVisible" Value="False" />
-  </Style>
-
-  <Style Selector="ScrollViewer.newsFeedScroll /template/ ScrollBar:vertical /template/ RepeatButton#PART_LineDownButton">
+  <Style Selector="ScrollViewer /template/ ScrollBar:vertical /template/ RepeatButton#PART_LineDownButton">
     <Setter Property="IsVisible" Value="False" />
   </Style>
 
@@ -797,7 +816,7 @@ SPDX-License-Identifier: GPL-3.0-only
   </Style>
 
   <Style Selector="Border.settingsRail">
-    <Setter Property="Background" Value="{DynamicResource StrokeBrush}" />
+    <Setter Property="Background" Value="{DynamicResource NavigationPaneBrush}" />
     <Setter Property="BorderThickness" Value="0" />
   </Style>
 
@@ -897,26 +916,6 @@ SPDX-License-Identifier: GPL-3.0-only
 
   <Style Selector="Border.settingsRail.compact">
     <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
-  </Style>
-
-  <Style Selector="ScrollViewer.settingsCategoryScroll /template/ ScrollBar:vertical">
-    <Setter Property="Width" Value="8" />
-    <Setter Property="Margin" Value="0,8,1,8" />
-    <Setter Property="Background" Value="Transparent" />
-  </Style>
-
-  <Style Selector="ScrollViewer.settingsCategoryScroll /template/ ScrollBar:vertical /template/ Thumb">
-    <Setter Property="MinHeight" Value="40" />
-    <Setter Property="Background" Value="#42FFFFFF" />
-    <Setter Property="CornerRadius" Value="4" />
-  </Style>
-
-  <Style Selector="ScrollViewer.settingsCategoryScroll /template/ ScrollBar:vertical /template/ RepeatButton#PART_LineUpButton">
-    <Setter Property="IsVisible" Value="False" />
-  </Style>
-
-  <Style Selector="ScrollViewer.settingsCategoryScroll /template/ ScrollBar:vertical /template/ RepeatButton#PART_LineDownButton">
-    <Setter Property="IsVisible" Value="False" />
   </Style>
 
   <Style Selector="Border.settingsGroup">
@@ -1044,15 +1043,4 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="MinHeight" Value="40" />
   </Style>
 
-  <Style Selector="ScrollViewer.settingsScroll /template/ ScrollBar:vertical">
-    <Setter Property="Width" Value="7" />
-    <Setter Property="Margin" Value="0,4,4,8" />
-    <Setter Property="Background" Value="Transparent" />
-  </Style>
-
-  <Style Selector="ScrollViewer.settingsScroll /template/ ScrollBar:vertical /template/ Thumb">
-    <Setter Property="MinHeight" Value="38" />
-    <Setter Property="Background" Value="#3AFFFFFF" />
-    <Setter Property="CornerRadius" Value="4" />
-  </Style>
 </Styles>
