@@ -4,6 +4,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Metadata;
+using Avalonia.Controls.Platform;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Interactivity;
@@ -52,6 +53,42 @@ public sealed class FadingComboBox : ComboBox
             ShowPopup();
         else
             BeginHidePopup();
+    }
+
+    public override bool UpdateSelectionFromEvent(Control container, RoutedEventArgs eventArgs)
+    {
+        if (eventArgs.Handled)
+            return false;
+
+        var containerIndex = IndexFromContainer(container);
+        if (containerIndex == -1)
+            return false;
+
+        var shouldSelect = eventArgs switch
+        {
+            PointerEventArgs pointerEvent => ShouldTriggerSelection(container, pointerEvent),
+            KeyEventArgs keyEvent => ShouldTriggerSelection(container, keyEvent),
+            FocusChangedEventArgs => true,
+            _ => false
+        };
+
+        if (!shouldSelect)
+            return false;
+
+        UpdateSelection(
+            containerIndex,
+            select: true,
+            rangeModifier: ItemSelectionEventTriggers.HasRangeSelectionModifier(container, eventArgs),
+            toggleModifier: ItemSelectionEventTriggers.HasToggleSelectionModifier(container, eventArgs),
+            rightButton: eventArgs is PointerEventArgs { Properties.IsRightButtonPressed: true },
+            fromFocus: eventArgs is FocusChangedEventArgs);
+
+        if (eventArgs is PointerEventArgs)
+            container.PerformFeedback(FeedbackAction.Click);
+
+        eventArgs.Handled = true;
+        SetCurrentValue(IsDropDownOpenProperty, false);
+        return true;
     }
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
@@ -169,10 +206,20 @@ public sealed class FadingComboBox : ComboBox
         if (!IsDropDownOpen || e.Source is not Visual source)
             return;
 
-        if (ReferenceEquals(source, this) || this.IsVisualAncestorOf(source))
+        if (IsDropDownInteractionSource(source))
             return;
 
         SetCurrentValue(IsDropDownOpenProperty, false);
+    }
+
+    internal bool IsDropDownInteractionSource(Visual source)
+    {
+        if (ReferenceEquals(source, this) || this.IsVisualAncestorOf(source))
+            return true;
+
+        var popupBorder = ResolvePopupBorder();
+        return popupBorder is not null &&
+               (ReferenceEquals(source, popupBorder) || popupBorder.IsVisualAncestorOf(source));
     }
 
     private void OnWindowDeactivated(object? sender, EventArgs e)

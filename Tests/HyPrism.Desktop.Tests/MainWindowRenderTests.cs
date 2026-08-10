@@ -494,13 +494,27 @@ public sealed class MainWindowRenderTests
         Assert.Equal(
             byte.MaxValue,
             Assert.IsAssignableFrom<ISolidColorBrush>(languagePopupBorder.Background).Color.A);
+        var languagePopupScrollBar = languagePopupBorder.GetVisualDescendants()
+            .OfType<ScrollBar>()
+            .Single(scrollBar => scrollBar.Orientation == Avalonia.Layout.Orientation.Vertical);
+        Assert.True(fadingLanguageComboBox.IsDropDownInteractionSource(languagePopupScrollBar));
         var languageDropDownGlyph = fadingLanguageComboBox.GetVisualDescendants()
             .OfType<PathIcon>()
             .Single(icon => icon.Name == "DropDownGlyph");
         Assert.Equal(14, languageDropDownGlyph.Width);
         Assert.Equal(14, languageDropDownGlyph.Height);
-        fadingLanguageComboBox.IsDropDownOpen = false;
+        var german = viewModel.Settings.Languages.Single(choice => choice.Value == "de-DE");
+        var germanContainer = languagePopupBorder.GetVisualDescendants()
+            .OfType<ComboBoxItem>()
+            .Single(item => ReferenceEquals(item.Content, german));
+        var selectionEvent = new FocusChangedEventArgs(InputElement.GotFocusEvent)
+        {
+            Source = germanContainer
+        };
+        Assert.True(fadingLanguageComboBox.UpdateSelectionFromEvent(germanContainer, selectionEvent));
         Dispatcher.UIThread.RunJobs();
+        Assert.Same(german, languageComboBox.SelectedItem);
+        Assert.False(fadingLanguageComboBox.IsDropDownOpen);
         Assert.True(fadingLanguageComboBox.IsPopupVisible);
         Assert.Contains(":dropdownclosing", fadingLanguageComboBox.Classes);
         Assert.Contains(
@@ -516,6 +530,14 @@ public sealed class MainWindowRenderTests
         Dispatcher.UIThread.RunJobs();
         Assert.False(fadingLanguageComboBox.IsPopupVisible);
         Assert.DoesNotContain(":dropdownclosing", fadingLanguageComboBox.Classes);
+
+        fadingLanguageComboBox.IsDropDownOpen = true;
+        Dispatcher.UIThread.RunJobs();
+        Assert.True(fadingLanguageComboBox.IsDropDownOpen);
+        Assert.True(fadingLanguageComboBox.IsPopupVisible);
+        fadingLanguageComboBox.IsDropDownOpen = false;
+        await Task.Delay(230);
+        Dispatcher.UIThread.RunJobs();
 
         var russian = viewModel.Settings.Languages.Single(choice => choice.Value == "ru-RU");
         languageComboBox.SelectedItem = russian;
@@ -1614,6 +1636,9 @@ public sealed class MainWindowRenderTests
             var track = toggle.GetVisualDescendants()
                 .OfType<Border>()
                 .Single(border => border.Name == "SettingsSwitchTrack");
+            var movingKnobs = toggle.GetVisualDescendants()
+                .OfType<Grid>()
+                .Single(grid => grid.Name == "PART_MovingKnobs");
             var knob = toggle.GetVisualDescendants()
                 .OfType<Avalonia.Controls.Shapes.Ellipse>()
                 .Single(ellipse => ellipse.Name == "SettingsSwitchKnob");
@@ -1621,6 +1646,12 @@ public sealed class MainWindowRenderTests
             Assert.Equal(new CornerRadius(13), track.CornerRadius);
             Assert.Equal(18, knob.Width);
             Assert.Equal(18, knob.Height);
+            var movement = Assert.IsType<DoubleTransition>(Assert.Single(
+                movingKnobs.Transitions!,
+                transition => transition is DoubleTransition { Property: { } property } &&
+                              property == Canvas.LeftProperty));
+            Assert.Equal(TimeSpan.FromMilliseconds(220), movement.Duration);
+            Assert.IsType<CubicEaseInOut>(movement.Easing);
         });
         if (width == 1280)
         {

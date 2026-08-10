@@ -1214,7 +1214,11 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="OffContent" Value="{x:Null}" />
     <Setter Property="KnobTransitions">
       <Transitions>
-        <DoubleTransition Property="Canvas.Left" Duration="0:0:0.2" />
+        <DoubleTransition Property="Canvas.Left" Duration="0:0:0.22">
+          <DoubleTransition.Easing>
+            <easing:CubicEaseInOut />
+          </DoubleTransition.Easing>
+        </DoubleTransition>
       </Transitions>
     </Setter>
     <Setter Property="Template">
@@ -1241,6 +1245,15 @@ SPDX-License-Identifier: GPL-3.0-only
                   HorizontalAlignment="Left"
                   VerticalAlignment="Center">
             <Grid x:Name="PART_MovingKnobs" Width="22" Height="28">
+              <Grid.Transitions>
+                <Transitions>
+                  <DoubleTransition Property="Canvas.Left" Duration="0:0:0.22">
+                    <DoubleTransition.Easing>
+                      <easing:CubicEaseInOut />
+                    </DoubleTransition.Easing>
+                  </DoubleTransition>
+                </Transitions>
+              </Grid.Transitions>
               <Ellipse x:Name="SettingsSwitchKnob"
                        Width="18"
                        Height="18"
