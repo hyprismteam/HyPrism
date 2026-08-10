@@ -74,7 +74,9 @@ HyPrism/
     ├── HyPrism.Desktop/            # Native Avalonia 12 desktop host
     │   ├── Views/                   # AXAML views and native window shell
     │   ├── ViewModels/              # MVVM state, news presentation, and service orchestration
-    │   ├── Themes/                  # Shared Avalonia styles and palette
+    │   ├── Styles/                  # Shared Avalonia visual system
+    │   │   ├── Tokens.axaml         # Color palette and control color tokens
+    │   │   └── Styles.axaml         # Shared selectors, templates, and transitions
     │   ├── Localization/            # Adapter for the existing locale JSON files
     │   ├── Assets/Fonts/            # Embedded Google Sans font files
     │   └── Assets/Icons/            # Checked-in Material Symbols AXAML geometries
