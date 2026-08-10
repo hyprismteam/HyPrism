@@ -33,7 +33,6 @@ public sealed partial class SettingsViewModel : ObservableObject
     private string _selectedCategory = "general";
 
     [ObservableProperty] private SettingChoiceViewModel _selectedLanguage;
-    [ObservableProperty] private SettingChoiceViewModel _selectedLauncherBranch;
     [ObservableProperty] private SettingChoiceViewModel _selectedBackground;
     [ObservableProperty] private SettingChoiceViewModel _selectedGpuPreference;
     [ObservableProperty] private bool _closeAfterLaunch;
@@ -79,11 +78,6 @@ public sealed partial class SettingsViewModel : ObservableObject
         Languages = new ObservableCollection<SettingChoiceViewModel>(
             localizer.AvailableLanguages.Select(language =>
                 new SettingChoiceViewModel(language.Key, language.Value)));
-        LauncherBranches = new ObservableCollection<SettingChoiceViewModel>(
-        [
-            new("release", localizer["settings.generalSettings.updateChannelStable"]),
-            new("beta", localizer["settings.generalSettings.updateChannelBeta"])
-        ]);
         Backgrounds = new ObservableCollection<SettingChoiceViewModel>(
             [new("auto", localizer["settings.visualSettings.autoShuffle"]),
              .. (settings.GetAvailableBackgrounds() ?? []).Select(name => new SettingChoiceViewModel(name, name))]);
@@ -95,7 +89,6 @@ public sealed partial class SettingsViewModel : ObservableObject
         ]);
 
         _selectedLanguage = FindChoice(Languages, settings.GetLanguage());
-        _selectedLauncherBranch = FindChoice(LauncherBranches, settings.GetLauncherBranch());
         _selectedBackground = FindChoice(Backgrounds, settings.GetBackgroundMode());
         _selectedGpuPreference = FindChoice(GpuPreferences, settings.GetGpuPreference());
         _closeAfterLaunch = settings.GetCloseAfterLaunch();
@@ -117,7 +110,6 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     public ObservableCollection<SettingCategoryViewModel> Categories { get; }
     public ObservableCollection<SettingChoiceViewModel> Languages { get; }
-    public ObservableCollection<SettingChoiceViewModel> LauncherBranches { get; }
     public ObservableCollection<SettingChoiceViewModel> Backgrounds { get; }
     public ObservableCollection<SettingChoiceViewModel> GpuPreferences { get; }
 
@@ -137,8 +129,6 @@ public sealed partial class SettingsViewModel : ObservableObject
     public string SaveLabel { get; private set; } = string.Empty;
     public string LanguageLabel { get; private set; } = string.Empty;
     public string LanguageHint { get; private set; } = string.Empty;
-    public string UpdateChannelLabel { get; private set; } = string.Empty;
-    public string UpdateChannelHint { get; private set; } = string.Empty;
     public string CloseAfterLaunchLabel { get; private set; } = string.Empty;
     public string CloseAfterLaunchHint { get; private set; } = string.Empty;
     public string AlphaModsLabel { get; private set; } = string.Empty;
@@ -222,8 +212,6 @@ public sealed partial class SettingsViewModel : ObservableObject
         SaveLabel = _localizer["common.save"];
         LanguageLabel = _localizer["settings.languageSettings.interfaceLanguage"];
         LanguageHint = _localizer["settings.languageSettings.interfaceLanguageHint"];
-        UpdateChannelLabel = _localizer["settings.generalSettings.updateChannel"];
-        UpdateChannelHint = _localizer["settings.generalSettings.updateChannelHint"];
         CloseAfterLaunchLabel = _localizer["settings.generalSettings.closeLauncher"];
         CloseAfterLaunchHint = _localizer["settings.generalSettings.closeLauncherHint"];
         AlphaModsLabel = _localizer["settings.generalSettings.showAlphaMods"];
@@ -286,8 +274,6 @@ public sealed partial class SettingsViewModel : ObservableObject
         UpdateCategoryDescription("data", _localizer["settings.categoryDescriptions.data"]);
         UpdateCategoryDescription("about", _localizer["settings.categoryDescriptions.about"]);
         UpdateCategoryDescription("developer", _localizer["settings.categoryDescriptions.developer"]);
-        UpdateChoiceDisplay(LauncherBranches, "release", _localizer["settings.generalSettings.updateChannelStable"]);
-        UpdateChoiceDisplay(LauncherBranches, "beta", _localizer["settings.generalSettings.updateChannelBeta"]);
         UpdateChoiceDisplay(Backgrounds, "auto", _localizer["settings.visualSettings.autoShuffle"]);
         UpdateChoiceDisplay(GpuPreferences, "dedicated", _localizer["settings.graphicsSettings.gpu_dedicated"]);
         UpdateChoiceDisplay(GpuPreferences, "integrated", _localizer["settings.graphicsSettings.gpu_integrated"]);
@@ -307,7 +293,6 @@ public sealed partial class SettingsViewModel : ObservableObject
         if (_localizer.SetLanguage(value.Value))
             _settings.SetLanguage(_localizer.CurrentLanguage);
     }
-    partial void OnSelectedLauncherBranchChanged(SettingChoiceViewModel value) => _settings.SetLauncherBranch(value.Value);
     partial void OnSelectedBackgroundChanged(SettingChoiceViewModel value) => _settings.SetBackgroundMode(value.Value);
     partial void OnSelectedGpuPreferenceChanged(SettingChoiceViewModel value) => _settings.SetGpuPreference(value.Value);
     partial void OnCloseAfterLaunchChanged(bool value) => _settings.SetCloseAfterLaunch(value);

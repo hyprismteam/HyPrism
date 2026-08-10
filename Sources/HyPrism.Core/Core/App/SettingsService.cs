@@ -66,33 +66,6 @@ public class SettingsService : ISettingsService
 
     #endregion
 
-    #region Launcher Branch
-
-    /// <inheritdoc/>
-    public string GetLauncherBranch() => _configService.Configuration.LauncherBranch;
-    
-    /// <inheritdoc/>
-    public bool SetLauncherBranch(string branch)
-    {
-        var normalizedBranch = branch?.ToLowerInvariant() ?? "release";
-        if (normalizedBranch != "release" && normalizedBranch != "beta")
-        {
-            normalizedBranch = "release";
-        }
-        
-        if (_configService.Configuration.LauncherBranch == normalizedBranch)
-        {
-            return false;
-        }
-        
-        _configService.Configuration.LauncherBranch = normalizedBranch;
-        _configService.SaveConfig();
-        Logger.Info("Config", $"Launcher branch set to: {normalizedBranch}");
-        return true;
-    }
-
-    #endregion
-
     #region Version & Branch Settings
     // NOTE: These methods use deprecated Config fields for backward compatibility
     // They will be removed in a future version when migration to Instances is complete

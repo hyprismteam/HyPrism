@@ -21,8 +21,9 @@ Tests/HyPrism.Core.Tests/
 │   │   ├── FileServiceTests.cs
 │   │   └── UtilityServiceTests.cs
 │   └── App/
-    │       ├── ProgressNotificationServiceTests.cs
-│       └── SettingsServiceTests.cs
+│       ├── ProgressNotificationServiceTests.cs
+│       ├── SettingsServiceTests.cs
+│       └── UpdateServiceTests.cs
 ├── Game/
 │   ├── Auth/
 │   │   └── AuthServiceTests.cs

@@ -1893,30 +1893,6 @@ Você pode precisar reinstalar o jogo se trocar de unidade.</value>
   <data name="settings.generalSettings.title" xml:space="preserve">
     <value>Configurações Gerais</value>
   </data>
-  <data name="settings.generalSettings.updateChannel" xml:space="preserve">
-    <value>Canal de Atualização</value>
-  </data>
-  <data name="settings.generalSettings.updateChannelBeta" xml:space="preserve">
-    <value>Beta</value>
-  </data>
-  <data name="settings.generalSettings.updateChannelBetaHint" xml:space="preserve">
-    <value>Tenha acesso antecipado a novos recursos</value>
-  </data>
-  <data name="settings.generalSettings.updateChannelBetaWarning" xml:space="preserve">
-    <value>Você receberá atualizações beta que podem ser instáveis.</value>
-  </data>
-  <data name="settings.generalSettings.updateChannelExperimental" xml:space="preserve">
-    <value>Experimental</value>
-  </data>
-  <data name="settings.generalSettings.updateChannelHint" xml:space="preserve">
-    <value>Você receberá apenas versões estáveis.</value>
-  </data>
-  <data name="settings.generalSettings.updateChannelStable" xml:space="preserve">
-    <value>Estável</value>
-  </data>
-  <data name="settings.generalSettings.updateChannelStableHint" xml:space="preserve">
-    <value>Recomendado para a maioria dos usuários</value>
-  </data>
   <data name="settings.generalSettings.watchTutorial" xml:space="preserve">
     <value>Assistir Tutorial</value>
   </data>

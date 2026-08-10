@@ -258,7 +258,6 @@ export interface HytaleAuthStatus {
 export interface SettingsSnapshot {
   language: string;
   musicEnabled: boolean;
-  launcherBranch: string;
   versionType: string;
   selectedVersion: number;
   closeAfterLaunch: boolean;

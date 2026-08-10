@@ -1965,30 +1965,6 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="settings.generalSettings.title" xml:space="preserve">
     <value>Общие настройки</value>
   </data>
-  <data name="settings.generalSettings.updateChannel" xml:space="preserve">
-    <value>Канал обновлений</value>
-  </data>
-  <data name="settings.generalSettings.updateChannelBeta" xml:space="preserve">
-    <value>Бета</value>
-  </data>
-  <data name="settings.generalSettings.updateChannelBetaHint" xml:space="preserve">
-    <value>Ранний доступ к новым функциям</value>
-  </data>
-  <data name="settings.generalSettings.updateChannelBetaWarning" xml:space="preserve">
-    <value>Вы будете получать бета-обновления, которые могут быть нестабильными.</value>
-  </data>
-  <data name="settings.generalSettings.updateChannelExperimental" xml:space="preserve">
-    <value>Экспериментальный</value>
-  </data>
-  <data name="settings.generalSettings.updateChannelHint" xml:space="preserve">
-    <value>Только проверенные версии.</value>
-  </data>
-  <data name="settings.generalSettings.updateChannelStable" xml:space="preserve">
-    <value>Стабильный</value>
-  </data>
-  <data name="settings.generalSettings.updateChannelStableHint" xml:space="preserve">
-    <value>Рекомендуется для большинства</value>
-  </data>
   <data name="settings.generalSettings.watchTutorial" xml:space="preserve">
     <value>Смотреть туториал</value>
   </data>

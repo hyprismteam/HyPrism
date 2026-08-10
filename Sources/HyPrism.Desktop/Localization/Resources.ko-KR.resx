@@ -1893,30 +1893,6 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="settings.generalSettings.title" xml:space="preserve">
     <value>일반 설정</value>
   </data>
-  <data name="settings.generalSettings.updateChannel" xml:space="preserve">
-    <value>업데이트 채널</value>
-  </data>
-  <data name="settings.generalSettings.updateChannelBeta" xml:space="preserve">
-    <value>베타</value>
-  </data>
-  <data name="settings.generalSettings.updateChannelBetaHint" xml:space="preserve">
-    <value>새로운 기능에 조기 액세스</value>
-  </data>
-  <data name="settings.generalSettings.updateChannelBetaWarning" xml:space="preserve">
-    <value>불안정할 수 있는 베타 업데이트를 받게 됩니다.</value>
-  </data>
-  <data name="settings.generalSettings.updateChannelExperimental" xml:space="preserve">
-    <value>실험적</value>
-  </data>
-  <data name="settings.generalSettings.updateChannelHint" xml:space="preserve">
-    <value>안정 버전만 받습니다.</value>
-  </data>
-  <data name="settings.generalSettings.updateChannelStable" xml:space="preserve">
-    <value>안정</value>
-  </data>
-  <data name="settings.generalSettings.updateChannelStableHint" xml:space="preserve">
-    <value>대부분의 사용자에게 권장</value>
-  </data>
   <data name="settings.generalSettings.watchTutorial" xml:space="preserve">
     <value>튜토리얼 보기</value>
   </data>

@@ -175,7 +175,7 @@ SPDX-License-Identifier: GPL-3.0-only
           <StackPanel Spacing="14" IsVisible="{Binding IsGeneral}">
             <Border Classes="settingsGroup">
               <StackPanel>
-                <Border Classes="settingsRow">
+                <Border Classes="settingsRow last">
                   <Grid ColumnDefinitions="*,220" ColumnSpacing="24">
                     <StackPanel Spacing="3" VerticalAlignment="Center">
                       <TextBlock Text="{Binding LanguageLabel}" Classes="settingsLabel" />
@@ -185,18 +185,6 @@ SPDX-License-Identifier: GPL-3.0-only
                               ItemsSource="{Binding Languages}"
                               ItemTemplate="{StaticResource SettingChoiceTemplate}"
                               SelectedItem="{Binding SelectedLanguage}" />
-                  </Grid>
-                </Border>
-                <Border Classes="settingsRow last">
-                  <Grid ColumnDefinitions="*,220" ColumnSpacing="24">
-                    <StackPanel Spacing="3" VerticalAlignment="Center">
-                      <TextBlock Text="{Binding UpdateChannelLabel}" Classes="settingsLabel" />
-                      <TextBlock Text="{Binding UpdateChannelHint}" Classes="settingsHint" />
-                    </StackPanel>
-                    <ComboBox Grid.Column="1"
-                              ItemsSource="{Binding LauncherBranches}"
-                              ItemTemplate="{StaticResource SettingChoiceTemplate}"
-                              SelectedItem="{Binding SelectedLauncherBranch}" />
                   </Grid>
                 </Border>
               </StackPanel>

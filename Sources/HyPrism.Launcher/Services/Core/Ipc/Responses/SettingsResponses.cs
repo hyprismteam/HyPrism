@@ -9,7 +9,6 @@ namespace HyPrism.Services.Core.Ipc.Responses;
 public record SettingsSnapshot(
     string Language,
     bool MusicEnabled,
-    string LauncherBranch,
     string VersionType,
     int SelectedVersion,
     bool CloseAfterLaunch,

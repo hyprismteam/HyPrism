@@ -7,7 +7,6 @@ namespace HyPrism.Services.Core.App;
 
 /// <summary>
 /// Manages launcher and game updates, including version checking, downloading, and installation.
-/// Supports both stable (release) and beta update channels via GitHub Releases.
 /// </summary>
 public interface IUpdateService
 {
@@ -27,12 +26,6 @@ public interface IUpdateService
     /// </summary>
     /// <returns>The current launcher version.</returns>
     string GetLauncherVersion();
-    
-    /// <summary>
-    /// Gets the current launcher update branch ("release" or "beta").
-    /// </summary>
-    /// <returns>The current update branch.</returns>
-    string GetLauncherBranch();
     
     /// <summary>
     /// Checks GitHub for available launcher updates and raises <see cref="LauncherUpdateAvailable"/> if found.

@@ -1893,30 +1893,6 @@ Vous devrez peut-être réinstaller le jeu si vous changez de lecteur.</value>
   <data name="settings.generalSettings.title" xml:space="preserve">
     <value>Paramètres Généraux</value>
   </data>
-  <data name="settings.generalSettings.updateChannel" xml:space="preserve">
-    <value>Canal de mise à jour</value>
-  </data>
-  <data name="settings.generalSettings.updateChannelBeta" xml:space="preserve">
-    <value>Bêta</value>
-  </data>
-  <data name="settings.generalSettings.updateChannelBetaHint" xml:space="preserve">
-    <value>Accès anticipé aux nouvelles fonctionnalités</value>
-  </data>
-  <data name="settings.generalSettings.updateChannelBetaWarning" xml:space="preserve">
-    <value>Tu recevras des mises à jour bêta qui peuvent être instables.</value>
-  </data>
-  <data name="settings.generalSettings.updateChannelExperimental" xml:space="preserve">
-    <value>Expérimental</value>
-  </data>
-  <data name="settings.generalSettings.updateChannelHint" xml:space="preserve">
-    <value>Tu recevras uniquement les versions stables.</value>
-  </data>
-  <data name="settings.generalSettings.updateChannelStable" xml:space="preserve">
-    <value>Stable</value>
-  </data>
-  <data name="settings.generalSettings.updateChannelStableHint" xml:space="preserve">
-    <value>Recommandé pour la plupart des utilisateurs</value>
-  </data>
   <data name="settings.generalSettings.watchTutorial" xml:space="preserve">
     <value>Regarder le Tutoriel</value>
   </data>

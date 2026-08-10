@@ -20,7 +20,6 @@ export function useAppInitialization() {
   const [isOfficialServerMode, setIsOfficialServerMode] = useState(false);
   const [backgroundMode, setBackgroundMode] = useState<string | null>(null);
   const [isMuted, setIsMuted] = useState(false);
-  const [launcherBranch, setLauncherBranch] = useState('release');
   const [enabledMirrorCount, setEnabledMirrorCount] = useState(0);
   const [hasOfficialAccount, setHasOfficialAccount] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -120,7 +119,6 @@ export function useAppInitialization() {
         setLauncherVersion(settings.launcherVersion ?? 'dev');
         setBackgroundMode(settings.backgroundMode ?? 'slideshow');
         setIsMuted(!(settings.musicEnabled ?? true));
-        setLauncherBranch(settings.launcherBranch ?? 'release');
 
         await Promise.all([refreshOfficialStatus(), refreshDownloadSources()]);
       } catch (e) {
@@ -146,7 +144,6 @@ export function useAppInitialization() {
     backgroundMode, setBackgroundMode,
     isMuted,
     handleToggleMute,
-    launcherBranch, setLauncherBranch,
     hasDownloadSources,
     showOnboarding, setShowOnboarding,
     onboardingChecked,
@@ -156,4 +153,3 @@ export function useAppInitialization() {
     refreshDownloadSources,
   };
 }
-

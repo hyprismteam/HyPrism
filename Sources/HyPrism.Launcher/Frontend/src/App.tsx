@@ -210,13 +210,6 @@ const App: React.FC = () => {
     game.startDownload({ instanceId, launchAfterDownload });
   };
 
-  const handleLauncherBranchChange = async (branch: string) => {
-    try {
-      await ipc.settings.update({ launcherBranch: branch });
-      init.setLauncherBranch(branch);
-    } catch { /* ignore */ }
-  };
-
   const handleInstanceDeleted = async () => { await refreshInstances(); };
   const handleDownload = () => setCurrentPage('instances');
 
@@ -399,8 +392,6 @@ const App: React.FC = () => {
             {currentPage === 'settings' && (
               <SettingsPage
                 key="settings"
-                launcherBranch={init.launcherBranch}
-                onLauncherBranchChange={handleLauncherBranchChange}
                 onBackgroundModeChange={mode => init.setBackgroundMode(mode)}
                 onInstanceDeleted={handleInstanceDeleted}
                 onAuthSettingsChange={async () => {

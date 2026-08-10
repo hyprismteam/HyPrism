@@ -35,8 +35,6 @@ import {
 
 export interface SettingsPageProps {
   onClose?: () => void;
-  launcherBranch: string;
-  onLauncherBranchChange: (branch: string) => void;
   onBackgroundModeChange?: (mode: string) => void;
   onInstanceDeleted?: () => void;
   onAuthSettingsChange?: () => void;
@@ -46,8 +44,6 @@ export interface SettingsPageProps {
 
 export const SettingsPage: React.FC<SettingsPageProps> = ({
   onClose,
-  launcherBranch,
-  onLauncherBranchChange,
   onBackgroundModeChange,
   onInstanceDeleted,
   onAuthSettingsChange,
@@ -58,8 +54,6 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
 
   // Main settings hook
   const settings = useSettings({
-    launcherBranch,
-    onLauncherBranchChange,
     onBackgroundModeChange,
     onInstanceDeleted,
     onAuthSettingsChange,
@@ -166,11 +160,6 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                   setIsLanguageOpen={settings.setIsLanguageOpen}
                   languageDropdownRef={settings.languageDropdownRef as React.RefObject<HTMLDivElement>}
                   handleLanguageSelect={settings.handleLanguageSelect}
-                  isBranchOpen={settings.isBranchOpen}
-                  setIsBranchOpen={settings.setIsBranchOpen}
-                  branchDropdownRef={settings.branchDropdownRef as React.RefObject<HTMLDivElement>}
-                  selectedLauncherBranch={settings.selectedLauncherBranch}
-                  handleLauncherBranchChange={settings.handleLauncherBranchChange}
                   closeAfterLaunch={settings.closeAfterLaunch}
                   handleCloseAfterLaunchChange={settings.handleCloseAfterLaunchChange}
                   showAlphaMods={settings.showAlphaMods}
@@ -319,7 +308,6 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                   gc={settings.gc}
                   accentColor={settings.accentColor}
                   activeTab={settings.activeTab}
-                  selectedLauncherBranch={settings.selectedLauncherBranch}
                   resetOnboarding={settings.resetOnboarding}
                 />
               )}

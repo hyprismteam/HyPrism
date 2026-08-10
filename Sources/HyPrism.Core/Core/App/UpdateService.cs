@@ -17,7 +17,6 @@ namespace HyPrism.Services.Core.App;
 
 /// <summary>
 /// Manages HyPrism launcher updates via GitHub Releases.
-/// Supports release (stable) and beta (pre-release) update channels.
 /// </summary>
 /// <remarks>
 /// Checks GitHub releases API for new versions and handles the download,
@@ -139,19 +138,6 @@ public class UpdateService : IUpdateService
         }
     }
 
-    private string GetInstalledLauncherBranchOrInit(string desiredBranch)
-    {
-        var installed = _config.InstalledLauncherBranch;
-        if (!string.IsNullOrWhiteSpace(installed))
-            return installed;
-
-        // First run (or old config): assume the currently running launcher matches the user's desired channel.
-        installed = string.IsNullOrWhiteSpace(desiredBranch) ? "release" : desiredBranch;
-        _config.InstalledLauncherBranch = installed;
-        try { _configService.SaveConfig(); } catch { /* ignore */ }
-        return installed;
-    }
-
     /// <summary>
     /// Gets the path to the latest game instance for the current branch.
     /// </summary>
@@ -182,75 +168,27 @@ public class UpdateService : IUpdateService
     public static string GetCurrentVersion() => _launcherVersion.Value;
 
     /// <summary>
-    /// Returns the active update channel for the launcher (<c>"release"</c> or <c>"beta"</c>).
-    /// Falls back to <c>"release"</c> when no channel is configured.
-    /// </summary>
-    public string GetLauncherBranch() => 
-        string.IsNullOrWhiteSpace(_config.LauncherBranch) ? "release" : _config.LauncherBranch;
-
-    /// <summary>
-    /// Checks GitHub for a newer launcher release and raises <c>LauncherUpdateAvailable</c>
-    /// if one is found. Respects the configured update channel (release vs. beta).
+    /// Checks GitHub for a newer published launcher release and raises
+    /// <c>LauncherUpdateAvailable</c> if one is found.
     /// </summary>
     public async Task CheckForLauncherUpdatesAsync()
     {
         try
         {
-            var launcherBranch = GetLauncherBranch();
-            var isBetaChannel = launcherBranch == "beta";
-            var installedBranch = GetInstalledLauncherBranchOrInit(launcherBranch);
-            var isChannelSwitch = !string.Equals(installedBranch, launcherBranch, StringComparison.OrdinalIgnoreCase);
-            
-            // Get all releases (not just latest) to support beta channel
-            var apiUrl = $"{GitHubApiUrl}?per_page=50";
+            var apiUrl = $"{GitHubApiUrl}/latest";
             var json = await _httpClient.GetStringAsync(apiUrl);
             using var doc = JsonDocument.Parse(json);
 
             var currentVersion = GetLauncherVersion();
-            string? bestVersion = null;
-            JsonElement? bestRelease = null;
+            var release = doc.RootElement;
+            var tagName = release.TryGetProperty("tag_name", out var tagElement)
+                ? tagElement.GetString()
+                : null;
+            var latestVersion = ParseVersionFromTag(tagName ?? string.Empty);
 
-            foreach (var release in doc.RootElement.EnumerateArray())
+            if (!string.IsNullOrWhiteSpace(latestVersion) && IsNewerVersion(latestVersion, currentVersion))
             {
-                var tagName = release.GetProperty("tag_name").GetString();
-                if (string.IsNullOrWhiteSpace(tagName)) continue;
-
-                // Check GitHub's native prerelease flag
-                var isPrerelease = release.TryGetProperty("prerelease", out var prereleaseVal) && prereleaseVal.GetBoolean();
-
-                // Match channel: beta channel gets prereleases, stable gets stable releases
-                if (isBetaChannel && !isPrerelease) continue;
-                if (!isBetaChannel && isPrerelease) continue;
-
-                // Parse version from tag
-                var version = ParseVersionFromTag(tagName);
-                if (string.IsNullOrWhiteSpace(version)) continue;
-
-                if (isChannelSwitch)
-                {
-                    // Channel switch: always offer the newest release in the selected channel,
-                    // even if it is the same version or a downgrade.
-                    bestVersion = version;
-                    bestRelease = release;
-                    break;
-                }
-
-                // Normal update flow: only newer versions
-                if (IsNewerVersion(version, currentVersion))
-                {
-                    if (bestVersion == null || IsNewerVersion(version, bestVersion))
-                    {
-                        bestVersion = version;
-                        bestRelease = release;
-                    }
-                }
-            }
-
-            if (bestRelease.HasValue && !string.IsNullOrWhiteSpace(bestVersion))
-            {
-                var release = bestRelease.Value;
-                var reason = isChannelSwitch ? $"channel switch {installedBranch} -> {launcherBranch}" : "version update";
-                Logger.Info("Update", $"Update available: {currentVersion} -> {bestVersion} ({reason})");
+                Logger.Info("Update", $"Update available: {currentVersion} -> {latestVersion}");
                 
                 // Pick the right asset for this platform
                 string? downloadUrl = null;
@@ -259,7 +197,7 @@ public class UpdateService : IUpdateService
 
                 if (string.IsNullOrWhiteSpace(downloadUrl) || string.IsNullOrWhiteSpace(assetName))
                 {
-                    Logger.Warning("Update", $"Update found ({bestVersion}) but no compatible asset was found for this platform; skipping notification");
+                    Logger.Warning("Update", $"Update found ({latestVersion}) but no compatible asset was found for this platform; skipping notification");
                     return;
                 }
 
@@ -268,21 +206,20 @@ public class UpdateService : IUpdateService
                 var updateInfo = new
                 {
                     // Back-compat: keep both `version` and `latestVersion`
-                    version = bestVersion,
-                    latestVersion = bestVersion,
+                    version = latestVersion,
+                    latestVersion = latestVersion,
                     currentVersion = currentVersion,
                     changelog = changelog ?? string.Empty,
                     downloadUrl = downloadUrl,
                     assetName = assetName,
-                    releaseUrl = release.GetProperty("html_url").GetString() ?? "",
-                    isBeta = launcherBranch == "beta"
+                    releaseUrl = release.GetProperty("html_url").GetString() ?? ""
                 };
                     
                 LauncherUpdateAvailable?.Invoke(updateInfo);
             }
             else
             {
-                Logger.Info("Update", $"Launcher is up to date: {currentVersion} (channel: {launcherBranch})");
+                Logger.Info("Update", $"Launcher is up to date: {currentVersion}");
             }
         }
         catch (Exception ex)
@@ -296,53 +233,26 @@ public class UpdateService : IUpdateService
         bool downloadCompleted = false;
         try
         {
-            var launcherBranch = GetLauncherBranch();
-            var isBetaChannel = launcherBranch == "beta";
             var currentVersion = GetLauncherVersion();
-            var installedBranch = GetInstalledLauncherBranchOrInit(launcherBranch);
-            var isChannelSwitch = !string.Equals(installedBranch, launcherBranch, StringComparison.OrdinalIgnoreCase);
-            
-            // Get all releases to find the best match for user's channel
-            var apiUrl = $"{GitHubApiUrl}?per_page=50";
+
+            var apiUrl = $"{GitHubApiUrl}/latest";
             var json = await _httpClient.GetStringAsync(apiUrl);
             using var doc = JsonDocument.Parse(json);
+            var targetRelease = doc.RootElement;
+            var tagName = targetRelease.TryGetProperty("tag_name", out var tagElement)
+                ? tagElement.GetString()
+                : null;
+            var targetVersion = ParseVersionFromTag(tagName ?? string.Empty);
             
-            // Find the best release for the user's channel
-            JsonElement? targetRelease = null;
-            string? targetVersion = null;
-            
-            foreach (var release in doc.RootElement.EnumerateArray())
+            if (string.IsNullOrWhiteSpace(targetVersion))
             {
-                var isPrerelease = release.TryGetProperty("prerelease", out var prereleaseVal) && prereleaseVal.GetBoolean();
-                
-                // Match channel
-                if (isBetaChannel && !isPrerelease) continue; // Beta wants prereleases
-                if (!isBetaChannel && isPrerelease) continue; // Stable wants releases
-                
-                var tagName = release.GetProperty("tag_name").GetString();
-                if (string.IsNullOrWhiteSpace(tagName)) continue;
-                
-                var version = ParseVersionFromTag(tagName);
-                if (string.IsNullOrWhiteSpace(version)) continue;
-                
-                // Take the first matching release (they're sorted newest first)
-                if (targetRelease == null)
-                {
-                    targetRelease = release;
-                    targetVersion = version;
-                    break;
-                }
-            }
-            
-            if (!targetRelease.HasValue || string.IsNullOrWhiteSpace(targetVersion))
-            {
-                Logger.Error("Update", $"No suitable {(isBetaChannel ? "pre-release" : "release")} found");
+                Logger.Error("Update", "The latest published release has no valid version tag");
                 return false;
             }
             
-            Logger.Info("Update", $"Downloading {(isBetaChannel ? "pre-release" : "release")} {targetVersion} (current: {currentVersion})");
+            Logger.Info("Update", $"Downloading release {targetVersion} (current: {currentVersion})");
 
-            if (!isChannelSwitch && !IsNewerVersion(targetVersion, currentVersion))
+            if (!IsNewerVersion(targetVersion, currentVersion))
             {
                 Logger.Info("Update", $"No update needed (current: {currentVersion}, latest: {targetVersion})");
                 return false;
@@ -350,7 +260,7 @@ public class UpdateService : IUpdateService
             
             string? downloadUrl = null;
             string? assetName = null;
-            TryPickBestAssetForCurrentPlatform(targetRelease.Value, out downloadUrl, out assetName);
+            TryPickBestAssetForCurrentPlatform(targetRelease, out downloadUrl, out assetName);
 
             if (string.IsNullOrWhiteSpace(downloadUrl) || string.IsNullOrWhiteSpace(assetName))
             {
@@ -393,20 +303,6 @@ public class UpdateService : IUpdateService
             }
 
             downloadCompleted = File.Exists(targetPath);
-
-            // Platform-specific installation
-
-            // Persist the installed channel before we hand off to the replacement script.
-            // (The current process usually exits right after starting the updater.)
-            try
-            {
-                _config.InstalledLauncherBranch = launcherBranch;
-                _configService.SaveConfig();
-            }
-            catch
-            {
-                // Non-fatal
-            }
 
             EmitLauncherUpdateProgress("install", 85, "Installing...", 0, 0);
             await InstallUpdateAsync(targetPath);
@@ -1047,24 +943,8 @@ rm -f ""$0""
     private static string? ParseVersionFromTag(string tag)
     {
         if (string.IsNullOrWhiteSpace(tag)) return null;
-        
-        var tagLower = tag.ToLowerInvariant();
-        
-        // Handle beta format: "beta3-3.0.0" or "beta-3.0.0"
-        if (tagLower.StartsWith("beta"))
-        {
-            var dashIndex = tag.IndexOf('-');
-            if (dashIndex >= 0 && dashIndex < tag.Length - 1)
-            {
-                var versionPart = tag.Substring(dashIndex + 1).TrimStart('v', 'V');
-                return versionPart;
-            }
-            // beta without dash, try to extract version after "beta" text
-            var afterBeta = tag.Substring(4).TrimStart('0', '1', '2', '3', '4', '5', '6', '7', '8', '9').TrimStart('-', '_').TrimStart('v', 'V');
-            return string.IsNullOrWhiteSpace(afterBeta) ? null : afterBeta;
-        }
-        
-        // Handle standard format: "v2.0.1" or "2.0.1"
+
+        // Published releases use standard tags such as "v3.0.4" or "3.0.4".
         return tag.TrimStart('v', 'V');
     }
 

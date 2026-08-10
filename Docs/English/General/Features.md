@@ -89,7 +89,7 @@ SPDX-License-Identifier: GPL-3.0-only
 ## Updates
 
 - **Auto-updates** — Launcher self-update via GitHub releases
-- **Pre-release channel** — Opt-in to receive pre-release builds
+- **Latest release only** — Update checks use the newest published release and ignore drafts and pre-releases
 - **Release notes** —before updating
 
 ## Developer Features

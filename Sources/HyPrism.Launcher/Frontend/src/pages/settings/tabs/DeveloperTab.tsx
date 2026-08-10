@@ -11,7 +11,6 @@ interface DeveloperTabProps {
   gc: string;
   accentColor: string;
   activeTab: string;
-  selectedLauncherBranch: string;
   resetOnboarding: () => Promise<void>;
 }
 
@@ -19,7 +18,6 @@ export const DeveloperTab: React.FC<DeveloperTabProps> = ({
   gc,
   accentColor,
   activeTab,
-  selectedLauncherBranch,
   resetOnboarding,
 }) => {
   const { t } = useTranslation();
@@ -51,7 +49,7 @@ export const DeveloperTab: React.FC<DeveloperTabProps> = ({
 
       <div className={`p-4 rounded-2xl ${gc}`}>
         <p className="text-white/40 text-xs">
-          {t('settings.developerSettings.debugInfo')} Tab={activeTab}, Branch={selectedLauncherBranch}, Accent={accentColor}
+          {t('settings.developerSettings.debugInfo')} Tab={activeTab}, Accent={accentColor}
         </p>
       </div>
     </div>

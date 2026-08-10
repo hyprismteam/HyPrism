@@ -526,7 +526,6 @@ public class IpcService(IServiceProvider services) : IpcServiceBase(services)
         return new SettingsSnapshot(
             Language: s.GetLanguage(),
             MusicEnabled: s.GetMusicEnabled(),
-            LauncherBranch: s.GetLauncherBranch(),
             VersionType: s.GetVersionType(),
             SelectedVersion: s.GetSelectedVersion(),
             CloseAfterLaunch: s.GetCloseAfterLaunch(),
@@ -552,20 +551,13 @@ public class IpcService(IServiceProvider services) : IpcServiceBase(services)
             UseDualAuth: s.GetUseDualAuth());
     }
 
-    /// <summary>Applies a partial settings update from the renderer and saves to disk; triggers update check if branch changed.</summary>
+    /// <summary>Applies a partial settings update from the renderer and saves it to disk.</summary>
     [IpcInvoke("hyprism:settings:update")]
     public SuccessResult UpdateSettings(UpdateSettingsRequest req)
     {
         var s = Services.GetRequiredService<ISettingsService>();
-        var oldBranch = s.GetLauncherBranch();
         foreach (var (key, value) in req.Updates ?? new Dictionary<string, JsonElement>())
             ApplySetting(s, key, value);
-        if (!string.Equals(oldBranch, s.GetLauncherBranch(), StringComparison.OrdinalIgnoreCase))
-            _ = Task.Run(async () =>
-            {
-                try { await Services.GetRequiredService<IUpdateService>().CheckForLauncherUpdatesAsync(); }
-                catch (Exception ex) { Logger.Warning("Update", $"Update check after channel switch failed: {ex.Message}"); }
-            });
         return new SuccessResult(true);
     }
 
@@ -1421,7 +1413,6 @@ public class IpcService(IServiceProvider services) : IpcServiceBase(services)
         {
             case "language":                 s.SetLanguage(val.GetString() ?? "en-US"); break;
             case "musicEnabled":             s.SetMusicEnabled(val.GetBoolean()); break;
-            case "launcherBranch":           s.SetLauncherBranch(val.GetString() ?? "release"); break;
             case "versionType":              s.SetVersionType(val.GetString() ?? "release"); break;
             case "selectedVersion":          s.SetSelectedVersion(val.ValueKind == JsonValueKind.Number ? val.GetInt32() : 0); break;
             case "closeAfterLaunch":         s.SetCloseAfterLaunch(val.GetBoolean()); break;

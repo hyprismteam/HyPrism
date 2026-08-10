@@ -73,7 +73,8 @@ All services are registered as singletons in `Bootstrapper.cs` and injected via 
 ### UpdateService
 - **File:** `Sources/HyPrism.Core/Core/App/UpdateService.cs`
 - **Purpose:** Checks GitHub Releases for a newer launcher version and applies a self-update.
-- **Update source:** `yyyumeniku/TEST` (GitHub Releases API)
+- **Update source:** `hyprismteam/HyPrism` through the GitHub Releases `releases/latest` endpoint.
+- **Release policy:** only the newest published release is considered. Launcher update channels and pre-release selection are not supported.
 - **User flow:** on startup, if a newer version exists, the dashboard shows an update indicator. Installing the update downloads quietly in-app (with progress), replaces the launcher executable/app, and restarts.
 - **Fallback:** update assets are downloaded into the user **Downloads** folder when available, so users can manually install if auto-update fails.
 - **Windows portable updates:** when updating from a `.zip`, the updater copies the extracted app folder (including side-by-side runtime files like `ffmpeg.dll`) into the install directory.

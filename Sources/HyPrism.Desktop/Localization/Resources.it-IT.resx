@@ -1893,30 +1893,6 @@ Potrebbe essere necessario reinstallare il gioco se si cambia drive.</value>
   <data name="settings.generalSettings.title" xml:space="preserve">
     <value>Impostazioni generali</value>
   </data>
-  <data name="settings.generalSettings.updateChannel" xml:space="preserve">
-    <value>Canale di aggiornamento</value>
-  </data>
-  <data name="settings.generalSettings.updateChannelBeta" xml:space="preserve">
-    <value>Beta</value>
-  </data>
-  <data name="settings.generalSettings.updateChannelBetaHint" xml:space="preserve">
-    <value>Ottieni accesso anticipato a nuove funzionalità</value>
-  </data>
-  <data name="settings.generalSettings.updateChannelBetaWarning" xml:space="preserve">
-    <value>Riceverai aggiornamenti beta che potrebbero essere instabili.</value>
-  </data>
-  <data name="settings.generalSettings.updateChannelExperimental" xml:space="preserve">
-    <value>Sperimentale</value>
-  </data>
-  <data name="settings.generalSettings.updateChannelHint" xml:space="preserve">
-    <value>Riceverai solo versioni stabili.</value>
-  </data>
-  <data name="settings.generalSettings.updateChannelStable" xml:space="preserve">
-    <value>Stabile</value>
-  </data>
-  <data name="settings.generalSettings.updateChannelStableHint" xml:space="preserve">
-    <value>Consigliato per la maggior parte degli utenti</value>
-  </data>
   <data name="settings.generalSettings.watchTutorial" xml:space="preserve">
     <value>Guarda il tutorial</value>
   </data>

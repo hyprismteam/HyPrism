@@ -10,8 +10,6 @@ import { pageVariants } from '@/constants/animations';
 const SettingsPageContent = lazy(() => import('./settings/SettingsPage').then(m => ({ default: m.SettingsPage })));
 
 interface SettingsPageProps {
-  launcherBranch: string;
-  onLauncherBranchChange: (branch: string) => void;
   onBackgroundModeChange?: (mode: string) => void;
   onInstanceDeleted?: () => void;
   onNavigateToMods?: () => void;
@@ -39,8 +37,6 @@ export const SettingsPage: React.FC<SettingsPageProps> = (props) => {
               </div>
             }>
               <SettingsPageContent
-                launcherBranch={props.launcherBranch}
-                onLauncherBranchChange={props.onLauncherBranchChange}
                 onBackgroundModeChange={props.onBackgroundModeChange}
                 onInstanceDeleted={props.onInstanceDeleted}
                 onAuthSettingsChange={props.onAuthSettingsChange}

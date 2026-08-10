@@ -46,19 +46,6 @@ public interface ISettingsService
     bool SetMusicEnabled(bool enabled);
     
     /// <summary>
-    /// Gets the current launcher update branch ("release" or "beta").
-    /// </summary>
-    /// <returns>The current launcher branch.</returns>
-    string GetLauncherBranch();
-    
-    /// <summary>
-    /// Sets the launcher update branch.
-    /// </summary>
-    /// <param name="branch">The branch to use ("release" or "beta").</param>
-    /// <returns><c>true</c> if the setting was successfully saved.</returns>
-    bool SetLauncherBranch(string branch);
-    
-    /// <summary>
     /// Gets the game version branch type (e.g. "release", "beta").
     /// </summary>
     string GetVersionType();

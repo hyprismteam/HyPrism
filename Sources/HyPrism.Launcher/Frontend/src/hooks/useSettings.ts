@@ -56,8 +56,6 @@ export type SettingsTab =
  * Options accepted by the {@link useSettings} hook.
  */
 export interface UseSettingsOptions {
-  launcherBranch: string;
-  onLauncherBranchChange: (branch: string) => void;
   onBackgroundModeChange?: (mode: string) => void;
   onInstanceDeleted?: () => void;
   onAuthSettingsChange?: () => void;
@@ -233,12 +231,7 @@ export function useSettings(options: UseSettingsOptions) {
 
   // Dropdown states
   const [isLanguageOpen, setIsLanguageOpen] = useState(false);
-  const [isBranchOpen, setIsBranchOpen] = useState(false);
   const languageDropdownRef = useRef<HTMLDivElement>(null);
-  const branchDropdownRef = useRef<HTMLDivElement>(null);
-
-  // Launcher branch
-  const [selectedLauncherBranch, setSelectedLauncherBranch] = useState(options.launcherBranch);
 
   // General settings
   const [hasOfficialAccount, setHasOfficialAccount] = useState(false);
@@ -502,9 +495,6 @@ export function useSettings(options: UseSettingsOptions) {
       if (languageDropdownRef.current && !languageDropdownRef.current.contains(e.target as Node)) {
         setIsLanguageOpen(false);
       }
-      if (branchDropdownRef.current && !branchDropdownRef.current.contains(e.target as Node)) {
-        setIsBranchOpen(false);
-      }
     };
 
     const handleEscape = (e: KeyboardEvent) => {
@@ -537,12 +527,6 @@ export function useSettings(options: UseSettingsOptions) {
       console.warn('Failed to change language:', error);
     }
   }, []);
-
-  const handleLauncherBranchChange = useCallback(async (branch: string) => {
-    setSelectedLauncherBranch(branch);
-    setIsBranchOpen(false);
-    options.onLauncherBranchChange(branch);
-  }, [options.onLauncherBranchChange]);
 
   const handleCloseAfterLaunchChange = useCallback(async () => {
     const newValue = !closeAfterLaunch;
@@ -831,11 +815,7 @@ export function useSettings(options: UseSettingsOptions) {
     setActiveTab,
     isLanguageOpen,
     setIsLanguageOpen,
-    isBranchOpen,
-    setIsBranchOpen,
     languageDropdownRef,
-    branchDropdownRef,
-    selectedLauncherBranch,
     hasOfficialAccount,
     isActiveProfileOfficial,
     closeAfterLaunch,
@@ -903,7 +883,6 @@ export function useSettings(options: UseSettingsOptions) {
 
     // Handlers
     handleLanguageSelect,
-    handleLauncherBranchChange,
     handleCloseAfterLaunchChange,
     handleShowAlphaModsChange,
     handleSaveJavaArguments,
