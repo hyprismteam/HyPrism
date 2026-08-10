@@ -74,7 +74,7 @@ public sealed partial class SettingsViewModel : ObservableObject
             new("graphics", localizer["settings.graphics"], "graphics.png"),
             new("variables", localizer["settings.variables"], "variables.png"),
             new("data", localizer["settings.data"], "data.png"),
-            new("about", localizer["settings.about"], "avares://HyPrism.Desktop/Assets/Images/appicon.png", true),
+            new("about", localizer["settings.about"], "about.png"),
             new("developer", localizer["settings.developer"], "developer.png")
         ]);
         Categories[0].IsSelected = true;
@@ -405,16 +405,10 @@ public sealed partial class SettingsViewModel : ObservableObject
 
 public sealed partial class SettingCategoryViewModel : ObservableObject
 {
-    public SettingCategoryViewModel(
-        string id,
-        string label,
-        string icon,
-        bool isAbsoluteIconUri = false)
+    public SettingCategoryViewModel(string id, string label, string icon)
     {
         Id = id;
-        var iconUri = isAbsoluteIconUri
-            ? icon
-            : $"avares://HyPrism.Desktop/Assets/Fluent/{icon}";
+        var iconUri = $"avares://HyPrism.Desktop/Assets/Fluent/{icon}";
         using var iconStream = AssetLoader.Open(new Uri(iconUri));
         Icon = new Bitmap(iconStream);
         _label = label;

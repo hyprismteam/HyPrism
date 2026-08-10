@@ -20,17 +20,13 @@ SPDX-License-Identifier: GPL-3.0-only
       <Button Classes="settingsRailCategory"
               Classes.compact="{Binding DataContext.IsCompactLayout, ElementName=SettingsRoot}"
               Classes.selected="{Binding IsSelected}"
+              HorizontalAlignment="Stretch"
               Click="OnSettingsCategoryClicked"
               Command="{Binding DataContext.SelectCategoryCommand, ElementName=SettingsRoot}"
               CommandParameter="{Binding}">
         <Grid ColumnDefinitions="Auto,*" VerticalAlignment="Center">
-          <Border Classes="settingsCategoryIconFrame"
-                  Width="44"
-                  Height="44"
-                  Margin="0,0,14,0">
+          <Border Classes="settingsCategoryIconFrame">
             <Image Classes="settingsCategoryIcon"
-                   Width="38"
-                   Height="38"
                    Source="{Binding Icon}"
                    Stretch="Uniform"
                    IsHitTestVisible="False" />
@@ -57,15 +53,19 @@ SPDX-License-Identifier: GPL-3.0-only
     <Border x:Name="SettingsCategoryRail"
             Grid.Column="0"
             Classes="settingsRail">
-      <ScrollViewer Classes="settingsCategoryScroll"
-                    Margin="14,18"
+      <ScrollViewer x:Name="SettingsCategoryScroll"
+                    Classes="settingsCategoryScroll"
+                    Margin="14,18,4,18"
+                    HorizontalContentAlignment="Stretch"
                     HorizontalScrollBarVisibility="Disabled"
                     VerticalScrollBarVisibility="Auto">
         <ItemsControl ItemsSource="{Binding Categories}"
+                      HorizontalAlignment="Stretch"
+                      Margin="0,0,10,0"
                       ItemTemplate="{StaticResource SettingRailCategoryTemplate}">
           <ItemsControl.ItemsPanel>
             <ItemsPanelTemplate>
-              <StackPanel Spacing="2" />
+              <StackPanel HorizontalAlignment="Stretch" Spacing="2" />
             </ItemsPanelTemplate>
           </ItemsControl.ItemsPanel>
         </ItemsControl>

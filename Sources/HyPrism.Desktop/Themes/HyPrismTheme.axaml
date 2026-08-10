@@ -802,12 +802,13 @@ SPDX-License-Identifier: GPL-3.0-only
   </Style>
 
   <Style Selector="Button.settingsRailCategory">
-    <Setter Property="Height" Value="58" />
-    <Setter Property="Padding" Value="16,0" />
+    <Setter Property="Height" Value="72" />
+    <Setter Property="Padding" Value="12,9" />
     <Setter Property="Background" Value="Transparent" />
     <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
     <Setter Property="BorderThickness" Value="0" />
     <Setter Property="CornerRadius" Value="11" />
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
     <Setter Property="HorizontalContentAlignment" Value="Stretch" />
     <Setter Property="RenderTransform" Value="{x:Null}" />
     <Setter Property="Transitions">
@@ -848,7 +849,7 @@ SPDX-License-Identifier: GPL-3.0-only
   </Style>
 
   <Style Selector="TextBlock.settingsCategoryDescription">
-    <Setter Property="IsVisible" Value="False" />
+    <Setter Property="IsVisible" Value="True" />
     <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
     <Setter Property="FontSize" Value="11" />
     <Setter Property="LineHeight" Value="14" />
@@ -856,7 +857,15 @@ SPDX-License-Identifier: GPL-3.0-only
   </Style>
 
   <Style Selector="Border.settingsCategoryIconFrame">
-    <Setter Property="IsVisible" Value="False" />
+    <Setter Property="IsVisible" Value="True" />
+    <Setter Property="Width" Value="40" />
+    <Setter Property="Height" Value="40" />
+    <Setter Property="Margin" Value="0,0,12,0" />
+  </Style>
+
+  <Style Selector="Image.settingsCategoryIcon">
+    <Setter Property="Width" Value="34" />
+    <Setter Property="Height" Value="34" />
   </Style>
 
   <Style Selector="Button.settingsRailCategory.compact">
@@ -875,12 +884,15 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
   </Style>
 
-  <Style Selector="Button.settingsRailCategory.compact TextBlock.settingsCategoryDescription">
-    <Setter Property="IsVisible" Value="True" />
+  <Style Selector="Button.settingsRailCategory.compact Border.settingsCategoryIconFrame">
+    <Setter Property="Width" Value="44" />
+    <Setter Property="Height" Value="44" />
+    <Setter Property="Margin" Value="0,0,14,0" />
   </Style>
 
-  <Style Selector="Button.settingsRailCategory.compact Border.settingsCategoryIconFrame">
-    <Setter Property="IsVisible" Value="True" />
+  <Style Selector="Button.settingsRailCategory.compact Image.settingsCategoryIcon">
+    <Setter Property="Width" Value="38" />
+    <Setter Property="Height" Value="38" />
   </Style>
 
   <Style Selector="Border.settingsRail.compact">

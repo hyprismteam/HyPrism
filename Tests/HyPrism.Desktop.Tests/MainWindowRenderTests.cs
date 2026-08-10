@@ -1539,10 +1539,12 @@ public sealed class MainWindowRenderTests
 
         var settingsView = window.GetVisualDescendants().OfType<SettingsView>().Single();
         var settingsScroll = settingsView.FindControl<ScrollViewer>("SettingsContent");
+        var categoryScroll = settingsView.FindControl<ScrollViewer>("SettingsCategoryScroll");
         var settingsRail = settingsView.FindControl<Border>("SettingsCategoryRail");
         var compactSettingsToolbar = settingsView.FindControl<Border>("CompactSettingsToolbar");
         var settingsMain = settingsView.FindControl<Grid>("SettingsMain");
         Assert.NotNull(settingsScroll);
+        Assert.NotNull(categoryScroll);
         Assert.NotNull(settingsRail);
         Assert.NotNull(compactSettingsToolbar);
         Assert.NotNull(settingsMain);
@@ -1556,17 +1558,24 @@ public sealed class MainWindowRenderTests
             .ToArray();
         Assert.Equal(10, categoryIcons.Length);
         Assert.All(categoryIcons, icon => Assert.NotNull(icon.Source));
-        Assert.Equal(
-            compactSettingsLayout ? 10 : 0,
-            categoryIcons.Count(icon => icon.IsEffectivelyVisible));
+        Assert.Equal(10, categoryIcons.Count(icon => icon.IsEffectivelyVisible));
         var categoryDescriptions = settingsView.GetVisualDescendants()
             .OfType<TextBlock>()
             .Where(text => text.Classes.Contains("settingsCategoryDescription"))
             .ToArray();
         Assert.Equal(10, categoryDescriptions.Length);
-        Assert.Equal(
-            compactSettingsLayout ? 10 : 0,
-            categoryDescriptions.Count(description => description.IsEffectivelyVisible));
+        Assert.Equal(10, categoryDescriptions.Count(description => description.IsEffectivelyVisible));
+        var categoryButtons = settingsView.GetVisualDescendants()
+            .OfType<Button>()
+            .Where(button => button.Classes.Contains("settingsRailCategory"))
+            .ToArray();
+        Assert.Equal(10, categoryButtons.Length);
+        Assert.All(
+            categoryButtons,
+            button => Assert.InRange(
+                Math.Abs(button.Bounds.Width - (categoryScroll!.Viewport.Width - 10)),
+                0,
+                1));
         if (compactSettingsLayout)
         {
             window.MouseMove(new Point(0, 0));
@@ -1611,11 +1620,7 @@ public sealed class MainWindowRenderTests
             border => border.IsEffectivelyVisible && border.Classes.Contains("settingsGroup"));
         Assert.Equal(10, viewModel.Settings.Categories.Count);
         Assert.True(viewModel.Settings.IsGeneral);
-        Assert.All(
-            settingsView.GetVisualDescendants()
-                .OfType<Button>()
-                .Where(button => button.Classes.Contains("settingsRailCategory")),
-            AssertNoPressScale);
+        Assert.All(categoryButtons, AssertNoPressScale);
 
         var settingsPreviewPath = Environment.GetEnvironmentVariable("HYPRISM_SETTINGS_RENDER_OUTPUT");
         if (!string.IsNullOrWhiteSpace(settingsPreviewPath) && width == 1280)
