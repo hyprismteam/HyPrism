@@ -12,7 +12,7 @@ SPDX-License-Identifier: GPL-3.0-only
              Classes.compact="{Binding IsCompactDashboardLayout}"
              ClipToBounds="True">
   <Grid Background="#0D0E10">
-    <Image Source="avares://HyPrism.Desktop/Assets/Backgrounds/bg_26.jpg"
+    <Image Source="{Binding DashboardBackground}"
            Stretch="UniformToFill"
            Opacity="0.72">
       <Image.RenderTransform>

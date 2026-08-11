@@ -1650,9 +1650,6 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="settings.categoryDescriptions.data" xml:space="preserve">
     <value>Файли лаунчера, версії гри та кеш</value>
   </data>
-  <data name="settings.categoryDescriptions.developer" xml:space="preserve">
-    <value>Експериментальні функції та керування онбордингом</value>
-  </data>
   <data name="settings.categoryDescriptions.downloads" xml:space="preserve">
     <value>Джерела завантаження, перевірка з’єднання та запуск гри</value>
   </data>
@@ -1736,27 +1733,6 @@ SPDX-License-Identifier: GPL-3.0-only
   </data>
   <data name="settings.devMode" xml:space="preserve">
     <value>Режим розробника</value>
-  </data>
-  <data name="settings.developer" xml:space="preserve">
-    <value>Розробник</value>
-  </data>
-  <data name="settings.developerSettings.debugInfo" xml:space="preserve">
-    <value>Інформація про налагодження:</value>
-  </data>
-  <data name="settings.developerSettings.introRestart" xml:space="preserve">
-    <value>Вступ відображатиметься під час наступного запуску. Перезапустіть панель запуску.</value>
-  </data>
-  <data name="settings.developerSettings.onboarding" xml:space="preserve">
-    <value>Вступ</value>
-  </data>
-  <data name="settings.developerSettings.showIntro" xml:space="preserve">
-    <value>Показувати вступ під час наступного запуску</value>
-  </data>
-  <data name="settings.developerSettings.title" xml:space="preserve">
-    <value>Налаштування розробника</value>
-  </data>
-  <data name="settings.developerSettings.warning" xml:space="preserve">
-    <value>Параметри розробника призначені лише для тестування</value>
   </data>
   <data name="settings.downloads.addMirror" xml:space="preserve">
     <value>Додати дзеркало</value>

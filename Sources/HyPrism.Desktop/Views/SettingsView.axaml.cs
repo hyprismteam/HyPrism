@@ -38,12 +38,9 @@ public sealed partial class SettingsView : UserControl
             SetMainOffsetWithoutTransition(e.NewSize.Width);
         }
 
-        SettingsHeader.Margin = compact
-            ? new Thickness(24, 6, 24, 14)
-            : new Thickness(32, 23, 32, 16);
         SettingsContentHost.Margin = compact
-            ? new Thickness(24, 2, 24, 36)
-            : new Thickness(32, 2, 32, 40);
+            ? new Thickness(24, 16, 24, 36)
+            : new Thickness(32, 28, 32, 40);
     }
 
     private void ApplyLayoutMode(bool compact, double width)
@@ -53,7 +50,6 @@ public sealed partial class SettingsView : UserControl
             viewModel.IsCompactLayout = compact;
 
         CompactSettingsToolbar.IsVisible = compact;
-        SettingsHeader.IsVisible = !compact;
         if (compact)
         {
             SettingsLayout.ColumnDefinitions[0].Width = new GridLength(1, GridUnitType.Star);
@@ -86,14 +82,18 @@ public sealed partial class SettingsView : UserControl
     }
 
     private void OnCompactSettingsBackClicked(object? sender, RoutedEventArgs e)
+        => TryCloseCompactContent();
+
+    public bool TryCloseCompactContent()
     {
-        if (_usesCompactLayout is not true)
-            return;
+        if (_usesCompactLayout is not true || !_compactContentOpen)
+            return false;
 
         _compactContentOpen = false;
         SettingsMain.IsHitTestVisible = false;
         SettingsCategoryRail.IsHitTestVisible = true;
         MainTranslation.X = Bounds.Width;
+        return true;
     }
 
     private void SetMainOffsetWithoutTransition(double offset)

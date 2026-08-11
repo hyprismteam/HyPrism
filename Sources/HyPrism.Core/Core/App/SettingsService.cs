@@ -197,10 +197,11 @@ public class SettingsService : ISettingsService
     public List<string> GetAvailableBackgrounds()
     {
         var backgrounds = new List<string>();
-        // All backgrounds are now JPG format (PNG converted to save space)
-        var jpgs = new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 22, 23, 24, 25, 26, 27, 28, 29, 30 };
+        var pngs = new HashSet<int> { 4, 6, 9, 12, 16, 19 };
+        var ids = new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 22, 23, 24, 25, 26, 27, 28, 29, 30 };
 
-        foreach (var i in jpgs) backgrounds.Add($"bg_{i}.jpg");
+        foreach (var id in ids)
+            backgrounds.Add($"bg_{id}.{(pngs.Contains(id) ? "png" : "jpg")}");
         
         return backgrounds.OrderBy(x => 
         {

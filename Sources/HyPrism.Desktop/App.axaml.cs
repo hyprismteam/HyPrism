@@ -48,7 +48,8 @@ public sealed partial class App : Application
                 services.GetRequiredService<INewsService>(),
                 services.GetRequiredService<IBrowserService>(),
                 services.GetRequiredService<HttpClient>(),
-                localizer);
+                localizer,
+                services.GetRequiredService<IFileDialogService>());
 
             desktop.MainWindow = new MainWindow
             {

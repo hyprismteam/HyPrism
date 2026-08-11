@@ -8,6 +8,55 @@ namespace HyPrism.Core.Tests.Game.Launch;
 
 public class JvmArgumentBuilderTests
 {
+    [Theory]
+    [InlineData("-Xmx4G", 4096)]
+    [InlineData("-Xmx1.5g -Dfile.encoding=UTF-8", 1536)]
+    [InlineData("-Xmx2048M", 2048)]
+    [InlineData("-Xmx1048576K", 1024)]
+    public void ParseMaximumHeapMb_ValidHeap_ReturnsMegabytes(string args, int expected)
+    {
+        Assert.Equal(expected, JvmArgumentBuilder.ParseMaximumHeapMb(args));
+    }
+
+    [Fact]
+    public void ParseInitialHeapMb_MissingHeap_ReturnsNull()
+    {
+        Assert.Null(JvmArgumentBuilder.ParseInitialHeapMb("-Dfile.encoding=UTF-8"));
+    }
+
+    [Fact]
+    public void SetHeapMb_ReplacesOnlyRequestedHeapAndPreservesOtherArguments()
+    {
+        var withMaximum = JvmArgumentBuilder.SetMaximumHeapMb(
+            "-Xmx2G -Xms1G -Dfile.encoding=UTF-8",
+            6144);
+        var result = JvmArgumentBuilder.SetInitialHeapMb(withMaximum, 2048);
+
+        Assert.Equal("-Xms2048M -Xmx6144M -Dfile.encoding=UTF-8", result);
+    }
+
+    [Fact]
+    public void SetMaximumHeapMb_NonPositiveValue_Throws()
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            JvmArgumentBuilder.SetMaximumHeapMb(string.Empty, 0));
+    }
+
+    [Theory]
+    [InlineData("-Xmx4G -Xms1G -Dfile.encoding=UTF-8", "-Dfile.encoding=UTF-8")]
+    [InlineData("-Dfoo=bar -xMs2048m", "-Dfoo=bar")]
+    [InlineData("-Xmx", "")]
+    public void RemoveHeapArguments_RemovesLauncherManagedFlags(string args, string expected)
+    {
+        Assert.Equal(expected, JvmArgumentBuilder.RemoveHeapArguments(args));
+        Assert.True(JvmArgumentBuilder.ContainsHeapArguments(args));
+    }
+
+    [Fact]
+    public void ContainsHeapArguments_CustomArgumentsOnly_ReturnsFalse()
+    {
+        Assert.False(JvmArgumentBuilder.ContainsHeapArguments("-Dfile.encoding=UTF-8"));
+    }
 
     [Fact]
     public void Sanitize_SafeArgs_PassThrough()

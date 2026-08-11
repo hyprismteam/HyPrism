@@ -1710,14 +1710,11 @@ You may need to reinstall the game if switching drives.</value>
   <data name="settings.categoryDescriptions.data" xml:space="preserve">
     <value>Launcher files, game versions and cache</value>
   </data>
-  <data name="settings.categoryDescriptions.developer" xml:space="preserve">
-    <value>Experimental features and onboarding tools</value>
-  </data>
   <data name="settings.categoryDescriptions.downloads" xml:space="preserve">
     <value>Download sources, connection checks and game launch</value>
   </data>
   <data name="settings.categoryDescriptions.general" xml:space="preserve">
-    <value>Language, updates and launcher behavior</value>
+    <value>Language, music and launcher behavior</value>
   </data>
   <data name="settings.categoryDescriptions.graphics" xml:space="preserve">
     <value>GPU selection for launching Hytale</value>
@@ -1732,7 +1729,7 @@ You may need to reinstall the game if switching drives.</value>
     <value>Environment variables passed to Hytale</value>
   </data>
   <data name="settings.categoryDescriptions.visual" xml:space="preserve">
-    <value>Background, music, news and announcements</value>
+    <value>Background and news presentation</value>
   </data>
   <data name="settings.close" xml:space="preserve">
     <value>Close</value>
@@ -1796,27 +1793,6 @@ You may need to reinstall the game if switching drives.</value>
   </data>
   <data name="settings.devMode" xml:space="preserve">
     <value>Dev Mode</value>
-  </data>
-  <data name="settings.developer" xml:space="preserve">
-    <value>Developer</value>
-  </data>
-  <data name="settings.developerSettings.debugInfo" xml:space="preserve">
-    <value>Debug info:</value>
-  </data>
-  <data name="settings.developerSettings.introRestart" xml:space="preserve">
-    <value>Intro will show on next launch. Please restart the launcher.</value>
-  </data>
-  <data name="settings.developerSettings.onboarding" xml:space="preserve">
-    <value>Onboarding</value>
-  </data>
-  <data name="settings.developerSettings.showIntro" xml:space="preserve">
-    <value>Show Intro on Next Launch</value>
-  </data>
-  <data name="settings.developerSettings.title" xml:space="preserve">
-    <value>Developer Settings</value>
-  </data>
-  <data name="settings.developerSettings.warning" xml:space="preserve">
-    <value>Developer options are for testing only</value>
   </data>
   <data name="settings.downloads.addMirror" xml:space="preserve">
     <value>Add Mirror</value>
@@ -2137,7 +2113,7 @@ You may need to reinstall the game if switching drives.</value>
     <value>Initial RAM (-Xms)</value>
   </data>
   <data name="settings.javaSettings.javaRuntime" xml:space="preserve">
-    <value>Java runtime</value>
+    <value>Runtime</value>
   </data>
   <data name="settings.javaSettings.javaRuntimeHint" xml:space="preserve">
     <value>Choose which Java executable should be used to run the singleplayer server</value>
@@ -2147,6 +2123,9 @@ You may need to reinstall the game if switching drives.</value>
   </data>
   <data name="settings.javaSettings.jvmArgumentsBlocked" xml:space="preserve">
     <value>Some unsafe or managed JVM flags were removed before saving</value>
+  </data>
+  <data name="settings.javaSettings.jvmMemoryArgumentsManaged" xml:space="preserve">
+    <value>-Xms and -Xmx are controlled by the memory allocation sliders</value>
   </data>
   <data name="settings.javaSettings.jvmArgumentsHint" xml:space="preserve">
     <value>Optional extra flags for the singleplayer server. Saved to JAVA_TOOL_OPTIONS</value>
@@ -2161,7 +2140,7 @@ You may need to reinstall the game if switching drives.</value>
     <value>Recommended max: {{value}}</value>
   </data>
   <data name="settings.javaSettings.ramAllocation" xml:space="preserve">
-    <value>Server RAM allocation</value>
+    <value>Memory allocation</value>
   </data>
   <data name="settings.javaSettings.ramAllocationHint" xml:space="preserve">
     <value>Sets Java max heap (-Xmx) for the singleplayer server using a simple slider</value>
@@ -2498,5 +2477,14 @@ You may need to reinstall the game if switching drives.</value>
   </data>
   <data name="wrapper.updateAvailable" xml:space="preserve">
     <value>Update available</value>
+  </data>
+  <data name="desktopSettings.categories.language" xml:space="preserve">
+    <value>Language</value>
+  </data>
+  <data name="desktopSettings.categories.miscellaneous" xml:space="preserve">
+    <value>Miscellaneous</value>
+  </data>
+  <data name="desktopSettings.categories.appearance" xml:space="preserve">
+    <value>Appearance</value>
   </data>
 </root>

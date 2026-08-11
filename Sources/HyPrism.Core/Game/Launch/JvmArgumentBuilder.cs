@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 using System.Diagnostics;
+using System.Globalization;
 using System.Text.RegularExpressions;
 
 namespace HyPrism.Services.Game.Launch;
@@ -12,6 +13,51 @@ namespace HyPrism.Services.Game.Launch;
 /// </summary>
 public static class JvmArgumentBuilder
 {
+    /// <summary>
+    /// Reads the maximum JVM heap size (<c>-Xmx</c>) and returns it in megabytes.
+    /// </summary>
+    public static int? ParseMaximumHeapMb(string? args) => ParseHeapMb(args, "Xmx");
+
+    /// <summary>
+    /// Reads the initial JVM heap size (<c>-Xms</c>) and returns it in megabytes.
+    /// </summary>
+    public static int? ParseInitialHeapMb(string? args) => ParseHeapMb(args, "Xms");
+
+    /// <summary>
+    /// Replaces or inserts the maximum JVM heap size (<c>-Xmx</c>).
+    /// </summary>
+    public static string SetMaximumHeapMb(string? args, int memoryMb)
+        => SetHeapMb(args, "Xmx", memoryMb);
+
+    /// <summary>
+    /// Replaces or inserts the initial JVM heap size (<c>-Xms</c>).
+    /// </summary>
+    public static string SetInitialHeapMb(string? args, int memoryMb)
+        => SetHeapMb(args, "Xms", memoryMb);
+
+    /// <summary>
+    /// Removes launcher-managed heap arguments (<c>-Xms</c> and <c>-Xmx</c>)
+    /// from a user-editable JVM argument string.
+    /// </summary>
+    public static string RemoveHeapArguments(string? args)
+    {
+        var withoutHeap = Regex.Replace(
+            args ?? string.Empty,
+            @"(?:^|\s)-Xm[sx]\S*",
+            " ",
+            RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+        return Regex.Replace(withoutHeap, @"\s+", " ").Trim();
+    }
+
+    /// <summary>
+    /// Returns whether a JVM argument string contains launcher-managed heap arguments.
+    /// </summary>
+    public static bool ContainsHeapArguments(string? args)
+        => !string.Equals(
+            RemoveHeapArguments(args),
+            Regex.Replace(args ?? string.Empty, @"\s+", " ").Trim(),
+            StringComparison.Ordinal);
+
     /// <summary>
     /// Sanitizes user-supplied JVM arguments by removing dangerous flags
     /// that could compromise launcher integrity (e.g., -javaagent, -classpath, -jar).
@@ -117,5 +163,47 @@ public static class JvmArgumentBuilder
 USER_JAVA_TOOL_OPTIONS=""{escaped}""
 
 ";
+    }
+
+    private static int? ParseHeapMb(string? args, string flag)
+    {
+        if (string.IsNullOrWhiteSpace(args))
+            return null;
+
+        var match = Regex.Match(
+            args,
+            $@"(?:^|\s)-{flag}(\d+(?:\.\d+)?)([KMG])(?=\s|$)",
+            RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+        if (!match.Success ||
+            !double.TryParse(match.Groups[1].Value, NumberStyles.Float, CultureInfo.InvariantCulture, out var value) ||
+            !double.IsFinite(value) ||
+            value <= 0)
+        {
+            return null;
+        }
+
+        var memoryMb = char.ToUpperInvariant(match.Groups[2].Value[0]) switch
+        {
+            'G' => value * 1024,
+            'K' => value / 1024,
+            _ => value
+        };
+
+        return Math.Max(1, (int)Math.Round(memoryMb, MidpointRounding.AwayFromZero));
+    }
+
+    private static string SetHeapMb(string? args, string flag, int memoryMb)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(memoryMb);
+
+        var withoutHeap = Regex.Replace(
+            args ?? string.Empty,
+            $@"(?:^|\s)-{flag}\S+",
+            " ",
+            RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+        withoutHeap = Regex.Replace(withoutHeap, @"\s+", " ").Trim();
+
+        var heapArgument = $"-{flag}{memoryMb}M";
+        return withoutHeap.Length == 0 ? heapArgument : $"{heapArgument} {withoutHeap}";
     }
 }

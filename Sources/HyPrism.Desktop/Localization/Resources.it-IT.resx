@@ -1650,9 +1650,6 @@ Potrebbe essere necessario reinstallare il gioco se si cambia drive.</value>
   <data name="settings.categoryDescriptions.data" xml:space="preserve">
     <value>File del launcher, versioni del gioco e cache</value>
   </data>
-  <data name="settings.categoryDescriptions.developer" xml:space="preserve">
-    <value>Funzioni sperimentali e strumenti di onboarding</value>
-  </data>
   <data name="settings.categoryDescriptions.downloads" xml:space="preserve">
     <value>Fonti di download, verifica della connessione e avvio del gioco</value>
   </data>
@@ -1736,27 +1733,6 @@ Potrebbe essere necessario reinstallare il gioco se si cambia drive.</value>
   </data>
   <data name="settings.devMode" xml:space="preserve">
     <value>Modalità sviluppatore</value>
-  </data>
-  <data name="settings.developer" xml:space="preserve">
-    <value>Sviluppatore</value>
-  </data>
-  <data name="settings.developerSettings.debugInfo" xml:space="preserve">
-    <value>Informazioni di debug:</value>
-  </data>
-  <data name="settings.developerSettings.introRestart" xml:space="preserve">
-    <value>Le schermate di introduzione verranno mostrate al prossimo avvio. Per favore, riavvia il launcher.</value>
-  </data>
-  <data name="settings.developerSettings.onboarding" xml:space="preserve">
-    <value>Introduzione</value>
-  </data>
-  <data name="settings.developerSettings.showIntro" xml:space="preserve">
-    <value>Mostra l'introduzione al prossimo avvio</value>
-  </data>
-  <data name="settings.developerSettings.title" xml:space="preserve">
-    <value>Impostazioni sviluppatore</value>
-  </data>
-  <data name="settings.developerSettings.warning" xml:space="preserve">
-    <value>Le opzioni per sviluppatori sono mirate a sviluppatori e tester.</value>
   </data>
   <data name="settings.downloads.addMirror" xml:space="preserve">
     <value>Aggiungi Mirror</value>

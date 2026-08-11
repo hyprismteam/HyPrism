@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 using System.Collections.ObjectModel;
+using Avalonia.Media.Imaging;
+using Avalonia.Platform;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -39,6 +41,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     private readonly ISettingsService _settingsService;
     private readonly INewsService _newsService;
     private readonly IBrowserService _browserService;
+    private readonly IFileDialogService? _fileDialogService;
     private readonly HttpClient _httpClient;
     private readonly LocalizationService _localizer;
     private InstanceInfo? _selectedInstance;
@@ -79,6 +82,9 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
 
     [ObservableProperty]
     private string _selectedInstanceState = string.Empty;
+
+    [ObservableProperty]
+    private Bitmap? _dashboardBackground;
 
     [ObservableProperty]
     private string _primaryActionText = string.Empty;
@@ -186,7 +192,8 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         INewsService newsService,
         IBrowserService browserService,
         HttpClient httpClient,
-        LocalizationService localizer)
+        LocalizationService localizer,
+        IFileDialogService? fileDialogService = null)
     {
         _instanceService = instanceService;
         _gameLaunchCoordinator = gameLaunchCoordinator;
@@ -196,10 +203,13 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         _settingsService = settingsService;
         _newsService = newsService;
         _browserService = browserService;
+        _fileDialogService = fileDialogService;
         _httpClient = httpClient;
         _localizer = localizer;
         _localizer.LanguageChanged += ApplyLanguage;
+        _settingsService.OnBackgroundChanged += OnBackgroundChanged;
         _settings = CreateSettingsViewModel();
+        DashboardBackground = LoadDashboardBackground(_settingsService.GetBackgroundMode());
 
         UserName = profileService.GetNick();
         UserInitial = string.IsNullOrWhiteSpace(UserName)
@@ -849,7 +859,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     }
 
     private SettingsViewModel CreateSettingsViewModel()
-        => new(_settingsService, _browserService, _localizer);
+        => new(_settingsService, _browserService, _localizer, _fileDialogService);
 
     private void ApplyLanguage(string language)
     {
@@ -918,6 +928,35 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     private void OnErrorOccurred(string type, string message, string? technical)
         => Dispatcher.UIThread.Post(() => ShowError(technical ?? message));
 
+    private void OnBackgroundChanged(string? mode)
+        => Dispatcher.UIThread.Post(() => ReplaceDashboardBackground(mode));
+
+    private void ReplaceDashboardBackground(string? mode)
+    {
+        var replacement = LoadDashboardBackground(mode);
+        var previous = DashboardBackground;
+        DashboardBackground = replacement;
+        previous?.Dispose();
+    }
+
+    private Bitmap LoadDashboardBackground(string? mode)
+    {
+        var available = _settingsService.GetAvailableBackgrounds() ?? [];
+        var selected = mode;
+        if (string.IsNullOrWhiteSpace(selected) ||
+            string.Equals(selected, "auto", StringComparison.OrdinalIgnoreCase) ||
+            !available.Contains(selected, StringComparer.OrdinalIgnoreCase))
+        {
+            selected = available.Count > 0
+                ? available[Random.Shared.Next(available.Count)]
+                : "bg_26.jpg";
+        }
+
+        var uri = new Uri($"avares://HyPrism.Desktop/Assets/Backgrounds/{selected}");
+        using var stream = AssetLoader.Open(uri);
+        return new Bitmap(stream);
+    }
+
     private void ShowError(string message)
     {
         ActivityTitle = _localizer["error.title"];
@@ -971,6 +1010,9 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         _progressService.DownloadProgressChanged -= OnDownloadProgressChanged;
         _progressService.GameStateChanged -= OnGameStateChanged;
         _progressService.ErrorOccurred -= OnErrorOccurred;
+        _settingsService.OnBackgroundChanged -= OnBackgroundChanged;
         _localizer.LanguageChanged -= ApplyLanguage;
+        DashboardBackground?.Dispose();
+        DashboardBackground = null;
     }
 }

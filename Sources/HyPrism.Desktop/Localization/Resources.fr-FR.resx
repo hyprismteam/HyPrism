@@ -1650,9 +1650,6 @@ Vous devrez peut-être réinstaller le jeu si vous changez de lecteur.</value>
   <data name="settings.categoryDescriptions.data" xml:space="preserve">
     <value>Fichiers du launcher, versions du jeu et cache</value>
   </data>
-  <data name="settings.categoryDescriptions.developer" xml:space="preserve">
-    <value>Fonctionnalités expérimentales et outils d’accueil</value>
-  </data>
   <data name="settings.categoryDescriptions.downloads" xml:space="preserve">
     <value>Sources de téléchargement, test de connexion et lancement du jeu</value>
   </data>
@@ -1736,27 +1733,6 @@ Vous devrez peut-être réinstaller le jeu si vous changez de lecteur.</value>
   </data>
   <data name="settings.devMode" xml:space="preserve">
     <value>Mode Développeur</value>
-  </data>
-  <data name="settings.developer" xml:space="preserve">
-    <value>Développeur</value>
-  </data>
-  <data name="settings.developerSettings.debugInfo" xml:space="preserve">
-    <value>Infos de débogage :</value>
-  </data>
-  <data name="settings.developerSettings.introRestart" xml:space="preserve">
-    <value>L'intro s'affichera au prochain lancement. Redémarre le lanceur.</value>
-  </data>
-  <data name="settings.developerSettings.onboarding" xml:space="preserve">
-    <value>Accueil</value>
-  </data>
-  <data name="settings.developerSettings.showIntro" xml:space="preserve">
-    <value>Afficher l'Intro au Prochain Lancement</value>
-  </data>
-  <data name="settings.developerSettings.title" xml:space="preserve">
-    <value>Paramètres Développeur</value>
-  </data>
-  <data name="settings.developerSettings.warning" xml:space="preserve">
-    <value>Les options développeur sont uniquement pour les tests</value>
   </data>
   <data name="settings.downloads.addMirror" xml:space="preserve">
     <value>Ajouter Miroir</value>

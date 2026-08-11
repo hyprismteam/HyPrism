@@ -1650,9 +1650,6 @@ Bei Laufwerkswechsel muss das Spiel möglicherweise neu installiert werden.</val
   <data name="settings.categoryDescriptions.data" xml:space="preserve">
     <value>Launcher-Dateien, Spielversionen und Cache</value>
   </data>
-  <data name="settings.categoryDescriptions.developer" xml:space="preserve">
-    <value>Experimentelle Funktionen und Onboarding-Werkzeuge</value>
-  </data>
   <data name="settings.categoryDescriptions.downloads" xml:space="preserve">
     <value>Downloadquellen, Verbindungstests und Spielstart</value>
   </data>
@@ -1736,27 +1733,6 @@ Bei Laufwerkswechsel muss das Spiel möglicherweise neu installiert werden.</val
   </data>
   <data name="settings.devMode" xml:space="preserve">
     <value>Entwicklermodus</value>
-  </data>
-  <data name="settings.developer" xml:space="preserve">
-    <value>Entwickler</value>
-  </data>
-  <data name="settings.developerSettings.debugInfo" xml:space="preserve">
-    <value>Debug-Info:</value>
-  </data>
-  <data name="settings.developerSettings.introRestart" xml:space="preserve">
-    <value>Intro wird beim nächsten Start angezeigt. Bitte Launcher neu starten.</value>
-  </data>
-  <data name="settings.developerSettings.onboarding" xml:space="preserve">
-    <value>Onboarding</value>
-  </data>
-  <data name="settings.developerSettings.showIntro" xml:space="preserve">
-    <value>Intro beim nächsten Start anzeigen</value>
-  </data>
-  <data name="settings.developerSettings.title" xml:space="preserve">
-    <value>Entwicklereinstellungen</value>
-  </data>
-  <data name="settings.developerSettings.warning" xml:space="preserve">
-    <value>Entwickleroptionen nur zum Testen</value>
   </data>
   <data name="settings.downloads.addMirror" xml:space="preserve">
     <value>Spiegel hinzufügen</value>

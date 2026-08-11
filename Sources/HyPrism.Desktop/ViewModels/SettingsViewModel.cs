@@ -8,15 +8,23 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using HyPrism.Desktop.Localization;
 using HyPrism.Services.Core.App;
+using HyPrism.Services.Core.Infrastructure;
 using HyPrism.Services.Core.Platform;
+using HyPrism.Services.Game.Launch;
 
 namespace HyPrism.Desktop.ViewModels;
 
 public sealed partial class SettingsViewModel : ObservableObject
 {
+    private const int MinimumJavaMemoryMb = 1024;
+    private const int JavaMemoryStepMb = 256;
+
     private readonly ISettingsService _settings;
     private readonly IBrowserService _browser;
     private readonly LocalizationService _localizer;
+    private readonly IFileDialogService? _fileDialog;
+    private bool _updatingJavaMemory;
+    private bool _updatingJavaArguments;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsGeneral))]
@@ -28,12 +36,11 @@ public sealed partial class SettingsViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(IsVariables))]
     [NotifyPropertyChangedFor(nameof(IsData))]
     [NotifyPropertyChangedFor(nameof(IsAbout))]
-    [NotifyPropertyChangedFor(nameof(IsDeveloper))]
     [NotifyPropertyChangedFor(nameof(ActiveCategoryTitle))]
     private string _selectedCategory = "general";
 
     [ObservableProperty] private SettingChoiceViewModel _selectedLanguage;
-    [ObservableProperty] private SettingChoiceViewModel _selectedBackground;
+    [ObservableProperty] private BackgroundChoiceViewModel _selectedBackground;
     [ObservableProperty] private SettingChoiceViewModel _selectedGpuPreference;
     [ObservableProperty] private bool _closeAfterLaunch;
     [ObservableProperty] private bool _launchAfterDownload;
@@ -43,10 +50,25 @@ public sealed partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private bool _showDiscordAnnouncements;
     [ObservableProperty] private bool _onlineMode;
     [ObservableProperty] private bool _useDualAuth;
-    [ObservableProperty] private bool _useCustomJava;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(UseBundledJava))]
+    private bool _useCustomJava;
     [ObservableProperty] private string _authDomain;
     [ObservableProperty] private string _customJavaPath;
     [ObservableProperty] private string _javaArguments;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(JavaMaximumRamValue))]
+    [NotifyPropertyChangedFor(nameof(JavaInitialRamMaximum))]
+    private double _javaMaximumRamMb;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(JavaInitialRamValue))]
+    private double _javaInitialRamMb;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasJavaPathError))]
+    private string _javaPathError = string.Empty;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasJavaArgumentsError))]
+    private string _javaArgumentsError = string.Empty;
     [ObservableProperty] private string _gameEnvironmentVariables;
     [ObservableProperty] private string _statusMessage = string.Empty;
     [ObservableProperty] private bool _isCompactLayout;
@@ -54,11 +76,13 @@ public sealed partial class SettingsViewModel : ObservableObject
     public SettingsViewModel(
         ISettingsService settings,
         IBrowserService browser,
-        LocalizationService localizer)
+        LocalizationService localizer,
+        IFileDialogService? fileDialog = null)
     {
         _settings = settings;
         _browser = browser;
         _localizer = localizer;
+        _fileDialog = fileDialog;
 
         Categories = new ObservableCollection<SettingCategoryViewModel>(
         [
@@ -70,17 +94,17 @@ public sealed partial class SettingsViewModel : ObservableObject
             new("graphics", localizer["settings.graphics"], "graphics.png"),
             new("variables", localizer["settings.variables"], "variables.png"),
             new("data", localizer["settings.data"], "data.png"),
-            new("about", localizer["settings.about"], "about.png"),
-            new("developer", localizer["settings.developer"], "developer.png")
+            new("about", localizer["settings.about"], "about.png")
         ]);
         Categories[0].IsSelected = true;
 
         Languages = new ObservableCollection<SettingChoiceViewModel>(
             localizer.AvailableLanguages.Select(language =>
                 new SettingChoiceViewModel(language.Key, language.Value, GetFlagCountryCode(language.Key))));
-        Backgrounds = new ObservableCollection<SettingChoiceViewModel>(
-            [new("auto", localizer["settings.visualSettings.autoShuffle"]),
-             .. (settings.GetAvailableBackgrounds() ?? []).Select(name => new SettingChoiceViewModel(name, name))]);
+        var availableBackgrounds = settings.GetAvailableBackgrounds() ?? [];
+        Backgrounds = new ObservableCollection<BackgroundChoiceViewModel>(
+            [new("auto", localizer["settings.visualSettings.autoShuffle"], availableBackgrounds.Take(3)),
+             .. availableBackgrounds.Select(name => new BackgroundChoiceViewModel(name, name, [name]))]);
         GpuPreferences = new ObservableCollection<SettingChoiceViewModel>(
         [
             new("dedicated", localizer["settings.graphicsSettings.gpu_dedicated"]),
@@ -89,7 +113,8 @@ public sealed partial class SettingsViewModel : ObservableObject
         ]);
 
         _selectedLanguage = FindChoice(Languages, settings.GetLanguage());
-        _selectedBackground = FindChoice(Backgrounds, settings.GetBackgroundMode());
+        _selectedBackground = FindBackgroundChoice(Backgrounds, settings.GetBackgroundMode());
+        UpdateSelectedBackgroundState();
         _selectedGpuPreference = FindChoice(GpuPreferences, settings.GetGpuPreference());
         _closeAfterLaunch = settings.GetCloseAfterLaunch();
         _launchAfterDownload = settings.GetLaunchAfterDownload();
@@ -102,7 +127,21 @@ public sealed partial class SettingsViewModel : ObservableObject
         _useCustomJava = settings.GetUseCustomJava();
         _authDomain = settings.GetAuthDomain() ?? string.Empty;
         _customJavaPath = settings.GetCustomJavaPath() ?? string.Empty;
-        _javaArguments = settings.GetJavaArguments() ?? string.Empty;
+        var persistedJavaArguments = settings.GetJavaArguments() ?? string.Empty;
+        _javaArguments = JvmArgumentBuilder.RemoveHeapArguments(persistedJavaArguments);
+        DetectedSystemMemoryMb = Math.Max(4096, SystemInfoService.GetSystemMemoryMb());
+        MaximumJavaRamMb = Math.Max(
+            MinimumJavaMemoryMb,
+            Math.Floor(DetectedSystemMemoryMb * 0.75 / JavaMemoryStepMb) * JavaMemoryStepMb);
+        _javaMaximumRamMb = NormalizeJavaMemory(
+            JvmArgumentBuilder.ParseMaximumHeapMb(persistedJavaArguments) ?? 4096,
+            MaximumJavaRamMb);
+        var defaultInitialMemory = Math.Max(
+            MinimumJavaMemoryMb,
+            Math.Floor(_javaMaximumRamMb / 2 / JavaMemoryStepMb) * JavaMemoryStepMb);
+        _javaInitialRamMb = NormalizeJavaMemory(
+            JvmArgumentBuilder.ParseInitialHeapMb(persistedJavaArguments) ?? (int)defaultInitialMemory,
+            _javaMaximumRamMb);
         _gameEnvironmentVariables = settings.GetGameEnvironmentVariables() ?? string.Empty;
 
         RefreshLocalization();
@@ -110,12 +149,24 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     public ObservableCollection<SettingCategoryViewModel> Categories { get; }
     public ObservableCollection<SettingChoiceViewModel> Languages { get; }
-    public ObservableCollection<SettingChoiceViewModel> Backgrounds { get; }
+    public ObservableCollection<BackgroundChoiceViewModel> Backgrounds { get; }
     public ObservableCollection<SettingChoiceViewModel> GpuPreferences { get; }
+
+    public int DetectedSystemMemoryMb { get; }
+    public double MinimumJavaRamMb => MinimumJavaMemoryMb;
+    public double MaximumJavaRamMb { get; }
+    public double JavaMemoryTickFrequency => JavaMemoryStepMb;
+    public double JavaInitialRamMaximum => JavaMaximumRamMb;
+    public bool UseBundledJava => !UseCustomJava;
+    public bool HasJavaPathError => !string.IsNullOrWhiteSpace(JavaPathError);
+    public bool HasJavaArgumentsError => !string.IsNullOrWhiteSpace(JavaArgumentsError);
+    public string JavaMaximumRamValue => FormatMemory(JavaMaximumRamMb);
+    public string JavaInitialRamValue => FormatMemory(JavaInitialRamMb);
 
     public string PageTitle { get; private set; } = string.Empty;
     public string PageDescription { get; private set; } = string.Empty;
     public string BackLabel { get; private set; } = string.Empty;
+    public string LanguageCategoryTitle { get; private set; } = string.Empty;
     public string GeneralTitle { get; private set; } = string.Empty;
     public string DownloadsTitle { get; private set; } = string.Empty;
     public string JavaTitle { get; private set; } = string.Empty;
@@ -125,7 +176,6 @@ public sealed partial class SettingsViewModel : ObservableObject
     public string VariablesTitle { get; private set; } = string.Empty;
     public string DataTitle { get; private set; } = string.Empty;
     public string AboutTitle { get; private set; } = string.Empty;
-    public string DeveloperTitle { get; private set; } = string.Empty;
     public string SaveLabel { get; private set; } = string.Empty;
     public string LanguageLabel { get; private set; } = string.Empty;
     public string LanguageHint { get; private set; } = string.Empty;
@@ -150,11 +200,18 @@ public sealed partial class SettingsViewModel : ObservableObject
     public string DualAuthLabel { get; private set; } = string.Empty;
     public string DualAuthHint { get; private set; } = string.Empty;
     public string JavaRuntimeLabel { get; private set; } = string.Empty;
-    public string JavaRuntimeHint { get; private set; } = string.Empty;
+    public string BundledJavaLabel { get; private set; } = string.Empty;
+    public string BundledJavaHint { get; private set; } = string.Empty;
     public string CustomJavaLabel { get; private set; } = string.Empty;
+    public string CustomJavaHint { get; private set; } = string.Empty;
     public string CustomJavaPathPlaceholder { get; private set; } = string.Empty;
+    public string SelectLabel { get; private set; } = string.Empty;
+    public string RamAllocationLabel { get; private set; } = string.Empty;
+    public string MaximumRamLabel { get; private set; } = string.Empty;
+    public string InitialRamLabel { get; private set; } = string.Empty;
     public string JavaArgumentsLabel { get; private set; } = string.Empty;
     public string JavaArgumentsHint { get; private set; } = string.Empty;
+    public string JavaArgumentsPlaceholder { get; private set; } = string.Empty;
     public string GpuLabel { get; private set; } = string.Empty;
     public string GpuHint { get; private set; } = string.Empty;
     public string EnvPresetsLabel { get; private set; } = string.Empty;
@@ -165,22 +222,9 @@ public sealed partial class SettingsViewModel : ObservableObject
     public string AboutDescription { get; private set; } = string.Empty;
     public string AboutDisclaimer { get; private set; } = string.Empty;
     public string BugReportLabel { get; private set; } = string.Empty;
-    public string ReplayIntroLabel { get; private set; } = string.Empty;
-    public string DeveloperWarning { get; private set; } = string.Empty;
 
-    public string ActiveCategoryTitle => SelectedCategory switch
-    {
-        "downloads" => DownloadsTitle,
-        "java" => JavaTitle,
-        "visual" => VisualTitle,
-        "network" => NetworkTitle,
-        "graphics" => GraphicsTitle,
-        "variables" => VariablesTitle,
-        "data" => DataTitle,
-        "about" => AboutTitle,
-        "developer" => DeveloperTitle,
-        _ => GeneralTitle
-    };
+    public string ActiveCategoryTitle =>
+        Categories.FirstOrDefault(category => category.Id == SelectedCategory)?.Label ?? GeneralTitle;
 
     public bool IsGeneral => SelectedCategory == "general";
     public bool IsDownloads => SelectedCategory == "downloads";
@@ -191,14 +235,13 @@ public sealed partial class SettingsViewModel : ObservableObject
     public bool IsVariables => SelectedCategory == "variables";
     public bool IsData => SelectedCategory == "data";
     public bool IsAbout => SelectedCategory == "about";
-    public bool IsDeveloper => SelectedCategory == "developer";
-
     public void RefreshLocalization()
     {
         PageTitle = _localizer["dock.settings"];
         PageDescription = _localizer["desktopSettings.description"];
         BackLabel = _localizer["common.back"];
-        GeneralTitle = _localizer["settings.generalSettings.title"];
+        LanguageCategoryTitle = _localizer["desktopSettings.categories.language"];
+        GeneralTitle = _localizer["desktopSettings.categories.miscellaneous"];
         DownloadsTitle = _localizer["settings.downloads.title"];
         JavaTitle = _localizer["settings.java"];
         VisualTitle = _localizer["settings.visualSettings.title"];
@@ -207,7 +250,6 @@ public sealed partial class SettingsViewModel : ObservableObject
         VariablesTitle = _localizer["settings.variablesSettings.title"];
         DataTitle = _localizer["settings.dataSettings.title"];
         AboutTitle = _localizer["settings.aboutSettings.title"];
-        DeveloperTitle = _localizer["settings.developerSettings.title"];
         SaveLabel = _localizer["common.save"];
         LanguageLabel = _localizer["settings.languageSettings.interfaceLanguage"];
         LanguageHint = _localizer["settings.languageSettings.interfaceLanguageHint"];
@@ -232,11 +274,18 @@ public sealed partial class SettingsViewModel : ObservableObject
         DualAuthLabel = _localizer["settings.generalSettings.dualAuth"];
         DualAuthHint = _localizer["settings.generalSettings.dualAuthHint"];
         JavaRuntimeLabel = _localizer["settings.javaSettings.javaRuntime"];
-        JavaRuntimeHint = _localizer["settings.javaSettings.javaRuntimeHint"];
+        BundledJavaLabel = _localizer["settings.javaSettings.useBundledJava"];
+        BundledJavaHint = _localizer["settings.javaSettings.useBundledJavaHint"];
         CustomJavaLabel = _localizer["settings.javaSettings.useCustomJava"];
+        CustomJavaHint = _localizer["settings.javaSettings.useCustomJavaHint"];
         CustomJavaPathPlaceholder = _localizer["settings.javaSettings.customJavaPathPlaceholder"];
+        SelectLabel = _localizer["common.select"];
+        RamAllocationLabel = _localizer["settings.javaSettings.ramAllocation"];
+        MaximumRamLabel = _localizer["settings.javaSettings.maxRam"];
+        InitialRamLabel = _localizer["settings.javaSettings.initialRam"];
         JavaArgumentsLabel = _localizer["settings.javaSettings.jvmArguments"];
         JavaArgumentsHint = _localizer["settings.javaSettings.jvmArgumentsHint"];
+        JavaArgumentsPlaceholder = _localizer["settings.javaSettings.jvmArgumentsPlaceholder"];
         GpuLabel = _localizer["settings.graphicsSettings.gpuPreference"];
         GpuHint = _localizer["settings.graphicsSettings.gpuPreferenceHint"];
         EnvPresetsLabel = _localizer["settings.variablesSettings.commonPresets"];
@@ -249,19 +298,16 @@ public sealed partial class SettingsViewModel : ObservableObject
         AboutDescription = _localizer["settings.aboutSettings.description"];
         AboutDisclaimer = _localizer["settings.aboutSettings.disclaimer"];
         BugReportLabel = _localizer["settings.aboutSettings.bugReport"];
-        ReplayIntroLabel = _localizer["settings.aboutSettings.replayIntro"];
-        DeveloperWarning = _localizer["settings.developerSettings.warning"];
 
         UpdateCategoryLabel("general", _localizer["settings.general"]);
         UpdateCategoryLabel("downloads", _localizer["settings.downloads.title"]);
         UpdateCategoryLabel("java", _localizer["settings.java"]);
-        UpdateCategoryLabel("visual", _localizer["settings.visual"]);
+        UpdateCategoryLabel("visual", _localizer["desktopSettings.categories.appearance"]);
         UpdateCategoryLabel("network", _localizer["settings.network"]);
         UpdateCategoryLabel("graphics", _localizer["settings.graphics"]);
         UpdateCategoryLabel("variables", _localizer["settings.variables"]);
         UpdateCategoryLabel("data", _localizer["settings.data"]);
         UpdateCategoryLabel("about", _localizer["settings.about"]);
-        UpdateCategoryLabel("developer", _localizer["settings.developer"]);
         UpdateCategoryDescription("general", _localizer["settings.categoryDescriptions.general"]);
         UpdateCategoryDescription("downloads", _localizer["settings.categoryDescriptions.downloads"]);
         UpdateCategoryDescription("java", _localizer["settings.categoryDescriptions.java"]);
@@ -271,8 +317,8 @@ public sealed partial class SettingsViewModel : ObservableObject
         UpdateCategoryDescription("variables", _localizer["settings.categoryDescriptions.variables"]);
         UpdateCategoryDescription("data", _localizer["settings.categoryDescriptions.data"]);
         UpdateCategoryDescription("about", _localizer["settings.categoryDescriptions.about"]);
-        UpdateCategoryDescription("developer", _localizer["settings.categoryDescriptions.developer"]);
-        UpdateChoiceDisplay(Backgrounds, "auto", _localizer["settings.visualSettings.autoShuffle"]);
+        Backgrounds.First(choice => choice.Value == "auto").Display =
+            _localizer["settings.visualSettings.autoShuffle"];
         UpdateChoiceDisplay(GpuPreferences, "dedicated", _localizer["settings.graphicsSettings.gpu_dedicated"]);
         UpdateChoiceDisplay(GpuPreferences, "integrated", _localizer["settings.graphicsSettings.gpu_integrated"]);
         UpdateChoiceDisplay(GpuPreferences, "auto", _localizer["settings.graphicsSettings.gpu_auto"]);
@@ -291,7 +337,14 @@ public sealed partial class SettingsViewModel : ObservableObject
         if (_localizer.SetLanguage(value.Value))
             _settings.SetLanguage(_localizer.CurrentLanguage);
     }
-    partial void OnSelectedBackgroundChanged(SettingChoiceViewModel value) => _settings.SetBackgroundMode(value.Value);
+    partial void OnSelectedBackgroundChanged(BackgroundChoiceViewModel value)
+    {
+        if (value is null)
+            return;
+
+        UpdateSelectedBackgroundState();
+        _settings.SetBackgroundMode(value.Value);
+    }
     partial void OnSelectedGpuPreferenceChanged(SettingChoiceViewModel value) => _settings.SetGpuPreference(value.Value);
     partial void OnCloseAfterLaunchChanged(bool value) => _settings.SetCloseAfterLaunch(value);
     partial void OnLaunchAfterDownloadChanged(bool value) => _settings.SetLaunchAfterDownload(value);
@@ -301,7 +354,39 @@ public sealed partial class SettingsViewModel : ObservableObject
     partial void OnShowDiscordAnnouncementsChanged(bool value) => _settings.SetShowDiscordAnnouncements(value);
     partial void OnOnlineModeChanged(bool value) => _settings.SetOnlineMode(value);
     partial void OnUseDualAuthChanged(bool value) => _settings.SetUseDualAuth(value);
-    partial void OnUseCustomJavaChanged(bool value) => _settings.SetUseCustomJava(value);
+    partial void OnUseCustomJavaChanged(bool value)
+    {
+        JavaPathError = string.Empty;
+        _settings.SetUseCustomJava(value);
+    }
+
+    partial void OnCustomJavaPathChanged(string value) => JavaPathError = string.Empty;
+    partial void OnJavaArgumentsChanged(string value)
+    {
+        if (_updatingJavaArguments)
+            return;
+
+        var withoutHeap = JvmArgumentBuilder.RemoveHeapArguments(value);
+        if (JvmArgumentBuilder.ContainsHeapArguments(value))
+        {
+            _updatingJavaArguments = true;
+            try
+            {
+                JavaArguments = withoutHeap;
+            }
+            finally
+            {
+                _updatingJavaArguments = false;
+            }
+
+            JavaArgumentsError = _localizer["settings.javaSettings.jvmMemoryArgumentsManaged"];
+            return;
+        }
+
+        JavaArgumentsError = string.Empty;
+    }
+    partial void OnJavaMaximumRamMbChanged(double value) => PersistJavaMemory();
+    partial void OnJavaInitialRamMbChanged(double value) => PersistJavaMemory();
 
     [RelayCommand]
     private void SelectCategory(SettingCategoryViewModel? category)
@@ -323,10 +408,65 @@ public sealed partial class SettingsViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void SaveJava()
+    private void SelectBundledJava() => UseCustomJava = false;
+
+    [RelayCommand]
+    private void SelectCustomJava() => UseCustomJava = true;
+
+    [RelayCommand]
+    private void SelectBackground(BackgroundChoiceViewModel? background)
     {
-        _settings.SetCustomJavaPath(CustomJavaPath);
-        _settings.SetJavaArguments(JavaArguments);
+        if (background is not null && !ReferenceEquals(SelectedBackground, background))
+            SelectedBackground = background;
+    }
+
+    [RelayCommand]
+    private async Task BrowseJava()
+    {
+        if (_fileDialog is null)
+            return;
+
+        var selectedPath = await _fileDialog.BrowseJavaExecutableAsync();
+        if (!string.IsNullOrWhiteSpace(selectedPath))
+            CustomJavaPath = selectedPath;
+    }
+
+    [RelayCommand]
+    private void SaveJavaPath()
+    {
+        var normalizedPath = CustomJavaPath.Trim();
+        if (normalizedPath.Length == 0)
+        {
+            JavaPathError = _localizer["settings.javaSettings.customJavaPathRequired"];
+            return;
+        }
+
+        if (!File.Exists(normalizedPath))
+        {
+            JavaPathError = _localizer["settings.javaSettings.customJavaPathNotFound"];
+            return;
+        }
+
+        CustomJavaPath = normalizedPath;
+        JavaPathError = string.Empty;
+        _settings.SetCustomJavaPath(normalizedPath);
+        UseCustomJava = true;
+        ShowSaved();
+    }
+
+    [RelayCommand]
+    private void SaveJavaArguments()
+    {
+        var withoutHeap = JvmArgumentBuilder.RemoveHeapArguments(JavaArguments);
+        var sanitized = JvmArgumentBuilder.Sanitize(withoutHeap);
+        var containedBlockedArguments =
+            !string.Equals(sanitized, withoutHeap.Trim(), StringComparison.Ordinal);
+
+        JavaArguments = sanitized;
+        JavaArgumentsError = containedBlockedArguments
+            ? _localizer["settings.javaSettings.jvmArgumentsBlocked"]
+            : string.Empty;
+        _settings.SetJavaArguments(BuildPersistedJavaArguments(sanitized));
         ShowSaved();
     }
 
@@ -337,13 +477,6 @@ public sealed partial class SettingsViewModel : ObservableObject
         ShowSaved();
     }
 
-    [RelayCommand]
-    private void ResetOnboarding()
-    {
-        _settings.ResetOnboarding();
-        ShowSaved();
-    }
-
     [RelayCommand] private void OpenGitHub() => _browser.OpenURL("https://github.com/HyPrismTeam/HyPrism");
     [RelayCommand] private void OpenDiscord() => _browser.OpenURL("https://discord.gg/hyprism");
     [RelayCommand] private void OpenBugReport() => _browser.OpenURL("https://github.com/HyPrismTeam/HyPrism/issues/new");
@@ -351,8 +484,65 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     private void ShowSaved() => StatusMessage = "✓";
 
+    private void PersistJavaMemory()
+    {
+        if (_updatingJavaMemory)
+            return;
+
+        _updatingJavaMemory = true;
+        try
+        {
+            var normalizedMaximum = NormalizeJavaMemory(JavaMaximumRamMb, MaximumJavaRamMb);
+            var normalizedInitial = NormalizeJavaMemory(JavaInitialRamMb, normalizedMaximum);
+            JavaMaximumRamMb = normalizedMaximum;
+            JavaInitialRamMb = normalizedInitial;
+
+            _settings.SetJavaArguments(BuildPersistedJavaArguments(JavaArguments));
+
+            OnPropertyChanged(nameof(JavaMaximumRamValue));
+            OnPropertyChanged(nameof(JavaInitialRamValue));
+            OnPropertyChanged(nameof(JavaInitialRamMaximum));
+        }
+        finally
+        {
+            _updatingJavaMemory = false;
+        }
+    }
+
+    private static double NormalizeJavaMemory(double value, double maximum)
+    {
+        var rounded = Math.Round(value / JavaMemoryStepMb, MidpointRounding.AwayFromZero) * JavaMemoryStepMb;
+        return Math.Clamp(rounded, MinimumJavaMemoryMb, maximum);
+    }
+
+    private string BuildPersistedJavaArguments(string customArguments)
+    {
+        var updated = JvmArgumentBuilder.SetMaximumHeapMb(customArguments, (int)JavaMaximumRamMb);
+        return JvmArgumentBuilder.SetInitialHeapMb(updated, (int)JavaInitialRamMb);
+    }
+
+    private void UpdateSelectedBackgroundState()
+    {
+        foreach (var background in Backgrounds)
+            background.IsSelected = ReferenceEquals(background, SelectedBackground);
+    }
+
+    private static string FormatMemory(double memoryMb)
+    {
+        var memoryGb = memoryMb / 1024;
+        return Math.Abs(memoryGb - Math.Round(memoryGb)) < 0.001
+            ? $"{memoryGb:0} GB"
+            : $"{memoryGb:0.#} GB";
+    }
+
     private static SettingChoiceViewModel FindChoice(
         IEnumerable<SettingChoiceViewModel> choices,
+        string? value)
+        => choices.FirstOrDefault(choice => string.Equals(choice.Value, value, StringComparison.OrdinalIgnoreCase))
+           ?? choices.First();
+
+    private static BackgroundChoiceViewModel FindBackgroundChoice(
+        IEnumerable<BackgroundChoiceViewModel> choices,
         string? value)
         => choices.FirstOrDefault(choice => string.Equals(choice.Value, value, StringComparison.OrdinalIgnoreCase))
            ?? choices.First();
@@ -375,6 +565,34 @@ public sealed partial class SettingsViewModel : ObservableObject
         return separatorIndex >= 0
             ? cultureName[(separatorIndex + 1)..].ToUpperInvariant()
             : cultureName.ToUpperInvariant();
+    }
+}
+
+public sealed partial class BackgroundChoiceViewModel : ObservableObject
+{
+    public BackgroundChoiceViewModel(string value, string display, IEnumerable<string> previewNames)
+    {
+        Value = value;
+        _display = display;
+        Previews = new ObservableCollection<Bitmap>(previewNames.Select(LoadPreview));
+    }
+
+    public string Value { get; }
+    public bool IsAuto => string.Equals(Value, "auto", StringComparison.Ordinal);
+    public bool IsSingle => !IsAuto;
+    public ObservableCollection<Bitmap> Previews { get; }
+    public Bitmap? Preview => Previews.FirstOrDefault();
+    public Bitmap? PreviewOne => Previews.ElementAtOrDefault(0);
+    public Bitmap? PreviewTwo => Previews.ElementAtOrDefault(1);
+    public Bitmap? PreviewThree => Previews.ElementAtOrDefault(2);
+    [ObservableProperty] private string _display;
+    [ObservableProperty] private bool _isSelected;
+
+    private static Bitmap LoadPreview(string name)
+    {
+        var uri = new Uri($"avares://HyPrism.Desktop/Assets/Backgrounds/{name}");
+        using var stream = AssetLoader.Open(uri);
+        return Bitmap.DecodeToWidth(stream, 360, BitmapInterpolationMode.MediumQuality);
     }
 }
 

@@ -1650,9 +1650,6 @@ Sürücü değiştirirseniz oyunu yeniden yüklemeniz gerekebilir.</value>
   <data name="settings.categoryDescriptions.data" xml:space="preserve">
     <value>Başlatıcı dosyaları, oyun sürümleri ve önbellek</value>
   </data>
-  <data name="settings.categoryDescriptions.developer" xml:space="preserve">
-    <value>Deneysel özellikler ve başlangıç araçları</value>
-  </data>
   <data name="settings.categoryDescriptions.downloads" xml:space="preserve">
     <value>İndirme kaynakları, bağlantı denetimi ve oyun başlatma</value>
   </data>
@@ -1736,27 +1733,6 @@ Sürücü değiştirirseniz oyunu yeniden yüklemeniz gerekebilir.</value>
   </data>
   <data name="settings.devMode" xml:space="preserve">
     <value>Geliştirici Modu</value>
-  </data>
-  <data name="settings.developer" xml:space="preserve">
-    <value>Geliştirici</value>
-  </data>
-  <data name="settings.developerSettings.debugInfo" xml:space="preserve">
-    <value>Hata ayıklama bilgisi:</value>
-  </data>
-  <data name="settings.developerSettings.introRestart" xml:space="preserve">
-    <value>Giriş bir sonraki başlatmada gösterilecek. Lütfen başlatıcıyı yeniden başlatın.</value>
-  </data>
-  <data name="settings.developerSettings.onboarding" xml:space="preserve">
-    <value>İlk Kurulum</value>
-  </data>
-  <data name="settings.developerSettings.showIntro" xml:space="preserve">
-    <value>Sonraki Başlatmada Girişi Göster</value>
-  </data>
-  <data name="settings.developerSettings.title" xml:space="preserve">
-    <value>Geliştirici Ayarları</value>
-  </data>
-  <data name="settings.developerSettings.warning" xml:space="preserve">
-    <value>Geliştirici seçenekleri sadece test içindir</value>
   </data>
   <data name="settings.downloads.addMirror" xml:space="preserve">
     <value>Ayna Ekle</value>

@@ -102,6 +102,17 @@ public sealed partial class MainWindow : Window
     protected override void OnKeyDown(KeyEventArgs e)
     {
         if (e.Key == Key.Escape &&
+            DataContext is MainWindowViewModel { IsSettings: true } &&
+            this.GetVisualDescendants()
+                .OfType<SettingsView>()
+                .FirstOrDefault()
+                ?.TryCloseCompactContent() == true)
+        {
+            e.Handled = true;
+            return;
+        }
+
+        if (e.Key == Key.Escape &&
             DataContext is MainWindowViewModel { IsNews: true, HasSelectedNewsItem: true } viewModel)
         {
             viewModel.CloseNewsArticleCommand.Execute(null);

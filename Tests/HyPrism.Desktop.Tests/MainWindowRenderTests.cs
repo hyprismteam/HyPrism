@@ -550,7 +550,7 @@ public sealed class MainWindowRenderTests
         Assert.Equal("Офлайн-аккаунт", viewModel.AccountType);
         Assert.Equal("Загрузить ещё", viewModel.LoadMoreLabel);
         Assert.Equal(
-            "Фон, музыка, новости и объявления",
+            "Фон и отображение новостей",
             viewModel.Settings.Categories.Single(category => category.Id == "visual").Description);
         Assert.Equal(
             "Среда выполнения, путь к Java и аргументы JVM",
@@ -661,6 +661,8 @@ public sealed class MainWindowRenderTests
                 IsOfficial = isOfficialProfile
             });
         settings.Setup(service => service.GetLaunchAfterDownload()).Returns(true);
+        settings.Setup(service => service.GetAvailableBackgrounds()).Returns(
+            ["bg_1.jpg", "bg_2.jpg", "bg_3.jpg", "bg_4.png", "bg_5.jpg", "bg_6.png"]);
         news.Setup(service => service.GetNewsAsync(It.IsAny<int>(), It.IsAny<NewsSource>()))
             .ReturnsAsync(
             [
@@ -1609,16 +1611,12 @@ public sealed class MainWindowRenderTests
         var settingsRail = settingsView.FindControl<Border>("SettingsCategoryRail");
         var compactSettingsToolbar = settingsView.FindControl<Border>("CompactSettingsToolbar");
         var compactSettingsTitle = settingsView.FindControl<TextBlock>("CompactSettingsTitle");
-        var settingsHeader = settingsView.FindControl<Grid>("SettingsHeader");
-        var settingsPageSubtitle = settingsView.FindControl<TextBlock>("SettingsPageSubtitle");
         var settingsMain = settingsView.FindControl<Grid>("SettingsMain");
         Assert.NotNull(settingsScroll);
         Assert.NotNull(categoryScroll);
         Assert.NotNull(settingsRail);
         Assert.NotNull(compactSettingsToolbar);
         Assert.NotNull(compactSettingsTitle);
-        Assert.NotNull(settingsHeader);
-        Assert.NotNull(settingsPageSubtitle);
         Assert.NotNull(settingsMain);
         AssertUsesApplicationScrollBar(categoryScroll!);
         AssertUsesApplicationScrollBar(settingsScroll!);
@@ -1690,27 +1688,25 @@ public sealed class MainWindowRenderTests
         var compactSettingsLayout = settingsView.Bounds.Width < 940;
         Assert.True(settingsRail!.IsEffectivelyVisible);
         Assert.Equal(compactSettingsLayout, compactSettingsToolbar!.IsVisible);
-        Assert.Equal(!compactSettingsLayout, settingsHeader!.IsVisible);
-        Assert.Equal(!compactSettingsLayout, settingsPageSubtitle!.IsEffectivelyVisible);
         Assert.Equal(!compactSettingsLayout, settingsMain!.IsHitTestVisible);
         var categoryIcons = settingsView.GetVisualDescendants()
             .OfType<Image>()
             .Where(image => image.Classes.Contains("settingsCategoryIcon"))
             .ToArray();
-        Assert.Equal(10, categoryIcons.Length);
+        Assert.Equal(9, categoryIcons.Length);
         Assert.All(categoryIcons, icon => Assert.NotNull(icon.Source));
-        Assert.Equal(10, categoryIcons.Count(icon => icon.IsEffectivelyVisible));
+        Assert.Equal(9, categoryIcons.Count(icon => icon.IsEffectivelyVisible));
         var categoryDescriptions = settingsView.GetVisualDescendants()
             .OfType<TextBlock>()
             .Where(text => text.Classes.Contains("settingsCategoryDescription"))
             .ToArray();
-        Assert.Equal(10, categoryDescriptions.Length);
-        Assert.Equal(10, categoryDescriptions.Count(description => description.IsEffectivelyVisible));
+        Assert.Equal(9, categoryDescriptions.Length);
+        Assert.Equal(9, categoryDescriptions.Count(description => description.IsEffectivelyVisible));
         var categoryTitles = settingsView.GetVisualDescendants()
             .OfType<TextBlock>()
             .Where(text => text.Classes.Contains("settingsCategoryTitle"))
             .ToArray();
-        Assert.Equal(10, categoryTitles.Length);
+        Assert.Equal(9, categoryTitles.Length);
         Assert.All(
             categoryTitles,
             title => Assert.Equal(
@@ -1720,7 +1716,7 @@ public sealed class MainWindowRenderTests
             .OfType<Button>()
             .Where(button => button.Classes.Contains("settingsRailCategory"))
             .ToArray();
-        Assert.Equal(10, categoryButtons.Length);
+        Assert.Equal(9, categoryButtons.Length);
         Assert.All(
             categoryButtons,
             button => Assert.InRange(
@@ -1806,12 +1802,115 @@ public sealed class MainWindowRenderTests
                 Color.Parse("#18191B"),
                 Assert.IsAssignableFrom<ISolidColorBrush>(settingsRail.Background).Color);
         }
-        Assert.Contains(
-            settingsView.GetVisualDescendants().OfType<Border>(),
-            border => border.IsEffectivelyVisible && border.Classes.Contains("settingsGroup"));
-        Assert.Equal(10, viewModel.Settings.Categories.Count);
+        var visibleSettingsGroups = settingsView.GetVisualDescendants()
+            .OfType<Border>()
+            .Where(border => border.IsEffectivelyVisible && border.Classes.Contains("settingsGroup"))
+            .ToArray();
+        Assert.Equal(2, visibleSettingsGroups.Length);
+        Assert.All(visibleSettingsGroups, group =>
+        {
+            Assert.Equal(new Thickness(0), group.BorderThickness);
+            Assert.Equal(
+                Color.Parse("#151618"),
+                Assert.IsAssignableFrom<ISolidColorBrush>(group.Background).Color);
+            Assert.Equal(new CornerRadius(14), group.CornerRadius);
+
+            var rows = group.GetVisualDescendants()
+                .OfType<Border>()
+                .Where(border => border.IsEffectivelyVisible && border.Classes.Contains("settingsRow"))
+                .ToArray();
+            Assert.NotEmpty(rows);
+            Assert.All(rows.Where(row => !row.Classes.Contains("last")), row =>
+            {
+                Assert.Equal(new Thickness(0, 0, 0, 3), row.BorderThickness);
+                Assert.Equal(
+                    Color.Parse("#0D0E10"),
+                    Assert.IsAssignableFrom<ISolidColorBrush>(row.BorderBrush).Color);
+            });
+        });
+        var visibleSettingsHeadings = settingsView.GetVisualDescendants()
+            .OfType<TextBlock>()
+            .Where(text => text.IsEffectivelyVisible && text.Classes.Contains("settingsCategoryHeading"))
+            .ToArray();
+        Assert.Equal(2, visibleSettingsHeadings.Length);
+        Assert.Contains(visibleSettingsHeadings, heading => heading.Text == viewModel.Settings.LanguageCategoryTitle);
+        Assert.Contains(visibleSettingsHeadings, heading => heading.Text == viewModel.Settings.GeneralTitle);
+        Assert.DoesNotContain(
+            settingsView.GetVisualDescendants().OfType<Grid>(),
+            grid => grid.Name == "SettingsHeader");
+        Assert.Equal(9, viewModel.Settings.Categories.Count);
+        Assert.DoesNotContain(viewModel.Settings.Categories, category => category.Id == "developer");
         Assert.True(viewModel.Settings.IsGeneral);
         Assert.All(categoryButtons, AssertNoPressScale);
+
+        var javaCategory = viewModel.Settings.Categories.Single(category => category.Id == "java");
+        viewModel.Settings.SelectCategoryCommand.Execute(javaCategory);
+        Dispatcher.UIThread.RunJobs();
+        Assert.Equal(
+            3,
+            settingsView.GetVisualDescendants().OfType<Border>().Count(
+                border => border.IsEffectivelyVisible && border.Classes.Contains("settingsGroup")));
+        var javaCategoryHeadings = settingsView.GetVisualDescendants()
+            .OfType<TextBlock>()
+            .Where(text => text.IsEffectivelyVisible && text.Classes.Contains("settingsCategoryHeading"))
+            .Select(text => text.Text)
+            .ToArray();
+        Assert.Contains(viewModel.Settings.JavaRuntimeLabel, javaCategoryHeadings);
+        Assert.Contains(viewModel.Settings.RamAllocationLabel, javaCategoryHeadings);
+        Assert.Contains(viewModel.Settings.JavaArgumentsLabel, javaCategoryHeadings);
+        var maximumMemorySlider = settingsView.FindControl<Slider>("JavaMaximumMemorySlider");
+        var initialMemorySlider = settingsView.FindControl<Slider>("JavaInitialMemorySlider");
+        Assert.NotNull(maximumMemorySlider);
+        Assert.NotNull(initialMemorySlider);
+        Assert.Equal(1024, maximumMemorySlider!.Minimum);
+        Assert.Equal(viewModel.Settings.MaximumJavaRamMb, maximumMemorySlider.Maximum);
+        Assert.Equal(256, maximumMemorySlider.TickFrequency);
+        Assert.True(maximumMemorySlider.IsSnapToTickEnabled);
+        Assert.Equal(1024, initialMemorySlider!.Minimum);
+        Assert.Equal(viewModel.Settings.JavaMaximumRamMb, initialMemorySlider.Maximum);
+        Assert.Equal(256, initialMemorySlider.TickFrequency);
+        Assert.True(initialMemorySlider.IsSnapToTickEnabled);
+        Assert.True(viewModel.Settings.JavaInitialRamMb <= viewModel.Settings.JavaMaximumRamMb);
+        viewModel.Settings.JavaArguments = "-Xms1G -Xmx8G -Dfile.encoding=UTF-8";
+        Assert.Equal("-Dfile.encoding=UTF-8", viewModel.Settings.JavaArguments);
+        Assert.True(viewModel.Settings.HasJavaArgumentsError);
+        Assert.DoesNotContain(
+            settingsView.GetVisualDescendants().OfType<TextBlock>(),
+            text => string.Equals(text.Text, "G1GC", StringComparison.OrdinalIgnoreCase));
+
+        var javaSettingsPreviewPath = Environment.GetEnvironmentVariable(
+            "HYPRISM_JAVA_SETTINGS_RENDER_OUTPUT");
+        if (!string.IsNullOrWhiteSpace(javaSettingsPreviewPath) && width == 1280)
+        {
+            var javaSettingsFrame = window.CaptureRenderedFrame();
+            Assert.NotNull(javaSettingsFrame);
+            javaSettingsFrame!.Save(javaSettingsPreviewPath, PngBitmapEncoderOptions.Default);
+            Assert.True(File.Exists(javaSettingsPreviewPath));
+        }
+
+        var visualCategory = viewModel.Settings.Categories.Single(category => category.Id == "visual");
+        viewModel.Settings.SelectCategoryCommand.Execute(visualCategory);
+        Dispatcher.UIThread.RunJobs();
+        Assert.Equal(7, viewModel.Settings.Backgrounds.Count);
+        Assert.True(viewModel.Settings.Backgrounds[0].IsAuto);
+        Assert.Equal(3, viewModel.Settings.Backgrounds[0].Previews.Count);
+        Assert.Equal(
+            7,
+            settingsView.GetVisualDescendants().OfType<Button>().Count(
+                button => button.IsEffectivelyVisible && button.Classes.Contains("backgroundChoice")));
+        var visualSettingsPreviewPath = Environment.GetEnvironmentVariable(
+            "HYPRISM_VISUAL_SETTINGS_RENDER_OUTPUT");
+        if (!string.IsNullOrWhiteSpace(visualSettingsPreviewPath) && width == 1280)
+        {
+            var visualSettingsFrame = window.CaptureRenderedFrame();
+            Assert.NotNull(visualSettingsFrame);
+            visualSettingsFrame!.Save(visualSettingsPreviewPath, PngBitmapEncoderOptions.Default);
+            Assert.True(File.Exists(visualSettingsPreviewPath));
+        }
+
+        var generalCategory = viewModel.Settings.Categories.Single(category => category.Id == "general");
+        viewModel.Settings.SelectCategoryCommand.Execute(generalCategory);
+        Dispatcher.UIThread.RunJobs();
 
         var settingsPreviewPath = Environment.GetEnvironmentVariable("HYPRISM_SETTINGS_RENDER_OUTPUT");
         if (!string.IsNullOrWhiteSpace(settingsPreviewPath) && width == 1280)
@@ -1891,6 +1990,19 @@ public sealed class MainWindowRenderTests
                 Math.Abs(compactTitleCenter!.Value.X - (compactSettingsToolbar.Bounds.Width / 2)),
                 0,
                 1);
+
+            window.KeyPress(Key.Escape, RawInputModifiers.None, PhysicalKey.Escape, null);
+            await Task.Delay(340);
+            Dispatcher.UIThread.RunJobs();
+            Assert.False(settingsMain.IsHitTestVisible);
+            Assert.True(Assert.IsType<TranslateTransform>(settingsMain.RenderTransform).X > 0);
+
+            window.MouseDown(categoryPoint.Value, MouseButton.Left);
+            window.MouseUp(categoryPoint.Value, MouseButton.Left);
+            await Task.Delay(340);
+            Dispatcher.UIThread.RunJobs();
+            Assert.True(settingsMain.IsHitTestVisible);
+            Assert.Equal(0, Assert.IsType<TranslateTransform>(settingsMain.RenderTransform).X);
 
             var compactSettingsContentPreviewPath = Environment.GetEnvironmentVariable(
                 "HYPRISM_SETTINGS_COMPACT_CONTENT_RENDER_OUTPUT");

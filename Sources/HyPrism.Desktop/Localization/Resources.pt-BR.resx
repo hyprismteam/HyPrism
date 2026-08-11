@@ -1650,9 +1650,6 @@ Você pode precisar reinstalar o jogo se trocar de unidade.</value>
   <data name="settings.categoryDescriptions.data" xml:space="preserve">
     <value>Arquivos do launcher, versões do jogo e cache</value>
   </data>
-  <data name="settings.categoryDescriptions.developer" xml:space="preserve">
-    <value>Recursos experimentais e ferramentas de integração</value>
-  </data>
   <data name="settings.categoryDescriptions.downloads" xml:space="preserve">
     <value>Fontes de download, teste de conexão e inicialização do jogo</value>
   </data>
@@ -1736,27 +1733,6 @@ Você pode precisar reinstalar o jogo se trocar de unidade.</value>
   </data>
   <data name="settings.devMode" xml:space="preserve">
     <value>Modo Dev</value>
-  </data>
-  <data name="settings.developer" xml:space="preserve">
-    <value>Desenvolvedor</value>
-  </data>
-  <data name="settings.developerSettings.debugInfo" xml:space="preserve">
-    <value>Info de debug:</value>
-  </data>
-  <data name="settings.developerSettings.introRestart" xml:space="preserve">
-    <value>A introdução será exibida na próxima inicialização. Por favor, reinicie o launcher.</value>
-  </data>
-  <data name="settings.developerSettings.onboarding" xml:space="preserve">
-    <value>Onboarding</value>
-  </data>
-  <data name="settings.developerSettings.showIntro" xml:space="preserve">
-    <value>Mostrar Introdução na Próxima Inicialização</value>
-  </data>
-  <data name="settings.developerSettings.title" xml:space="preserve">
-    <value>Configurações de Desenvolvedor</value>
-  </data>
-  <data name="settings.developerSettings.warning" xml:space="preserve">
-    <value>Opções de desenvolvedor são apenas para testes</value>
   </data>
   <data name="settings.downloads.addMirror" xml:space="preserve">
     <value>Adicionar Espelho</value>

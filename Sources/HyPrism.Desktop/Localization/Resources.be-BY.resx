@@ -1650,9 +1650,6 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="settings.categoryDescriptions.data" xml:space="preserve">
     <value>Файлы лаўнчара, версіі гульні і кэш</value>
   </data>
-  <data name="settings.categoryDescriptions.developer" xml:space="preserve">
-    <value>Эксперыментальныя функцыі і кіраванне анбордынгам</value>
-  </data>
   <data name="settings.categoryDescriptions.downloads" xml:space="preserve">
     <value>Крыніцы спампоўвання, праверка злучэння і запуск гульні</value>
   </data>
@@ -1736,27 +1733,6 @@ SPDX-License-Identifier: GPL-3.0-only
   </data>
   <data name="settings.devMode" xml:space="preserve">
     <value>Рэжым распрацоўшчыка</value>
-  </data>
-  <data name="settings.developer" xml:space="preserve">
-    <value>Распрацоўшчык</value>
-  </data>
-  <data name="settings.developerSettings.debugInfo" xml:space="preserve">
-    <value>Інфармацыя для адладкі:</value>
-  </data>
-  <data name="settings.developerSettings.introRestart" xml:space="preserve">
-    <value>Уводзіны будуць паказаны пры наступным запуску. Калі ласка, перазапусціце лаўнчар.</value>
-  </data>
-  <data name="settings.developerSettings.onboarding" xml:space="preserve">
-    <value>Уводзіны</value>
-  </data>
-  <data name="settings.developerSettings.showIntro" xml:space="preserve">
-    <value>Паказаць уводзіны пры наступным запуску</value>
-  </data>
-  <data name="settings.developerSettings.title" xml:space="preserve">
-    <value>Налады распрацоўшчыка</value>
-  </data>
-  <data name="settings.developerSettings.warning" xml:space="preserve">
-    <value>Параметры распрацоўшчыка толькі для тэставання</value>
   </data>
   <data name="settings.downloads.addMirror" xml:space="preserve">
     <value>Дадаць люстэрка</value>

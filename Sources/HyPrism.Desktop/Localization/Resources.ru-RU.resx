@@ -1707,14 +1707,11 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="settings.categoryDescriptions.data" xml:space="preserve">
     <value>Файлы лаунчера, установленные версии игры и кеш</value>
   </data>
-  <data name="settings.categoryDescriptions.developer" xml:space="preserve">
-    <value>Экспериментальные функции и управление онбордингом</value>
-  </data>
   <data name="settings.categoryDescriptions.downloads" xml:space="preserve">
     <value>Источники загрузки, проверка соединения и запуск игры</value>
   </data>
   <data name="settings.categoryDescriptions.general" xml:space="preserve">
-    <value>Язык, обновления и поведение лаунчера</value>
+    <value>Язык, музыка и поведение лаунчера</value>
   </data>
   <data name="settings.categoryDescriptions.graphics" xml:space="preserve">
     <value>Выбор видеокарты для запуска Hytale</value>
@@ -1729,7 +1726,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>Переменные окружения, передаваемые Hytale</value>
   </data>
   <data name="settings.categoryDescriptions.visual" xml:space="preserve">
-    <value>Фон, музыка, новости и объявления</value>
+    <value>Фон и отображение новостей</value>
   </data>
   <data name="settings.close" xml:space="preserve">
     <value>Закрыть</value>
@@ -1793,27 +1790,6 @@ SPDX-License-Identifier: GPL-3.0-only
   </data>
   <data name="settings.devMode" xml:space="preserve">
     <value>Режим разработчика</value>
-  </data>
-  <data name="settings.developer" xml:space="preserve">
-    <value>Разработчик</value>
-  </data>
-  <data name="settings.developerSettings.debugInfo" xml:space="preserve">
-    <value>Отладочная информация:</value>
-  </data>
-  <data name="settings.developerSettings.introRestart" xml:space="preserve">
-    <value>Вступление отобразится при следующем запуске. Перезапустите лаунчер.</value>
-  </data>
-  <data name="settings.developerSettings.onboarding" xml:space="preserve">
-    <value>Онбординг</value>
-  </data>
-  <data name="settings.developerSettings.showIntro" xml:space="preserve">
-    <value>Показать вступление при следующем запуске</value>
-  </data>
-  <data name="settings.developerSettings.title" xml:space="preserve">
-    <value>Настройки разработчика</value>
-  </data>
-  <data name="settings.developerSettings.warning" xml:space="preserve">
-    <value>Опции разработчика предназначены только для тестирования</value>
   </data>
   <data name="settings.downloads.addMirror" xml:space="preserve">
     <value>Добавить зеркало</value>
@@ -2134,7 +2110,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>Начальная RAM (-Xms)</value>
   </data>
   <data name="settings.javaSettings.javaRuntime" xml:space="preserve">
-    <value>Java runtime</value>
+    <value>Рантайм</value>
   </data>
   <data name="settings.javaSettings.javaRuntimeHint" xml:space="preserve">
     <value>Выберите, какой Java-исполняемый файл использовать для запуска однопользовательского сервера</value>
@@ -2144,6 +2120,9 @@ SPDX-License-Identifier: GPL-3.0-only
   </data>
   <data name="settings.javaSettings.jvmArgumentsBlocked" xml:space="preserve">
     <value>Часть опасных или управляемых JVM-флагов была удалена перед сохранением</value>
+  </data>
+  <data name="settings.javaSettings.jvmMemoryArgumentsManaged" xml:space="preserve">
+    <value>-Xms и -Xmx настраиваются ползунками выделения памяти</value>
   </data>
   <data name="settings.javaSettings.jvmArgumentsHint" xml:space="preserve">
     <value>Дополнительные флаги для однопользовательского сервера. Сохраняются в JAVA_TOOL_OPTIONS</value>
@@ -2158,7 +2137,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>Рекомендуемый максимум: {{value}}</value>
   </data>
   <data name="settings.javaSettings.ramAllocation" xml:space="preserve">
-    <value>Выделение RAM (сервер)</value>
+    <value>Выделение памяти</value>
   </data>
   <data name="settings.javaSettings.ramAllocationHint" xml:space="preserve">
     <value>Настраивает максимальную память Java (-Xmx) для однопользовательского сервера через слайдер</value>
@@ -2495,5 +2474,14 @@ SPDX-License-Identifier: GPL-3.0-only
   </data>
   <data name="wrapper.updateAvailable" xml:space="preserve">
     <value>Доступно обновление</value>
+  </data>
+  <data name="desktopSettings.categories.language" xml:space="preserve">
+    <value>Язык</value>
+  </data>
+  <data name="desktopSettings.categories.miscellaneous" xml:space="preserve">
+    <value>Прочее</value>
+  </data>
+  <data name="desktopSettings.categories.appearance" xml:space="preserve">
+    <value>Внешний вид</value>
   </data>
 </root>

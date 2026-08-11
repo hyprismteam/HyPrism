@@ -920,26 +920,35 @@ SPDX-License-Identifier: GPL-3.0-only
   </Style>
 
   <Style Selector="Border.settingsGroup">
-    <Setter Property="Background" Value="#0E0F11" />
-    <Setter Property="BorderBrush" Value="#10FFFFFF" />
-    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="Background" Value="#151618" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
     <Setter Property="CornerRadius" Value="14" />
     <Setter Property="ClipToBounds" Value="True" />
   </Style>
 
-  <Style Selector="Border.settingsFormGroup">
-    <Setter Property="Padding" Value="18" />
+  <Style Selector="TextBlock.settingsCategoryHeading">
+    <Setter Property="Margin" Value="4,0,4,2" />
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+    <Setter Property="FontSize" Value="18" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="TextWrapping" Value="Wrap" />
   </Style>
 
   <Style Selector="Border.settingsRow">
     <Setter Property="MinHeight" Value="66" />
-    <Setter Property="Padding" Value="18,13" />
-    <Setter Property="BorderBrush" Value="#10FFFFFF" />
-    <Setter Property="BorderThickness" Value="0,0,0,1" />
+    <Setter Property="Padding" Value="18,14" />
+    <Setter Property="BorderBrush" Value="{DynamicResource SurfaceBrush}" />
+    <Setter Property="BorderThickness" Value="0,0,0,3" />
   </Style>
 
   <Style Selector="Border.settingsRow.last">
     <Setter Property="BorderThickness" Value="0" />
+  </Style>
+
+  <Style Selector="Border.settingsRow.runtime">
+    <Setter Property="MinHeight" Value="0" />
+    <Setter Property="Padding" Value="0" />
   </Style>
 
   <Style Selector="TextBlock.settingsLabel">
@@ -955,20 +964,174 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="TextWrapping" Value="Wrap" />
   </Style>
 
-  <Style Selector="Border.settingsInfoCard">
-    <Setter Property="Background" Value="#0AFFFFFF" />
-    <Setter Property="BorderBrush" Value="#12FFFFFF" />
-    <Setter Property="BorderThickness" Value="1" />
-    <Setter Property="CornerRadius" Value="14" />
-    <Setter Property="Padding" Value="18" />
+  <Style Selector="TextBlock.settingsError">
+    <Setter Property="Foreground" Value="#FF9B9B" />
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="TextWrapping" Value="Wrap" />
   </Style>
 
-  <Style Selector="Border.settingsWarningCard">
-    <Setter Property="Background" Value="#14FFC04A" />
-    <Setter Property="BorderBrush" Value="#30FFC04A" />
-    <Setter Property="BorderThickness" Value="1" />
-    <Setter Property="CornerRadius" Value="14" />
-    <Setter Property="Padding" Value="18" />
+  <Style Selector="TextBlock.settingsWarningText">
+    <Setter Property="Foreground" Value="#FFD477" />
+    <Setter Property="FontSize" Value="13" />
+    <Setter Property="LineHeight" Value="19" />
+  </Style>
+
+  <Style Selector="Button.javaRuntimeOption">
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Setter Property="MinHeight" Value="58" />
+    <Setter Property="Padding" Value="18,10" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="CornerRadius" Value="0" />
+    <Setter Property="RenderTransform" Value="{x:Null}" />
+    <Setter Property="Transitions">
+      <Transitions>
+        <BrushTransition Property="Background" Duration="0:0:0.16" />
+      </Transitions>
+    </Setter>
+  </Style>
+
+  <Style Selector="Button.javaRuntimeOption:pointerover">
+    <Setter Property="Background" Value="#0AFFFFFF" />
+    <Setter Property="RenderTransform" Value="{x:Null}" />
+  </Style>
+
+  <Style Selector="Button.javaRuntimeOption:pressed">
+    <Setter Property="Background" Value="#10FFFFFF" />
+    <Setter Property="RenderTransform" Value="{x:Null}" />
+  </Style>
+
+  <Style Selector="Button.javaRuntimeOption.selected">
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+
+  <Style Selector="Button.javaRuntimeOption.selected:pointerover">
+    <Setter Property="Background" Value="#0AFFFFFF" />
+  </Style>
+
+  <Style Selector="Border.javaRadioIndicator">
+    <Setter Property="Width" Value="19" />
+    <Setter Property="Height" Value="19" />
+    <Setter Property="Padding" Value="4" />
+    <Setter Property="Background" Value="#0F1012" />
+    <Setter Property="BorderBrush" Value="#78FFFFFF" />
+    <Setter Property="BorderThickness" Value="1.5" />
+    <Setter Property="CornerRadius" Value="999" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+
+  <Style Selector="Button.javaRuntimeOption.selected Border.javaRadioIndicator">
+    <Setter Property="BorderBrush" Value="#FFFFFF" />
+  </Style>
+
+  <Style Selector="Ellipse.javaRadioDot">
+    <Setter Property="Fill" Value="#FFFFFF" />
+  </Style>
+
+  <Style Selector="Button.backgroundChoice">
+    <Setter Property="Width" Value="166" />
+    <Setter Property="Height" Value="96" />
+    <Setter Property="Margin" Value="0,0,12,12" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="Background" Value="#1B1C1F" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="CornerRadius" Value="12" />
+    <Setter Property="ClipToBounds" Value="True" />
+    <Setter Property="RenderTransform" Value="{x:Null}" />
+    <Setter Property="Cursor" Value="Hand" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Background="{TemplateBinding Background}"
+                BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="{TemplateBinding BorderThickness}"
+                CornerRadius="{TemplateBinding CornerRadius}"
+                ClipToBounds="True">
+          <ContentPresenter Content="{TemplateBinding Content}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}"
+                            HorizontalContentAlignment="Stretch"
+                            VerticalContentAlignment="Stretch" />
+        </Border>
+      </ControlTemplate>
+    </Setter>
+    <Setter Property="Transitions">
+      <Transitions>
+        <BrushTransition Property="Background" Duration="0:0:0.16" />
+      </Transitions>
+    </Setter>
+  </Style>
+
+  <Style Selector="Button.backgroundChoice:pointerover">
+    <Setter Property="Background" Value="#24262A" />
+    <Setter Property="RenderTransform" Value="{x:Null}" />
+  </Style>
+
+  <Style Selector="Button.backgroundChoice:pressed">
+    <Setter Property="RenderTransform" Value="{x:Null}" />
+  </Style>
+
+  <Style Selector="Border.backgroundAutoLabel">
+    <Setter Property="HorizontalAlignment" Value="Left" />
+    <Setter Property="VerticalAlignment" Value="Bottom" />
+    <Setter Property="Margin" Value="9" />
+    <Setter Property="Padding" Value="8,4" />
+    <Setter Property="CornerRadius" Value="7" />
+    <Setter Property="Background" Value="#B20D0E10" />
+  </Style>
+
+  <Style Selector="Border.backgroundAutoLabel TextBlock">
+    <Setter Property="Foreground" Value="White" />
+    <Setter Property="FontSize" Value="11" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+
+  <Style Selector="Border.backgroundSelectedIndicator">
+    <Setter Property="BorderBrush" Value="#EFFFFFFF" />
+    <Setter Property="BorderThickness" Value="2" />
+    <Setter Property="CornerRadius" Value="12" />
+    <Setter Property="IsHitTestVisible" Value="False" />
+  </Style>
+
+  <Style Selector="Button.javaInlineAction">
+    <Setter Property="Height" Value="36" />
+    <Setter Property="Padding" Value="14,0" />
+    <Setter Property="Background" Value="#18191C" />
+    <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="CornerRadius" Value="10" />
+    <Setter Property="RenderTransform" Value="{x:Null}" />
+    <Setter Property="Transitions">
+      <Transitions>
+        <BrushTransition Property="Background" Duration="0:0:0.16" />
+        <BrushTransition Property="Foreground" Duration="0:0:0.16" />
+      </Transitions>
+    </Setter>
+  </Style>
+
+  <Style Selector="Button.javaInlineAction:pointerover">
+    <Setter Property="Background" Value="#202124" />
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+    <Setter Property="RenderTransform" Value="{x:Null}" />
+  </Style>
+
+  <Style Selector="Button.javaInlineAction:pressed">
+    <Setter Property="RenderTransform" Value="{x:Null}" />
+  </Style>
+
+  <Style Selector="Border.javaMemoryCard">
+    <Setter Property="Padding" Value="2,6" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="CornerRadius" Value="0" />
+  </Style>
+
+  <Style Selector="TextBlock.javaMemoryValue">
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+    <Setter Property="FontSize" Value="14" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="VerticalAlignment" Value="Center" />
   </Style>
 
   <Style Selector="Border.settingsCodeLine">

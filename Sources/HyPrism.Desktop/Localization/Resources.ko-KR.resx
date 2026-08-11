@@ -1650,9 +1650,6 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="settings.categoryDescriptions.data" xml:space="preserve">
     <value>런처 파일, 게임 버전 및 캐시</value>
   </data>
-  <data name="settings.categoryDescriptions.developer" xml:space="preserve">
-    <value>실험적 기능 및 온보딩 도구</value>
-  </data>
   <data name="settings.categoryDescriptions.downloads" xml:space="preserve">
     <value>다운로드 소스, 연결 확인 및 게임 실행</value>
   </data>
@@ -1736,27 +1733,6 @@ SPDX-License-Identifier: GPL-3.0-only
   </data>
   <data name="settings.devMode" xml:space="preserve">
     <value>개발자 모드</value>
-  </data>
-  <data name="settings.developer" xml:space="preserve">
-    <value>개발자</value>
-  </data>
-  <data name="settings.developerSettings.debugInfo" xml:space="preserve">
-    <value>디버그 정보:</value>
-  </data>
-  <data name="settings.developerSettings.introRestart" xml:space="preserve">
-    <value>다음 실행 시 소개가 표시됩니다. 런처를 다시 시작하세요.</value>
-  </data>
-  <data name="settings.developerSettings.onboarding" xml:space="preserve">
-    <value>온보딩</value>
-  </data>
-  <data name="settings.developerSettings.showIntro" xml:space="preserve">
-    <value>다음 실행 시 소개 표시</value>
-  </data>
-  <data name="settings.developerSettings.title" xml:space="preserve">
-    <value>개발자 설정</value>
-  </data>
-  <data name="settings.developerSettings.warning" xml:space="preserve">
-    <value>개발자 옵션은 테스트 전용입니다</value>
   </data>
   <data name="settings.downloads.addMirror" xml:space="preserve">
     <value>미러 추가</value>

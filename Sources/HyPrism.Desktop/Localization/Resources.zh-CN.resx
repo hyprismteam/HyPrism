@@ -1650,9 +1650,6 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="settings.categoryDescriptions.data" xml:space="preserve">
     <value>启动器文件、游戏版本和缓存</value>
   </data>
-  <data name="settings.categoryDescriptions.developer" xml:space="preserve">
-    <value>实验性功能和新手引导工具</value>
-  </data>
   <data name="settings.categoryDescriptions.downloads" xml:space="preserve">
     <value>下载源、连接检测和游戏启动</value>
   </data>
@@ -1736,27 +1733,6 @@ SPDX-License-Identifier: GPL-3.0-only
   </data>
   <data name="settings.devMode" xml:space="preserve">
     <value>开发模式</value>
-  </data>
-  <data name="settings.developer" xml:space="preserve">
-    <value>开发者</value>
-  </data>
-  <data name="settings.developerSettings.debugInfo" xml:space="preserve">
-    <value>调试信息：</value>
-  </data>
-  <data name="settings.developerSettings.introRestart" xml:space="preserve">
-    <value>介绍将在下次启动时显示。请重启启动器。</value>
-  </data>
-  <data name="settings.developerSettings.onboarding" xml:space="preserve">
-    <value>引导流程</value>
-  </data>
-  <data name="settings.developerSettings.showIntro" xml:space="preserve">
-    <value>下次启动时显示介绍</value>
-  </data>
-  <data name="settings.developerSettings.title" xml:space="preserve">
-    <value>开发者设置</value>
-  </data>
-  <data name="settings.developerSettings.warning" xml:space="preserve">
-    <value>开发者选项仅供测试使用</value>
   </data>
   <data name="settings.downloads.addMirror" xml:space="preserve">
     <value>添加镜像</value>

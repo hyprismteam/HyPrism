@@ -73,6 +73,81 @@ SPDX-License-Identifier: GPL-3.0-only
       </Style>
     </ControlTheme>
 
+    <ControlTheme x:Key="JavaSliderTrackButtonTheme" TargetType="RepeatButton">
+      <Setter Property="Template">
+        <ControlTemplate>
+          <Border Height="8"
+                  VerticalAlignment="Center"
+                  Background="{TemplateBinding Background}"
+                  CornerRadius="999">
+            <Border.Transitions>
+              <Transitions>
+                <BrushTransition Property="Background" Duration="0:0:0.16" />
+              </Transitions>
+            </Border.Transitions>
+          </Border>
+        </ControlTemplate>
+      </Setter>
+    </ControlTheme>
+
+    <ControlTheme x:Key="JavaSliderThumbTheme" TargetType="Thumb">
+      <Setter Property="Width" Value="18" />
+      <Setter Property="Height" Value="18" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <Border x:Name="JavaSliderThumbVisual"
+                  Width="{TemplateBinding Width}"
+                  Height="{TemplateBinding Height}"
+                  Background="{TemplateBinding Background}"
+                  CornerRadius="999"
+                  BoxShadow="0 2 6 0 #99000000">
+            <Border.Transitions>
+              <Transitions>
+                <BrushTransition Property="Background" Duration="0:0:0.16" />
+              </Transitions>
+            </Border.Transitions>
+          </Border>
+        </ControlTemplate>
+      </Setter>
+    </ControlTheme>
+
+    <ControlTheme x:Key="JavaMemorySliderTheme" TargetType="Slider">
+      <Setter Property="Height" Value="28" />
+      <Setter Property="Background" Value="#24FFFFFF" />
+      <Setter Property="Foreground" Value="#E8E8EA" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="FocusAdorner" Value="{x:Null}" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <Grid Background="Transparent">
+            <Track x:Name="PART_Track"
+                   Minimum="{TemplateBinding Minimum}"
+                   Maximum="{TemplateBinding Maximum}"
+                   Value="{TemplateBinding Value, Mode=TwoWay}"
+                   Orientation="Horizontal">
+              <Track.DecreaseButton>
+                <RepeatButton Theme="{StaticResource JavaSliderTrackButtonTheme}"
+                              Background="{TemplateBinding Foreground}" />
+              </Track.DecreaseButton>
+              <Track.IncreaseButton>
+                <RepeatButton Theme="{StaticResource JavaSliderTrackButtonTheme}"
+                              Background="{TemplateBinding Background}" />
+              </Track.IncreaseButton>
+              <Track.Thumb>
+                <Thumb x:Name="JavaMemorySliderThumb"
+                       Theme="{StaticResource JavaSliderThumbTheme}"
+                       Background="{TemplateBinding Foreground}" />
+              </Track.Thumb>
+            </Track>
+          </Grid>
+        </ControlTemplate>
+      </Setter>
+      <Style Selector="^:pointerover">
+        <Setter Property="Background" Value="#32FFFFFF" />
+        <Setter Property="Foreground" Value="#FFFFFF" />
+      </Style>
+    </ControlTheme>
+
     <DataTemplate x:Key="SettingRailCategoryTemplate" x:DataType="vm:SettingCategoryViewModel">
       <Button Classes="settingsRailCategory"
               Classes.compact="{Binding DataContext.IsCompactLayout, ElementName=SettingsRoot}"
@@ -133,7 +208,7 @@ SPDX-License-Identifier: GPL-3.0-only
 
     <Grid x:Name="SettingsMain"
           Grid.Column="1"
-          RowDefinitions="Auto,Auto,*"
+          RowDefinitions="Auto,*"
           Background="{DynamicResource SurfaceBrush}"
           ZIndex="1">
       <Grid.RenderTransform>
@@ -197,41 +272,19 @@ SPDX-License-Identifier: GPL-3.0-only
         </Grid>
       </Border>
 
-      <Grid x:Name="SettingsHeader"
-            Grid.Row="1"
-            Margin="32,23,32,16"
-            MaxWidth="980"
-            HorizontalAlignment="Stretch"
-            ColumnDefinitions="*,Auto">
-        <StackPanel Spacing="4">
-          <TextBlock Text="{Binding ActiveCategoryTitle}"
-                     FontSize="28"
-                     FontWeight="Bold" />
-          <TextBlock x:Name="SettingsPageSubtitle"
-                     Text="{Binding PageDescription}"
-                     Classes="muted"
-                     FontSize="13" />
-        </StackPanel>
-        <TextBlock Grid.Column="1"
-                   Text="{Binding StatusMessage}"
-                   Margin="16,0,0,0"
-                   FontSize="20"
-                   VerticalAlignment="Center"
-                   Foreground="#A9E8BE" />
-      </Grid>
-
       <ScrollViewer x:Name="SettingsContent"
-                    Grid.Row="2"
+                    Grid.Row="1"
                     Classes="settingsScroll"
                     HorizontalScrollBarVisibility="Disabled"
                     VerticalScrollBarVisibility="Auto">
         <Grid x:Name="SettingsContentHost"
-              Margin="32,2,32,40"
+              Margin="32,28,32,40"
               MaxWidth="980"
               HorizontalAlignment="Stretch">
-          <StackPanel Spacing="14" IsVisible="{Binding IsGeneral}">
-            <Border Classes="settingsGroup">
-              <StackPanel>
+          <StackPanel Spacing="22" IsVisible="{Binding IsGeneral}">
+            <StackPanel Spacing="10">
+              <TextBlock Text="{Binding LanguageCategoryTitle}" Classes="settingsCategoryHeading" />
+              <Border Classes="settingsGroup">
                 <Border Classes="settingsRow last">
                   <Grid ColumnDefinitions="*,220" ColumnSpacing="24">
                     <StackPanel Spacing="3" VerticalAlignment="Center">
@@ -245,11 +298,13 @@ SPDX-License-Identifier: GPL-3.0-only
                                              SelectedItem="{Binding SelectedLanguage}" />
                   </Grid>
                 </Border>
-              </StackPanel>
-            </Border>
+              </Border>
+            </StackPanel>
 
-            <Border Classes="settingsGroup">
-              <StackPanel>
+            <StackPanel Spacing="10">
+              <TextBlock Text="{Binding GeneralTitle}" Classes="settingsCategoryHeading" />
+              <Border Classes="settingsGroup">
+                <StackPanel>
                 <Border Classes="settingsRow">
                   <Grid ColumnDefinitions="*,Auto" ColumnSpacing="24">
                     <StackPanel Spacing="3">
@@ -268,7 +323,7 @@ SPDX-License-Identifier: GPL-3.0-only
                     <ToggleSwitch Grid.Column="1" IsChecked="{Binding ShowAlphaMods}" />
                   </Grid>
                 </Border>
-                <Border Classes="settingsRow last">
+                <Border Classes="settingsRow">
                   <Grid ColumnDefinitions="*,Auto" ColumnSpacing="24">
                     <StackPanel Spacing="3">
                       <TextBlock Text="{Binding DiscordAnnouncementsLabel}" Classes="settingsLabel" />
@@ -277,72 +332,7 @@ SPDX-License-Identifier: GPL-3.0-only
                     <ToggleSwitch Grid.Column="1" IsChecked="{Binding ShowDiscordAnnouncements}" />
                   </Grid>
                 </Border>
-              </StackPanel>
-            </Border>
-          </StackPanel>
-
-          <StackPanel Spacing="14" IsVisible="{Binding IsDownloads}">
-            <Border Classes="settingsGroup">
-              <Border Classes="settingsRow last">
-                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="24">
-                  <StackPanel Spacing="3">
-                    <TextBlock Text="{Binding LaunchAfterDownloadLabel}" Classes="settingsLabel" />
-                    <TextBlock Text="{Binding LaunchAfterDownloadHint}" Classes="settingsHint" />
-                  </StackPanel>
-                  <ToggleSwitch Grid.Column="1" IsChecked="{Binding LaunchAfterDownload}" />
-                </Grid>
-              </Border>
-            </Border>
-            <Border Classes="settingsInfoCard">
-              <TextBlock Text="{Binding DownloadsInfo}" Classes="settingsHint" />
-            </Border>
-          </StackPanel>
-
-          <StackPanel Spacing="14" IsVisible="{Binding IsJava}">
-            <Border Classes="settingsGroup">
-              <StackPanel>
-                <Border Classes="settingsRow">
-                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="24">
-                    <StackPanel Spacing="3">
-                      <TextBlock Text="{Binding CustomJavaLabel}" Classes="settingsLabel" />
-                      <TextBlock Text="{Binding JavaRuntimeHint}" Classes="settingsHint" />
-                    </StackPanel>
-                    <ToggleSwitch Grid.Column="1" IsChecked="{Binding UseCustomJava}" />
-                  </Grid>
-                </Border>
                 <Border Classes="settingsRow last">
-                  <TextBox Text="{Binding CustomJavaPath}"
-                           PlaceholderText="{Binding CustomJavaPathPlaceholder}"
-                           IsEnabled="{Binding UseCustomJava}" />
-                </Border>
-              </StackPanel>
-            </Border>
-            <Border Classes="settingsGroup settingsFormGroup">
-              <StackPanel Spacing="10">
-                <TextBlock Text="{Binding JavaArgumentsLabel}" Classes="settingsLabel" />
-                <TextBlock Text="{Binding JavaArgumentsHint}" Classes="settingsHint" />
-                <TextBox Text="{Binding JavaArguments}" AcceptsReturn="True" MinHeight="104" />
-                <Button Classes="settingsAction" Command="{Binding SaveJavaCommand}" HorizontalAlignment="Right">
-                  <TextBlock Text="{Binding SaveLabel}" />
-                </Button>
-              </StackPanel>
-            </Border>
-          </StackPanel>
-
-          <StackPanel Spacing="14" IsVisible="{Binding IsVisual}">
-            <Border Classes="settingsGroup">
-              <StackPanel>
-                <Border Classes="settingsRow">
-                  <Grid ColumnDefinitions="*,220" ColumnSpacing="24">
-                    <TextBlock Text="{Binding BackgroundLabel}" Classes="settingsLabel" VerticalAlignment="Center" />
-                    <controls:FadingComboBox Grid.Column="1"
-                                             ItemsSource="{Binding Backgrounds}"
-                                             ItemTemplate="{StaticResource SettingChoiceTemplate}"
-                                             ItemContainerTheme="{StaticResource SettingsComboBoxItemTheme}"
-                                             SelectedItem="{Binding SelectedBackground}" />
-                  </Grid>
-                </Border>
-                <Border Classes="settingsRow">
                   <Grid ColumnDefinitions="*,Auto" ColumnSpacing="24">
                     <StackPanel Spacing="3">
                       <TextBlock Text="{Binding MusicLabel}" Classes="settingsLabel" />
@@ -350,6 +340,183 @@ SPDX-License-Identifier: GPL-3.0-only
                     </StackPanel>
                     <ToggleSwitch Grid.Column="1" IsChecked="{Binding MusicEnabled}" />
                   </Grid>
+                </Border>
+                </StackPanel>
+              </Border>
+            </StackPanel>
+          </StackPanel>
+
+          <StackPanel Spacing="10" IsVisible="{Binding IsDownloads}">
+            <TextBlock Text="{Binding DownloadsTitle}" Classes="settingsCategoryHeading" />
+            <Border Classes="settingsGroup">
+              <StackPanel>
+                <Border Classes="settingsRow">
+                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="24">
+                    <StackPanel Spacing="3">
+                      <TextBlock Text="{Binding LaunchAfterDownloadLabel}" Classes="settingsLabel" />
+                      <TextBlock Text="{Binding LaunchAfterDownloadHint}" Classes="settingsHint" />
+                    </StackPanel>
+                    <ToggleSwitch Grid.Column="1" IsChecked="{Binding LaunchAfterDownload}" />
+                  </Grid>
+                </Border>
+                <Border Classes="settingsRow last">
+                  <TextBlock Text="{Binding DownloadsInfo}" Classes="settingsHint" />
+                </Border>
+              </StackPanel>
+            </Border>
+          </StackPanel>
+
+          <StackPanel Spacing="22" IsVisible="{Binding IsJava}">
+            <StackPanel Spacing="10">
+              <TextBlock Text="{Binding JavaRuntimeLabel}" Classes="settingsCategoryHeading" />
+              <Border Classes="settingsGroup">
+                <StackPanel>
+                  <Border Classes="settingsRow runtime">
+                    <Button Classes="javaRuntimeOption"
+                            Classes.selected="{Binding UseBundledJava}"
+                            Command="{Binding SelectBundledJavaCommand}">
+                      <Grid ColumnDefinitions="Auto,*" ColumnSpacing="14">
+                        <Border Classes="javaRadioIndicator">
+                          <Ellipse Classes="javaRadioDot" IsVisible="{Binding UseBundledJava}" />
+                        </Border>
+                        <StackPanel Grid.Column="1" Spacing="2">
+                          <TextBlock Text="{Binding BundledJavaLabel}" Classes="settingsLabel" />
+                          <TextBlock Text="{Binding BundledJavaHint}" Classes="settingsHint" />
+                        </StackPanel>
+                      </Grid>
+                    </Button>
+                  </Border>
+                  <Border Classes="settingsRow runtime last">
+                    <StackPanel>
+                      <Button Classes="javaRuntimeOption"
+                              Classes.selected="{Binding UseCustomJava}"
+                              Command="{Binding SelectCustomJavaCommand}">
+                        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="14">
+                          <Border Classes="javaRadioIndicator">
+                            <Ellipse Classes="javaRadioDot" IsVisible="{Binding UseCustomJava}" />
+                          </Border>
+                          <StackPanel Grid.Column="1" Spacing="2">
+                            <TextBlock Text="{Binding CustomJavaLabel}" Classes="settingsLabel" />
+                            <TextBlock Text="{Binding CustomJavaHint}" Classes="settingsHint" />
+                          </StackPanel>
+                        </Grid>
+                      </Button>
+                      <StackPanel Margin="18,4,18,14" Spacing="8" IsVisible="{Binding UseCustomJava}">
+                        <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+                          <TextBox Text="{Binding CustomJavaPath}"
+                                   PlaceholderText="{Binding CustomJavaPathPlaceholder}"
+                                   VerticalAlignment="Center" />
+                          <Button Grid.Column="1" Classes="javaInlineAction" Command="{Binding BrowseJavaCommand}">
+                            <TextBlock Text="{Binding SelectLabel}" />
+                          </Button>
+                          <Button Grid.Column="2" Classes="settingsAction" Command="{Binding SaveJavaPathCommand}">
+                            <TextBlock Text="{Binding SaveLabel}" />
+                          </Button>
+                        </Grid>
+                        <TextBlock Text="{Binding JavaPathError}" Classes="settingsError" IsVisible="{Binding HasJavaPathError}" />
+                      </StackPanel>
+                    </StackPanel>
+                  </Border>
+                </StackPanel>
+              </Border>
+            </StackPanel>
+
+            <StackPanel Spacing="10">
+              <TextBlock Text="{Binding RamAllocationLabel}" Classes="settingsCategoryHeading" />
+              <Border Classes="settingsGroup">
+                <StackPanel>
+                  <Border Classes="settingsRow">
+                    <StackPanel Spacing="10">
+                      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                        <TextBlock Text="{Binding MaximumRamLabel}" Classes="settingsLabel" VerticalAlignment="Center" />
+                        <TextBlock Grid.Column="1" Text="{Binding JavaMaximumRamValue}" Classes="javaMemoryValue" />
+                      </Grid>
+                      <Slider x:Name="JavaMaximumMemorySlider"
+                              Theme="{StaticResource JavaMemorySliderTheme}"
+                              Minimum="{Binding MinimumJavaRamMb}"
+                              Maximum="{Binding MaximumJavaRamMb}"
+                              TickFrequency="{Binding JavaMemoryTickFrequency}"
+                              IsSnapToTickEnabled="True"
+                              Value="{Binding JavaMaximumRamMb, Mode=TwoWay}" />
+                    </StackPanel>
+                  </Border>
+                  <Border Classes="settingsRow last">
+                    <StackPanel Spacing="10">
+                      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                        <TextBlock Text="{Binding InitialRamLabel}" Classes="settingsLabel" VerticalAlignment="Center" />
+                        <TextBlock Grid.Column="1" Text="{Binding JavaInitialRamValue}" Classes="javaMemoryValue" />
+                      </Grid>
+                      <Slider x:Name="JavaInitialMemorySlider"
+                              Theme="{StaticResource JavaMemorySliderTheme}"
+                              Minimum="{Binding MinimumJavaRamMb}"
+                              Maximum="{Binding JavaInitialRamMaximum}"
+                              TickFrequency="{Binding JavaMemoryTickFrequency}"
+                              IsSnapToTickEnabled="True"
+                              Value="{Binding JavaInitialRamMb, Mode=TwoWay}" />
+                    </StackPanel>
+                  </Border>
+                </StackPanel>
+              </Border>
+            </StackPanel>
+
+            <StackPanel Spacing="10">
+              <TextBlock Text="{Binding JavaArgumentsLabel}" Classes="settingsCategoryHeading" />
+              <Border Classes="settingsGroup">
+                <Border Classes="settingsRow last">
+                  <StackPanel Spacing="10">
+                    <TextBlock Text="{Binding JavaArgumentsHint}" Classes="settingsHint" />
+                    <TextBox Text="{Binding JavaArguments}"
+                             PlaceholderText="{Binding JavaArgumentsPlaceholder}"
+                             AcceptsReturn="True"
+                             TextWrapping="Wrap"
+                             MinHeight="104" />
+                    <TextBlock Text="{Binding JavaArgumentsError}" Classes="settingsError" IsVisible="{Binding HasJavaArgumentsError}" />
+                    <Button Classes="settingsAction" Command="{Binding SaveJavaArgumentsCommand}" HorizontalAlignment="Right">
+                      <TextBlock Text="{Binding SaveLabel}" />
+                    </Button>
+                  </StackPanel>
+                </Border>
+              </Border>
+            </StackPanel>
+          </StackPanel>
+
+          <StackPanel Spacing="22" IsVisible="{Binding IsVisual}">
+            <StackPanel Spacing="10">
+              <TextBlock Text="{Binding VisualTitle}" Classes="settingsCategoryHeading" />
+              <Border Classes="settingsGroup">
+                <StackPanel>
+                <Border Classes="settingsRow">
+                  <StackPanel Spacing="12">
+                    <TextBlock Text="{Binding BackgroundLabel}" Classes="settingsLabel" />
+                    <ItemsControl ItemsSource="{Binding Backgrounds}">
+                      <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                          <WrapPanel Orientation="Horizontal" ItemWidth="178" ItemHeight="112" />
+                        </ItemsPanelTemplate>
+                      </ItemsControl.ItemsPanel>
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:BackgroundChoiceViewModel">
+                          <Button Classes="backgroundChoice"
+                                  Classes.selected="{Binding IsSelected}"
+                                  Command="{Binding DataContext.SelectBackgroundCommand, ElementName=SettingsRoot}"
+                                  CommandParameter="{Binding}">
+                            <Grid ClipToBounds="True">
+                              <Image Source="{Binding Preview}" Stretch="UniformToFill" IsVisible="{Binding IsSingle}" />
+                              <Grid ColumnDefinitions="*,*,*" IsVisible="{Binding IsAuto}">
+                                <Image Source="{Binding PreviewOne}" Stretch="UniformToFill" />
+                                <Image Grid.Column="1" Source="{Binding PreviewTwo}" Stretch="UniformToFill" />
+                                <Image Grid.Column="2" Source="{Binding PreviewThree}" Stretch="UniformToFill" />
+                              </Grid>
+                              <Border Classes="backgroundAutoLabel" IsVisible="{Binding IsAuto}">
+                                <TextBlock Text="{Binding Display}" />
+                              </Border>
+                              <Border Classes="backgroundSelectedIndicator" IsVisible="{Binding IsSelected}" />
+                            </Grid>
+                          </Button>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </StackPanel>
                 </Border>
                 <Border Classes="settingsRow last">
                   <Grid ColumnDefinitions="*,Auto" ColumnSpacing="24">
@@ -360,13 +527,16 @@ SPDX-License-Identifier: GPL-3.0-only
                     <ToggleSwitch Grid.Column="1" IsChecked="{Binding DisableNews}" />
                   </Grid>
                 </Border>
-              </StackPanel>
-            </Border>
+                </StackPanel>
+              </Border>
+            </StackPanel>
           </StackPanel>
 
-          <StackPanel Spacing="14" IsVisible="{Binding IsNetwork}">
-            <Border Classes="settingsGroup">
-              <StackPanel>
+          <StackPanel Spacing="22" IsVisible="{Binding IsNetwork}">
+            <StackPanel Spacing="10">
+              <TextBlock Text="{Binding NetworkTitle}" Classes="settingsCategoryHeading" />
+              <Border Classes="settingsGroup">
+                <StackPanel>
                 <Border Classes="settingsRow">
                   <Grid ColumnDefinitions="*,Auto" ColumnSpacing="24">
                     <StackPanel Spacing="3">
@@ -385,26 +555,32 @@ SPDX-License-Identifier: GPL-3.0-only
                     <ToggleSwitch Grid.Column="1" IsChecked="{Binding UseDualAuth}" />
                   </Grid>
                 </Border>
-              </StackPanel>
-            </Border>
-            <Border Classes="settingsGroup settingsFormGroup">
-              <StackPanel Spacing="10">
-                <TextBlock Text="{Binding AuthServerLabel}" Classes="settingsLabel" />
-                <TextBlock Text="{Binding AuthServerHint}" Classes="settingsHint" />
-                <TextBox Text="{Binding AuthDomain}" />
-                <Button Classes="settingsAction" Command="{Binding SaveNetworkCommand}" HorizontalAlignment="Right">
-                  <TextBlock Text="{Binding SaveLabel}" />
-                </Button>
-              </StackPanel>
-            </Border>
+                </StackPanel>
+              </Border>
+            </StackPanel>
+
+            <StackPanel Spacing="10">
+              <TextBlock Text="{Binding AuthServerLabel}" Classes="settingsCategoryHeading" />
+              <Border Classes="settingsGroup">
+                <Border Classes="settingsRow last">
+                  <StackPanel Spacing="10">
+                    <TextBlock Text="{Binding AuthServerHint}" Classes="settingsHint" />
+                    <TextBox Text="{Binding AuthDomain}" />
+                    <Button Classes="settingsAction" Command="{Binding SaveNetworkCommand}" HorizontalAlignment="Right">
+                      <TextBlock Text="{Binding SaveLabel}" />
+                    </Button>
+                  </StackPanel>
+                </Border>
+              </Border>
+            </StackPanel>
           </StackPanel>
 
-          <StackPanel Spacing="14" IsVisible="{Binding IsGraphics}">
+          <StackPanel Spacing="10" IsVisible="{Binding IsGraphics}">
+            <TextBlock Text="{Binding GpuLabel}" Classes="settingsCategoryHeading" />
             <Border Classes="settingsGroup">
               <Border Classes="settingsRow last">
                 <Grid ColumnDefinitions="*,220" ColumnSpacing="24">
                   <StackPanel Spacing="3" VerticalAlignment="Center">
-                    <TextBlock Text="{Binding GpuLabel}" Classes="settingsLabel" />
                     <TextBlock Text="{Binding GpuHint}" Classes="settingsHint" />
                   </StackPanel>
                   <controls:FadingComboBox Grid.Column="1"
@@ -417,73 +593,64 @@ SPDX-License-Identifier: GPL-3.0-only
             </Border>
           </StackPanel>
 
-          <StackPanel Spacing="14" IsVisible="{Binding IsVariables}">
-            <Border Classes="settingsInfoCard">
-              <StackPanel Spacing="8">
-                <TextBlock Text="{Binding EnvPresetsLabel}" Classes="settingsLabel" />
-                <Border Classes="settingsCodeLine"><TextBlock Text="SDL_VIDEODRIVER=x11" FontFamily="JetBrains Mono" /></Border>
-                <Border Classes="settingsCodeLine"><TextBlock Text="VK_LOADER_LAYERS_DISABLE=all" FontFamily="JetBrains Mono" /></Border>
-              </StackPanel>
-            </Border>
-            <Border Classes="settingsGroup settingsFormGroup">
-              <StackPanel Spacing="10">
-                <TextBlock Text="{Binding EnvLabel}" Classes="settingsLabel" />
-                <TextBlock Text="{Binding EnvHint}" Classes="settingsHint" />
-                <TextBox Text="{Binding GameEnvironmentVariables}"
-                         AcceptsReturn="True"
-                         MinHeight="150"
-                         FontFamily="JetBrains Mono" />
-                <Button Classes="settingsAction" Command="{Binding SaveVariablesCommand}" HorizontalAlignment="Right">
-                  <TextBlock Text="{Binding SaveLabel}" />
-                </Button>
-              </StackPanel>
-            </Border>
+          <StackPanel Spacing="22" IsVisible="{Binding IsVariables}">
+            <StackPanel Spacing="10">
+              <TextBlock Text="{Binding EnvPresetsLabel}" Classes="settingsCategoryHeading" />
+              <Border Classes="settingsGroup">
+                <Border Classes="settingsRow last">
+                  <StackPanel Spacing="8">
+                    <Border Classes="settingsCodeLine"><TextBlock Text="SDL_VIDEODRIVER=x11" FontFamily="JetBrains Mono" /></Border>
+                    <Border Classes="settingsCodeLine"><TextBlock Text="VK_LOADER_LAYERS_DISABLE=all" FontFamily="JetBrains Mono" /></Border>
+                  </StackPanel>
+                </Border>
+              </Border>
+            </StackPanel>
+
+            <StackPanel Spacing="10">
+              <TextBlock Text="{Binding EnvLabel}" Classes="settingsCategoryHeading" />
+              <Border Classes="settingsGroup">
+                <Border Classes="settingsRow last">
+                  <StackPanel Spacing="10">
+                    <TextBlock Text="{Binding EnvHint}" Classes="settingsHint" />
+                    <TextBox Text="{Binding GameEnvironmentVariables}" AcceptsReturn="True" MinHeight="150" FontFamily="JetBrains Mono" />
+                    <Button Classes="settingsAction" Command="{Binding SaveVariablesCommand}" HorizontalAlignment="Right">
+                      <TextBlock Text="{Binding SaveLabel}" />
+                    </Button>
+                  </StackPanel>
+                </Border>
+              </Border>
+            </StackPanel>
           </StackPanel>
 
-          <StackPanel Spacing="14" IsVisible="{Binding IsData}">
+          <StackPanel Spacing="10" IsVisible="{Binding IsData}">
+            <TextBlock Text="{Binding InstanceFolderLabel}" Classes="settingsCategoryHeading" />
             <Border Classes="settingsGroup">
               <Border Classes="settingsRow last">
                 <StackPanel Spacing="5">
-                  <TextBlock Text="{Binding InstanceFolderLabel}" Classes="settingsLabel" />
                   <TextBlock Text="{Binding InstanceFolder}" Classes="settingsHint" TextWrapping="Wrap" />
                 </StackPanel>
               </Border>
             </Border>
           </StackPanel>
 
-          <StackPanel Spacing="14" IsVisible="{Binding IsAbout}">
-            <Border Classes="settingsGroup settingsFormGroup">
-              <StackPanel Spacing="8">
-                <TextBlock Text="HyPrism Launcher" FontSize="22" FontWeight="Bold" />
-                <TextBlock Text="{Binding AboutDescription}" Classes="settingsHint" />
-                <TextBlock Text="{Binding AboutDisclaimer}" Classes="settingsHint" FontSize="11" />
-              </StackPanel>
-            </Border>
+          <StackPanel Spacing="10" IsVisible="{Binding IsAbout}">
+            <TextBlock Text="HyPrism Launcher" Classes="settingsCategoryHeading" />
             <Border Classes="settingsGroup">
               <StackPanel>
-                <Button Classes="settingsLink" Command="{Binding OpenGitHubCommand}"><TextBlock Text="GitHub" /></Button>
-                <Button Classes="settingsLink" Command="{Binding OpenDiscordCommand}"><TextBlock Text="Discord" /></Button>
-                <Button Classes="settingsLink" Command="{Binding OpenBugReportCommand}"><TextBlock Text="{Binding BugReportLabel}" /></Button>
-                <Button Classes="settingsLink" Command="{Binding OpenIcons8Command}"><TextBlock Text="Icons by Icons8" /></Button>
+                <Border Classes="settingsRow">
+                  <StackPanel Spacing="8">
+                    <TextBlock Text="{Binding AboutDescription}" Classes="settingsHint" />
+                    <TextBlock Text="{Binding AboutDisclaimer}" Classes="settingsHint" FontSize="11" />
+                  </StackPanel>
+                </Border>
+                <Border Classes="settingsRow"><Button Classes="settingsLink" Command="{Binding OpenGitHubCommand}"><TextBlock Text="GitHub" /></Button></Border>
+                <Border Classes="settingsRow"><Button Classes="settingsLink" Command="{Binding OpenDiscordCommand}"><TextBlock Text="Discord" /></Button></Border>
+                <Border Classes="settingsRow"><Button Classes="settingsLink" Command="{Binding OpenBugReportCommand}"><TextBlock Text="{Binding BugReportLabel}" /></Button></Border>
+                <Border Classes="settingsRow last"><Button Classes="settingsLink" Command="{Binding OpenIcons8Command}"><TextBlock Text="Icons by Icons8" /></Button></Border>
               </StackPanel>
             </Border>
           </StackPanel>
 
-          <StackPanel Spacing="14" IsVisible="{Binding IsDeveloper}">
-            <Border Classes="settingsWarningCard">
-              <TextBlock Text="{Binding DeveloperWarning}" TextWrapping="Wrap" />
-            </Border>
-            <Border Classes="settingsGroup">
-              <Border Classes="settingsRow last">
-                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="24">
-                  <TextBlock Text="{Binding ReplayIntroLabel}" Classes="settingsLabel" VerticalAlignment="Center" />
-                  <Button Grid.Column="1" Classes="settingsAction" Command="{Binding ResetOnboardingCommand}">
-                    <TextBlock Text="{Binding ReplayIntroLabel}" />
-                  </Button>
-                </Grid>
-              </Border>
-            </Border>
-          </StackPanel>
         </Grid>
       </ScrollViewer>
     </Grid>

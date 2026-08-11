@@ -13,12 +13,12 @@ Access settings through the **Settings** page (gear icon in sidebar).
 
 ### Native Settings page (Avalonia preview)
 
-- The native page groups all currently supported launcher preferences into General, Downloads, Java, Visual, Network, Graphics, Variables, Data, About, and Developer categories.
-- Like the News reader, wide windows use a dedicated `#18191B` navigation surface beside an independent content pane. This darker shared surface separates navigation without the brighter gray cast of the old translucent stroke color, and category titles remain white in every interaction state. Compact windows first show the full category list and slide horizontally to the selected section; the content view uses the same compact toolbar style as News, with **Back** on the left and the active category title centered instead of repeating a title and subtitle below it.
+- The native page groups all currently supported launcher preferences into General, Downloads, Java, Appearance, Network, Graphics, Variables, Data, and About sections. The obsolete Developer section is no longer exposed.
+- Like the News reader, wide windows use a dedicated `#18191B` navigation surface beside an independent content pane. This darker shared surface separates navigation without the brighter gray cast of the old translucent stroke color, and section titles remain white in every interaction state. A sidebar section can contain several semantic categories, each titled immediately above its own settings card. Compact windows first show the full section list and slide horizontally to the selected section; the toolbar keeps the section name centered while category headings remain in the scrollable body. Both the Back button and Escape return to the section list.
 - Category rows fill the available content width of the navigation pane, so hover and selection feedback cover the complete row in both layouts. Every vertical page scroller now uses one application-wide style: a stable reserved gutter prevents content from sitting underneath the scrollbar, the track stays transparent, and a centered fully rounded thumb animates its actual width from 3 to 6 px without a scale transform or edge jump. Wide and compact rows both show a category-specific Fluent icon—including a dedicated information icon for About—and a concise localized summary of the whole section instead of reusing a hint from one individual option. Compact rows retain the same dark surface, white-title/secondary-description hierarchy, and subtle full-row hover transition as News cards, with no preselected highlight. Resizing an open wide section into compact mode keeps that section open instead of returning to the category list.
-- Related options are arranged as dense setting rows inside a small number of grouped surfaces. Selectors stay aligned with their labels, while longer values and explicit-save editors use the full content width; this keeps both large and minimum-size windows useful without oversized cards.
+- Each category owns one large dark settings card rather than several nested cards. Its options are full-width rows separated edge to edge by the application background color. Selectors stay aligned with their labels, while longer values and explicit-save editors use the full content width.
 - Switches and selectors are persisted immediately through `ISettingsService`. Selectors use the same fully opaque dark active surface for their strongly rounded menu, keep a small visual gap below the field, use a compact chevron, and fade both in and out—including after choosing an item. Their logical open state, chevron, and retained popup stay synchronized, so the next click always reopens the menu. Interacting with a long menu's scrollbar keeps the selector open. The language selector shows a country flag beside every native language name in both the field and menu. Changing the interface language reloads native labels and culture-sensitive dates without restarting the launcher. Text settings such as the authentication domain, custom Java path/JVM arguments, and game environment variables use an explicit **Save** action.
-- The Avalonia visual theme keeps its fixed white accent; the Visual category exposes the background, music, and news visibility controls without reintroducing a conflicting accent picker.
+- The Avalonia visual theme keeps its fixed white accent. Appearance contains an adaptive thumbnail grid for background selection and the news-visibility control; its first three-way split thumbnail selects automatic background rotation. A selection is persisted and applied to the Dashboard immediately. Background music lives under General → Miscellaneous.
 
 ### Native Dashboard (Avalonia preview)
 
@@ -70,13 +70,14 @@ Settings use borderless controls throughout the native UI. Switches show state t
 
 | Setting | Description | Default |
 |---------|-------------|---------|
-| Java runtime | Bundled Java or custom executable path | Bundled Java |
+| Runtime | Bundled Java or custom executable path | Bundled Java |
 | Max RAM | Graphical slider for Java max heap (`-Xmx`) | 4096 MB |
 | Initial RAM | Graphical slider for Java initial heap (`-Xms`) | 1024 MB |
-| Garbage collector | Auto profile or explicit G1GC profile | Auto |
 | Advanced JVM arguments | Optional extra JVM flags passed through JAVA_TOOL_OPTIONS (unsafe launch flags are filtered) | empty |
 
 - When custom Java is enabled, use the **Select** button to pick an executable and save only after path validation.
+- The two memory sliders use 256 MB increments. The maximum heap is capped at 75% of detected physical memory, and the initial heap automatically stays at or below the selected maximum. Their managed `-Xms` and `-Xmx` flags are hidden from the advanced-arguments editor and rejected if entered there.
+- The native settings intentionally do not expose a garbage-collector profile selector; GC tuning remains an advanced JVM-argument concern.
 
 #### GPU Preference Options
 
@@ -90,7 +91,6 @@ Settings use borderless controls throughout the native UI. Switches show state t
 
 | Setting | Description | Default |
 |---------|-------------|---------|
-| Developer mode | Show developer tools | false |
 | Verbose logging | Extended log output | false |
 | Data directory | Custom data storage path | Platform default |
 | Download source | Managed automatically by launcher (official first, mirrors as fallback) | auto |
