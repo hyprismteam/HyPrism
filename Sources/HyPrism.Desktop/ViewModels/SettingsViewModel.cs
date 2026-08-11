@@ -2,29 +2,53 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 using System.Collections.ObjectModel;
+using System.Reflection;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
+using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using HyPrism.Desktop.Localization;
 using HyPrism.Services.Core.App;
 using HyPrism.Services.Core.Infrastructure;
+using HyPrism.Services.Core.Integration;
 using HyPrism.Services.Core.Platform;
 using HyPrism.Services.Game.Launch;
 
 namespace HyPrism.Desktop.ViewModels;
 
-public sealed partial class SettingsViewModel : ObservableObject
+public sealed partial class SettingsViewModel : ObservableObject, IDisposable
 {
     private const int MinimumJavaMemoryMb = 1024;
     private const int JavaMemoryStepMb = 256;
+    private static readonly HashSet<string> BotLogins = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "copilot",
+        "github-actions",
+        "dependabot",
+        "renovate",
+        "semantic-release-bot",
+        "allcontributors",
+        "imgbot",
+        "codecov",
+        "snyk-bot",
+        "greenkeeper",
+        "google-labs-jules"
+    };
 
     private readonly ISettingsService _settings;
     private readonly IBrowserService _browser;
     private readonly LocalizationService _localizer;
     private readonly IFileDialogService? _fileDialog;
+    private readonly IGitHubService? _gitHubService;
     private bool _updatingJavaMemory;
     private bool _updatingJavaArguments;
+    private bool _aboutDataLoadStarted;
+    private bool _aboutDataLoaded;
+    private bool _disposed;
+    private int _aboutContributorSlotCapacity = 9;
+    private GitHubCommit? _latestMainCommit;
+    private readonly List<AboutContributorViewModel> _aboutContributorPool = [];
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsGeneral))]
@@ -72,17 +96,25 @@ public sealed partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private string _gameEnvironmentVariables;
     [ObservableProperty] private string _statusMessage = string.Empty;
     [ObservableProperty] private bool _isCompactLayout;
+    [ObservableProperty] private bool _isAboutDataLoading;
+    [ObservableProperty] private bool _hasAboutLatestCommit;
+    [ObservableProperty] private bool _hasMoreAboutContributors;
+    [ObservableProperty] private string _aboutLatestCommitSha = string.Empty;
+    [ObservableProperty] private string _aboutLatestCommitHint = string.Empty;
+    [ObservableProperty] private string _aboutContributorOverflow = string.Empty;
 
     public SettingsViewModel(
         ISettingsService settings,
         IBrowserService browser,
         LocalizationService localizer,
-        IFileDialogService? fileDialog = null)
+        IFileDialogService? fileDialog = null,
+        IGitHubService? gitHubService = null)
     {
         _settings = settings;
         _browser = browser;
         _localizer = localizer;
         _fileDialog = fileDialog;
+        _gitHubService = gitHubService;
 
         Categories = new ObservableCollection<SettingCategoryViewModel>(
         [
@@ -110,6 +142,15 @@ public sealed partial class SettingsViewModel : ObservableObject
             new("dedicated", localizer["settings.graphicsSettings.gpu_dedicated"]),
             new("integrated", localizer["settings.graphicsSettings.gpu_integrated"]),
             new("auto", localizer["settings.graphicsSettings.gpu_auto"])
+        ]);
+        AboutTeamMembers = new ObservableCollection<AboutTeamMemberViewModel>(
+        [
+            new("yyyumeniku", "YY", "creatorRole"),
+            new("sanasol", "SA", "authRole"),
+            new("Daniel Freak", "DF", "codevRole", "freakdaniel"),
+            new("XargonWan", "XW", "cicdRole"),
+            new("FowlBytez", "FB", "testerRole"),
+            new("Aarav2709", "A", "siteRole")
         ]);
 
         _selectedLanguage = FindChoice(Languages, settings.GetLanguage());
@@ -151,6 +192,8 @@ public sealed partial class SettingsViewModel : ObservableObject
     public ObservableCollection<SettingChoiceViewModel> Languages { get; }
     public ObservableCollection<BackgroundChoiceViewModel> Backgrounds { get; }
     public ObservableCollection<SettingChoiceViewModel> GpuPreferences { get; }
+    public ObservableCollection<AboutTeamMemberViewModel> AboutTeamMembers { get; }
+    public ObservableCollection<AboutContributorViewModel> AboutContributors { get; } = [];
 
     public int DetectedSystemMemoryMb { get; }
     public double MinimumJavaRamMb => MinimumJavaMemoryMb;
@@ -219,9 +262,29 @@ public sealed partial class SettingsViewModel : ObservableObject
     public string EnvHint { get; private set; } = string.Empty;
     public string InstanceFolderLabel { get; private set; } = string.Empty;
     public string InstanceFolder { get; private set; } = string.Empty;
-    public string AboutDescription { get; private set; } = string.Empty;
     public string AboutDisclaimer { get; private set; } = string.Empty;
     public string BugReportLabel { get; private set; } = string.Empty;
+    public string AboutProjectTitle { get; private set; } = string.Empty;
+    public string AboutGitHubHint { get; private set; } = string.Empty;
+    public string AboutDocumentationLabel { get; private set; } = string.Empty;
+    public string AboutDocumentationHint { get; private set; } = string.Empty;
+    public string AboutCommunityTitle { get; private set; } = string.Empty;
+    public string AboutDiscordHint { get; private set; } = string.Empty;
+    public string AboutBugReportHint { get; private set; } = string.Empty;
+    public string AboutTeamTitle { get; private set; } = string.Empty;
+    public string AboutTeamHint { get; private set; } = string.Empty;
+    public string AboutLegalTitle { get; private set; } = string.Empty;
+    public string AboutLicenseLabel { get; private set; } = string.Empty;
+    public string AboutLicenseHint { get; private set; } = string.Empty;
+    public string AboutCreditsLabel { get; private set; } = string.Empty;
+    public string AboutCreditsHint { get; private set; } = string.Empty;
+    public string AboutCurrentVersionLabel { get; private set; } = string.Empty;
+    public string AboutCurrentVersionHint { get; private set; } = string.Empty;
+    public string AboutCurrentVersion { get; private set; } = string.Empty;
+    public string AboutLatestCommitLabel { get; private set; } = string.Empty;
+    public string AboutContributorsTitle { get; private set; } = string.Empty;
+    public string AboutHytaleEulaLabel { get; private set; } = string.Empty;
+    public string AboutHytaleEulaHint { get; private set; } = string.Empty;
 
     public string ActiveCategoryTitle =>
         Categories.FirstOrDefault(category => category.Id == SelectedCategory)?.Label ?? GeneralTitle;
@@ -295,9 +358,36 @@ public sealed partial class SettingsViewModel : ObservableObject
         InstanceFolder = string.IsNullOrWhiteSpace(_settings.GetInstanceDirectory())
             ? _localizer["desktopSettings.defaultLocation"]
             : _settings.GetInstanceDirectory();
-        AboutDescription = _localizer["settings.aboutSettings.description"];
         AboutDisclaimer = _localizer["settings.aboutSettings.disclaimer"];
         BugReportLabel = _localizer["settings.aboutSettings.bugReport"];
+        AboutProjectTitle = _localizer["settings.aboutSettings.project"];
+        AboutGitHubHint = _localizer["settings.aboutSettings.githubHint"];
+        AboutDocumentationLabel = _localizer["settings.aboutSettings.documentation"];
+        AboutDocumentationHint = _localizer["settings.aboutSettings.documentationHint"];
+        AboutCommunityTitle = _localizer["settings.aboutSettings.community"];
+        AboutDiscordHint = _localizer["settings.aboutSettings.discordHint"];
+        AboutBugReportHint = _localizer["settings.aboutSettings.bugReportHint"];
+        AboutTeamTitle = _localizer["settings.aboutSettings.coreTeam"];
+        AboutTeamHint = _localizer["settings.aboutSettings.coreTeamDescription"];
+        AboutLegalTitle = _localizer["settings.aboutSettings.legal"];
+        AboutLicenseLabel = _localizer["settings.aboutSettings.license"];
+        AboutLicenseHint = _localizer["settings.aboutSettings.licenseHint"];
+        AboutCreditsLabel = _localizer["settings.aboutSettings.credits"];
+        AboutCreditsHint = _localizer["settings.aboutSettings.creditsHint"];
+        AboutCurrentVersionLabel = _localizer["settings.aboutSettings.currentVersion"];
+        AboutCurrentVersionHint = _localizer["settings.aboutSettings.currentVersionHint"];
+        AboutCurrentVersion = GetApplicationVersion();
+        AboutLatestCommitLabel = _localizer["settings.aboutSettings.latestMainCommit"];
+        AboutContributorsTitle = _localizer["settings.aboutSettings.contributors"];
+        AboutHytaleEulaLabel = _localizer["settings.aboutSettings.hytaleEula"];
+        AboutHytaleEulaHint = _localizer["settings.aboutSettings.hytaleEulaHint"];
+        AboutLatestCommitHint = _latestMainCommit?.Message ?? _localizer[
+            _aboutDataLoaded
+                ? "settings.aboutSettings.latestMainCommitUnavailable"
+                : "settings.aboutSettings.latestMainCommitLoading"];
+
+        foreach (var member in AboutTeamMembers)
+            member.Role = _localizer[$"settings.aboutSettings.{member.RoleKey}"];
 
         UpdateCategoryLabel("general", _localizer["settings.general"]);
         UpdateCategoryLabel("downloads", _localizer["settings.downloads.title"]);
@@ -398,6 +488,9 @@ public sealed partial class SettingsViewModel : ObservableObject
         foreach (var item in Categories)
             item.IsSelected = ReferenceEquals(item, category);
         StatusMessage = string.Empty;
+
+        if (string.Equals(category.Id, "about", StringComparison.Ordinal))
+            _ = LoadAboutDataAsync();
     }
 
     [RelayCommand]
@@ -477,10 +570,201 @@ public sealed partial class SettingsViewModel : ObservableObject
         ShowSaved();
     }
 
-    [RelayCommand] private void OpenGitHub() => _browser.OpenURL("https://github.com/HyPrismTeam/HyPrism");
+    [RelayCommand] private void OpenGitHub() => _browser.OpenURL("https://github.com/hyprismteam/HyPrism");
+    [RelayCommand] private void OpenDocumentation() => _browser.OpenURL("https://hyprismteam.github.io/HyPrism/docs/");
     [RelayCommand] private void OpenDiscord() => _browser.OpenURL("https://discord.gg/hyprism");
-    [RelayCommand] private void OpenBugReport() => _browser.OpenURL("https://github.com/HyPrismTeam/HyPrism/issues/new");
+    [RelayCommand] private void OpenBugReport() => _browser.OpenURL("https://github.com/hyprismteam/HyPrism/issues/new/choose");
+    [RelayCommand] private void OpenLicense() => _browser.OpenURL("https://github.com/hyprismteam/HyPrism/blob/main/LICENSE");
+    [RelayCommand] private void OpenHytaleEula() => _browser.OpenURL("https://hytale.com/eula");
     [RelayCommand] private void OpenIcons8() => _browser.OpenURL("https://icons8.com");
+    [RelayCommand]
+    private void OpenLatestCommit()
+    {
+        if (!string.IsNullOrWhiteSpace(_latestMainCommit?.HtmlUrl))
+            _browser.OpenURL(_latestMainCommit.HtmlUrl);
+    }
+
+    [RelayCommand]
+    private void OpenTeamMember(AboutTeamMemberViewModel? member)
+    {
+        if (member is not null)
+            _browser.OpenURL($"https://github.com/{member.GitHubLogin}");
+    }
+
+    [RelayCommand]
+    private void OpenContributor(AboutContributorViewModel? contributor)
+    {
+        if (contributor is not null && !string.IsNullOrWhiteSpace(contributor.ProfileUrl))
+            _browser.OpenURL(contributor.ProfileUrl);
+    }
+
+    [RelayCommand]
+    private void OpenAllContributors()
+        => _browser.OpenURL("https://github.com/hyprismteam/HyPrism/graphs/contributors");
+
+    private async Task LoadAboutDataAsync()
+    {
+        if (_gitHubService is null || _aboutDataLoadStarted || _disposed)
+            return;
+
+        _aboutDataLoadStarted = true;
+        IsAboutDataLoading = true;
+
+        var contributorsTask = _gitHubService.GetContributorsAsync();
+        var commitTask = _gitHubService.GetLatestMainCommitAsync();
+        var teamAvatarTasks = AboutTeamMembers
+            .Select(async member => new
+            {
+                Member = member,
+                Avatar = await LoadGitHubAvatarAsync(
+                    $"https://github.com/{Uri.EscapeDataString(member.GitHubLogin)}.png")
+                    .ConfigureAwait(false)
+            })
+            .ToArray();
+
+        var contributors = await contributorsTask.ConfigureAwait(false);
+        var teamLogins = AboutTeamMembers
+            .Select(member => member.GitHubLogin)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var visibleContributors = contributors
+            .Where(contributor => !teamLogins.Contains(contributor.Login) && !IsBot(contributor))
+            .ToList();
+        var contributorViewModels = visibleContributors
+            .Select(contributor => new AboutContributorViewModel(
+                contributor.Login,
+                contributor.HtmlUrl,
+                contributor.Contributions,
+                contributor.AvatarUrl))
+            .ToList();
+
+        await Task.WhenAll(teamAvatarTasks).ConfigureAwait(false);
+        var commit = await commitTask.ConfigureAwait(false);
+
+        if (_disposed)
+        {
+            foreach (var contributor in contributorViewModels)
+                contributor.Dispose();
+            foreach (var result in teamAvatarTasks.Select(task => task.Result))
+                result.Avatar?.Dispose();
+            return;
+        }
+
+        await Dispatcher.UIThread.InvokeAsync(() =>
+        {
+            _latestMainCommit = commit;
+            _aboutDataLoaded = true;
+            HasAboutLatestCommit = commit is not null;
+            AboutLatestCommitSha = commit is null
+                ? string.Empty
+                : commit.Sha[..Math.Min(7, commit.Sha.Length)];
+            AboutLatestCommitHint = commit?.Message
+                                    ?? _localizer["settings.aboutSettings.latestMainCommitUnavailable"];
+
+            foreach (var result in teamAvatarTasks.Select(task => task.Result))
+                result.Member.Avatar = result.Avatar;
+
+            foreach (var contributor in _aboutContributorPool)
+                contributor.Dispose();
+            _aboutContributorPool.Clear();
+            _aboutContributorPool.AddRange(contributorViewModels);
+            RebuildVisibleAboutContributors();
+            IsAboutDataLoading = false;
+        });
+    }
+
+    /// <summary>
+    /// Updates how many contributor circles fit in the available row
+    /// </summary>
+    /// <param name="slotCount">The number of circle slots available in the contributors container</param>
+    public void UpdateAboutContributorCapacity(int slotCount)
+    {
+        var normalizedCapacity = Math.Max(1, slotCount);
+        if (_aboutContributorSlotCapacity == normalizedCapacity)
+            return;
+
+        _aboutContributorSlotCapacity = normalizedCapacity;
+        RebuildVisibleAboutContributors();
+    }
+
+    private void RebuildVisibleAboutContributors()
+    {
+        var visibleCount = _aboutContributorPool.Count > _aboutContributorSlotCapacity
+            ? Math.Max(0, _aboutContributorSlotCapacity - 1)
+            : _aboutContributorPool.Count;
+
+        AboutContributors.Clear();
+        foreach (var contributor in _aboutContributorPool.Take(visibleCount))
+            AboutContributors.Add(contributor);
+
+        var remainingCount = _aboutContributorPool.Count - visibleCount;
+        HasMoreAboutContributors = remainingCount > 0;
+        AboutContributorOverflow = $"+{remainingCount}";
+        _ = LoadVisibleContributorAvatarsAsync();
+    }
+
+    private async Task LoadVisibleContributorAvatarsAsync()
+    {
+        if (_gitHubService is null || _disposed)
+            return;
+
+        var contributors = AboutContributors
+            .Where(contributor => !contributor.AvatarLoadStarted)
+            .ToArray();
+        foreach (var contributor in contributors)
+            contributor.AvatarLoadStarted = true;
+
+        var results = await Task.WhenAll(contributors.Select(async contributor => new
+        {
+            Contributor = contributor,
+            Avatar = await LoadGitHubAvatarAsync(contributor.AvatarUrl).ConfigureAwait(false)
+        })).ConfigureAwait(false);
+
+        if (_disposed)
+        {
+            foreach (var result in results)
+                result.Avatar?.Dispose();
+            return;
+        }
+
+        await Dispatcher.UIThread.InvokeAsync(() =>
+        {
+            foreach (var result in results)
+                result.Contributor.Avatar = result.Avatar;
+        });
+    }
+
+    private async Task<Bitmap?> LoadGitHubAvatarAsync(string url)
+    {
+        try
+        {
+            var bytes = await _gitHubService!.LoadAvatarAsync(url, 96).ConfigureAwait(false);
+            if (bytes is null || bytes.Length == 0)
+                return null;
+
+            return await Task.Run(() =>
+            {
+                using var stream = new MemoryStream(bytes, writable: false);
+                return Bitmap.DecodeToWidth(stream, 96, BitmapInterpolationMode.HighQuality);
+            }).ConfigureAwait(false);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static bool IsBot(GitHubUser contributor)
+    {
+        if (string.Equals(contributor.Type, "Bot", StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        var login = contributor.Login;
+        return BotLogins.Contains(login) ||
+               login.EndsWith("[bot]", StringComparison.OrdinalIgnoreCase) ||
+               login.EndsWith("-bot", StringComparison.OrdinalIgnoreCase) ||
+               login.EndsWith("_bot", StringComparison.OrdinalIgnoreCase) ||
+               login.EndsWith("bot[bot]", StringComparison.OrdinalIgnoreCase);
+    }
 
     private void ShowSaved() => StatusMessage = "✓";
 
@@ -565,6 +849,125 @@ public sealed partial class SettingsViewModel : ObservableObject
         return separatorIndex >= 0
             ? cultureName[(separatorIndex + 1)..].ToUpperInvariant()
             : cultureName.ToUpperInvariant();
+    }
+
+    private static string GetApplicationVersion()
+    {
+        var assembly = typeof(SettingsViewModel).Assembly;
+        var informationalVersion = assembly
+            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
+            .InformationalVersion;
+        if (!string.IsNullOrWhiteSpace(informationalVersion))
+        {
+            var metadataIndex = informationalVersion.IndexOf('+');
+            return metadataIndex > 0
+                ? informationalVersion[..metadataIndex]
+                : informationalVersion;
+        }
+
+        var version = assembly.GetName().Version;
+        return version is null
+            ? "0.0.0"
+            : $"{version.Major}.{version.Minor}.{Math.Max(0, version.Build)}";
+    }
+
+    /// <inheritdoc />
+    public void Dispose()
+    {
+        if (_disposed)
+            return;
+
+        _disposed = true;
+        foreach (var member in AboutTeamMembers)
+            member.Dispose();
+        foreach (var contributor in _aboutContributorPool)
+            contributor.Dispose();
+        _aboutContributorPool.Clear();
+        AboutContributors.Clear();
+    }
+}
+
+public sealed partial class AboutTeamMemberViewModel : ObservableObject, IDisposable
+{
+    /// <summary>
+    /// Creates a core team entry shown on the About page
+    /// </summary>
+    /// <param name="displayName">The name displayed in the launcher</param>
+    /// <param name="initials">The fallback initials used before an avatar is available</param>
+    /// <param name="roleKey">The localization key suffix for the team role</param>
+    /// <param name="gitHubLogin">The GitHub login, or <c>null</c> when it matches the display name</param>
+    public AboutTeamMemberViewModel(
+        string displayName,
+        string initials,
+        string roleKey,
+        string? gitHubLogin = null)
+    {
+        DisplayName = displayName;
+        Initials = initials;
+        RoleKey = roleKey;
+        GitHubLogin = gitHubLogin ?? displayName;
+    }
+
+    public string DisplayName { get; }
+    public string Initials { get; }
+    public string RoleKey { get; }
+    public string GitHubLogin { get; }
+    public bool HasAvatar => Avatar is not null;
+    [ObservableProperty] private string _role = string.Empty;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasAvatar))]
+    private Bitmap? _avatar;
+
+    partial void OnAvatarChanging(Bitmap? oldValue, Bitmap? newValue)
+        => oldValue?.Dispose();
+
+    /// <inheritdoc />
+    public void Dispose()
+        => Avatar = null;
+}
+
+/// <summary>
+/// Represents a repository contributor displayed on the About page
+/// </summary>
+public sealed partial class AboutContributorViewModel : ObservableObject, IDisposable
+{
+    /// <summary>
+    /// Creates a contributor entry
+    /// </summary>
+    /// <param name="login">The GitHub login</param>
+    /// <param name="profileUrl">The public GitHub profile URL</param>
+    /// <param name="contributions">The contribution count reported by GitHub</param>
+    /// <param name="avatarUrl">The GitHub avatar URL</param>
+    public AboutContributorViewModel(
+        string login,
+        string profileUrl,
+        int contributions,
+        string avatarUrl)
+    {
+        Login = login;
+        ProfileUrl = profileUrl;
+        Contributions = contributions;
+        AvatarUrl = avatarUrl;
+    }
+
+    public string Login { get; }
+    public string ProfileUrl { get; }
+    public int Contributions { get; }
+    public string AvatarUrl { get; }
+    public bool HasAvatar => Avatar is not null;
+    public string Initial => string.IsNullOrWhiteSpace(Login) ? "?" : Login[..1].ToUpperInvariant();
+    internal bool AvatarLoadStarted { get; set; }
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasAvatar))]
+    private Bitmap? _avatar;
+
+    partial void OnAvatarChanging(Bitmap? oldValue, Bitmap? newValue)
+        => oldValue?.Dispose();
+
+    /// <inheritdoc />
+    public void Dispose()
+    {
+        Avatar = null;
     }
 }
 

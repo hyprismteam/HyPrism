@@ -964,6 +964,219 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="TextWrapping" Value="Wrap" />
   </Style>
 
+  <Style Selector="Border.settingsRow.aboutRow">
+    <Setter Property="Padding" Value="0" />
+  </Style>
+
+  <Style Selector="Button.aboutLink">
+    <Setter Property="MinHeight" Value="66" />
+    <Setter Property="Padding" Value="18,14" />
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="CornerRadius" Value="0" />
+    <Setter Property="FocusAdorner" Value="{x:Null}" />
+    <Setter Property="Cursor" Value="Hand" />
+    <Setter Property="RenderTransform" Value="{x:Null}" />
+    <Setter Property="Transitions">
+      <Transitions>
+        <BrushTransition Property="Background" Duration="0:0:0.18" />
+        <BrushTransition Property="Foreground" Duration="0:0:0.18" />
+      </Transitions>
+    </Setter>
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Background="{TemplateBinding Background}"
+                Padding="{TemplateBinding Padding}">
+          <ContentPresenter Content="{TemplateBinding Content}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}"
+                            HorizontalContentAlignment="Stretch"
+                            VerticalContentAlignment="Center" />
+        </Border>
+      </ControlTemplate>
+    </Setter>
+  </Style>
+
+  <Style Selector="Button.aboutLink:pointerover">
+    <Setter Property="Background" Value="#0AFFFFFF" />
+    <Setter Property="RenderTransform" Value="{x:Null}" />
+  </Style>
+
+  <Style Selector="Button.aboutLink:pressed">
+    <Setter Property="Background" Value="#10FFFFFF" />
+    <Setter Property="RenderTransform" Value="{x:Null}" />
+  </Style>
+
+  <Style Selector="Path.aboutOpenIcon">
+    <Setter Property="Width" Value="17" />
+    <Setter Property="Height" Value="17" />
+    <Setter Property="Stretch" Value="Uniform" />
+    <Setter Property="Fill" Value="{DynamicResource TextMutedBrush}" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="Transitions">
+      <Transitions>
+        <BrushTransition Property="Fill" Duration="0:0:0.18" />
+      </Transitions>
+    </Setter>
+  </Style>
+
+  <Style Selector="Button.aboutLink:pointerover Path.aboutOpenIcon">
+    <Setter Property="Fill" Value="{DynamicResource TextPrimaryBrush}" />
+  </Style>
+
+  <Style Selector="Border.aboutTeamGroup">
+    <Setter Property="Padding" Value="8" />
+  </Style>
+
+  <Style Selector="Button.aboutTeamMember">
+    <Setter Property="MinHeight" Value="82" />
+    <Setter Property="Margin" Value="2" />
+    <Setter Property="Padding" Value="10" />
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="CornerRadius" Value="10" />
+    <Setter Property="FocusAdorner" Value="{x:Null}" />
+    <Setter Property="Cursor" Value="Hand" />
+    <Setter Property="RenderTransform" Value="{x:Null}" />
+    <Setter Property="Transitions">
+      <Transitions>
+        <BrushTransition Property="Background" Duration="0:0:0.18" />
+      </Transitions>
+    </Setter>
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Background="{TemplateBinding Background}"
+                CornerRadius="{TemplateBinding CornerRadius}"
+                Padding="{TemplateBinding Padding}">
+          <ContentPresenter Content="{TemplateBinding Content}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}"
+                            HorizontalContentAlignment="Stretch"
+                            VerticalContentAlignment="Center" />
+        </Border>
+      </ControlTemplate>
+    </Setter>
+  </Style>
+
+  <Style Selector="Button.aboutTeamMember:pointerover">
+    <Setter Property="Background" Value="#0AFFFFFF" />
+    <Setter Property="RenderTransform" Value="{x:Null}" />
+  </Style>
+
+  <Style Selector="Button.aboutTeamMember:pressed">
+    <Setter Property="Background" Value="#10FFFFFF" />
+    <Setter Property="RenderTransform" Value="{x:Null}" />
+  </Style>
+
+  <Style Selector="Border.aboutTeamAvatar">
+    <Setter Property="Width" Value="40" />
+    <Setter Property="Height" Value="40" />
+    <Setter Property="CornerRadius" Value="999" />
+    <Setter Property="Background" Value="#24B59CFF" />
+    <Setter Property="ClipToBounds" Value="True" />
+  </Style>
+
+  <Style Selector="Border.aboutTeamAvatar TextBlock">
+    <Setter Property="Foreground" Value="#E7E0FF" />
+  </Style>
+
+  <Style Selector="TextBlock.aboutTeamRole">
+    <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+    <Setter Property="FontSize" Value="11" />
+  </Style>
+
+  <Style Selector="Border.aboutContributorsGroup">
+    <Setter Property="Padding" Value="14" />
+  </Style>
+
+  <Style Selector="Button.aboutContributor">
+    <Setter Property="Width" Value="58" />
+    <Setter Property="Height" Value="58" />
+    <Setter Property="Margin" Value="3" />
+    <Setter Property="Padding" Value="6" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="CornerRadius" Value="999" />
+    <Setter Property="Cursor" Value="Hand" />
+    <Setter Property="FocusAdorner" Value="{x:Null}" />
+    <Setter Property="RenderTransform" Value="{x:Null}" />
+    <Setter Property="Transitions">
+      <Transitions>
+        <BrushTransition Property="Background" Duration="0:0:0.18" />
+      </Transitions>
+    </Setter>
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Background="{TemplateBinding Background}"
+                CornerRadius="{TemplateBinding CornerRadius}"
+                Padding="{TemplateBinding Padding}">
+          <ContentPresenter Content="{TemplateBinding Content}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}"
+                            HorizontalContentAlignment="Center"
+                            VerticalContentAlignment="Center" />
+        </Border>
+      </ControlTemplate>
+    </Setter>
+  </Style>
+
+  <Style Selector="Button.aboutContributor:pointerover">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="RenderTransform" Value="{x:Null}" />
+  </Style>
+
+  <Style Selector="Button.aboutContributor:pressed">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="RenderTransform" Value="{x:Null}" />
+  </Style>
+
+  <Style Selector="Border.aboutContributorAvatar">
+    <Setter Property="Width" Value="46" />
+    <Setter Property="Height" Value="46" />
+    <Setter Property="CornerRadius" Value="999" />
+    <Setter Property="ClipToBounds" Value="True" />
+    <Setter Property="Background" Value="#24B59CFF" />
+  </Style>
+
+  <Style Selector="Border.aboutContributorAvatar.overflow">
+    <Setter Property="Background" Value="#18FFFFFF" />
+    <Setter Property="Transitions">
+      <Transitions>
+        <BrushTransition Property="Background" Duration="0:0:0.18" />
+      </Transitions>
+    </Setter>
+  </Style>
+
+  <Style Selector="Border.aboutContributorAvatar.overflow TextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+  </Style>
+
+  <Style Selector="Button.aboutContributor.overflow:pointerover Border.aboutContributorAvatar">
+    <Setter Property="Background" Value="#28FFFFFF" />
+  </Style>
+
+  <Style Selector="Border.aboutLicenseValue">
+    <Setter Property="Padding" Value="10,5" />
+    <Setter Property="Background" Value="#12FFFFFF" />
+    <Setter Property="CornerRadius" Value="999" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+
+  <Style Selector="Border.aboutLicenseValue TextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+    <Setter Property="FontSize" Value="11" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+
+  <Style Selector="TextBlock.aboutDisclaimer">
+    <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
+    <Setter Property="FontSize" Value="11" />
+    <Setter Property="LineHeight" Value="16" />
+  </Style>
+
   <Style Selector="TextBlock.settingsError">
     <Setter Property="Foreground" Value="#FF9B9B" />
     <Setter Property="FontSize" Value="12" />

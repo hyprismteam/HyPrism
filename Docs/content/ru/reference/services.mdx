@@ -21,6 +21,7 @@ description: Ответственность публичных групп сер
 | Профили | `IProfileService`, `IProfileManagementService`, `IUserIdentityService` | жизненный цикл личности и профиля |
 | Ресурсы | `IAssetService`, `IAvatarService`, `ISkinService` | извлечение ресурсов и визуальные данные профиля |
 | Новости | `INewsService`, `INewsSource` | лента и структурированные статьи |
+| GitHub | `IGitHubService` | кешированные данные репозитория, контрибьюторы, коммиты и аватары |
 | Платформа | `IBrowserService`, `IClipboardService`, `IFileDialogService`, `IGpuDetectionService` | возможности операционной системы, реализуемые хостом |
 
 Запрашивайте самый узкий контракт, необходимый потребителю. Не получайте сервисы из контейнера внутри доменного кода

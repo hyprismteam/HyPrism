@@ -21,6 +21,7 @@ description: Responsibilities of the public service groups in HyPrism.Core
 | Profiles | `IProfileService`, `IProfileManagementService`, `IUserIdentityService` | identity and profile lifecycle |
 | Assets | `IAssetService`, `IAvatarService`, `ISkinService` | asset extraction and profile visuals |
 | News | `INewsService`, `INewsSource` | feed and structured article retrieval |
+| GitHub | `IGitHubService` | cached repository metadata, contributors, commits, and avatars |
 | Platform | `IBrowserService`, `IClipboardService`, `IFileDialogService`, `IGpuDetectionService` | host-owned operating system capabilities |
 
 Prefer the narrowest contract required by a consumer. Avoid resolving services from the container inside domain code

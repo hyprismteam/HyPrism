@@ -42,6 +42,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     private readonly INewsService _newsService;
     private readonly IBrowserService _browserService;
     private readonly IFileDialogService? _fileDialogService;
+    private readonly IGitHubService? _gitHubService;
     private readonly HttpClient _httpClient;
     private readonly LocalizationService _localizer;
     private InstanceInfo? _selectedInstance;
@@ -193,7 +194,8 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         IBrowserService browserService,
         HttpClient httpClient,
         LocalizationService localizer,
-        IFileDialogService? fileDialogService = null)
+        IFileDialogService? fileDialogService = null,
+        IGitHubService? gitHubService = null)
     {
         _instanceService = instanceService;
         _gameLaunchCoordinator = gameLaunchCoordinator;
@@ -204,6 +206,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         _newsService = newsService;
         _browserService = browserService;
         _fileDialogService = fileDialogService;
+        _gitHubService = gitHubService;
         _httpClient = httpClient;
         _localizer = localizer;
         _localizer.LanguageChanged += ApplyLanguage;
@@ -859,7 +862,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     }
 
     private SettingsViewModel CreateSettingsViewModel()
-        => new(_settingsService, _browserService, _localizer, _fileDialogService);
+        => new(_settingsService, _browserService, _localizer, _fileDialogService, _gitHubService);
 
     private void ApplyLanguage(string language)
     {
@@ -1012,6 +1015,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         _progressService.ErrorOccurred -= OnErrorOccurred;
         _settingsService.OnBackgroundChanged -= OnBackgroundChanged;
         _localizer.LanguageChanged -= ApplyLanguage;
+        Settings.Dispose();
         DashboardBackground?.Dispose();
         DashboardBackground = null;
     }

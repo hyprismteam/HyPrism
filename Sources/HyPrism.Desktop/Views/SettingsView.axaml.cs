@@ -97,6 +97,20 @@ public sealed partial class SettingsView : UserControl
             DispatcherPriority.Loaded);
     }
 
+    private void OnAboutContributorsSizeChanged(object? sender, SizeChangedEventArgs e)
+    {
+        const double containerPadding = 28;
+        const double contributorSlotWidth = 64;
+
+        if (DataContext is not SettingsViewModel viewModel || e.NewSize.Width <= containerPadding)
+            return;
+
+        var slots = Math.Max(
+            1,
+            (int)Math.Floor((e.NewSize.Width - containerPadding) / contributorSlotWidth));
+        viewModel.UpdateAboutContributorCapacity(slots);
+    }
+
     private void UpdateBackgroundPickerLayout(double availableWidth)
     {
         const double targetSlotWidth = 185;

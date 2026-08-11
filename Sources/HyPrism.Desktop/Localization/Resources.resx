@@ -1672,13 +1672,16 @@ You may need to reinstall the game if switching drives.</value>
     <value>Project Creator</value>
   </data>
   <data name="settings.aboutSettings.description" xml:space="preserve">
-    <value>All in one launcher and mod manager fotr Hytale</value>
+    <value>All in one launcher and mod manager for Hytale</value>
   </data>
   <data name="settings.aboutSettings.disclaimer" xml:space="preserve">
     <value>HyPrism is an unofficial launcher for Hytale. This project is not affiliated with Hypixel Studios.</value>
   </data>
   <data name="settings.aboutSettings.installerRole" xml:space="preserve">
     <value>Installer Creator</value>
+  </data>
+  <data name="settings.aboutSettings.siteRole" xml:space="preserve">
+    <value>Documentation Website Developer</value>
   </data>
   <data name="settings.aboutSettings.maintainerRole" xml:space="preserve">
     <value>Maintainer &amp; Developer</value>
@@ -1700,6 +1703,63 @@ You may need to reinstall the game if switching drives.</value>
   </data>
   <data name="settings.aboutSettings.version" xml:space="preserve">
     <value>Version {0}</value>
+  </data>
+  <data name="settings.aboutSettings.project" xml:space="preserve">
+    <value>Project</value>
+  </data>
+  <data name="settings.aboutSettings.githubHint" xml:space="preserve">
+    <value>Source code, releases and development</value>
+  </data>
+  <data name="settings.aboutSettings.documentation" xml:space="preserve">
+    <value>Documentation</value>
+  </data>
+  <data name="settings.aboutSettings.documentationHint" xml:space="preserve">
+    <value>Guides, architecture and contributor reference</value>
+  </data>
+  <data name="settings.aboutSettings.community" xml:space="preserve">
+    <value>Community</value>
+  </data>
+  <data name="settings.aboutSettings.discordHint" xml:space="preserve">
+    <value>News, discussion and help from the community</value>
+  </data>
+  <data name="settings.aboutSettings.bugReportHint" xml:space="preserve">
+    <value>Report a problem or suggest an improvement</value>
+  </data>
+  <data name="settings.aboutSettings.legal" xml:space="preserve">
+    <value>Open source and legal</value>
+  </data>
+  <data name="settings.aboutSettings.license" xml:space="preserve">
+    <value>License</value>
+  </data>
+  <data name="settings.aboutSettings.licenseHint" xml:space="preserve">
+    <value>HyPrism source code is distributed under GPL-3.0-only</value>
+  </data>
+  <data name="settings.aboutSettings.credits" xml:space="preserve">
+    <value>Visual credits</value>
+  </data>
+  <data name="settings.aboutSettings.creditsHint" xml:space="preserve">
+    <value>Settings category artwork is provided by Icons8</value>
+  </data>
+  <data name="settings.aboutSettings.currentVersion" xml:space="preserve">
+    <value>Current version</value>
+  </data>
+  <data name="settings.aboutSettings.currentVersionHint" xml:space="preserve">
+    <value>The launcher version installed on this device</value>
+  </data>
+  <data name="settings.aboutSettings.latestMainCommit" xml:space="preserve">
+    <value>Latest commit in main</value>
+  </data>
+  <data name="settings.aboutSettings.latestMainCommitLoading" xml:space="preserve">
+    <value>Loading repository information</value>
+  </data>
+  <data name="settings.aboutSettings.latestMainCommitUnavailable" xml:space="preserve">
+    <value>Repository information is temporarily unavailable</value>
+  </data>
+  <data name="settings.aboutSettings.hytaleEula" xml:space="preserve">
+    <value>Hytale EULA</value>
+  </data>
+  <data name="settings.aboutSettings.hytaleEulaHint" xml:space="preserve">
+    <value>End User License Agreement for Hytale</value>
   </data>
   <data name="settings.browse" xml:space="preserve">
     <value>Browse</value>

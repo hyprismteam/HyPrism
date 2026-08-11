@@ -49,7 +49,8 @@ public sealed partial class App : Application
                 services.GetRequiredService<IBrowserService>(),
                 services.GetRequiredService<HttpClient>(),
                 localizer,
-                services.GetRequiredService<IFileDialogService>());
+                services.GetRequiredService<IFileDialogService>(),
+                services.GetRequiredService<IGitHubService>());
 
             desktop.MainWindow = new MainWindow
             {

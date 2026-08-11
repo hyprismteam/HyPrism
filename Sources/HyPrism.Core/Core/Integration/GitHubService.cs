@@ -1,138 +1,261 @@
 // Copyright (C) 2026 HyPrism Launcher
 // SPDX-License-Identifier: GPL-3.0-only
 
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Net.Http;
+using System.Collections.Concurrent;
 using System.Net.Http.Json;
-using System.Threading.Tasks;
 using System.Text.Json.Serialization;
 using HyPrism.Services.Core.Infrastructure;
 
 namespace HyPrism.Services.Core.Integration;
 
 /// <summary>
-/// Represents a GitHub user with basic profile information.
-/// Used for displaying contributors and user details.
+/// Represents a public GitHub account returned by the contributors API
 /// </summary>
-public class GitHubUser
+public sealed class GitHubUser
 {
     /// <summary>
-    /// Gets or sets the GitHub username (login name).
+    /// Gets the GitHub login
     /// </summary>
     [JsonPropertyName("login")]
-    public string Login { get; set; } = "";
-    
+    public string Login { get; init; } = string.Empty;
+
     /// <summary>
-    /// Gets or sets the URL to the user's avatar image.
+    /// Gets the avatar URL
     /// </summary>
     [JsonPropertyName("avatar_url")]
-    public string AvatarUrl { get; set; } = "";
-    
+    public string AvatarUrl { get; init; } = string.Empty;
+
     /// <summary>
-    /// Gets or sets the URL to the user's GitHub profile page.
+    /// Gets the public profile URL
     /// </summary>
     [JsonPropertyName("html_url")]
-    public string HtmlUrl { get; set; } = "";
-    
+    public string HtmlUrl { get; init; } = string.Empty;
+
     /// <summary>
-    /// Gets or sets the account type (e.g., "User", "Bot").
+    /// Gets the GitHub account type
     /// </summary>
     [JsonPropertyName("type")]
-    public string Type { get; set; } = "";
+    public string Type { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Gets the number of contributions counted by GitHub
+    /// </summary>
+    [JsonPropertyName("contributions")]
+    public int Contributions { get; init; }
 }
 
 /// <summary>
-/// Provides GitHub API integration for fetching contributor information and avatars.
-/// Handles rate limiting gracefully and caches avatar downloads.
+/// Represents a commit displayed in the About page
 /// </summary>
-public class GitHubService : IGitHubService
+/// <param name="Sha">The full commit SHA</param>
+/// <param name="Message">The first line of the commit message</param>
+/// <param name="HtmlUrl">The public GitHub URL for the commit</param>
+public sealed record GitHubCommit(string Sha, string Message, string HtmlUrl);
+
+/// <summary>
+/// Loads and caches public metadata for the HyPrism GitHub repository
+/// </summary>
+public sealed class GitHubService : IGitHubService
 {
+    private const string RepositoryApi = "https://api.github.com/repos/hyprismteam/HyPrism";
+
     private readonly HttpClient _httpClient;
-    private const string RepoOwner = "yyyumeniku";
-    private const string RepoName = "HyPrism";
+    private readonly object _cacheLock = new();
+    private readonly ConcurrentDictionary<string, Task<byte[]?>> _avatarCache = new();
+    private Task<List<GitHubUser>>? _contributorsTask;
+    private Task<GitHubCommit?>? _latestCommitTask;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="GitHubService"/> class.
+    /// Initializes the GitHub integration
     /// </summary>
-    /// <param name="httpClient">The HTTP client for making API requests.</param>
+    /// <param name="httpClient">The shared client used for GitHub requests</param>
     public GitHubService(HttpClient httpClient)
     {
         _httpClient = httpClient;
-        // Ensure User-Agent is set (required for GitHub API)
         if (!_httpClient.DefaultRequestHeaders.Contains("User-Agent"))
-        {
             _httpClient.DefaultRequestHeaders.Add("User-Agent", "HyPrism-Launcher");
-        }
     }
 
-    /// <inheritdoc/>
+    /// <inheritdoc />
     public async Task<List<GitHubUser>> GetContributorsAsync()
     {
-        try
-        {
-            var url = $"https://api.github.com/repos/{RepoOwner}/{RepoName}/contributors?per_page=100";
-            return await _httpClient.GetFromJsonAsync<List<GitHubUser>>(url) ?? [];
-        }
-        catch (HttpRequestException ex)
-        {
-            if (ex.StatusCode == System.Net.HttpStatusCode.Forbidden || ex.Message.Contains("403"))
-            {
-                Logger.Warning("GitHub", "Failed to fetch contributors rate limit exceeded");
-                return [];
-            }
-            Logger.Error("GitHub", $"Failed to fetch contributors: {ex}");
-            return [];
-        }
-        catch (Exception ex)
-        {
-            Logger.Error("GitHub", $"Failed to fetch contributors: {ex}");
-            return [];
-        }
+        Task<List<GitHubUser>> task;
+        lock (_cacheLock)
+            task = _contributorsTask ??= LoadContributorsAsync();
+
+        return [.. await task.ConfigureAwait(false)];
     }
 
-    /// <inheritdoc/>
+    /// <inheritdoc />
+    public async Task<GitHubCommit?> GetLatestMainCommitAsync()
+    {
+        Task<GitHubCommit?> task;
+        lock (_cacheLock)
+            task = _latestCommitTask ??= LoadLatestMainCommitAsync();
+
+        return await task.ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
     public async Task<GitHubUser?> GetUserAsync(string username)
     {
+        if (string.IsNullOrWhiteSpace(username))
+            return null;
+
         try
         {
-            var url = $"https://api.github.com/users/{username}";
-            return await _httpClient.GetFromJsonAsync<GitHubUser>(url);
+            return await _httpClient
+                .GetFromJsonAsync<GitHubUser>($"https://api.github.com/users/{Uri.EscapeDataString(username)}")
+                .ConfigureAwait(false);
         }
-        catch (HttpRequestException ex)
+        catch (Exception exception)
         {
-            if (ex.StatusCode == System.Net.HttpStatusCode.Forbidden || ex.Message.Contains("403"))
-            {
-                Logger.Warning("GitHub", $"Failed to fetch user {username} rate limit exceeded");
-                return null;
-            }
-            Logger.Error("GitHub", $"Failed to fetch user {username}: {ex}");
-            return null;
-        }
-        catch (Exception ex)
-        {
-            Logger.Error("GitHub", $"Failed to fetch user {username}: {ex}");
+            LogFailure($"load GitHub user {username}", exception);
             return null;
         }
     }
 
-    /// <inheritdoc/>
-    public async Task<byte[]?> LoadAvatarAsync(string url, int decodeWidth = 96)
+    /// <inheritdoc />
+    public Task<byte[]?> LoadAvatarAsync(string url, int decodeWidth = 96)
+    {
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) || uri.Scheme is not ("http" or "https"))
+            return Task.FromResult<byte[]?>(null);
+
+        var normalizedWidth = Math.Clamp(decodeWidth, 24, 512);
+        var cacheKey = $"{uri.AbsoluteUri}|{normalizedWidth}";
+        return _avatarCache.GetOrAdd(cacheKey, _ => LoadAvatarCoreAsync(uri, normalizedWidth));
+    }
+
+    private async Task<List<GitHubUser>> LoadContributorsAsync()
     {
         try
         {
-            if (string.IsNullOrEmpty(url)) return null;
-            
-            // Append GitHub size parameter to request smaller image from CDN (saves bandwidth)
-            var sizedUrl = url.Contains('?') ? $"{url}&s={decodeWidth}" : $"{url}?s={decodeWidth}";
-            
-            return await _httpClient.GetByteArrayAsync(sizedUrl);
+            var contributors = await _httpClient
+                                   .GetFromJsonAsync<List<GitHubUser>>(
+                                       $"{RepositoryApi}/contributors?per_page=100")
+                                   .ConfigureAwait(false)
+                               ?? [];
+            var recentLogins = await LoadRecentContributorLoginsAsync().ConfigureAwait(false);
+            if (recentLogins.Count == 0)
+                return contributors;
+
+            var recentOrder = recentLogins
+                .Select((login, index) => (login, index))
+                .ToDictionary(item => item.login, item => item.index, StringComparer.OrdinalIgnoreCase);
+            return contributors
+                .Select((contributor, index) => new { contributor, index })
+                .OrderBy(item => recentOrder.GetValueOrDefault(item.contributor.Login, int.MaxValue))
+                .ThenBy(item => item.index)
+                .Select(item => item.contributor)
+                .ToList();
         }
-        catch (Exception ex)
+        catch (Exception exception)
         {
-            Logger.Error("GitHub", $"Failed to load avatar from {url}: {ex}");
+            LogFailure("load GitHub contributors", exception);
+            return [];
+        }
+    }
+
+    private async Task<List<string>> LoadRecentContributorLoginsAsync()
+    {
+        try
+        {
+            var commits = await _httpClient
+                              .GetFromJsonAsync<List<GitHubCommitAuthorResponse>>(
+                                  $"{RepositoryApi}/commits?sha=main&per_page=100")
+                              .ConfigureAwait(false)
+                          ?? [];
+            return commits
+                .Select(commit => commit.Author?.Login)
+                .Where(login => !string.IsNullOrWhiteSpace(login))
+                .Select(login => login!)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+        }
+        catch (Exception exception)
+        {
+            LogFailure("load recent GitHub contributors", exception);
+            return [];
+        }
+    }
+
+    private async Task<GitHubCommit?> LoadLatestMainCommitAsync()
+    {
+        try
+        {
+            var response = await _httpClient
+                .GetFromJsonAsync<GitHubCommitResponse>($"{RepositoryApi}/commits/main")
+                .ConfigureAwait(false);
+            if (response is null || string.IsNullOrWhiteSpace(response.Sha))
+                return null;
+
+            var message = response.Commit.Message
+                .Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries)
+                .FirstOrDefault()
+                ?.Trim() ?? string.Empty;
+            return new GitHubCommit(response.Sha, message, response.HtmlUrl);
+        }
+        catch (Exception exception)
+        {
+            LogFailure("load the latest main commit", exception);
             return null;
         }
+    }
+
+    private async Task<byte[]?> LoadAvatarCoreAsync(Uri uri, int decodeWidth)
+    {
+        try
+        {
+            var separator = string.IsNullOrEmpty(uri.Query) ? '?' : '&';
+            return await _httpClient
+                .GetByteArrayAsync($"{uri.AbsoluteUri}{separator}s={decodeWidth}")
+                .ConfigureAwait(false);
+        }
+        catch (Exception exception)
+        {
+            LogFailure($"load GitHub avatar {uri}", exception);
+            return null;
+        }
+    }
+
+    private static void LogFailure(string operation, Exception exception)
+    {
+        if (exception is HttpRequestException { StatusCode: System.Net.HttpStatusCode.Forbidden })
+        {
+            Logger.Warning("GitHub", $"Failed to {operation}: rate limit exceeded");
+            return;
+        }
+
+        Logger.Error("GitHub", $"Failed to {operation}: {exception}");
+    }
+
+    private sealed class GitHubCommitResponse
+    {
+        [JsonPropertyName("sha")]
+        public string Sha { get; init; } = string.Empty;
+
+        [JsonPropertyName("html_url")]
+        public string HtmlUrl { get; init; } = string.Empty;
+
+        [JsonPropertyName("commit")]
+        public GitHubCommitDetails Commit { get; init; } = new();
+    }
+
+    private sealed class GitHubCommitDetails
+    {
+        [JsonPropertyName("message")]
+        public string Message { get; init; } = string.Empty;
+    }
+
+    private sealed class GitHubCommitAuthorResponse
+    {
+        [JsonPropertyName("author")]
+        public GitHubCommitAuthor? Author { get; init; }
+    }
+
+    private sealed class GitHubCommitAuthor
+    {
+        [JsonPropertyName("login")]
+        public string Login { get; init; } = string.Empty;
     }
 }

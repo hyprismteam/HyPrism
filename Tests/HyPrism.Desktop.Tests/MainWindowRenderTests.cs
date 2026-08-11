@@ -555,6 +555,9 @@ public sealed class MainWindowRenderTests
         Assert.Equal(
             "Среда выполнения, путь к Java и аргументы JVM",
             viewModel.Settings.Categories.Single(category => category.Id == "java").Description);
+        Assert.Equal(
+            "О программе",
+            viewModel.Settings.Categories.Single(category => category.Id == "about").Label);
         Assert.All(
             viewModel.Settings.Categories,
             category => Assert.False(category.Description.EndsWith('.')));
@@ -635,6 +638,7 @@ public sealed class MainWindowRenderTests
         var settings = new Mock<ISettingsService>();
         var news = new Mock<INewsService>();
         var browser = new Mock<IBrowserService>();
+        var github = new Mock<IGitHubService>();
 
         var selected = new InstanceInfo
         {
@@ -663,6 +667,28 @@ public sealed class MainWindowRenderTests
         settings.Setup(service => service.GetLaunchAfterDownload()).Returns(true);
         settings.Setup(service => service.GetAvailableBackgrounds()).Returns(
             ["bg_1.jpg", "bg_2.jpg", "bg_3.jpg", "bg_4.png", "bg_5.jpg", "bg_6.png"]);
+        github.Setup(service => service.GetContributorsAsync()).ReturnsAsync(
+        [
+            new GitHubUser { Login = "yyyumeniku", Type = "User" },
+            new GitHubUser { Login = "Aarav2709", Type = "User" },
+            .. Enumerable.Range(1, 10).Select(index => new GitHubUser
+            {
+                Login = $"contributor-{index}",
+                AvatarUrl = $"https://avatars.githubusercontent.com/u/{index}",
+                HtmlUrl = $"https://github.com/contributor-{index}",
+                Type = "User",
+                Contributions = 20 - index
+            }),
+            new GitHubUser { Login = "dependabot[bot]", Type = "Bot" },
+            new GitHubUser { Login = "release-bot", Type = "User" }
+        ]);
+        github.Setup(service => service.GetLatestMainCommitAsync()).ReturnsAsync(
+            new GitHubCommit(
+                "abcdef1234567890",
+                "feat: refine the native About page",
+                "https://github.com/hyprismteam/HyPrism/commit/abcdef1"));
+        github.Setup(service => service.LoadAvatarAsync(It.IsAny<string>(), It.IsAny<int>()))
+            .ReturnsAsync(TinyPngHandler.ImageBytes);
         news.Setup(service => service.GetNewsAsync(It.IsAny<int>(), It.IsAny<NewsSource>()))
             .ReturnsAsync(
             [
@@ -921,7 +947,9 @@ public sealed class MainWindowRenderTests
             news.Object,
             browser.Object,
             new HttpClient(),
-            new LocalizationService("en-US"));
+            new LocalizationService("en-US"),
+            null,
+            github.Object);
 
         Assert.Equal(
             isOfficialProfile ? "Hytale Account" : "Offline Account",
@@ -2086,6 +2114,140 @@ public sealed class MainWindowRenderTests
                 border => border.IsEffectivelyVisible && border.Classes.Contains("settingsGroup"));
         }
 
+        var aboutCategory = viewModel.Settings.Categories.Single(category => category.Id == "about");
+        viewModel.Settings.SelectCategoryCommand.Execute(aboutCategory);
+        for (var attempt = 0; attempt < 50 && viewModel.Settings.IsAboutDataLoading; attempt++)
+        {
+            await Task.Delay(20);
+            Dispatcher.UIThread.RunJobs();
+        }
+        Dispatcher.UIThread.RunJobs();
+        Assert.False(string.IsNullOrWhiteSpace(viewModel.Settings.AboutCurrentVersion));
+        Assert.Equal(6, viewModel.Settings.AboutTeamMembers.Count);
+        Assert.Contains(viewModel.Settings.AboutTeamMembers, member => member.GitHubLogin == "Aarav2709");
+        Assert.DoesNotContain(viewModel.Settings.AboutTeamMembers, member => member.GitHubLogin == "CupRusk");
+        Assert.All(viewModel.Settings.AboutTeamMembers, member => Assert.True(member.HasAvatar));
+        Assert.InRange(viewModel.Settings.AboutContributors.Count, 1, 10);
+        Assert.DoesNotContain(
+            viewModel.Settings.AboutContributors,
+            contributor => contributor.Login.Contains("bot", StringComparison.OrdinalIgnoreCase));
+        var hiddenContributorCount = viewModel.Settings.HasMoreAboutContributors
+            ? int.Parse(viewModel.Settings.AboutContributorOverflow[1..], CultureInfo.InvariantCulture)
+            : 0;
+        Assert.Equal(10, viewModel.Settings.AboutContributors.Count + hiddenContributorCount);
+        if (width >= 1920)
+        {
+            Assert.Equal(10, viewModel.Settings.AboutContributors.Count);
+            Assert.False(viewModel.Settings.HasMoreAboutContributors);
+        }
+        else
+        {
+            Assert.True(viewModel.Settings.HasMoreAboutContributors);
+        }
+        Assert.Equal("abcdef1", viewModel.Settings.AboutLatestCommitSha);
+        Assert.Equal("feat: refine the native About page", viewModel.Settings.AboutLatestCommitHint);
+        Assert.DoesNotContain(
+            settingsView.GetVisualDescendants().OfType<Border>(),
+            border => border.IsEffectivelyVisible && border.Classes.Contains("aboutHero"));
+        Assert.Equal(
+            6,
+            settingsView.GetVisualDescendants().OfType<Button>().Count(
+                button => button.IsEffectivelyVisible && button.Classes.Contains("aboutTeamMember")));
+        Assert.Equal(
+            viewModel.Settings.AboutContributors.Count + (viewModel.Settings.HasMoreAboutContributors ? 1 : 0),
+            settingsView.GetVisualDescendants().OfType<Button>().Count(
+                button => button.IsEffectivelyVisible && button.Classes.Contains("aboutContributor")));
+        var contributorsContainer = settingsView.FindControl<Border>("AboutContributorsContainer");
+        var contributorsRow = settingsView.FindControl<StackPanel>("AboutContributorsRow");
+        Assert.NotNull(contributorsContainer);
+        Assert.NotNull(contributorsRow);
+        var contributorsRowCenter = contributorsRow!.TranslatePoint(
+            new Point(contributorsRow.Bounds.Width / 2, contributorsRow.Bounds.Height / 2),
+            contributorsContainer);
+        Assert.NotNull(contributorsRowCenter);
+        Assert.InRange(
+            Math.Abs(contributorsRowCenter!.Value.X - contributorsContainer!.Bounds.Width / 2),
+            0,
+            1);
+        Assert.DoesNotContain(
+            settingsView.GetVisualDescendants().OfType<TextBlock>(),
+            textBlock => textBlock.IsEffectivelyVisible && textBlock.Text == viewModel.Settings.AboutTeamHint);
+        Assert.All(
+            settingsView.GetVisualDescendants().OfType<Button>().Where(
+                button => button.IsEffectivelyVisible &&
+                          (button.Classes.Contains("aboutLink") ||
+                           button.Classes.Contains("aboutTeamMember") ||
+                           button.Classes.Contains("aboutContributor"))),
+            AssertNoPressScale);
+        Assert.All(
+            settingsView.GetVisualDescendants()
+                .OfType<Avalonia.Controls.Shapes.Path>()
+                .Where(path => path.IsEffectivelyVisible && path.Classes.Contains("aboutOpenIcon")),
+            path => Assert.Contains(
+                path.Transitions!,
+                transition => transition is BrushTransition { Property: { } property } &&
+                              property == Avalonia.Controls.Shapes.Shape.FillProperty));
+        var aboutDisclaimer = settingsView.GetVisualDescendants()
+            .OfType<TextBlock>()
+            .Single(textBlock => textBlock.IsEffectivelyVisible &&
+                                 textBlock.Text == viewModel.Settings.AboutDisclaimer);
+        Assert.IsType<StackPanel>(aboutDisclaimer.Parent);
+
+        viewModel.Settings.OpenDocumentationCommand.Execute(null);
+        browser.Verify(
+            service => service.OpenURL("https://hyprismteam.github.io/HyPrism/docs/"),
+            Times.Once);
+        viewModel.Settings.OpenLatestCommitCommand.Execute(null);
+        browser.Verify(
+            service => service.OpenURL("https://github.com/hyprismteam/HyPrism/commit/abcdef1"),
+            Times.Once);
+        viewModel.Settings.OpenAllContributorsCommand.Execute(null);
+        browser.Verify(
+            service => service.OpenURL("https://github.com/hyprismteam/HyPrism/graphs/contributors"),
+            Times.Once);
+        viewModel.Settings.OpenHytaleEulaCommand.Execute(null);
+        browser.Verify(service => service.OpenURL("https://hytale.com/eula"), Times.Once);
+
+        var aboutPreviewPath = Environment.GetEnvironmentVariable("HYPRISM_ABOUT_RENDER_OUTPUT");
+        if (!string.IsNullOrWhiteSpace(aboutPreviewPath) && width == 1280)
+        {
+            settingsScroll.ScrollToHome();
+            Dispatcher.UIThread.RunJobs();
+            var aboutFrame = window.CaptureRenderedFrame();
+            Assert.NotNull(aboutFrame);
+            aboutFrame!.Save(aboutPreviewPath, PngBitmapEncoderOptions.Default);
+            Assert.True(File.Exists(aboutPreviewPath));
+        }
+
+        var aboutTeamPreviewPath = Environment.GetEnvironmentVariable(
+            "HYPRISM_ABOUT_TEAM_RENDER_OUTPUT");
+        if (!string.IsNullOrWhiteSpace(aboutTeamPreviewPath) && width == 1280)
+        {
+            settingsScroll.ScrollToEnd();
+            Dispatcher.UIThread.RunJobs();
+            var aboutTeamFrame = window.CaptureRenderedFrame();
+            Assert.NotNull(aboutTeamFrame);
+            aboutTeamFrame!.Save(aboutTeamPreviewPath, PngBitmapEncoderOptions.Default);
+            Assert.True(File.Exists(aboutTeamPreviewPath));
+        }
+
+        var compactAboutPreviewPath = Environment.GetEnvironmentVariable(
+            "HYPRISM_ABOUT_COMPACT_RENDER_OUTPUT");
+        if (!string.IsNullOrWhiteSpace(compactAboutPreviewPath) && width == 1024)
+        {
+            var aboutCategoryButton = settingsView.GetVisualDescendants()
+                .OfType<Button>()
+                .Single(button => button.IsEffectivelyVisible && ReferenceEquals(button.DataContext, aboutCategory));
+            aboutCategoryButton.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+            await Task.Delay(340);
+            settingsScroll.ScrollToHome();
+            Dispatcher.UIThread.RunJobs();
+            var compactAboutFrame = window.CaptureRenderedFrame();
+            Assert.NotNull(compactAboutFrame);
+            compactAboutFrame!.Save(compactAboutPreviewPath, PngBitmapEncoderOptions.Default);
+            Assert.True(File.Exists(compactAboutPreviewPath));
+        }
+
         window.Close();
     }
 
@@ -2162,6 +2324,8 @@ public sealed class MainWindowRenderTests
     {
         private static readonly byte[] Png = Convert.FromBase64String(
             "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=");
+
+        public static byte[] ImageBytes => Png;
 
         protected override Task<HttpResponseMessage> SendAsync(
             HttpRequestMessage request,

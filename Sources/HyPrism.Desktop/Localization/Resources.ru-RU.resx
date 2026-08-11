@@ -1636,7 +1636,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>Ваш игровой аватар</value>
   </data>
   <data name="settings.about" xml:space="preserve">
-    <value>О нас</value>
+    <value>О программе</value>
   </data>
   <data name="settings.aboutSettings.authRole" xml:space="preserve">
     <value>Создатель сервера авторизации</value>
@@ -1677,6 +1677,9 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="settings.aboutSettings.installerRole" xml:space="preserve">
     <value>Создатель установщика</value>
   </data>
+  <data name="settings.aboutSettings.siteRole" xml:space="preserve">
+    <value>Разработчик сайта документации</value>
+  </data>
   <data name="settings.aboutSettings.maintainerRole" xml:space="preserve">
     <value>Разработчик и Сопровождающий</value>
   </data>
@@ -1697,6 +1700,63 @@ SPDX-License-Identifier: GPL-3.0-only
   </data>
   <data name="settings.aboutSettings.version" xml:space="preserve">
     <value>Версия {0}</value>
+  </data>
+  <data name="settings.aboutSettings.project" xml:space="preserve">
+    <value>Проект</value>
+  </data>
+  <data name="settings.aboutSettings.githubHint" xml:space="preserve">
+    <value>Исходный код, релизы и разработка</value>
+  </data>
+  <data name="settings.aboutSettings.documentation" xml:space="preserve">
+    <value>Документация</value>
+  </data>
+  <data name="settings.aboutSettings.documentationHint" xml:space="preserve">
+    <value>Руководства, архитектура и материалы для участников</value>
+  </data>
+  <data name="settings.aboutSettings.community" xml:space="preserve">
+    <value>Сообщество</value>
+  </data>
+  <data name="settings.aboutSettings.discordHint" xml:space="preserve">
+    <value>Новости, общение и помощь сообщества</value>
+  </data>
+  <data name="settings.aboutSettings.bugReportHint" xml:space="preserve">
+    <value>Сообщить о проблеме или предложить улучшение</value>
+  </data>
+  <data name="settings.aboutSettings.legal" xml:space="preserve">
+    <value>Открытый код и правовая информация</value>
+  </data>
+  <data name="settings.aboutSettings.license" xml:space="preserve">
+    <value>Лицензия</value>
+  </data>
+  <data name="settings.aboutSettings.licenseHint" xml:space="preserve">
+    <value>Исходный код HyPrism распространяется под GPL-3.0-only</value>
+  </data>
+  <data name="settings.aboutSettings.credits" xml:space="preserve">
+    <value>Визуальные материалы</value>
+  </data>
+  <data name="settings.aboutSettings.creditsHint" xml:space="preserve">
+    <value>Иллюстрации категорий настроек предоставлены Icons8</value>
+  </data>
+  <data name="settings.aboutSettings.currentVersion" xml:space="preserve">
+    <value>Текущая версия</value>
+  </data>
+  <data name="settings.aboutSettings.currentVersionHint" xml:space="preserve">
+    <value>Версия лаунчера, установленная на этом устройстве</value>
+  </data>
+  <data name="settings.aboutSettings.latestMainCommit" xml:space="preserve">
+    <value>Последний коммит в main</value>
+  </data>
+  <data name="settings.aboutSettings.latestMainCommitLoading" xml:space="preserve">
+    <value>Загрузка информации о репозитории</value>
+  </data>
+  <data name="settings.aboutSettings.latestMainCommitUnavailable" xml:space="preserve">
+    <value>Информация о репозитории временно недоступна</value>
+  </data>
+  <data name="settings.aboutSettings.hytaleEula" xml:space="preserve">
+    <value>Hytale EULA</value>
+  </data>
+  <data name="settings.aboutSettings.hytaleEulaHint" xml:space="preserve">
+    <value>Лицензионное соглашение конечного пользователя Hytale</value>
   </data>
   <data name="settings.browse" xml:space="preserve">
     <value>Обзор</value>

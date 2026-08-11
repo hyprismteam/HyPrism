@@ -178,6 +178,60 @@ SPDX-License-Identifier: GPL-3.0-only
         </Grid>
       </Button>
     </DataTemplate>
+
+    <DataTemplate x:Key="AboutTeamMemberTemplate" x:DataType="vm:AboutTeamMemberViewModel">
+      <Button Classes="aboutTeamMember"
+              Command="{Binding DataContext.OpenTeamMemberCommand, ElementName=SettingsRoot}"
+              CommandParameter="{Binding}">
+        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+          <Border Classes="aboutTeamAvatar">
+            <Grid>
+              <Image Source="{Binding Avatar}"
+                     IsVisible="{Binding HasAvatar}"
+                     Stretch="UniformToFill" />
+              <TextBlock Text="{Binding Initials}"
+                         IsVisible="{Binding !HasAvatar}"
+                         HorizontalAlignment="Center"
+                         VerticalAlignment="Center"
+                         FontSize="12"
+                         FontWeight="Bold" />
+            </Grid>
+          </Border>
+          <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
+            <TextBlock Text="{Binding DisplayName}"
+                       Classes="settingsLabel"
+                       MaxLines="1"
+                       TextTrimming="CharacterEllipsis" />
+            <TextBlock Text="{Binding Role}"
+                       Classes="aboutTeamRole"
+                       MaxLines="2"
+                       TextWrapping="Wrap"
+                       TextTrimming="CharacterEllipsis" />
+          </StackPanel>
+        </Grid>
+      </Button>
+    </DataTemplate>
+
+    <DataTemplate x:Key="AboutContributorTemplate" x:DataType="vm:AboutContributorViewModel">
+      <Button Classes="aboutContributor"
+              Command="{Binding DataContext.OpenContributorCommand, ElementName=SettingsRoot}"
+              CommandParameter="{Binding}"
+              ToolTip.Tip="{Binding Login}">
+        <Border Classes="aboutContributorAvatar">
+          <Grid>
+            <Image Source="{Binding Avatar}"
+                   IsVisible="{Binding HasAvatar}"
+                   Stretch="UniformToFill" />
+            <TextBlock Text="{Binding Initial}"
+                       IsVisible="{Binding !HasAvatar}"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"
+                       FontSize="12"
+                       FontWeight="Bold" />
+          </Grid>
+        </Border>
+      </Button>
+    </DataTemplate>
   </UserControl.Resources>
 
   <Grid x:Name="SettingsLayout"
@@ -637,22 +691,190 @@ SPDX-License-Identifier: GPL-3.0-only
             </Border>
           </StackPanel>
 
-          <StackPanel Spacing="10" IsVisible="{Binding IsAbout}">
-            <TextBlock Text="HyPrism Launcher" Classes="settingsCategoryHeading" />
-            <Border Classes="settingsGroup">
-              <StackPanel>
-                <Border Classes="settingsRow">
-                  <StackPanel Spacing="8">
-                    <TextBlock Text="{Binding AboutDescription}" Classes="settingsHint" />
-                    <TextBlock Text="{Binding AboutDisclaimer}" Classes="settingsHint" FontSize="11" />
-                  </StackPanel>
-                </Border>
-                <Border Classes="settingsRow"><Button Classes="settingsLink" Command="{Binding OpenGitHubCommand}"><TextBlock Text="GitHub" /></Button></Border>
-                <Border Classes="settingsRow"><Button Classes="settingsLink" Command="{Binding OpenDiscordCommand}"><TextBlock Text="Discord" /></Button></Border>
-                <Border Classes="settingsRow"><Button Classes="settingsLink" Command="{Binding OpenBugReportCommand}"><TextBlock Text="{Binding BugReportLabel}" /></Button></Border>
-                <Border Classes="settingsRow last"><Button Classes="settingsLink" Command="{Binding OpenIcons8Command}"><TextBlock Text="Icons by Icons8" /></Button></Border>
-              </StackPanel>
-            </Border>
+          <StackPanel Spacing="22" IsVisible="{Binding IsAbout}">
+            <StackPanel Spacing="10">
+              <TextBlock Text="{Binding AboutProjectTitle}" Classes="settingsCategoryHeading" />
+              <Border Classes="settingsGroup">
+                <StackPanel>
+                  <Border Classes="settingsRow aboutRow">
+                    <Grid MinHeight="66" Margin="18,0" ColumnDefinitions="*,Auto" ColumnSpacing="18">
+                      <StackPanel Spacing="3" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding AboutCurrentVersionLabel}" Classes="settingsLabel" />
+                        <TextBlock Text="{Binding AboutCurrentVersionHint}" Classes="settingsHint" />
+                      </StackPanel>
+                      <Border Grid.Column="1" Classes="aboutLicenseValue">
+                        <TextBlock Text="{Binding AboutCurrentVersion}" />
+                      </Border>
+                    </Grid>
+                  </Border>
+                  <Border Classes="settingsRow aboutRow">
+                    <Button Classes="aboutLink"
+                            Command="{Binding OpenLatestCommitCommand}"
+                            IsEnabled="{Binding HasAboutLatestCommit}">
+                      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="18">
+                        <StackPanel Spacing="3">
+                          <TextBlock Text="{Binding AboutLatestCommitLabel}" Classes="settingsLabel" />
+                          <TextBlock Text="{Binding AboutLatestCommitHint}"
+                                     Classes="settingsHint"
+                                     MaxLines="1"
+                                     TextTrimming="CharacterEllipsis" />
+                        </StackPanel>
+                        <Border Grid.Column="1"
+                                Classes="aboutLicenseValue"
+                                IsVisible="{Binding HasAboutLatestCommit}">
+                          <TextBlock Text="{Binding AboutLatestCommitSha}" FontFamily="JetBrains Mono" />
+                        </Border>
+                      </Grid>
+                    </Button>
+                  </Border>
+                  <Border Classes="settingsRow aboutRow">
+                    <Button Classes="aboutLink" Command="{Binding OpenGitHubCommand}">
+                      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="18">
+                        <StackPanel Spacing="3">
+                          <TextBlock Text="GitHub" Classes="settingsLabel" />
+                          <TextBlock Text="{Binding AboutGitHubHint}" Classes="settingsHint" />
+                        </StackPanel>
+                        <Path Grid.Column="1" Classes="aboutOpenIcon" Data="{StaticResource OpenIcon}" />
+                      </Grid>
+                    </Button>
+                  </Border>
+                  <Border Classes="settingsRow aboutRow last">
+                    <Button Classes="aboutLink" Command="{Binding OpenDocumentationCommand}">
+                      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="18">
+                        <StackPanel Spacing="3">
+                          <TextBlock Text="{Binding AboutDocumentationLabel}" Classes="settingsLabel" />
+                          <TextBlock Text="{Binding AboutDocumentationHint}" Classes="settingsHint" />
+                        </StackPanel>
+                        <Path Grid.Column="1" Classes="aboutOpenIcon" Data="{StaticResource OpenIcon}" />
+                      </Grid>
+                    </Button>
+                  </Border>
+                </StackPanel>
+              </Border>
+            </StackPanel>
+
+            <StackPanel Spacing="10">
+              <TextBlock Text="{Binding AboutCommunityTitle}" Classes="settingsCategoryHeading" />
+              <Border Classes="settingsGroup">
+                <StackPanel>
+                  <Border Classes="settingsRow aboutRow">
+                    <Button Classes="aboutLink" Command="{Binding OpenDiscordCommand}">
+                      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="18">
+                        <StackPanel Spacing="3">
+                          <TextBlock Text="Discord" Classes="settingsLabel" />
+                          <TextBlock Text="{Binding AboutDiscordHint}" Classes="settingsHint" />
+                        </StackPanel>
+                        <Path Grid.Column="1" Classes="aboutOpenIcon" Data="{StaticResource OpenIcon}" />
+                      </Grid>
+                    </Button>
+                  </Border>
+                  <Border Classes="settingsRow aboutRow last">
+                    <Button Classes="aboutLink" Command="{Binding OpenBugReportCommand}">
+                      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="18">
+                        <StackPanel Spacing="3">
+                          <TextBlock Text="{Binding BugReportLabel}" Classes="settingsLabel" />
+                          <TextBlock Text="{Binding AboutBugReportHint}" Classes="settingsHint" />
+                        </StackPanel>
+                        <Path Grid.Column="1" Classes="aboutOpenIcon" Data="{StaticResource OpenIcon}" />
+                      </Grid>
+                    </Button>
+                  </Border>
+                </StackPanel>
+              </Border>
+            </StackPanel>
+
+            <StackPanel Spacing="10">
+              <TextBlock Text="{Binding AboutTeamTitle}" Classes="settingsCategoryHeading" />
+              <Border Classes="settingsGroup aboutTeamGroup">
+                <ItemsControl ItemsSource="{Binding AboutTeamMembers}"
+                              ItemTemplate="{StaticResource AboutTeamMemberTemplate}">
+                  <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                      <UniformGrid Columns="3" />
+                    </ItemsPanelTemplate>
+                  </ItemsControl.ItemsPanel>
+                </ItemsControl>
+              </Border>
+            </StackPanel>
+
+            <StackPanel Spacing="10">
+              <TextBlock Text="{Binding AboutContributorsTitle}" Classes="settingsCategoryHeading" />
+              <Border x:Name="AboutContributorsContainer"
+                      Classes="settingsGroup aboutContributorsGroup"
+                      SizeChanged="OnAboutContributorsSizeChanged">
+                <StackPanel x:Name="AboutContributorsRow"
+                            Orientation="Horizontal"
+                            HorizontalAlignment="Center">
+                  <ItemsControl ItemsSource="{Binding AboutContributors}"
+                                ItemTemplate="{StaticResource AboutContributorTemplate}">
+                    <ItemsControl.ItemsPanel>
+                      <ItemsPanelTemplate>
+                        <StackPanel Orientation="Horizontal" />
+                      </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                  </ItemsControl>
+                  <Button Classes="aboutContributor overflow"
+                          IsVisible="{Binding HasMoreAboutContributors}"
+                          Command="{Binding OpenAllContributorsCommand}"
+                          ToolTip.Tip="{Binding AboutContributorsTitle}">
+                    <Border Classes="aboutContributorAvatar overflow">
+                      <TextBlock Text="{Binding AboutContributorOverflow}"
+                                 HorizontalAlignment="Center"
+                                 VerticalAlignment="Center"
+                                 FontSize="13"
+                                 FontWeight="Bold" />
+                    </Border>
+                  </Button>
+                </StackPanel>
+              </Border>
+            </StackPanel>
+
+            <StackPanel Spacing="10">
+              <TextBlock Text="{Binding AboutLegalTitle}" Classes="settingsCategoryHeading" />
+              <Border Classes="settingsGroup">
+                <StackPanel>
+                  <Border Classes="settingsRow aboutRow">
+                    <Button Classes="aboutLink" Command="{Binding OpenLicenseCommand}">
+                      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="18">
+                        <StackPanel Spacing="3">
+                          <TextBlock Text="{Binding AboutLicenseLabel}" Classes="settingsLabel" />
+                          <TextBlock Text="{Binding AboutLicenseHint}" Classes="settingsHint" />
+                        </StackPanel>
+                        <Border Grid.Column="1" Classes="aboutLicenseValue">
+                          <TextBlock Text="GPL-3.0-only" />
+                        </Border>
+                      </Grid>
+                    </Button>
+                  </Border>
+                  <Border Classes="settingsRow aboutRow">
+                    <Button Classes="aboutLink" Command="{Binding OpenHytaleEulaCommand}">
+                      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="18">
+                        <StackPanel Spacing="3">
+                          <TextBlock Text="{Binding AboutHytaleEulaLabel}" Classes="settingsLabel" />
+                          <TextBlock Text="{Binding AboutHytaleEulaHint}" Classes="settingsHint" />
+                        </StackPanel>
+                        <Path Grid.Column="1" Classes="aboutOpenIcon" Data="{StaticResource OpenIcon}" />
+                      </Grid>
+                    </Button>
+                  </Border>
+                  <Border Classes="settingsRow aboutRow last">
+                    <Button Classes="aboutLink" Command="{Binding OpenIcons8Command}">
+                      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="18">
+                        <StackPanel Spacing="3">
+                          <TextBlock Text="{Binding AboutCreditsLabel}" Classes="settingsLabel" />
+                          <TextBlock Text="{Binding AboutCreditsHint}" Classes="settingsHint" />
+                        </StackPanel>
+                        <Path Grid.Column="1" Classes="aboutOpenIcon" Data="{StaticResource OpenIcon}" />
+                      </Grid>
+                    </Button>
+                  </Border>
+                </StackPanel>
+              </Border>
+              <TextBlock Text="{Binding AboutDisclaimer}"
+                         Classes="aboutDisclaimer"
+                         Margin="4,2,4,0"
+                         TextWrapping="Wrap" />
+            </StackPanel>
           </StackPanel>
 
         </Grid>
