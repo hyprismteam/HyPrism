@@ -6,7 +6,7 @@
 import { useEffect } from 'react'
 import { useMDXComponents as getMDXComponents } from '../../mdx-components'
 import { useDocsLocale } from './locale-context'
-import { localizedPages, type MdxPageKey } from './mdx-registry'
+import { localizedPages, type MdxPageKey } from './mdx-registry.generated'
 
 type LocalizedMdxPageProps = Readonly<{
   pageKey: MdxPageKey

@@ -4,8 +4,12 @@
   "private": true,
   "packageManager": "pnpm@11.21.0",
   "scripts": {
+    "generate:mdx-registry": "python3 ../Scripts/generate_mdx_registry.py",
+    "predev": "pnpm generate:mdx-registry",
     "dev": "next dev",
+    "prebuild": "pnpm generate:mdx-registry",
     "build": "next build",
+    "precheck": "pnpm generate:mdx-registry",
     "check": "python3 ../Scripts/check_documentation.py && next typegen && tsc --noEmit",
     "lint:content": "python3 ../Scripts/check_documentation.py"
   },

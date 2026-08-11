@@ -3,7 +3,7 @@
 
 import { generateStaticParamsFor, importPage } from 'nextra/pages'
 import { LocalizedMdxPage } from '../../_components/localized-mdx-page'
-import type { MdxPageKey } from '../../_components/mdx-registry'
+import type { MdxPageKey } from '../../_components/mdx-registry.generated'
 
 type PageProps = Readonly<{
   params: Promise<{

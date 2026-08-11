@@ -25,6 +25,8 @@ English pages live under `content/en`, Russian pages live under `content/ru`, an
 
 Interface translations for search, navigation helpers, themes, the table of contents, and the footer live under `app/_dictionaries`. The language switch updates the page without changing its URL and stores the preference in the browser
 
+The `dev`, `check`, and `build` commands generate `app/_components/mdx-registry.generated.ts` from both language trees. Add the matching MDX files and never edit the generated registry by hand. Generation fails when a route is missing from either language
+
 ## Production build
 
 ```bash
