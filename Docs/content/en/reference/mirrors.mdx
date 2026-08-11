@@ -11,11 +11,11 @@ A mirror definition describes its identity, enabled state, priority, request hea
 
 ## Discovery
 
-`IMirrorDiscoveryService` can inspect a compatible endpoint and infer a candidate schema. Review the generated definition before saving it
+`IMirrorDiscovery` can inspect a compatible endpoint and infer a candidate schema. Review the generated definition before saving it
 
 ## Runtime selection
 
-`IVersionService` loads enabled mirror definitions, preloads source metadata, caches speed tests, and selects an available source. The obsolete `PreferredMirror` configuration value is ignored because selection is automatic
+`IGameVersionCatalog` loads enabled mirror definitions, preloads source metadata, caches speed tests, and selects an available source. The obsolete `PreferredMirror` configuration value is ignored because selection is automatic
 
 ## Security
 

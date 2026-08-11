@@ -1,9 +1,9 @@
 // Copyright (C) 2026 HyPrism Launcher
 // SPDX-License-Identifier: GPL-3.0-only
 
-using HyPrism.Models;
+using HyPrism.Core.Models;
 
-namespace HyPrism.Services.Game.Sources;
+namespace HyPrism.Core.Game.Sources;
 
 /// <summary>
 /// Cached mirror speed test result
@@ -63,7 +63,7 @@ public sealed class VersionSourceLayoutInfo
 /// <summary>
 /// Unified interface for version data sources.
 /// Both official Hytale API and community mirrors implement this interface,
-/// allowing the VersionService to treat them uniformly
+/// allowing the GameVersionCatalog to treat them uniformly
 /// </summary>
 public interface IVersionSource
 {
@@ -140,7 +140,7 @@ public interface IVersionSource
 
     /// <summary>
     /// Gets the full patch chain for a branch (all patch steps from version 1+).
-    /// Used by VersionService for centralized patch caching alongside version caching
+    /// Used by GameVersionCatalog for centralized patch caching alongside version caching
     /// </summary>
     /// <param name="os">OS identifier</param>
     /// <param name="arch">Architecture</param>

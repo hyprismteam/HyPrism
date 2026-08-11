@@ -9,13 +9,21 @@ The documentation is a Nextra 4 application stored entirely under `Docs`
 
 ## Local development
 
+Use Node.js 22 and pnpm 11.21.0. The `packageManager` field in `Docs/package.json` keeps the pnpm version consistent between local development and CI
+
 ```bash
 cd Docs
 pnpm install
 pnpm dev
 ```
 
-Open `http://localhost:3000/docs/`
+Open `http://localhost:3000/HyPrism/en/docs/` for English or `http://localhost:3000/HyPrism/ru/docs/` for Russian. The local development server uses the same `/HyPrism` base path as GitHub Pages
+
+## Localization model
+
+Each locale is an independent documentation site. English pages live under `content/en`, Russian pages live under `content/ru`, and both trees must contain matching routes
+
+Interface translations for search, navigation helpers, themes, the table of contents, and the footer live under `app/_dictionaries`. The language switch keeps the current documentation route when moving between locales
 
 ## Production build
 
@@ -30,10 +38,12 @@ Next.js exports static files to `Docs/out`
 
 ## GitHub Pages path
 
-The workflow sets `PAGES_BASE_PATH=/HyPrism`, while Nextra serves content below `/docs`. The deployed English documentation therefore starts at
+The workflow sets `PAGES_BASE_PATH=/HyPrism`. The deployed English documentation starts at
 
 ```text
-https://hyprismteam.github.io/HyPrism/docs/en/
+https://hyprismteam.github.io/HyPrism/en/docs/
 ```
+
+The compatibility route `/HyPrism/docs/` selects English or Russian from the saved preference and browser language
 
 In repository settings, open **Pages** and select **GitHub Actions** as the publishing source. The `docs-pages.yml` workflow handles the remaining build and deployment steps

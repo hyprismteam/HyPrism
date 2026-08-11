@@ -8,9 +8,14 @@ const withNextra = nextra({
 })
 
 export default withNextra({
+  agentRules: false,
   output: 'export',
   trailingSlash: true,
-  basePath: process.env.PAGES_BASE_PATH || '',
+  basePath: process.env.PAGES_BASE_PATH || (process.env.NODE_ENV === 'development' ? '/HyPrism' : ''),
+  i18n: {
+    locales: ['en', 'ru'],
+    defaultLocale: 'en'
+  },
   images: {
     unoptimized: true
   }

@@ -6,9 +6,9 @@ using System.Text.Json;
 using System.Runtime.InteropServices;
 using System.Diagnostics;
 using System.IO.Compression;
-using HyPrism.Services.Core.Infrastructure;
+using HyPrism.Core.Infrastructure;
 
-namespace HyPrism.Services.Game.Launch;
+namespace HyPrism.Core.Game.Launch;
 
 /// <summary>
 /// Patches the HytaleClient binary to replace hytale.com domain references
@@ -16,7 +16,7 @@ namespace HyPrism.Services.Game.Launch;
 /// Example: hytale.com -> sanasol.ws
 /// This allows the game to connect to custom authentication servers
 /// </summary>
-public class ClientPatcher : IClientPatcher
+public class ClientPatcher
 {
     private const string OriginalDomain = "hytale.com";
     private const string DefaultNewDomain = "sanasol.ws"; // Must be 10 chars like hytale.com

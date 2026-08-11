@@ -1,23 +1,23 @@
 // Copyright (C) 2026 HyPrism Launcher
 // SPDX-License-Identifier: GPL-3.0-only
 
-using HyPrism.Models;
-using HyPrism.Services.Core.App;
-using HyPrism.Services.Core.Infrastructure;
-using HyPrism.Services.Game;
-using HyPrism.Services.Game.Instance;
-using HyPrism.Services.Game.Launch;
-using HyPrism.Services.User;
+using HyPrism.Core.Models;
+using HyPrism.Core.Application.Progress;
+using HyPrism.Core.Infrastructure;
+using HyPrism.Core.Game;
+using HyPrism.Core.Game.Instances;
+using HyPrism.Core.Game.Launch;
+using HyPrism.Core.Accounts;
 
 namespace HyPrism.Core.Tests.Game;
 
 public sealed class GameLaunchCoordinatorTests
 {
-    private readonly Mock<IGameSessionService> _gameSession = new();
-    private readonly Mock<IGameProcessService> _gameProcess = new();
-    private readonly Mock<IInstanceService> _instances = new();
-    private readonly Mock<IConfigService> _config = new();
-    private readonly Mock<IProgressNotificationService> _progress = new();
+    private readonly Mock<IGameInstallationWorkflow> _gameSession = new();
+    private readonly Mock<IGameProcessTracker> _gameProcess = new();
+    private readonly Mock<IInstanceRepository> _instances = new();
+    private readonly Mock<IConfigStore> _config = new();
+    private readonly Mock<IProgressReporter> _progress = new();
 
     [Fact]
     public async Task LaunchAsync_UsesRequestedInstanceAndPreference()

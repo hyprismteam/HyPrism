@@ -3,7 +3,7 @@
 
 using System.Text.Json.Serialization;
 
-namespace HyPrism.Models;
+namespace HyPrism.Core.Models;
 
 /// <summary>
 /// Response from the official Hytale patches API.

@@ -3,7 +3,7 @@
 
 using System.Collections.Generic;
 
-namespace HyPrism.Models;
+namespace HyPrism.Core.Models;
 
 /// <summary>Paged result set returned from mod search operations.</summary>
 public class ModSearchResult

@@ -4,18 +4,19 @@
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using HyPrism.Desktop.Features.About;
+using HyPrism.Desktop.Features.News;
+using HyPrism.Desktop.Features.Settings;
+using HyPrism.Desktop.Platform;
 using HyPrism.Desktop.Localization;
-using HyPrism.Desktop.Services;
-using HyPrism.Desktop.ViewModels;
-using HyPrism.Desktop.Views;
-using HyPrism.Services.Core.App;
-using HyPrism.Services.Core.Infrastructure;
-using HyPrism.Services.Core.Integration;
-using HyPrism.Services.Core.Platform;
-using HyPrism.Services.Game;
-using HyPrism.Services.Game.Instance;
-using HyPrism.Services.Game.Launch;
-using HyPrism.Services.User;
+using HyPrism.Desktop.Shell;
+using HyPrism.Core;
+using HyPrism.Core.Application.Ports;
+using HyPrism.Core.Application.Progress;
+using HyPrism.Core.Game;
+using HyPrism.Core.Game.Instances;
+using HyPrism.Core.Game.Launch;
+using HyPrism.Core.Accounts;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HyPrism.Desktop;
@@ -32,29 +33,31 @@ public sealed partial class App : Application
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             var services = DesktopRuntime.Services;
-            var settings = services.GetRequiredService<ISettingsService>();
+            var settings = services.GetRequiredService<IDesktopSettingsStore>();
+            services.GetRequiredService<IDiscordPresence>().Initialize();
 
-            var localizer = new LocalizationService(settings.GetLanguage());
-            if (!string.Equals(settings.GetLanguage(), localizer.CurrentLanguage, StringComparison.OrdinalIgnoreCase))
-                settings.SetLanguage(localizer.CurrentLanguage);
+            var localizer = new StringLocalizer(settings.Language);
+            if (!string.Equals(settings.Language, localizer.CurrentLanguage, StringComparison.OrdinalIgnoreCase))
+                settings.Language = localizer.CurrentLanguage;
 
             var mainWindow = new MainWindow();
             var uriLauncher = new ExternalUriLauncher(() => mainWindow);
+            var filePicker = new FilePicker(() => mainWindow);
             _mainWindowViewModel = new MainWindowViewModel(
-                services.GetRequiredService<IInstanceService>(),
-                services.GetRequiredService<IProfileService>(),
-                services.GetRequiredService<IProfileManagementService>(),
+                services.GetRequiredService<IInstanceRepository>(),
+                services.GetRequiredService<IProfileManager>(),
+                services.GetRequiredService<IProfileRepository>(),
                 services.GetRequiredService<IGameLaunchCoordinator>(),
-                services.GetRequiredService<IGameSessionService>(),
-                services.GetRequiredService<IGameProcessService>(),
-                services.GetRequiredService<IProgressNotificationService>(),
+                services.GetRequiredService<IGameInstallationWorkflow>(),
+                services.GetRequiredService<IGameProcessTracker>(),
+                services.GetRequiredService<IProgressReporter>(),
                 settings,
-                services.GetRequiredService<INewsService>(),
+                services.GetRequiredService<IHytaleNewsClient>(),
                 uriLauncher,
                 services.GetRequiredService<HttpClient>(),
                 localizer,
-                services.GetRequiredService<IFileDialogService>(),
-                services.GetRequiredService<IGitHubService>());
+                filePicker,
+                services.GetRequiredService<IGitHubClient>());
 
             mainWindow.DataContext = _mainWindowViewModel;
             desktop.MainWindow = mainWindow;

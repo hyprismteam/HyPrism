@@ -3,7 +3,7 @@
 
 using System.Collections.Generic;
 
-namespace HyPrism.Models;
+namespace HyPrism.Core.Models;
 
 /// <summary>Paged search response from the CurseForge Search API.</summary>
 public class CurseForgeSearchResponse

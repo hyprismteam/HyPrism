@@ -9,13 +9,21 @@ description: Локальная работа с Nextra и публикация �
 
 ## Локальная разработка
 
+Используйте Node.js 22 и pnpm 11.21.0. Поле `packageManager` в `Docs/package.json` синхронизирует версию pnpm в локальной среде и CI
+
 ```bash
 cd Docs
 pnpm install
 pnpm dev
 ```
 
-Откройте `http://localhost:3000/docs/`
+Откройте `http://localhost:3000/HyPrism/ru/docs/` для русской версии или `http://localhost:3000/HyPrism/en/docs/` для английской. Локальный dev-сервер использует тот же base path `/HyPrism`, что и GitHub Pages
+
+## Модель локализации
+
+Каждая локаль является отдельным сайтом документации. Английские страницы находятся в `content/en`, русские в `content/ru`, а маршруты в обоих деревьях должны совпадать
+
+Переводы поиска, навигационных элементов, тем, оглавления и footer хранятся в `app/_dictionaries`. Переключатель языка сохраняет текущий маршрут документации
 
 ## Production-сборка
 
@@ -30,10 +38,12 @@ Next.js экспортирует статические файлы в `Docs/out`
 
 ## Путь GitHub Pages
 
-Workflow задает `PAGES_BASE_PATH=/HyPrism`, а Nextra обслуживает контент внутри `/docs`. Русская документация будет доступна по адресу
+Workflow задает `PAGES_BASE_PATH=/HyPrism`. Русская документация будет доступна по адресу
 
 ```text
-https://hyprismteam.github.io/HyPrism/docs/ru/
+https://hyprismteam.github.io/HyPrism/ru/docs/
 ```
+
+Совместимый маршрут `/HyPrism/docs/` выбирает английскую или русскую версию по сохраненному выбору и языку браузера
 
 В настройках репозитория откройте **Pages** и выберите **GitHub Actions** как источник публикации. Остальную сборку и развертывание выполняет `docs-pages.yml`

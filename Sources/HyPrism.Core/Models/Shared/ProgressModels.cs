@@ -1,7 +1,7 @@
 // Copyright (C) 2026 HyPrism Launcher
 // SPDX-License-Identifier: GPL-3.0-only
 
-namespace HyPrism.Models;
+namespace HyPrism.Core.Models;
 
 /// <summary>
 /// Represents a username->UUID mapping for the frontend.
@@ -21,7 +21,7 @@ public class DownloadProgress
 {
     /// <summary>Whether the download completed successfully.</summary>
     public bool Success { get; set; }
-    /// <summary>Progress percentage (0–100).</summary>
+    /// <summary>Progress percentage from 0 to 100</summary>
     public int Progress { get; set; }
     /// <summary>Error message if the download failed; null on success.</summary>
     public string? Error { get; set; }

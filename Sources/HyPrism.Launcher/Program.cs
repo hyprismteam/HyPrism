@@ -4,11 +4,19 @@
 using ElectronNET;
 using ElectronNET.API;
 using ElectronNET.API.Entities;
+using HyPrism.Desktop.Features.About;
+using HyPrism.Desktop.Features.News;
+using HyPrism.Desktop.Integrations.Discord;
+using HyPrism.Core;
+using HyPrism.Core.Application.Ports;
+using HyPrism.Core.Application.Progress;
+using HyPrism.Core.Game.Instances;
+using HyPrism.Core.Game.Versions;
+using HyPrism.Core.Infrastructure;
 using HyPrism.Services.Core.Infrastructure;
 using HyPrism.Services.Core.Ipc;
 using HyPrism.Services.Core.Platform;
-using HyPrism.Services.Game.Instance;
-using HyPrism.Services.User;
+using HyPrism.Services.Core.App;
 using Microsoft.Extensions.DependencyInjection;
 
 using Serilog;
@@ -26,7 +34,7 @@ class Program
         GCSettings.LatencyMode = GCLatencyMode.Interactive;
 
         // Initialize Logger
-        var appDir = UtilityService.GetEffectiveAppDir();
+        var appDir = LauncherUtilities.GetEffectiveAppDir();
         var logsDir = Path.Combine(appDir, "Logs");
         Directory.CreateDirectory(logsDir);
 
@@ -81,6 +89,30 @@ class Program
             {
                 services.AddSingleton<ClipboardService>();
                 services.AddSingleton<IClipboardService>(sp => sp.GetRequiredService<ClipboardService>());
+                services.AddSingleton<HytaleNewsClient>();
+                services.AddSingleton<IHytaleNewsClient>(sp => sp.GetRequiredService<HytaleNewsClient>());
+                services.AddSingleton<GitHubClient>();
+                services.AddSingleton<IGitHubClient>(sp => sp.GetRequiredService<GitHubClient>());
+                services.AddSingleton<DiscordPresence>();
+                services.AddSingleton<IDiscordPresence>(sp => sp.GetRequiredService<DiscordPresence>());
+                services.AddSingleton(sp =>
+                    new FileService(sp.GetRequiredService<AppPathConfiguration>()));
+                services.AddSingleton<IFileService>(sp => sp.GetRequiredService<FileService>());
+                services.AddSingleton<FileDialogService>();
+                services.AddSingleton<IFileDialogService>(sp => sp.GetRequiredService<FileDialogService>());
+                services.AddSingleton<GpuDetectionService>();
+                services.AddSingleton<IGpuProvider>(sp => sp.GetRequiredService<GpuDetectionService>());
+                services.AddSingleton(sp =>
+                    new SettingsService(sp.GetRequiredService<IConfigStore>()));
+                services.AddSingleton<ISettingsService>(sp => sp.GetRequiredService<SettingsService>());
+                services.AddSingleton(sp =>
+                    new UpdateService(
+                        sp.GetRequiredService<HttpClient>(),
+                        sp.GetRequiredService<IConfigStore>(),
+                        sp.GetRequiredService<IGameVersionCatalog>(),
+                        sp.GetRequiredService<IInstanceRepository>(),
+                        sp.GetRequiredService<IProgressReporter>()));
+                services.AddSingleton<IUpdateService>(sp => sp.GetRequiredService<UpdateService>());
                 services.AddSingleton<IpcService>();
             });
             
@@ -155,14 +187,14 @@ class Program
         ipcService.RegisterAll();
 
         // Run instance migrations (delegated to the dedicated migration service)
-        var migrationService = services.GetRequiredService<IInstanceMigrationService>();
+        var migrationService = services.GetRequiredService<IInstanceMigrator>();
         migrationService.MigrateLegacyData();
         migrationService.MigrateVersionFoldersToIdFolders();
         migrationService.MigrateBranchSubdirectoriesToFlat();
 
         // Repair legacy profile mods symlink/junction if present and ensure
         // mods are stored in instance-local UserData/Mods.
-        var profileManagementService = services.GetRequiredService<IProfileManagementService>();
+        var profileManagementService = services.GetRequiredService<IProfileRepository>();
         profileManagementService.InitializeProfileModsSymlink();
 
         // Resolve icon path for the window

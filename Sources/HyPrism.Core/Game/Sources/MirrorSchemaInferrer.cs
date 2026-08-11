@@ -2,15 +2,15 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 using System.Text.Json;
-using HyPrism.Models;
+using HyPrism.Core.Models;
 
-namespace HyPrism.Services.Game.Sources;
+namespace HyPrism.Core.Game.Sources;
 
 /// <summary>
 /// Static helpers for constructing <see cref="MirrorMeta"/> objects from auto-discovery
 /// results and for deriving stable mirror identifiers and names from URIs.
 /// All business logic for <em>detecting</em> the mirror type remains in
-/// <see cref="MirrorDiscoveryService"/>; this class only deals with schema construction.
+/// <see cref="MirrorDiscovery"/>; this class only deals with schema construction.
 /// </summary>
 internal static class MirrorSchemaInferrer
 {

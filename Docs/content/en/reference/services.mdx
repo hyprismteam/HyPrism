@@ -1,29 +1,36 @@
 ---
-title: Core services
-description: Responsibilities of the public service groups in HyPrism.Core
+title: Core contracts
+description: Responsibilities and placement of the public HyPrism.Core contracts
 ---
 
-# Core services
+# Core contracts
 
 `Bootstrapper.Initialize` registers the default implementations and returns an `IServiceProvider`. A host may add platform-specific registrations through its configuration callback
 
-| Service group | Main contracts | Responsibility |
+| Feature | Main contracts | Responsibility |
 | --- | --- | --- |
-| Settings and config | `ISettingsService`, `IConfigService` | typed preferences and persistence |
-| Progress | `IProgressNotificationService` | download, game state, and error events |
-| Versions | `IVersionService`, `IVersionSource` | version lists, source selection, cache, and patches |
-| Instances | `IInstanceService`, `IInstanceMigrationService` | paths, metadata, selection, import, and migration |
-| Downloads | `IDownloadService`, `IPatchManager`, `IButlerService` | transfer, file size checks, patching, and Butler |
-| Launch | `IGameSessionService`, `IGameLaunchCoordinator`, `IGameLauncher` | orchestration from selection to process start |
-| Process | `IGameProcessService` | process tracking and controlled exit |
-| Mods | `IModService` | search, install, import, update checks, and changelog retrieval |
-| Authentication | `IHytaleAuthService`, `IAuthService` | official sessions, OAuth challenges, and game tokens |
-| Profiles | `IProfileService`, `IProfileManagementService`, `IUserIdentityService` | identity and profile lifecycle |
-| Assets | `IAssetService`, `IAvatarService`, `ISkinService` | asset extraction and profile visuals |
-| News | `INewsService`, `INewsSource` | feed and structured article retrieval |
-| GitHub | `IGitHubService` | cached repository metadata, contributors, commits, and avatars |
-| Platform | `IClipboardService`, `IFileDialogService`, `IGpuDetectionService` | host-owned operating system capabilities that remain behind Core contracts |
+| Configuration | `IConfigStore` | shared launcher and game configuration persistence |
+| Progress | `IProgressReporter` | download, game state, and error events |
+| Versions | `IGameVersionCatalog`, `IVersionSource` | version lists, source selection, cache, and patches |
+| Instances | `IInstanceRepository`, `IInstanceMigrator` | paths, metadata, selection, import, and migration |
+| Downloads | `IFileDownloader`, `IPatchManager`, `IButlerClient` | transfer, file size checks, patching, and Butler |
+| Launch | `IGameInstallationWorkflow`, `IGameLaunchCoordinator`, `IGameLauncher` | orchestration from selection to process start |
+| Process | `IGameProcessTracker` | process tracking and controlled exit |
+| Mods | `IModManager` | search, install, import, update checks, and changelog retrieval |
+| Authentication | `IHytaleAuthenticator`, `GameSessionAuthenticator` | official sessions, OAuth challenges, and game tokens |
+| Profiles | `IProfileManager`, `IProfileRepository`, `IUserIdentityProvider` | identity and profile lifecycle |
+| Assets | `IAvatarCache`, `ISkinRepository` | avatar and skin data used by profiles and game launch |
+| Platform | `IGpuProvider` | GPU detection required by cross-platform game launch |
+| Presence | `IDiscordPresence` | host-provided launcher and game presence updates |
 
-Prefer the narrowest contract required by a consumer. Avoid resolving services from the container inside domain code
+Contracts live beside their feature implementation. `Application/Ports` is reserved for capabilities supplied by the active host, currently `IDiscordPresence` and `IGpuProvider`
+
+Prefer the narrowest contract required by a consumer. Avoid resolving dependencies from the container inside domain code
 
 Interactive OAuth does not depend on a browser service in Core. The host passes an asynchronous URI launcher into the launch operation, and Core uses it only when an official account requires authorization
+
+Launcher self-update and clipboard compatibility code belongs to the obsolete Electron host. The active Core graph does not register or expose this legacy code
+
+Avalonia preferences are exposed by `IDesktopSettingsStore` in `HyPrism.Desktop`. Core components that require launch configuration consume `IConfigStore` directly
+
+`IHytaleNewsClient`, `IGitHubClient`, and their implementations belong to Desktop features. News exposes only the official Hytale feed and structured articles, while GitHub metadata is used by the About page

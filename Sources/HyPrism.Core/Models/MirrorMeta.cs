@@ -3,7 +3,7 @@
 
 using System.Text.Json.Serialization;
 
-namespace HyPrism.Models;
+namespace HyPrism.Core.Models;
 
 /// <summary>
 /// Root model for a mirror meta JSON file (*.mirror.json).

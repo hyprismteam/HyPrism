@@ -1,9 +1,9 @@
 // Copyright (C) 2026 HyPrism Launcher
 // SPDX-License-Identifier: GPL-3.0-only
 
-using HyPrism.Services.User;
+using HyPrism.Core.Accounts;
 
-namespace HyPrism.Services.Game.Launch;
+namespace HyPrism.Core.Game.Launch;
 
 /// <summary>
 /// Handles launching the game process, including client patching,

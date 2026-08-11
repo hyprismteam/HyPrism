@@ -6,25 +6,27 @@ using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using ElectronNET.API;
+using HyPrism.Desktop.Features.News;
 using Microsoft.Extensions.DependencyInjection;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Processing;
-using HyPrism.Models;
+using HyPrism.Core.Accounts;
+using HyPrism.Core.Application.Ports;
+using HyPrism.Core.Game;
+using HyPrism.Core.Game.Instances;
+using HyPrism.Core.Game.Launch;
+using HyPrism.Core.Game.Mods;
+using HyPrism.Core.Game.Patching;
+using HyPrism.Core.Game.Sources;
+using HyPrism.Core.Game.Versions;
+using HyPrism.Core.Infrastructure;
+using HyPrism.Core.Models;
 using HyPrism.Services.Core.Infrastructure;
 using HyPrism.Services.Core.App;
-using HyPrism.Services.Core.Integration;
 using HyPrism.Services.Core.Platform;
-using HyPrism.Services.Game;
-using HyPrism.Services.Game.Butler;
-using HyPrism.Services.Game.Instance;
-using HyPrism.Services.Game.Launch;
-using HyPrism.Services.Game.Mod;
-using HyPrism.Services.Game.Sources;
-using HyPrism.Services.User;
 using HyPrism.Services.Core.Ipc.Attributes;
 using HyPrism.Services.Core.Ipc.Requests;
 using HyPrism.Services.Core.Ipc.Responses;
-using HyPrism.Services.Game.Version;
 
 namespace HyPrism.Services.Core.Ipc;
 
@@ -113,7 +115,7 @@ public class IpcService(IServiceProvider services) : IpcServiceBase(services)
     [IpcInvoke("hyprism:config:get")]
     public AppConfig GetConfig()
     {
-        var config = Services.GetRequiredService<IConfigService>().Configuration;
+        var config = Services.GetRequiredService<IConfigStore>().Configuration;
         return new AppConfig(config.Language, Services.GetRequiredService<AppPathConfiguration>().AppDir);
     }
 
@@ -121,7 +123,7 @@ public class IpcService(IServiceProvider services) : IpcServiceBase(services)
     [IpcInvoke("hyprism:config:save")]
     public SuccessResult SaveConfig()
     {
-        Services.GetRequiredService<IConfigService>().SaveConfig();
+        Services.GetRequiredService<IConfigStore>().SaveConfig();
         return new SuccessResult(true);
     }
 
@@ -141,23 +143,23 @@ public class IpcService(IServiceProvider services) : IpcServiceBase(services)
     /// <summary>Cancels an in-progress game download.</summary>
     [IpcSend("hyprism:game:cancel")]
     public void CancelGame()
-        => Services.GetRequiredService<IGameSessionService>().CancelDownload();
+        => Services.GetRequiredService<IGameInstallationWorkflow>().CancelDownload();
 
     /// <summary>Sends an exit signal to the running game process.</summary>
     [IpcInvoke("hyprism:game:stop")]
     public bool StopGame()
-        => Services.GetRequiredService<IGameProcessService>().ExitGame();
+        => Services.GetRequiredService<IGameProcessTracker>().ExitGame();
 
     /// <summary>Returns a list of all locally installed game instances with validation status.</summary>
     [IpcInvoke("hyprism:game:instances")]
     public List<InstalledInstance> GetInstances()
-        => Services.GetRequiredService<IInstanceService>().GetInstalledInstances();
+        => Services.GetRequiredService<IInstanceRepository>().GetInstalledInstances();
 
     /// <summary>Returns the playability status of a specific instance.</summary>
     [IpcInvoke("hyprism:instance:status")]
     public InstanceStatusResponse GetInstanceStatus(string instanceId)
     {
-        var instanceSvc = Services.GetRequiredService<IInstanceService>();
+        var instanceSvc = Services.GetRequiredService<IInstanceRepository>();
         var path = instanceSvc.GetInstancePathById(instanceId);
 
         if (string.IsNullOrEmpty(path))
@@ -172,17 +174,17 @@ public class IpcService(IServiceProvider services) : IpcServiceBase(services)
     /// <summary>Returns whether the game process is currently running.</summary>
     [IpcInvoke("hyprism:game:isRunning")]
     public bool IsGameRunning()
-        => Services.GetRequiredService<IGameProcessService>().CheckForRunningGame();
+        => Services.GetRequiredService<IGameProcessTracker>().CheckForRunningGame();
 
     /// <summary>Returns the list of available game version numbers for the given branch.</summary>
     [IpcInvoke("hyprism:game:versions")]
     public async Task<List<int>> GetVersions(GetVersionsRequest? req)
     {
 #pragma warning disable CS0618
-        var branch = Services.GetRequiredService<IConfigService>().Configuration.VersionType ?? "release";
+        var branch = Services.GetRequiredService<IConfigStore>().Configuration.VersionType ?? "release";
 #pragma warning restore CS0618
         if (!string.IsNullOrEmpty(req?.Branch)) branch = req.Branch;
-        return await Services.GetRequiredService<IVersionService>().GetVersionListAsync(branch);
+        return await Services.GetRequiredService<IGameVersionCatalog>().GetVersionListAsync(branch);
     }
 
     /// <summary>Returns available game versions enriched with download-source metadata (official and mirror).</summary>
@@ -190,17 +192,17 @@ public class IpcService(IServiceProvider services) : IpcServiceBase(services)
     public async Task<VersionListResponse> GetVersionsWithSources(GetVersionsRequest? req)
     {
 #pragma warning disable CS0618
-        var branch = Services.GetRequiredService<IConfigService>().Configuration.VersionType ?? "release";
+        var branch = Services.GetRequiredService<IConfigStore>().Configuration.VersionType ?? "release";
 #pragma warning restore CS0618
         if (!string.IsNullOrEmpty(req?.Branch)) branch = req.Branch;
-        return await Services.GetRequiredService<IVersionService>().GetVersionListWithSourcesAsync(branch);
+        return await Services.GetRequiredService<IGameVersionCatalog>().GetVersionListWithSourcesAsync(branch);
     }
 
     /// <summary>Subscribes the renderer to real-time download/install progress updates.</summary>
     [IpcEvent("hyprism:game:progress")]
     public void SubscribeGameProgress(Action<ProgressUpdate> emit)
     {
-        Services.GetRequiredService<ProgressNotificationService>().DownloadProgressChanged += msg =>
+        Services.GetRequiredService<ProgressReporter>().DownloadProgressChanged += msg =>
         {
             try { emit(new ProgressUpdate(msg.State, msg.Progress, msg.MessageKey, msg.Args, msg.DownloadedBytes, msg.TotalBytes)); }
             catch { /* swallow */ }
@@ -211,7 +213,7 @@ public class IpcService(IServiceProvider services) : IpcServiceBase(services)
     [IpcEvent("hyprism:game:state")]
     public void SubscribeGameState(Action<GameState> emit)
     {
-        Services.GetRequiredService<ProgressNotificationService>().GameStateChanged += (state, exitCode) =>
+        Services.GetRequiredService<ProgressReporter>().GameStateChanged += (state, exitCode) =>
         {
             try { emit(new GameState(state, exitCode)); } catch { /* swallow */ }
         };
@@ -221,7 +223,7 @@ public class IpcService(IServiceProvider services) : IpcServiceBase(services)
     [IpcEvent("hyprism:game:error")]
     public void SubscribeGameError(Action<GameError> emit)
     {
-        Services.GetRequiredService<ProgressNotificationService>().ErrorOccurred += (type, message, technical) =>
+        Services.GetRequiredService<ProgressReporter>().ErrorOccurred += (type, message, technical) =>
         {
             try { emit(new GameError(type, message, technical)); } catch { /* swallow */ }
         };
@@ -235,7 +237,7 @@ public class IpcService(IServiceProvider services) : IpcServiceBase(services)
     [IpcInvoke("hyprism:instance:create")]
     public InstanceInfo? CreateInstance(CreateInstanceRequest req)
     {
-        var meta = Services.GetRequiredService<IInstanceService>()
+        var meta = Services.GetRequiredService<IInstanceRepository>()
             .CreateInstanceMeta(req.Branch, req.Version, req.CustomName, req.IsLatest ?? false);
         return meta == null ? null : new InstanceInfo
         {
@@ -246,27 +248,27 @@ public class IpcService(IServiceProvider services) : IpcServiceBase(services)
     /// <summary>Deletes a game instance by ID, removing its directory and metadata.</summary>
     [IpcInvoke("hyprism:instance:delete")]
     public bool DeleteInstance(InstanceIdRequest req)
-        => Services.GetRequiredService<IInstanceService>().DeleteGameById(req.InstanceId);
+        => Services.GetRequiredService<IInstanceRepository>().DeleteGameById(req.InstanceId);
 
     /// <summary>Sets the specified instance as the currently selected instance to launch.</summary>
     [IpcInvoke("hyprism:instance:select")]
     public bool SelectInstance(SelectInstanceRequest req)
     {
         if (string.IsNullOrEmpty(req.Id)) return false;
-        Services.GetRequiredService<IInstanceService>().SetSelectedInstance(req.Id);
+        Services.GetRequiredService<IInstanceRepository>().SetSelectedInstance(req.Id);
         return true;
     }
 
     /// <summary>Returns the currently selected instance info, or null if none is selected.</summary>
     [IpcInvoke("hyprism:instance:getSelected")]
     public InstanceInfo? GetSelectedInstance()
-        => Services.GetRequiredService<IInstanceService>().GetSelectedInstance();
+        => Services.GetRequiredService<IInstanceRepository>().GetSelectedInstance();
 
     /// <summary>Returns a list of all known instances with lightweight info (name, branch, version, installed state).</summary>
     [IpcInvoke("hyprism:instance:list")]
     public List<InstanceInfo> ListInstances()
     {
-        var svc = Services.GetRequiredService<IInstanceService>();
+        var svc = Services.GetRequiredService<IInstanceRepository>();
         svc.SyncInstancesWithConfig();
         return svc.GetCachedInstances().Select(i => new InstanceInfo
         {
@@ -283,21 +285,21 @@ public class IpcService(IServiceProvider services) : IpcServiceBase(services)
     public bool RenameInstance(RenameInstanceRequest req)
     {
         if (string.IsNullOrEmpty(req.InstanceId)) return false;
-        Services.GetRequiredService<IInstanceService>().SetInstanceCustomNameById(req.InstanceId, req.CustomName);
+        Services.GetRequiredService<IInstanceRepository>().SetInstanceCustomNameById(req.InstanceId, req.CustomName);
         return true;
     }
 
     /// <summary>Changes the target version (or branch) of a "latest" instance.</summary>
     [IpcInvoke("hyprism:instance:changeVersion")]
     public bool ChangeVersion(ChangeVersionRequest req)
-        => Services.GetRequiredService<IInstanceService>()
+        => Services.GetRequiredService<IInstanceRepository>()
             .ChangeInstanceVersion(req.InstanceId, req.Branch, req.Version);
 
     /// <summary>Opens the instance directory in the system file manager.</summary>
     [IpcSend("hyprism:instance:openFolder")]
     public void OpenInstanceFolder(InstanceIdRequest req)
     {
-        var path = Services.GetRequiredService<IInstanceService>().GetInstancePathById(req.InstanceId);
+        var path = Services.GetRequiredService<IInstanceRepository>().GetInstancePathById(req.InstanceId);
         if (!string.IsNullOrEmpty(path) && Directory.Exists(path))
             Services.GetRequiredService<IFileService>().OpenFolder(path);
     }
@@ -306,10 +308,10 @@ public class IpcService(IServiceProvider services) : IpcServiceBase(services)
     [IpcSend("hyprism:instance:openModsFolder")]
     public void OpenModsFolder(InstanceIdRequest req)
     {
-        var svc = Services.GetRequiredService<IInstanceService>();
+        var svc = Services.GetRequiredService<IInstanceRepository>();
         var path = svc.GetInstancePathById(req.InstanceId);
         if (string.IsNullOrEmpty(path)) return;
-        var modsPath = Services.GetRequiredService<IModService>().GetOrCreateModsDirectory(path);
+        var modsPath = Services.GetRequiredService<IModManager>().GetOrCreateModsDirectory(path);
         Services.GetRequiredService<IFileService>().OpenFolder(modsPath);
     }
 
@@ -332,7 +334,7 @@ public class IpcService(IServiceProvider services) : IpcServiceBase(services)
     [IpcSend("hyprism:instance:openSaveFolder")]
     public void OpenSaveFolder(OpenSaveFolderRequest req)
     {
-        var path = Services.GetRequiredService<IInstanceService>().GetInstancePathById(req.InstanceId);
+        var path = Services.GetRequiredService<IInstanceRepository>().GetInstancePathById(req.InstanceId);
         if (string.IsNullOrEmpty(path)) return;
         var savePath = Path.Combine(path, "UserData", "Saves", req.SaveName);
         if (Directory.Exists(savePath))
@@ -343,7 +345,7 @@ public class IpcService(IServiceProvider services) : IpcServiceBase(services)
     [IpcInvoke("hyprism:instance:getIcon")]
     public string? GetInstanceIcon(InstanceIdRequest req)
     {
-        var path = Services.GetRequiredService<IInstanceService>().GetInstancePathById(req.InstanceId);
+        var path = Services.GetRequiredService<IInstanceRepository>().GetInstancePathById(req.InstanceId);
         if (string.IsNullOrEmpty(path) || !Directory.Exists(path)) return null;
         var logo = Path.Combine(path, "logo.png");
         var icon = Path.Combine(path, "icon.png");
@@ -357,7 +359,7 @@ public class IpcService(IServiceProvider services) : IpcServiceBase(services)
     [IpcInvoke("hyprism:instance:setIcon")]
     public async Task<bool> SetInstanceIcon(SetIconRequest req)
     {
-        var path = Services.GetRequiredService<IInstanceService>().GetInstancePathById(req.InstanceId);
+        var path = Services.GetRequiredService<IInstanceRepository>().GetInstancePathById(req.InstanceId);
         if (string.IsNullOrEmpty(path) || !Directory.Exists(path)) return false;
         if (string.IsNullOrEmpty(req.IconBase64)) return false;
 
@@ -384,12 +386,12 @@ public class IpcService(IServiceProvider services) : IpcServiceBase(services)
     /// <summary>Fetches the latest 20 news items from the Hytale blog and launcher announcement feed.</summary>
     [IpcInvoke("hyprism:news:get")]
     public async Task<List<NewsItemResponse>> GetNews()
-        => await Services.GetRequiredService<INewsService>().GetNewsAsync(count: 20);
+        => await Services.GetRequiredService<IHytaleNewsClient>().GetNewsAsync(count: 20);
 
     /// <summary>Fetches and sanitizes one complete Hytale article for the renderer.</summary>
     [IpcInvoke("hyprism:news:getArticle")]
     public async Task<NewsArticleResponse?> GetNewsArticle(string url)
-        => await Services.GetRequiredService<INewsService>().GetNewsArticleAsync(url);
+        => await Services.GetRequiredService<IHytaleNewsClient>().GetNewsArticleAsync(url);
 
     #endregion
 
@@ -399,14 +401,14 @@ public class IpcService(IServiceProvider services) : IpcServiceBase(services)
     [IpcInvoke("hyprism:profile:get")]
     public ProfileSnapshot GetProfile()
     {
-        var svc = Services.GetRequiredService<IProfileService>();
+        var svc = Services.GetRequiredService<IProfileManager>();
         return new ProfileSnapshot(svc.GetNick(), svc.GetUUID(), svc.GetAvatarPreview());
     }
 
     /// <summary>Returns a list of all saved profiles (id, name, uuid, isOfficial).</summary>
     [IpcInvoke("hyprism:profile:list")]
     public List<IpcProfile> ListProfiles()
-        => Services.GetRequiredService<IProfileManagementService>().GetProfiles()
+        => Services.GetRequiredService<IProfileRepository>().GetProfiles()
             .Select(p => new IpcProfile(p.Id, p.Name, p.UUID, p.IsOfficial))
             .ToList();
 
@@ -414,66 +416,70 @@ public class IpcService(IServiceProvider services) : IpcServiceBase(services)
     [IpcInvoke("hyprism:profile:switch")]
     public SuccessResult SwitchProfile(SwitchProfileRequest req)
     {
-        var ok = Services.GetRequiredService<IProfileManagementService>().SwitchProfile(req.Id);
+        var ok = Services.GetRequiredService<IProfileRepository>().SwitchProfile(req.Id);
         if (ok)
-            Services.GetRequiredService<IHytaleAuthService>().ReloadSessionForCurrentProfile();
+            Services.GetRequiredService<IHytaleAuthenticator>().ReloadSessionForCurrentProfile();
         return new SuccessResult(ok);
     }
 
     /// <summary>Updates the display name of the currently active profile.</summary>
     [IpcInvoke("hyprism:profile:setNick")]
     public SuccessResult SetNick(string nick)
-        => new(Services.GetRequiredService<IProfileService>().SetNick(nick));
+        => new(Services.GetRequiredService<IProfileManager>().SetNick(nick));
 
     /// <summary>Updates the UUID of the currently active profile.</summary>
     [IpcInvoke("hyprism:profile:setUuid")]
     public SuccessResult SetUuid(string uuid)
-        => new(Services.GetRequiredService<IProfileService>().SetUUID(uuid));
+        => new(Services.GetRequiredService<IProfileManager>().SetUUID(uuid));
 
     /// <summary>Creates a new profile with the given name and UUID, optionally marking it as an official Hytale account.</summary>
     [IpcInvoke("hyprism:profile:create")]
     public IpcProfile? CreateProfile(CreateProfileRequest req)
     {
-        var mgmt = Services.GetRequiredService<IProfileManagementService>();
+        var mgmt = Services.GetRequiredService<IProfileRepository>();
         var profile = mgmt.CreateProfile(req.Name, req.Uuid, req.IsOfficial ?? false);
         if (profile == null) return null;
         if (profile.IsOfficial)
-            Services.GetRequiredService<IHytaleAuthService>().SaveSessionToProfile(profile);
+            Services.GetRequiredService<IHytaleAuthenticator>().SaveSessionToProfile(profile);
         return new IpcProfile(profile.Id, profile.Name, profile.UUID, profile.IsOfficial);
     }
 
     /// <summary>Deletes the profile with the specified ID.</summary>
     [IpcInvoke("hyprism:profile:delete")]
     public SuccessResult DeleteProfile(string id)
-        => new(Services.GetRequiredService<IProfileManagementService>().DeleteProfile(id));
+        => new(Services.GetRequiredService<IProfileRepository>().DeleteProfile(id));
 
     /// <summary>Returns the zero-based index of the currently active profile in the profile list.</summary>
     [IpcInvoke("hyprism:profile:activeIndex")]
     public int GetActiveProfileIndex()
-        => Services.GetRequiredService<IProfileManagementService>().GetActiveProfileIndex();
+        => Services.GetRequiredService<IProfileRepository>().GetActiveProfileIndex();
 
     /// <summary>Saves the current active profile state as a named profile entry.</summary>
     [IpcInvoke("hyprism:profile:save")]
     public SuccessResult SaveProfile()
-        => new(Services.GetRequiredService<IProfileManagementService>().SaveCurrentAsProfile() != null);
+        => new(Services.GetRequiredService<IProfileRepository>().SaveCurrentAsProfile() != null);
 
     /// <summary>Creates a copy of the specified profile (without copying its user data).</summary>
     [IpcInvoke("hyprism:profile:duplicate")]
     public IpcProfile? DuplicateProfile(string id)
     {
-        var p = Services.GetRequiredService<IProfileManagementService>().DuplicateProfileWithoutData(id);
+        var p = Services.GetRequiredService<IProfileRepository>().DuplicateProfileWithoutData(id);
         return p == null ? null : new IpcProfile(p.Id, p.Name, p.UUID, p.IsOfficial);
     }
 
     /// <summary>Opens the current profile's data directory in the system file manager.</summary>
     [IpcSend("hyprism:profile:openFolder")]
     public void OpenProfileFolder()
-        => Services.GetRequiredService<IProfileManagementService>().OpenCurrentProfileFolder();
+    {
+        var path = Services.GetRequiredService<IProfileRepository>().GetCurrentProfileFolder();
+        if (!string.IsNullOrWhiteSpace(path))
+            Services.GetRequiredService<IFileService>().OpenFolder(path);
+    }
 
     /// <summary>Returns a base64-encoded avatar preview image for the given UUID.</summary>
     [IpcInvoke("hyprism:profile:avatarForUuid")]
     public string GetAvatarForUuid(string uuid)
-        => Services.GetRequiredService<IProfileService>().GetAvatarPreviewForUUID(uuid) ?? "";
+        => Services.GetRequiredService<IProfileManager>().GetAvatarPreviewForUUID(uuid) ?? "";
 
     #endregion
 
@@ -482,13 +488,13 @@ public class IpcService(IServiceProvider services) : IpcServiceBase(services)
     /// <summary>Returns the current Hytale account authentication status and linked profile info.</summary>
     [IpcInvoke("hyprism:auth:status")]
     public HytaleAuthStatus GetAuthStatus()
-        => MapAuthStatus(Services.GetRequiredService<HytaleAuthService>().GetAuthStatus());
+        => MapAuthStatus(Services.GetRequiredService<HytaleAuthenticator>().GetAuthStatus());
 
     /// <summary>Opens the Hytale OAuth login flow and returns the resulting auth status.</summary>
     [IpcInvoke("hyprism:auth:login")]
     public async Task<HytaleAuthStatus> Login()
     {
-        var auth = Services.GetRequiredService<HytaleAuthService>();
+        var auth = Services.GetRequiredService<HytaleAuthenticator>();
         try
         {
             await auth.LoginAsync(PresentAuthorizationUriAsync);
@@ -512,7 +518,7 @@ public class IpcService(IServiceProvider services) : IpcServiceBase(services)
     [IpcInvoke("hyprism:auth:logout")]
     public SuccessResult Logout()
     {
-        Services.GetRequiredService<HytaleAuthService>().Logout();
+        Services.GetRequiredService<HytaleAuthenticator>().Logout();
         return new SuccessResult(true);
     }
 
@@ -534,19 +540,21 @@ public class IpcService(IServiceProvider services) : IpcServiceBase(services)
     public SettingsSnapshot GetSettings()
     {
         var s = Services.GetRequiredService<ISettingsService>();
+        var config = Services.GetRequiredService<IConfigStore>().Configuration;
+        #pragma warning disable CS0618
         var appPath = Services.GetRequiredService<AppPathConfiguration>();
         return new SettingsSnapshot(
             Language: s.GetLanguage(),
             MusicEnabled: s.GetMusicEnabled(),
-            VersionType: s.GetVersionType(),
-            SelectedVersion: s.GetSelectedVersion(),
+            VersionType: config.VersionType,
+            SelectedVersion: config.SelectedVersion,
             CloseAfterLaunch: s.GetCloseAfterLaunch(),
             LaunchAfterDownload: s.GetLaunchAfterDownload(),
             ShowDiscordAnnouncements: s.GetShowDiscordAnnouncements(),
             DisableNews: s.GetDisableNews(),
             BackgroundMode: s.GetBackgroundMode(),
             AvailableBackgrounds: s.GetAvailableBackgrounds(),
-            HasCompletedOnboarding: s.GetHasCompletedOnboarding(),
+            HasCompletedOnboarding: config.HasCompletedOnboarding,
             OnlineMode: s.GetOnlineMode(),
             AuthDomain: s.GetAuthDomain(),
             DataDirectory: appPath.AppDir,
@@ -560,6 +568,7 @@ public class IpcService(IServiceProvider services) : IpcServiceBase(services)
             GpuPreference: s.GetGpuPreference(),
             GameEnvironmentVariables: s.GetGameEnvironmentVariables(),
             UseDualAuth: s.GetUseDualAuth());
+        #pragma warning restore CS0618
     }
 
     /// <summary>Applies a partial settings update from the renderer and saves it to disk.</summary>
@@ -567,28 +576,29 @@ public class IpcService(IServiceProvider services) : IpcServiceBase(services)
     public SuccessResult UpdateSettings(UpdateSettingsRequest req)
     {
         var s = Services.GetRequiredService<ISettingsService>();
+        var config = Services.GetRequiredService<IConfigStore>();
         foreach (var (key, value) in req.Updates ?? new Dictionary<string, JsonElement>())
-            ApplySetting(s, key, value);
+            ApplySetting(s, config, key, value);
         return new SuccessResult(true);
     }
 
     /// <summary>Runs a speed test for the specified community mirror and returns the result.</summary>
     [IpcInvoke("hyprism:settings:testMirrorSpeed")]
     public async Task<MirrorSpeedTestResult> TestMirrorSpeed(TestMirrorSpeedRequest req)
-        => await Services.GetRequiredService<IVersionService>()
+        => await Services.GetRequiredService<IGameVersionCatalog>()
             .TestMirrorSpeedAsync(req.MirrorId, req.ForceRefresh ?? false);
 
     /// <summary>Runs a speed test for the official Hytale download servers and returns the result.</summary>
     [IpcInvoke("hyprism:settings:testOfficialSpeed")]
     public async Task<MirrorSpeedTestResult> TestOfficialSpeed(TestOfficialSpeedRequest? req)
-        => await Services.GetRequiredService<IVersionService>()
+        => await Services.GetRequiredService<IGameVersionCatalog>()
             .TestOfficialSpeedAsync(req?.ForceRefresh ?? false);
 
     /// <summary>Returns a summary of available download sources (official account state, enabled mirror count).</summary>
     [IpcInvoke("hyprism:settings:hasDownloadSources")]
     public DownloadSourcesSummary GetDownloadSources()
     {
-        var vs = Services.GetRequiredService<IVersionService>();
+        var vs = Services.GetRequiredService<IGameVersionCatalog>();
         return new DownloadSourcesSummary(vs.HasDownloadSources(), vs.HasOfficialAccount, vs.EnabledMirrorCount);
     }
 
@@ -597,7 +607,7 @@ public class IpcService(IServiceProvider services) : IpcServiceBase(services)
     public List<MirrorInfo> GetMirrors()
     {
         var appPath = Services.GetRequiredService<AppPathConfiguration>();
-        return MirrorLoaderService.GetAllMirrorMetas(appPath.AppDir)
+        return MirrorCatalogLoader.GetAllMirrorMetas(appPath.AppDir)
             .Select(m => new MirrorInfo(m.Id, m.Name, m.Priority, m.Enabled, m.SourceType, GetMirrorHostname(m), m.Description))
             .ToList();
     }
@@ -614,7 +624,7 @@ public class IpcService(IServiceProvider services) : IpcServiceBase(services)
             ? ParseHeadersString(req.Headers)
             : null;
         var httpClient = Services.GetRequiredService<HttpClient>();
-        var discovery = new MirrorDiscoveryService(httpClient);
+        var discovery = new MirrorDiscovery(httpClient);
         var result = await discovery.DiscoverMirrorAsync(req.Url, parsedHeaders);
 
         if (!result.Success || result.Mirror == null)
@@ -623,16 +633,16 @@ public class IpcService(IServiceProvider services) : IpcServiceBase(services)
         if (parsedHeaders?.Count > 0)
             result.Mirror.Headers = parsedHeaders;
 
-        if (MirrorLoaderService.MirrorExists(appPath.AppDir, result.Mirror.Id))
+        if (MirrorCatalogLoader.MirrorExists(appPath.AppDir, result.Mirror.Id))
         {
             var baseId = result.Mirror.Id;
             var counter = 2;
-            while (MirrorLoaderService.MirrorExists(appPath.AppDir, $"{baseId}-{counter}")) counter++;
+            while (MirrorCatalogLoader.MirrorExists(appPath.AppDir, $"{baseId}-{counter}")) counter++;
             result.Mirror.Id = $"{baseId}-{counter}";
         }
 
-        MirrorLoaderService.SaveMirror(appPath.AppDir, result.Mirror);
-        Services.GetRequiredService<IVersionService>().ReloadMirrorSources();
+        MirrorCatalogLoader.SaveMirror(appPath.AppDir, result.Mirror);
+        Services.GetRequiredService<IGameVersionCatalog>().ReloadMirrorSources();
 
         var mirrorDto = new MirrorInfo(result.Mirror.Id, result.Mirror.Name, result.Mirror.Priority,
             result.Mirror.Enabled, result.Mirror.SourceType, GetMirrorHostname(result.Mirror), result.Mirror.Description);
@@ -646,8 +656,8 @@ public class IpcService(IServiceProvider services) : IpcServiceBase(services)
         if (string.IsNullOrWhiteSpace(req.MirrorId))
             return new SuccessResult(false, "Mirror ID is required");
         var appPath = Services.GetRequiredService<AppPathConfiguration>();
-        var deleted = MirrorLoaderService.DeleteMirror(appPath.AppDir, req.MirrorId);
-        if (deleted) Services.GetRequiredService<IVersionService>().ReloadMirrorSources();
+        var deleted = MirrorCatalogLoader.DeleteMirror(appPath.AppDir, req.MirrorId);
+        if (deleted) Services.GetRequiredService<IGameVersionCatalog>().ReloadMirrorSources();
         return new SuccessResult(deleted);
     }
 
@@ -656,12 +666,12 @@ public class IpcService(IServiceProvider services) : IpcServiceBase(services)
     public SuccessResult ToggleMirror(ToggleMirrorRequest req)
     {
         var appPath = Services.GetRequiredService<AppPathConfiguration>();
-        var mirrors = MirrorLoaderService.GetAllMirrorMetas(appPath.AppDir);
+        var mirrors = MirrorCatalogLoader.GetAllMirrorMetas(appPath.AppDir);
         var mirror = mirrors.FirstOrDefault(m => m.Id == req.MirrorId);
         if (mirror == null) return new SuccessResult(false, "Mirror not found");
         mirror.Enabled = req.Enabled;
-        MirrorLoaderService.SaveMirror(appPath.AppDir, mirror);
-        Services.GetRequiredService<IVersionService>().ReloadMirrorSources();
+        MirrorCatalogLoader.SaveMirror(appPath.AppDir, mirror);
+        Services.GetRequiredService<IGameVersionCatalog>().ReloadMirrorSources();
         return new SuccessResult(true);
     }
 
@@ -767,13 +777,13 @@ public class IpcService(IServiceProvider services) : IpcServiceBase(services)
         var path = ResolveModInstancePath(null);
         return string.IsNullOrEmpty(path)
             ? []
-            : Services.GetRequiredService<IModService>().GetInstanceInstalledMods(path);
+            : Services.GetRequiredService<IModManager>().GetInstanceInstalledMods(path);
     }
 
     /// <summary>Searches CurseForge for mods matching the query, with pagination and filtering.</summary>
     [IpcInvoke("hyprism:mods:search", 30_000)]
     public async Task<ModSearchResult> SearchMods(ModSearchRequest req)
-        => await Services.GetRequiredService<IModService>().SearchModsAsync(
+        => await Services.GetRequiredService<IModManager>().SearchModsAsync(
             req.Query, req.Page, req.PageSize,
             req.Categories.ToArray(), req.SortField, req.SortOrder);
 
@@ -784,7 +794,7 @@ public class IpcService(IServiceProvider services) : IpcServiceBase(services)
         var path = ResolveModInstancePath(req.InstanceId);
         return string.IsNullOrEmpty(path)
             ? []
-            : Services.GetRequiredService<IModService>().GetInstanceInstalledMods(path);
+            : Services.GetRequiredService<IModManager>().GetInstanceInstalledMods(path);
     }
 
     /// <summary>Removes the specified mod from the instance's Mods directory.</summary>
@@ -799,7 +809,7 @@ public class IpcService(IServiceProvider services) : IpcServiceBase(services)
         var path = ResolveModInstancePath(req.InstanceId);
         return string.IsNullOrEmpty(path)
             ? []
-            : await Services.GetRequiredService<IModService>().CheckInstanceModUpdatesAsync(path);
+            : await Services.GetRequiredService<IModManager>().CheckInstanceModUpdatesAsync(path);
     }
 
     /// <summary>Downloads and installs a specific CurseForge mod file into the instance's Mods directory.</summary>
@@ -808,31 +818,31 @@ public class IpcService(IServiceProvider services) : IpcServiceBase(services)
     {
         var path = ResolveModInstancePath(req.InstanceId);
         return !string.IsNullOrEmpty(path) &&
-               await Services.GetRequiredService<IModService>()
+               await Services.GetRequiredService<IModManager>()
                    .InstallModFileToInstanceAsync(req.ModId, req.FileId, path);
     }
 
     /// <summary>Returns a paged list of files available for the specified CurseForge mod.</summary>
     [IpcInvoke("hyprism:mods:files")]
     public async Task<ModFilesResult> GetModFiles(ModFilesRequest req)
-        => await Services.GetRequiredService<IModService>()
+        => await Services.GetRequiredService<IModManager>()
             .GetModFilesAsync(req.ModId, req.Page ?? 0, req.PageSize ?? 20);
 
     /// <summary>Returns detailed information about the specified CurseForge mod.</summary>
     [IpcInvoke("hyprism:mods:info", 30_000)]
     public async Task<ModInfo?> GetModInfo(ModInfoRequest req)
-        => await Services.GetRequiredService<IModService>().GetModAsync(req.ModId);
+        => await Services.GetRequiredService<IModManager>().GetModAsync(req.ModId);
 
     /// <summary>Returns the changelog text for the specified mod file.</summary>
     [IpcInvoke("hyprism:mods:changelog")]
     public async Task<string> GetModChangelog(ModChangelogRequest req)
-        => await Services.GetRequiredService<IModService>()
+        => await Services.GetRequiredService<IModManager>()
                .GetModFileChangelogAsync(req.ModId, req.FileId) ?? "";
 
     /// <summary>Returns all available CurseForge mod categories for Hytale.</summary>
     [IpcInvoke("hyprism:mods:categories")]
     public async Task<List<ModCategory>> GetModCategories()
-        => await Services.GetRequiredService<IModService>().GetModCategoriesAsync();
+        => await Services.GetRequiredService<IModManager>().GetModCategoriesAsync();
 
     /// <summary>Copies a local JAR/ZIP file into the instance's Mods directory.</summary>
     [IpcInvoke("hyprism:mods:installLocal")]
@@ -840,7 +850,7 @@ public class IpcService(IServiceProvider services) : IpcServiceBase(services)
     {
         var path = ResolveModInstancePath(req.InstanceId);
         return !string.IsNullOrEmpty(path) &&
-               await Services.GetRequiredService<IModService>().InstallLocalModFile(req.SourcePath, path);
+               await Services.GetRequiredService<IModManager>().InstallLocalModFile(req.SourcePath, path);
     }
 
     /// <summary>Decodes a base64-encoded mod file and installs it into the instance's Mods directory.</summary>
@@ -849,7 +859,7 @@ public class IpcService(IServiceProvider services) : IpcServiceBase(services)
     {
         var path = ResolveModInstancePath(req.InstanceId);
         return !string.IsNullOrEmpty(path) &&
-               await Services.GetRequiredService<IModService>().InstallModFromBase64(req.FileName, req.Base64Content, path);
+               await Services.GetRequiredService<IModManager>().InstallModFromBase64(req.FileName, req.Base64Content, path);
     }
 
     /// <summary>Opens the instance's UserData/Mods directory in the system file manager.</summary>
@@ -858,7 +868,7 @@ public class IpcService(IServiceProvider services) : IpcServiceBase(services)
     {
         var path = ResolveModInstancePath(req.InstanceId);
         if (string.IsNullOrEmpty(path)) return;
-        var modsPath = Services.GetRequiredService<IModService>().GetOrCreateModsDirectory(path);
+        var modsPath = Services.GetRequiredService<IModManager>().GetOrCreateModsDirectory(path);
         Electron.Shell.OpenPathAsync(modsPath);
     }
 
@@ -950,7 +960,7 @@ public class IpcService(IServiceProvider services) : IpcServiceBase(services)
 
     private List<SaveInfo> GetInstanceSaves(string instanceId)
     {
-        var svc = Services.GetRequiredService<IInstanceService>();
+        var svc = Services.GetRequiredService<IInstanceRepository>();
         var path = svc.GetInstancePathById(instanceId);
         if (string.IsNullOrEmpty(path)) return [];
 
@@ -973,7 +983,7 @@ public class IpcService(IServiceProvider services) : IpcServiceBase(services)
 
     private async Task<string> ExportInstanceAsync(string instanceId)
     {
-        var svc = Services.GetRequiredService<IInstanceService>();
+        var svc = Services.GetRequiredService<IInstanceRepository>();
         var fileDialog = Services.GetRequiredService<IFileDialogService>();
         var path = svc.GetInstancePathById(instanceId);
         if (string.IsNullOrEmpty(path) || !Directory.Exists(path)) return "";
@@ -993,7 +1003,7 @@ public class IpcService(IServiceProvider services) : IpcServiceBase(services)
 
     private async Task<bool> ImportInstanceAsync()
     {
-        var svc = Services.GetRequiredService<IInstanceService>();
+        var svc = Services.GetRequiredService<IInstanceRepository>();
         var fileDialog = Services.GetRequiredService<IFileDialogService>();
         var filePath = await fileDialog.BrowseInstanceArchiveAsync();
         if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath)) return false;
@@ -1037,7 +1047,7 @@ public class IpcService(IServiceProvider services) : IpcServiceBase(services)
 
     private string? ResolveModInstancePath(string? instanceId)
     {
-        var svc = Services.GetRequiredService<IInstanceService>();
+        var svc = Services.GetRequiredService<IInstanceRepository>();
         if (!string.IsNullOrWhiteSpace(instanceId))
         {
             var byId = svc.GetInstancePathById(instanceId);
@@ -1049,7 +1059,7 @@ public class IpcService(IServiceProvider services) : IpcServiceBase(services)
 
     private async Task<bool> UninstallModAsync(string modId, string? instanceId)
     {
-        var modSvc = Services.GetRequiredService<IModService>();
+        var modSvc = Services.GetRequiredService<IModManager>();
         var instancePath = ResolveModInstancePath(instanceId);
         if (string.IsNullOrEmpty(instancePath)) return false;
 
@@ -1112,7 +1122,7 @@ public class IpcService(IServiceProvider services) : IpcServiceBase(services)
 
     private async Task<bool> ToggleModAsync(string modId, string? instanceId)
     {
-        var modSvc = Services.GetRequiredService<IModService>();
+        var modSvc = Services.GetRequiredService<IModManager>();
         var instancePath = ResolveModInstancePath(instanceId);
         if (string.IsNullOrEmpty(instancePath)) return false;
 
@@ -1175,9 +1185,9 @@ public class IpcService(IServiceProvider services) : IpcServiceBase(services)
 
     private async Task<string> ExportModsAsync(string? instanceId, string exportPath, string exportType)
     {
-        var svc = Services.GetRequiredService<IInstanceService>();
-        var modSvc = Services.GetRequiredService<IModService>();
-        var config = Services.GetRequiredService<IConfigService>();
+        var svc = Services.GetRequiredService<IInstanceRepository>();
+        var modSvc = Services.GetRequiredService<IModManager>();
+        var config = Services.GetRequiredService<IConfigStore>();
 
         if (string.IsNullOrEmpty(exportPath)) return "";
 
@@ -1218,8 +1228,8 @@ public class IpcService(IServiceProvider services) : IpcServiceBase(services)
 
     private async Task<int> ImportModListAsync(string filePath, string? instanceId)
     {
-        var svc = Services.GetRequiredService<IInstanceService>();
-        var modSvc = Services.GetRequiredService<IModService>();
+        var svc = Services.GetRequiredService<IInstanceRepository>();
+        var modSvc = Services.GetRequiredService<IModManager>();
 
         if (!File.Exists(filePath)) return 0;
 
@@ -1246,10 +1256,10 @@ public class IpcService(IServiceProvider services) : IpcServiceBase(services)
 
     private async Task<SetInstanceDirResult> SetInstanceDirAsync(string path)
     {
-        var config = Services.GetRequiredService<IConfigService>();
-        var instanceSvc = Services.GetRequiredService<IInstanceService>();
+        var config = Services.GetRequiredService<IConfigStore>();
+        var instanceSvc = Services.GetRequiredService<IInstanceRepository>();
         var appPath = Services.GetRequiredService<AppPathConfiguration>();
-        var progressSvc = Services.GetRequiredService<ProgressNotificationService>();
+        var progressSvc = Services.GetRequiredService<ProgressReporter>();
 
         Logger.Info("IPC", $"Setting instance directory to: {path}");
         var resetToDefault = string.IsNullOrWhiteSpace(path);
@@ -1362,11 +1372,11 @@ public class IpcService(IServiceProvider services) : IpcServiceBase(services)
         }
     }
 
-    private async Task ImportPwrFileAsync(string pwrPath, IInstanceService instanceService)
+    private async Task ImportPwrFileAsync(string pwrPath, IInstanceRepository instanceService)
     {
-        var butler = Services.GetRequiredService<IButlerService>();
+        var butler = Services.GetRequiredService<IButlerClient>();
         var fileName = Path.GetFileNameWithoutExtension(pwrPath);
-        var version = InstanceService.TryParseVersionFromPwrFilename(fileName);
+        var version = InstanceRepository.TryParseVersionFromPwrFilename(fileName);
         var branch = "release";
         var newId = Guid.NewGuid().ToString();
         var targetPath = instanceService.CreateInstanceDirectory(branch, newId);
@@ -1418,14 +1428,16 @@ public class IpcService(IServiceProvider services) : IpcServiceBase(services)
         return "";
     }
 
-    private static void ApplySetting(ISettingsService s, string key, JsonElement val)
+    private static void ApplySetting(ISettingsService s, IConfigStore configService, string key, JsonElement val)
     {
         switch (key)
         {
             case "language":                 s.SetLanguage(val.GetString() ?? "en-US"); break;
             case "musicEnabled":             s.SetMusicEnabled(val.GetBoolean()); break;
-            case "versionType":              s.SetVersionType(val.GetString() ?? "release"); break;
-            case "selectedVersion":          s.SetSelectedVersion(val.ValueKind == JsonValueKind.Number ? val.GetInt32() : 0); break;
+            #pragma warning disable CS0618
+            case "versionType":              configService.Configuration.VersionType = val.GetString() ?? "release"; configService.SaveConfig(); break;
+            case "selectedVersion":          configService.Configuration.SelectedVersion = val.ValueKind == JsonValueKind.Number ? val.GetInt32() : 0; configService.SaveConfig(); break;
+            #pragma warning restore CS0618
             case "closeAfterLaunch":         s.SetCloseAfterLaunch(val.GetBoolean()); break;
             case "launchAfterDownload":      s.SetLaunchAfterDownload(val.GetBoolean()); break;
             case "showDiscordAnnouncements": s.SetShowDiscordAnnouncements(val.GetBoolean()); break;
@@ -1439,7 +1451,7 @@ public class IpcService(IServiceProvider services) : IpcServiceBase(services)
             case "gpuPreference":            s.SetGpuPreference(val.GetString() ?? "dedicated"); break;
             case "gameEnvironmentVariables": s.SetGameEnvironmentVariables(val.GetString() ?? ""); break;
             case "useDualAuth":              s.SetUseDualAuth(val.GetBoolean()); break;
-            case "hasCompletedOnboarding":   s.SetHasCompletedOnboarding(val.GetBoolean()); break;
+            case "hasCompletedOnboarding":   configService.Configuration.HasCompletedOnboarding = val.GetBoolean(); configService.SaveConfig(); break;
             case "showAlphaMods":            s.SetShowAlphaMods(val.GetBoolean()); break;
             default: Logger.Warning("IPC", $"Unknown setting key: {key}"); break;
         }

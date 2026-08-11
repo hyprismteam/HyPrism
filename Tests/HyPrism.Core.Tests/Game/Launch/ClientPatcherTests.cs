@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 using System.Text;
-using HyPrism.Services.Game.Launch;
+using HyPrism.Core.Game.Launch;
 
 namespace HyPrism.Core.Tests.Game.Launch;
 

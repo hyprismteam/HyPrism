@@ -7,7 +7,9 @@ SPDX-License-Identifier: GPL-3.0-only
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:controls="using:HyPrism.Desktop.Controls"
         xmlns:easing="using:Avalonia.Animation.Easings"
-        xmlns:views="using:HyPrism.Desktop.Views">
+        xmlns:dashboard="using:HyPrism.Desktop.Features.Dashboard"
+        xmlns:news="using:HyPrism.Desktop.Features.News"
+        xmlns:settings="using:HyPrism.Desktop.Features.Settings">
   <Style Selector="Window">
     <Setter Property="FontFamily" Value="{DynamicResource GoogleSansFont}" />
     <Setter Property="FontSize" Value="15" />
@@ -326,7 +328,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="Fill" Value="{Binding $parent[Button].Foreground}" />
   </Style>
 
-  <Style Selector="views|DashboardView.compact TextBlock.dashboardTitle">
+  <Style Selector="dashboard|DashboardView.compact TextBlock.dashboardTitle">
     <Setter Property="FontSize" Value="34" />
   </Style>
 
@@ -722,18 +724,18 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="Fill" Value="{Binding $parent[Button].Foreground}" />
   </Style>
 
-  <Style Selector="controls|NewsRichTextBlock.articleParagraph">
+  <Style Selector="news|NewsRichTextBlock.articleParagraph">
     <Setter Property="Foreground" Value="#E1E2E5" />
     <Setter Property="FontSize" Value="16" />
     <Setter Property="LineHeight" Value="28" />
   </Style>
 
-  <Style Selector="controls|NewsRichTextBlock.articleHeading">
+  <Style Selector="news|NewsRichTextBlock.articleHeading">
     <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
     <Setter Property="FontWeight" Value="Bold" />
   </Style>
 
-  <Style Selector="controls|NewsRichTextBlock.articleCaption">
+  <Style Selector="news|NewsRichTextBlock.articleCaption">
     <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
     <Setter Property="FontSize" Value="12" />
     <Setter Property="TextAlignment" Value="Center" />
@@ -787,7 +789,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="RenderTransform" Value="{x:Null}" />
   </Style>
 
-  <Style Selector="controls|NewsRichTextBlock.articleDetailsSummary">
+  <Style Selector="news|NewsRichTextBlock.articleDetailsSummary">
     <Setter Property="Foreground" Value="#FFC54D" />
     <Setter Property="FontSize" Value="16" />
     <Setter Property="FontWeight" Value="Bold" />
@@ -1404,7 +1406,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="RenderTransform" Value="{x:Null}" />
   </Style>
 
-  <Style Selector="views|SettingsView TextBox">
+  <Style Selector="settings|SettingsView TextBox">
     <Setter Property="Background" Value="#141517" />
     <Setter Property="BorderBrush" Value="Transparent" />
     <Setter Property="BorderThickness" Value="0" />
@@ -1413,7 +1415,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="Padding" Value="12,9" />
   </Style>
 
-  <Style Selector="views|SettingsView TextBox /template/ Border#PART_BorderElement">
+  <Style Selector="settings|SettingsView TextBox /template/ Border#PART_BorderElement">
     <Setter Property="Background" Value="#141517" />
     <Setter Property="BorderBrush" Value="Transparent" />
     <Setter Property="BorderThickness" Value="0" />
@@ -1424,19 +1426,19 @@ SPDX-License-Identifier: GPL-3.0-only
     </Setter>
   </Style>
 
-  <Style Selector="views|SettingsView TextBox:pointerover /template/ Border#PART_BorderElement">
+  <Style Selector="settings|SettingsView TextBox:pointerover /template/ Border#PART_BorderElement">
     <Setter Property="Background" Value="#1A1B1E" />
     <Setter Property="BorderBrush" Value="Transparent" />
     <Setter Property="BorderThickness" Value="0" />
   </Style>
 
-  <Style Selector="views|SettingsView TextBox:focus /template/ Border#PART_BorderElement">
+  <Style Selector="settings|SettingsView TextBox:focus /template/ Border#PART_BorderElement">
     <Setter Property="Background" Value="#1D1E21" />
     <Setter Property="BorderBrush" Value="Transparent" />
     <Setter Property="BorderThickness" Value="0" />
   </Style>
 
-  <Style Selector="views|SettingsView :is(ComboBox)">
+  <Style Selector="settings|SettingsView :is(ComboBox)">
     <Setter Property="HorizontalAlignment" Value="Stretch" />
     <Setter Property="VerticalAlignment" Value="Center" />
     <Setter Property="HorizontalContentAlignment" Value="Left" />
@@ -1449,7 +1451,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="Padding" Value="14,6,42,6" />
   </Style>
 
-  <Style Selector="views|SettingsView controls|FadingComboBox">
+  <Style Selector="settings|SettingsView controls|FadingComboBox">
     <Setter Property="Template">
       <ControlTemplate>
         <DataValidationErrors>
@@ -1507,7 +1509,7 @@ SPDX-License-Identifier: GPL-3.0-only
     </Setter>
   </Style>
 
-  <Style Selector="views|SettingsView :is(ComboBox) /template/ Border#Background">
+  <Style Selector="settings|SettingsView :is(ComboBox) /template/ Border#Background">
     <Setter Property="Background" Value="#141517" />
     <Setter Property="BorderBrush" Value="Transparent" />
     <Setter Property="BorderThickness" Value="0" />
@@ -1518,21 +1520,21 @@ SPDX-License-Identifier: GPL-3.0-only
     </Setter>
   </Style>
 
-  <Style Selector="views|SettingsView :is(ComboBox):pointerover /template/ Border#Background">
+  <Style Selector="settings|SettingsView :is(ComboBox):pointerover /template/ Border#Background">
     <Setter Property="Background" Value="#1A1B1E" />
     <Setter Property="BorderBrush" Value="Transparent" />
   </Style>
 
-  <Style Selector="views|SettingsView :is(ComboBox):dropdownopen /template/ Border#Background">
+  <Style Selector="settings|SettingsView :is(ComboBox):dropdownopen /template/ Border#Background">
     <Setter Property="Background" Value="#1D1E21" />
   </Style>
 
-  <Style Selector="views|SettingsView :is(ComboBox):focus-visible /template/ Border#HighlightBackground">
+  <Style Selector="settings|SettingsView :is(ComboBox):focus-visible /template/ Border#HighlightBackground">
     <Setter Property="IsVisible" Value="False" />
     <Setter Property="BorderThickness" Value="0" />
   </Style>
 
-  <Style Selector="views|SettingsView :is(ComboBox) /template/ PathIcon#DropDownGlyph">
+  <Style Selector="settings|SettingsView :is(ComboBox) /template/ PathIcon#DropDownGlyph">
     <Setter Property="Data" Value="{StaticResource ExpandMoreIcon}" />
     <Setter Property="Width" Value="14" />
     <Setter Property="Height" Value="14" />
@@ -1548,16 +1550,16 @@ SPDX-License-Identifier: GPL-3.0-only
     </Setter>
   </Style>
 
-  <Style Selector="views|SettingsView :is(ComboBox):pointerover /template/ PathIcon#DropDownGlyph">
+  <Style Selector="settings|SettingsView :is(ComboBox):pointerover /template/ PathIcon#DropDownGlyph">
     <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
   </Style>
 
-  <Style Selector="views|SettingsView :is(ComboBox):dropdownopen /template/ PathIcon#DropDownGlyph">
+  <Style Selector="settings|SettingsView :is(ComboBox):dropdownopen /template/ PathIcon#DropDownGlyph">
     <Setter Property="RenderTransform" Value="rotate(180deg)" />
     <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
   </Style>
 
-  <Style Selector="views|SettingsView :is(ComboBox) /template/ Border#PopupBorder">
+  <Style Selector="settings|SettingsView :is(ComboBox) /template/ Border#PopupBorder">
     <Setter Property="Background" Value="#1D1E21" />
     <Setter Property="BorderBrush" Value="Transparent" />
     <Setter Property="BorderThickness" Value="0" />
@@ -1576,7 +1578,7 @@ SPDX-License-Identifier: GPL-3.0-only
     </Setter>
   </Style>
 
-  <Style Selector="views|SettingsView ToggleSwitch">
+  <Style Selector="settings|SettingsView ToggleSwitch">
     <Setter Property="Width" Value="48" />
     <Setter Property="Height" Value="28" />
     <Setter Property="MinWidth" Value="48" />
@@ -1649,23 +1651,23 @@ SPDX-License-Identifier: GPL-3.0-only
     </Setter>
   </Style>
 
-  <Style Selector="views|SettingsView ToggleSwitch:pointerover /template/ Border#SettingsSwitchTrack">
+  <Style Selector="settings|SettingsView ToggleSwitch:pointerover /template/ Border#SettingsSwitchTrack">
     <Setter Property="Background" Value="#3B3E43" />
   </Style>
 
-  <Style Selector="views|SettingsView ToggleSwitch:checked /template/ Border#SettingsSwitchTrack">
+  <Style Selector="settings|SettingsView ToggleSwitch:checked /template/ Border#SettingsSwitchTrack">
     <Setter Property="Background" Value="#35A85B" />
   </Style>
 
-  <Style Selector="views|SettingsView ToggleSwitch:checked:pointerover /template/ Border#SettingsSwitchTrack">
+  <Style Selector="settings|SettingsView ToggleSwitch:checked:pointerover /template/ Border#SettingsSwitchTrack">
     <Setter Property="Background" Value="#43BC6B" />
   </Style>
 
-  <Style Selector="views|SettingsView ToggleSwitch:pointerover /template/ Ellipse#SettingsSwitchKnob">
+  <Style Selector="settings|SettingsView ToggleSwitch:pointerover /template/ Ellipse#SettingsSwitchKnob">
     <Setter Property="Fill" Value="#FFFFFF" />
   </Style>
 
-  <Style Selector="views|SettingsView ToggleSwitch:disabled">
+  <Style Selector="settings|SettingsView ToggleSwitch:disabled">
     <Setter Property="Opacity" Value="0.45" />
   </Style>
 

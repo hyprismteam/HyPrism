@@ -2,7 +2,15 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 using Avalonia;
-using HyPrism.Services.Core.Infrastructure;
+using HyPrism.Desktop.Features.About;
+using HyPrism.Desktop.Features.News;
+using HyPrism.Desktop.Features.Settings;
+using HyPrism.Desktop.Integrations.Discord;
+using HyPrism.Desktop.Platform;
+using HyPrism.Core;
+using HyPrism.Core.Infrastructure;
+using HyPrism.Core.Application.Ports;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace HyPrism.Desktop;
 
@@ -12,7 +20,24 @@ internal static class Program
     public static void Main(string[] args)
     {
         Logger.CaptureOriginalConsole();
-        DesktopRuntime.Services = Bootstrapper.Initialize();
+        DesktopRuntime.Services = Bootstrapper.Initialize(services =>
+        {
+            services.AddSingleton<DesktopSettingsStore>();
+            services.AddSingleton<IDesktopSettingsStore>(provider =>
+                provider.GetRequiredService<DesktopSettingsStore>());
+            services.AddSingleton<HytaleNewsClient>();
+            services.AddSingleton<IHytaleNewsClient>(provider =>
+                provider.GetRequiredService<HytaleNewsClient>());
+            services.AddSingleton<GitHubClient>();
+            services.AddSingleton<IGitHubClient>(provider =>
+                provider.GetRequiredService<GitHubClient>());
+            services.AddSingleton<DiscordPresence>();
+            services.AddSingleton<IDiscordPresence>(provider =>
+                provider.GetRequiredService<DiscordPresence>());
+            services.AddSingleton<GpuProvider>();
+            services.AddSingleton<IGpuProvider>(provider =>
+                provider.GetRequiredService<GpuProvider>());
+        });
 
         BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
     }

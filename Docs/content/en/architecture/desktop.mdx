@@ -10,13 +10,24 @@ description: Avalonia views, view models, localization, and native controls
 ## Composition
 
 - `App.axaml` loads shared tokens, styles, and resources
-- `MainWindow` provides native window chrome and primary navigation
-- `MainWindowViewModel` coordinates dashboard and news state with Core services
-- `SettingsViewModel` adapts `ISettingsService` to the settings UI
+- `Shell` contains the main window, native chrome, navigation, and top-level application state
+- `Features/Dashboard` contains the home view and its instance presentation model
+- `SettingsViewModel` adapts `IDesktopSettingsStore` to the settings UI
+- `DesktopSettingsStore` owns Avalonia preferences and persists them through Core configuration storage
 - `ExternalUriLauncher` opens links through Avalonia's native `TopLevel.Launcher`
+- `FilePicker` uses Avalonia's native `StorageProvider` instead of shelling out to platform utilities
+- `SystemMemoryProvider` provides the memory limit shown by Java settings
+- `GpuProvider` implements the Core GPU boundary with host platform tools
+- `Features/News` retrieves official Hytale news and keeps parsed feed and article caches under `Cache/News`
+- `Features/About` provides repository metadata, contributors, commits, and avatars for the About page
+- `Features/Settings` owns the adaptive settings UI and Desktop preferences
+- `Platform` contains native URI, file picker, memory, and GPU adapters
+- `Integrations/Discord` implements the Core presence port and follows the Avalonia host lifetime
 - custom controls handle rich news content, smooth scrolling, and animated combo boxes
 - `.resx` files under `Localization` provide UI strings for every supported culture
 
 The desktop project uses compiled bindings by default. View models expose state and commands while code-behind is limited to control behavior that depends on Avalonia input, layout, or animation primitives
 
-Platform services such as file dialogs are registered by the host through the bootstrapper callback. External links stay in Desktop and are passed to Core as an asynchronous callback only for interactive OAuth
+External links and file dialogs stay in Desktop. URI presentation is passed to Core as an asynchronous callback only for interactive OAuth, while file selection is consumed directly by Desktop view models
+
+News and GitHub response models stay beside their Desktop features because they are presentation-facing data and are not part of game or account logic

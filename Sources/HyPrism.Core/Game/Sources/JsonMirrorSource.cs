@@ -3,11 +3,11 @@
 
 using System.Text.Json;
 using System.Text.RegularExpressions;
-using HyPrism.Models;
-using HyPrism.Services.Core.Infrastructure;
-using HyPrism.Services.Core.Integration;
+using HyPrism.Core.Models;
+using HyPrism.Core.Infrastructure;
+using HyPrism.Core.Integrations.Hytale;
 
-namespace HyPrism.Services.Game.Sources;
+namespace HyPrism.Core.Game.Sources;
 
 /// <summary>
 /// Universal IVersionSource implementation driven by a MirrorMeta JSON descriptor.
@@ -82,7 +82,7 @@ public class JsonMirrorSource : IVersionSource
             {
                 if (hytaleAgent == null)
                 {
-                    var launcherVersion = await HytaleLauncherHeaderHelper.GetLauncherVersionAsync(_httpClient, ct);
+                    var launcherVersion = await HytaleLauncherHeaders.GetLauncherVersionAsync(_httpClient, ct);
                     hytaleAgent = $"hytale-launcher/{launcherVersion}";
                 }
                 expandedValue = expandedValue.Replace("{hytaleAgent}", hytaleAgent, StringComparison.OrdinalIgnoreCase);
@@ -193,8 +193,8 @@ public class JsonMirrorSource : IVersionSource
         }
         else
         {
-            var os = UtilityService.GetOS();
-            var arch = UtilityService.GetArch();
+            var os = LauncherUtilities.GetOS();
+            var arch = LauncherUtilities.GetArch();
             await DiscoverVersionsAsync(os, arch, "release", ct);
         }
     }
@@ -336,8 +336,8 @@ public class JsonMirrorSource : IVersionSource
                 Logger.Debug($"Mirror:{SourceId}", $"Ping successful: {result.PingMs}ms, proceeding to speed test");
 
                 // Speed test: download real file data
-                var os = UtilityService.GetOS();
-                var arch = UtilityService.GetArch();
+                var os = LauncherUtilities.GetOS();
+                var arch = LauncherUtilities.GetArch();
                 var testUrl = await GetSpeedTestUrlAsync(os, arch, ct);
 
                 if (!string.IsNullOrEmpty(testUrl))

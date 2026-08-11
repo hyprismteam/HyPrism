@@ -3,12 +3,12 @@
 
 using System.Net.Http.Headers;
 using System.Text.Json;
-using HyPrism.Models;
-using HyPrism.Services.Core.Infrastructure;
-using HyPrism.Services.Core.Integration;
-using HyPrism.Services.User;
+using HyPrism.Core.Models;
+using HyPrism.Core.Infrastructure;
+using HyPrism.Core.Integrations.Hytale;
+using HyPrism.Core.Accounts;
 
-namespace HyPrism.Services.Game.Sources;
+namespace HyPrism.Core.Game.Sources;
 
 /// <summary>
 /// Exception thrown when Hytale API returns 401/403, indicating token needs refresh
@@ -35,9 +35,9 @@ public class HytaleVersionSource : IVersionSource
 
     private readonly string _appDir;
     private readonly HttpClient _httpClient;
-    private readonly HytaleAuthService _authService;
-    private readonly IConfigService _configService;
-    private readonly IProfileService _profileService;
+    private readonly HytaleAuthenticator _authService;
+    private readonly IConfigStore _configStore;
+    private readonly IProfileManager _profiles;
     private readonly SemaphoreSlim _fetchLock = new(1, 1);
 
     // In-memory cache: cacheKey -> (timestamp, response)
@@ -49,15 +49,15 @@ public class HytaleVersionSource : IVersionSource
     /// <param name="appDir">The application data directory</param>
     /// <param name="httpClient">The HTTP client used for Hytale API requests</param>
     /// <param name="authService">The official account authentication service</param>
-    /// <param name="configService">The launcher configuration service</param>
-    /// <param name="profileService">The active profile service</param>
-    public HytaleVersionSource(string appDir, HttpClient httpClient, HytaleAuthService authService, IConfigService configService, IProfileService profileService)
+    /// <param name="configStore">The launcher configuration service</param>
+    /// <param name="profiles">The active profile service</param>
+    public HytaleVersionSource(string appDir, HttpClient httpClient, HytaleAuthenticator authService, IConfigStore configStore, IProfileManager profiles)
     {
         _appDir = appDir;
         _httpClient = httpClient;
         _authService = authService;
-        _configService = configService;
-        _profileService = profileService;
+        _configStore = configStore;
+        _profiles = profiles;
     }
 
     #region IVersionSource Implementation
@@ -84,14 +84,14 @@ public class HytaleVersionSource : IVersionSource
             return true;
 
         // Check config for any official profiles
-        var profiles = _profileService.GetProfiles();
+        var profiles = _profiles.GetProfiles();
         if (!profiles.Any(p => p.IsOfficial))
             return false;
 
         // Check if any profile is official and has session file
         foreach (var profile in profiles.Where(p => p.IsOfficial))
         {
-            var profileDir = UtilityService.GetProfileFolderPath(_appDir, profile, createIfMissing: false, migrateLegacyByName: true);
+            var profileDir = LauncherUtilities.GetProfileFolderPath(_appDir, profile, createIfMissing: false, migrateLegacyByName: true);
             var sessionPath = Path.Combine(profileDir, "hytale_session.json");
             if (File.Exists(sessionPath))
                 return true;
@@ -108,7 +108,7 @@ public class HytaleVersionSource : IVersionSource
     {
         FullBuildLocation = "Official API: /patches/{os}/{arch}/{branch}/0 (latest full build)",
         PatchLocation = "Official API: /patches/{os}/{arch}/{branch}/{fromBuild} (signed incremental steps)",
-        CachePolicy = "In-memory TTL 15m by key os:arch:branch:fromBuild; patches cached by VersionService in Cache/Game/patches.json"
+        CachePolicy = "In-memory TTL 15m by key os:arch:branch:fromBuild; patches cached by GameVersionCatalog in Cache/Game/patches.json"
     };
 
     /// <inheritdoc/>
@@ -254,7 +254,7 @@ public class HytaleVersionSource : IVersionSource
 
             using var request = new HttpRequestMessage(HttpMethod.Get, url);
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
-            await HytaleLauncherHeaderHelper.ApplyOfficialHeadersAsync(request, _httpClient, branch, ct);
+            await HytaleLauncherHeaders.ApplyOfficialHeadersAsync(request, _httpClient, branch, ct);
 
             using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
             cts.CancelAfter(TimeSpan.FromSeconds(30));
@@ -435,9 +435,9 @@ public class HytaleVersionSource : IVersionSource
 
                 result.PingMs = (long)(DateTime.UtcNow - pingStart).TotalMilliseconds;
 
-                // Use UtilityService for correct OS/arch
-                var os = UtilityService.GetOS();
-                var arch = UtilityService.GetArch();
+                // Use LauncherUtilities for correct OS/arch
+                var os = LauncherUtilities.GetOS();
+                var arch = LauncherUtilities.GetArch();
 
                 // Try to get a patch URL for speed testing
                 var patchesResponse = await GetPatchesAsync(os, arch, "pre-release", 0, ct);

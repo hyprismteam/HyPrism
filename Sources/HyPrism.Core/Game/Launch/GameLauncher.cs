@@ -7,46 +7,45 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
-using HyPrism.Models;
-using HyPrism.Services.Core.Infrastructure;
-using HyPrism.Services.Core.App;
-using HyPrism.Services.Core.Integration;
-using HyPrism.Services.Core.Platform;
-using HyPrism.Services.Game.Asset;
-using HyPrism.Services.Game.Auth;
-using HyPrism.Services.Game.Instance;
-using HyPrism.Services.User;
+using HyPrism.Core.Models;
+using HyPrism.Core.Infrastructure;
+using HyPrism.Core.Application.Progress;
+using HyPrism.Core.Application.Ports;
+using HyPrism.Core.Game.Assets;
+using HyPrism.Core.Game.Authentication;
+using HyPrism.Core.Game.Instances;
+using HyPrism.Core.Accounts;
 
-namespace HyPrism.Services.Game.Launch;
+namespace HyPrism.Core.Game.Launch;
 
 /// <summary>
 /// Handles the game launch process including client patching, authentication,
 /// process creation and monitoring, and Discord Rich Presence updates
 /// </summary>
 /// <remarks>
-/// Extracted from the former monolithic GameSessionService for better separation of concerns.
+/// Extracted from the former monolithic GameInstallationWorkflow for better separation of concerns.
 /// Coordinates between multiple services to prepare and launch the game
 /// </remarks>
 public class GameLauncher : IGameLauncher
 {
     private const string DefaultCustomAuthDomain = "sessions.sanasol.ws";
 
-    private readonly IConfigService _configService;
-    private readonly ILaunchService _launchService;
-    private readonly IInstanceService _instanceService;
-    private readonly IGameProcessService _gameProcessService;
-    private readonly IProgressNotificationService _progressService;
-    private readonly IDiscordService _discordService;
-    private readonly ISkinService _skinService;
-    private readonly IUserIdentityService _userIdentityService;
-    private readonly IAvatarService _avatarService;
+    private readonly IConfigStore _configStore;
+    private readonly IRuntimeProvisioner _runtime;
+    private readonly IInstanceRepository _instances;
+    private readonly IGameProcessTracker _gameProcess;
+    private readonly IProgressReporter _progress;
+    private readonly IDiscordPresence _discord;
+    private readonly ISkinRepository _skins;
+    private readonly IUserIdentityProvider _identity;
+    private readonly IAvatarCache _avatars;
     private readonly HttpClient _httpClient;
-    private readonly IHytaleAuthService _hytaleAuthService;
-    private readonly IGpuDetectionService _gpuDetectionService;
-    private readonly IProfileService _profileService;
+    private readonly IHytaleAuthenticator _hytaleGameSessionAuthenticator;
+    private readonly IGpuProvider _gpuProvider;
+    private readonly IProfileManager _profiles;
     private readonly string _appDir;
 
-    private Config _config => _configService.Configuration;
+    private Config _config => _configStore.Configuration;
 
     /// <summary>
     /// Stores the DualAuth agent path after download, used when building process start info
@@ -61,51 +60,51 @@ public class GameLauncher : IGameLauncher
     /// <summary>
     /// Initializes a new instance of the <see cref="GameLauncher"/> class
     /// </summary>
-    /// <param name="configService">Service for accessing configuration</param>
-    /// <param name="launchService">Service for launch prerequisites (JRE, VC++ Redist)</param>
-    /// <param name="instanceService">Service for instance path management</param>
-    /// <param name="gameProcessService">Service for game process tracking</param>
-    /// <param name="progressService">Service for progress notifications</param>
-    /// <param name="discordService">Service for Discord Rich Presence</param>
-    /// <param name="skinService">Service for skin protection</param>
-    /// <param name="userIdentityService">Service for user identity management</param>
-    /// <param name="avatarService">Service for avatar backup</param>
+    /// <param name="configStore">Service for accessing configuration</param>
+    /// <param name="runtime">Service for launch prerequisites (JRE, VC++ Redist)</param>
+    /// <param name="instances">Service for instance path management</param>
+    /// <param name="gameProcess">Service for game process tracking</param>
+    /// <param name="progress">Service for progress notifications</param>
+    /// <param name="discord">Service for Discord Rich Presence</param>
+    /// <param name="skins">Service for skin protection</param>
+    /// <param name="identity">Service for user identity management</param>
+    /// <param name="avatars">Service for avatar backup</param>
     /// <param name="httpClient">HTTP client for authentication requests</param>
-    /// <param name="hytaleAuthService">Service for official Hytale OAuth authentication</param>
-    /// <param name="gpuDetectionService">Service for GPU detection</param>
+    /// <param name="hytaleGameSessionAuthenticator">Service for official Hytale OAuth authentication</param>
+    /// <param name="gpuProvider">Service for GPU detection</param>
     /// <param name="appPath">Application path configuration</param>
-    /// <param name="profileService">Service for the active launcher profile</param>
+    /// <param name="profiles">Service for the active launcher profile</param>
     public GameLauncher(
-        IConfigService configService,
-        ILaunchService launchService,
-        IInstanceService instanceService,
-        IGameProcessService gameProcessService,
-        IProgressNotificationService progressService,
-        IDiscordService discordService,
-        ISkinService skinService,
-        IUserIdentityService userIdentityService,
-        IAvatarService avatarService,
+        IConfigStore configStore,
+        IRuntimeProvisioner runtime,
+        IInstanceRepository instances,
+        IGameProcessTracker gameProcess,
+        IProgressReporter progress,
+        IDiscordPresence discord,
+        ISkinRepository skins,
+        IUserIdentityProvider identity,
+        IAvatarCache avatars,
         HttpClient httpClient,
-        IHytaleAuthService hytaleAuthService,
-        IGpuDetectionService gpuDetectionService,
+        IHytaleAuthenticator hytaleGameSessionAuthenticator,
+        IGpuProvider gpuProvider,
         AppPathConfiguration appPath,
-        IProfileService profileService)
+        IProfileManager profiles)
     {
-        _configService = configService;
-        _launchService = launchService;
-        _instanceService = instanceService;
-        _gameProcessService = gameProcessService;
-        _progressService = progressService;
-        _discordService = discordService;
-        _skinService = skinService;
-        _userIdentityService = userIdentityService;
-        _avatarService = avatarService;
+        _configStore = configStore;
+        _runtime = runtime;
+        _instances = instances;
+        _gameProcess = gameProcess;
+        _progress = progress;
+        _discord = discord;
+        _skins = skins;
+        _identity = identity;
+        _avatars = avatars;
         _httpClient = httpClient;
-        _hytaleAuthService = hytaleAuthService;
-        _gpuDetectionService = gpuDetectionService;
+        _hytaleGameSessionAuthenticator = hytaleGameSessionAuthenticator;
+        _gpuProvider = gpuProvider;
         _appDir = appPath.AppDir;
-        _profileService = profileService;
-        _gameProcessService.ProcessExited += OnGameProcessExited;
+        _profiles = profiles;
+        _gameProcess.ProcessExited += OnGameProcessExited;
     }
 
 
@@ -115,15 +114,15 @@ public class GameLauncher : IGameLauncher
         {
             Logger.Info("Game", "Game process exited, performing cleanup...");
 
-            var uuid = _userIdentityService.GetUuidForUser(_config.Nick);
-            _skinService.StopSkinProtection();
-            _skinService.BackupProfileSkinData(uuid);
+            var uuid = _identity.GetUuidForUser(_config.Nick);
+            _skins.StopSkinProtection();
+            _skins.BackupProfileSkinData(uuid);
 
             // Copy the latest game avatar to persistent backup
-            _avatarService.BackupAvatar(uuid);
+            _avatars.BackupAvatar(uuid);
 
-            _discordService.SetPresence(DiscordService.PresenceState.Idle);
-            _progressService.ReportGameStateChanged("stopped", 0);
+            _discord.SetPresence(PresenceState.Idle);
+            _progress.ReportGameStateChanged("stopped", 0);
         }
         catch (Exception ex)
         {
@@ -141,8 +140,8 @@ public class GameLauncher : IGameLauncher
         Logger.Info("Game", $"Preparing to launch from {versionPath}");
 
         // Validate profile/server compatibility before proceeding
-        string sessionUuid = _userIdentityService.GetUuidForUser(_config.Nick);
-        var currentProfile = _profileService.GetProfiles().FirstOrDefault(p => p.UUID == sessionUuid);
+        string sessionUuid = _identity.GetUuidForUser(_config.Nick);
+        var currentProfile = _profiles.GetProfiles().FirstOrDefault(p => p.UUID == sessionUuid);
         bool isOfficialProfile = currentProfile?.IsOfficial == true;
 
         if (!isOfficialProfile && IsOfficialDomain(_config.AuthDomain) && _config.OnlineMode)
@@ -173,7 +172,7 @@ public class GameLauncher : IGameLauncher
         if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {
             string appBundle = Path.Combine(versionPath, "Client", "Hytale.app");
-            UtilityService.ClearMacQuarantine(appBundle);
+            LauncherUtilities.ClearMacQuarantine(appBundle);
             Logger.Info("Game", "Cleared macOS quarantine attributes before patching");
         }
 
@@ -183,7 +182,7 @@ public class GameLauncher : IGameLauncher
 
         ct.ThrowIfCancellationRequested();
 
-        _progressService.ReportDownloadProgress("launching", 0, "launch.detail.authenticating_generic", null, 0, 0);
+        _progress.ReportDownloadProgress("launching", 0, "launch.detail.authenticating_generic", null, 0, 0);
 
         Logger.Info("Game", $"Using UUID for user '{_config.Nick}': {sessionUuid}");
 
@@ -203,7 +202,7 @@ public class GameLauncher : IGameLauncher
         string javaPath = ResolveJavaPath();
         if (!File.Exists(javaPath)) throw new Exception($"Java not found at {javaPath}");
 
-        string userDataDir = _instanceService.GetInstanceUserDataPath(versionPath);
+        string userDataDir = _instances.GetInstanceUserDataPath(versionPath);
         Directory.CreateDirectory(userDataDir);
 
         InvalidateAotCacheIfNeeded(versionPath);
@@ -262,7 +261,7 @@ public class GameLauncher : IGameLauncher
             return customJavaPath;
         }
 
-        var bundledJavaPath = _launchService.GetJavaPath();
+        var bundledJavaPath = _runtime.GetJavaPath();
         Logger.Info("Game", $"Using bundled Java executable: {bundledJavaPath}");
         return bundledJavaPath;
     }
@@ -273,8 +272,8 @@ public class GameLauncher : IGameLauncher
     /// </summary>
     private bool IsOfficialServerMode()
     {
-        var currentUuid = _userIdentityService.GetUuidForUser(_config.Nick);
-        var currentProfile = _profileService.GetProfiles().FirstOrDefault(p => p.UUID == currentUuid);
+        var currentUuid = _identity.GetUuidForUser(_config.Nick);
+        var currentProfile = _profiles.GetProfiles().FirstOrDefault(p => p.UUID == currentUuid);
         return currentProfile?.IsOfficial == true;
     }
 
@@ -361,7 +360,7 @@ public class GameLauncher : IGameLauncher
             if (clientPatched || serverPatched)
             {
                 Logger.Info("Game", "Official server mode: restoring original unpatched binaries");
-                _progressService.ReportDownloadProgress("patching", 0, "launch.detail.restoring_originals", null, 0, 0);
+                _progress.ReportDownloadProgress("patching", 0, "launch.detail.restoring_originals", null, 0, 0);
 
                 try
                 {
@@ -369,7 +368,7 @@ public class GameLauncher : IGameLauncher
                     {
                         Logger.Info("Patcher", progress.HasValue ? $"{msg} ({progress}%)" : msg);
                         if (progress.HasValue)
-                            _progressService.ReportDownloadProgress("patching", (int)progress.Value, msg, null, 0, 0);
+                            _progress.ReportDownloadProgress("patching", (int)progress.Value, msg, null, 0, 0);
                     });
 
                     if (restoreResult.Success)
@@ -377,7 +376,7 @@ public class GameLauncher : IGameLauncher
                     else
                         Logger.Warning("Game", $"Restore had issues: {restoreResult.Error}");
 
-                    _progressService.ReportDownloadProgress("patching", 100, "launch.detail.patching_complete", null, 0, 0);
+                    _progress.ReportDownloadProgress("patching", 100, "launch.detail.patching_complete", null, 0, 0);
                 }
                 catch (Exception ex)
                 {
@@ -397,7 +396,7 @@ public class GameLauncher : IGameLauncher
 
         bool useDualAuth = _config.UseDualAuth;
 
-        _progressService.ReportDownloadProgress("patching", 0, "launch.detail.patching_init", null, 0, 0);
+        _progress.ReportDownloadProgress("patching", 0, "launch.detail.patching_init", null, 0, 0);
         try
         {
             string baseDomain = effectiveAuthDomain;
@@ -408,7 +407,7 @@ public class GameLauncher : IGameLauncher
 
             Logger.Info("Game", $"Patching binary: hytale.com -> {baseDomain}");
             Logger.Info("Game", $"Server patching mode: {(useDualAuth ? "DualAuth (experimental)" : "Legacy JAR patching")}");
-            _progressService.ReportDownloadProgress("patching", 10, "launch.detail.patching_client", null, 0, 0);
+            _progress.ReportDownloadProgress("patching", 10, "launch.detail.patching_client", null, 0, 0);
 
             var patcher = new ClientPatcher(baseDomain);
 
@@ -432,7 +431,7 @@ public class GameLauncher : IGameLauncher
                     if (progress.HasValue)
                     {
                         int mapped = 10 + (int)(progress.Value * 0.5);
-                        _progressService.ReportDownloadProgress("patching", mapped, msg, null, 0, 0);
+                        _progress.ReportDownloadProgress("patching", mapped, msg, null, 0, 0);
                     }
                 });
 
@@ -440,17 +439,17 @@ public class GameLauncher : IGameLauncher
                 // Always check for a newer version before launch; falls back to local check
                 // if GitHub API is unreachable.
                 Logger.Info("Game", $"Checking DualAuth agent version for auth domain: {baseDomain}");
-                _progressService.ReportDownloadProgress("patching", 65, "launch.detail.dualauth_setup", null, 0, 0);
+                _progress.ReportDownloadProgress("patching", 65, "launch.detail.dualauth_setup", null, 0, 0);
 
                 try
                 {
-                    var dualAuthResult = await DualAuthService.EnsureAgentUpToDateAsync(_appDir, (msg, progress) =>
+                    var dualAuthResult = await DualAuthAgent.EnsureAgentUpToDateAsync(_appDir, (msg, progress) =>
                     {
                         Logger.Info("DualAuth", progress.HasValue ? $"{msg} ({progress}%)" : msg);
                         if (progress.HasValue)
                         {
                             int mapped = 65 + (int)(progress.Value * 0.25);
-                            _progressService.ReportDownloadProgress("patching", mapped, msg, null, 0, 0);
+                            _progress.ReportDownloadProgress("patching", mapped, msg, null, 0, 0);
                         }
                     });
 
@@ -474,7 +473,7 @@ public class GameLauncher : IGameLauncher
                 {
                     try
                     {
-                        _progressService.ReportDownloadProgress("patching", 95, "launch.detail.resigning", null, 0, 0);
+                        _progress.ReportDownloadProgress("patching", 95, "launch.detail.resigning", null, 0, 0);
                         Logger.Info("Game", "Re-signing patched binary...");
                         string appBundle = Path.Combine(versionPath, "Client", "Hytale.app");
                         bool signed = ClientPatcher.SignMacOSBinary(appBundle);
@@ -500,7 +499,7 @@ public class GameLauncher : IGameLauncher
                     if (progress.HasValue)
                     {
                         int mapped = 10 + (int)(progress.Value * 0.85);
-                        _progressService.ReportDownloadProgress("patching", mapped, msg, null, 0, 0);
+                        _progress.ReportDownloadProgress("patching", mapped, msg, null, 0, 0);
                     }
                 });
 
@@ -517,7 +516,7 @@ public class GameLauncher : IGameLauncher
                 {
                     try
                     {
-                        _progressService.ReportDownloadProgress("patching", 95, "launch.detail.resigning", null, 0, 0);
+                        _progress.ReportDownloadProgress("patching", 95, "launch.detail.resigning", null, 0, 0);
                         Logger.Info("Game", "Re-signing patched binary...");
                         string appBundle = Path.Combine(versionPath, "Client", "Hytale.app");
                         bool signed = ClientPatcher.SignMacOSBinary(appBundle);
@@ -531,7 +530,7 @@ public class GameLauncher : IGameLauncher
                 }
             }
 
-            _progressService.ReportDownloadProgress("patching", 100, "launch.detail.patching_complete", null, 0, 0);
+            _progress.ReportDownloadProgress("patching", 100, "launch.detail.patching_complete", null, 0, 0);
 
             // Force GC to reclaim the large byte[] arrays used during binary patching
             GC.Collect(2, GCCollectionMode.Aggressive, true, true);
@@ -554,31 +553,31 @@ public class GameLauncher : IGameLauncher
         string? authPlayerName = null;
 
         // Check if the active profile is an official Hytale account
-        var currentProfile = _profileService.GetProfiles().FirstOrDefault(p => p.UUID == sessionUuid);
+        var currentProfile = _profiles.GetProfiles().FirstOrDefault(p => p.UUID == sessionUuid);
         bool isOfficialProfile = currentProfile?.IsOfficial == true;
 
         if (isOfficialProfile)
         {
-            // Use HytaleAuthService for OAuth tokens from an official account
+            // Use HytaleAuthenticator for OAuth tokens from an official account
             // Always create a fresh game session before launch to avoid SESSION EXPIRED errors
-            _progressService.ReportDownloadProgress("launching", 20, "launch.detail.authenticating_official", null, 0, 0);
+            _progress.ReportDownloadProgress("launching", 20, "launch.detail.authenticating_official", null, 0, 0);
             Logger.Info("Game", "Official profile detected. Refreshing tokens and creating a fresh game session");
 
             try
             {
                 // EnsureFreshSessionForLaunchAsync: refreshes access token if expired + always creates new game session
-                var session = await _hytaleAuthService.EnsureFreshSessionForLaunchAsync();
+                var session = await _hytaleGameSessionAuthenticator.EnsureFreshSessionForLaunchAsync();
                 if (session == null)
                 {
                     Logger.Warning("Game", "No valid Hytale session. Attempting full re-authentication...");
-                    _progressService.ReportDownloadProgress("launching", 25, "launch.detail.authenticating_browser", null, 0, 0);
+                    _progress.ReportDownloadProgress("launching", 25, "launch.detail.authenticating_browser", null, 0, 0);
                     if (authorizationUriPresenter is null)
                     {
                         throw new InvalidOperationException(
                             "Interactive Hytale authorization requires an external URI launcher from the application host");
                     }
 
-                    session = await _hytaleAuthService.LoginAsync(
+                    session = await _hytaleGameSessionAuthenticator.LoginAsync(
                         authorizationUriPresenter,
                         cancellationToken);
                     if (session == null)
@@ -587,7 +586,7 @@ public class GameLauncher : IGameLauncher
                         throw new Exception("Official Hytale session expired and re-login failed. Please try logging in again from the profile settings.");
                     }
                     // Save session to the active profile after successful re-authentication
-                    _hytaleAuthService.SaveCurrentSession();
+                    _hytaleGameSessionAuthenticator.SaveCurrentSession();
                 }
 
                 identityToken = session.IdentityToken;
@@ -612,12 +611,12 @@ public class GameLauncher : IGameLauncher
         if (!_config.OnlineMode || string.IsNullOrWhiteSpace(effectiveAuthDomain))
             return (identityToken, sessionToken, authPlayerName);
 
-        _progressService.ReportDownloadProgress("launching", 20, "launch.detail.authenticating", [effectiveAuthDomain], 0, 0);
+        _progress.ReportDownloadProgress("launching", 20, "launch.detail.authenticating", [effectiveAuthDomain], 0, 0);
         Logger.Info("Game", $"Online mode enabled - fetching auth tokens from {effectiveAuthDomain}...");
 
         try
         {
-            var authService = new AuthService(_httpClient, effectiveAuthDomain);
+            var authService = new GameSessionAuthenticator(_httpClient, effectiveAuthDomain);
             var tokenResult = await authService.GetGameSessionTokenAsync(sessionUuid, _config.Nick);
 
             if (tokenResult.Success && !string.IsNullOrEmpty(tokenResult.Token))
@@ -655,12 +654,12 @@ public class GameLauncher : IGameLauncher
         }
 
         Logger.Info("Game", $"Fetching offline token from {effectiveAuthDomain}...");
-        _progressService.ReportDownloadProgress("launching", 25, "launch.detail.offline_token", null, 0, 0);
+        _progress.ReportDownloadProgress("launching", 25, "launch.detail.offline_token", null, 0, 0);
 
         try
         {
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
-            var authService = new AuthService(_httpClient, effectiveAuthDomain);
+            var authService = new GameSessionAuthenticator(_httpClient, effectiveAuthDomain);
             _offlineToken = await authService.GetOfflineTokenAsync(uuid, playerName, cts.Token);
 
             if (!string.IsNullOrEmpty(_offlineToken))
@@ -743,16 +742,16 @@ public class GameLauncher : IGameLauncher
 
     private void RestoreProfileSkinData(string sessionUuid, string userDataDir)
     {
-        var currentProfile = _profileService.GetProfiles().FirstOrDefault(p => p.UUID == sessionUuid);
+        var currentProfile = _profiles.GetProfiles().FirstOrDefault(p => p.UUID == sessionUuid);
         if (currentProfile == null) return;
 
-        _skinService.RestoreProfileSkinData(currentProfile);
+        _skins.RestoreProfileSkinData(currentProfile);
         Logger.Info("Game", $"Restored skin data for profile '{currentProfile.Name}'");
 
         string skinCachePath = Path.Combine(userDataDir, "CachedPlayerSkins", $"{currentProfile.UUID}.json");
         if (File.Exists(skinCachePath))
         {
-            _skinService.StartSkinProtection(currentProfile, skinCachePath);
+            _skins.StartSkinProtection(currentProfile, skinCachePath);
         }
     }
 
@@ -893,7 +892,7 @@ public class GameLauncher : IGameLauncher
 
         string authDomain = DeriveAuthDomain(GetEffectiveCustomAuthDomain(logFallback: false));
 
-        DualAuthService.ApplyToProcess(startInfo, _dualAuthAgentPath, authDomain, trustOfficialIssuers: true);
+        DualAuthAgent.ApplyToProcess(startInfo, _dualAuthAgentPath, authDomain, trustOfficialIssuers: true);
         Logger.Info("Game", $"DualAuth environment applied to process (auth domain: {authDomain})");
     }
 
@@ -1114,7 +1113,7 @@ exec env ""${{ENV_ARGS[@]}}"" ""{executable}"" {argsString}
             sb.AppendLine("# GPU preference: dedicated (discrete GPU)");
 
             // Detect the vendor of the dedicated GPU
-            var adapters = _gpuDetectionService.GetAdapters();
+            var adapters = _gpuProvider.GetAdapters();
             var dedicatedGpu = adapters.FirstOrDefault(a => a.Type == "dedicated");
 
             if (dedicatedGpu != null && !string.IsNullOrEmpty(dedicatedGpu.PciId))
@@ -1348,7 +1347,7 @@ DUALAUTH_TRUST_OFFICIAL=""true""
         Process? process = null;
         try
         {
-            _progressService.ReportDownloadProgress("launching", 80, "launch.detail.starting_process", null, 0, 0);
+            _progress.ReportDownloadProgress("launching", 80, "launch.detail.starting_process", null, 0, 0);
 
             process = new Process { StartInfo = startInfo };
             var interfaceLoadedTcs = new TaskCompletionSource<bool>();
@@ -1417,20 +1416,20 @@ DUALAUTH_TRUST_OFFICIAL=""true""
             if (!process.Start())
             {
                 Logger.Error("Game", "Process.Start returned false - game failed to launch");
-                _progressService.ReportError("launch", "Failed to start game", "Process.Start returned false");
+                _progress.ReportError("launch", "Failed to start game", "Process.Start returned false");
                 throw new Exception("Failed to start game process");
             }
 
             process.BeginOutputReadLine();
             process.BeginErrorReadLine();
 
-            // Transfer ownership to GameProcessService (it will handle disposal and notify subscribers)
-            _gameProcessService.SetGameProcess(process);
+            // Transfer ownership to GameProcessTracker (it will handle disposal and notify subscribers)
+            _gameProcess.SetGameProcess(process);
             Logger.Success("Game", $"Game started with PID: {process.Id}");
 
-            _discordService.SetPresence(DiscordService.PresenceState.Playing, $"Playing as {_config.Nick}");
-            _progressService.ReportGameStateChanged("started", process.Id);
-            _progressService.ReportDownloadProgress("launching", 100, "launch.detail.waiting_for_window", null, 0, 0);
+            _discord.SetPresence(PresenceState.Playing, $"Playing as {_config.Nick}");
+            _progress.ReportGameStateChanged("started", process.Id);
+            _progress.ReportDownloadProgress("launching", 100, "launch.detail.waiting_for_window", null, 0, 0);
 
             // Wait for interface loaded signal or timeout (60s)
             var timeoutTask = Task.Delay(TimeSpan.FromSeconds(60));
@@ -1441,19 +1440,19 @@ DUALAUTH_TRUST_OFFICIAL=""true""
                 Logger.Warning("Game", "Timed out waiting for interface load signal (or game output is silent)");
             }
 
-            _progressService.ReportDownloadProgress("complete", 100, "launch.detail.done", null, 0, 0);
+            _progress.ReportDownloadProgress("complete", 100, "launch.detail.done", null, 0, 0);
         }
         catch (Exception ex)
         {
             Logger.Error("Game", $"Failed to start game process: {ex.Message}");
 
-            // Cleanup process if failed before transferring to GameProcessService
-            if (process != null && _gameProcessService.GetGameProcess() != process)
+            // Cleanup process if failed before transferring to GameProcessTracker
+            if (process != null && _gameProcess.GetGameProcess() != process)
             {
                 try { process.Dispose(); } catch { }
             }
 
-            _progressService.ReportError("launch", "Failed to start game", ex.Message);
+            _progress.ReportError("launch", "Failed to start game", ex.Message);
             throw new Exception($"Failed to start game: {ex.Message}");
         }
     }

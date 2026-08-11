@@ -31,4 +31,8 @@ SPDX-License-Identifier: GPL-3.0-only
     <ProjectReference Include="../../Sources/HyPrism.Desktop/HyPrism.Desktop.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Include="Fixtures/**/*.html" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

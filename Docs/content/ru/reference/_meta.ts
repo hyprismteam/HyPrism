@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 export default {
-  services: 'Сервисы Core',
+  services: 'Контракты Core',
   configuration: 'Конфигурация',
   mirrors: 'Зеркала'
 }

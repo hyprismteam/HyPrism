@@ -5,7 +5,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Text.RegularExpressions;
 
-namespace HyPrism.Services.Game.Launch;
+namespace HyPrism.Core.Game.Launch;
 
 /// <summary>
 /// Provides helpers for building, sanitizing, and applying JVM arguments

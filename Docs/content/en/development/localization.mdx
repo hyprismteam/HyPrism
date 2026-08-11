@@ -13,10 +13,10 @@ The default resource is `Sources/HyPrism.Desktop/Localization/Resources.resx`. E
 
 1. Add the key and English value to `Resources.resx`
 2. Add the same key to every culture file
-3. Read the value through `LocalizationService`
+3. Read the value through `StringLocalizer`
 4. Refresh the affected view model when `LanguageChanged` fires
 5. Add or update localization tests
 
 `_supportedCultures` in the default resource controls the language picker. `_langName` in each culture resource provides the native display name
 
-Core stores only the selected culture code through `ISettingsService`. Core must not own translated strings or Avalonia resource lookup
+`IDesktopSettingsStore` stores the selected culture code in the shared configuration. Core must not own translated strings or Avalonia resource lookup

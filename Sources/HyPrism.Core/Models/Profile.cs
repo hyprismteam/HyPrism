@@ -3,7 +3,7 @@
 
 using System;
 
-namespace HyPrism.Models;
+namespace HyPrism.Core.Models;
 
 /// <summary>
 /// A user profile with DDID and display name.

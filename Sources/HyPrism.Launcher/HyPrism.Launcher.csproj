@@ -74,8 +74,11 @@ SPDX-License-Identifier: GPL-3.0-only
 
   <!-- Electron host packages. Shared launcher dependencies live in HyPrism.Core. -->
   <ItemGroup>
+    <PackageReference Include="AngleSharp" Version="1.7.0" />
+    <PackageReference Include="DiscordRichPresence" Version="1.143.0" />
     <PackageReference Include="ElectronNET.Core" Version="0.4.1" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.10" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
     <PackageReference Include="Serilog" Version="4.4.0" />
     <PackageReference Include="Serilog.Enrichers.Thread" Version="4.0.0" />
     <PackageReference Include="Serilog.Sinks.File" Version="8.0.0-dev-02318" />
@@ -84,6 +87,22 @@ SPDX-License-Identifier: GPL-3.0-only
 
   <ItemGroup>
     <ProjectReference Include="../HyPrism.Core/HyPrism.Core.csproj" />
+  </ItemGroup>
+
+  <!-- Obsolete Electron compatibility links. Active ownership lives in Desktop. -->
+  <ItemGroup>
+    <Compile Include="../HyPrism.Desktop/Integrations/Discord/DiscordPresence.cs"
+             Link="Compatibility/Desktop/DiscordPresence.cs" />
+    <Compile Include="../HyPrism.Desktop/Features/About/GitHubClient.cs"
+             Link="Compatibility/Desktop/About/GitHubClient.cs" />
+    <Compile Include="../HyPrism.Desktop/Features/About/IGitHubClient.cs"
+             Link="Compatibility/Desktop/About/IGitHubClient.cs" />
+    <Compile Include="../HyPrism.Desktop/Features/News/HytaleNewsClient.cs"
+             Link="Compatibility/Desktop/News/HytaleNewsClient.cs" />
+    <Compile Include="../HyPrism.Desktop/Features/News/IHytaleNewsClient.cs"
+             Link="Compatibility/Desktop/News/IHytaleNewsClient.cs" />
+    <Compile Include="../HyPrism.Desktop/Features/News/NewsModels.cs"
+             Link="Compatibility/Desktop/News/NewsModels.cs" />
   </ItemGroup>
 
   <!-- Localization files as embedded resources -->

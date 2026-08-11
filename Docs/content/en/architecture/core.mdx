@@ -1,6 +1,6 @@
 ---
 title: HyPrism.Core
-description: Domain services and orchestration owned by the launcher core
+description: Domain features, contracts, and orchestration owned by the launcher core
 ---
 
 # HyPrism.Core
@@ -9,27 +9,38 @@ description: Domain services and orchestration owned by the launcher core
 
 ## Application and infrastructure
 
-- `Core/App` contains settings, update orchestration, package extraction, and progress notifications
-- `Core/Infrastructure` contains configuration, files, logging, system information, and shared utilities
-- `Core/Integration` contains news, GitHub, Discord Rich Presence, and remote protocol helpers
-- `Core/Platform` contains the remaining clipboard, file dialog, and GPU boundaries
+- `Application/Composition` builds the default dependency graph
+- `Application/Progress` publishes download, game state, and error events
+- `Application/Ports` contains only host-provided capabilities such as Discord presence and GPU discovery
+- `Infrastructure` contains JSON configuration persistence, logging, and shared launcher utilities
+- `Integrations/Hytale` contains protocol details required to communicate with official Hytale endpoints
 
 ## Game
 
-- `Game/Version` resolves official and mirror version metadata and caches source results
+- `Game/Versions` resolves official and mirror version metadata and caches source results
 - `Game/Download` streams files, applies patch sequences, and reports progress
-- `Game/Instance` owns instance metadata, paths, selection, import, deletion, and migrations
+- `Game/Instances` owns instance metadata, paths, selection, import, deletion, and migrations
 - `Game/Launch` prepares Java, authentication, patching, environment variables, and the game process
-- `Game/Asset` extracts assets and protects avatar data
-- `Game/Mod` searches and installs CurseForge or local mods
+- `Game/Authentication` obtains compatible game session tokens
+- `Game/Assets` manages avatar data required by profiles and game launch
+- `Game/Mods` searches and installs CurseForge or local mods
+- `Game/Patching` owns the Butler client used for differential updates
 - `Game/Sources` implements official and JSON mirror sources
 
-## User
+## Accounts
 
-`User` owns Hytale authentication, profiles, identities, tokens, skins, and migration of older profile data
+`Accounts` is divided into authentication, profiles, identity, and skins. Contracts stay beside their implementation instead of being collected in a separate abstractions directory
 
 ## Dependency rule
 
 Core may expose host capabilities through interfaces, but it must not reference Avalonia, Electron, or any presentation model
 
 OAuth remains UI-neutral: Core creates the authorization URI and accepts a host callback for presenting it. Opening a browser is owned by the active application host
+
+The obsolete Electron updater and clipboard adapter live in `HyPrism.Launcher` and are not part of the active Core architecture
+
+Core resolves profile directories but never opens a system file manager. Native file dialogs and system memory detection belong to `HyPrism.Desktop`; the obsolete host keeps private compatibility adapters for its old IPC surface
+
+Game launch depends only on `IGpuProvider` and `GpuAdapterInfo`. Each host owns the concrete adapter discovery implementation
+
+News parsing, GitHub metadata, and the Discord Rich Presence adapter belong to `HyPrism.Desktop`. Core only consumes `IDiscordPresence` as a host capability while reporting launcher and game activity

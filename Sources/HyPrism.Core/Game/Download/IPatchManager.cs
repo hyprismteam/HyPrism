@@ -1,7 +1,7 @@
 // Copyright (C) 2026 HyPrism Launcher
 // SPDX-License-Identifier: GPL-3.0-only
 
-namespace HyPrism.Services.Game.Download;
+namespace HyPrism.Core.Game.Download;
 
 /// <summary>
 /// Manages differential game updates by downloading and applying Butler patches

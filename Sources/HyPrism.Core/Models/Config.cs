@@ -4,7 +4,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace HyPrism.Models;
+namespace HyPrism.Core.Models;
 
 public class Config
 {

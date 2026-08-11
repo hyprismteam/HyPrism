@@ -3,7 +3,7 @@
 
 using System;
 
-namespace HyPrism.Services;
+namespace HyPrism.Core.Models;
 
 /// <summary>
 /// Stores information about the latest installed game instance version.

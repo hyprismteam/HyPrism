@@ -17,19 +17,21 @@ using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using CommunityToolkit.Mvvm.Input;
+using HyPrism.Desktop.Features.About;
+using HyPrism.Desktop.Features.Dashboard;
+using HyPrism.Desktop.Features.News;
+using HyPrism.Desktop.Features.Settings;
 using HyPrism.Desktop.Localization;
 using HyPrism.Desktop.Controls;
-using HyPrism.Desktop.Services;
-using HyPrism.Desktop.ViewModels;
-using HyPrism.Desktop.Views;
-using HyPrism.Models;
-using HyPrism.Services.Core.App;
-using HyPrism.Services.Core.Integration;
-using HyPrism.Services.Core.Platform;
-using HyPrism.Services.Game;
-using HyPrism.Services.Game.Instance;
-using HyPrism.Services.Game.Launch;
-using HyPrism.Services.User;
+using HyPrism.Desktop.Platform;
+using HyPrism.Desktop.Shell;
+using HyPrism.Core.Models;
+using HyPrism.Core.Application.Progress;
+using HyPrism.Core.Application.Ports;
+using HyPrism.Core.Game;
+using HyPrism.Core.Game.Instances;
+using HyPrism.Core.Game.Launch;
+using HyPrism.Core.Accounts;
 using Moq;
 using Xunit;
 
@@ -294,23 +296,23 @@ public sealed class MainWindowRenderTests
     [AvaloniaFact]
     public async Task CompactNewsLoadingUsesOpaqueReaderAndKeepsSkeletonBelowBack()
     {
-        var progress = new Mock<IProgressNotificationService>();
-        var instances = new Mock<IInstanceService>();
-        var profile = new Mock<IProfileService>();
-        var profileManagement = new Mock<IProfileManagementService>();
+        var progress = new Mock<IProgressReporter>();
+        var instances = new Mock<IInstanceRepository>();
+        var profile = new Mock<IProfileManager>();
+        var profileManagement = new Mock<IProfileRepository>();
         var launchCoordinator = new Mock<IGameLaunchCoordinator>();
-        var gameSession = new Mock<IGameSessionService>();
-        var gameProcess = new Mock<IGameProcessService>();
-        var settings = new Mock<ISettingsService>();
-        var news = new Mock<INewsService>();
+        var gameSession = new Mock<IGameInstallationWorkflow>();
+        var gameProcess = new Mock<IGameProcessTracker>();
+        var settings = new Mock<IDesktopSettingsStore>();
+        var news = new Mock<IHytaleNewsClient>();
         var uriLauncher = new Mock<IExternalUriLauncher>();
         var articleCompletion = new TaskCompletionSource<NewsArticleResponse?>(
             TaskCreationOptions.RunContinuationsAsynchronously);
 
         instances.Setup(service => service.GetCachedInstances()).Returns([]);
         profile.Setup(service => service.GetNick()).Returns("Reader Test");
-        settings.Setup(service => service.GetAvailableBackgrounds()).Returns([]);
-        news.Setup(service => service.GetNewsAsync(It.IsAny<int>(), NewsSource.Hytale))
+        settings.SetupGet(service => service.AvailableBackgrounds).Returns([]);
+        news.Setup(service => service.GetNewsAsync(It.IsAny<int>()))
             .ReturnsAsync(
             [
                 new NewsItemResponse
@@ -319,8 +321,7 @@ public sealed class MainWindowRenderTests
                     Excerpt = "Loading without blocking the feed.",
                     Url = "https://hytale.com/news/2026/8/uncached-article",
                     Date = "2026-08-08",
-                    Author = "Hytale Team",
-                    Source = "hytale"
+                    Author = "Hytale Team"
                 }
             ]);
         news.Setup(service => service.GetNewsArticleAsync(It.IsAny<string>()))
@@ -338,7 +339,7 @@ public sealed class MainWindowRenderTests
             news.Object,
             uriLauncher.Object,
             new HttpClient(),
-            new LocalizationService("en-US"));
+            new StringLocalizer("en-US"));
         var window = new MainWindow
         {
             Width = 1024,
@@ -417,35 +418,33 @@ public sealed class MainWindowRenderTests
     public async Task NewsPaginationAndLanguageChangesApplyWithoutRestart()
     {
         using var cultureScope = new CultureRestoreScope();
-        var progress = new Mock<IProgressNotificationService>();
-        var instances = new Mock<IInstanceService>();
-        var profile = new Mock<IProfileService>();
-        var profileManagement = new Mock<IProfileManagementService>();
+        var progress = new Mock<IProgressReporter>();
+        var instances = new Mock<IInstanceRepository>();
+        var profile = new Mock<IProfileManager>();
+        var profileManagement = new Mock<IProfileRepository>();
         var launchCoordinator = new Mock<IGameLaunchCoordinator>();
-        var gameSession = new Mock<IGameSessionService>();
-        var gameProcess = new Mock<IGameProcessService>();
-        var settings = new Mock<ISettingsService>();
-        var news = new Mock<INewsService>();
+        var gameSession = new Mock<IGameInstallationWorkflow>();
+        var gameProcess = new Mock<IGameProcessTracker>();
+        var settings = new Mock<IDesktopSettingsStore>();
+        var news = new Mock<IHytaleNewsClient>();
         var uriLauncher = new Mock<IExternalUriLauncher>();
         var language = "en-US";
 
         instances.Setup(service => service.GetCachedInstances()).Returns([]);
         profile.Setup(service => service.GetNick()).Returns("Reader Test");
-        settings.Setup(service => service.GetLanguage()).Returns(() => language);
-        settings.Setup(service => service.SetLanguage(It.IsAny<string>()))
-            .Callback<string>(value => language = value)
-            .Returns(true);
-        settings.Setup(service => service.GetAvailableBackgrounds()).Returns([]);
-        news.Setup(service => service.GetNewsAsync(It.IsAny<int>(), NewsSource.Hytale))
-            .ReturnsAsync((int count, NewsSource _) => Enumerable.Range(1, count)
+        settings.SetupGet(service => service.Language).Returns(() => language);
+        settings.SetupSet(service => service.Language = It.IsAny<string>())
+            .Callback<string>(value => language = value);
+        settings.SetupGet(service => service.AvailableBackgrounds).Returns([]);
+        news.Setup(service => service.GetNewsAsync(It.IsAny<int>()))
+            .ReturnsAsync((int count) => Enumerable.Range(1, count)
                 .Select(index => new NewsItemResponse
                 {
                     Title = $"News {index}",
                     Excerpt = "A paginated article excerpt.",
                     Url = $"https://hytale.com/news/2026/8/news-{index}",
                     Date = $"2026-08-{Math.Min(index, 28):00}",
-                    Author = "Hytale Team",
-                    Source = "hytale"
+                    Author = "Hytale Team"
                 })
                 .ToList());
 
@@ -461,7 +460,7 @@ public sealed class MainWindowRenderTests
             news.Object,
             uriLauncher.Object,
             new HttpClient(),
-            new LocalizationService("en-US"));
+            new StringLocalizer("en-US"));
 
         viewModel.NavigateCommand.Execute("news");
         Dispatcher.UIThread.RunJobs();
@@ -470,7 +469,7 @@ public sealed class MainWindowRenderTests
 
         await viewModel.LoadMoreNewsCommand.ExecuteAsync(null);
         Assert.Equal(20, 1 + viewModel.LatestNews.Count);
-        news.Verify(service => service.GetNewsAsync(20, NewsSource.Hytale), Times.Once);
+        news.Verify(service => service.GetNewsAsync(20), Times.Once);
 
         viewModel.NavigateCommand.Execute("settings");
         var settingsBeforeChange = viewModel.Settings;
@@ -578,7 +577,7 @@ public sealed class MainWindowRenderTests
         Assert.All(
             viewModel.Settings.Categories,
             category => Assert.False(category.Description.EndsWith('.')));
-        settings.Verify(service => service.SetLanguage("ru-RU"), Times.Once);
+        settings.VerifySet(service => service.Language = "ru-RU", Times.Once);
         window.Close();
     }
 
@@ -645,17 +644,17 @@ public sealed class MainWindowRenderTests
     [InlineData(1920, 900, true)]
     public async Task ShellRendersAtSupportedDesktopSizes(int width, int height, bool isOfficialProfile)
     {
-        var progress = new Mock<IProgressNotificationService>();
-        var instances = new Mock<IInstanceService>();
-        var profile = new Mock<IProfileService>();
-        var profileManagement = new Mock<IProfileManagementService>();
+        var progress = new Mock<IProgressReporter>();
+        var instances = new Mock<IInstanceRepository>();
+        var profile = new Mock<IProfileManager>();
+        var profileManagement = new Mock<IProfileRepository>();
         var launchCoordinator = new Mock<IGameLaunchCoordinator>();
-        var gameSession = new Mock<IGameSessionService>();
-        var gameProcess = new Mock<IGameProcessService>();
-        var settings = new Mock<ISettingsService>();
-        var news = new Mock<INewsService>();
+        var gameSession = new Mock<IGameInstallationWorkflow>();
+        var gameProcess = new Mock<IGameProcessTracker>();
+        var settings = new Mock<IDesktopSettingsStore>();
+        var news = new Mock<IHytaleNewsClient>();
         var uriLauncher = new Mock<IExternalUriLauncher>();
-        var github = new Mock<IGitHubService>();
+        var github = new Mock<IGitHubClient>();
 
         var selected = new InstanceInfo
         {
@@ -681,8 +680,8 @@ public sealed class MainWindowRenderTests
                 Name = "HyPrism Player",
                 IsOfficial = isOfficialProfile
             });
-        settings.Setup(service => service.GetLaunchAfterDownload()).Returns(true);
-        settings.Setup(service => service.GetAvailableBackgrounds()).Returns(
+        settings.SetupGet(service => service.LaunchAfterDownload).Returns(true);
+        settings.SetupGet(service => service.AvailableBackgrounds).Returns(
             ["bg_1.jpg", "bg_2.jpg", "bg_3.jpg", "bg_4.png", "bg_5.jpg", "bg_6.png"]);
         github.Setup(service => service.GetContributorsAsync()).ReturnsAsync(
         [
@@ -706,7 +705,7 @@ public sealed class MainWindowRenderTests
                 "https://github.com/hyprismteam/HyPrism/commit/abcdef1"));
         github.Setup(service => service.LoadAvatarAsync(It.IsAny<string>(), It.IsAny<int>()))
             .ReturnsAsync(TinyPngHandler.ImageBytes);
-        news.Setup(service => service.GetNewsAsync(It.IsAny<int>(), It.IsAny<NewsSource>()))
+        news.Setup(service => service.GetNewsAsync(It.IsAny<int>()))
             .ReturnsAsync(
             [
                 new NewsItemResponse
@@ -715,17 +714,7 @@ public sealed class MainWindowRenderTests
                     Excerpt = "A closer look at the world, its creatures, and the systems behind exploration.",
                     Url = "https://hytale.com/news/preview",
                     Date = "2026-08-05",
-                    Author = "Hytale Team",
-                    Source = "hytale"
-                },
-                new NewsItemResponse
-                {
-                    Title = "HyPrism Avalonia preview",
-                    Excerpt = "The native launcher shell now includes a real, service-backed news page.",
-                    Url = "https://github.com/hyprismteam/HyPrism/releases/tag/preview",
-                    Date = "2026-08-04",
-                    Author = "HyPrism",
-                    Source = "hyprism"
+                    Author = "Hytale Team"
                 },
                 new NewsItemResponse
                 {
@@ -733,8 +722,7 @@ public sealed class MainWindowRenderTests
                     Excerpt = "New environments and discoveries await.",
                     Url = "https://hytale.com/news/world-update",
                     Date = "2026-08-03",
-                    Author = "Hytale Team",
-                    Source = "hytale"
+                    Author = "Hytale Team"
                 },
                 new NewsItemResponse
                 {
@@ -742,8 +730,7 @@ public sealed class MainWindowRenderTests
                     Excerpt = "Meet the artists shaping Hytale's regions.",
                     Url = "https://hytale.com/news/world-art",
                     Date = "2026-08-02",
-                    Author = "Hytale Team",
-                    Source = "hytale"
+                    Author = "Hytale Team"
                 },
                 new NewsItemResponse
                 {
@@ -751,8 +738,7 @@ public sealed class MainWindowRenderTests
                     Excerpt = "The team shares its latest design work.",
                     Url = "https://hytale.com/news/adventure-mode",
                     Date = "2026-08-01",
-                    Author = "Hytale Team",
-                    Source = "hytale"
+                    Author = "Hytale Team"
                 }
             ]);
         news.Setup(service => service.GetNewsArticleAsync(It.IsAny<string>()))
@@ -964,7 +950,7 @@ public sealed class MainWindowRenderTests
             news.Object,
             uriLauncher.Object,
             new HttpClient(),
-            new LocalizationService("en-US"),
+            new StringLocalizer("en-US"),
             null,
             github.Object);
 
@@ -1088,11 +1074,9 @@ public sealed class MainWindowRenderTests
         Dispatcher.UIThread.RunJobs();
 
         Assert.True(viewModel.HasFeaturedNews);
-        Assert.Equal("Hytale", viewModel.FeaturedNews?.SourceLabel);
         Assert.Equal(3, viewModel.LatestNews.Count);
-        Assert.All(viewModel.LatestNews, item => Assert.Equal("hytale", item.Source));
         news.Verify(
-            service => service.GetNewsAsync(12, NewsSource.Hytale),
+            service => service.GetNewsAsync(12),
             Times.Once);
 
         var newsLayout = window.FindControl<Grid>("NewsResponsiveLayout");
