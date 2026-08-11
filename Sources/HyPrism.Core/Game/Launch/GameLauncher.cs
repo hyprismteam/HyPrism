@@ -132,7 +132,11 @@ public class GameLauncher : IGameLauncher
     }
 
     /// <inheritdoc/>
-    public async Task LaunchGameAsync(string versionPath, string branch, CancellationToken ct = default)
+    public async Task LaunchGameAsync(
+        string versionPath,
+        string branch,
+        CancellationToken ct = default,
+        AuthUriPresenter? authorizationUriPresenter = null)
     {
         Logger.Info("Game", $"Preparing to launch from {versionPath}");
 
@@ -183,7 +187,10 @@ public class GameLauncher : IGameLauncher
 
         Logger.Info("Game", $"Using UUID for user '{_config.Nick}': {sessionUuid}");
 
-        var (identityToken, sessionToken, authPlayerName) = await AuthenticateAsync(sessionUuid);
+        var (identityToken, sessionToken, authPlayerName) = await AuthenticateAsync(
+            sessionUuid,
+            authorizationUriPresenter,
+            ct);
         string launchPlayerName = ResolveLaunchPlayerName(authPlayerName, identityToken);
 
         // When launching in offline mode, fetch an offline token for HYTALE_OFFLINE_TOKEN env var
@@ -537,7 +544,10 @@ public class GameLauncher : IGameLauncher
         }
     }
 
-    private async Task<(string? identityToken, string? sessionToken, string? authPlayerName)> AuthenticateAsync(string sessionUuid)
+    private async Task<(string? identityToken, string? sessionToken, string? authPlayerName)> AuthenticateAsync(
+        string sessionUuid,
+        AuthUriPresenter? authorizationUriPresenter,
+        CancellationToken cancellationToken)
     {
         string? identityToken = null;
         string? sessionToken = null;
@@ -562,7 +572,15 @@ public class GameLauncher : IGameLauncher
                 {
                     Logger.Warning("Game", "No valid Hytale session. Attempting full re-authentication...");
                     _progressService.ReportDownloadProgress("launching", 25, "launch.detail.authenticating_browser", null, 0, 0);
-                    session = await _hytaleAuthService.LoginAsync();
+                    if (authorizationUriPresenter is null)
+                    {
+                        throw new InvalidOperationException(
+                            "Interactive Hytale authorization requires an external URI launcher from the application host");
+                    }
+
+                    session = await _hytaleAuthService.LoginAsync(
+                        authorizationUriPresenter,
+                        cancellationToken);
                     if (session == null)
                     {
                         Logger.Error("Game", "Full re-authentication failed. Authenticated launch is unavailable");

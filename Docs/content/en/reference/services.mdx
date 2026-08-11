@@ -17,11 +17,13 @@ description: Responsibilities of the public service groups in HyPrism.Core
 | Launch | `IGameSessionService`, `IGameLaunchCoordinator`, `IGameLauncher` | orchestration from selection to process start |
 | Process | `IGameProcessService` | process tracking and controlled exit |
 | Mods | `IModService` | search, install, import, update checks, and changelog retrieval |
-| Authentication | `IHytaleAuthService`, `IAuthService` | official sessions and game tokens |
+| Authentication | `IHytaleAuthService`, `IAuthService` | official sessions, OAuth challenges, and game tokens |
 | Profiles | `IProfileService`, `IProfileManagementService`, `IUserIdentityService` | identity and profile lifecycle |
 | Assets | `IAssetService`, `IAvatarService`, `ISkinService` | asset extraction and profile visuals |
 | News | `INewsService`, `INewsSource` | feed and structured article retrieval |
 | GitHub | `IGitHubService` | cached repository metadata, contributors, commits, and avatars |
-| Platform | `IBrowserService`, `IClipboardService`, `IFileDialogService`, `IGpuDetectionService` | host-owned operating system capabilities |
+| Platform | `IClipboardService`, `IFileDialogService`, `IGpuDetectionService` | host-owned operating system capabilities that remain behind Core contracts |
 
 Prefer the narrowest contract required by a consumer. Avoid resolving services from the container inside domain code
+
+Interactive OAuth does not depend on a browser service in Core. The host passes an asynchronous URI launcher into the launch operation, and Core uses it only when an official account requires authorization

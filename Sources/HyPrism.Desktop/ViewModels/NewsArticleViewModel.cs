@@ -7,30 +7,30 @@ using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using HyPrism.Desktop.Services;
 using HyPrism.Models;
-using HyPrism.Services.Core.Platform;
 
 namespace HyPrism.Desktop.ViewModels;
 
 public sealed class NewsArticleViewModel : ObservableObject, IDisposable
 {
-    private readonly IBrowserService _browserService;
+    private readonly IExternalUriLauncher _uriLauncher;
     private readonly string _publishedAt;
     private string _date = string.Empty;
     private string _metadata = string.Empty;
 
-    public NewsArticleViewModel(NewsArticleResponse article, IBrowserService browserService)
+    public NewsArticleViewModel(NewsArticleResponse article, IExternalUriLauncher uriLauncher)
     {
-        _browserService = browserService;
+        _uriLauncher = uriLauncher;
         Title = article.Title;
         Excerpt = article.Excerpt;
         Url = article.Url;
         Author = article.Author;
         _publishedAt = article.PublishedAt;
         Categories = string.Join("  ·  ", article.Categories);
-        OpenLinkCommand = new RelayCommand<string?>(OpenLink);
+        OpenLinkCommand = new AsyncRelayCommand<string?>(OpenLinkAsync);
         Blocks = NewsArticleBlockViewModel.Create(article.Content, OpenLinkCommand);
-        OpenOriginalCommand = new RelayCommand(OpenOriginal);
+        OpenOriginalCommand = new AsyncRelayCommand(OpenOriginalAsync);
         RefreshCulture();
     }
 
@@ -133,20 +133,17 @@ public sealed class NewsArticleViewModel : ObservableObject, IDisposable
         }
     }
 
-    private void OpenOriginal()
-    {
-        if (!string.IsNullOrWhiteSpace(Url))
-            _browserService.OpenURL(Url);
-    }
+    private Task OpenOriginalAsync()
+        => LaunchExternalAsync(Url);
 
-    private void OpenLink(string? url)
-    {
-        if (Uri.TryCreate(url, UriKind.Absolute, out var uri) &&
-            (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps))
-        {
-            _browserService.OpenURL(uri.AbsoluteUri);
-        }
-    }
+    private Task OpenLinkAsync(string? url)
+        => LaunchExternalAsync(url);
+
+    private Task<bool> LaunchExternalAsync(string? url)
+        => Uri.TryCreate(url, UriKind.Absolute, out var uri) &&
+           (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps)
+            ? _uriLauncher.LaunchAsync(uri)
+            : Task.FromResult(false);
 
     public void Dispose()
     {

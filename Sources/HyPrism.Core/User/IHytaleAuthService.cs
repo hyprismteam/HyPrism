@@ -17,12 +17,15 @@ public interface IHytaleAuthService
     HytaleAuthSession? CurrentSession { get; }
 
     /// <summary>
-    /// Initiates OAuth 2.0 login flow with PKCE.
-    /// Opens browser for user authentication
+    /// Initiates an OAuth 2.0 login flow with PKCE. The host presents the generated authorization URI
     /// </summary>
+    /// <param name="authorizationUriPresenter">Host callback that opens the authorization URI and reports whether the operating system accepted it</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Authenticated session, or null if login failed/cancelled</returns>
-    Task<HytaleAuthSession?> LoginAsync(CancellationToken cancellationToken = default);
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="authorizationUriPresenter"/> is <see langword="null"/></exception>
+    Task<HytaleAuthSession?> LoginAsync(
+        AuthUriPresenter authorizationUriPresenter,
+        CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Logs out the current user and clears session data

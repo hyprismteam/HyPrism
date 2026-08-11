@@ -12,7 +12,7 @@ description: Domain services and orchestration owned by the launcher core
 - `Core/App` contains settings, update orchestration, package extraction, and progress notifications
 - `Core/Infrastructure` contains configuration, files, logging, system information, and shared utilities
 - `Core/Integration` contains news, GitHub, Discord Rich Presence, and remote protocol helpers
-- `Core/Platform` defines browser, clipboard, file dialog, and GPU boundaries
+- `Core/Platform` contains the remaining clipboard, file dialog, and GPU boundaries
 
 ## Game
 
@@ -31,3 +31,5 @@ description: Domain services and orchestration owned by the launcher core
 ## Dependency rule
 
 Core may expose host capabilities through interfaces, but it must not reference Avalonia, Electron, or any presentation model
+
+OAuth remains UI-neutral: Core creates the authorization URI and accepts a host callback for presenting it. Opening a browser is owned by the active application host

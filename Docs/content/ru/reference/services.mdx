@@ -17,11 +17,13 @@ description: Ответственность публичных групп сер
 | Запуск | `IGameSessionService`, `IGameLaunchCoordinator`, `IGameLauncher` | путь от выбранного экземпляра до процесса игры |
 | Процесс | `IGameProcessService` | отслеживание и корректное завершение процесса |
 | Моды | `IModService` | поиск, установка, импорт, обновления и changelog |
-| Авторизация | `IHytaleAuthService`, `IAuthService` | официальные сессии и игровые токены |
+| Авторизация | `IHytaleAuthService`, `IAuthService` | официальные сессии, OAuth-запросы и игровые токены |
 | Профили | `IProfileService`, `IProfileManagementService`, `IUserIdentityService` | жизненный цикл личности и профиля |
 | Ресурсы | `IAssetService`, `IAvatarService`, `ISkinService` | извлечение ресурсов и визуальные данные профиля |
 | Новости | `INewsService`, `INewsSource` | лента и структурированные статьи |
 | GitHub | `IGitHubService` | кешированные данные репозитория, контрибьюторы, коммиты и аватары |
-| Платформа | `IBrowserService`, `IClipboardService`, `IFileDialogService`, `IGpuDetectionService` | возможности операционной системы, реализуемые хостом |
+| Платформа | `IClipboardService`, `IFileDialogService`, `IGpuDetectionService` | возможности операционной системы, для которых Core сохраняет отдельные контракты |
 
 Запрашивайте самый узкий контракт, необходимый потребителю. Не получайте сервисы из контейнера внутри доменного кода
+
+Интерактивный OAuth не зависит от браузерного сервиса в Core. Хост передает асинхронную функцию открытия URI в операцию запуска, а Core вызывает ее только тогда, когда официальному аккаунту требуется авторизация

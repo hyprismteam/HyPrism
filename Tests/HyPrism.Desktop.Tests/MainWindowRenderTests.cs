@@ -19,6 +19,7 @@ using Avalonia.VisualTree;
 using CommunityToolkit.Mvvm.Input;
 using HyPrism.Desktop.Localization;
 using HyPrism.Desktop.Controls;
+using HyPrism.Desktop.Services;
 using HyPrism.Desktop.ViewModels;
 using HyPrism.Desktop.Views;
 using HyPrism.Models;
@@ -36,6 +37,22 @@ namespace HyPrism.Desktop.Tests;
 
 public sealed class MainWindowRenderTests
 {
+    [AvaloniaFact]
+    public async Task ExternalUriLauncherRejectsUnsupportedSchemesBeforeResolvingWindow()
+    {
+        var topLevelRequested = false;
+        var launcher = new ExternalUriLauncher(() =>
+        {
+            topLevelRequested = true;
+            return null;
+        });
+
+        var launched = await launcher.LaunchAsync(new Uri("file:///tmp/hyprism"));
+
+        Assert.False(launched);
+        Assert.False(topLevelRequested);
+    }
+
     [AvaloniaFact]
     public async Task NewsMediaViewModelsDecodeBlockAndInlineImages()
     {
@@ -286,7 +303,7 @@ public sealed class MainWindowRenderTests
         var gameProcess = new Mock<IGameProcessService>();
         var settings = new Mock<ISettingsService>();
         var news = new Mock<INewsService>();
-        var browser = new Mock<IBrowserService>();
+        var uriLauncher = new Mock<IExternalUriLauncher>();
         var articleCompletion = new TaskCompletionSource<NewsArticleResponse?>(
             TaskCreationOptions.RunContinuationsAsynchronously);
 
@@ -319,7 +336,7 @@ public sealed class MainWindowRenderTests
             progress.Object,
             settings.Object,
             news.Object,
-            browser.Object,
+            uriLauncher.Object,
             new HttpClient(),
             new LocalizationService("en-US"));
         var window = new MainWindow
@@ -409,7 +426,7 @@ public sealed class MainWindowRenderTests
         var gameProcess = new Mock<IGameProcessService>();
         var settings = new Mock<ISettingsService>();
         var news = new Mock<INewsService>();
-        var browser = new Mock<IBrowserService>();
+        var uriLauncher = new Mock<IExternalUriLauncher>();
         var language = "en-US";
 
         instances.Setup(service => service.GetCachedInstances()).Returns([]);
@@ -442,7 +459,7 @@ public sealed class MainWindowRenderTests
             progress.Object,
             settings.Object,
             news.Object,
-            browser.Object,
+            uriLauncher.Object,
             new HttpClient(),
             new LocalizationService("en-US"));
 
@@ -637,7 +654,7 @@ public sealed class MainWindowRenderTests
         var gameProcess = new Mock<IGameProcessService>();
         var settings = new Mock<ISettingsService>();
         var news = new Mock<INewsService>();
-        var browser = new Mock<IBrowserService>();
+        var uriLauncher = new Mock<IExternalUriLauncher>();
         var github = new Mock<IGitHubService>();
 
         var selected = new InstanceInfo
@@ -945,7 +962,7 @@ public sealed class MainWindowRenderTests
             progress.Object,
             settings.Object,
             news.Object,
-            browser.Object,
+            uriLauncher.Object,
             new HttpClient(),
             new LocalizationService("en-US"),
             null,
@@ -1515,7 +1532,11 @@ public sealed class MainWindowRenderTests
         window.MouseDown(linkPoint.Value, MouseButton.Left);
         window.MouseUp(linkPoint.Value, MouseButton.Left);
         Dispatcher.UIThread.RunJobs();
-        browser.Verify(service => service.OpenURL("https://hytale.com/news"), Times.Once);
+        uriLauncher.Verify(
+            service => service.LaunchAsync(
+                new Uri("https://hytale.com/news"),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
 
         var nestedLinkRun = linkedListRuns[linkedListLinkIndex];
         var nestedUnderline = Assert.IsType<SolidColorBrush>(
@@ -1538,8 +1559,10 @@ public sealed class MainWindowRenderTests
         window.MouseDown(nestedLinkPoint.Value, MouseButton.Left);
         window.MouseUp(nestedLinkPoint.Value, MouseButton.Left);
         Dispatcher.UIThread.RunJobs();
-        browser.Verify(
-            service => service.OpenURL("https://hytalemodding.dev/"),
+        uriLauncher.Verify(
+            service => service.LaunchAsync(
+                new Uri("https://hytalemodding.dev/"),
+                It.IsAny<CancellationToken>()),
             Times.Once);
 
         var policyLinkIndex = Array.FindIndex(linkedListRuns, run =>
@@ -1565,8 +1588,10 @@ public sealed class MainWindowRenderTests
         window.MouseDown(policyLinkPoint.Value, MouseButton.Left);
         window.MouseUp(policyLinkPoint.Value, MouseButton.Left);
         Dispatcher.UIThread.RunJobs();
-        browser.Verify(
-            service => service.OpenURL("https://hytale.com/server-policies"),
+        uriLauncher.Verify(
+            service => service.LaunchAsync(
+                new Uri("https://hytale.com/server-policies"),
+                It.IsAny<CancellationToken>()),
             Times.Once);
 
         var readerPreviewPath = Environment.GetEnvironmentVariable("HYPRISM_READER_RENDER_OUTPUT");
@@ -2194,19 +2219,29 @@ public sealed class MainWindowRenderTests
         Assert.IsType<StackPanel>(aboutDisclaimer.Parent);
 
         viewModel.Settings.OpenDocumentationCommand.Execute(null);
-        browser.Verify(
-            service => service.OpenURL("https://hyprismteam.github.io/HyPrism/docs/"),
+        uriLauncher.Verify(
+            service => service.LaunchAsync(
+                new Uri("https://hyprismteam.github.io/HyPrism/docs/"),
+                It.IsAny<CancellationToken>()),
             Times.Once);
         viewModel.Settings.OpenLatestCommitCommand.Execute(null);
-        browser.Verify(
-            service => service.OpenURL("https://github.com/hyprismteam/HyPrism/commit/abcdef1"),
+        uriLauncher.Verify(
+            service => service.LaunchAsync(
+                new Uri("https://github.com/hyprismteam/HyPrism/commit/abcdef1"),
+                It.IsAny<CancellationToken>()),
             Times.Once);
         viewModel.Settings.OpenAllContributorsCommand.Execute(null);
-        browser.Verify(
-            service => service.OpenURL("https://github.com/hyprismteam/HyPrism/graphs/contributors"),
+        uriLauncher.Verify(
+            service => service.LaunchAsync(
+                new Uri("https://github.com/hyprismteam/HyPrism/graphs/contributors"),
+                It.IsAny<CancellationToken>()),
             Times.Once);
         viewModel.Settings.OpenHytaleEulaCommand.Execute(null);
-        browser.Verify(service => service.OpenURL("https://hytale.com/eula"), Times.Once);
+        uriLauncher.Verify(
+            service => service.LaunchAsync(
+                new Uri("https://hytale.com/eula"),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
 
         var aboutPreviewPath = Environment.GetEnvironmentVariable("HYPRISM_ABOUT_RENDER_OUTPUT");
         if (!string.IsNullOrWhiteSpace(aboutPreviewPath) && width == 1280)

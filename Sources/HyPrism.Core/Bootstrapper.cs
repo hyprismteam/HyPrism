@@ -237,7 +237,6 @@ public static class Bootstrapper
                 new HytaleAuthService(
                     sp.GetRequiredService<HttpClient>(),
                     sp.GetRequiredService<AppPathConfiguration>().AppDir,
-                    sp.GetRequiredService<IBrowserService>(),
                     sp.GetRequiredService<IConfigService>()));
             services.AddSingleton<IHytaleAuthService>(sp => sp.GetRequiredService<HytaleAuthService>());
 
@@ -256,9 +255,6 @@ public static class Bootstrapper
             #endregion
 
             #region Localization & UI Support
-
-            services.AddSingleton<BrowserService>();
-            services.AddSingleton<IBrowserService>(sp => sp.GetRequiredService<BrowserService>());
 
             services.AddSingleton<DiscordService>();
             services.AddSingleton<IDiscordService>(sp => sp.GetRequiredService<DiscordService>());

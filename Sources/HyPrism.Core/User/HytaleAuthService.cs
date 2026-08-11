@@ -11,7 +11,6 @@ using System.Text.Json.Serialization;
 using HyPrism.Models;
 using HyPrism.Services.Core.Infrastructure;
 using HyPrism.Services.Core.Integration;
-using HyPrism.Services.Core.Platform;
 
 namespace HyPrism.Services.User;
 
@@ -36,7 +35,6 @@ public class HytaleAuthService : IHytaleAuthService
 
     private readonly HttpClient _httpClient;
     private readonly string _appDir;
-    private readonly IBrowserService _browserService;
     private readonly IConfigService _configService;
 
     private string? _pendingCodeVerifier;
@@ -54,13 +52,11 @@ public class HytaleAuthService : IHytaleAuthService
     /// </summary>
     /// <param name="httpClient">The HTTP client used for OAuth requests</param>
     /// <param name="appDir">The application data directory</param>
-    /// <param name="browserService">The service used to open the login page</param>
     /// <param name="configService">The launcher configuration service</param>
-    public HytaleAuthService(HttpClient httpClient, string appDir, IBrowserService browserService, IConfigService configService)
+    public HytaleAuthService(HttpClient httpClient, string appDir, IConfigService configService)
     {
         _httpClient = httpClient;
         _appDir = appDir;
-        _browserService = browserService;
         _configService = configService;
 
         // Try to restore session from disk for current profile
@@ -71,12 +67,18 @@ public class HytaleAuthService : IHytaleAuthService
     }
 
     /// <summary>
-    /// Starts the OAuth login flow: opens browser, waits for callback, exchanges code for tokens,
-    /// fetches profile data
+    /// Starts the OAuth login flow, asks the host to present the authorization URI, waits for the callback and exchanges the code for tokens
     /// </summary>
+    /// <param name="authorizationUriPresenter">Host callback that presents the authorization URI</param>
+    /// <param name="cancellationToken">Token used to cancel authorization</param>
     /// <returns>The authenticated session, or null on failure/cancellation</returns>
-    public async Task<HytaleAuthSession?> LoginAsync(CancellationToken cancellationToken = default)
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="authorizationUriPresenter"/> is <see langword="null"/></exception>
+    public async Task<HytaleAuthSession?> LoginAsync(
+        AuthUriPresenter authorizationUriPresenter,
+        CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(authorizationUriPresenter);
+
         // Stop any previous listener to avoid port conflicts
         StopListener();
 
@@ -109,8 +111,13 @@ public class HytaleAuthService : IHytaleAuthService
                           $"&scope={Uri.EscapeDataString(Scopes)}" +
                           $"&state={Uri.EscapeDataString(state)}";
 
-            Logger.Info("HytaleAuth", "Opening browser for Hytale login...");
-            _browserService.OpenURL(authUrl);
+            Logger.Info("HytaleAuth", "Requesting presentation of the Hytale authorization page");
+            var authorizationUri = new Uri(authUrl, UriKind.Absolute);
+            if (!await authorizationUriPresenter(authorizationUri, cancellationToken))
+            {
+                Logger.Warning("HytaleAuth", "The host could not present the Hytale authorization page");
+                return null;
+            }
 
             // Step 4: Listen for callback (async)
             _ = ListenForCallbackAsync(listener, cancellationToken);

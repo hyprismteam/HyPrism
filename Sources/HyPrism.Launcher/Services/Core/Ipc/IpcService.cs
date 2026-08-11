@@ -133,7 +133,10 @@ public class IpcService(IServiceProvider services) : IpcServiceBase(services)
     [IpcSend("hyprism:game:launch")]
     public void LaunchGame(LaunchGameRequest? req)
         => _ = Services.GetRequiredService<IGameLaunchCoordinator>()
-            .LaunchAsync(req?.InstanceId, req?.LaunchAfterDownload);
+            .LaunchAsync(
+                req?.InstanceId,
+                req?.LaunchAfterDownload,
+                PresentAuthorizationUriAsync);
 
     /// <summary>Cancels an in-progress game download.</summary>
     [IpcSend("hyprism:game:cancel")]
@@ -488,7 +491,7 @@ public class IpcService(IServiceProvider services) : IpcServiceBase(services)
         var auth = Services.GetRequiredService<HytaleAuthService>();
         try
         {
-            await auth.LoginAsync();
+            await auth.LoginAsync(PresentAuthorizationUriAsync);
             return MapAuthStatus(auth.GetAuthStatus());
         }
         catch (HytaleNoProfileException)
@@ -511,6 +514,15 @@ public class IpcService(IServiceProvider services) : IpcServiceBase(services)
     {
         Services.GetRequiredService<HytaleAuthService>().Logout();
         return new SuccessResult(true);
+    }
+
+    private static async Task<bool> PresentAuthorizationUriAsync(
+        Uri authorizationUri,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        await Electron.Shell.OpenExternalAsync(authorizationUri.AbsoluteUri);
+        return true;
     }
 
     #endregion

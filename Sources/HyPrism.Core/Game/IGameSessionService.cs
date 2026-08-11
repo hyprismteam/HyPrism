@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 using HyPrism.Models;
+using HyPrism.Services.User;
 
 namespace HyPrism.Services.Game;
 
@@ -15,8 +16,11 @@ public interface IGameSessionService : IDisposable
     /// Downloads/updates the game and optionally launches it upon completion
     /// </summary>
     /// <param name="launchAfterDownloadProvider">Optional function that returns whether to launch the game after download completes</param>
+    /// <param name="authorizationUriPresenter">Optional host callback used when an official account requires interactive authorization</param>
     /// <returns>A <see cref="DownloadProgress"/> object for tracking download state and progress</returns>
-    Task<DownloadProgress> DownloadAndLaunchAsync(Func<bool>? launchAfterDownloadProvider = null);
+    Task<DownloadProgress> DownloadAndLaunchAsync(
+        Func<bool>? launchAfterDownloadProvider = null,
+        AuthUriPresenter? authorizationUriPresenter = null);
 
     /// <summary>
     /// Cancels any ongoing download operation

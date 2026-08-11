@@ -11,6 +11,7 @@ using HyPrism.Services.Game.Download;
 using HyPrism.Services.Game.Instance;
 using HyPrism.Services.Game.Launch;
 using HyPrism.Services.Game.Version;
+using HyPrism.Services.User;
 
 namespace HyPrism.Services.Game;
 
@@ -85,7 +86,9 @@ public class GameSessionService : IGameSessionService
     private Config _config => _configService.Configuration;
 
     /// <inheritdoc/>
-    public async Task<DownloadProgress> DownloadAndLaunchAsync(Func<bool>? launchAfterDownloadProvider = null)
+    public async Task<DownloadProgress> DownloadAndLaunchAsync(
+        Func<bool>? launchAfterDownloadProvider = null,
+        AuthUriPresenter? authorizationUriPresenter = null)
     {
         CancellationTokenSource cts;
         lock (_ctsLock)
@@ -130,7 +133,11 @@ public class GameSessionService : IGameSessionService
             if (gameIsInstalled && !isLatestInstance && targetVersion > 0)
             {
                 Logger.Success("Download", $"Fast path: Game already installed at v{targetVersion}, skipping version check");
-                return await HandleInstalledGameFastAsync(versionPath, branch, cts.Token);
+                return await HandleInstalledGameFastAsync(
+                    versionPath,
+                    branch,
+                    cts.Token,
+                    authorizationUriPresenter);
             }
 
             // For "latest" instances or fresh installs, we need to fetch version list
@@ -166,7 +173,14 @@ public class GameSessionService : IGameSessionService
                     {
                         await _patchManager.ApplyDifferentialUpdateAsync(
                             versionPath, branch, instanceMeta.InstalledVersion, instanceMeta.PendingVersion, cts.Token);
-                        return await CompleteInstallAsync(versionPath, branch, isLatestInstance, instanceMeta.PendingVersion, launchAfterDownloadProvider, cts.Token);
+                        return await CompleteInstallAsync(
+                            versionPath,
+                            branch,
+                            isLatestInstance,
+                            instanceMeta.PendingVersion,
+                            launchAfterDownloadProvider,
+                            cts.Token,
+                            authorizationUriPresenter);
                     }
                     catch (OperationCanceledException) { throw; }
                     catch (Exception ex)
@@ -190,10 +204,23 @@ public class GameSessionService : IGameSessionService
 
             if (gameIsInstalled)
             {
-                return await HandleInstalledGameAsync(versionPath, branch, isLatestInstance, versions, cts.Token);
+                return await HandleInstalledGameAsync(
+                    versionPath,
+                    branch,
+                    isLatestInstance,
+                    versions,
+                    cts.Token,
+                    authorizationUriPresenter);
             }
 
-            return await HandleFreshInstallAsync(versionPath, branch, isLatestInstance, targetVersion, launchAfterDownloadProvider, cts.Token);
+            return await HandleFreshInstallAsync(
+                versionPath,
+                branch,
+                isLatestInstance,
+                targetVersion,
+                launchAfterDownloadProvider,
+                cts.Token,
+                authorizationUriPresenter);
         }
         catch (OperationCanceledException)
         {
@@ -244,7 +271,10 @@ public class GameSessionService : IGameSessionService
     /// Skips version list fetching because no network calls are needed
     /// </summary>
     private async Task<DownloadProgress> HandleInstalledGameFastAsync(
-        string versionPath, string branch, CancellationToken ct)
+        string versionPath,
+        string branch,
+        CancellationToken ct,
+        AuthUriPresenter? authorizationUriPresenter)
     {
         Logger.Success("Download", "Fast path: Game is already installed, skipping version check");
 
@@ -253,7 +283,7 @@ public class GameSessionService : IGameSessionService
         _progressService.ReportDownloadProgress("complete", 100, "launch.detail.launching_game", null, 0, 0);
         try
         {
-            await _gameLauncher.LaunchGameAsync(versionPath, branch, ct);
+            await _gameLauncher.LaunchGameAsync(versionPath, branch, ct, authorizationUriPresenter);
             return new DownloadProgress { Success = true, Progress = 100 };
         }
         catch (Exception ex)
@@ -266,7 +296,9 @@ public class GameSessionService : IGameSessionService
 
     private async Task<DownloadProgress> HandleInstalledGameAsync(
         string versionPath, string branch, bool isLatestInstance,
-        List<int> versions, CancellationToken ct)
+        List<int> versions,
+        CancellationToken ct,
+        AuthUriPresenter? authorizationUriPresenter)
     {
         Logger.Success("Download", "Game is already installed");
 
@@ -281,7 +313,7 @@ public class GameSessionService : IGameSessionService
         _progressService.ReportDownloadProgress("complete", 100, "launch.detail.launching_game", null, 0, 0);
         try
         {
-            await _gameLauncher.LaunchGameAsync(versionPath, branch, ct);
+            await _gameLauncher.LaunchGameAsync(versionPath, branch, ct, authorizationUriPresenter);
             return new DownloadProgress { Success = true, Progress = 100 };
         }
         catch (Exception ex)
@@ -382,7 +414,10 @@ public class GameSessionService : IGameSessionService
 
     private async Task<DownloadProgress> HandleFreshInstallAsync(
         string versionPath, string branch, bool isLatestInstance,
-        int targetVersion, Func<bool>? launchAfterDownloadProvider, CancellationToken ct)
+        int targetVersion,
+        Func<bool>? launchAfterDownloadProvider,
+        CancellationToken ct,
+        AuthUriPresenter? authorizationUriPresenter)
     {
         Logger.Info("Download", "Game not installed, starting download...");
         _progressService.ReportDownloadProgress("download", 1, "launch.detail.preparing_download", null, 0, 0);
@@ -427,7 +462,14 @@ public class GameSessionService : IGameSessionService
                 return new DownloadProgress { Error = $"Failed to install game from mirror: {ex.Message}" };
             }
 
-            return await CompleteInstallAsync(versionPath, branch, isLatestInstance, targetVersion, launchAfterDownloadProvider, ct);
+            return await CompleteInstallAsync(
+                versionPath,
+                branch,
+                isLatestInstance,
+                targetVersion,
+                launchAfterDownloadProvider,
+                ct,
+                authorizationUriPresenter);
         }
         else
         {
@@ -470,7 +512,14 @@ public class GameSessionService : IGameSessionService
                 try
                 {
                     await _patchManager.ApplyDifferentialUpdateAsync(versionPath, branch, 0, targetVersion, ct);
-                    return await CompleteInstallAsync(versionPath, branch, isLatestInstance, targetVersion, launchAfterDownloadProvider, ct);
+                    return await CompleteInstallAsync(
+                        versionPath,
+                        branch,
+                        isLatestInstance,
+                        targetVersion,
+                        launchAfterDownloadProvider,
+                        ct,
+                        authorizationUriPresenter);
                 }
                 catch (OperationCanceledException) { throw; }
                 catch (Exception ex)
@@ -504,7 +553,14 @@ public class GameSessionService : IGameSessionService
                     return new DownloadProgress { Error = $"Failed to install pre-release v{targetVersion}: no valid base build + patch path found" };
                 }
 
-                return await CompleteInstallAsync(versionPath, branch, isLatestInstance, targetVersion, launchAfterDownloadProvider, ct);
+                return await CompleteInstallAsync(
+                    versionPath,
+                    branch,
+                    isLatestInstance,
+                    targetVersion,
+                    launchAfterDownloadProvider,
+                    ct,
+                    authorizationUriPresenter);
             }
 
             // Extract PWR with Butler
@@ -528,7 +584,14 @@ public class GameSessionService : IGameSessionService
             }
         }
 
-        return await CompleteInstallAsync(versionPath, branch, isLatestInstance, targetVersion, launchAfterDownloadProvider, ct);
+        return await CompleteInstallAsync(
+            versionPath,
+            branch,
+            isLatestInstance,
+            targetVersion,
+            launchAfterDownloadProvider,
+            ct,
+            authorizationUriPresenter);
     }
 
     private async Task<DownloadProgress> CompleteInstallAsync(
@@ -537,7 +600,8 @@ public class GameSessionService : IGameSessionService
         bool isLatestInstance,
         int targetVersion,
         Func<bool>? launchAfterDownloadProvider,
-        CancellationToken ct)
+        CancellationToken ct,
+        AuthUriPresenter? authorizationUriPresenter)
     {
         if (isLatestInstance)
             _instanceService.SaveLatestInfo(branch, targetVersion);
@@ -568,7 +632,7 @@ public class GameSessionService : IGameSessionService
 
         try
         {
-            await _gameLauncher.LaunchGameAsync(versionPath, branch, ct);
+            await _gameLauncher.LaunchGameAsync(versionPath, branch, ct, authorizationUriPresenter);
 
             var cacheDir = Path.Combine(_appDir, "Cache");
             if (Directory.Exists(cacheDir))

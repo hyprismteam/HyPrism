@@ -8,6 +8,7 @@ using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using HyPrism.Desktop.Localization;
+using HyPrism.Desktop.Services;
 using HyPrism.Models;
 using HyPrism.Services.Core.App;
 using HyPrism.Services.Core.Integration;
@@ -40,7 +41,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     private readonly IProgressNotificationService _progressService;
     private readonly ISettingsService _settingsService;
     private readonly INewsService _newsService;
-    private readonly IBrowserService _browserService;
+    private readonly IExternalUriLauncher _uriLauncher;
     private readonly IFileDialogService? _fileDialogService;
     private readonly IGitHubService? _gitHubService;
     private readonly HttpClient _httpClient;
@@ -191,7 +192,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         IProgressNotificationService progressService,
         ISettingsService settingsService,
         INewsService newsService,
-        IBrowserService browserService,
+        IExternalUriLauncher uriLauncher,
         HttpClient httpClient,
         LocalizationService localizer,
         IFileDialogService? fileDialogService = null,
@@ -204,7 +205,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         _progressService = progressService;
         _settingsService = settingsService;
         _newsService = newsService;
-        _browserService = browserService;
+        _uriLauncher = uriLauncher;
         _fileDialogService = fileDialogService;
         _gitHubService = gitHubService;
         _httpClient = httpClient;
@@ -383,13 +384,16 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         {
             if (_selectedInstance.IsInstalled)
             {
-                await _gameLaunchCoordinator.LaunchAsync(_selectedInstance.Id);
+                await _gameLaunchCoordinator.LaunchAsync(
+                    _selectedInstance.Id,
+                    authorizationUriPresenter: _uriLauncher.LaunchAsync);
             }
             else
             {
                 _instanceService.SetSelectedInstance(_selectedInstance.Id);
                 var result = await _gameSessionService.DownloadAndLaunchAsync(
-                    () => _settingsService.GetLaunchAfterDownload());
+                    () => _settingsService.GetLaunchAfterDownload(),
+                    _uriLauncher.LaunchAsync);
 
                 if (!result.Success && !result.Cancelled && !string.IsNullOrWhiteSpace(result.Error))
                     ShowError(result.Error);
@@ -475,7 +479,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
                 item.Dispose();
             _allNews.Clear();
             _allNews.AddRange(news.Select(item =>
-                new NewsItemViewModel(item, _browserService, OpenNewsArticleAsync)));
+                new NewsItemViewModel(item, _uriLauncher, OpenNewsArticleAsync)));
             _canLoadMoreNews = news.Count == InitialNewsCount;
             _hasLoadedNews = true;
             PresentNews();
@@ -528,7 +532,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
             var added = response
                 .Where(item => knownUrls.Add(item.Url))
-                .Select(item => new NewsItemViewModel(item, _browserService, OpenNewsArticleAsync))
+                .Select(item => new NewsItemViewModel(item, _uriLauncher, OpenNewsArticleAsync))
                 .ToArray();
 
             _allNews.AddRange(added);
@@ -600,7 +604,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
             }
 
             var articleViewModel = await Task.Run(
-                () => new NewsArticleViewModel(article, _browserService));
+                () => new NewsArticleViewModel(article, _uriLauncher));
             if (loadVersion != _articleLoadVersion)
             {
                 articleViewModel.Dispose();
@@ -862,7 +866,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     }
 
     private SettingsViewModel CreateSettingsViewModel()
-        => new(_settingsService, _browserService, _localizer, _fileDialogService, _gitHubService);
+        => new(_settingsService, _uriLauncher, _localizer, _fileDialogService, _gitHubService);
 
     private void ApplyLanguage(string language)
     {

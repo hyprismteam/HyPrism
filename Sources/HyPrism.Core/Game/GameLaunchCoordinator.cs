@@ -5,6 +5,7 @@ using HyPrism.Services.Core.App;
 using HyPrism.Services.Core.Infrastructure;
 using HyPrism.Services.Game.Instance;
 using HyPrism.Services.Game.Launch;
+using HyPrism.Services.User;
 
 namespace HyPrism.Services.Game;
 
@@ -26,7 +27,10 @@ public sealed class GameLaunchCoordinator(
     private const int ErrorMirrorUnreachable = 14;
 
     /// <inheritdoc/>
-    public async Task LaunchAsync(string? instanceId = null, bool? launchAfterDownload = null)
+    public async Task LaunchAsync(
+        string? instanceId = null,
+        bool? launchAfterDownload = null,
+        AuthUriPresenter? authorizationUriPresenter = null)
     {
         if (processService.IsGameRunning())
         {
@@ -61,7 +65,9 @@ public sealed class GameLaunchCoordinator(
 
         try
         {
-            var result = await gameSession.DownloadAndLaunchAsync(() => shouldLaunchAfterDownload);
+            var result = await gameSession.DownloadAndLaunchAsync(
+                () => shouldLaunchAfterDownload,
+                authorizationUriPresenter);
 
             if (result.Cancelled || string.Equals(result.Error, "Cancelled", StringComparison.OrdinalIgnoreCase))
             {

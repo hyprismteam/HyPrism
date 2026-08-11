@@ -5,6 +5,7 @@ using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using HyPrism.Desktop.Localization;
+using HyPrism.Desktop.Services;
 using HyPrism.Desktop.ViewModels;
 using HyPrism.Desktop.Views;
 using HyPrism.Services.Core.App;
@@ -36,6 +37,9 @@ public sealed partial class App : Application
             var localizer = new LocalizationService(settings.GetLanguage());
             if (!string.Equals(settings.GetLanguage(), localizer.CurrentLanguage, StringComparison.OrdinalIgnoreCase))
                 settings.SetLanguage(localizer.CurrentLanguage);
+
+            var mainWindow = new MainWindow();
+            var uriLauncher = new ExternalUriLauncher(() => mainWindow);
             _mainWindowViewModel = new MainWindowViewModel(
                 services.GetRequiredService<IInstanceService>(),
                 services.GetRequiredService<IProfileService>(),
@@ -46,16 +50,14 @@ public sealed partial class App : Application
                 services.GetRequiredService<IProgressNotificationService>(),
                 settings,
                 services.GetRequiredService<INewsService>(),
-                services.GetRequiredService<IBrowserService>(),
+                uriLauncher,
                 services.GetRequiredService<HttpClient>(),
                 localizer,
                 services.GetRequiredService<IFileDialogService>(),
                 services.GetRequiredService<IGitHubService>());
 
-            desktop.MainWindow = new MainWindow
-            {
-                DataContext = _mainWindowViewModel
-            };
+            mainWindow.DataContext = _mainWindowViewModel;
+            desktop.MainWindow = mainWindow;
 
             desktop.Exit += OnDesktopExit;
             _ = Task.Run(() => Bootstrapper.InitializeAsync(services));

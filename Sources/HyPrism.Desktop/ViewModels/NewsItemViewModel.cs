@@ -6,15 +6,15 @@ using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using HyPrism.Desktop.Services;
 using HyPrism.Models;
 using HyPrism.Services.Core.Integration;
-using HyPrism.Services.Core.Platform;
 
 namespace HyPrism.Desktop.ViewModels;
 
 public sealed partial class NewsItemViewModel : ObservableObject, IDisposable
 {
-    private readonly IBrowserService _browserService;
+    private readonly IExternalUriLauncher _uriLauncher;
     private readonly Func<NewsItemViewModel, Task>? _openArticle;
     private readonly string? _publishedAt;
     private readonly string? _date;
@@ -33,10 +33,10 @@ public sealed partial class NewsItemViewModel : ObservableObject, IDisposable
 
     public NewsItemViewModel(
         NewsItemResponse item,
-        IBrowserService browserService,
+        IExternalUriLauncher uriLauncher,
         Func<NewsItemViewModel, Task>? openArticle = null)
     {
-        _browserService = browserService;
+        _uriLauncher = uriLauncher;
         _openArticle = openArticle;
         Title = item.Title;
         Excerpt = NewsService.CleanNewsExcerpt(item.Excerpt, item.Title);
@@ -74,16 +74,19 @@ public sealed partial class NewsItemViewModel : ObservableObject, IDisposable
         }
         else if (!string.IsNullOrWhiteSpace(Url))
         {
-            _browserService.OpenURL(Url);
+            await LaunchExternalAsync(Url);
         }
     }
 
     [RelayCommand]
-    private void OpenExternal()
-    {
-        if (!string.IsNullOrWhiteSpace(Url))
-            _browserService.OpenURL(Url);
-    }
+    private Task OpenExternal()
+        => LaunchExternalAsync(Url);
+
+    private Task<bool> LaunchExternalAsync(string? url)
+        => Uri.TryCreate(url, UriKind.Absolute, out var uri) &&
+           (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps)
+            ? _uriLauncher.LaunchAsync(uri)
+            : Task.FromResult(false);
 
     public async Task LoadImageAsync(HttpClient httpClient, CancellationToken cancellationToken)
     {

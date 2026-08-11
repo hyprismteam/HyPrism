@@ -9,6 +9,7 @@ using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using HyPrism.Desktop.Localization;
+using HyPrism.Desktop.Services;
 using HyPrism.Services.Core.App;
 using HyPrism.Services.Core.Infrastructure;
 using HyPrism.Services.Core.Integration;
@@ -37,7 +38,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     };
 
     private readonly ISettingsService _settings;
-    private readonly IBrowserService _browser;
+    private readonly IExternalUriLauncher _uriLauncher;
     private readonly LocalizationService _localizer;
     private readonly IFileDialogService? _fileDialog;
     private readonly IGitHubService? _gitHubService;
@@ -105,13 +106,13 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
 
     public SettingsViewModel(
         ISettingsService settings,
-        IBrowserService browser,
+        IExternalUriLauncher uriLauncher,
         LocalizationService localizer,
         IFileDialogService? fileDialog = null,
         IGitHubService? gitHubService = null)
     {
         _settings = settings;
-        _browser = browser;
+        _uriLauncher = uriLauncher;
         _localizer = localizer;
         _fileDialog = fileDialog;
         _gitHubService = gitHubService;
@@ -570,37 +571,36 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         ShowSaved();
     }
 
-    [RelayCommand] private void OpenGitHub() => _browser.OpenURL("https://github.com/hyprismteam/HyPrism");
-    [RelayCommand] private void OpenDocumentation() => _browser.OpenURL("https://hyprismteam.github.io/HyPrism/docs/");
-    [RelayCommand] private void OpenDiscord() => _browser.OpenURL("https://discord.gg/hyprism");
-    [RelayCommand] private void OpenBugReport() => _browser.OpenURL("https://github.com/hyprismteam/HyPrism/issues/new/choose");
-    [RelayCommand] private void OpenLicense() => _browser.OpenURL("https://github.com/hyprismteam/HyPrism/blob/main/LICENSE");
-    [RelayCommand] private void OpenHytaleEula() => _browser.OpenURL("https://hytale.com/eula");
-    [RelayCommand] private void OpenIcons8() => _browser.OpenURL("https://icons8.com");
+    [RelayCommand] private Task OpenGitHub() => LaunchExternalAsync("https://github.com/hyprismteam/HyPrism");
+    [RelayCommand] private Task OpenDocumentation() => LaunchExternalAsync("https://hyprismteam.github.io/HyPrism/docs/");
+    [RelayCommand] private Task OpenDiscord() => LaunchExternalAsync("https://discord.gg/hyprism");
+    [RelayCommand] private Task OpenBugReport() => LaunchExternalAsync("https://github.com/hyprismteam/HyPrism/issues/new/choose");
+    [RelayCommand] private Task OpenLicense() => LaunchExternalAsync("https://github.com/hyprismteam/HyPrism/blob/main/LICENSE");
+    [RelayCommand] private Task OpenHytaleEula() => LaunchExternalAsync("https://hytale.com/eula");
+    [RelayCommand] private Task OpenIcons8() => LaunchExternalAsync("https://icons8.com");
     [RelayCommand]
-    private void OpenLatestCommit()
-    {
-        if (!string.IsNullOrWhiteSpace(_latestMainCommit?.HtmlUrl))
-            _browser.OpenURL(_latestMainCommit.HtmlUrl);
-    }
+    private Task OpenLatestCommit()
+        => LaunchExternalAsync(_latestMainCommit?.HtmlUrl);
 
     [RelayCommand]
-    private void OpenTeamMember(AboutTeamMemberViewModel? member)
-    {
-        if (member is not null)
-            _browser.OpenURL($"https://github.com/{member.GitHubLogin}");
-    }
+    private Task OpenTeamMember(AboutTeamMemberViewModel? member)
+        => LaunchExternalAsync(member is null
+            ? null
+            : $"https://github.com/{member.GitHubLogin}");
 
     [RelayCommand]
-    private void OpenContributor(AboutContributorViewModel? contributor)
-    {
-        if (contributor is not null && !string.IsNullOrWhiteSpace(contributor.ProfileUrl))
-            _browser.OpenURL(contributor.ProfileUrl);
-    }
+    private Task OpenContributor(AboutContributorViewModel? contributor)
+        => LaunchExternalAsync(contributor?.ProfileUrl);
 
     [RelayCommand]
-    private void OpenAllContributors()
-        => _browser.OpenURL("https://github.com/hyprismteam/HyPrism/graphs/contributors");
+    private Task OpenAllContributors()
+        => LaunchExternalAsync("https://github.com/hyprismteam/HyPrism/graphs/contributors");
+
+    private Task LaunchExternalAsync(string? url)
+        => Uri.TryCreate(url, UriKind.Absolute, out var uri) &&
+           (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps)
+            ? _uriLauncher.LaunchAsync(uri)
+            : Task.FromResult(false);
 
     private async Task LoadAboutDataAsync()
     {
