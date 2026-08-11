@@ -4,15 +4,19 @@
 import type { Metadata } from 'next'
 import { Head } from 'nextra/components'
 import type { ReactNode } from 'react'
+import EnglishDictionary from './_dictionaries/en'
 import 'nextra-theme-docs/style.css'
-import '../styles.css'
+import './styles.css'
 
 export const metadata: Metadata = {
-  title: 'HyPrism Documentation',
-  description: 'Choose the HyPrism documentation language'
+  title: {
+    default: EnglishDictionary.siteTitle,
+    template: '%s | HyPrism'
+  },
+  description: EnglishDictionary.siteDescription
 }
 
-export default function CompatibilityLayout({ children }: Readonly<{ children: ReactNode }>) {
+export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <html lang="en" dir="ltr" suppressHydrationWarning>
       <Head>

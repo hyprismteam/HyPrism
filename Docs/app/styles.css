@@ -30,9 +30,12 @@
   padding: 0.2rem;
 }
 
-.hyprism-language-switch a {
+.hyprism-language-switch button {
+  background: transparent;
+  border: 0;
   border-radius: 0.45rem;
   color: inherit;
+  cursor: pointer;
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -42,11 +45,11 @@
   transition: background-color 150ms ease, color 150ms ease;
 }
 
-.hyprism-language-switch a:hover {
+.hyprism-language-switch button:hover {
   background: rgba(127, 127, 127, 0.12);
 }
 
-.hyprism-language-switch a[aria-current='page'] {
+.hyprism-language-switch button[aria-current='page'] {
   background: rgb(var(--hyprism-accent));
   color: white;
 }

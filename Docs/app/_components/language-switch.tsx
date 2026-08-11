@@ -3,46 +3,36 @@
 
 'use client'
 
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
 import type { Locale } from '../_dictionaries/types'
 
 type LanguageSwitchProps = Readonly<{
   activeLocale: Locale
   label: string
   languages: Record<Locale, string>
+  onChange: (locale: Locale) => void
 }>
 
 const availableLocales: Locale[] = ['en', 'ru']
 
-export function LanguageSwitch({ activeLocale, label, languages }: LanguageSwitchProps) {
-  const pathname = usePathname()
-
-  function getLocalizedPath(locale: Locale): string {
-    const segments = pathname.split('/')
-    segments[1] = locale
-    return segments.join('/') || `/${locale}/docs/`
-  }
-
-  function rememberLocale(locale: Locale) {
-    localStorage.setItem('hyprism-docs-locale', locale)
-    document.cookie = `NEXT_LOCALE=${locale}; max-age=31536000; path=/; SameSite=Lax`
-  }
-
+export function LanguageSwitch({
+  activeLocale,
+  label,
+  languages,
+  onChange
+}: LanguageSwitchProps) {
   return (
     <nav className="hyprism-language-switch" aria-label={label}>
       {availableLocales.map(locale => (
-        <Link
+        <button
           key={locale}
-          href={getLocalizedPath(locale)}
-          hrefLang={locale}
-          lang={locale}
+          type="button"
           aria-current={locale === activeLocale ? 'page' : undefined}
+          aria-pressed={locale === activeLocale}
           aria-label={languages[locale]}
-          onClick={() => rememberLocale(locale)}
+          onClick={() => onChange(locale)}
         >
           {locale.toUpperCase()}
-        </Link>
+        </button>
       ))}
     </nav>
   )
