@@ -10,7 +10,7 @@ namespace HyPrism.Services.Game.Launch;
 /// <summary>
 /// Manages the DualAuth agent for server authentication.
 /// DualAuth allows runtime bytecode transformation instead of static JAR patching,
-/// enabling seamless dual-authentication (Official + F2P) without modifying server files.
+/// enabling seamless dual-authentication (Official + F2P) without modifying server files
 /// </summary>
 public static class DualAuthService
 {
@@ -32,7 +32,7 @@ public static class DualAuthService
     }
 
     /// <summary>
-    /// Gets the path to the file that stores the installed agent version tag.
+    /// Gets the path to the file that stores the installed agent version tag
     /// </summary>
     public static string GetAgentVersionPath(string appDir)
     {
@@ -41,7 +41,7 @@ public static class DualAuthService
 
     /// <summary>
     /// Reads the installed agent version tag from disk.
-    /// Returns null if the file does not exist or cannot be read.
+    /// Returns null if the file does not exist or cannot be read
     /// </summary>
     public static string? GetInstalledAgentVersion(string appDir)
     {
@@ -59,7 +59,7 @@ public static class DualAuthService
     }
 
     /// <summary>
-    /// Saves the installed agent version tag to disk.
+    /// Saves the installed agent version tag to disk
     /// </summary>
     private static void SaveAgentVersion(string appDir, string tag)
     {
@@ -75,7 +75,7 @@ public static class DualAuthService
 
     /// <summary>
     /// Queries the GitHub Releases API to get the latest release tag and download URL.
-    /// Returns null on failure (network error, rate limit, etc.).
+    /// Returns null on failure (network error, rate limit, etc.)
     /// </summary>
     public static async Task<(string tag, string downloadUrl)?> FetchLatestReleaseInfoAsync(CancellationToken ct = default)
     {
@@ -139,7 +139,7 @@ public static class DualAuthService
     /// <summary>
     /// Ensures the DualAuth agent is present and up-to-date before each launch.
     /// Checks GitHub for a newer release; if found, downloads the new agent and removes the old one.
-    /// Falls back to <see cref="EnsureAgentAvailableAsync"/> if the GitHub API is unreachable.
+    /// Falls back to <see cref="EnsureAgentAvailableAsync"/> if the GitHub API is unreachable
     /// </summary>
     public static async Task<DualAuthResult> EnsureAgentUpToDateAsync(
         string appDir,
@@ -159,7 +159,7 @@ public static class DualAuthService
 
         if (releaseInfo == null)
         {
-            // GitHub API unreachable — fall back to ensuring agent exists
+            // Fall back to checking the local agent when the GitHub API is unreachable
             Logger.Warning("DualAuth", "Cannot check for updates (GitHub unreachable), falling back to local check");
             return await EnsureAgentAvailableAsync(appDir, progressCallback, ct);
         }
@@ -254,7 +254,7 @@ public static class DualAuthService
     }
 
     /// <summary>
-    /// Checks if the DualAuth agent exists and appears valid.
+    /// Checks if the DualAuth agent exists and appears valid
     /// </summary>
     public static bool IsAgentAvailable(string appDir)
     {
@@ -274,7 +274,7 @@ public static class DualAuthService
 
     /// <summary>
     /// Downloads the DualAuth agent JAR if not already present or invalid.
-    /// The agent is stored globally in appDir/DualAuth/ and shared across all instances.
+    /// The agent is stored globally in appDir/DualAuth/ and shared across all instances
     /// </summary>
     public static async Task<DualAuthResult> EnsureAgentAvailableAsync(
         string appDir,
@@ -358,7 +358,7 @@ public static class DualAuthService
     }
 
     /// <summary>
-    /// Builds environment variables for DualAuth agent.
+    /// Builds environment variables for DualAuth agent
     /// </summary>
     /// <param name="agentPath">Full path to dualauth-agent.jar</param>
     /// <param name="authDomain">Custom auth domain (e.g., "sanasol.ws")</param>
@@ -373,7 +373,7 @@ public static class DualAuthService
         {
             // Java agent flag - this tells the JVM to use the DualAuth agent
             ["JAVA_TOOL_OPTIONS"] = $"-javaagent:\"{agentPath}\"",
-            
+
             // DualAuth configuration
             ["HYTALE_AUTH_DOMAIN"] = authDomain,
             ["HYTALE_TRUST_ALL_ISSUERS"] = "true",
@@ -385,7 +385,7 @@ public static class DualAuthService
     }
 
     /// <summary>
-    /// Applies DualAuth environment variables to a ProcessStartInfo.
+    /// Applies DualAuth environment variables to a ProcessStartInfo
     /// </summary>
     public static void ApplyToProcess(ProcessStartInfo startInfo, string agentPath, string authDomain, bool trustOfficialIssuers = true)
     {
@@ -397,7 +397,7 @@ public static class DualAuthService
     }
 
     /// <summary>
-    /// Builds environment variable lines for Unix launch scripts.
+    /// Builds environment variable lines for Unix launch scripts
     /// </summary>
     public static string BuildUnixEnvLines(string agentPath, string authDomain, bool trustOfficialIssuers = true)
     {
@@ -411,7 +411,7 @@ export HYTALE_TRUST_OFFICIAL=""{(trustOfficialIssuers ? "true" : "false")}""
 }
 
 /// <summary>
-/// Result of DualAuth agent operations.
+/// Result of DualAuth agent operations
 /// </summary>
 public class DualAuthResult
 {

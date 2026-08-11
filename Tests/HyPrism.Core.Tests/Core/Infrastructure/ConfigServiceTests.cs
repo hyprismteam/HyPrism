@@ -8,8 +8,8 @@ using HyPrism.Services.Core.Infrastructure;
 namespace HyPrism.Core.Tests.Core.Infrastructure;
 
 /// <summary>
-/// Tests for <see cref="ConfigService"/> — covers load/save/reset and migration logic.
-/// All tests use temporary directories to isolate I/O.
+/// Tests loading, saving, resetting, and migration behavior in <see cref="ConfigService"/>
+/// All tests use temporary directories to isolate I/O
 /// </summary>
 public class ConfigServiceTests : IDisposable
 {

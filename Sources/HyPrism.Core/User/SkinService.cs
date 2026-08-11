@@ -10,11 +10,11 @@ namespace HyPrism.Services.User;
 
 /// <summary>
 /// Manages player skin data including protection from game overwrites,
-/// backup/restore operations, and orphaned skin recovery.
+/// backup/restore operations, and orphaned skin recovery
 /// </summary>
 /// <remarks>
-/// Implements file watching to protect custom skins from being 
-/// overwritten during gameplay. Backs up skin data to profile directories.
+/// Implements file watching to protect custom skins from being
+/// overwritten during gameplay. Backs up skin data to profile directories
 /// </remarks>
 public class SkinService : ISkinService
 {
@@ -31,11 +31,12 @@ public class SkinService : ISkinService
     private readonly string _appDir;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="SkinService"/> class.
+    /// Initializes a new instance of the <see cref="SkinService"/> class
     /// </summary>
-    /// <param name="appPath">The application path configuration.</param>
-    /// <param name="configService">The configuration service.</param>
-    /// <param name="instanceService">The game instance service.</param>
+    /// <param name="appPath">The application path configuration</param>
+    /// <param name="configService">The configuration service</param>
+    /// <param name="instanceService">The game instance service</param>
+    /// <param name="profileService">The active profile service</param>
     public SkinService(
         AppPathConfiguration appPath,
         IConfigService configService,
@@ -56,13 +57,13 @@ public class SkinService : ISkinService
         try
         {
             StopSkinProtection(); // Clean up any existing watcher
-            
+
             if (!File.Exists(skinCachePath))
             {
                 Logger.Warning("SkinProtection", $"Skin file doesn't exist, cannot protect: {skinCachePath}");
                 return;
             }
-            
+
             // Store the original skin content
             lock (_skinProtectionLock)
             {
@@ -70,7 +71,7 @@ public class SkinService : ISkinService
                 _protectedSkinContent = File.ReadAllText(skinCachePath);
                 _skinProtectionEnabled = true;
             }
-            
+
             // Set file to READ-ONLY to prevent game from overwriting it
             // This is more reliable than FileSystemWatcher because the game will fail to write
             try
@@ -83,25 +84,25 @@ public class SkinService : ISkinService
             {
                 Logger.Warning("SkinProtection", $"Failed to set read-only: {ex.Message}");
             }
-            
+
             var directory = Path.GetDirectoryName(skinCachePath);
             var filename = Path.GetFileName(skinCachePath);
-            
+
             if (string.IsNullOrEmpty(directory))
             {
                 Logger.Warning("SkinProtection", "Invalid skin path");
                 return;
             }
-            
+
             _skinWatcher = new FileSystemWatcher(directory, filename)
             {
                 NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.Size | NotifyFilters.CreationTime,
                 EnableRaisingEvents = true
             };
-            
+
             _skinWatcher.Changed += OnSkinFileChanged;
             _skinWatcher.Created += OnSkinFileChanged;
-            
+
             Logger.Success("SkinProtection", $"Started protecting skin file for {profile.Name}");
         }
         catch (Exception ex)
@@ -111,39 +112,39 @@ public class SkinService : ISkinService
     }
 
     /// <summary>
-    /// Handles skin file changes - restores the protected content if it was overwritten.
+    /// Handles skin file changes - restores the protected content if it was overwritten
     /// </summary>
-    /// <param name="sender">The event sender.</param>
-    /// <param name="e">The file system event arguments.</param>
+    /// <param name="sender">The event sender</param>
+    /// <param name="e">The file system event arguments</param>
     private void OnSkinFileChanged(object sender, FileSystemEventArgs e)
     {
         lock (_skinProtectionLock)
         {
             if (!_skinProtectionEnabled || string.IsNullOrEmpty(_protectedSkinPath) || string.IsNullOrEmpty(_protectedSkinContent))
                 return;
-            
+
             try
             {
                 // Small delay to let the file write complete
                 Thread.Sleep(100);
-                
+
                 // Read current content
                 var currentContent = File.ReadAllText(_protectedSkinPath);
-                
+
                 // Compare - if different, the game overwrote our skin
                 if (currentContent != _protectedSkinContent)
                 {
                     Logger.Warning("SkinProtection", "Detected skin overwrite - restoring protected skin!");
-                    
+
                     // Temporarily disable watcher to avoid triggering ourselves
                     _skinProtectionEnabled = false;
-                    
+
                     // Restore the protected content
                     File.WriteAllText(_protectedSkinPath, _protectedSkinContent);
-                    
+
                     // Re-enable protection
                     _skinProtectionEnabled = true;
-                    
+
                     Logger.Success("SkinProtection", "Skin restored successfully");
                 }
             }
@@ -167,7 +168,7 @@ public class SkinService : ISkinService
                 _protectedSkinPath = null;
                 _protectedSkinContent = null;
             }
-            
+
             // Remove READ-ONLY flag so file can be modified again
             if (!string.IsNullOrEmpty(pathToUnprotect) && File.Exists(pathToUnprotect))
             {
@@ -182,7 +183,7 @@ public class SkinService : ISkinService
                     Logger.Warning("SkinProtection", $"Failed to remove read-only: {ex.Message}");
                 }
             }
-            
+
             if (_skinWatcher != null)
             {
                 _skinWatcher.EnableRaisingEvents = false;
@@ -214,7 +215,7 @@ public class SkinService : ISkinService
             {
                 return;
             }
-            
+
             // Get the current instance's UserData path
             var versionPath = TryGetCurrentExistingInstancePath();
             if (string.IsNullOrWhiteSpace(versionPath))
@@ -224,7 +225,7 @@ public class SkinService : ISkinService
             var userDataPath = _instanceService.GetInstanceUserDataPath(versionPath);
             var skinCacheDir = Path.Combine(userDataPath, "CachedPlayerSkins");
             var avatarCacheDir = Path.Combine(userDataPath, "CachedAvatarPreviews");
-            
+
             // Check if current UUID already has skin data
             var currentSkinPath = Path.Combine(skinCacheDir, $"{currentUuid}.json");
             if (File.Exists(currentSkinPath))
@@ -232,13 +233,13 @@ public class SkinService : ISkinService
                 // Current UUID has skin - no recovery needed
                 return;
             }
-            
+
             // No skin for current UUID - look for orphaned skins
             if (!Directory.Exists(skinCacheDir))
             {
                 return;
             }
-            
+
             // Get all existing UUIDs from Profiles
             var knownUuids = new HashSet<string>(
                 _profileService.GetProfiles().Select(p => p.UUID)
@@ -246,12 +247,12 @@ public class SkinService : ISkinService
                     .Where(u => !string.IsNullOrEmpty(u)),
                 StringComparer.OrdinalIgnoreCase
             );
-            
+
             // Scan for orphaned skin files
             var skinFiles = Directory.GetFiles(skinCacheDir, "*.json");
             string? orphanedUuid = null;
             DateTime latestTime = DateTime.MinValue;
-            
+
             foreach (var file in skinFiles)
             {
                 var fileName = Path.GetFileNameWithoutExtension(file);
@@ -270,19 +271,19 @@ public class SkinService : ISkinService
                     }
                 }
             }
-            
+
             if (orphanedUuid == null)
             {
                 return; // No orphans found
             }
-            
+
             Logger.Info("Startup", $"Found orphaned skin with UUID {orphanedUuid}");
             Logger.Info("Startup", $"Current user '{config.Nick}' has no skin - recovering orphaned skin");
-            
+
             // Strategy: Update the current user's UUID to match the orphaned skin
             config.UUID = orphanedUuid;
             _configService.SaveConfig();
-            
+
             Logger.Success("Startup", $"Recovered orphaned skin! User '{config.Nick}' now uses UUID {orphanedUuid}");
         }
         catch (Exception ex)
@@ -305,12 +306,12 @@ public class SkinService : ISkinService
             }
             var userDataPath = _instanceService.GetInstanceUserDataPath(versionPath);
             var skinCacheDir = Path.Combine(userDataPath, "CachedPlayerSkins");
-            
+
             if (!Directory.Exists(skinCacheDir))
             {
                 return null;
             }
-            
+
             // Get all existing UUIDs from Profiles
             var knownUuids = new HashSet<string>(
                 _profileService.GetProfiles().Select(p => p.UUID)
@@ -318,11 +319,11 @@ public class SkinService : ISkinService
                     .Where(u => !string.IsNullOrEmpty(u)),
                 StringComparer.OrdinalIgnoreCase
             );
-            
+
             // Scan skin files for orphaned UUIDs
             var skinFiles = Directory.GetFiles(skinCacheDir, "*.json");
             var orphanedUuids = new List<string>();
-            
+
             foreach (var file in skinFiles)
             {
                 var fileName = Path.GetFileNameWithoutExtension(file);
@@ -338,7 +339,7 @@ public class SkinService : ISkinService
                     }
                 }
             }
-            
+
             // If exactly one orphaned UUID found, we can safely adopt it
             // If multiple are found, we can't determine which is correct
             if (orphanedUuids.Count == 1)
@@ -350,7 +351,7 @@ public class SkinService : ISkinService
                 // Multiple orphans - pick the most recently modified one
                 string? mostRecent = null;
                 DateTime latestTime = DateTime.MinValue;
-                
+
                 foreach (var orphanUuid in orphanedUuids)
                 {
                     var skinPath = Path.Combine(skinCacheDir, $"{orphanUuid}.json");
@@ -364,14 +365,14 @@ public class SkinService : ISkinService
                         }
                     }
                 }
-                
+
                 if (mostRecent != null)
                 {
                     Logger.Info("UUID", $"Multiple orphaned skins found, using most recent: {mostRecent}");
                     return mostRecent;
                 }
             }
-            
+
             return null;
         }
         catch (Exception ex)
@@ -388,13 +389,13 @@ public class SkinService : ISkinService
         {
             var config = _configService.Configuration;
             var orphanedUuid = FindOrphanedSkinUuid();
-            
+
             if (string.IsNullOrEmpty(orphanedUuid))
             {
                 Logger.Info("UUID", "No orphaned skin data found to recover");
                 return false;
             }
-            
+
             // If the current UUID already has a skin, don't overwrite
             var versionPath = TryGetCurrentExistingInstancePath();
             if (string.IsNullOrWhiteSpace(versionPath))
@@ -404,16 +405,16 @@ public class SkinService : ISkinService
             var userDataPath = _instanceService.GetInstanceUserDataPath(versionPath);
             var skinCacheDir = Path.Combine(userDataPath, "CachedPlayerSkins");
             var avatarCacheDir = Path.Combine(userDataPath, "CachedAvatarPreviews");
-            
+
             var currentSkinPath = Path.Combine(skinCacheDir, $"{currentUuid}.json");
-            
+
             // If current user already has a skin, ask them to use "switch to orphan" instead
             if (File.Exists(currentSkinPath))
             {
                 Logger.Info("UUID", $"Current user already has skin data. Use SetUuidForUser to switch to the orphaned UUID: {orphanedUuid}");
                 return false;
             }
-            
+
             // Copy orphaned skin to current UUID
             var orphanSkinPath = Path.Combine(skinCacheDir, $"{orphanedUuid}.json");
             if (File.Exists(orphanSkinPath))
@@ -422,7 +423,7 @@ public class SkinService : ISkinService
                 File.Copy(orphanSkinPath, currentSkinPath, true);
                 Logger.Success("UUID", $"Copied orphaned skin from {orphanedUuid} to {currentUuid}");
             }
-            
+
             // Copy orphaned avatar to current UUID
             var orphanAvatarPath = Path.Combine(avatarCacheDir, $"{orphanedUuid}.png");
             var currentAvatarPath = Path.Combine(avatarCacheDir, $"{currentUuid}.png");
@@ -432,7 +433,7 @@ public class SkinService : ISkinService
                 File.Copy(orphanAvatarPath, currentAvatarPath, true);
                 Logger.Success("UUID", $"Copied orphaned avatar from {orphanedUuid} to {currentUuid}");
             }
-            
+
             return true;
         }
         catch (Exception ex)
@@ -458,10 +459,10 @@ public class SkinService : ISkinService
             {
                 return;
             }
-            
+
             var profileDir = UtilityService.GetProfileFolderPath(_appDir, profile);
             Directory.CreateDirectory(profileDir);
-            
+
             // Get game UserData path
             var versionPath = TryGetCurrentExistingInstancePath();
             if (string.IsNullOrWhiteSpace(versionPath))
@@ -469,7 +470,7 @@ public class SkinService : ISkinService
                 return;
             }
             var userDataPath = _instanceService.GetInstanceUserDataPath(versionPath);
-            
+
             // Backup skin JSON
             var skinCacheDir = Path.Combine(userDataPath, "CachedPlayerSkins");
             var skinPath = Path.Combine(skinCacheDir, $"{uuid}.json");
@@ -493,7 +494,7 @@ public class SkinService : ISkinService
             {
                 Logger.Warning("Profile", $"No skin file found to backup for {profile.Name} at {skinPath}");
             }
-            
+
             // Backup avatar preview
             var avatarCacheDir = Path.Combine(userDataPath, "CachedAvatarPreviews");
             var avatarPath = Path.Combine(avatarCacheDir, $"{uuid}.png");
@@ -517,13 +518,13 @@ public class SkinService : ISkinService
         {
             var config = _configService.Configuration;
             var profileDir = UtilityService.GetProfileFolderPath(_appDir, profile);
-            
+
             if (!Directory.Exists(profileDir))
             {
                 Logger.Info("Profile", $"No profile folder to restore from for {profile.Name}");
                 return;
             }
-            
+
             // Get game UserData path
             var versionPath = TryGetCurrentExistingInstancePath();
             if (string.IsNullOrWhiteSpace(versionPath))
@@ -531,7 +532,7 @@ public class SkinService : ISkinService
                 return;
             }
             var userDataPath = _instanceService.GetInstanceUserDataPath(versionPath);
-            
+
             // Restore skin JSON
             var skinBackupPath = Path.Combine(profileDir, "skin.json");
             if (File.Exists(skinBackupPath))
@@ -542,7 +543,7 @@ public class SkinService : ISkinService
                 File.Copy(skinBackupPath, skinPath, true);
                 Logger.Info("Profile", $"Restored skin for {profile.Name}");
             }
-            
+
             // Restore avatar preview
             var avatarBackupPath = Path.Combine(profileDir, "avatar.png");
             if (File.Exists(avatarBackupPath))
@@ -573,7 +574,7 @@ public class SkinService : ISkinService
                 return;
             }
             var userDataPath = _instanceService.GetInstanceUserDataPath(versionPath);
-            
+
             // Copy skin JSON
             var skinCacheDir = Path.Combine(userDataPath, "CachedPlayerSkins");
             var skinPath = Path.Combine(skinCacheDir, $"{uuid}.json");
@@ -583,7 +584,7 @@ public class SkinService : ISkinService
                 File.Copy(skinPath, destPath, true);
                 Logger.Info("Profile", $"Copied skin for UUID {uuid}");
             }
-            
+
             // Copy avatar PNG
             var avatarCacheDir = Path.Combine(userDataPath, "CachedAvatarPreviews");
             var avatarPath = Path.Combine(avatarCacheDir, $"{uuid}.png");
@@ -603,7 +604,7 @@ public class SkinService : ISkinService
     #endregion
 
     /// <summary>
-    /// Releases resources used by the skin service, stopping any active skin protection.
+    /// Releases resources used by the skin service, stopping any active skin protection
     /// </summary>
     public void Dispose()
     {

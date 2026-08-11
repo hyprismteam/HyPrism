@@ -1,0 +1,21 @@
+---
+title: HyPrism.Desktop
+description: Avalonia views, view models, localization, and native controls
+---
+
+# HyPrism.Desktop
+
+`HyPrism.Desktop` is the active application host
+
+## Composition
+
+- `App.axaml` loads shared tokens, styles, and resources
+- `MainWindow` provides native window chrome and primary navigation
+- `MainWindowViewModel` coordinates dashboard and news state with Core services
+- `SettingsViewModel` adapts `ISettingsService` to the settings UI
+- custom controls handle rich news content, smooth scrolling, and animated combo boxes
+- `.resx` files under `Localization` provide UI strings for every supported culture
+
+The desktop project uses compiled bindings by default. View models expose state and commands while code-behind is limited to control behavior that depends on Avalonia input, layout, or animation primitives
+
+Platform services such as file dialogs are registered by the host through the bootstrapper callback

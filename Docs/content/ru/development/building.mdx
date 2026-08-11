@@ -1,0 +1,38 @@
+---
+title: Сборка
+description: Восстановление, сборка и запуск нативного лаунчера
+---
+
+# Сборка
+
+## Требования
+
+- .NET 10 SDK
+- Git
+- Node.js 22 и pnpm только для документации или устаревшего Electron-эталона
+
+## Нативный лаунчер
+
+```bash
+dotnet restore HyPrism.sln
+dotnet build Sources/HyPrism.Desktop/HyPrism.Desktop.csproj
+dotnet run --project Sources/HyPrism.Desktop/HyPrism.Desktop.csproj
+```
+
+## Все solution-проекты
+
+```bash
+dotnet build HyPrism.sln
+```
+
+Solution пока содержит устаревший Electron-хост и генератор IPC. Для проверки нативных изменений собирайте `HyPrism.Desktop` напрямую
+
+## Документация
+
+```bash
+cd Docs
+pnpm install --frozen-lockfile
+pnpm build
+```
+
+Статический сайт появится в `Docs/out`

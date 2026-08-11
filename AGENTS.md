@@ -3,14 +3,15 @@ Copyright (C) 2026 HyPrism Launcher
 SPDX-License-Identifier: GPL-3.0-only
 -->
 
-# Agent Documentation Policy
+# Agent documentation policy
 
 This file is intended for automation agents (bots, CI scripts, or assistant agents) that interact with the HyPrism repository. It explains how an agent should use the project's documentation and the responsibilities the agent must follow when making changes
 
 ## Read the docs to learn more 💡
 
-- Agents MAY read any files under `Docs/` to learn about features, architecture, build processes, APIs, and packaging
-- Prefer `Docs/` Markdown pages (see `Docs/English/` and `Docs/Russian/`) for platform-specific notes
+- Agents may read any files under `Docs/content/` to learn about features, architecture, build processes, APIs, and packaging
+- English pages live under `Docs/content/en/` and Russian pages live under `Docs/content/ru/`
+- Keep both language trees aligned when changing shared behavior
 
 ## Documentation responsibilities (required) ✅
 
@@ -23,18 +24,22 @@ An agent MUST:
 
 ## How to make a docs change 🔧
 
-- Create a branch named `docs/update-<short-description>` or include the documentation changes in the same feature branch as the code change
-- Add or modify files under `Docs/` and keep content clear and concise
-- Validate changes locally: run `make html` in `Docs/` or `sphinx-build` to ensure no build errors
-- Use commit messages starting with `docs:` (for example: `docs: add patcher instructions for ClientPatcher`)
-- Open a Pull Request including a short PR description and a checklist of the docs updated
+- Add or modify MDX pages under `Docs/content/` and keep the writing clear and concise
+- Do not use em dashes in documentation or code comments
+- Do not end the final sentence of a section or list item with a period
+- Run `pnpm install` in `Docs/` when dependencies change
+- Validate content and types with `pnpm check` in `Docs/`
+- Validate the static export with `PAGES_BASE_PATH=/HyPrism pnpm build` in `Docs/`
+- Use commit messages starting with `docs:` when a commit contains only documentation changes
+- Include a short documentation checklist in the pull request description
 
 ## Docs & PR checklist 📋 🤖
 
 Before merging changes, ensure the following:
 
 - [ ] Documentation updated (user / developer / API) for the change
-- [ ] Docs build passes locally or in CI (run `make html` in `Docs/` or verify Read the Docs build)
+- [ ] `pnpm check` passes in `Docs/`
+- [ ] The Nextra static export builds for the `/HyPrism` base path
 - [ ] Spell-check or lint docs and code
 - [ ] README updated if needed
 

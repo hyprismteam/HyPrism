@@ -1,0 +1,22 @@
+---
+title: Instances, profiles, and mods
+description: Current Core capabilities and native UI availability
+---
+
+# Instances, profiles, and mods
+
+The Core already contains the working domain logic for all three areas, but their Avalonia pages are not complete yet
+
+## Instances
+
+Core can discover installed instances, migrate legacy layouts, create stable instance metadata, select an active instance, change versions, import ZIP archives, and delete installations
+
+## Profiles
+
+Core supports offline and official profiles, stable profile identifiers, per-profile data, identity switching, avatar backups, skin recovery, and authentication session storage
+
+## Mods
+
+Core integrates with CurseForge for search, categories, file resolution, installation, local file import, changelogs, and update checks scoped to an instance
+
+Use the legacy Electron UI only to study the previous interaction model. New user-facing work belongs in `HyPrism.Desktop`

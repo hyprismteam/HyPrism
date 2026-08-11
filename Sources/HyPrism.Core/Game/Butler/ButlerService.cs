@@ -10,21 +10,21 @@ namespace HyPrism.Services.Game.Butler;
 
 /// <summary>
 /// Provides functionality for managing the Butler patching tool.
-/// Butler is used for applying differential game updates via PWR patch files.
+/// Butler is used for applying differential game updates via PWR patch files
 /// </summary>
 public class ButlerService : IButlerService
 {
     private const string BrothUrlTemplate = "https://broth.itch.zone/butler/{0}-{1}/LATEST/archive/default";
-    
+
     private readonly string _butlerDir;
     private readonly string _cacheDir;
     private static readonly HttpClient HttpClient = new() { Timeout = TimeSpan.FromMinutes(5) };
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ButlerService"/> class.
-    /// Creates the Butler and Cache directories if they don't exist.
+    /// Creates the Butler and Cache directories if they don't exist
     /// </summary>
-    /// <param name="appDir">The application data directory path.</param>
+    /// <param name="appDir">The application data directory path</param>
     public ButlerService(string appDir)
     {
         _butlerDir = Path.Combine(appDir, "Butler");
@@ -54,7 +54,7 @@ public class ButlerService : IButlerService
         Directory.CreateDirectory(_cacheDir);
 
         string butlerPath = GetButlerPath();
-        
+
         if (File.Exists(butlerPath))
         {
             if (await VerifyButlerWorksAsync(butlerPath))
@@ -220,6 +220,7 @@ public class ButlerService : IButlerService
         }
     }
 
+    /// <inheritdoc/>
     public async Task ApplyPwrAsync(string pwrFile, string targetDir, Action<int, string>? progressCallback = null, CancellationToken externalCancellationToken = default)
     {
         string butlerPath = await EnsureButlerInstalledAsync(progressCallback);
@@ -260,7 +261,7 @@ public class ButlerService : IButlerService
         using var timeoutCts = new System.Threading.CancellationTokenSource(TimeSpan.FromMinutes(8));
         using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(timeoutCts.Token, externalCancellationToken);
         var cts = linkedCts;
-        
+
         int lastProgress = 10;
         var progressTimer = new System.Timers.Timer(2000);
         progressTimer.Elapsed += (s, e) =>
@@ -290,16 +291,16 @@ public class ButlerService : IButlerService
                     {
                         int read = await process.StandardOutput.ReadAsync(buffer, cts.Token);
                         if (read == 0) break;
-                        
+
                         string chunk = new string(buffer, 0, read);
                         outputBuilder.Append(chunk);
-                        
+
                         if (chunk.Contains("%"))
                         {
                             var match = System.Text.RegularExpressions.Regex.Match(chunk, @"(\d+(?:\.\d+)?)%");
-                            if (match.Success && double.TryParse(match.Groups[1].Value, 
-                                System.Globalization.NumberStyles.Any, 
-                                System.Globalization.CultureInfo.InvariantCulture, 
+                            if (match.Success && double.TryParse(match.Groups[1].Value,
+                                System.Globalization.NumberStyles.Any,
+                                System.Globalization.CultureInfo.InvariantCulture,
                                 out double pct))
                             {
                                 int mappedProgress = 10 + (int)(pct * 0.85);
@@ -313,8 +314,8 @@ public class ButlerService : IButlerService
                     }
                 }
                 catch (OperationCanceledException) { }
-                catch (Exception ex) 
-                { 
+                catch (Exception ex)
+                {
                     Logger.Warning("Butler", $"Output read error: {ex.Message}");
                 }
             }, cts.Token);

@@ -34,6 +34,13 @@ Build/*
 packaging-build
 wwwroot/
 node_modules/
+.next/
+Docs/out/
+Docs/.next/
+Docs/.pagefind/
+Docs/AGENTS.md
+Docs/CLAUDE.md
+*.tsbuildinfo
 
 # IMPORTANT folder (backup)
 IMPORTANT/

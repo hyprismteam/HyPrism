@@ -556,7 +556,7 @@ do_publish() {
     dotnet publish -c Release -p:RuntimeIdentifier="$rid" $msbuild_args ${SOURCE_ARGS[@]:-} || exit_code=$?
 
     if [[ $exit_code -ne 0 ]]; then
-        log_error "Build failed for $label ($rid) — exit code $exit_code"
+        log_error "Build failed for $label ($rid): exit code $exit_code"
         FAIL_COUNT=$((FAIL_COUNT + 1))
         return 1
     fi
@@ -597,10 +597,10 @@ do_publish() {
 
     local elapsed=$(( SECONDS - start_time ))
     if [[ $count -gt 0 ]]; then
-        log_ok "$label ($rid) — $count artifact(s), ${elapsed}s"
+        log_ok "$label ($rid): $count artifact(s), ${elapsed}s"
         BUILD_COUNT=$((BUILD_COUNT + count))
     else
-        log_warn "$label ($rid) — no artifacts found (${elapsed}s)"
+        log_warn "$label ($rid): no artifacts found (${elapsed}s)"
     fi
 }
 
@@ -614,7 +614,7 @@ build_platform() {
     if ! check_platform "$platform"; then
         local pname
         pname=$(platform_name "$platform")
-        log_warn "Skipping $label — requires $pname (current OS: $(platform_name "$CURRENT_OS"))"
+        log_warn "Skipping $label because it requires $pname (current OS: $(platform_name "$CURRENT_OS"))"
         SKIP_COUNT=$((SKIP_COUNT + 1))
         return 0
     fi
@@ -668,7 +668,7 @@ build_flatpak() {
     if ! check_platform "$platform"; then
         local pname
         pname=$(platform_name "$platform")
-        log_warn "Skipping flatpak — requires $pname (current OS: $(platform_name "$CURRENT_OS"))"
+        log_warn "Skipping flatpak because it requires $pname (current OS: $(platform_name "$CURRENT_OS"))"
         SKIP_COUNT=$((SKIP_COUNT + 1))
         return 0
     fi
@@ -773,7 +773,7 @@ do_flatpak_publish() {
     flatpak build-bundle "$repo_dir" "$out_file" "$flatpak_app_id" --arch="$flatpak_arch"
 
     local elapsed=$(( SECONDS - start_time ))
-    log_ok "Flatpak built: $(basename "$out_file") — ${elapsed}s"
+    log_ok "Flatpak built: $(basename "$out_file"), ${elapsed}s"
     BUILD_COUNT=$((BUILD_COUNT + 1))
 
     # cleanup temporary bundle & build dir (keep repo for inspection)

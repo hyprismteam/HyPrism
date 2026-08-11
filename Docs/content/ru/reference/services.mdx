@@ -1,0 +1,26 @@
+---
+title: Сервисы Core
+description: Ответственность публичных групп сервисов HyPrism.Core
+---
+
+# Сервисы Core
+
+`Bootstrapper.Initialize` регистрирует стандартные реализации и возвращает `IServiceProvider`. Хост может добавить платформенные регистрации через callback конфигурации
+
+| Группа | Основные контракты | Ответственность |
+| --- | --- | --- |
+| Настройки | `ISettingsService`, `IConfigService` | типизированные параметры и сохранение |
+| Прогресс | `IProgressNotificationService` | события загрузки, состояния игры и ошибок |
+| Версии | `IVersionService`, `IVersionSource` | списки версий, источники, кеш и патчи |
+| Экземпляры | `IInstanceService`, `IInstanceMigrationService` | пути, метаданные, выбор, импорт и миграция |
+| Загрузка | `IDownloadService`, `IPatchManager`, `IButlerService` | передача, проверка файлов, патчинг и Butler |
+| Запуск | `IGameSessionService`, `IGameLaunchCoordinator`, `IGameLauncher` | путь от выбранного экземпляра до процесса игры |
+| Процесс | `IGameProcessService` | отслеживание и корректное завершение процесса |
+| Моды | `IModService` | поиск, установка, импорт, обновления и changelog |
+| Авторизация | `IHytaleAuthService`, `IAuthService` | официальные сессии и игровые токены |
+| Профили | `IProfileService`, `IProfileManagementService`, `IUserIdentityService` | жизненный цикл личности и профиля |
+| Ресурсы | `IAssetService`, `IAvatarService`, `ISkinService` | извлечение ресурсов и визуальные данные профиля |
+| Новости | `INewsService`, `INewsSource` | лента и структурированные статьи |
+| Платформа | `IBrowserService`, `IClipboardService`, `IFileDialogService`, `IGpuDetectionService` | возможности операционной системы, реализуемые хостом |
+
+Запрашивайте самый узкий контракт, необходимый потребителю. Не получайте сервисы из контейнера внутри доменного кода

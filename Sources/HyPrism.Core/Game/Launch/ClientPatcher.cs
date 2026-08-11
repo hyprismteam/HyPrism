@@ -14,7 +14,7 @@ namespace HyPrism.Services.Game.Launch;
 /// Patches the HytaleClient binary to replace hytale.com domain references
 /// 10 characters (same as hytale.com) for direct replacement to work.
 /// Example: hytale.com -> sanasol.ws
-/// This allows the game to connect to custom authentication servers.
+/// This allows the game to connect to custom authentication servers
 /// </summary>
 public class ClientPatcher : IClientPatcher
 {
@@ -26,6 +26,10 @@ public class ClientPatcher : IClientPatcher
 
     private readonly string _targetDomain;
 
+    /// <summary>
+    /// Creates a client patcher for the selected authentication domain
+    /// </summary>
+    /// <param name="targetDomain">The replacement domain, or <see langword="null"/> to use the default</param>
     public ClientPatcher(string? targetDomain = null)
     {
         _targetDomain = targetDomain ?? DefaultNewDomain;
@@ -40,7 +44,7 @@ public class ClientPatcher : IClientPatcher
 
     /// <summary>
     /// Get the flag file path for tracking patch status.
-    /// On macOS, stores outside the app bundle to avoid breaking code signature.
+    /// On macOS, stores outside the app bundle to avoid breaking code signature
     /// </summary>
     private static string GetFlagFilePath(string clientPath)
     {
@@ -57,7 +61,7 @@ public class ClientPatcher : IClientPatcher
 
     /// <summary>
     /// Get the backup file path for the original binary.
-    /// On macOS, stores outside the app bundle to avoid breaking code signature.
+    /// On macOS, stores outside the app bundle to avoid breaking code signature
     /// </summary>
     private static string GetBackupFilePath(string clientPath)
     {
@@ -73,7 +77,7 @@ public class ClientPatcher : IClientPatcher
 
     /// <summary>
     /// Clean up old flag/backup files that were incorrectly placed inside the app bundle.
-    /// This is needed for migration from old patching behavior.
+    /// This is needed for migration from old patching behavior
     /// </summary>
     private static void CleanupLegacyFiles(string clientPath)
     {
@@ -207,7 +211,7 @@ public class ClientPatcher : IClientPatcher
             // Copy the new pattern
             int copyLen = Math.Min(newPattern.Length, oldPattern.Length);
             Array.Copy(newPattern, 0, data, pos, copyLen);
-            
+
             // If new pattern is shorter, null out the remaining bytes
             // This ensures no leftover data from the old pattern
             if (newPattern.Length < oldPattern.Length)
@@ -227,11 +231,11 @@ public class ClientPatcher : IClientPatcher
     public bool IsPatchedAlready(string clientPath)
     {
         string flagFile = GetFlagFilePath(clientPath);
-        
+
         // Also check legacy location for migration purposes
         string legacyFlagFile = clientPath + PatchedFlag;
         string actualFlagFile = File.Exists(flagFile) ? flagFile : (File.Exists(legacyFlagFile) ? legacyFlagFile : null!);
-        
+
         if (actualFlagFile == null)
         {
             return false;
@@ -295,7 +299,7 @@ public class ClientPatcher : IClientPatcher
 
     /// <summary>
     /// Create a backup of the original client binary.
-    /// On macOS, stores outside the app bundle to preserve code signature.
+    /// On macOS, stores outside the app bundle to preserve code signature
     /// </summary>
     private static void BackupClient(string clientPath)
     {
@@ -448,16 +452,16 @@ public class ClientPatcher : IClientPatcher
             if (utf8Count > 0)
             {
                 Logger.Info("Patcher", $"Found {utf8Count} occurrences with UTF-8 format", false);
-                
+
                 // Also patch common URL patterns with UTF-8
                 string[] urlPatterns = {
                     "sessions.hytale.com",
-                    "tools.hytale.com", 
+                    "tools.hytale.com",
                     "account-data.hytale.com",
                     "telemetry.hytale.com",
                     "api.hytale.com"
                 };
-                
+
                 foreach (var pattern in urlPatterns)
                 {
                     byte[] oldUrl = StringToUtf8(pattern);
@@ -471,7 +475,7 @@ public class ClientPatcher : IClientPatcher
                         utf8Count += urlCount;
                     }
                 }
-                
+
                 Logger.Info("Patcher", "Creating backup before writing...", false);
                 BackupClient(clientPath);
                 File.WriteAllBytes(clientPath, data);
@@ -485,37 +489,37 @@ public class ClientPatcher : IClientPatcher
             // Fallback to direct UTF-16LE replacement
             // IMPORTANT: The base domain (4th occurrence) has 0x89 instead of 0x00 after the last char
             // So we search for the pattern WITHOUT the final high byte (first 19 of 20 bytes)
-            
+
             // First, try the full UTF-16LE pattern (catches 3 URL occurrences)
             byte[] oldDomain = StringToUtf16LE(OriginalDomain);
             byte[] newDomain = StringToUtf16LE(mainDomain);
             int legacyCount = ReplaceBytes(data, oldDomain, newDomain);
             Logger.Info("Patcher", $"Full UTF-16LE pattern: found {legacyCount} occurrences", false);
-            
+
             // Now search for partial pattern (19 bytes) to catch the base domain with 0x89 suffix
             // This catches: h.y.t.a.l.e...c.o.m (without the trailing 00)
             // Pattern: 68 00 79 00 74 00 61 00 6c 00 65 00 2e 00 63 00 6f 00 6d
             byte[] oldDomainPartial = new byte[OriginalDomain.Length * 2 - 1];  // 19 bytes
             byte[] newDomainPartial = new byte[mainDomain.Length * 2 - 1];
-            
+
             for (int i = 0; i < OriginalDomain.Length; i++)
             {
                 oldDomainPartial[i * 2] = (byte)OriginalDomain[i];
                 if (i * 2 + 1 < oldDomainPartial.Length)
                     oldDomainPartial[i * 2 + 1] = 0;
             }
-            
+
             for (int i = 0; i < mainDomain.Length; i++)
             {
                 newDomainPartial[i * 2] = (byte)mainDomain[i];
                 if (i * 2 + 1 < newDomainPartial.Length)
                     newDomainPartial[i * 2 + 1] = 0;
             }
-            
+
             // Find positions with the partial pattern
             var partialPositions = FindAllOccurrences(data, oldDomainPartial);
             Logger.Info("Patcher", $"Partial UTF-16LE pattern (19 bytes): found {partialPositions.Count} occurrences");
-            
+
             // Only replace those that weren't already replaced (check if byte after is NOT 00)
             int additionalCount = 0;
             foreach (int pos in partialPositions)
@@ -530,7 +534,7 @@ public class ClientPatcher : IClientPatcher
                     Logger.Info("Patcher", $"  Patched base domain at offset {pos} (byte after: 0x{data[afterPos]:X2})");
                 }
             }
-            
+
             legacyCount += additionalCount;
 
             if (legacyCount > 0)
@@ -552,7 +556,7 @@ public class ClientPatcher : IClientPatcher
         progressCallback?.Invoke("launch.detail.creating_backup", 70);
         Logger.Info("Patcher", "Creating backup before writing...");
         BackupClient(clientPath);
-        
+
         progressCallback?.Invoke("launch.detail.writing_patched_binary", 80);
         Logger.Info("Patcher", "Writing patched binary...");
         File.WriteAllBytes(clientPath, data);
@@ -604,7 +608,7 @@ public class ClientPatcher : IClientPatcher
     }
 
     /// <summary>
-    /// Check if the client binary in the given game directory is currently patched (any domain).
+    /// Check if the client binary in the given game directory is currently patched (any domain)
     /// </summary>
     public static bool IsClientPatched(string gameDir)
     {
@@ -617,7 +621,7 @@ public class ClientPatcher : IClientPatcher
     }
 
     /// <summary>
-    /// Check if the server JAR in the given game directory is currently patched.
+    /// Check if the server JAR in the given game directory is currently patched
     /// </summary>
     public static bool IsServerJarPatched(string gameDir)
     {
@@ -628,14 +632,14 @@ public class ClientPatcher : IClientPatcher
 
     /// <summary>
     /// Restore the client binary from its .original backup, removing the patch.
-    /// Used when switching to official servers where no patching is needed.
+    /// Used when switching to official servers where no patching is needed
     /// </summary>
     public static PatchResult RestoreClientFromBackup(string gameDir, Action<string, int?>? progressCallback = null)
     {
         string? clientPath = FindClientPath(gameDir);
         if (clientPath == null)
         {
-            Logger.Info("Patcher", "Client binary not found — nothing to restore");
+            Logger.Info("Patcher", "Client binary not found. Nothing to restore");
             return new PatchResult { Success = true, PatchCount = 0 };
         }
 
@@ -644,7 +648,7 @@ public class ClientPatcher : IClientPatcher
 
         if (!File.Exists(backupPath))
         {
-            Logger.Info("Patcher", "No client backup found — binary is likely already original");
+            Logger.Info("Patcher", "No client backup found. The binary is likely already original");
             // Clean up flag file if it exists without a backup (shouldn't happen, but be safe)
             if (File.Exists(flagFile)) File.Delete(flagFile);
             return new PatchResult { Success = true, PatchCount = 0 };
@@ -677,7 +681,7 @@ public class ClientPatcher : IClientPatcher
     }
 
     /// <summary>
-    /// Restore the server JAR from its .original backup, removing the patch.
+    /// Restore the server JAR from its .original backup, removing the patch
     /// </summary>
     public static PatchResult RestoreServerJarFromBackup(string gameDir, Action<string, int?>? progressCallback = null)
     {
@@ -687,7 +691,7 @@ public class ClientPatcher : IClientPatcher
 
         if (!File.Exists(backupPath))
         {
-            Logger.Info("Patcher", "No server JAR backup found — JAR is likely already original");
+            Logger.Info("Patcher", "No server JAR backup found. The JAR is likely already original");
             if (File.Exists(patchFlag)) File.Delete(patchFlag);
             return new PatchResult { Success = true, PatchCount = 0 };
         }
@@ -715,7 +719,7 @@ public class ClientPatcher : IClientPatcher
 
     /// <summary>
     /// Restore both client and server JAR from backups.
-    /// Used when switching to official servers.
+    /// Used when switching to official servers
     /// </summary>
     public static PatchResult RestoreAllFromBackup(string gameDir, Action<string, int?>? progressCallback = null)
     {
@@ -730,7 +734,7 @@ public class ClientPatcher : IClientPatcher
             string? clientPath = FindClientPath(gameDir);
             if (clientPath != null && File.Exists(GetBackupFilePath(clientPath)))
             {
-                // Backup existed, so we actually restored — re-sign the app
+                // Re-sign the app after restoring an existing backup
                 string appBundle = Path.Combine(gameDir, "Client", "Hytale.app");
                 if (Directory.Exists(appBundle))
                 {
@@ -802,7 +806,7 @@ public class ClientPatcher : IClientPatcher
     /// Patch the HytaleServer.jar to use custom auth domain.
     /// The server JAR contains sessions.hytale.com which needs to be changed to sessions.sanasol.ws
     /// for JWT validation to work with the custom auth server.
-    /// JAR files are ZIP archives with compressed class files, so we need to extract, patch, and re-archive.
+    /// JAR files are ZIP archives with compressed class files, so we need to extract, patch, and re-archive
     /// </summary>
     public PatchResult PatchServerJar(string gameDir, Action<string, int?>? progressCallback = null)
     {
@@ -824,7 +828,7 @@ public class ClientPatcher : IClientPatcher
         // Define the patterns to patch
         string oldSessionsUrl = "sessions.hytale.com";
         string newSessionsUrl = $"sessions.{mainDomain}";
-        
+
         // Ensure replacement is same length (required for class file patching)
         if (newSessionsUrl.Length != oldSessionsUrl.Length)
         {
@@ -861,12 +865,12 @@ public class ClientPatcher : IClientPatcher
                             foreach (var entry in archive.Entries)
                             {
                                 if (!entry.FullName.EndsWith(".class")) continue;
-                                
+
                                 using var stream = entry.Open();
                                 using var ms = new MemoryStream();
                                 stream.CopyTo(ms);
                                 byte[] classData = ms.ToArray();
-                                
+
                                 byte[] patchedPattern = StringToUtf8(newSessionsUrl);
                                 if (FindAllOccurrences(classData, patchedPattern).Count > 0)
                                 {
@@ -875,7 +879,7 @@ public class ClientPatcher : IClientPatcher
                                 }
                             }
                         }
-                        
+
                         if (foundPatched)
                         {
                             Logger.Info("Patcher", $"Server JAR already patched for {_targetDomain}, skipping", false);
@@ -897,7 +901,7 @@ public class ClientPatcher : IClientPatcher
 
         progressCallback?.Invoke("launch.detail.reading_server_jar", 10);
         Logger.Info("Patcher", "Extracting and patching server JAR (ZIP archive)...");
-        
+
         // Create backup first
         string backupPath = serverJarPath + ".original";
         if (!File.Exists(backupPath))
@@ -905,31 +909,31 @@ public class ClientPatcher : IClientPatcher
             File.Copy(serverJarPath, backupPath);
             Logger.Info("Patcher", $"Created backup at {backupPath}");
         }
-        
+
         // Create a temporary path for the new JAR
         string tempJarPath = serverJarPath + ".patching";
         int totalPatched = 0;
-        
+
         try
         {
             progressCallback?.Invoke("launch.detail.patching_class_files", 30);
-            
+
             // Open the existing JAR and create a new one with patched content
             using (var sourceArchive = ZipFile.OpenRead(serverJarPath))
             using (var destArchive = ZipFile.Open(tempJarPath, ZipArchiveMode.Create))
             {
                 byte[] oldUrlBytes = StringToUtf8(oldSessionsUrl);
                 byte[] newUrlBytes = StringToUtf8(newSessionsUrl);
-                
+
                 // Also patch the full URL
                 string oldFullUrl = "https://sessions.hytale.com";
                 string newFullUrl = $"https://sessions.{mainDomain}";
                 byte[] oldFullBytes = StringToUtf8(oldFullUrl);
                 byte[] newFullBytes = StringToUtf8(newFullUrl);
-                
+
                 int entryCount = sourceArchive.Entries.Count;
                 int processed = 0;
-                
+
                 foreach (var entry in sourceArchive.Entries)
                 {
                     processed++;
@@ -938,30 +942,30 @@ public class ClientPatcher : IClientPatcher
                         int progress = 30 + (int)(50.0 * processed / entryCount);
                         progressCallback?.Invoke($"Processing {processed}/{entryCount}...", progress);
                     }
-                    
+
                     // Create the same entry in destination
                     var destEntry = destArchive.CreateEntry(entry.FullName, CompressionLevel.Optimal);
-                    
+
                     using var sourceStream = entry.Open();
                     using var destStream = destEntry.Open();
-                    
+
                     if (entry.FullName.EndsWith(".class"))
                     {
                         // Read class file content
                         using var ms = new MemoryStream();
                         sourceStream.CopyTo(ms);
                         byte[] classData = ms.ToArray();
-                        
+
                         // Patch both URL patterns
                         int count1 = ReplaceBytes(classData, oldUrlBytes, newUrlBytes);
                         int count2 = ReplaceBytes(classData, oldFullBytes, newFullBytes);
-                        
+
                         if (count1 > 0 || count2 > 0)
                         {
                             totalPatched += count1 + count2;
                             Logger.Info("Patcher", $"  Patched {count1 + count2} occurrence(s) in {entry.FullName}");
                         }
-                        
+
                         // Write patched content
                         destStream.Write(classData, 0, classData.Length);
                     }
@@ -972,13 +976,13 @@ public class ClientPatcher : IClientPatcher
                     }
                 }
             }
-            
+
             progressCallback?.Invoke("launch.detail.replacing_original_jar", 80);
-            
+
             // Replace the original JAR with the patched one
             File.Delete(serverJarPath);
             File.Move(tempJarPath, serverJarPath);
-            
+
             Logger.Info("Patcher", $"Total occurrences patched: {totalPatched}");
         }
         catch (Exception ex)
@@ -988,7 +992,7 @@ public class ClientPatcher : IClientPatcher
             {
                 try { File.Delete(tempJarPath); } catch { }
             }
-            
+
             Logger.Error("Patcher", $"Error patching server JAR: {ex.Message}");
             return new PatchResult { Success = false, Error = ex.Message };
         }
@@ -1012,7 +1016,7 @@ public class ClientPatcher : IClientPatcher
 
         progressCallback?.Invoke("launch.detail.server_jar_patched", 100);
         Logger.Success("Patcher", $"Successfully patched {totalPatched} occurrences in server JAR");
-        
+
         return new PatchResult { Success = true, PatchCount = totalPatched };
     }
 

@@ -1,0 +1,27 @@
+---
+title: Contributing
+description: Prepare a focused change for review
+---
+
+# Contributing
+
+Start with an issue or a short design note when a change affects architecture, persistent data, authentication, or packaging
+
+## Workflow
+
+1. Create a focused branch
+2. Keep unrelated user changes intact
+3. Add tests for changed behavior
+4. Update user, developer, or API documentation in the same change
+5. Run the relevant .NET tests and `pnpm build` in `Docs`
+6. Run `python3 Scripts/license_headers.py --check` and verify the REUSE workflow before opening a pull request
+
+## Pull request checklist
+
+- behavior and tradeoffs are described in plain language
+- the Avalonia and Core boundary remains clear
+- public API documentation is complete
+- no credentials, local paths, build products, or cache files are included
+- documentation reflects the implementation rather than planned behavior
+
+Bug reports should include the platform, HyPrism version, reproduction steps, expected behavior, actual behavior, and relevant logs

@@ -18,11 +18,11 @@ namespace HyPrism.Services.User;
 /// <summary>
 /// Handles Hytale OAuth 2.0 Authorization Code flow with PKCE.
 /// Used to authenticate official Hytale accounts and obtain session tokens
-/// for launching the game in authenticated mode.
+/// for launching the game in authenticated mode
 /// </summary>
 /// <remarks>
 /// Session data is stored per-profile in the profile's folder to support
-/// multiple Hytale accounts across different launcher profiles.
+/// multiple Hytale accounts across different launcher profiles
 /// </remarks>
 public class HytaleAuthService : IHytaleAuthService
 {
@@ -45,10 +45,17 @@ public class HytaleAuthService : IHytaleAuthService
     private System.Net.HttpListener? _callbackListener;
 
     /// <summary>
-    /// The current auth session, or null if not logged in.
+    /// The current auth session, or null if not logged in
     /// </summary>
     public HytaleAuthSession? CurrentSession { get; private set; }
 
+    /// <summary>
+    /// Creates the official Hytale authentication service and restores the current profile session
+    /// </summary>
+    /// <param name="httpClient">The HTTP client used for OAuth requests</param>
+    /// <param name="appDir">The application data directory</param>
+    /// <param name="browserService">The service used to open the login page</param>
+    /// <param name="configService">The launcher configuration service</param>
     public HytaleAuthService(HttpClient httpClient, string appDir, IBrowserService browserService, IConfigService configService)
     {
         _httpClient = httpClient;
@@ -65,9 +72,9 @@ public class HytaleAuthService : IHytaleAuthService
 
     /// <summary>
     /// Starts the OAuth login flow: opens browser, waits for callback, exchanges code for tokens,
-    /// fetches profile data.
+    /// fetches profile data
     /// </summary>
-    /// <returns>The authenticated session, or null on failure/cancellation.</returns>
+    /// <returns>The authenticated session, or null on failure/cancellation</returns>
     public async Task<HytaleAuthSession?> LoginAsync(CancellationToken cancellationToken = default)
     {
         // Stop any previous listener to avoid port conflicts
@@ -178,7 +185,7 @@ public class HytaleAuthService : IHytaleAuthService
     }
 
     /// <summary>
-    /// Logs out: clears session from memory and disk.
+    /// Logs out: clears session from memory and disk
     /// </summary>
     public void Logout()
     {
@@ -188,7 +195,7 @@ public class HytaleAuthService : IHytaleAuthService
     }
 
     /// <summary>
-    /// Returns the current auth status (logged in, username, uuid).
+    /// Returns the current auth status (logged in, username, uuid)
     /// </summary>
     public object GetAuthStatus()
     {
@@ -206,7 +213,7 @@ public class HytaleAuthService : IHytaleAuthService
     }
 
     /// <summary>
-    /// Refreshes the access token if expired. Returns a valid session or null.
+    /// Refreshes the access token if expired. Returns a valid session or null
     /// </summary>
     public async Task<HytaleAuthSession?> GetValidSessionAsync()
     {
@@ -229,7 +236,7 @@ public class HytaleAuthService : IHytaleAuthService
 
     /// <summary>
     /// Forces a token refresh regardless of expiry time.
-    /// Used when API returns 401/403 indicating token is invalid.
+    /// Used when API returns 401/403 indicating token is invalid
     /// </summary>
     public async Task<bool> ForceRefreshAsync()
     {
@@ -251,7 +258,7 @@ public class HytaleAuthService : IHytaleAuthService
     /// Ensures a valid session with fresh game session tokens for launching.
     /// Always creates a new game session even if the access token is still valid,
     /// because game session tokens (identityToken/sessionToken) expire independently
-    /// and must be refreshed before each launch.
+    /// and must be refreshed before each launch
     /// </summary>
     public async Task<HytaleAuthSession?> EnsureFreshSessionForLaunchAsync()
     {
@@ -273,13 +280,13 @@ public class HytaleAuthService : IHytaleAuthService
             }
             else
             {
-                Logger.Warning("HytaleAuth", "Failed to create fresh game session — will use cached tokens");
+                Logger.Warning("HytaleAuth", "Failed to create fresh game session. Cached tokens will be used");
             }
         }
         catch (Exception ex)
         {
             Logger.Warning("HytaleAuth", $"Error creating fresh game session: {ex.Message}");
-            // Fall through — cached tokens may still work
+            // Continue because cached tokens may still work
         }
 
         return session;
@@ -549,7 +556,7 @@ public class HytaleAuthService : IHytaleAuthService
     #region Session Persistence
 
     /// <summary>
-    /// Reads all profiles from the profiles.json cache on disk.
+    /// Reads all profiles from the profiles.json cache on disk
     /// </summary>
     private List<Profile> ReadProfilesCache()
     {
@@ -565,7 +572,7 @@ public class HytaleAuthService : IHytaleAuthService
 
     /// <summary>
     /// Gets the profile folder path for the current active profile.
-    /// Returns null if no profile is active.
+    /// Returns null if no profile is active
     /// </summary>
     private string? GetCurrentProfileFolder()
     {
@@ -583,17 +590,17 @@ public class HytaleAuthService : IHytaleAuthService
 
     /// <summary>
     /// Gets the session file path for the current profile.
-    /// Falls back to app root if no profile is active (legacy behavior).
+    /// Falls back to app root if no profile is active (legacy behavior)
     /// </summary>
     private string GetSessionFilePath() => TokenStore.GetSessionFilePath(GetCurrentProfileFolder(), _appDir);
 
     /// <summary>
-    /// Gets the old (legacy) session file path at app root.
+    /// Gets the old (legacy) session file path at app root
     /// </summary>
     private string GetLegacySessionFilePath() => TokenStore.GetLegacySessionFilePath(_appDir);
 
     /// <summary>
-    /// Migrates old global session file to current profile folder if needed.
+    /// Migrates old global session file to current profile folder if needed
     /// </summary>
     private void MigrateOldSessionIfNeeded()
     {
@@ -661,7 +668,7 @@ public class HytaleAuthService : IHytaleAuthService
     }
 
     /// <summary>
-    /// Reloads session for the current profile. Call this after switching profiles.
+    /// Reloads session for the current profile. Call this after switching profiles
     /// </summary>
     public void ReloadSessionForCurrentProfile()
     {
@@ -674,7 +681,7 @@ public class HytaleAuthService : IHytaleAuthService
 
     /// <summary>
     /// Gets a valid session from any official profile (not just the active one).
-    /// Used for fetching version info when the current profile may not be official.
+    /// Used for fetching version info when the current profile may not be official
     /// </summary>
     public async Task<HytaleAuthSession?> GetValidOfficialSessionAsync()
     {
@@ -747,7 +754,7 @@ public class HytaleAuthService : IHytaleAuthService
     }
 
     /// <summary>
-    /// Refreshes token for a specific session (not necessarily the current one).
+    /// Refreshes token for a specific session (not necessarily the current one)
     /// </summary>
     private async Task<bool> RefreshTokenForSessionAsync(HytaleAuthSession session)
     {
@@ -804,7 +811,7 @@ public class HytaleAuthService : IHytaleAuthService
 
     /// <summary>
     /// Saves current session to the active profile's folder.
-    /// Use this after LoginAsync() when re-authenticating within an existing official profile.
+    /// Use this after LoginAsync() when re-authenticating within an existing official profile
     /// </summary>
     public void SaveCurrentSession()
     {
@@ -813,10 +820,10 @@ public class HytaleAuthService : IHytaleAuthService
 
     /// <summary>
     /// Saves the current session to a specific profile's folder.
-    /// Used when creating a new official profile to enable Hytale source access.
+    /// Used when creating a new official profile to enable Hytale source access
     /// </summary>
-    /// <param name="profile">The profile to save the session to.</param>
-    /// <returns>True if the session was saved successfully.</returns>
+    /// <param name="profile">The profile to save the session to</param>
+    /// <returns>True if the session was saved successfully</returns>
     public bool SaveSessionToProfile(Profile profile)
     {
         if (CurrentSession == null)
@@ -849,7 +856,7 @@ public class HytaleAuthService : IHytaleAuthService
 #region Models
 
 /// <summary>
-/// Persisted auth session for Hytale account.
+/// Persisted auth session for Hytale account
 /// </summary>
 public class HytaleAuthSession
 {
@@ -932,19 +939,29 @@ internal class GameSessionResponse
 
 /// <summary>
 /// Thrown when no game profiles are found in the Hytale account.
-/// This is a non-critical warning — the user simply has no game profile yet.
+/// This is a non-critical warning because the user has no game profile yet
 /// </summary>
 public class HytaleNoProfileException : Exception
 {
+    /// <summary>
+    /// Creates an exception for an account without game profiles
+    /// </summary>
+    /// <param name="message">The error message</param>
     public HytaleNoProfileException(string message) : base(message) { }
 }
 
 /// <summary>
-/// Thrown when a general auth error occurs (network, HTTP status, etc.).
+/// Thrown when a general auth error occurs (network, HTTP status, etc.)
 /// </summary>
 public class HytaleAuthException : Exception
 {
     public string ErrorType { get; }
+
+    /// <summary>
+    /// Creates an exception for an authentication failure
+    /// </summary>
+    /// <param name="errorType">The stable authentication error category</param>
+    /// <param name="message">The error message</param>
     public HytaleAuthException(string errorType, string message) : base(message)
     {
         ErrorType = errorType;

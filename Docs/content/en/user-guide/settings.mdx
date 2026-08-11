@@ -1,0 +1,26 @@
+---
+title: Settings
+description: Configure launcher behavior, Java, networking, appearance, and storage
+---
+
+# Settings
+
+Settings use the same adaptive master-detail layout as the news reader. Wide windows keep categories beside their content. Compact windows show one page at a time and support the Back button or Escape
+
+## Categories
+
+| Category | Purpose |
+| --- | --- |
+| General | language, music, launch behavior, announcements, and news visibility |
+| Downloads | download source behavior and instance storage |
+| Java | bundled or custom runtime, initial memory, maximum memory, and extra arguments |
+| Appearance | background selection and interface personalization |
+| Network | online mode, authentication server, and DualAuth |
+| Graphics | preferred GPU for game launch |
+| Variables | environment variables passed to the game process |
+| Data | application and instance storage locations |
+| About | project and license information |
+
+Java heap arguments such as `-Xms` and `-Xmx` are managed by the memory controls and are rejected in the free-form arguments field
+
+Settings are written through `ISettingsService` and persisted by `IConfigService`

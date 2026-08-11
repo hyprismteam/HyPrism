@@ -12,25 +12,25 @@ namespace HyPrism.Services.Game.Launch;
 
 /// <summary>
 /// Manages launch prerequisites including Java Runtime Environment and Visual C++ Redistributable.
-/// Downloads and installs required runtimes before game launch.
+/// Downloads and installs required runtimes before game launch
 /// </summary>
 /// <remarks>
 /// Uses the official Hytale JRE distribution for maximum compatibility.
-/// On Windows, also ensures the Visual C++ Redistributable is installed.
+/// On Windows, also ensures the Visual C++ Redistributable is installed
 /// </remarks>
 public class LaunchService : ILaunchService
 {
     private const string RequiredJreVersion = "25.0.1_8";
     private const string VCRedistUrl = "https://aka.ms/vs/17/release/vc_redist.x64.exe";
-    
+
     private readonly string _appDir;
     private readonly HttpClient _httpClient;
-    
+
     /// <summary>
-    /// Initializes a new instance of the <see cref="LaunchService"/> class.
+    /// Initializes a new instance of the <see cref="LaunchService"/> class
     /// </summary>
-    /// <param name="appDir">The application data directory path.</param>
-    /// <param name="httpClient">The HTTP client for downloading runtimes.</param>
+    /// <param name="appDir">The application data directory path</param>
+    /// <param name="httpClient">The HTTP client for downloading runtimes</param>
     public LaunchService(string appDir, HttpClient httpClient)
     {
         _appDir = appDir;
@@ -44,7 +44,7 @@ public class LaunchService : ILaunchService
     {
         string jreDir = Path.Combine(_appDir, "Jre");
         string javaBin;
-        
+
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
             javaBin = Path.Combine(jreDir, "bin", "java.exe");
@@ -53,10 +53,10 @@ public class LaunchService : ILaunchService
         {
             javaBin = Path.Combine(jreDir, "bin", "java");
         }
-        
+
         // Check if correct JRE version is installed by looking for version marker file
         string versionMarkerPath = Path.Combine(jreDir, ".jre_version");
-        
+
         if (File.Exists(javaBin) && File.Exists(versionMarkerPath))
         {
             try
@@ -81,7 +81,7 @@ public class LaunchService : ILaunchService
             // Old installation without version marker - reinstall
             Logger.Warning("JRE", "JRE version marker not found. Reinstalling official Hytale JRE...");
         }
-        
+
         // Delete old JRE if exists
         if (Directory.Exists(jreDir))
         {
@@ -95,26 +95,26 @@ public class LaunchService : ILaunchService
                 Logger.Warning("JRE", $"Failed to remove old JRE: {ex.Message}");
             }
         }
-        
+
         progressCallback(0, "Downloading Java Runtime...");
         Logger.Info("JRE", "Downloading official Hytale Java Runtime...");
-        
+
         // Determine platform - Hytale uses different naming convention
-        string osName = RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? "darwin" : 
+        string osName = RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? "darwin" :
                         RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "windows" : "linux";
         string arch = RuntimeInformation.OSArchitecture == Architecture.Arm64 ? "arm64" : "amd64";
         string archiveType = osName == "windows" ? "zip" : "tar.gz";
-        
+
         // First try to fetch latest JRE info from Hytale launcher directly
         string? url = null;
         string? expectedSha256 = null;
-        
+
         try
         {
             Logger.Info("JRE", "Fetching JRE info from launcher.hytale.com...");
             var jreInfoResponse = await _httpClient.GetStringAsync("https://launcher.hytale.com/version/release/jre.json");
             var jreInfo = JsonSerializer.Deserialize<JsonElement>(jreInfoResponse);
-            
+
             if (jreInfo.TryGetProperty("download_url", out var downloadUrls) &&
                 downloadUrls.TryGetProperty(osName, out var osUrls) &&
                 osUrls.TryGetProperty(arch, out var archInfo))
@@ -134,7 +134,7 @@ public class LaunchService : ILaunchService
         {
             Logger.Warning("JRE", $"Failed to fetch from launcher.hytale.com: {ex.Message}");
         }
-        
+
         // Fallback to local jre.json config
         if (string.IsNullOrEmpty(url))
         {
@@ -145,7 +145,7 @@ public class LaunchService : ILaunchService
                 {
                     var jreConfigJson = await File.ReadAllTextAsync(jreConfigPath);
                     var jreConfig = JsonSerializer.Deserialize<JsonElement>(jreConfigJson);
-                    
+
                     if (jreConfig.TryGetProperty("download_url", out var downloadUrls) &&
                         downloadUrls.TryGetProperty(osName, out var osUrls) &&
                         osUrls.TryGetProperty(arch, out var archInfo))
@@ -167,40 +167,40 @@ public class LaunchService : ILaunchService
                 Logger.Warning("JRE", $"Failed to load local jre.json: {ex.Message}");
             }
         }
-        
+
         // Ultimate fallback - hardcoded URLs for official Hytale JRE
         if (string.IsNullOrEmpty(url))
         {
             url = $"https://launcher.hytale.com/redist/jre/{osName}/{arch}/jre-{RequiredJreVersion}.{archiveType}";
             Logger.Info("JRE", $"Using hardcoded Hytale JRE URL: {url}");
         }
-        
+
         string cacheDir = Path.Combine(_appDir, "Cache");
         Directory.CreateDirectory(cacheDir);
         string archivePath = Path.Combine(cacheDir, $"jre.{archiveType}");
-        
+
         // Download with proper headers for Adoptium API
         // Reuse injected HttpClient instead of creating a new one (avoids socket exhaustion)
         using var request = new HttpRequestMessage(HttpMethod.Get, url);
         request.Headers.Add("User-Agent", "HyPrism/1.0");
         request.Headers.Add("Accept", "*/*");
-        
+
         using var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
         response.EnsureSuccessStatusCode();
-        
+
         var totalBytes = response.Content.Headers.ContentLength ?? -1;
         using var stream = await response.Content.ReadAsStreamAsync();
         using var fileStream = new FileStream(archivePath, FileMode.Create, FileAccess.Write, FileShare.None, 8192);
-        
+
         var buffer = new byte[8192];
         long totalRead = 0;
         int bytesRead;
-        
+
         while ((bytesRead = await stream.ReadAsync(buffer)) > 0)
         {
             await fileStream.WriteAsync(buffer.AsMemory(0, bytesRead));
             totalRead += bytesRead;
-            
+
             if (totalBytes > 0)
             {
                 var progress = (int)((totalRead * 80) / totalBytes); // 0-80%
@@ -208,13 +208,13 @@ public class LaunchService : ILaunchService
             }
         }
         fileStream.Close();
-        
+
         progressCallback(85, "Extracting Java Runtime...");
         Logger.Info("JRE", "Extracting Java Runtime...");
-        
+
         // Create jre directory
         Directory.CreateDirectory(jreDir);
-        
+
         // Extract
         if (archiveType == "zip")
         {
@@ -231,13 +231,13 @@ public class LaunchService : ILaunchService
             var tar = Process.Start(tarProcess);
             tar?.WaitForExit();
         }
-        
+
         // Normalize JRE structure - move contents up if nested
         var entries = Directory.GetDirectories(jreDir);
         if (entries.Length == 1)
         {
             var subDir = entries[0];
-            
+
             // On macOS, structure is different
             if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
@@ -247,7 +247,7 @@ public class LaunchService : ILaunchService
                     subDir = contentsDir;
                 }
             }
-            
+
             // Move files from subdirectory to jreDir
             foreach (var entry in Directory.GetFileSystemEntries(subDir))
             {
@@ -258,11 +258,11 @@ public class LaunchService : ILaunchService
                     Directory.Move(entry, dest);
                 }
             }
-            
+
             // Remove empty subdirectory
             try { Directory.Delete(entries[0], true); } catch { }
         }
-        
+
         // Make java executable on Unix
         if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
@@ -273,10 +273,10 @@ public class LaunchService : ILaunchService
             };
             Process.Start(chmod)?.WaitForExit();
         }
-        
+
         // Cleanup archive
         try { File.Delete(archivePath); } catch { }
-        
+
         // On macOS, create java symlink structure like old launcher
         if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {
@@ -285,7 +285,7 @@ public class LaunchService : ILaunchService
 
         // Wrap java to strip unsupported flags and point to the freshly installed JRE
         EnsureJavaWrapper(javaBin);
-        
+
         // Write version marker file to track installed version
         try
         {
@@ -296,7 +296,7 @@ public class LaunchService : ILaunchService
         {
             Logger.Warning("JRE", $"Failed to write version marker: {ex.Message}");
         }
-        
+
         progressCallback(100, "Java Runtime installed");
         Logger.Success("JRE", $"Hytale Java Runtime {RequiredJreVersion} installed successfully");
     }
@@ -306,7 +306,7 @@ public class LaunchService : ILaunchService
         // Create java directory structure like old launcher
         string javaDir = Path.Combine(_appDir, "java");
         string javaHomeBin = Path.Combine(javaDir, "Contents", "Home", "bin");
-        
+
         if (!Directory.Exists(javaHomeBin))
         {
             try
@@ -315,9 +315,9 @@ public class LaunchService : ILaunchService
                 {
                     Directory.Delete(javaDir, true);
                 }
-                
+
                 Directory.CreateDirectory(Path.Combine(javaDir, "Contents", "Home"));
-                
+
                 // Create symlinks
                 var lnBin = new ProcessStartInfo("ln", $"-sf \"{Path.Combine(jreDir, "bin")}\" \"{Path.Combine(javaDir, "Contents", "Home", "bin")}\"")
                 {
@@ -325,7 +325,7 @@ public class LaunchService : ILaunchService
                     CreateNoWindow = true
                 };
                 Process.Start(lnBin)?.WaitForExit();
-                
+
                 var lnLib = new ProcessStartInfo("ln", $"-sf \"{Path.Combine(jreDir, "lib")}\" \"{Path.Combine(javaDir, "Contents", "Home", "lib")}\"")
                 {
                     UseShellExecute = false,
@@ -338,7 +338,7 @@ public class LaunchService : ILaunchService
                 Logger.Warning("JRE", $"Failed to create Java symlinks: {ex.Message}");
             }
         }
-        
+
         // Sign JRE
         Logger.Info("JRE", "Signing Java Runtime...");
         RunSilentProcess("xattr", $"-cr \"{jreDir}\"");
@@ -346,6 +346,7 @@ public class LaunchService : ILaunchService
         await Task.CompletedTask;
     }
 
+    /// <inheritdoc/>
     public async Task<int> GetJavaFeatureVersionAsync(string javaBin)
     {
         try
@@ -409,6 +410,7 @@ public class LaunchService : ILaunchService
         return 0;
     }
 
+    /// <inheritdoc/>
     public async Task<bool> SupportsShenandoahAsync(string javaBin)
     {
         try
@@ -548,6 +550,7 @@ public class LaunchService : ILaunchService
         }
     }
 
+    /// <inheritdoc/>
     public string GetJavaPath()
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
@@ -571,7 +574,7 @@ public class LaunchService : ILaunchService
 
     /// <summary>
     /// Checks if Visual C++ Redistributable is installed on Windows.
-    /// Uses registry check for VC++ 14.x (Visual Studio 2015-2022).
+    /// Uses registry check for VC++ 14.x (Visual Studio 2015-2022)
     /// </summary>
     public bool IsVCRedistInstalled()
     {
@@ -585,7 +588,7 @@ public class LaunchService : ILaunchService
             // Check registry for VC++ 14.x (VS 2015-2022 uses the same redistributable)
             using var key = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(
                 @"SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64");
-            
+
             if (key != null)
             {
                 var installed = key.GetValue("Installed");
@@ -606,7 +609,7 @@ public class LaunchService : ILaunchService
 
     /// <summary>
     /// Ensures Visual C++ Redistributable is installed on Windows.
-    /// Downloads and runs the installer if not present.
+    /// Downloads and runs the installer if not present
     /// </summary>
     public async Task EnsureVCRedistInstalledAsync(Action<int, string> progressCallback)
     {
@@ -615,49 +618,49 @@ public class LaunchService : ILaunchService
             progressCallback(100, "VC++ not required on this platform");
             return;
         }
-        
+
         if (IsVCRedistInstalled())
         {
             progressCallback(100, "VC++ Redistributable ready");
             return;
         }
-        
+
         progressCallback(0, "Downloading Visual C++ Redistributable...");
         Logger.Info("VCRedist", "Downloading VC++ Redistributable...");
-        
+
         string cacheDir = Path.Combine(_appDir, "Cache");
         Directory.CreateDirectory(cacheDir);
         string installerPath = Path.Combine(cacheDir, "vc_redist.x64.exe");
-        
+
         try
         {
             // Download the installer
             using var response = await _httpClient.GetAsync(VCRedistUrl, HttpCompletionOption.ResponseHeadersRead);
             response.EnsureSuccessStatusCode();
-            
+
             var totalBytes = response.Content.Headers.ContentLength ?? 0;
             using var contentStream = await response.Content.ReadAsStreamAsync();
             using var fileStream = new FileStream(installerPath, FileMode.Create, FileAccess.Write, FileShare.None, 8192, true);
-            
+
             var buffer = new byte[8192];
             long downloadedBytes = 0;
             int bytesRead;
-            
+
             while ((bytesRead = await contentStream.ReadAsync(buffer, 0, buffer.Length)) > 0)
             {
                 await fileStream.WriteAsync(buffer, 0, bytesRead);
                 downloadedBytes += bytesRead;
-                
+
                 if (totalBytes > 0)
                 {
                     int percent = (int)((downloadedBytes * 50) / totalBytes); // 0-50%
                     progressCallback(percent, $"Downloading VC++ Redistributable... {percent * 2}%");
                 }
             }
-            
+
             Logger.Info("VCRedist", "Download complete, running installer...");
             progressCallback(50, "Installing Visual C++ Redistributable...");
-            
+
             // Run the installer silently
             var startInfo = new ProcessStartInfo
             {
@@ -666,12 +669,12 @@ public class LaunchService : ILaunchService
                 UseShellExecute = true,
                 Verb = "runas" // Request elevation
             };
-            
+
             using var process = Process.Start(startInfo);
             if (process != null)
             {
                 await process.WaitForExitAsync();
-                
+
                 if (process.ExitCode == 0 || process.ExitCode == 1638) // 1638 = already installed
                 {
                     Logger.Success("VCRedist", "VC++ Redistributable installed successfully");
@@ -688,7 +691,7 @@ public class LaunchService : ILaunchService
                     progressCallback(100, "VC++ installation completed");
                 }
             }
-            
+
             // Clean up installer
             try { File.Delete(installerPath); } catch { }
         }

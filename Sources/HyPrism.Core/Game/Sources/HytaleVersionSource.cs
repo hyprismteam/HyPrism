@@ -11,7 +11,7 @@ using HyPrism.Services.User;
 namespace HyPrism.Services.Game.Sources;
 
 /// <summary>
-/// Exception thrown when Hytale API returns 401/403, indicating token needs refresh.
+/// Exception thrown when Hytale API returns 401/403, indicating token needs refresh
 /// </summary>
 internal class HytaleAuthExpiredException : Exception
 {
@@ -20,12 +20,12 @@ internal class HytaleAuthExpiredException : Exception
 
 /// <summary>
 /// Version source for official Hytale servers.
-/// Requires an authenticated Hytale account with a purchased game.
+/// Requires an authenticated Hytale account with a purchased game
 /// </summary>
 /// <remarks>
 /// Endpoint: https://account-data.hytale.com/patches/{os}/{arch}/{channel}/{from_build}
 /// The official API returns patch steps with signed download URLs.
-/// Automatically refreshes access token on auth errors.
+/// Automatically refreshes access token on auth errors
 /// </remarks>
 public class HytaleVersionSource : IVersionSource
 {
@@ -43,6 +43,14 @@ public class HytaleVersionSource : IVersionSource
     // In-memory cache: cacheKey -> (timestamp, response)
     private readonly Dictionary<string, (DateTime CachedAt, OfficialPatchesResponse Response)> _cache = new();
 
+    /// <summary>
+    /// Creates an official Hytale version source
+    /// </summary>
+    /// <param name="appDir">The application data directory</param>
+    /// <param name="httpClient">The HTTP client used for Hytale API requests</param>
+    /// <param name="authService">The official account authentication service</param>
+    /// <param name="configService">The launcher configuration service</param>
+    /// <param name="profileService">The active profile service</param>
     public HytaleVersionSource(string appDir, HttpClient httpClient, HytaleAuthService authService, IConfigService configService, IProfileService profileService)
     {
         _appDir = appDir;
@@ -62,12 +70,12 @@ public class HytaleVersionSource : IVersionSource
 
     /// <inheritdoc/>
     /// <remarks>
-    /// Checks if ANY official profile has a valid session (not just the active one).
+    /// Checks if ANY official profile has a valid session (not just the active one)
     /// </remarks>
     public bool IsAvailable => HasAnyOfficialProfile();
 
     /// <summary>
-    /// Checks if there's any official profile with a session file.
+    /// Checks if there's any official profile with a session file
     /// </summary>
     private bool HasAnyOfficialProfile()
     {
@@ -107,7 +115,7 @@ public class HytaleVersionSource : IVersionSource
     /// <remarks>
     /// Official Hytale API with from_build=0 returns the LATEST full version as a complete .pwr.
     /// This means for downloading the latest version, we DON'T need patch chains.
-    /// Patches (from_build=1+) are only needed for updating existing installations.
+    /// Patches (from_build=1+) are only needed for updating existing installations
     /// </remarks>
     public bool IsDiffBasedBranch(string branch) => false; // from_build=0 gives full downloads
 
@@ -207,7 +215,7 @@ public class HytaleVersionSource : IVersionSource
 
     /// <summary>
     /// Fetches patches from the official Hytale API.
-    /// Automatically retries with token refresh on auth errors.
+    /// Automatically retries with token refresh on auth errors
     /// </summary>
     internal async Task<OfficialPatchesResponse?> GetPatchesAsync(
         string os, string arch, string branch, int fromBuild = 0, CancellationToken ct = default)
@@ -218,13 +226,13 @@ public class HytaleVersionSource : IVersionSource
     }
 
     /// <summary>
-    /// Internal method that performs the actual patches fetch.
+    /// Internal method that performs the actual patches fetch
     /// </summary>
     private async Task<OfficialPatchesResponse?> FetchPatchesInternalAsync(
         string os, string arch, string branch, int fromBuild, string accessToken, CancellationToken ct)
     {
         string cacheKey = $"{os}:{arch}:{branch}:{fromBuild}";
-        
+
         // Check cache
         if (_cache.TryGetValue(cacheKey, out var cached) && DateTime.UtcNow - cached.CachedAt < CacheTtl)
         {
@@ -300,12 +308,12 @@ public class HytaleVersionSource : IVersionSource
 
     /// <summary>
     /// Executes an API call with automatic token refresh on auth errors.
-    /// Uses GetValidOfficialSessionAsync to get session from ANY official profile.
+    /// Uses GetValidOfficialSessionAsync to get session from ANY official profile
     /// </summary>
     /// <typeparam name="T">The return type of the API call.</typeparam>
-    /// <param name="apiCall">Function that takes access token and returns result.</param>
-    /// <param name="ct">Cancellation token.</param>
-    /// <returns>Result of the API call, or default if all retries fail.</returns>
+    /// <param name="apiCall">Function that takes access token and returns result</param>
+    /// <param name="ct">Cancellation token</param>
+    /// <returns>Result of the API call, or default if all retries fail</returns>
     private async Task<T?> FetchWithTokenRefreshAsync<T>(
         Func<string, Task<T?>> apiCall,
         CancellationToken ct = default) where T : class
@@ -329,10 +337,10 @@ public class HytaleVersionSource : IVersionSource
                 if (attempt < MaxAuthRetries - 1)
                 {
                     Logger.Warning("HytaleSource", $"Auth error ({ex.Message}), forcing token refresh (attempt {attempt + 1}/{MaxAuthRetries})...");
-                    
+
                     // Force a token refresh on the current session
                     await _authService.ForceRefreshAsync();
-                    
+
                     // Clear cache since old URLs may have expired signatures
                     ClearCache();
                 }
@@ -348,12 +356,12 @@ public class HytaleVersionSource : IVersionSource
     }
 
     /// <summary>
-    /// Gets the access token from the current Hytale session.
+    /// Gets the access token from the current Hytale session
     /// </summary>
     public string? GetAccessToken() => _authService.CurrentSession?.AccessToken;
 
     /// <summary>
-    /// Clears the patches cache. Call after re-authentication.
+    /// Clears the patches cache. Call after re-authentication
     /// </summary>
     public void ClearCache()
     {
@@ -370,7 +378,7 @@ public class HytaleVersionSource : IVersionSource
     private MirrorSpeedTestResult? _speedTestResult;
 
     /// <summary>
-    /// Returns cached speed test result if still valid.
+    /// Returns cached speed test result if still valid
     /// </summary>
     public MirrorSpeedTestResult? GetCachedSpeedTest()
     {
@@ -385,7 +393,7 @@ public class HytaleVersionSource : IVersionSource
 
     /// <summary>
     /// Tests official CDN speed (ping and download speed).
-    /// Uses authenticated requests to download real game data.
+    /// Uses authenticated requests to download real game data
     /// </summary>
     public async Task<MirrorSpeedTestResult> TestSpeedAsync(CancellationToken ct = default)
     {
@@ -433,7 +441,7 @@ public class HytaleVersionSource : IVersionSource
 
                 // Try to get a patch URL for speed testing
                 var patchesResponse = await GetPatchesAsync(os, arch, "pre-release", 0, ct);
-                
+
                 if (patchesResponse?.Steps == null || patchesResponse.Steps.Count == 0)
                 {
                     Logger.Warning("HytaleSource", "No patches available for speed test");

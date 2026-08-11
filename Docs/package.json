@@ -1,0 +1,25 @@
+{
+  "name": "@hyprism/docs",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@11.16.0",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "check": "python3 ../Scripts/check_documentation.py && next typegen && tsc --noEmit",
+    "lint:content": "python3 ../Scripts/check_documentation.py"
+  },
+  "dependencies": {
+    "next": "16.3.0",
+    "nextra": "4.6.1",
+    "nextra-theme-docs": "4.6.1",
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
+  },
+  "devDependencies": {
+    "@types/mdx": "2.0.14",
+    "@types/node": "^24.0.0",
+    "@types/react": "^19.0.0",
+    "typescript": "^5.9.0"
+  }
+}

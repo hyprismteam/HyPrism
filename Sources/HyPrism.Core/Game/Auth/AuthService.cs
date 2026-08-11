@@ -10,11 +10,11 @@ namespace HyPrism.Services.Game.Auth;
 
 /// <summary>
 /// Handles authentication with the custom Hytale auth server.
-/// Manages session creation, token retrieval, and JWT handling.
+/// Manages session creation, token retrieval, and JWT handling
 /// </summary>
 /// <remarks>
 /// Supports both the /game-session/child and /game-session endpoints
-/// for backwards compatibility with different auth server versions.
+/// for backwards compatibility with different auth server versions
 /// </remarks>
 public class AuthService : IAuthService
 {
@@ -23,10 +23,10 @@ public class AuthService : IAuthService
 
     /// <summary>
     /// Initializes a new instance of the <see cref="AuthService"/> class.
-    /// Normalizes auth domain and builds fallback candidates.
+    /// Normalizes auth domain and builds fallback candidates
     /// </summary>
-    /// <param name="httpClient">The HTTP client for making auth requests.</param>
-    /// <param name="authDomain">The auth server domain (e.g., "auth.example.com" or "sessions.sanasol.ws").</param>
+    /// <param name="httpClient">The HTTP client for making auth requests</param>
+    /// <param name="authDomain">The auth server domain (e.g., "auth.example.com" or "sessions.sanasol.ws")</param>
     public AuthService(HttpClient httpClient, string authDomain)
     {
         _httpClient = httpClient;
@@ -67,11 +67,11 @@ public class AuthService : IAuthService
     }
 
     /// <summary>
-    /// Creates a game session and retrieves authentication tokens.
+    /// Creates a game session and retrieves authentication tokens
     /// </summary>
-    /// <param name="uuid">The player's unique identifier.</param>
-    /// <param name="playerName">The player's display name.</param>
-    /// <returns>An <see cref="AuthTokenResult"/> containing the session tokens or error information.</returns>
+    /// <param name="uuid">The player's unique identifier</param>
+    /// <param name="playerName">The player's display name</param>
+    /// <returns>An <see cref="AuthTokenResult"/> containing the session tokens or error information</returns>
     public async Task<AuthTokenResult> GetGameSessionTokenAsync(string uuid, string playerName)
     {
         try
@@ -180,11 +180,12 @@ public class AuthService : IAuthService
 
     /// <summary>
     /// Requests an offline mode token from the auth server.
-    /// Used when the game client requires HYTALE_OFFLINE_TOKEN for offline/singleplayer mode.
+    /// Used when the game client requires HYTALE_OFFLINE_TOKEN for offline/singleplayer mode
     /// </summary>
-    /// <param name="uuid">The player's unique identifier.</param>
-    /// <param name="playerName">The player's display name.</param>
-    /// <returns>The offline token string, or null if unavailable.</returns>
+    /// <param name="uuid">The player's unique identifier</param>
+    /// <param name="playerName">The player's display name</param>
+    /// <param name="ct">Token to cancel the request</param>
+    /// <returns>The offline token string, or null if unavailable</returns>
     public async Task<string?> GetOfflineTokenAsync(string uuid, string playerName, CancellationToken ct = default)
     {
         try
@@ -203,7 +204,7 @@ public class AuthService : IAuthService
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase
             });
 
-            // Use /auth endpoint — lightweight token generation without session creation
+            // Use the lightweight /auth endpoint without creating a session
             foreach (var authServerUrl in _authServerUrls)
             {
                 ct.ThrowIfCancellationRequested();

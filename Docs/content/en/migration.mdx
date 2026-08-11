@@ -1,0 +1,32 @@
+---
+title: Avalonia migration
+description: What is native today and what still depends on obsolete reference code
+---
+
+# Avalonia migration
+
+HyPrism is moving from Electron.NET and React to a native Avalonia 12 interface. The launcher domain remains in .NET 10 and is shared through `HyPrism.Core`
+
+## Current state
+
+| Area | State | Notes |
+| --- | --- | --- |
+| Core launcher logic | retained | game, user, download, version, mirror, and platform services stay in .NET |
+| Dashboard | native | responsive launch surface and background selection |
+| News | native | adaptive feed, full article reader, caching, rich content, and external links |
+| Settings | native | adaptive categories, localization, Java memory controls, and background picker |
+| Instances | pending UI | Core services are present, navigation currently shows a placeholder |
+| Mods | pending UI | Core services are present, navigation currently shows a placeholder |
+| Profiles | pending UI | Core services are present, navigation currently shows a placeholder |
+| Onboarding | pending UI | legacy flow is not yet replaced |
+| Packaging | transitional | release scripts still contain Electron-oriented paths and tooling |
+
+## Architectural boundary
+
+The native desktop host resolves Core services through dependency injection and calls C# interfaces directly. It does not use the Electron IPC bridge or generated `ipc.ts`
+
+`HyPrism.Launcher`, its React frontend, and `HyPrism.IpcGen` are obsolete migration references. They may explain old behavior but must not receive new product features
+
+## Definition of parity
+
+The migration is complete when every user workflow has a native page, release packaging starts the Avalonia host on all supported platforms, tests cover the critical flows, and no runtime path depends on Electron or the generated TypeScript bridge

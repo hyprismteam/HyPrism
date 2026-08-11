@@ -5,279 +5,292 @@ namespace HyPrism.Services.Core.App;
 
 /// <summary>
 /// Provides high-level access to all launcher settings with change notifications.
-/// Abstracts configuration persistence and validation from the UI layer.
+/// Abstracts configuration persistence and validation from the UI layer
 /// </summary>
 public interface ISettingsService
 {
     /// <summary>
-    /// Raised when the background image or mode changes.
+    /// Raised when the background image or mode changes
     /// </summary>
     event Action<string?>? OnBackgroundChanged;
-    
+
     /// <summary>
-    /// Gets the persisted language preference without interpreting UI locale availability.
+    /// Gets the persisted language preference without interpreting UI locale availability
     /// </summary>
-    /// <returns>The current language code.</returns>
+    /// <returns>The current language code</returns>
     string GetLanguage();
-    
+
     /// <summary>
-    /// Persists a language preference. The presentation host validates and applies it.
+    /// Persists a language preference. The presentation host validates and applies it
     /// </summary>
-    /// <param name="language">The language code to set (e.g., "en-US").</param>
-    /// <returns><c>true</c> if the non-empty preference was persisted; otherwise, <c>false</c>.</returns>
+    /// <param name="language">The language code to set (e.g., "en-US")</param>
+    /// <returns><c>true</c> if the non-empty preference was persisted; otherwise, <c>false</c></returns>
     bool SetLanguage(string language);
-    
+
     /// <summary>
-    /// Gets whether background music is enabled.
+    /// Gets whether background music is enabled
     /// </summary>
-    /// <returns><c>true</c> if music is enabled; otherwise, <c>false</c>.</returns>
+    /// <returns><c>true</c> if music is enabled; otherwise, <c>false</c></returns>
     bool GetMusicEnabled();
-    
+
     /// <summary>
-    /// Sets the background music enabled state.
+    /// Sets the background music enabled state
     /// </summary>
-    /// <param name="enabled">Whether to enable background music.</param>
-    /// <returns><c>true</c> if the setting was successfully saved.</returns>
+    /// <param name="enabled">Whether to enable background music</param>
+    /// <returns><c>true</c> if the setting was successfully saved</returns>
     bool SetMusicEnabled(bool enabled);
-    
+
     /// <summary>
-    /// Gets the game version branch type (e.g. "release", "beta").
+    /// Gets the game version branch type (e.g. "release", "beta")
     /// </summary>
+    /// <returns>The saved game branch identifier</returns>
     string GetVersionType();
 
     /// <summary>
-    /// Sets the game version branch type.
+    /// Sets the game version branch type
     /// </summary>
+    /// <param name="type">Game branch identifier to persist</param>
+    /// <returns><see langword="true"/> when the setting was saved</returns>
     bool SetVersionType(string type);
 
     /// <summary>
-    /// Gets the selected game version number.
+    /// Gets the selected game version number
     /// </summary>
+    /// <returns>The selected version number</returns>
     int GetSelectedVersion();
 
     /// <summary>
-    /// Sets the selected game version number.
+    /// Sets the selected game version number
     /// </summary>
+    /// <param name="version">Version number to persist</param>
+    /// <returns><see langword="true"/> when the setting was saved</returns>
     bool SetSelectedVersion(int version);
 
     /// <summary>
-    /// Gets whether the launcher should close after launching the game.
+    /// Gets whether the launcher should close after launching the game
     /// </summary>
-    /// <returns><c>true</c> if launcher closes after launch; otherwise, <c>false</c>.</returns>
+    /// <returns><c>true</c> if launcher closes after launch; otherwise, <c>false</c></returns>
     bool GetCloseAfterLaunch();
-    
+
     /// <summary>
-    /// Sets whether the launcher should close after launching the game.
+    /// Sets whether the launcher should close after launching the game
     /// </summary>
-    /// <param name="close">Whether to close after launch.</param>
-    /// <returns><c>true</c> if the setting was successfully saved.</returns>
+    /// <param name="close">Whether to close after launch</param>
+    /// <returns><c>true</c> if the setting was successfully saved</returns>
     bool SetCloseAfterLaunch(bool close);
 
     /// <summary>
-    /// Gets whether the launcher should automatically launch the game after download/install.
+    /// Gets whether the launcher should automatically launch the game after download/install
     /// </summary>
+    /// <returns><see langword="true"/> when automatic launch is enabled</returns>
     bool GetLaunchAfterDownload();
 
     /// <summary>
-    /// Sets whether the launcher should automatically launch the game after download/install.
+    /// Sets whether the launcher should automatically launch the game after download/install
     /// </summary>
+    /// <param name="enabled">Whether automatic launch should be enabled</param>
+    /// <returns><see langword="true"/> when the setting was saved</returns>
     bool SetLaunchAfterDownload(bool enabled);
-    
+
     /// <summary>
-    /// Gets whether Discord announcement notifications are shown.
+    /// Gets whether Discord announcement notifications are shown
     /// </summary>
-    /// <returns><c>true</c> if announcements are shown; otherwise, <c>false</c>.</returns>
+    /// <returns><c>true</c> if announcements are shown; otherwise, <c>false</c></returns>
     bool GetShowDiscordAnnouncements();
-    
+
     /// <summary>
-    /// Sets whether to show Discord announcement notifications.
+    /// Sets whether to show Discord announcement notifications
     /// </summary>
-    /// <param name="show">Whether to show announcements.</param>
-    /// <returns><c>true</c> if the setting was successfully saved.</returns>
+    /// <param name="show">Whether to show announcements</param>
+    /// <returns><c>true</c> if the setting was successfully saved</returns>
     bool SetShowDiscordAnnouncements(bool show);
-    
+
     /// <summary>
-    /// Checks if a specific announcement has been dismissed by the user.
+    /// Checks if a specific announcement has been dismissed by the user
     /// </summary>
-    /// <param name="id">The unique announcement identifier.</param>
-    /// <returns><c>true</c> if the announcement was dismissed; otherwise, <c>false</c>.</returns>
+    /// <param name="id">The unique announcement identifier</param>
+    /// <returns><c>true</c> if the announcement was dismissed; otherwise, <c>false</c></returns>
     bool IsAnnouncementDismissed(string id);
-    
+
     /// <summary>
-    /// Marks an announcement as dismissed so it won't be shown again.
+    /// Marks an announcement as dismissed so it won't be shown again
     /// </summary>
-    /// <param name="id">The unique announcement identifier to dismiss.</param>
-    /// <returns><c>true</c> if the dismissal was successfully saved.</returns>
+    /// <param name="id">The unique announcement identifier to dismiss</param>
+    /// <returns><c>true</c> if the dismissal was successfully saved</returns>
     bool DismissAnnouncement(string id);
-    
+
     /// <summary>
-    /// Gets whether the news section is disabled.
+    /// Gets whether the news section is disabled
     /// </summary>
-    /// <returns><c>true</c> if news is disabled; otherwise, <c>false</c>.</returns>
+    /// <returns><c>true</c> if news is disabled; otherwise, <c>false</c></returns>
     bool GetDisableNews();
-    
+
     /// <summary>
-    /// Sets whether to disable the news section.
+    /// Sets whether to disable the news section
     /// </summary>
-    /// <param name="disable">Whether to disable news.</param>
-    /// <returns><c>true</c> if the setting was successfully saved.</returns>
+    /// <param name="disable">Whether to disable news</param>
+    /// <returns><c>true</c> if the setting was successfully saved</returns>
     bool SetDisableNews(bool disable);
-    
+
     /// <summary>
-    /// Gets the current background mode ("default", "custom", or "none").
+    /// Gets the current background mode ("default", "custom", or "none")
     /// </summary>
-    /// <returns>The current background mode identifier.</returns>
+    /// <returns>The current background mode identifier</returns>
     string GetBackgroundMode();
-    
+
     /// <summary>
-    /// Sets the background mode for the launcher.
+    /// Sets the background mode for the launcher
     /// </summary>
-    /// <param name="mode">The background mode ("default", "custom", or "none").</param>
-    /// <returns><c>true</c> if the setting was successfully saved.</returns>
+    /// <param name="mode">The background mode ("default", "custom", or "none")</param>
+    /// <returns><c>true</c> if the setting was successfully saved</returns>
     bool SetBackgroundMode(string mode);
-    
+
     /// <summary>
-    /// Gets a list of available background image names from embedded resources.
+    /// Gets a list of available background image names from embedded resources
     /// </summary>
-    /// <returns>A list of background image identifiers.</returns>
+    /// <returns>A list of background image identifiers</returns>
     List<string> GetAvailableBackgrounds();
-    
+
     /// <summary>
-    /// Gets whether the user has completed the initial onboarding flow.
+    /// Gets whether the user has completed the initial onboarding flow
     /// </summary>
-    /// <returns><c>true</c> if onboarding is complete; otherwise, <c>false</c>.</returns>
+    /// <returns><c>true</c> if onboarding is complete; otherwise, <c>false</c></returns>
     bool GetHasCompletedOnboarding();
-    
+
     /// <summary>
-    /// Sets whether onboarding has been completed.
+    /// Sets whether onboarding has been completed
     /// </summary>
-    /// <param name="completed">Whether onboarding is complete.</param>
-    /// <returns><c>true</c> if the setting was successfully saved.</returns>
+    /// <param name="completed">Whether onboarding is complete</param>
+    /// <returns><c>true</c> if the setting was successfully saved</returns>
     bool SetHasCompletedOnboarding(bool completed);
-    
+
     /// <summary>
-    /// Resets the onboarding state to show the onboarding flow again.
+    /// Resets the onboarding state to show the onboarding flow again
     /// </summary>
-    /// <returns><c>true</c> if the reset was successful.</returns>
+    /// <returns><c>true</c> if the reset was successful</returns>
     bool ResetOnboarding();
-    
+
     /// <summary>
-    /// Gets whether online/authenticated mode is enabled.
+    /// Gets whether online/authenticated mode is enabled
     /// </summary>
-    /// <returns><c>true</c> if online mode is enabled; otherwise, <c>false</c>.</returns>
+    /// <returns><c>true</c> if online mode is enabled; otherwise, <c>false</c></returns>
     bool GetOnlineMode();
-    
+
     /// <summary>
-    /// Sets the online/authenticated mode state.
+    /// Sets the online/authenticated mode state
     /// </summary>
-    /// <param name="online">Whether to enable online mode.</param>
-    /// <returns><c>true</c> if the setting was successfully saved.</returns>
+    /// <param name="online">Whether to enable online mode</param>
+    /// <returns><c>true</c> if the setting was successfully saved</returns>
     bool SetOnlineMode(bool online);
-    
+
     /// <summary>
-    /// Gets the authentication domain for online mode.
+    /// Gets the authentication domain for online mode
     /// </summary>
-    /// <returns>The current authentication domain URL.</returns>
+    /// <returns>The current authentication domain URL</returns>
     string GetAuthDomain();
 
     /// <summary>
-    /// Gets custom Java runtime arguments passed to Java processes during launch.
+    /// Gets custom Java runtime arguments passed to Java processes during launch
     /// </summary>
-    /// <returns>The current Java arguments string.</returns>
+    /// <returns>The current Java arguments string</returns>
     string GetJavaArguments();
 
     /// <summary>
-    /// Gets whether launcher should use a custom Java executable path.
+    /// Gets whether launcher should use a custom Java executable path
     /// </summary>
-    /// <returns><c>true</c> when custom Java is enabled; otherwise, <c>false</c>.</returns>
+    /// <returns><c>true</c> when custom Java is enabled; otherwise, <c>false</c></returns>
     bool GetUseCustomJava();
 
     /// <summary>
-    /// Gets custom Java executable path.
+    /// Gets custom Java executable path
     /// </summary>
-    /// <returns>Absolute executable path or empty string.</returns>
+    /// <returns>Absolute executable path or empty string</returns>
     string GetCustomJavaPath();
-    
+
     /// <summary>
-    /// Sets the authentication domain for online mode.
+    /// Sets the authentication domain for online mode
     /// </summary>
-    /// <param name="domain">The authentication domain URL.</param>
-    /// <returns><c>true</c> if the setting was successfully saved.</returns>
+    /// <param name="domain">The authentication domain URL</param>
+    /// <returns><c>true</c> if the setting was successfully saved</returns>
     bool SetAuthDomain(string domain);
 
     /// <summary>
-    /// Sets custom Java runtime arguments passed to Java processes during launch.
+    /// Sets custom Java runtime arguments passed to Java processes during launch
     /// </summary>
-    /// <param name="args">A whitespace-separated Java arguments string.</param>
-    /// <returns><c>true</c> if the setting was successfully saved.</returns>
+    /// <param name="args">A whitespace-separated Java arguments string</param>
+    /// <returns><c>true</c> if the setting was successfully saved</returns>
     bool SetJavaArguments(string args);
 
     /// <summary>
-    /// Enables or disables custom Java runtime usage.
+    /// Enables or disables custom Java runtime usage
     /// </summary>
-    /// <param name="enabled">Whether custom Java should be used.</param>
-    /// <returns><c>true</c> if the setting was successfully saved.</returns>
+    /// <param name="enabled">Whether custom Java should be used</param>
+    /// <returns><c>true</c> if the setting was successfully saved</returns>
     bool SetUseCustomJava(bool enabled);
 
     /// <summary>
-    /// Sets custom Java executable path.
+    /// Sets custom Java executable path
     /// </summary>
-    /// <param name="path">Absolute path to java/java.exe.</param>
-    /// <returns><c>true</c> if the setting was successfully saved.</returns>
+    /// <param name="path">Absolute path to java/java.exe</param>
+    /// <returns><c>true</c> if the setting was successfully saved</returns>
     bool SetCustomJavaPath(string path);
-    
+
     /// <summary>
-    /// Gets the GPU preference for game launch ("dedicated", "integrated", or "auto").
+    /// Gets the GPU preference for game launch ("dedicated", "integrated", or "auto")
     /// </summary>
-    /// <returns>The current GPU preference string.</returns>
+    /// <returns>The current GPU preference string</returns>
     string GetGpuPreference();
-    
+
     /// <summary>
-    /// Sets the GPU preference for game launch.
+    /// Sets the GPU preference for game launch
     /// </summary>
-    /// <param name="preference">The GPU preference ("dedicated", "integrated", or "auto").</param>
-    /// <returns><c>true</c> if the setting was successfully saved.</returns>
+    /// <param name="preference">The GPU preference ("dedicated", "integrated", or "auto")</param>
+    /// <returns><c>true</c> if the setting was successfully saved</returns>
     bool SetGpuPreference(string preference);
-    
+
     /// <summary>
     /// Gets whether the experimental DualAuth Java Agent is enabled.
-    /// When false (default), uses stable legacy JAR patching.
+    /// When false (default), uses stable legacy JAR patching
     /// </summary>
+    /// <returns><see langword="true"/> when DualAuth is enabled</returns>
     bool GetUseDualAuth();
 
     /// <summary>
-    /// Sets whether the experimental DualAuth Java Agent is enabled.
+    /// Sets whether the experimental DualAuth Java Agent is enabled
     /// </summary>
-    /// <param name="useDualAuth">Whether to enable DualAuth.</param>
-    /// <returns><c>true</c> if the setting was successfully saved.</returns>
+    /// <param name="useDualAuth">Whether to enable DualAuth</param>
+    /// <returns><c>true</c> if the setting was successfully saved</returns>
     bool SetUseDualAuth(bool useDualAuth);
 
     /// <summary>
-    /// Gets the custom environment variables for game launch.
+    /// Gets the custom environment variables for game launch
     /// </summary>
-    /// <returns>Space-separated KEY=VALUE pairs.</returns>
+    /// <returns>Space-separated KEY=VALUE pairs</returns>
     string GetGameEnvironmentVariables();
-    
+
     /// <summary>
-    /// Sets custom environment variables for game launch.
+    /// Sets custom environment variables for game launch
     /// </summary>
-    /// <param name="envVars">Space-separated KEY=VALUE pairs.</param>
-    /// <returns><c>true</c> if the setting was successfully saved.</returns>
+    /// <param name="envVars">Space-separated KEY=VALUE pairs</param>
+    /// <returns><c>true</c> if the setting was successfully saved</returns>
     bool SetGameEnvironmentVariables(string envVars);
-    
+
     /// <summary>
-    /// Gets the current instance directory path.
+    /// Gets the current instance directory path
     /// </summary>
-    /// <returns>The absolute path to the instances directory.</returns>
+    /// <returns>The absolute path to the instances directory</returns>
     string GetInstanceDirectory();
 
     /// <summary>
-    /// Gets whether alpha release type mods should be shown in the mod manager.
+    /// Gets whether alpha release type mods should be shown in the mod manager
     /// </summary>
+    /// <returns><see langword="true"/> when alpha mod files are visible</returns>
     bool GetShowAlphaMods();
 
     /// <summary>
-    /// Sets whether alpha release type mods should be shown in the mod manager.
+    /// Sets whether alpha release type mods should be shown in the mod manager
     /// </summary>
+    /// <param name="show">Whether alpha mod files should be visible</param>
+    /// <returns><see langword="true"/> when the setting was saved</returns>
     bool SetShowAlphaMods(bool show);
 }

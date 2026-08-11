@@ -10,7 +10,7 @@ namespace HyPrism.Services.Game.Launch;
 
 /// <summary>
 /// Manages the game process lifecycle including tracking, monitoring, and termination.
-/// Handles detection of running Hytale instances across different platforms.
+/// Handles detection of running Hytale instances across different platforms
 /// </summary>
 public class GameProcessService : IGameProcessService
 {
@@ -29,7 +29,7 @@ public class GameProcessService : IGameProcessService
         }
 
         _gameProcess = p;
-        
+
         if (p != null)
         {
             p.EnableRaisingEvents = true;
@@ -49,7 +49,7 @@ public class GameProcessService : IGameProcessService
             ProcessExited?.Invoke(this, EventArgs.Empty);
         }
     }
-    
+
     /// <inheritdoc/>
     public Process? GetGameProcess() => _gameProcess;
 
@@ -83,10 +83,10 @@ public class GameProcessService : IGameProcessService
             {
                 foreach (var p in potentialProcesses)
                 {
-                    try 
+                    try
                     {
                         // 1. Check Window Title (Works well on Windows, sometime on Linux/macOS)
-                        if (!string.IsNullOrEmpty(p.MainWindowTitle) && 
+                        if (!string.IsNullOrEmpty(p.MainWindowTitle) &&
                             p.MainWindowTitle.Contains("Hytale"))
                         {
                             _gameProcess = p;
@@ -140,6 +140,7 @@ public class GameProcessService : IGameProcessService
         return null;
     }
 
+    /// <inheritdoc/>
     public bool ExitGame()
     {
         var gameProcess = _gameProcess;

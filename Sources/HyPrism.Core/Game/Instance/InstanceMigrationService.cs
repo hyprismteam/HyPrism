@@ -10,12 +10,12 @@ namespace HyPrism.Services.Game.Instance;
 
 /// <summary>
 /// Handles one-time and on-startup migrations of legacy instance folder structures
-/// and legacy configuration data to the current format.
+/// and legacy configuration data to the current format
 /// </summary>
 /// <remarks>
 /// Extracted from <see cref="InstanceService"/> to keep the instance service focused on
 /// path resolution and instance CRUD. All methods are safe to call even when the
-/// relevant legacy artefacts no longer exist — they simply become no-ops.
+/// relevant legacy artefacts no longer exist, in which case they become no-ops
 /// </remarks>
 public class InstanceMigrationService : IInstanceMigrationService
 {
@@ -24,11 +24,11 @@ public class InstanceMigrationService : IInstanceMigrationService
     private readonly IInstanceService _instanceService;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="InstanceMigrationService"/> class.
+    /// Initializes a new instance of the <see cref="InstanceMigrationService"/> class
     /// </summary>
-    /// <param name="appPath">The application path configuration.</param>
-    /// <param name="configService">The configuration service.</param>
-    /// <param name="instanceService">The instance service for path resolution and meta operations.</param>
+    /// <param name="appPath">The application path configuration</param>
+    /// <param name="configService">The configuration service</param>
+    /// <param name="instanceService">The instance service for path resolution and meta operations</param>
     public InstanceMigrationService(
         AppPathConfiguration appPath,
         IConfigService configService,
@@ -712,7 +712,7 @@ public class InstanceMigrationService : IInstanceMigrationService
     #region Private helpers (legacy data reading)
 
     /// <summary>
-    /// Gets the list of legacy installation root directories to search for migrations.
+    /// Gets the list of legacy installation root directories to search for migrations
     /// </summary>
     private IEnumerable<string> GetLegacyRoots()
     {
@@ -754,7 +754,7 @@ public class InstanceMigrationService : IInstanceMigrationService
     }
 
     /// <summary>
-    /// Loads configuration from a JSON file at the specified path.
+    /// Loads configuration from a JSON file at the specified path
     /// </summary>
     private static Config? LoadConfigFromPath(string path)
     {
@@ -775,7 +775,7 @@ public class InstanceMigrationService : IInstanceMigrationService
     }
 
     /// <summary>
-    /// Loads configuration from a TOML file at the specified path.
+    /// Loads configuration from a TOML file at the specified path
     /// </summary>
     private static Config? LoadConfigFromToml(string path)
     {
@@ -850,7 +850,7 @@ public class InstanceMigrationService : IInstanceMigrationService
     }
 
     /// <summary>
-    /// Loads a UUID from legacy uuid.txt/uuid.dat files.
+    /// Loads a UUID from legacy uuid.txt/uuid.dat files
     /// </summary>
     private static string? LoadLegacyUuid(string legacyRoot)
     {

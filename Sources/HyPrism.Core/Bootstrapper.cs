@@ -20,17 +20,26 @@ using HyPrism.Services.Game.Version;
 
 namespace HyPrism;
 
+/// <summary>
+/// Builds and initializes the shared launcher service graph
+/// </summary>
 public static class Bootstrapper
 {
     /// <summary>
     /// URL parts for fetching CurseForge API key.
-    /// Per legacy policy, the key cannot be stored in plain text.
+    /// Per legacy policy, the key cannot be stored in plain text
     /// </summary>
     private static string CurseForgeKeySourceUrl => string.Concat(
         System.Text.Encoding.UTF8.GetString(Convert.FromBase64String("aHR0cHM6Ly9yYXcuZ2l0aHVidXNlcmNvbnRlbnQuY29tLw==")),
         System.Text.Encoding.UTF8.GetString(Convert.FromBase64String("UHJpc21MYXVuY2hlci9QcmlzbUxhdW5jaGVy")),
         System.Text.Encoding.UTF8.GetString(Convert.FromBase64String("L2RldmVsb3AvQ01ha2VMaXN0cy50eHQ=")));
 
+    /// <summary>
+    /// Creates the shared launcher service graph and applies host-specific registrations
+    /// </summary>
+    /// <param name="configureHost">Optional callback that adds or replaces platform services before the provider is built</param>
+    /// <returns>The application service provider owned by the calling host</returns>
+    /// <exception cref="InvalidOperationException">Thrown when the registered service graph cannot be constructed</exception>
     public static IServiceProvider Initialize(Action<IServiceCollection>? configureHost = null)
     {
         Logger.Info("Bootstrapper", "Initializing application services...");
@@ -50,7 +59,7 @@ public static class Bootstrapper
                 return client;
             });
 
-            // Config — registered as both concrete (for HytaleVersionSource/HytaleAuthService that
+            // Config is registered as both concrete (for HytaleVersionSource/HytaleAuthService that
             // need it before IConfigService resolution) and as interface for all other consumers.
             services.AddSingleton<ConfigService>(sp =>
                 new ConfigService(sp.GetRequiredService<AppPathConfiguration>().AppDir));
@@ -232,7 +241,7 @@ public static class Bootstrapper
                     sp.GetRequiredService<IConfigService>()));
             services.AddSingleton<IHytaleAuthService>(sp => sp.GetRequiredService<HytaleAuthService>());
 
-            // Version Sources — official source (requires auth)
+            // Official version source that requires authentication
             services.AddSingleton(sp =>
                 new HytaleVersionSource(
                     sp.GetRequiredService<AppPathConfiguration>().AppDir,
@@ -290,10 +299,10 @@ public static class Bootstrapper
     }
 
     /// <summary>
-    /// Performs async initialization tasks after DI container is built.
-    /// Ensures CurseForge API key is available, fetching if needed.
+    /// Performs asynchronous initialization after the service provider has been built
     /// </summary>
-    /// <param name="services">The service provider.</param>
+    /// <param name="services">Service provider returned by <see cref="Initialize"/></param>
+    /// <returns>A task that completes after optional remote bootstrap data has been prepared</returns>
     public static async Task InitializeAsync(IServiceProvider services)
     {
         await EnsureCurseForgeKeyAsync(services);
@@ -301,7 +310,7 @@ public static class Bootstrapper
 
     /// <summary>
     /// Ensures the CurseForge API key is present in configuration.
-    /// If missing, fetches it from the upstream source.
+    /// If missing, fetches it from the upstream source
     /// </summary>
     private static async Task EnsureCurseForgeKeyAsync(IServiceProvider services)
     {
@@ -341,5 +350,8 @@ public static class Bootstrapper
     }
 }
 
-// Simple wrapper to inject just the string path cleanly
+/// <summary>
+/// Stores the writable application directory resolved by the host
+/// </summary>
+/// <param name="AppDir">Absolute path to the writable application directory</param>
 public record AppPathConfiguration(string AppDir);

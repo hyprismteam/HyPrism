@@ -1,0 +1,26 @@
+---
+title: First run
+description: What HyPrism prepares before the first game launch
+---
+
+# First run
+
+On startup, HyPrism creates its application directory, loads `config.json`, migrates supported legacy data, and registers the services required by the desktop host
+
+## Before launching
+
+1. Open **Settings** and choose the interface language
+2. Review the Java runtime and memory allocation
+3. Select online or offline identity behavior
+4. Choose or create an instance when the native instance screen becomes available
+5. Start the game from the dashboard
+
+The bundled runtime is the safe default. A custom Java executable can be selected in settings when a compatible runtime is already installed
+
+## Authentication
+
+Online mode uses the official Hytale authentication flow and opens the system browser when interactive sign-in is required. Offline mode uses the selected local profile and does not provide official online entitlements
+
+## Downloads
+
+Version discovery checks the official source and enabled user-provided mirrors. HyPrism chooses an available source, downloads the required image or patch sequence, verifies the resulting installation, extracts assets, and launches the selected instance

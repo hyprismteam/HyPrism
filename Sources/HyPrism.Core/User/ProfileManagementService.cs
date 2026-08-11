@@ -11,7 +11,7 @@ using HyPrism.Services.Game.Instance;
 namespace HyPrism.Services.User;
 
 /// <summary>
-/// Manages profile operations: creation, deletion, switching, and profile folder/symlink management.
+/// Manages profile operations: creation, deletion, switching, and profile folder/symlink management
 /// </summary>
 public class ProfileManagementService : IProfileManagementService
 {
@@ -24,13 +24,13 @@ public class ProfileManagementService : IProfileManagementService
     private bool _profileFolderMigrationAttempted;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="ProfileManagementService"/> class.
+    /// Initializes a new instance of the <see cref="ProfileManagementService"/> class
     /// </summary>
-    /// <param name="appPath">The application path configuration.</param>
-    /// <param name="configService">The configuration service.</param>
-    /// <param name="skinService">The skin management service.</param>
-    /// <param name="instanceService">The game instance service.</param>
-    /// <param name="userIdentityService">The user identity service.</param>
+    /// <param name="appPath">The application path configuration</param>
+    /// <param name="configService">The configuration service</param>
+    /// <param name="skinService">The skin management service</param>
+    /// <param name="instanceService">The game instance service</param>
+    /// <param name="userIdentityService">The user identity service</param>
     public ProfileManagementService(
         AppPathConfiguration appPath,
         IConfigService configService,
@@ -59,12 +59,12 @@ public class ProfileManagementService : IProfileManagementService
 
     #endregion
 
-    /// <summary>Returns the path to the profile cache file inside the profiles folder.</summary>
+    /// <summary>Returns the path to the profile cache file inside the profiles folder</summary>
     private string GetProfileCachePath() => Path.Combine(GetProfilesFolder(), "profiles.json");
 
     /// <summary>
     /// Loads the profile list from profiles.json.
-    /// On first run migrates from the deprecated config.Profiles field.
+    /// On first run migrates from the deprecated config.Profiles field
     /// </summary>
     private List<Profile> LoadProfilesFromCache()
     {
@@ -105,7 +105,7 @@ public class ProfileManagementService : IProfileManagementService
         return new List<Profile>();
     }
 
-    /// <summary>Saves the profile list to profiles.json.</summary>
+    /// <summary>Saves the profile list to profiles.json</summary>
     private void SaveProfilesToCache(IEnumerable<Profile> profiles)
     {
         try
@@ -121,10 +121,10 @@ public class ProfileManagementService : IProfileManagementService
         }
     }
 
-    /// <summary>Gets the ID of the currently active profile.</summary>
+    /// <summary>Gets the ID of the currently active profile</summary>
     public string GetSelectedProfileId() => _configService.Configuration.SelectedProfileId ?? "";
 
-    /// <summary>Gets the currently active profile object, or null if none is selected.</summary>
+    /// <summary>Gets the currently active profile object, or null if none is selected</summary>
     public Profile? GetSelectedProfile()
     {
         var id = GetSelectedProfileId();
@@ -134,7 +134,7 @@ public class ProfileManagementService : IProfileManagementService
 
 
     /// <inheritdoc/>
-    /// <remarks>Filters out any profiles with null/empty names or UUIDs.</remarks>
+    /// <remarks>Filters out any profiles with null/empty names or UUIDs</remarks>
     public List<Profile> GetProfiles()
     {
         EnsureProfileStorageUpgraded();
@@ -202,7 +202,7 @@ public class ProfileManagementService : IProfileManagementService
     }
 
     /// <inheritdoc/>
-    /// <remarks>Validates name length (1-16 characters) and UUID format before creation.</remarks>
+    /// <remarks>Validates name length (1-16 characters) and UUID format before creation</remarks>
     public Profile? CreateProfile(string name, string uuid, bool isOfficial = false)
     {
         try
@@ -212,7 +212,7 @@ public class ProfileManagementService : IProfileManagementService
                 Logger.Warning("Profile", $"Cannot create profile with empty name or UUID");
                 return null;
             }
-            
+
             // Validate name length (1-16 characters)
             var trimmedName = name.Trim();
             if (trimmedName.Length < 1 || trimmedName.Length > 16)
@@ -220,14 +220,14 @@ public class ProfileManagementService : IProfileManagementService
                 Logger.Warning("Profile", $"Invalid name length: {trimmedName.Length} (must be 1-16 chars)");
                 return null;
             }
-            
+
             // Validate UUID format
             if (!Guid.TryParse(uuid.Trim(), out var parsedUuid))
             {
                 Logger.Warning("Profile", $"Invalid UUID format: {uuid}");
                 return null;
             }
-            
+
             var profile = new Profile
             {
                 Id = Guid.NewGuid().ToString(),
@@ -236,7 +236,7 @@ public class ProfileManagementService : IProfileManagementService
                 IsOfficial = isOfficial,
                 CreatedAt = DateTime.UtcNow
             };
-            
+
             var profiles = LoadProfilesFromCache();
             profiles.Add(profile);
 
@@ -271,7 +271,7 @@ public class ProfileManagementService : IProfileManagementService
     }
 
     /// <inheritdoc/>
-    /// <remarks>Updates SelectedProfileId if the deleted profile was active.</remarks>
+    /// <remarks>Updates SelectedProfileId if the deleted profile was active</remarks>
     public bool DeleteProfile(string profileId)
     {
         try
@@ -313,7 +313,7 @@ public class ProfileManagementService : IProfileManagementService
     }
 
     /// <inheritdoc/>
-    /// <remarks>Backwards-compat wrapper — switches by index position in the cached list.</remarks>
+    /// <remarks>Compatibility wrapper that switches by index position in the cached list</remarks>
     public bool SwitchProfile(int index)
     {
         try
@@ -331,7 +331,7 @@ public class ProfileManagementService : IProfileManagementService
     }
 
     /// <inheritdoc/>
-    /// <remarks>Backups current profile's skin data and restores the new profile's skin data.</remarks>
+    /// <remarks>Backups current profile's skin data and restores the new profile's skin data</remarks>
     public bool SwitchProfile(string profileId)
     {
         try
@@ -424,7 +424,7 @@ public class ProfileManagementService : IProfileManagementService
     }
 
     /// <inheritdoc/>
-    /// <remarks>Updates existing profile if UUID already exists, otherwise creates new.</remarks>
+    /// <remarks>Updates existing profile if UUID already exists, otherwise creates new</remarks>
     public Profile? SaveCurrentAsProfile()
     {
         var config = _configService.Configuration;
@@ -450,7 +450,7 @@ public class ProfileManagementService : IProfileManagementService
     }
 
     /// <inheritdoc/>
-    /// <remarks>Copies UserData folder, mods folder, and skin data from the source profile.</remarks>
+    /// <remarks>Copies UserData folder, mods folder, and skin data from the source profile</remarks>
     public Profile? DuplicateProfile(string profileId)
     {
         try
@@ -478,13 +478,13 @@ public class ProfileManagementService : IProfileManagementService
             allProfiles.Add(newProfile);
             SaveProfilesToCache(allProfiles);
             SaveProfileToDisk(newProfile);
-            
+
             // Copy source profile's mods folder to new profile
             try
             {
                 var sourceModsPath = GetProfileModsFolder(sourceProfile);
                 var destModsPath = GetProfileModsFolder(newProfile);
-                
+
                 if (Directory.Exists(sourceModsPath))
                 {
                     CopyDirectory(sourceModsPath, destModsPath);
@@ -495,7 +495,7 @@ public class ProfileManagementService : IProfileManagementService
             {
                 Logger.Warning("Profile", $"Failed to copy mods during duplication: {ex.Message}");
             }
-            
+
             // Copy UserData from source profile if it exists
             try
             {
@@ -507,14 +507,14 @@ public class ProfileManagementService : IProfileManagementService
                 else
                 {
                     var userDataPath = _instanceService.GetInstanceUserDataPath(versionPath);
-                
+
                     if (Directory.Exists(userDataPath))
                     {
                         var sourceProfileFolder = UtilityService.GetProfileFolderPath(_appDir, sourceProfile);
                         var sourceUserDataBackup = Path.Combine(sourceProfileFolder, "UserData");
                         var destProfileFolder = UtilityService.GetProfileFolderPath(_appDir, newProfile);
                         var destUserDataBackup = Path.Combine(destProfileFolder, "UserData");
-                        
+
                         // If source profile has a UserData backup, copy it
                         if (Directory.Exists(sourceUserDataBackup))
                         {
@@ -528,20 +528,20 @@ public class ProfileManagementService : IProfileManagementService
             {
                 Logger.Warning("Profile", $"Failed to copy UserData during duplication: {ex.Message}");
             }
-            
+
             // Copy skin/avatar data
             try
             {
                 var sourceProfileDir = UtilityService.GetProfileFolderPath(_appDir, sourceProfile);
                 var destProfileDir = UtilityService.GetProfileFolderPath(_appDir, newProfile);
-                
+
                 // Copy skin.png if exists
                 var sourceSkin = Path.Combine(sourceProfileDir, "skin.png");
                 if (File.Exists(sourceSkin))
                 {
                     File.Copy(sourceSkin, Path.Combine(destProfileDir, "skin.png"), true);
                 }
-                
+
                 // Copy avatar.png if exists
                 var sourceAvatar = Path.Combine(sourceProfileDir, "avatar.png");
                 if (File.Exists(sourceAvatar))
@@ -553,7 +553,7 @@ public class ProfileManagementService : IProfileManagementService
             {
                 Logger.Warning("Profile", $"Failed to copy skin/avatar during duplication: {ex.Message}");
             }
-            
+
             Logger.Success("Profile", $"Duplicated profile '{sourceProfile.Name}' → '{newProfile.Name}'");
             return newProfile;
         }
@@ -565,7 +565,7 @@ public class ProfileManagementService : IProfileManagementService
     }
 
     /// <inheritdoc/>
-    /// <remarks>Copies mods and skin/avatar but NOT UserData folder.</remarks>
+    /// <remarks>Copies mods and skin/avatar but NOT UserData folder</remarks>
     public Profile? DuplicateProfileWithoutData(string profileId)
     {
         try
@@ -595,13 +595,13 @@ public class ProfileManagementService : IProfileManagementService
 
             // Save profile to disk
             SaveProfileToDisk(newProfile);
-            
+
             // Copy source profile's mods folder to new profile
             try
             {
                 var sourceModsPath = GetProfileModsFolder(sourceProfile);
                 var destModsPath = GetProfileModsFolder(newProfile);
-                
+
                 if (Directory.Exists(sourceModsPath))
                 {
                     CopyDirectory(sourceModsPath, destModsPath);
@@ -612,20 +612,20 @@ public class ProfileManagementService : IProfileManagementService
             {
                 Logger.Warning("Profile", $"Failed to copy mods during duplication: {ex.Message}");
             }
-            
+
             // Copy skin/avatar data (but NOT UserData)
             try
             {
                 var sourceProfileDir = UtilityService.GetProfileFolderPath(_appDir, sourceProfile);
                 var destProfileDir = UtilityService.GetProfileFolderPath(_appDir, newProfile);
-                
+
                 // Copy skin.png if exists
                 var sourceSkin = Path.Combine(sourceProfileDir, "skin.png");
                 if (File.Exists(sourceSkin))
                 {
                     File.Copy(sourceSkin, Path.Combine(destProfileDir, "skin.png"), true);
                 }
-                
+
                 // Copy avatar.png if exists
                 var sourceAvatar = Path.Combine(sourceProfileDir, "avatar.png");
                 if (File.Exists(sourceAvatar))
@@ -637,7 +637,7 @@ public class ProfileManagementService : IProfileManagementService
             {
                 Logger.Warning("Profile", $"Failed to copy skin/avatar during duplication: {ex.Message}");
             }
-            
+
             Logger.Success("Profile", $"Duplicated profile (without UserData) '{sourceProfile.Name}' → '{newProfile.Name}'");
             return newProfile;
         }
@@ -693,12 +693,12 @@ public class ProfileManagementService : IProfileManagementService
                 return false;
             }
             var profileDir = UtilityService.GetProfileFolderPath(_appDir, profile);
-            
+
             if (!Directory.Exists(profileDir))
             {
                 Directory.CreateDirectory(profileDir);
                 Logger.Info("Profile", $"Created profile folder: {profileDir}");
-                
+
                 // Write profile info to the folder so it always has matching data
                 try
                 {
@@ -718,8 +718,8 @@ public class ProfileManagementService : IProfileManagementService
                     Logger.Warning("Profile", $"Failed to write profile info: {infoEx.Message}");
                 }
             }
-            
-            // Open folder in file manager (cross-platform) — use ProcessStartInfo to handle paths with spaces
+
+            // Use ProcessStartInfo so the platform file manager handles paths with spaces
             var psi = new ProcessStartInfo();
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
@@ -738,7 +738,7 @@ public class ProfileManagementService : IProfileManagementService
             }
             psi.UseShellExecute = false;
             Process.Start(psi);
-            
+
             Logger.Success("Profile", $"Opened profile folder: {profileDir}");
             return true;
         }
@@ -779,9 +779,9 @@ public class ProfileManagementService : IProfileManagementService
     }
 
     #region Private Helper Methods
-    
+
     /// <summary>
-    /// Gets the path to a profile's mods folder.
+    /// Gets the path to a profile's mods folder
     /// </summary>
     private string GetProfileModsFolder(Profile profile)
     {
@@ -790,10 +790,10 @@ public class ProfileManagementService : IProfileManagementService
         Directory.CreateDirectory(modsDir);
         return modsDir;
     }
-    
+
     /// <summary>
     /// Ensures the active instance has a real UserData/Mods directory.
-    /// If a legacy profile symlink/junction is detected, migrates files back.
+    /// If a legacy profile symlink/junction is detected, migrates files back
     /// </summary>
     private void EnsureInstanceModsDirectory(Profile? profile)
     {
@@ -903,9 +903,9 @@ public class ProfileManagementService : IProfileManagementService
         // Fall back to any installed instance when nothing is explicitly selected.
         return _instanceService.GetInstalledInstances().FirstOrDefault()?.Path;
     }
-    
+
     /// <summary>
-    /// Saves a profile to disk as a .sh file with name and UUID, plus avatar if available.
+    /// Saves a profile to disk as a .sh file with name and UUID, plus avatar if available
     /// </summary>
     private void SaveProfileToDisk(Profile profile)
     {
@@ -913,11 +913,11 @@ public class ProfileManagementService : IProfileManagementService
         {
             var profileDir = UtilityService.GetProfileFolderPath(_appDir, profile);
             Directory.CreateDirectory(profileDir);
-            
+
             // Create the Mods folder for this profile
             var modsDir = Path.Combine(profileDir, "Mods");
             Directory.CreateDirectory(modsDir);
-            
+
             // Create the shell script with profile info
             var shPath = Path.Combine(profileDir, $"{profile.Name}.sh");
             var shContent = $@"#!/bin/bash
@@ -932,10 +932,10 @@ export HYPRISM_PROFILE_ID=""{profile.Id}""
 # You can source this file to use this profile's settings
 ";
             File.WriteAllText(shPath, shContent);
-            
+
             // Copy skin and avatar from game cache to profile folder
             _skinService.CopyProfileSkinData(profile.UUID, profileDir);
-            
+
             Logger.Info("Profile", $"Saved profile to disk: {profileDir}");
         }
         catch (Exception ex)
@@ -943,28 +943,28 @@ export HYPRISM_PROFILE_ID=""{profile.Id}""
             Logger.Warning("Profile", $"Failed to save profile to disk: {ex.Message}");
         }
     }
-    
+
     /// <summary>
-    /// Updates a profile's disk files when it's modified.
+    /// Updates a profile's disk files when it's modified
     /// </summary>
     private void UpdateProfileOnDisk(Profile profile)
     {
         try
         {
             var profileDir = UtilityService.GetProfileFolderPath(_appDir, profile);
-            
+
             if (!Directory.Exists(profileDir))
             {
                 SaveProfileToDisk(profile);
                 return;
             }
-            
+
             // Remove old .sh files
             foreach (var oldSh in Directory.GetFiles(profileDir, "*.sh"))
             {
                 File.Delete(oldSh);
             }
-            
+
             // Create new .sh file
             var shPath = Path.Combine(profileDir, $"{profile.Name}.sh");
             var shContent = $@"#!/bin/bash
@@ -980,7 +980,7 @@ export HYPRISM_PROFILE_ID=""{profile.Id}""
 # You can source this file to use this profile's settings
 ";
             File.WriteAllText(shPath, shContent);
-            
+
             Logger.Info("Profile", $"Updated profile on disk: {profileDir}");
         }
         catch (Exception ex)
@@ -988,16 +988,16 @@ export HYPRISM_PROFILE_ID=""{profile.Id}""
             Logger.Warning("Profile", $"Failed to update profile on disk: {ex.Message}");
         }
     }
-    
+
     /// <summary>
-    /// Deletes a profile's disk folder.
+    /// Deletes a profile's disk folder
     /// </summary>
     private void DeleteProfileFromDisk(string profileId, string? profileName = null)
     {
         try
         {
             var profilesDir = GetProfilesFolder();
-            
+
             // Try to delete by name first if provided
             if (!string.IsNullOrEmpty(profileName))
             {
@@ -1009,7 +1009,7 @@ export HYPRISM_PROFILE_ID=""{profile.Id}""
                     Logger.Info("Profile", $"Deleted profile from disk: {profileDirByName}");
                 }
             }
-            
+
             // Fallback to ID-based folder (for migration)
             var profileDir = Path.Combine(profilesDir, profileId);
             if (Directory.Exists(profileDir))
@@ -1023,9 +1023,9 @@ export HYPRISM_PROFILE_ID=""{profile.Id}""
             Logger.Warning("Profile", $"Failed to delete profile from disk: {ex.Message}");
         }
     }
-    
+
     /// <summary>
-    /// Recursively copies a directory and all its contents.
+    /// Recursively copies a directory and all its contents
     /// </summary>
     private void CopyDirectory(string sourceDir, string destDir)
     {

@@ -37,7 +37,7 @@ public class FileServiceTests : IDisposable
         Directory.CreateDirectory(subDir);
 
         // On CI the shell process launch may succeed even without a display manager.
-        // We only assert it doesn't throw — the return value is platform-dependent.
+        // We only assert it does not throw because the return value is platform-dependent
         var ex = Record.Exception(() => _svc.OpenFolder(subDir));
         Assert.Null(ex);
     }

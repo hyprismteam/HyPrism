@@ -1,0 +1,43 @@
+/* Copyright (C) 2026 HyPrism Launcher */
+/* SPDX-License-Identifier: GPL-3.0-only */
+
+:root {
+  --hyprism-accent: 153 107 255;
+}
+
+.hyprism-logo {
+  align-items: baseline;
+  display: inline-flex;
+  font-size: 1.05rem;
+  font-weight: 700;
+  gap: 0.35rem;
+  letter-spacing: -0.02em;
+}
+
+.hyprism-logo span {
+  color: rgb(var(--hyprism-accent));
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.hyprism-hero {
+  background: linear-gradient(145deg, rgba(153, 107, 255, 0.16), rgba(33, 36, 43, 0.24));
+  border: 1px solid rgba(153, 107, 255, 0.22);
+  border-radius: 1.5rem;
+  margin: 1.5rem 0 2rem;
+  padding: clamp(1.5rem, 4vw, 3.5rem);
+}
+
+.hyprism-hero h1 {
+  font-size: clamp(2.2rem, 6vw, 4.5rem);
+  letter-spacing: -0.055em;
+  line-height: 1;
+  margin: 0 0 1rem;
+}
+
+.hyprism-hero p {
+  color: rgb(190 193 203);
+  font-size: 1.1rem;
+  margin: 0;
+  max-width: 48rem;
+}

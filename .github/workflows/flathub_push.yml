@@ -60,7 +60,7 @@ jobs:
           fi
 
           echo "RELEASE_VERSION=$RELEASE_VERSION" > flathub_push_info.env
-          echo "Prepared Properties/linux/flathub — release_version=$RELEASE_VERSION"
+          echo "Prepared Properties/linux/flathub: release_version=$RELEASE_VERSION"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

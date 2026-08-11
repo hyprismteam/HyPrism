@@ -11,17 +11,22 @@ namespace HyPrism.Services.Game.Sources;
 
 /// <summary>
 /// Service for automatically discovering mirror configuration from a URL.
-/// Attempts to detect the mirror type (pattern/json-index) and build a MirrorMeta schema.
+/// Attempts to detect the mirror type (pattern/json-index) and build a MirrorMeta schema
 /// </summary>
 public class MirrorDiscoveryService : IMirrorDiscoveryService
 {
     private readonly HttpClient _httpClient;
     private const int TimeoutSeconds = 10;
-    
+
     // Custom headers to use for all discovery requests
     private Dictionary<string, string>? _customHeaders;
     private string? _hytaleAgent;
 
+    /// <summary>
+    /// Creates a mirror discovery service
+    /// </summary>
+    /// <param name="httpClient">The HTTP client used to inspect mirror endpoints</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="httpClient"/> is null</exception>
     public MirrorDiscoveryService(HttpClient httpClient)
     {
         _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
@@ -29,18 +34,18 @@ public class MirrorDiscoveryService : IMirrorDiscoveryService
 
     /// <summary>
     /// Sends a GET request with custom headers applied.
-    /// Expands {hytaleAgent} variable to the official Hytale launcher User-Agent.
+    /// Expands {hytaleAgent} variable to the official Hytale launcher User-Agent
     /// </summary>
     private async Task<HttpResponseMessage> GetWithHeadersAsync(string url, CancellationToken ct)
     {
         var request = new HttpRequestMessage(HttpMethod.Get, url);
-        
+
         if (_customHeaders != null && _customHeaders.Count > 0)
         {
             foreach (var (headerName, headerValue) in _customHeaders)
             {
                 var expandedValue = headerValue;
-                
+
                 // Expand {hytaleAgent} variable
                 if (expandedValue.Contains("{hytaleAgent}", StringComparison.OrdinalIgnoreCase))
                 {
@@ -51,17 +56,17 @@ public class MirrorDiscoveryService : IMirrorDiscoveryService
                     }
                     expandedValue = expandedValue.Replace("{hytaleAgent}", _hytaleAgent, StringComparison.OrdinalIgnoreCase);
                 }
-                
+
                 request.Headers.TryAddWithoutValidation(headerName, expandedValue);
             }
         }
-        
+
         return await _httpClient.SendAsync(request, ct);
     }
 
     /// <summary>
     /// Attempts to discover mirror configuration from a URL.
-    /// Tries multiple detection strategies with extensive endpoint probing.
+    /// Tries multiple detection strategies with extensive endpoint probing
     /// </summary>
     /// <param name="url">The mirror URL to discover</param>
     /// <param name="headers">Optional custom headers to use for discovery requests (supports {hytaleAgent} variable)</param>
@@ -71,7 +76,7 @@ public class MirrorDiscoveryService : IMirrorDiscoveryService
         // Store headers for use in all discovery requests
         _customHeaders = headers;
         _hytaleAgent = null; // Reset cached agent for fresh expansion
-        
+
         if (string.IsNullOrWhiteSpace(url))
         {
             return new DiscoveryResult { Success = false, Error = "URL is required" };
@@ -94,11 +99,11 @@ public class MirrorDiscoveryService : IMirrorDiscoveryService
 
         // Generate possible base URLs to test
         var baseUrls = GeneratePossibleBaseUrls(uri);
-        
+
         foreach (var baseUrl in baseUrls)
         {
             Logger.Debug("MirrorDiscovery", $"Testing base URL: {baseUrl}");
-            
+
             // Try all strategies for this base URL
             var result = await TryAllStrategiesAsync(new Uri(baseUrl), ct);
             if (result.Success && result.Mirror != null)
@@ -109,28 +114,28 @@ public class MirrorDiscoveryService : IMirrorDiscoveryService
         }
 
         Logger.Warning("MirrorDiscovery", "All discovery strategies failed");
-        return new DiscoveryResult 
-        { 
-            Success = false, 
-            Error = "Could not automatically detect mirror configuration. Please add a .mirror.json file manually." 
+        return new DiscoveryResult
+        {
+            Success = false,
+            Error = "Could not automatically detect mirror configuration. Please add a .mirror.json file manually."
         };
     }
 
     /// <summary>
     /// Generate possible base URLs from the input URL.
-    /// For example, if user enters "https://example.com/hytale", we also try "https://example.com".
+    /// For example, if user enters "https://example.com/hytale", we also try "https://example.com"
     /// </summary>
     private static List<string> GeneratePossibleBaseUrls(Uri uri)
     {
         var urls = new List<string> { uri.ToString().TrimEnd('/') };
-        
+
         // Add authority (root domain) as fallback
         var authority = uri.GetLeftPart(UriPartial.Authority);
         if (!urls.Contains(authority))
         {
             urls.Add(authority);
         }
-        
+
         // If path has multiple segments, try parent paths
         var pathParts = uri.AbsolutePath.Trim('/').Split('/');
         for (int i = pathParts.Length - 1; i > 0; i--)
@@ -142,7 +147,7 @@ public class MirrorDiscoveryService : IMirrorDiscoveryService
                 urls.Add(parentUrl);
             }
         }
-        
+
         return urls;
     }
 
@@ -187,21 +192,21 @@ public class MirrorDiscoveryService : IMirrorDiscoveryService
 
     /// <summary>
     /// Try detection for mirrors using /infos endpoint pattern.
-    /// Pattern: /infos for version info, /latest for patch steps, /dl/:os/:arch/:version.pwr for downloads.
+    /// Pattern: /infos for version info, /latest for patch steps, /dl/:os/:arch/:version.pwr for downloads
     /// </summary>
     private async Task<DiscoveryResult> TryInfosApiPatternAsync(Uri baseUri, CancellationToken ct)
     {
         // Test /infos endpoint - this is the main version discovery endpoint
         var infosUrl = new Uri(baseUri, "/infos").ToString();
         Logger.Debug("MirrorDiscovery", $"Testing /infos endpoint: {infosUrl}");
-        
+
         try
         {
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(TimeoutSeconds));
             using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, cts.Token);
-            
+
             using var response = await GetWithHeadersAsync(infosUrl, linkedCts.Token);
-            
+
             if (!response.IsSuccessStatusCode)
             {
                 Logger.Debug("MirrorDiscovery", $"/infos returned {response.StatusCode}");
@@ -231,10 +236,10 @@ public class MirrorDiscoveryService : IMirrorDiscoveryService
             // e.g. { "linux-amd64": { "release": { "buildVersion": "2026.02.17-xxx", "newest": 9 } } }
             var validPlatforms = new[] { "windows-amd64", "linux-amd64", "darwin-arm64" };
             var detectedPlatforms = new List<string>();
-            
+
             foreach (var platform in validPlatforms)
             {
-                if (root.TryGetProperty(platform, out var platformData) && 
+                if (root.TryGetProperty(platform, out var platformData) &&
                     platformData.ValueKind == JsonValueKind.Object)
                 {
                     // Check for release or pre-release branch
@@ -303,22 +308,22 @@ public class MirrorDiscoveryService : IMirrorDiscoveryService
     {
         // Build manifest URLs relative to the provided baseUri
         var inputUrl = baseUri.ToString().TrimEnd('/');
-        
+
         // Try manifest.json at various locations relative to the provided URL
         var manifestUrls = new List<string>
         {
             // If URL ends with manifest.json, use it directly
-            inputUrl.EndsWith("manifest.json", StringComparison.OrdinalIgnoreCase) 
-                ? inputUrl 
+            inputUrl.EndsWith("manifest.json", StringComparison.OrdinalIgnoreCase)
+                ? inputUrl
                 : null!,
             // Try manifest.json in current directory
             $"{inputUrl}/manifest.json",
             // Try in patches subdirectory
             $"{inputUrl}/patches/manifest.json",
-            // Try in hytale/patches subdirectory  
+            // Try in hytale/patches subdirectory
             $"{inputUrl}/hytale/patches/manifest.json"
         };
-        
+
         // Remove nulls and duplicates
         manifestUrls = manifestUrls.Where(u => u != null).Distinct().ToList();
 
@@ -424,7 +429,7 @@ public class MirrorDiscoveryService : IMirrorDiscoveryService
 
     /// <summary>
     /// Try detection for mirrors using /launcher/patches API pattern.
-    /// Pattern: /launcher/patches/{branch}/versions?os_name={os}&arch={arch}
+    /// Pattern: /launcher/patches/{branch}/versions?os_name={os}&amp;arch={arch}
     /// Note: The API may return 422 UnprocessableEntity if parameters are wrong,
     /// but this still means the endpoint exists!
     /// </summary>
@@ -433,7 +438,7 @@ public class MirrorDiscoveryService : IMirrorDiscoveryService
         // First check if /health endpoint works
         var healthUrl = new Uri(baseUri, "/health").ToString();
         bool hasHealthEndpoint = false;
-        
+
         try
         {
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(TimeoutSeconds));
@@ -461,19 +466,19 @@ public class MirrorDiscoveryService : IMirrorDiscoveryService
         {
             var testUrl = new Uri(baseUri, endpoint).ToString();
             Logger.Debug("MirrorDiscovery", $"Testing launcher API endpoint: {testUrl}");
-            
+
             try
             {
                 using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(TimeoutSeconds));
                 using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, cts.Token);
-                
+
                 using var response = await GetWithHeadersAsync(testUrl, linkedCts.Token);
                 var statusCode = (int)response.StatusCode;
-                
+
                 // Check Content-Type - must be JSON, not HTML error pages
                 var contentType = response.Content.Headers.ContentType?.MediaType ?? "";
                 var isJsonResponse = contentType.Contains("json", StringComparison.OrdinalIgnoreCase);
-                
+
                 // For 422/400 we need JSON response to confirm it's a real API
                 // For 200 OK we also need JSON to avoid HTML error pages
                 if (statusCode == 422 || statusCode == 400 || response.IsSuccessStatusCode)
@@ -483,12 +488,12 @@ public class MirrorDiscoveryService : IMirrorDiscoveryService
                         Logger.Debug("MirrorDiscovery", $"Endpoint returned {response.StatusCode} but Content-Type is not JSON: {contentType}");
                         continue;
                     }
-                    
+
                     Logger.Debug("MirrorDiscovery", $"Launcher API detected! Status: {response.StatusCode}");
-                    
+
                     var mirrorId = MirrorSchemaInferrer.GenerateMirrorId(baseUri);
                     var mirror = MirrorSchemaInferrer.CreateLauncherApiPatternMirror(baseUri, mirrorId);
-                    
+
                     return new DiscoveryResult
                     {
                         Success = true,
@@ -496,7 +501,7 @@ public class MirrorDiscoveryService : IMirrorDiscoveryService
                         DetectedType = "Pattern: Launcher API"
                     };
                 }
-                
+
                 Logger.Debug("MirrorDiscovery", $"Endpoint returned {response.StatusCode}");
             }
             catch (Exception ex)
@@ -527,7 +532,7 @@ public class MirrorDiscoveryService : IMirrorDiscoveryService
             "/patches",
             ""  // maybe the base URL is already the patches root
         };
-        
+
         var osArchBranch = new[]
         {
             "linux/x64/release/0/",
@@ -542,12 +547,12 @@ public class MirrorDiscoveryService : IMirrorDiscoveryService
                 var testPath = $"{pathPrefix}/{suffix}".Replace("//", "/");
                 var testUrl = new Uri(baseUri, testPath).ToString();
                 Logger.Debug("MirrorDiscovery", $"Testing static files path: {testUrl}");
-                
+
                 try
                 {
                     using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(TimeoutSeconds));
                     using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, cts.Token);
-                    
+
                     using var response = await GetWithHeadersAsync(testUrl, linkedCts.Token);
                     if (!response.IsSuccessStatusCode) continue;
 
@@ -561,13 +566,13 @@ public class MirrorDiscoveryService : IMirrorDiscoveryService
                     if (matches.Count > 0)
                     {
                         Logger.Debug("MirrorDiscovery", $"Found {matches.Count} .pwr files in HTML listing");
-                        
+
                         // Detected HTML autoindex with .pwr files
                         var basePath = pathPrefix.TrimEnd('/');
                         var mirrorId = MirrorSchemaInferrer.GenerateMirrorId(baseUri);
-                        
+
                         var mirror = MirrorSchemaInferrer.CreateStaticFilesPatternMirror(baseUri, mirrorId, basePath);
-                        
+
                         return new DiscoveryResult
                         {
                             Success = true,
@@ -588,7 +593,7 @@ public class MirrorDiscoveryService : IMirrorDiscoveryService
 
     /// <summary>
     /// Try to detect a JSON index API (like ShipOfYarn).
-    /// Expects JSON response with "hytale" root containing branch/platform structure.
+    /// Expects JSON response with "hytale" root containing branch/platform structure
     /// </summary>
     private async Task<DiscoveryResult> TryJsonIndexDiscoveryAsync(Uri baseUri, CancellationToken ct)
     {
@@ -607,14 +612,14 @@ public class MirrorDiscoveryService : IMirrorDiscoveryService
         {
             var apiUrl = new Uri(baseUri, endpoint).ToString();
             Logger.Debug("MirrorDiscovery", $"Testing JSON Index endpoint: {apiUrl}");
-            
+
             try
             {
                 using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(TimeoutSeconds));
                 using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, cts.Token);
-                
+
                 using var response = await GetWithHeadersAsync(apiUrl, linkedCts.Token);
-                
+
                 if (!response.IsSuccessStatusCode)
                 {
                     Logger.Debug("MirrorDiscovery", $"Endpoint returned {response.StatusCode}");
@@ -643,7 +648,7 @@ public class MirrorDiscoveryService : IMirrorDiscoveryService
                 if (root.TryGetProperty("hytale", out var hytaleNode))
                 {
                     Logger.Debug("MirrorDiscovery", "Found 'hytale' root property - JSON index format detected");
-                    
+
                     // Detected JSON index format
                     var mirrorId = MirrorSchemaInferrer.GenerateMirrorId(baseUri);
                     var mirror = new MirrorMeta
@@ -704,7 +709,7 @@ public class MirrorDiscoveryService : IMirrorDiscoveryService
     }
 
     /// <summary>
-    /// Try to detect a JSON API that returns version list.
+    /// Try to detect a JSON API that returns version list
     /// </summary>
     private async Task<DiscoveryResult> TryJsonApiDiscoveryAsync(Uri baseUri, CancellationToken ct)
     {
@@ -723,14 +728,14 @@ public class MirrorDiscoveryService : IMirrorDiscoveryService
         {
             var apiUrl = new Uri(baseUri, endpoint).ToString();
             Logger.Debug("MirrorDiscovery", $"Testing JSON API endpoint: {apiUrl}");
-            
+
             try
             {
                 using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(TimeoutSeconds));
                 using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, cts.Token);
-                
+
                 using var response = await GetWithHeadersAsync(apiUrl, linkedCts.Token);
-                
+
                 if (!response.IsSuccessStatusCode)
                 {
                     Logger.Debug("MirrorDiscovery", $"Endpoint returned {response.StatusCode}");
@@ -833,7 +838,7 @@ public class MirrorDiscoveryService : IMirrorDiscoveryService
     }
 
     /// <summary>
-    /// Try to detect HTML autoindex (Apache/Nginx directory listing).
+    /// Try to detect HTML autoindex (Apache/Nginx directory listing)
     /// </summary>
     private async Task<DiscoveryResult> TryHtmlAutoindexDiscoveryAsync(Uri baseUri, CancellationToken ct)
     {
@@ -852,14 +857,14 @@ public class MirrorDiscoveryService : IMirrorDiscoveryService
         {
             var testUrl = new Uri(baseUri, path).ToString();
             Logger.Debug("MirrorDiscovery", $"Testing HTML autoindex path: {testUrl}");
-            
+
             try
             {
                 using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(TimeoutSeconds));
                 using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, cts.Token);
-                
+
                 using var response = await GetWithHeadersAsync(testUrl, linkedCts.Token);
-                
+
                 if (!response.IsSuccessStatusCode)
                 {
                     Logger.Debug("MirrorDiscovery", $"Path returned {response.StatusCode}");
@@ -876,13 +881,13 @@ public class MirrorDiscoveryService : IMirrorDiscoveryService
                 if (matches.Count > 0)
                 {
                     Logger.Debug("MirrorDiscovery", $"Found {matches.Count} .pwr files in HTML listing");
-                    
+
                     // Detected HTML autoindex with .pwr files
                     // Determine which path structure we found
-                    var basePath = path.Contains("/x64/") 
-                        ? path.Replace("/linux/x64/release/0/", "").TrimEnd('/') 
+                    var basePath = path.Contains("/x64/")
+                        ? path.Replace("/linux/x64/release/0/", "").TrimEnd('/')
                         : path.Replace("/linux/amd64/release/0/", "").TrimEnd('/');
-                    
+
                     var mirrorId = MirrorSchemaInferrer.GenerateMirrorId(baseUri);
                     var mirror = new MirrorMeta
                     {
@@ -937,20 +942,20 @@ public class MirrorDiscoveryService : IMirrorDiscoveryService
     }
 
     /// <summary>
-    /// Try to match known mirror patterns based on hostname and directory structure.
+    /// Try to match known mirror patterns based on hostname and directory structure
     /// </summary>
     private async Task<DiscoveryResult> TryKnownPatternDiscoveryAsync(Uri baseUri, CancellationToken ct)
     {
         var url = baseUri.ToString().TrimEnd('/');
         Logger.Debug("MirrorDiscovery", $"Testing directory pattern at: {url}");
-        
+
         try
         {
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(TimeoutSeconds));
             using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, cts.Token);
-            
+
             using var response = await GetWithHeadersAsync(url, linkedCts.Token);
-            
+
             if (!response.IsSuccessStatusCode)
             {
                 Logger.Debug("MirrorDiscovery", $"URL returned {response.StatusCode}");
@@ -959,7 +964,7 @@ public class MirrorDiscoveryService : IMirrorDiscoveryService
 
             var contentType = response.Content.Headers.ContentType?.MediaType ?? "";
             var content = await response.Content.ReadAsStringAsync(linkedCts.Token);
-            
+
             Logger.Debug("MirrorDiscovery", $"Content-Type: {contentType}, length: {content.Length}");
 
             // If it's HTML with directory listing
@@ -967,11 +972,11 @@ public class MirrorDiscoveryService : IMirrorDiscoveryService
             {
                 // Check for subdirectories like linux/, windows/, darwin/
                 var hasOsDirectories = content.Contains("linux/") || content.Contains("windows/") || content.Contains("darwin/");
-                
+
                 if (hasOsDirectories)
                 {
                     Logger.Debug("MirrorDiscovery", "Found OS directories in listing");
-                    
+
                     var mirrorId = MirrorSchemaInferrer.GenerateMirrorId(baseUri);
                     var mirror = new MirrorMeta
                     {

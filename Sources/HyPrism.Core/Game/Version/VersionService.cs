@@ -11,12 +11,12 @@ namespace HyPrism.Services.Game.Version;
 
 /// <summary>
 /// Manages game version detection, update checking, and version caching.
-/// Queries all registered version sources (official + mirrors) and merges results.
+/// Queries all registered version sources (official + mirrors) and merges results
 /// </summary>
 /// <remarks>
 /// Version information is cached to avoid excessive network requests.
 /// Fetches from ALL sources and stores them separately, merging for queries.
-/// Sources are queried by priority (official first, then mirrors).
+/// Sources are queried by priority (official first, then mirrors)
 /// </remarks>
 public class VersionService : IVersionService
 {
@@ -29,17 +29,17 @@ public class VersionService : IVersionService
     // Keep direct references for source-specific operations
     private readonly HytaleVersionSource? _hytaleSource;
     private readonly List<IVersionSource> _mirrorSources = new();
-    
+
     // Selected mirror for downloads (set after speed test)
     private IVersionSource? _selectedMirror;
 
     /// <summary>
-    /// In-memory cache of versions and patch data, backed by on-disk files.
+    /// In-memory cache of versions and patch data, backed by on-disk files
     /// </summary>
     private readonly VersionCache _cache;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="VersionService"/> class.
+    /// Initializes a new instance of the <see cref="VersionService"/> class
     /// </summary>
     public VersionService(
         string appDir,
@@ -51,16 +51,16 @@ public class VersionService : IVersionService
         _appDir = appDir;
         _configService = configService;
         _httpClient = httpClient;
-        
+
         // Build source list
         _sources = new List<IVersionSource>();
-        
+
         if (hytaleSource != null)
         {
             _hytaleSource = hytaleSource;
             _sources.Add(hytaleSource);
         }
-        
+
         if (mirrorSources != null)
         {
             foreach (var mirror in mirrorSources.Where(m => m.Type == VersionSourceType.Mirror))
@@ -69,7 +69,7 @@ public class VersionService : IVersionService
                 _sources.Add(mirror);
             }
         }
-        
+
         // Sort by priority
         _sources.Sort((a, b) => a.Priority.CompareTo(b.Priority));
 
@@ -83,7 +83,7 @@ public class VersionService : IVersionService
     }
 
     /// <summary>
-    /// Whether an official Hytale account is available for authenticated requests.
+    /// Whether an official Hytale account is available for authenticated requests
     /// </summary>
     public bool HasOfficialAccount => _hytaleSource?.IsAvailable ?? false;
 
@@ -190,7 +190,7 @@ public class VersionService : IVersionService
                         }
                         mirrorCache.Branches[normalizedBranch] = versions;
                     }
-                    
+
                     Logger.Success("Version", $"{source.SourceId} returned {versions.Count} versions for {normalizedBranch}: [{string.Join(", ", versions.Select(v => v.Version))}]");
                 }
                 else
@@ -249,7 +249,7 @@ public class VersionService : IVersionService
     }
 
     /// <summary>
-    /// Gets merged version list from cache, preferring official source for duplicates.
+    /// Gets merged version list from cache, preferring official source for duplicates
     /// </summary>
     private List<int> GetMergedVersionList(VersionsCacheSnapshot snapshot, string branch)
     {
@@ -279,6 +279,7 @@ public class VersionService : IVersionService
         return allVersions.Keys.OrderByDescending(v => v).ToList();
     }
 
+    /// <inheritdoc/>
     public bool TryGetCachedVersions(string branch, TimeSpan maxAge, out List<int> versions)
     {
         versions = new List<int>();
@@ -297,21 +298,21 @@ public class VersionService : IVersionService
     }
 
     /// <summary>
-    /// Gets version list with source information (official vs mirror).
+    /// Gets version list with source information (official vs mirror)
     /// </summary>
     public async Task<VersionListResponse> GetVersionListWithSourcesAsync(string branch, CancellationToken ct = default)
     {
         var normalizedBranch = NormalizeBranch(branch);
-        
+
         // Ensure we have fetched the versions
         await GetVersionListAsync(normalizedBranch, ct);
 
         var snapshot = _cache.Current ?? _cache.Load();
-        
+
         var response = new VersionListResponse
         {
             HasOfficialAccount = HasOfficialAccount,
-            OfficialSourceAvailable = snapshot?.Data.Hytale?.Branches.ContainsKey(normalizedBranch) == true 
+            OfficialSourceAvailable = snapshot?.Data.Hytale?.Branches.ContainsKey(normalizedBranch) == true
                 && snapshot.Data.Hytale.Branches[normalizedBranch].Count > 0,
             HasDownloadSources = HasDownloadSources(),
             EnabledMirrorCount = EnabledMirrorCount
@@ -368,30 +369,30 @@ public class VersionService : IVersionService
     }
 
     /// <summary>
-    /// Gets the source of versions for a branch.
+    /// Gets the source of versions for a branch
     /// </summary>
     public VersionSource GetVersionSource(string branch)
     {
         var normalizedBranch = NormalizeBranch(branch);
         var snapshot = _cache.Current ?? _cache.Load();
-        
+
         if (snapshot?.Data.Hytale?.Branches.TryGetValue(normalizedBranch, out var versions) == true && versions.Count > 0)
         {
             return VersionSource.Official;
         }
-        
+
         return VersionSource.Mirror;
     }
 
     /// <summary>
     /// Gets the download URL for a specific version.
-    /// Prefers official source if available.
+    /// Prefers official source if available
     /// </summary>
     public string? GetVersionDownloadUrl(string branch, int version)
     {
         var normalizedBranch = NormalizeBranch(branch);
         var snapshot = _cache.Current ?? _cache.Load();
-        
+
         if (snapshot == null) return null;
 
         // Check official source first
@@ -421,13 +422,13 @@ public class VersionService : IVersionService
     }
 
     /// <summary>
-    /// Gets the cached version entry for a specific version.
+    /// Gets the cached version entry for a specific version
     /// </summary>
     public CachedVersionEntry? GetVersionEntry(string branch, int version)
     {
         var normalizedBranch = NormalizeBranch(branch);
         var snapshot = _cache.Current ?? _cache.Load();
-        
+
         if (snapshot == null) return null;
 
         // Check official source first
@@ -460,7 +461,7 @@ public class VersionService : IVersionService
     public async Task<string> RefreshAndGetDownloadUrlAsync(string branch, int version, CancellationToken ct = default)
     {
         var normalizedBranch = NormalizeBranch(branch);
-        
+
         // 1. Check cache first
         var url = GetVersionDownloadUrl(normalizedBranch, version);
         if (!string.IsNullOrEmpty(url))
@@ -468,11 +469,11 @@ public class VersionService : IVersionService
             Logger.Debug("Version", $"Using cached URL for {normalizedBranch} v{version}");
             return url;
         }
-        
+
         // 2. Cache miss - refresh from all sources
         Logger.Info("Version", $"No cached URL for {normalizedBranch} v{version}, refreshing cache...");
         await ForceRefreshCacheAsync(normalizedBranch, ct);
-        
+
         // 3. Try again after refresh
         url = GetVersionDownloadUrl(normalizedBranch, version);
         if (!string.IsNullOrEmpty(url))
@@ -480,7 +481,7 @@ public class VersionService : IVersionService
             Logger.Success("Version", $"Got URL for {normalizedBranch} v{version} after cache refresh");
             return url;
         }
-        
+
         // 4. Still no URL - version doesn't exist in any source
         throw new Exception($"No download URL available for {normalizedBranch} v{version}. " +
             "The version may not exist or all sources are unavailable.");
@@ -490,7 +491,7 @@ public class VersionService : IVersionService
     public async Task<CachedVersionEntry> RefreshAndGetVersionEntryAsync(string branch, int version, CancellationToken ct = default)
     {
         var normalizedBranch = NormalizeBranch(branch);
-        
+
         // 1. Check cache first
         var entry = GetVersionEntry(normalizedBranch, version);
         if (entry != null && !string.IsNullOrEmpty(entry.PwrUrl))
@@ -498,11 +499,11 @@ public class VersionService : IVersionService
             Logger.Debug("Version", $"Using cached entry for {normalizedBranch} v{version}");
             return entry;
         }
-        
+
         // 2. Cache miss - refresh from all sources
         Logger.Info("Version", $"No cached entry for {normalizedBranch} v{version}, refreshing cache...");
         await ForceRefreshCacheAsync(normalizedBranch, ct);
-        
+
         // 3. Try again after refresh
         entry = GetVersionEntry(normalizedBranch, version);
         if (entry != null && !string.IsNullOrEmpty(entry.PwrUrl))
@@ -510,7 +511,7 @@ public class VersionService : IVersionService
             Logger.Success("Version", $"Got entry for {normalizedBranch} v{version} after cache refresh");
             return entry;
         }
-        
+
         // 4. Still no entry - version doesn't exist in any source
         throw new Exception($"Version {normalizedBranch} v{version} not found in any source. " +
             "The version may not exist or all sources are unavailable.");
@@ -522,10 +523,10 @@ public class VersionService : IVersionService
         var normalizedBranch = NormalizeBranch(branch);
         string osName = UtilityService.GetOS();
         string arch = UtilityService.GetArch();
-        
+
         // Clear memory cache to force re-fetch
         _cache.Invalidate();
-        
+
         await _versionFetchLock.WaitAsync(ct);
         try
         {
@@ -539,11 +540,11 @@ public class VersionService : IVersionService
 
     /// <summary>
     /// Removes a specific version from the cache for a given mirror/source.
-    /// Call this when a download fails with 404 to prevent showing unavailable versions.
+    /// Call this when a download fails with 404 to prevent showing unavailable versions
     /// </summary>
-    /// <param name="branch">Branch name (e.g., "release", "pre-release").</param>
-    /// <param name="version">Version number to invalidate.</param>
-    /// <param name="sourceId">Source ID (mirror ID or "official"). If null, removes from all sources.</param>
+    /// <param name="branch">Branch name (e.g., "release", "pre-release")</param>
+    /// <param name="version">Version number to invalidate</param>
+    /// <param name="sourceId">Source ID (mirror ID or "official"). If null, removes from all sources</param>
     public void InvalidateVersionFromCache(string branch, int version, string? sourceId = null)
     {
         var normalizedBranch = NormalizeBranch(branch);
@@ -625,18 +626,18 @@ public class VersionService : IVersionService
 
     /// <summary>
     /// Returns true if the specified branch uses diff-based patching (mirrors only).
-    /// Pre-release branch uses diffs, release uses full copies.
+    /// Pre-release branch uses diffs, release uses full copies
     /// </summary>
     public bool IsDiffBasedBranch(string branch)
     {
         var normalizedBranch = NormalizeBranch(branch);
-        return _selectedMirror?.IsDiffBasedBranch(normalizedBranch) ?? 
+        return _selectedMirror?.IsDiffBasedBranch(normalizedBranch) ??
                _mirrorSources.FirstOrDefault()?.IsDiffBasedBranch(normalizedBranch) ?? false;
     }
 
     /// <summary>
     /// Gets download URL from mirror sources only.
-    /// Used when official servers are down and we need explicit mirror fallback.
+    /// Used when official servers are down and we need explicit mirror fallback
     /// </summary>
     public async Task<string?> GetMirrorDownloadUrlAsync(
         string os, string arch, string branch, int version, CancellationToken ct = default)
@@ -670,7 +671,7 @@ public class VersionService : IVersionService
     }
 
     /// <summary>
-    /// Gets diff patch URL from mirror sources for applying incremental updates.
+    /// Gets diff patch URL from mirror sources for applying incremental updates
     /// </summary>
     public async Task<string?> GetMirrorDiffUrlAsync(
         string os, string arch, string branch, int fromVersion, int toVersion, CancellationToken ct = default)
@@ -725,7 +726,7 @@ public class VersionService : IVersionService
     }
 
     /// <summary>
-    /// Check if latest instance needs an update.
+    /// Check if latest instance needs an update
     /// </summary>
     public async Task<bool> CheckLatestNeedsUpdateAsync(string branch, Func<string, bool> isClientPresent, Func<string> getLatestInstancePath, Func<string, LatestVersionInfo?> loadLatestInfo)
     {
@@ -745,9 +746,9 @@ public class VersionService : IVersionService
         }
         return info.Version != latest;
     }
-    
+
     /// <summary>
-    /// Gets the version status for the latest instance.
+    /// Gets the version status for the latest instance
     /// </summary>
     public async Task<VersionStatus> GetLatestVersionStatusAsync(string branch, Func<string, bool> isClientPresent, Func<string> getLatestInstancePath, Func<string, LatestVersionInfo?> loadLatestInfo)
     {
@@ -755,52 +756,52 @@ public class VersionService : IVersionService
         {
             var normalizedBranch = NormalizeBranch(branch);
             var versions = await GetVersionListAsync(normalizedBranch);
-            
+
             if (versions.Count == 0)
             {
                 return new VersionStatus { Status = "none", InstalledVersion = 0, LatestVersion = 0 };
             }
-            
+
             var latestAvailable = versions[0];
             var latestPath = getLatestInstancePath();
             var info = loadLatestInfo(normalizedBranch);
             var baseOk = isClientPresent(latestPath);
-            
+
             if (!baseOk)
             {
-                return new VersionStatus 
-                { 
-                    Status = "not_installed", 
-                    InstalledVersion = 0, 
-                    LatestVersion = latestAvailable 
+                return new VersionStatus
+                {
+                    Status = "not_installed",
+                    InstalledVersion = 0,
+                    LatestVersion = latestAvailable
                 };
             }
-            
+
             if (info == null)
             {
-                return new VersionStatus 
-                { 
-                    Status = "update_available", 
-                    InstalledVersion = 0, 
-                    LatestVersion = latestAvailable 
+                return new VersionStatus
+                {
+                    Status = "update_available",
+                    InstalledVersion = 0,
+                    LatestVersion = latestAvailable
                 };
             }
-            
+
             if (info.Version < latestAvailable)
             {
-                return new VersionStatus 
-                { 
-                    Status = "update_available", 
-                    InstalledVersion = info.Version, 
-                    LatestVersion = latestAvailable 
+                return new VersionStatus
+                {
+                    Status = "update_available",
+                    InstalledVersion = info.Version,
+                    LatestVersion = latestAvailable
                 };
             }
-            
-            return new VersionStatus 
-            { 
-                Status = "current", 
-                InstalledVersion = info.Version, 
-                LatestVersion = latestAvailable 
+
+            return new VersionStatus
+            {
+                Status = "current",
+                InstalledVersion = info.Version,
+                LatestVersion = latestAvailable
             };
         }
         catch (Exception ex)
@@ -811,7 +812,7 @@ public class VersionService : IVersionService
     }
 
     /// <summary>
-    /// Get pending update information.
+    /// Get pending update information
     /// </summary>
     public async Task<UpdateInfo?> GetPendingUpdateInfoAsync(string branch, Func<string> getLatestInstancePath, Func<string, LatestVersionInfo?> loadLatestInfo)
     {
@@ -824,13 +825,13 @@ public class VersionService : IVersionService
             var latestVersion = versions[0];
             var latestPath = getLatestInstancePath();
             var info = loadLatestInfo(normalizedBranch);
-            
+
             if (info == null || info.Version == latestVersion) return null;
-            
+
             var oldUserDataPath = Path.Combine(latestPath, "UserData");
-            var hasOldUserData = Directory.Exists(oldUserDataPath) && 
+            var hasOldUserData = Directory.Exists(oldUserDataPath) &&
                                  Directory.GetFileSystemEntries(oldUserDataPath).Length > 0;
-            
+
             return new UpdateInfo
             {
                 OldVersion = info.Version,
@@ -847,7 +848,7 @@ public class VersionService : IVersionService
     }
 
     /// <summary>
-    /// Get sequence of patches to apply for differential update.
+    /// Get sequence of patches to apply for differential update
     /// </summary>
     public List<int> GetPatchSequence(int fromVersion, int toVersion)
     {
@@ -864,9 +865,9 @@ public class VersionService : IVersionService
     {
         var normalizedBranch = NormalizeBranch(branch);
         var snapshot = _cache.Current ?? _cache.Load();
-        
+
         // Official is "down" if we don't have official data for this branch
-        return snapshot?.Data.Hytale?.Branches.ContainsKey(normalizedBranch) != true 
+        return snapshot?.Data.Hytale?.Branches.ContainsKey(normalizedBranch) != true
             || snapshot.Data.Hytale.Branches[normalizedBranch].Count == 0;
     }
 
@@ -886,12 +887,12 @@ public class VersionService : IVersionService
     }
 
     /// <summary>
-    /// Tests the speed and availability of a mirror by ID.
+    /// Tests the speed and availability of a mirror by ID
     /// </summary>
     public async Task<MirrorSpeedTestResult> TestMirrorSpeedAsync(string mirrorId, bool forceRefresh = false, CancellationToken ct = default)
     {
         var mirror = _mirrorSources.FirstOrDefault(m => m.SourceId.Equals(mirrorId, StringComparison.OrdinalIgnoreCase));
-        
+
         if (mirror == null)
         {
             Logger.Warning("Version", $"TestMirrorSpeedAsync: mirror '{mirrorId}' not found in {_mirrorSources.Count} loaded sources");
@@ -905,9 +906,9 @@ public class VersionService : IVersionService
                 TestedAt = DateTime.UtcNow
             };
         }
-        
+
         Logger.Debug("Version", $"TestMirrorSpeedAsync: testing mirror '{mirrorId}' (forceRefresh={forceRefresh})");
-        
+
         if (!forceRefresh)
         {
             var cached = mirror.GetCachedSpeedTest();
@@ -917,12 +918,12 @@ public class VersionService : IVersionService
                 return cached;
             }
         }
-        
+
         return await mirror.TestSpeedAsync(ct);
     }
-    
+
     /// <summary>
-    /// Tests the speed and availability of the official Hytale CDN.
+    /// Tests the speed and availability of the official Hytale CDN
     /// </summary>
     public async Task<MirrorSpeedTestResult> TestOfficialSpeedAsync(bool forceRefresh = false, CancellationToken ct = default)
     {
@@ -939,7 +940,7 @@ public class VersionService : IVersionService
                 TestedAt = DateTime.UtcNow
             };
         }
-        
+
         if (!forceRefresh)
         {
             var cached = _hytaleSource.GetCachedSpeedTest();
@@ -948,21 +949,21 @@ public class VersionService : IVersionService
                 return cached;
             }
         }
-        
+
         return await _hytaleSource.TestSpeedAsync(ct);
     }
-    
+
     /// <summary>
-    /// Gets all available mirrors.
+    /// Gets all available mirrors
     /// </summary>
     public List<(string Id, string Name)> GetAvailableMirrors()
     {
         return _mirrorSources.Select(m => (m.SourceId, m.GetCachedSpeedTest()?.MirrorName ?? m.SourceId)).ToList();
     }
-    
+
     /// <summary>
     /// Selects the best mirror based on speed tests.
-    /// Only called when official source is not available.
+    /// Only called when official source is not available
     /// </summary>
     public async Task<IVersionSource?> SelectBestMirrorAsync(CancellationToken ct = default)
     {
@@ -971,7 +972,7 @@ public class VersionService : IVersionService
             Logger.Warning("Version", "No mirrors available for selection");
             return null;
         }
-        
+
         // If only one mirror, use it
         if (_mirrorSources.Count == 1)
         {
@@ -979,11 +980,11 @@ public class VersionService : IVersionService
             Logger.Info("Version", $"Only one mirror available: {_selectedMirror.SourceId}");
             return _selectedMirror;
         }
-        
+
         Logger.Info("Version", $"Testing {_mirrorSources.Count} mirrors to select the best one...");
-        
+
         var results = new List<(IVersionSource Source, MirrorSpeedTestResult Result)>();
-        
+
         // Test all mirrors concurrently
         var tasks = _mirrorSources.Select(async mirror =>
         {
@@ -1005,76 +1006,76 @@ public class VersionService : IVersionService
                 });
             }
         });
-        
+
         var testResults = await Task.WhenAll(tasks);
         results.AddRange(testResults);
-        
+
         // Filter available mirrors and sort by speed (descending)
         var availableMirrors = results
             .Where(r => r.Result.IsAvailable && r.Result.SpeedMBps > 0)
             .OrderByDescending(r => r.Result.SpeedMBps)
             .ThenBy(r => r.Result.PingMs)
             .ToList();
-        
+
         if (availableMirrors.Count == 0)
         {
             Logger.Warning("Version", "No mirrors passed speed test, using first available");
             _selectedMirror = _mirrorSources[0];
             return _selectedMirror;
         }
-        
+
         var best = availableMirrors[0];
         _selectedMirror = best.Source;
         Logger.Success("Version", $"Selected mirror: {best.Source.SourceId} ({best.Result.SpeedMBps:F2} MB/s, {best.Result.PingMs}ms ping)");
-        
+
         return _selectedMirror;
     }
-    
+
     /// <summary>
-    /// Gets the currently selected mirror, or selects one if not yet selected.
+    /// Gets the currently selected mirror, or selects one if not yet selected
     /// </summary>
     public async Task<IVersionSource?> GetSelectedMirrorAsync(CancellationToken ct = default)
     {
         if (_selectedMirror != null)
             return _selectedMirror;
-        
+
         return await SelectBestMirrorAsync(ct);
     }
-    
+
     /// <inheritdoc/>
     public void ReloadMirrorSources()
     {
         Logger.Info("Version", "Reloading mirror sources from disk...");
-        
+
         // Remove old mirrors from sources
         foreach (var oldMirror in _mirrorSources)
         {
             _sources.Remove(oldMirror);
         }
         _mirrorSources.Clear();
-        
+
         // Reset selected mirror
         _selectedMirror = null;
-        
+
         // Load fresh mirrors from disk
         var freshMirrors = MirrorLoaderService.LoadAll(_appDir, _httpClient);
-        
+
         foreach (var mirror in freshMirrors.Where(m => m.Type == VersionSourceType.Mirror))
         {
             _mirrorSources.Add(mirror);
             _sources.Add(mirror);
         }
-        
+
         // Re-sort by priority
         _sources.Sort((a, b) => a.Priority.CompareTo(b.Priority));
-        
+
         Logger.Success("Version", $"Reloaded {_mirrorSources.Count} mirror sources");
-        
+
         foreach (var source in _mirrorSources)
         {
             Logger.Debug("Version", $"Mirror {source.SourceId}: priority={source.Priority}");
         }
-        
+
         // If no download sources remain, clear the version cache
         if (!HasDownloadSources())
         {
@@ -1082,16 +1083,16 @@ public class VersionService : IVersionService
             ClearVersionCache();
         }
     }
-    
+
     /// <inheritdoc/>
     public bool HasDownloadSources()
     {
         return HasOfficialAccount || EnabledMirrorCount > 0;
     }
-    
+
     /// <inheritdoc/>
     public int EnabledMirrorCount => _mirrorSources.Count;
-    
+
     /// <inheritdoc/>
     public void ClearVersionCache()
     {
@@ -1099,7 +1100,7 @@ public class VersionService : IVersionService
         {
             // Clear in-memory cache
             _cache.Invalidate();
-            
+
             // Delete versions cache file
             var versionsPath = _cache.GetSnapshotPath();
             if (File.Exists(versionsPath))
@@ -1107,7 +1108,7 @@ public class VersionService : IVersionService
                 File.Delete(versionsPath);
                 Logger.Info("Version", "Deleted versions cache file");
             }
-            
+
             // Delete patches cache file
             var patchesPath = _cache.GetPatchSnapshotPath();
             if (File.Exists(patchesPath))
@@ -1115,7 +1116,7 @@ public class VersionService : IVersionService
                 File.Delete(patchesPath);
                 Logger.Info("Version", "Deleted patches cache file");
             }
-            
+
             Logger.Success("Version", "Version cache cleared");
         }
         catch (Exception ex)

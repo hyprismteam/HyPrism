@@ -1,0 +1,47 @@
+---
+title: Coding style
+description: Language, source documentation, and repository conventions
+---
+
+# Coding style
+
+Write for the next person who needs to understand or change the code
+
+## Prose
+
+- use direct, human-readable wording
+- avoid em dashes
+- do not add a period to the final sentence of a paragraph, list item, summary, parameter, return, or exception description
+- prefer concrete behavior over marketing or filler text
+- explain why a constraint exists when the reason is not obvious
+
+## C# API documentation
+
+Every public method must have XML documentation. Document public types and data members when their meaning is not self-evident
+
+Public methods must include
+
+- `<summary>` with the operation and its intent
+- `<param>` for every parameter
+- `<returns>` for every non-void result, including `Task` and `Task<T>`
+- `<exception>` for every exception callers are expected to handle
+
+```csharp
+/// <summary>
+/// Loads the selected profile from persistent storage
+/// </summary>
+/// <param name="profileId">Stable identifier of the profile to load</param>
+/// <returns>The profile when it exists, otherwise <see langword="null"/></returns>
+/// <exception cref="IOException">Thrown when the profile file cannot be read</exception>
+public Profile? LoadProfile(string profileId)
+```
+
+Use `<inheritdoc/>` on an implementation only when the interface documents the complete contract
+
+## Structure
+
+- keep UI-independent behavior in `HyPrism.Core`
+- keep Avalonia resources and presentation state in `HyPrism.Desktop`
+- depend on interfaces at host boundaries
+- use async I/O and pass cancellation tokens through network or long-running work
+- do not add new features to the obsolete Electron host

@@ -1,0 +1,26 @@
+---
+title: Core services
+description: Responsibilities of the public service groups in HyPrism.Core
+---
+
+# Core services
+
+`Bootstrapper.Initialize` registers the default implementations and returns an `IServiceProvider`. A host may add platform-specific registrations through its configuration callback
+
+| Service group | Main contracts | Responsibility |
+| --- | --- | --- |
+| Settings and config | `ISettingsService`, `IConfigService` | typed preferences and persistence |
+| Progress | `IProgressNotificationService` | download, game state, and error events |
+| Versions | `IVersionService`, `IVersionSource` | version lists, source selection, cache, and patches |
+| Instances | `IInstanceService`, `IInstanceMigrationService` | paths, metadata, selection, import, and migration |
+| Downloads | `IDownloadService`, `IPatchManager`, `IButlerService` | transfer, file size checks, patching, and Butler |
+| Launch | `IGameSessionService`, `IGameLaunchCoordinator`, `IGameLauncher` | orchestration from selection to process start |
+| Process | `IGameProcessService` | process tracking and controlled exit |
+| Mods | `IModService` | search, install, import, update checks, and changelog retrieval |
+| Authentication | `IHytaleAuthService`, `IAuthService` | official sessions and game tokens |
+| Profiles | `IProfileService`, `IProfileManagementService`, `IUserIdentityService` | identity and profile lifecycle |
+| Assets | `IAssetService`, `IAvatarService`, `ISkinService` | asset extraction and profile visuals |
+| News | `INewsService`, `INewsSource` | feed and structured article retrieval |
+| Platform | `IBrowserService`, `IClipboardService`, `IFileDialogService`, `IGpuDetectionService` | host-owned operating system capabilities |
+
+Prefer the narrowest contract required by a consumer. Avoid resolving services from the container inside domain code

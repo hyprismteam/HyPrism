@@ -1,0 +1,46 @@
+---
+title: Configuration reference
+description: Current persistent settings in config.json
+---
+
+# Configuration reference
+
+`ConfigService` loads and saves the `Config` model as `config.json`
+
+## Identity and selection
+
+| Key | Meaning |
+| --- | --- |
+| `UUID` and `Nick` | current offline identity |
+| `SelectedProfileId` | stable active profile identifier |
+| `SelectedInstanceId` | stable active instance identifier |
+| `OnlineMode` | use official online authentication when enabled |
+| `AuthDomain` | authentication server domain used by compatible launch modes |
+
+## Launch and Java
+
+| Key | Meaning |
+| --- | --- |
+| `CloseAfterLaunch` | close HyPrism after a successful game start |
+| `LaunchAfterDownload` | launch automatically after installation completes |
+| `UseCustomJava` | select a user-provided Java executable |
+| `CustomJavaPath` | absolute path to that executable |
+| `JavaArguments` | extra JVM options and managed heap arguments |
+| `GpuPreference` | `dedicated`, `integrated`, or `auto` |
+| `GameEnvironmentVariables` | newline-separated `KEY=VALUE` entries |
+| `UseDualAuth` | use the DualAuth Java agent |
+
+## Interface and data
+
+| Key | Meaning |
+| --- | --- |
+| `Language` | culture code such as `en-US` or `ru-RU` |
+| `MusicEnabled` | background music state |
+| `BackgroundMode` | `auto` or a bundled background file name |
+| `DisableNews` | skip news retrieval and presentation |
+| `ShowDiscordAnnouncements` | show supported announcements |
+| `DismissedAnnouncementIds` | announcement identifiers hidden by the user |
+| `InstanceDirectory` | custom instance root |
+| `ShowAlphaMods` | include alpha mod files in search results |
+
+Fields marked obsolete in the model exist only to read and migrate older configurations. New code must use stable profile and instance identifiers

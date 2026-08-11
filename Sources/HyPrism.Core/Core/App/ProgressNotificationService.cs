@@ -8,45 +8,45 @@ namespace HyPrism.Services.Core.App;
 
 /// <summary>
 /// Manages progress notifications for download, installation, and game state changes.
-/// Coordinates with Discord Rich Presence to reflect current activity.
+/// Coordinates with Discord Rich Presence to reflect current activity
 /// </summary>
 public class ProgressNotificationService : IProgressNotificationService
 {
     private readonly IDiscordService _discordService;
-    
+
     /// <inheritdoc/>
     public event Action<ProgressUpdateMessage>? DownloadProgressChanged;
-    
+
     /// <inheritdoc/>
     public event Action<string, int>? GameStateChanged;
-    
+
     /// <inheritdoc/>
     public event Action<string, string, string?>? ErrorOccurred;
-    
+
     /// <summary>
-    /// Initializes a new instance of the <see cref="ProgressNotificationService"/> class.
+    /// Initializes a new instance of the <see cref="ProgressNotificationService"/> class
     /// </summary>
-    /// <param name="discordService">The Discord service for Rich Presence updates.</param>
+    /// <param name="discordService">The Discord service for Rich Presence updates</param>
     public ProgressNotificationService(IDiscordService discordService)
     {
         _discordService = discordService;
     }
-    
+
     /// <inheritdoc/>
     public void SendProgress(string stage, int progress, string messageKey, object[]? args, long downloaded, long total)
     {
-        var msg = new ProgressUpdateMessage 
-        { 
-            State = stage, 
-            Progress = progress, 
-            MessageKey = messageKey, 
+        var msg = new ProgressUpdateMessage
+        {
+            State = stage,
+            Progress = progress,
+            MessageKey = messageKey,
             Args = args,
             DownloadedBytes = downloaded,
             TotalBytes = total
         };
-        
+
         DownloadProgressChanged?.Invoke(msg);
-        
+
         // Don't update Discord during download/install to avoid showing extraction messages
         // Only update on complete or idle
         if (stage == "complete")
@@ -56,10 +56,14 @@ public class ProgressNotificationService : IProgressNotificationService
     }
 
     /// <inheritdoc/>
-    public void ReportDownloadProgress(string stage, int progress, string messageKey, object[]? args = null, long downloaded = 0, long total = 0) 
+    public void ReportDownloadProgress(string stage, int progress, string messageKey, object[]? args = null, long downloaded = 0, long total = 0)
         => SendProgress(stage, progress, messageKey, args, downloaded, total);
-    /// Sends game state change notification.
+
+    /// <summary>
+    /// Sends game state change notification
     /// </summary>
+    /// <param name="state">The new game state</param>
+    /// <param name="exitCode">The optional process exit code</param>
     public void SendGameStateEvent(string state, int? exitCode = null)
     {
         switch (state)
@@ -82,13 +86,21 @@ public class ProgressNotificationService : IProgressNotificationService
         }
     }
 
+    /// <inheritdoc/>
     public void ReportGameStateChanged(string state, int? exitCode = null) => SendGameStateEvent(state, exitCode);
 
+    /// <summary>
+    /// Sends an error notification to subscribed listeners
+    /// </summary>
+    /// <param name="type">The error category</param>
+    /// <param name="message">The user-facing error message</param>
+    /// <param name="technical">Optional diagnostic details</param>
     public void SendErrorEvent(string type, string message, string? technical = null)
     {
         ErrorOccurred?.Invoke(type, message, technical);
     }
-    
-    public void ReportError(string type, string message, string? technical = null) 
+
+    /// <inheritdoc/>
+    public void ReportError(string type, string message, string? technical = null)
         => SendErrorEvent(type, message, technical);
 }

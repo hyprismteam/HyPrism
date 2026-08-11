@@ -1,0 +1,28 @@
+---
+title: Mirrors
+description: Add user-controlled game version sources
+---
+
+# Mirrors
+
+HyPrism supports the official Hytale source and optional JSON-defined mirrors added by the user
+
+A mirror definition describes its identity, enabled state, priority, request headers, platform mappings, version list endpoint, full image endpoint, and optional differential patch endpoint
+
+## Discovery
+
+`IMirrorDiscoveryService` can inspect a compatible endpoint and infer a candidate schema. Review the generated definition before saving it
+
+## Runtime selection
+
+`IVersionService` loads enabled mirror definitions, preloads source metadata, caches speed tests, and selects an available source. The obsolete `PreferredMirror` configuration value is ignored because selection is automatic
+
+## Security
+
+- use HTTPS endpoints you trust
+- never commit private authorization headers
+- assume a mirror can provide hostile data
+- keep integrity and extraction checks enabled
+- custom mirrors do not change the user’s obligations under the Hytale EULA or local law
+
+HyPrism does not ship preconfigured third-party game mirrors

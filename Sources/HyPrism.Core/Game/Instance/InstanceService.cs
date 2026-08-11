@@ -12,20 +12,20 @@ namespace HyPrism.Services.Game.Instance;
 
 /// <summary>
 /// Manages game instance paths, versioning, and data organization.
-/// Handles instance discovery, creation, and migration from legacy launcher versions.
+/// Handles instance discovery, creation, and migration from legacy launcher versions
 /// </summary>
 /// <remarks>
 /// Instances are organized in a flat layout: {InstanceRoot}/{instanceId}/.
 /// Branch and version information is stored in each instance's meta.json.
 /// Legacy layouts (branch subdirectories, version-named folders) are migrated on startup.
-/// This service also handles user data directories and cosmetic skins.
+/// This service also handles user data directories and cosmetic skins
 /// </remarks>
 public class InstanceService : IInstanceService
 {
     private readonly string _appDir;
-    
+
     private readonly IConfigService _configService;
-    
+
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNameCaseInsensitive = true,
@@ -34,36 +34,36 @@ public class InstanceService : IInstanceService
     };
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="InstanceService"/> class.
+    /// Initializes a new instance of the <see cref="InstanceService"/> class
     /// </summary>
-    /// <param name="appDir">The application data directory path.</param>
-    /// <param name="configService">The configuration service for accessing settings.</param>
+    /// <param name="appDir">The application data directory path</param>
+    /// <param name="configService">The configuration service for accessing settings</param>
     public InstanceService(string appDir, IConfigService configService)
     {
         _appDir = appDir;
         _configService = configService;
-    } 
+    }
 
     /// <summary>
-    /// Gets the current configuration from the config service.
+    /// Gets the current configuration from the config service
     /// </summary>
-    /// <returns>The current configuration object.</returns>
+    /// <returns>The current configuration object</returns>
     private Config GetConfig() => _configService.Configuration;
-    
+
     /// <summary>
-    /// Persists the current configuration to disk.
+    /// Persists the current configuration to disk
     /// </summary>
-    /// <param name="config">The configuration object (parameter kept for API compatibility).</param>
+    /// <param name="config">The configuration object (parameter kept for API compatibility)</param>
     private void SaveConfig(Config config) => _configService.SaveConfig();
 
     #region Instance cache (instances.json)
 
-    /// <summary>Returns the path to the instance cache file.</summary>
+    /// <summary>Returns the path to the instance cache file</summary>
     private string GetInstanceCachePath() => Path.Combine(GetInstanceRoot(), "instances.json");
 
     /// <summary>
     /// Loads the instance list from instances.json.
-    /// On first run migrates from the deprecated config.Instances field.
+    /// On first run migrates from the deprecated config.Instances field
     /// </summary>
     private List<InstanceInfo> LoadInstanceCache()
     {
@@ -97,7 +97,7 @@ public class InstanceService : IInstanceService
         return new List<InstanceInfo>();
     }
 
-    /// <summary>Saves the instance list to instances.json.</summary>
+    /// <summary>Saves the instance list to instances.json</summary>
     private void SaveInstanceCache(IEnumerable<InstanceInfo> instances)
     {
         try
@@ -144,7 +144,7 @@ public class InstanceService : IInstanceService
     }
 
     /// <summary>
-    /// Get the path for a specific branch (release/pre-release).
+    /// Get the path for a specific branch (release/pre-release)
     /// </summary>
     public string GetBranchPath(string branch)
     {
@@ -153,7 +153,7 @@ public class InstanceService : IInstanceService
     }
 
     /// <summary>
-    /// Get the UserData path for a specific instance version.
+    /// Get the UserData path for a specific instance version
     /// </summary>
     public string GetInstanceUserDataPath(string versionPath)
     {
@@ -193,14 +193,14 @@ public class InstanceService : IInstanceService
 
     /// <summary>
     /// Find existing instance path by branch and version.
-    /// Checks multiple locations including legacy naming formats and GUID-named folders.
+    /// Checks multiple locations including legacy naming formats and GUID-named folders
     /// </summary>
     public string? FindExistingInstancePath(string branch, int version)
     {
         string normalizedBranch = NormalizeVersionType(branch);
         string versionSegment = version == 0 ? "latest" : version.ToString();
 
-        // Primary: flat structure — {root}/{guid}/
+        // Primary flat structure: {root}/{guid}/
         var flatRoot = GetInstanceRoot();
         if (Directory.Exists(flatRoot))
         {
@@ -265,7 +265,7 @@ public class InstanceService : IInstanceService
     }
 
     /// <summary>
-    /// Get all instance roots including legacy locations.
+    /// Get all instance roots including legacy locations
     /// </summary>
     public IEnumerable<string> GetInstanceRootsIncludingLegacy()
     {
@@ -310,7 +310,7 @@ public class InstanceService : IInstanceService
     }
 
     /// <summary>
-    /// Get path for latest instance symlink/info.
+    /// Get path for latest instance symlink/info
     /// </summary>
     public string GetLatestInstancePath(string branch)
     {
@@ -318,7 +318,7 @@ public class InstanceService : IInstanceService
     }
 
     /// <summary>
-    /// Get path for latest.json file (legacy, used for migration only).
+    /// Get path for latest.json file (legacy, used for migration only)
     /// </summary>
     public string GetLatestInfoPath(string branch)
     {
@@ -333,7 +333,7 @@ public class InstanceService : IInstanceService
     /// <summary>
     /// Load latest instance info.
     /// Reads from the "latest" instance's meta.json (InstalledVersion field).
-    /// Falls back to legacy latest.json for migration.
+    /// Falls back to legacy latest.json for migration
     /// </summary>
     public LatestInstanceInfo? LoadLatestInfo(string branch)
     {
@@ -385,7 +385,7 @@ public class InstanceService : IInstanceService
     /// <summary>
     /// Save latest instance info.
     /// Updates the "latest" instance's meta.json InstalledVersion field.
-    /// No longer creates latest.json files.
+    /// No longer creates latest.json files
     /// </summary>
     public void SaveLatestInfo(string branch, int version)
     {
@@ -432,7 +432,7 @@ public class InstanceService : IInstanceService
 
 
     /// <summary>
-    /// Safely copy directory recursively, preventing infinite loops.
+    /// Safely copy directory recursively, preventing infinite loops
     /// </summary>
     public static void SafeCopyDirectory(string sourceDir, string destDir)
     {
@@ -447,10 +447,10 @@ public class InstanceService : IInstanceService
     {
         return UtilityService.NormalizeVersionType(versionType);
     }
-    
+
     /// <summary>
     /// Checks if the game client executable exists at the specified version path.
-    /// Tries multiple layouts: new layout (Client/...) and legacy layout (game/Client/...).
+    /// Tries multiple layouts: new layout (Client/...) and legacy layout (game/Client/...)
     /// </summary>
     public bool IsClientPresent(string versionPath)
     {
@@ -486,7 +486,7 @@ public class InstanceService : IInstanceService
     }
 
     /// <summary>
-    /// Checks if game assets are present at the specified version path.
+    /// Checks if game assets are present at the specified version path
     /// </summary>
     public bool AreAssetsPresent(string versionPath)
     {
@@ -508,7 +508,7 @@ public class InstanceService : IInstanceService
     /// <summary>
     /// Gets the path to a specific instance version. Returns latest path if version is 0.
     /// Searches existing instances by branch/version using meta.json.
-    /// If not found, returns a path for a new instance (but does not create it).
+    /// If not found, returns a path for a new instance (but does not create it)
     /// </summary>
     public string GetInstancePath(string branch, int version)
     {
@@ -516,11 +516,11 @@ public class InstanceService : IInstanceService
         {
             return GetLatestInstancePath(branch);
         }
-        
+
         string normalizedBranch = NormalizeVersionType(branch);
         var flatRoot = GetInstanceRoot();
 
-        // Primary: flat structure — {root}/{guid}/
+        // Primary flat structure: {root}/{guid}/
         if (Directory.Exists(flatRoot))
         {
             foreach (var instanceDir in Directory.GetDirectories(flatRoot))
@@ -538,7 +538,7 @@ public class InstanceService : IInstanceService
             }
         }
 
-        // Legacy fallback: branch subdirectory — {root}/{branch}/{...}/
+        // Legacy fallback branch subdirectory: {root}/{branch}/{...}/
         var branchPath = Path.Combine(flatRoot, normalizedBranch);
         if (Directory.Exists(branchPath))
         {
@@ -567,7 +567,7 @@ public class InstanceService : IInstanceService
     }
 
     /// <summary>
-    /// Resolves the instance path, optionally preferring existing legacy paths.
+    /// Resolves the instance path, optionally preferring existing legacy paths
     /// </summary>
     public string ResolveInstancePath(string branch, int version, bool preferExisting)
     {
@@ -588,7 +588,7 @@ public class InstanceService : IInstanceService
     #region Legacy Config Migration
 
     /// <summary>
-    /// Gets the list of legacy installation root directories to search for migrations.
+    /// Gets the list of legacy installation root directories to search for migrations
     /// </summary>
     private IEnumerable<string> GetLegacyRoots()
     {
@@ -633,7 +633,7 @@ public class InstanceService : IInstanceService
 
     /// <summary>
     /// Deletes a game instance by branch and version number.
-    /// Also removes latest.json for latest instances (version 0).
+    /// Also removes latest.json for latest instances (version 0)
     /// </summary>
     public bool DeleteGame(string branch, int versionNumber)
     {
@@ -641,12 +641,12 @@ public class InstanceService : IInstanceService
         {
             string normalizedBranch = UtilityService.NormalizeVersionType(branch);
             string versionPath = ResolveInstancePath(normalizedBranch, versionNumber, true);
-            
+
             if (Directory.Exists(versionPath))
             {
                 Directory.Delete(versionPath, true);
             }
-            
+
             if (versionNumber == 0)
             {
                 var infoPath = GetLatestInfoPath(normalizedBranch);
@@ -655,7 +655,7 @@ public class InstanceService : IInstanceService
                     File.Delete(infoPath);
                 }
             }
-            
+
             return true;
         }
         catch (Exception ex)
@@ -666,7 +666,7 @@ public class InstanceService : IInstanceService
     }
 
     /// <summary>
-    /// Deletes a game instance by unique ID.
+    /// Deletes a game instance by unique ID
     /// </summary>
     public bool DeleteGameById(string instanceId)
     {
@@ -705,7 +705,7 @@ public class InstanceService : IInstanceService
     }
 
     /// <summary>
-    /// Scan for all installed instances in the standard hierarchy.
+    /// Scan for all installed instances in the standard hierarchy
     /// </summary>
     public List<InstalledInstance> GetInstalledInstances()
     {
@@ -854,7 +854,7 @@ public class InstanceService : IInstanceService
             });
         }
 
-        // Primary: flat structure — {root}/{guid}/
+        // Primary flat structure: {root}/{guid}/
         foreach (var folder in Directory.GetDirectories(root))
         {
             var dirName = Path.GetFileName(folder);
@@ -868,7 +868,7 @@ public class InstanceService : IInstanceService
             ProcessFolder(folder, null);
         }
 
-        // Legacy fallback: branch subdirectories — {root}/{branch}/{...}/
+        // Legacy fallback branch subdirectories: {root}/{branch}/{...}/
         foreach (var branch in new[] { "release", "pre-release" })
         {
             var branchDir = Path.Combine(root, branch);
@@ -889,13 +889,13 @@ public class InstanceService : IInstanceService
 
     /// <summary>
     /// Performs deep validation of a game instance, checking all critical components.
-    /// Returns detailed information about what's present and what's missing.
+    /// Returns detailed information about what's present and what's missing
     /// </summary>
     public (InstanceValidationStatus Status, InstanceValidationDetails Details) ValidateGameIntegrity(string folder)
     {
         var details = new InstanceValidationDetails();
         var missingComponents = new List<string>();
-        
+
         try
         {
             // 1. Check if the folder exists at all
@@ -962,7 +962,7 @@ public class InstanceService : IInstanceService
     }
 
     /// <summary>
-    /// Checks if the game executable is present at the specified path.
+    /// Checks if the game executable is present at the specified path
     /// </summary>
     private bool CheckExecutablePresent(string folder)
     {
@@ -983,7 +983,7 @@ public class InstanceService : IInstanceService
     }
 
     /// <summary>
-    /// Checks if game assets are present and contain actual files.
+    /// Checks if game assets are present and contain actual files
     /// </summary>
     private bool CheckAssetsPresent(string folder)
     {
@@ -1022,7 +1022,7 @@ public class InstanceService : IInstanceService
     }
 
     /// <summary>
-    /// Checks if required libraries/dependencies are present.
+    /// Checks if required libraries/dependencies are present
     /// </summary>
     private bool CheckLibrariesPresent(string folder)
     {
@@ -1038,7 +1038,7 @@ public class InstanceService : IInstanceService
             var monoPath = Path.Combine(folder, "Client", "Hytale.app", "Contents", "MonoBleedingEdge");
             return Directory.Exists(monoPath) && Directory.EnumerateFileSystemEntries(monoPath).Any();
         }
-        
+
         // On Windows/Linux, check for typical library locations
         var clientFolder = Path.Combine(folder, "Client");
         if (!Directory.Exists(clientFolder))
@@ -1066,7 +1066,7 @@ public class InstanceService : IInstanceService
     }
 
     /// <summary>
-    /// Checks if essential config files are present.
+    /// Checks if essential config files are present
     /// </summary>
     private bool CheckConfigPresent(string folder)
     {
@@ -1086,7 +1086,7 @@ public class InstanceService : IInstanceService
         }
 
         // At least one config file should exist
-        return configFiles.Any(File.Exists) || 
+        return configFiles.Any(File.Exists) ||
                Directory.Exists(Path.Combine(folder, "Client", "HytaleClient_Data"));
     }
 
@@ -1106,11 +1106,12 @@ public class InstanceService : IInstanceService
         }
     }
 
+    /// <inheritdoc/>
     public void SetInstanceCustomName(string branch, int version, string? customName)
     {
         // Use GetInstancePath which properly searches GUID-named folders
         var instancePath = GetInstancePath(branch, version);
-        
+
         if (string.IsNullOrEmpty(instancePath) || !Directory.Exists(instancePath))
         {
             Logger.Warning("InstanceService", $"Instance not found: {branch}/{version}");
@@ -1120,10 +1121,11 @@ public class InstanceService : IInstanceService
         SetInstanceNameInternal(instancePath, customName, $"{branch}/{version}");
     }
 
+    /// <inheritdoc/>
     public void SetInstanceCustomNameById(string instanceId, string? customName)
     {
         var instancePath = GetInstancePathById(instanceId);
-        
+
         if (string.IsNullOrEmpty(instancePath) || !Directory.Exists(instancePath))
         {
             Logger.Warning("InstanceService", $"Instance not found by ID: {instanceId}");
@@ -1146,16 +1148,16 @@ public class InstanceService : IInstanceService
             }
 
             // Update existing meta's Name field
-            meta.Name = string.IsNullOrWhiteSpace(customName) 
+            meta.Name = string.IsNullOrWhiteSpace(customName)
                 ? (meta.IsLatest ? $"{meta.Branch} (Latest)" : $"{meta.Branch} v{meta.Version}")
                 : customName;
 
             // Save meta.json
             SaveInstanceMeta(instancePath, meta);
-            
+
             // Also update Config.Instances for quick lookup
             SyncInstancesWithConfig();
-            
+
             Logger.Info("InstanceService", $"Updated instance name for {logIdentifier}: {meta.Name}");
         }
         catch (Exception ex)
@@ -1214,7 +1216,7 @@ public class InstanceService : IInstanceService
     public InstanceMeta CreateInstanceMeta(string branch, int version, string? name = null, bool isLatest = false)
     {
         var normalizedBranch = NormalizeVersionType(branch);
-        
+
         // For "latest" instances, check if one already exists (only one latest per branch)
         if (isLatest)
         {
@@ -1299,7 +1301,7 @@ public class InstanceService : IInstanceService
         {
             instancePath = FindExistingInstancePath(info.Branch, info.Version);
         }
-        
+
         if (!string.IsNullOrEmpty(instancePath))
         {
             var (status, _) = ValidateGameIntegrity(instancePath);
@@ -1388,11 +1390,11 @@ public class InstanceService : IInstanceService
         {
             if (!Directory.Exists(root)) continue;
 
-            // Primary: flat structure — {root}/{guid}/
+            // Primary flat structure: {root}/{guid}/
             foreach (var instanceDir in Directory.GetDirectories(root))
             {
                 var dirName = Path.GetFileName(instanceDir);
-                // Skip legacy branch subdirectories — handled below
+                // Skip legacy branch subdirectories because they are handled below
                 if (dirName.Equals("release", StringComparison.OrdinalIgnoreCase) ||
                     dirName.Equals("pre-release", StringComparison.OrdinalIgnoreCase))
                     continue;
@@ -1401,7 +1403,7 @@ public class InstanceService : IInstanceService
                 ProcessInstanceDir(instanceDir);
             }
 
-            // Legacy fallback: branch subdirectories — {root}/{branch}/{guid}/
+            // Legacy fallback branch subdirectories: {root}/{branch}/{guid}/
             foreach (var branchDir in Directory.GetDirectories(root))
             {
                 var branchName = Path.GetFileName(branchDir);
@@ -1423,7 +1425,7 @@ public class InstanceService : IInstanceService
     }
 
     /// <summary>
-    /// Migrates legacy metadata.json to new meta.json format.
+    /// Migrates legacy metadata.json to new meta.json format
     /// </summary>
     private InstanceMeta? MigrateLegacyMetadata(string instancePath, string legacyPath)
     {
@@ -1431,11 +1433,11 @@ public class InstanceService : IInstanceService
         {
             var json = File.ReadAllText(legacyPath);
             var legacyData = JsonSerializer.Deserialize<Dictionary<string, string>>(json, JsonOptions);
-            
+
             // Parse branch and version from path
             var dirName = Path.GetFileName(instancePath);
             var parentName = Path.GetFileName(Path.GetDirectoryName(instancePath) ?? "");
-            
+
             int version = 0;
             bool isLatest = dirName.Equals("latest", StringComparison.OrdinalIgnoreCase);
             if (!isLatest && int.TryParse(dirName, out var parsedVersion))
@@ -1479,12 +1481,12 @@ public class InstanceService : IInstanceService
         if (!Directory.Exists(root))
             return null;
 
-        // Primary: flat structure — {root}/{instanceId}
+        // Primary flat structure: {root}/{instanceId}
         var flatPath = Path.Combine(root, instanceId);
         if (Directory.Exists(flatPath))
             return flatPath;
 
-        // Legacy fallback: branch subdirectories — {root}/{branch}/{instanceId or version-name}
+        // Legacy fallback branch subdirectories: {root}/{branch}/{instanceId or version-name}
         foreach (var branchDir in Directory.GetDirectories(root))
         {
             var branchName = Path.GetFileName(branchDir);
@@ -1529,7 +1531,7 @@ public class InstanceService : IInstanceService
         if (cachedMatch != null)
             return cachedMatch;
 
-        // If not in cache, scan disk — primary: flat structure {root}/{guid}/
+        // Scan the primary flat structure {root}/{guid}/ when the instance is not cached
         var root = GetInstanceRoot();
         if (Directory.Exists(root))
         {
@@ -1547,7 +1549,7 @@ public class InstanceService : IInstanceService
             }
         }
 
-        // Legacy fallback: branch subdirectory — {root}/{branch}/{...}/
+        // Legacy fallback branch subdirectory: {root}/{branch}/{...}/
         var branchPath = GetBranchPath(normalizedBranch);
         if (!Directory.Exists(branchPath))
             return null;
@@ -1566,7 +1568,7 @@ public class InstanceService : IInstanceService
     public string CreateInstanceDirectory(string branch, string instanceId)
     {
         // Branch is retained as a parameter for callers that pass it for metadata purposes,
-        // but the folder is created flat at {InstanceRoot}/{instanceId} — no branch subdir.
+        // but the folder is created at {InstanceRoot}/{instanceId} without a branch subdirectory
         var path = Path.Combine(GetInstanceRoot(), instanceId);
         Directory.CreateDirectory(path);
         return path;
@@ -1577,7 +1579,7 @@ public class InstanceService : IInstanceService
     /// Changes the version/branch of an existing instance.
     /// For upgrades within the same branch: preserves game files and sets up for patching.
     /// For downgrades or branch changes: removes game client files and prepares for fresh download.
-    /// Always keeps UserData and meta.json, and marks IsLatest = false.
+    /// Always keeps UserData and meta.json, and marks IsLatest = false
     /// </summary>
     public bool ChangeInstanceVersion(string instanceId, string branch, int version)
     {
@@ -1614,7 +1616,7 @@ public class InstanceService : IInstanceService
             {
                 // PATCH MODE: Keep game files, set up for differential update
                 Logger.Info("InstanceService", $"Patch mode: upgrading {instanceId} from v{currentInstalledVersion} to v{version}");
-                
+
                 // Set PendingVersion to trigger patching on next launch
                 meta.Branch = normalizedBranch;
                 meta.Version = version;
@@ -1628,7 +1630,7 @@ public class InstanceService : IInstanceService
             {
                 // FULL DOWNLOAD MODE: Remove game files for clean install
                 Logger.Info("InstanceService", $"Full download mode: {instanceId} from {currentBranch} v{currentInstalledVersion} to {normalizedBranch} v{version}");
-                
+
                 // Remove game client directories while keeping UserData and meta.json
                 var clientDir = Path.Combine(instancePath, "Client");
                 var gameDir = Path.Combine(instancePath, "game");
@@ -1747,10 +1749,10 @@ public class InstanceService : IInstanceService
 
     /// <summary>
     /// Tries to parse version number from a PWR filename.
-    /// Supports patterns: v{version}-{os}-{arch}, 0_to_{version}, {version}, etc.
+    /// Supports patterns: v{version}-{os}-{arch}, 0_to_{version}, {version}, etc
     /// </summary>
-    /// <param name="filename">The filename without extension.</param>
-    /// <returns>The parsed version number, or 0 if parsing fails.</returns>
+    /// <param name="filename">The filename without extension</param>
+    /// <returns>The parsed version number, or 0 if parsing fails</returns>
     public static int TryParseVersionFromPwrFilename(string filename)
     {
         // Pattern: v{version}-{os}-{arch} (e.g., v123-linux-x64)
@@ -1777,4 +1779,3 @@ public class InstanceService : IInstanceService
 
     #endregion
 }
-

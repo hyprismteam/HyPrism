@@ -93,7 +93,7 @@ public class ProfileManagementServiceTests : IDisposable
     [Fact]
     public void CreateProfile_DuplicateName_ReturnsProfile()
     {
-        // ProfileManagementService does not enforce unique names — both calls succeed.
+        // ProfileManagementService does not enforce unique names, so both calls succeed
         var uuid = Guid.NewGuid().ToString();
         _svc.CreateProfile("Dupe", uuid);
 

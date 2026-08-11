@@ -1,0 +1,25 @@
+---
+title: Testing
+description: Run Core and Avalonia headless tests
+---
+
+# Testing
+
+Run all active tests from the repository root
+
+```bash
+dotnet test Tests/HyPrism.Core.Tests/HyPrism.Core.Tests.csproj
+dotnet test Tests/HyPrism.Desktop.Tests/HyPrism.Desktop.Tests.csproj
+```
+
+Core tests cover launch coordination and profile behavior. Desktop tests use Avalonia headless rendering to verify localization and important window states
+
+## Test boundaries
+
+- test domain behavior against Core interfaces
+- use temporary directories for persistent state
+- do not call live authentication, game, or third-party endpoints in unit tests
+- add a regression test when fixing a reproducible bug
+- keep render tests deterministic and independent of the machine theme
+
+Run the documentation build after changing any page, navigation metadata, or Nextra configuration

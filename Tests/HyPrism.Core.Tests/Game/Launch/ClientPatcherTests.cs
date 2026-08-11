@@ -8,7 +8,7 @@ namespace HyPrism.Core.Tests.Game.Launch;
 
 /// <summary>
 /// Tests for <see cref="ClientPatcher"/>. All tests operate on temporary directories
-/// containing synthetic binary files — no real Hytale binaries required.
+/// containing synthetic binary files without requiring real Hytale binaries
 /// </summary>
 public class ClientPatcherTests : IDisposable
 {
@@ -32,7 +32,7 @@ public class ClientPatcherTests : IDisposable
 
     /// <summary>
     /// Creates a synthetic binary containing the domain in UTF-8 (default) or
-    /// length-prefixed UTF-16LE format (used by .NET AOT binaries).
+    /// length-prefixed UTF-16LE format (used by .NET AOT binaries)
     /// </summary>
     private static string CreateFakeBinary(string dir, string filename, string domain = OriginalDomain,
         bool lengthPrefixed = false)
@@ -120,7 +120,7 @@ public class ClientPatcherTests : IDisposable
     [Fact]
     public void IsClientPatched_NoClientBinary_ReturnsFalse()
     {
-        // Empty game dir — no client binary
+        // Empty game directory without a client binary
         var result = ClientPatcher.IsClientPatched(_gameDir);
         Assert.False(result);
     }

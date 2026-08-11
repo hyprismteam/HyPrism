@@ -1,0 +1,39 @@
+---
+title: Documentation site
+description: Work locally with Nextra and publish the static site to GitHub Pages
+---
+
+# Documentation site
+
+The documentation is a Nextra 4 application stored entirely under `Docs`
+
+## Local development
+
+```bash
+cd Docs
+pnpm install
+pnpm dev
+```
+
+Open `http://localhost:3000/docs/`
+
+## Production build
+
+```bash
+cd Docs
+pnpm install --frozen-lockfile
+pnpm check
+pnpm build
+```
+
+Next.js exports static files to `Docs/out`
+
+## GitHub Pages path
+
+The workflow sets `PAGES_BASE_PATH=/HyPrism`, while Nextra serves content below `/docs`. The deployed English documentation therefore starts at
+
+```text
+https://hyprismteam.github.io/HyPrism/docs/en/
+```
+
+In repository settings, open **Pages** and select **GitHub Actions** as the publishing source. The `docs-pages.yml` workflow handles the remaining build and deployment steps

@@ -1,0 +1,22 @@
+---
+title: Localization
+description: Add and maintain Avalonia resource strings
+---
+
+# Localization
+
+Localization belongs to `HyPrism.Desktop` because translated UI text is a presentation concern
+
+The default resource is `Sources/HyPrism.Desktop/Localization/Resources.resx`. Each supported culture has a sibling file such as `Resources.ru-RU.resx`
+
+## Add a string
+
+1. Add the key and English value to `Resources.resx`
+2. Add the same key to every culture file
+3. Read the value through `LocalizationService`
+4. Refresh the affected view model when `LanguageChanged` fires
+5. Add or update localization tests
+
+`_supportedCultures` in the default resource controls the language picker. `_langName` in each culture resource provides the native display name
+
+Core stores only the selected culture code through `ISettingsService`. Core must not own translated strings or Avalonia resource lookup

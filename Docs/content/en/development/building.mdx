@@ -1,0 +1,38 @@
+---
+title: Building
+description: Restore, build, and run the native launcher
+---
+
+# Building
+
+## Requirements
+
+- .NET 10 SDK
+- Git
+- Node.js 22 and pnpm only when working on the documentation or obsolete Electron reference
+
+## Native launcher
+
+```bash
+dotnet restore HyPrism.sln
+dotnet build Sources/HyPrism.Desktop/HyPrism.Desktop.csproj
+dotnet run --project Sources/HyPrism.Desktop/HyPrism.Desktop.csproj
+```
+
+## Entire solution
+
+```bash
+dotnet build HyPrism.sln
+```
+
+The solution still includes the obsolete Electron host and IPC generator. Build `HyPrism.Desktop` directly when validating native-only work
+
+## Documentation
+
+```bash
+cd Docs
+pnpm install --frozen-lockfile
+pnpm build
+```
+
+The static site is written to `Docs/out`

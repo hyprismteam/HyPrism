@@ -21,11 +21,11 @@ namespace HyPrism.Services.Game.Launch;
 
 /// <summary>
 /// Handles the game launch process including client patching, authentication,
-/// process creation and monitoring, and Discord Rich Presence updates.
+/// process creation and monitoring, and Discord Rich Presence updates
 /// </summary>
 /// <remarks>
 /// Extracted from the former monolithic GameSessionService for better separation of concerns.
-/// Coordinates between multiple services to prepare and launch the game.
+/// Coordinates between multiple services to prepare and launch the game
 /// </remarks>
 public class GameLauncher : IGameLauncher
 {
@@ -45,35 +45,36 @@ public class GameLauncher : IGameLauncher
     private readonly IGpuDetectionService _gpuDetectionService;
     private readonly IProfileService _profileService;
     private readonly string _appDir;
-    
+
     private Config _config => _configService.Configuration;
 
     /// <summary>
-    /// Stores the DualAuth agent path after download, used when building process start info.
+    /// Stores the DualAuth agent path after download, used when building process start info
     /// </summary>
     private string? _dualAuthAgentPath;
 
     /// <summary>
-    /// Stores the offline token fetched from auth server, passed as HYTALE_OFFLINE_TOKEN env var.
+    /// Stores the offline token fetched from auth server, passed as HYTALE_OFFLINE_TOKEN env var
     /// </summary>
     private string? _offlineToken;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="GameLauncher"/> class.
+    /// Initializes a new instance of the <see cref="GameLauncher"/> class
     /// </summary>
-    /// <param name="configService">Service for accessing configuration.</param>
-    /// <param name="launchService">Service for launch prerequisites (JRE, VC++ Redist).</param>
-    /// <param name="instanceService">Service for instance path management.</param>
-    /// <param name="gameProcessService">Service for game process tracking.</param>
-    /// <param name="progressService">Service for progress notifications.</param>
-    /// <param name="discordService">Service for Discord Rich Presence.</param>
-    /// <param name="skinService">Service for skin protection.</param>
-    /// <param name="userIdentityService">Service for user identity management.</param>
-    /// <param name="avatarService">Service for avatar backup.</param>
-    /// <param name="httpClient">HTTP client for authentication requests.</param>
-    /// <param name="hytaleAuthService">Service for official Hytale OAuth authentication.</param>
-    /// <param name="gpuDetectionService">Service for GPU detection.</param>
-    /// <param name="appPath">Application path configuration.</param>
+    /// <param name="configService">Service for accessing configuration</param>
+    /// <param name="launchService">Service for launch prerequisites (JRE, VC++ Redist)</param>
+    /// <param name="instanceService">Service for instance path management</param>
+    /// <param name="gameProcessService">Service for game process tracking</param>
+    /// <param name="progressService">Service for progress notifications</param>
+    /// <param name="discordService">Service for Discord Rich Presence</param>
+    /// <param name="skinService">Service for skin protection</param>
+    /// <param name="userIdentityService">Service for user identity management</param>
+    /// <param name="avatarService">Service for avatar backup</param>
+    /// <param name="httpClient">HTTP client for authentication requests</param>
+    /// <param name="hytaleAuthService">Service for official Hytale OAuth authentication</param>
+    /// <param name="gpuDetectionService">Service for GPU detection</param>
+    /// <param name="appPath">Application path configuration</param>
+    /// <param name="profileService">Service for the active launcher profile</param>
     public GameLauncher(
         IConfigService configService,
         ILaunchService launchService,
@@ -117,7 +118,7 @@ public class GameLauncher : IGameLauncher
             var uuid = _userIdentityService.GetUuidForUser(_config.Nick);
             _skinService.StopSkinProtection();
             _skinService.BackupProfileSkinData(uuid);
-            
+
             // Copy the latest game avatar to persistent backup
             _avatarService.BackupAvatar(uuid);
 
@@ -261,7 +262,7 @@ public class GameLauncher : IGameLauncher
 
     /// <summary>
     /// Determines whether the current AuthDomain setting points to official Hytale servers
-    /// (i.e. no custom patching is needed).
+    /// (i.e. no custom patching is needed)
     /// </summary>
     private bool IsOfficialServerMode()
     {
@@ -279,11 +280,11 @@ public class GameLauncher : IGameLauncher
     }
 
     /// <summary>
-    /// Checks if the custom authentication server is reachable before launching the game.
+    /// Checks if the custom authentication server is reachable before launching the game
     /// </summary>
-    /// <param name="authDomain">The auth server domain to check.</param>
-    /// <param name="ct">Cancellation token.</param>
-    /// <returns>True if the auth server is reachable, false otherwise.</returns>
+    /// <param name="authDomain">The auth server domain to check</param>
+    /// <param name="ct">Cancellation token</param>
+    /// <returns>True if the auth server is reachable, false otherwise</returns>
     private async Task<bool> CheckAuthServerAvailabilityAsync(string authDomain, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(authDomain))
@@ -307,7 +308,7 @@ public class GameLauncher : IGameLauncher
             cts.CancelAfter(TimeSpan.FromSeconds(10));
 
             using var response = await _httpClient.GetAsync(pingUrl, cts.Token);
-            
+
             // Consider server reachable if we get any response (including 404, 401, 403)
             var isAvailable = response.IsSuccessStatusCode ||
                 (int)response.StatusCode == 404 ||
@@ -352,7 +353,7 @@ public class GameLauncher : IGameLauncher
 
             if (clientPatched || serverPatched)
             {
-                Logger.Info("Game", "Official server mode — restoring original (unpatched) binaries");
+                Logger.Info("Game", "Official server mode: restoring original unpatched binaries");
                 _progressService.ReportDownloadProgress("patching", 0, "launch.detail.restoring_originals", null, 0, 0);
 
                 try
@@ -365,7 +366,7 @@ public class GameLauncher : IGameLauncher
                     });
 
                     if (restoreResult.Success)
-                        Logger.Success("Game", "Originals restored — no patching needed for official servers");
+                        Logger.Success("Game", "Original binaries restored. Official servers need no patching");
                     else
                         Logger.Warning("Game", $"Restore had issues: {restoreResult.Error}");
 
@@ -378,7 +379,7 @@ public class GameLauncher : IGameLauncher
             }
             else
             {
-                Logger.Info("Game", "Official server mode — binaries are already unpatched, skipping");
+                Logger.Info("Game", "Official server mode: binaries are already unpatched");
             }
 
             return;
@@ -481,7 +482,7 @@ public class GameLauncher : IGameLauncher
             }
             else
             {
-                // This is the proven approach — statically modifies the JAR to replace
+                // This proven approach statically modifies the JAR to replace
                 // sessions.hytale.com with sessions.<custom-domain>.
                 // Also clear DualAuth agent path to prevent agent injection.
                 _dualAuthAgentPath = null;
@@ -548,10 +549,10 @@ public class GameLauncher : IGameLauncher
 
         if (isOfficialProfile)
         {
-            // Official Hytale account — use HytaleAuthService for OAuth tokens
+            // Use HytaleAuthService for OAuth tokens from an official account
             // Always create a fresh game session before launch to avoid SESSION EXPIRED errors
             _progressService.ReportDownloadProgress("launching", 20, "launch.detail.authenticating_official", null, 0, 0);
-            Logger.Info("Game", "Official profile detected — refreshing tokens and creating fresh game session");
+            Logger.Info("Game", "Official profile detected. Refreshing tokens and creating a fresh game session");
 
             try
             {
@@ -559,12 +560,12 @@ public class GameLauncher : IGameLauncher
                 var session = await _hytaleAuthService.EnsureFreshSessionForLaunchAsync();
                 if (session == null)
                 {
-                    Logger.Warning("Game", "No valid Hytale session — attempting full re-authentication...");
+                    Logger.Warning("Game", "No valid Hytale session. Attempting full re-authentication...");
                     _progressService.ReportDownloadProgress("launching", 25, "launch.detail.authenticating_browser", null, 0, 0);
                     session = await _hytaleAuthService.LoginAsync();
                     if (session == null)
                     {
-                        Logger.Error("Game", "Full re-authentication failed — cannot launch in authenticated mode");
+                        Logger.Error("Game", "Full re-authentication failed. Authenticated launch is unavailable");
                         throw new Exception("Official Hytale session expired and re-login failed. Please try logging in again from the profile settings.");
                     }
                     // Save session to the active profile after successful re-authentication
@@ -577,7 +578,7 @@ public class GameLauncher : IGameLauncher
                 if (!string.IsNullOrEmpty(identityToken))
                     Logger.Success("Game", "Official Hytale identity token obtained");
                 else
-                    Logger.Warning("Game", "Could not obtain Hytale session tokens — game may show SESSION EXPIRED");
+                    Logger.Warning("Game", "Could not obtain Hytale session tokens. The game may show SESSION EXPIRED");
             }
             catch (Exception ex) when (ex is not InvalidOperationException)
             {
@@ -588,7 +589,7 @@ public class GameLauncher : IGameLauncher
             return (identityToken, sessionToken, authPlayerName);
         }
 
-        // Non-official profile — use custom auth domain if configured
+        // Use a configured custom authentication domain for non-official profiles
         var effectiveAuthDomain = GetEffectiveCustomAuthDomain(logFallback: true);
         if (!_config.OnlineMode || string.IsNullOrWhiteSpace(effectiveAuthDomain))
             return (identityToken, sessionToken, authPlayerName);
@@ -624,14 +625,14 @@ public class GameLauncher : IGameLauncher
     /// <summary>
     /// Fetches an offline token from the custom auth server for HYTALE_OFFLINE_TOKEN env var.
     /// Required by Hytale client v2026.02.26+ for offline/singleplayer mode.
-    /// Only attempts the fetch when a custom auth server is configured and reachable.
+    /// Only attempts the fetch when a custom auth server is configured and reachable
     /// </summary>
     private async Task FetchOfflineTokenAsync(string uuid, string playerName)
     {
         var effectiveAuthDomain = GetEffectiveCustomAuthDomain(logFallback: false);
         if (string.IsNullOrWhiteSpace(effectiveAuthDomain))
         {
-            Logger.Info("Game", "Skipping offline token fetch — no custom auth server configured");
+            Logger.Info("Game", "Skipping offline token fetch because no custom auth server is configured");
             return;
         }
 
@@ -646,16 +647,16 @@ public class GameLauncher : IGameLauncher
 
             if (!string.IsNullOrEmpty(_offlineToken))
             {
-                Logger.Success("Game", "Offline token obtained — will pass as HYTALE_OFFLINE_TOKEN");
+                Logger.Success("Game", "Offline token obtained and ready as HYTALE_OFFLINE_TOKEN");
             }
             else
             {
-                Logger.Warning("Game", "Could not obtain offline token — game may fail with 'Offline mode requires an offline token'");
+                Logger.Warning("Game", "Could not obtain offline token. The game may report that offline mode requires a token");
             }
         }
         catch (OperationCanceledException)
         {
-            Logger.Warning("Game", "Offline token fetch timed out (5s) — continuing without it");
+            Logger.Warning("Game", "Offline token fetch timed out after 5 seconds. Continuing without it");
         }
         catch (Exception ex)
         {
@@ -741,7 +742,7 @@ public class GameLauncher : IGameLauncher
     /// Deletes the AOT (Ahead-Of-Time) cache in the Server directory when JVM flags have changed.
     /// The AOT cache can become invalid if the JRE version or JVM flags change
     /// (e.g., UseCompactObjectHeaders enabled vs disabled), causing the server to fail at startup.
-    /// We store a hash of the current JVM flags and invalidate when it changes.
+    /// We store a hash of the current JVM flags and invalidate when it changes
     /// </summary>
     private void InvalidateAotCacheIfNeeded(string versionPath)
     {
@@ -808,7 +809,7 @@ public class GameLauncher : IGameLauncher
     }
 
     /// <summary>
-    /// Computes a simple deterministic hash string for JVM flags comparison.
+    /// Computes a simple deterministic hash string for JVM flags comparison
     /// </summary>
     private static string ComputeSimpleHash(string input)
     {
@@ -852,7 +853,7 @@ public class GameLauncher : IGameLauncher
 
     /// <summary>
     /// Applies user-provided Java arguments via JAVA_TOOL_OPTIONS.
-    /// This affects Java processes started by the game client while preserving existing flags (for example DualAuth javaagent).
+    /// This affects Java processes started by the game client while preserving existing flags (for example DualAuth javaagent)
     /// </summary>
     private void ApplyUserJavaArguments(ProcessStartInfo startInfo)
     {
@@ -865,7 +866,7 @@ public class GameLauncher : IGameLauncher
 
     /// <summary>
     /// Applies DualAuth environment variables for custom auth server authentication.
-    /// Only applies when DualAuth mode is enabled in settings.
+    /// Only applies when DualAuth mode is enabled in settings
     /// </summary>
     private void ApplyDualAuthEnvironment(ProcessStartInfo startInfo)
     {
@@ -880,7 +881,7 @@ public class GameLauncher : IGameLauncher
 
     /// <summary>
     /// Derives the DualAuth domain (used for JWKS discovery) from the sessions domain.
-    /// For example, "sessions.sanasol.ws" → "auth.sanasol.ws".
+    /// For example, "sessions.sanasol.ws" → "auth.sanasol.ws"
     /// </summary>
     private static string DeriveAuthDomain(string? sessionsDomain)
     {
@@ -896,7 +897,7 @@ public class GameLauncher : IGameLauncher
 
     /// <summary>
     /// Applies GPU environment variables to a ProcessStartInfo based on the configured GPU preference.
-    /// Used for Windows direct-launch mode. Linux/macOS uses the launch script approach.
+    /// Used for Windows direct-launch mode. Linux/macOS uses the launch script approach
     /// </summary>
     private void ApplyGpuEnvironment(ProcessStartInfo startInfo)
     {
@@ -1082,7 +1083,7 @@ exec env ""${{ENV_ARGS[@]}}"" ""{executable}"" {argsString}
     /// <summary>
     /// Builds GPU environment variable lines for the Unix launch script.
     /// Returns a string with export lines to be placed before 'exec env'.
-    /// Detects the GPU vendor and applies appropriate environment variables.
+    /// Detects the GPU vendor and applies appropriate environment variables
     /// </summary>
     private string BuildGpuEnvLines()
     {
@@ -1093,7 +1094,7 @@ exec env ""${{ENV_ARGS[@]}}"" ""{executable}"" {argsString}
         {
             var sb = new StringBuilder();
             sb.AppendLine("# GPU preference: dedicated (discrete GPU)");
-            
+
             // Detect the vendor of the dedicated GPU
             var adapters = _gpuDetectionService.GetAdapters();
             var dedicatedGpu = adapters.FirstOrDefault(a => a.Type == "dedicated");
@@ -1112,13 +1113,13 @@ exec env ""${{ENV_ARGS[@]}}"" ""{executable}"" {argsString}
             }
 
             var vendor = dedicatedGpu?.Vendor?.ToUpperInvariant() ?? "";
-            
+
             if (vendor == "NVIDIA")
             {
                 Logger.Info("Game", "GPU preference: dedicated (NVIDIA env vars in launch script)");
                 sb.AppendLine("export __NV_PRIME_RENDER_OFFLOAD=1");
                 sb.AppendLine("export __GLX_VENDOR_LIBRARY_NAME=nvidia");
-                
+
                 var nvidiaEglVendorJson = TryGetLinuxNvidiaEglVendorJsonPath();
                 if (!string.IsNullOrWhiteSpace(nvidiaEglVendorJson))
                 {
@@ -1132,11 +1133,11 @@ exec env ""${{ENV_ARGS[@]}}"" ""{executable}"" {argsString}
             }
             else
             {
-                // Unknown vendor — apply both NVIDIA and AMD variables as fallback
+                // Apply both NVIDIA and AMD variables when the vendor is unknown
                 Logger.Info("Game", "GPU preference: dedicated (generic env vars, unknown vendor)");
                 sb.AppendLine("export __NV_PRIME_RENDER_OFFLOAD=1");
                 sb.AppendLine("export __GLX_VENDOR_LIBRARY_NAME=nvidia");
-                
+
                 var nvidiaEglVendorJson = TryGetLinuxNvidiaEglVendorJsonPath();
                 if (!string.IsNullOrWhiteSpace(nvidiaEglVendorJson))
                 {
@@ -1200,7 +1201,7 @@ export __NV_PRIME_RENDER_OFFLOAD=0
 
     /// <summary>
     /// Builds custom environment variable lines for the Unix launch script.
-    /// Parses KEY=VALUE pairs from config and adds them to ENV_ARGS.
+    /// Parses KEY=VALUE pairs from config and adds them to ENV_ARGS
     /// </summary>
     private string BuildOfflineTokenEnvLine()
     {
@@ -1218,10 +1219,10 @@ export __NV_PRIME_RENDER_OFFLOAD=0
 
         var sb = new StringBuilder();
         sb.AppendLine("# Custom environment variables from Settings");
-        
+
         var lines = customEnv.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
         var validCount = 0;
-        
+
         // Regex for parsing space-separated KEY=VALUE pairs (supports quotes)
         // Matches: KEY="VALUE" OR KEY='VALUE' OR KEY=VALUE
         var envVarRegex = new Regex(@"(?<key>[A-Za-z_][A-Za-z0-9_]*)=(?<value>""[^""]*""|'[^']*'|[^""'\s]+)", RegexOptions.Compiled);
@@ -1232,7 +1233,7 @@ export __NV_PRIME_RENDER_OFFLOAD=0
             // Skip comments and empty lines
             if (string.IsNullOrEmpty(trimmed) || trimmed.StartsWith("#"))
                 continue;
-            
+
             // Check if line contains multiple assignments (heuristic: "KEY=" appearing after whitespace)
             // If so, use regex parsing to robustly extract multiple variables from one line
             bool isMultiVarLine = Regex.IsMatch(trimmed, @"\s+[A-Za-z_][A-Za-z0-9_]*=");
@@ -1262,26 +1263,26 @@ export __NV_PRIME_RENDER_OFFLOAD=0
                 // Validate KEY=VALUE format
                 var eqIndex = trimmed.IndexOf('=');
                 if (eqIndex <= 0) continue;
-                
+
                 var key = trimmed[..eqIndex].Trim();
                 var value = trimmed[(eqIndex + 1)..].Trim();
-                
+
                 // Validate key is a valid env var name (alphanumeric + underscore, starts with letter/underscore)
                 if (!Regex.IsMatch(key, @"^[A-Za-z_][A-Za-z0-9_]*$"))
                     continue;
-                
+
                 // Escape value for bash
                 var escapedValue = EscapeForBashDoubleQuoted(value);
                 sb.AppendLine($"ENV_ARGS+=({key}=\"{escapedValue}\")");
                 validCount++;
             }
         }
-        
+
         if (validCount > 0)
         {
             Logger.Info("Game", $"Applied {validCount} custom environment variable(s) from settings");
         }
-        
+
         sb.AppendLine();
         return sb.ToString();
     }
@@ -1290,7 +1291,7 @@ export __NV_PRIME_RENDER_OFFLOAD=0
     /// Builds DualAuth environment variable lines for the Unix launch script.
     /// Returns a string with variable assignments to be placed before 'exec env'.
     /// Each variable is quoted individually to handle paths with spaces.
-    /// Only active when DualAuth mode is enabled in settings.
+    /// Only active when DualAuth mode is enabled in settings
     /// </summary>
     private string BuildDualAuthEnvLines()
     {
@@ -1300,7 +1301,7 @@ export __NV_PRIME_RENDER_OFFLOAD=0
         string authDomain = DeriveAuthDomain(GetEffectiveCustomAuthDomain(logFallback: false));
 
         Logger.Info("Game", $"DualAuth env lines for Unix script: {authDomain}");
-        
+
         // Store DualAuth values in separate shell variables, then compose the
         // JAVA_TOOL_OPTIONS=KEY=VALUE pair when building ENV_ARGS.
         // This avoids nested quoting issues where paths with spaces (e.g.
@@ -1427,13 +1428,13 @@ DUALAUTH_TRUST_OFFICIAL=""true""
         catch (Exception ex)
         {
             Logger.Error("Game", $"Failed to start game process: {ex.Message}");
-            
+
             // Cleanup process if failed before transferring to GameProcessService
             if (process != null && _gameProcessService.GetGameProcess() != process)
             {
                 try { process.Dispose(); } catch { }
             }
-            
+
             _progressService.ReportError("launch", "Failed to start game", ex.Message);
             throw new Exception($"Failed to start game: {ex.Message}");
         }

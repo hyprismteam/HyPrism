@@ -10,6 +10,10 @@ SPDX-PackageDownloadLocation = "https://github.com/hyprismteam/HyPrism"
 path = [
     "*.json",
     "**/*.json",
+    "**/*.mdx",
+    "**/*.lock",
+    "Docs/pnpm-lock.yaml",
+    "Docs/next-env.d.ts",
     "**/*.md5",
     "**/.hintrc",
     "**/*.png",

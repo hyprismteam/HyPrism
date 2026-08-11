@@ -38,6 +38,12 @@ public class JsonMirrorSource : IVersionSource
     private TimeSpan CacheTtl => TimeSpan.FromMinutes(_meta.Cache.IndexTtlMinutes);
     private TimeSpan SpeedTestCacheTtl => TimeSpan.FromMinutes(_meta.Cache.SpeedTestTtlMinutes);
 
+    /// <summary>
+    /// Creates a version source backed by a JSON mirror descriptor
+    /// </summary>
+    /// <param name="meta">The parsed mirror descriptor</param>
+    /// <param name="httpClient">The HTTP client used for mirror requests</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="meta"/> or <paramref name="httpClient"/> is null</exception>
     public JsonMirrorSource(MirrorMeta meta, HttpClient httpClient)
     {
         _meta = meta ?? throw new ArgumentNullException(nameof(meta));
@@ -46,7 +52,7 @@ public class JsonMirrorSource : IVersionSource
 
     /// <summary>
     /// Creates an HttpRequestMessage with custom headers from the mirror config.
-    /// Expands {hytaleAgent} variable to the official Hytale launcher User-Agent.
+    /// Expands {hytaleAgent} variable to the official Hytale launcher User-Agent
     /// </summary>
     private async Task<HttpRequestMessage> CreateRequestWithHeadersAsync(
         HttpMethod method, string url, CancellationToken ct = default)
@@ -58,7 +64,7 @@ public class JsonMirrorSource : IVersionSource
 
     /// <summary>
     /// Applies custom headers from the mirror config to an HttpRequestMessage.
-    /// Expands {hytaleAgent} variable to the official Hytale launcher User-Agent.
+    /// Expands {hytaleAgent} variable to the official Hytale launcher User-Agent
     /// </summary>
     private async Task ApplyCustomHeadersAsync(HttpRequestMessage request, CancellationToken ct = default)
     {
@@ -87,7 +93,7 @@ public class JsonMirrorSource : IVersionSource
     }
 
     /// <summary>
-    /// Sends a GET request with custom headers applied.
+    /// Sends a GET request with custom headers applied
     /// </summary>
     private async Task<HttpResponseMessage> GetWithHeadersAsync(string url, CancellationToken ct = default)
     {
@@ -96,7 +102,7 @@ public class JsonMirrorSource : IVersionSource
     }
 
     /// <summary>
-    /// Sends a GET request with custom headers and ResponseHeadersRead option.
+    /// Sends a GET request with custom headers and ResponseHeadersRead option
     /// </summary>
     private async Task<HttpResponseMessage> GetWithHeadersStreamAsync(string url, CancellationToken ct = default)
     {
@@ -294,24 +300,24 @@ public class JsonMirrorSource : IVersionSource
                 using var pingResp = await _httpClient.SendAsync(pingReq, pingCts.Token);
 
                 result.PingMs = (long)(DateTime.UtcNow - pingStart).TotalMilliseconds;
-                
+
                 // Check if HEAD succeeded, or if server returns codes that indicate "API exists but HEAD not supported"
                 var headStatusCode = (int)pingResp.StatusCode;
-                var headSucceeded = pingResp.IsSuccessStatusCode || 
-                    headStatusCode == 405 || // Method Not Allowed - API exists, HEAD not supported  
+                var headSucceeded = pingResp.IsSuccessStatusCode ||
+                    headStatusCode == 405 || // Method Not Allowed - API exists, HEAD not supported
                     headStatusCode == 400 || // Bad Request - API exists, needs different method
                     headStatusCode == 422;   // Unprocessable Entity - API exists, needs body/params
-                
+
                 if (!headSucceeded)
                 {
                     // Try GET as fallback
                     var getStart = DateTime.UtcNow;
                     using var getCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
                     getCts.CancelAfter(TimeSpan.FromSeconds(_meta.SpeedTest.PingTimeoutSeconds));
-                    
+
                     using var getReq = await CreateRequestWithHeadersAsync(HttpMethod.Get, pingUrl, getCts.Token);
                     using var getResp = await _httpClient.SendAsync(getReq, HttpCompletionOption.ResponseHeadersRead, getCts.Token);
-                    
+
                     result.PingMs = (long)(DateTime.UtcNow - getStart).TotalMilliseconds;
                     result.IsAvailable = getResp.IsSuccessStatusCode;
                 }
@@ -328,7 +334,7 @@ public class JsonMirrorSource : IVersionSource
                 }
 
                 Logger.Debug($"Mirror:{SourceId}", $"Ping successful: {result.PingMs}ms, proceeding to speed test");
-                
+
                 // Speed test: download real file data
                 var os = UtilityService.GetOS();
                 var arch = UtilityService.GetArch();
@@ -399,7 +405,7 @@ public class JsonMirrorSource : IVersionSource
         if (IsDiffBasedBranch(branch) && config.DiffPatchUrl != null)
         {
             // For diff branches, we don't know from~to pairs from version discovery.
-            // Return as full downloads from version 0 — caller can then request diffs.
+            // Return full downloads from version 0 so the caller can request diffs
             return versions.Select(v => new CachedVersionEntry
             {
                 Version = v,
@@ -423,7 +429,7 @@ public class JsonMirrorSource : IVersionSource
     }
 
     /// <summary>
-    /// Discovers available versions using the configured method.
+    /// Discovers available versions using the configured method
     /// </summary>
     private async Task<List<int>> DiscoverVersionsAsync(
         string os, string arch, string branch, CancellationToken ct)
@@ -511,12 +517,12 @@ public class JsonMirrorSource : IVersionSource
         }
 
         var json = await response.Content.ReadAsStringAsync(cts.Token);
-        
+
         // Apply placeholders to jsonPath (for paths like "{os}-{arch}.{branch}.newest")
-        var resolvedJsonPath = discovery.JsonPath != null 
+        var resolvedJsonPath = discovery.JsonPath != null
             ? ApplyPlaceholders(discovery.JsonPath, os, arch, branch, 0, 0, 0)
             : null;
-        
+
         return ParseVersionsFromJson(json, resolvedJsonPath);
     }
 
@@ -573,7 +579,7 @@ public class JsonMirrorSource : IVersionSource
     /// <summary>
     /// Parses version numbers from manifest.json.
     /// File paths: {os}/{arch}/{branch}/{from}_to_{to}.pwr
-    /// Returns list of available 'to' versions (targets) for the given os/arch/branch.
+    /// Returns list of available 'to' versions (targets) for the given os/arch/branch
     /// </summary>
     private List<int> ParseVersionsFromManifest(string json, string os, string arch, string branch)
     {
@@ -594,7 +600,7 @@ public class JsonMirrorSource : IVersionSource
             // Pattern: {os}/{arch}/{branch}/{from}_to_{to}.pwr
             var prefix = $"{mappedOs}/{mappedArch}/{branch}/";
             var patchPattern = new System.Text.RegularExpressions.Regex(
-                @"(\d+)_to_(\d+)\.pwr$", 
+                @"(\d+)_to_(\d+)\.pwr$",
                 System.Text.RegularExpressions.RegexOptions.Compiled);
 
             var versions = new HashSet<int>();
@@ -648,7 +654,7 @@ public class JsonMirrorSource : IVersionSource
             var root = doc.RootElement;
             var versions = new List<int>();
 
-            // "items[].version" — array of objects with a version field
+            // "items[].version" addresses an array of objects with a version field
             if (jsonPath != null && jsonPath.Contains("[]."))
             {
                 var parts = jsonPath.Split("[].");
@@ -673,7 +679,7 @@ public class JsonMirrorSource : IVersionSource
                 return versions.Distinct().OrderByDescending(v => v).ToList();
             }
 
-            // "$root" or null — root is an array
+            // "$root" or null means that the root is an array
             if (jsonPath == null || jsonPath == "$root")
             {
                 if (root.ValueKind == JsonValueKind.Array)
@@ -692,7 +698,7 @@ public class JsonMirrorSource : IVersionSource
             {
                 var pathParts = jsonPath.Split('.');
                 JsonElement current = root;
-                
+
                 foreach (var part in pathParts)
                 {
                     if (current.ValueKind != JsonValueKind.Object)
@@ -700,14 +706,14 @@ public class JsonMirrorSource : IVersionSource
                         Logger.Debug($"Mirror:{SourceId}", $"JsonPath '{jsonPath}': expected object at '{part}', got {current.ValueKind}");
                         return versions;
                     }
-                    
+
                     if (!current.TryGetProperty(part, out current))
                     {
                         Logger.Debug($"Mirror:{SourceId}", $"JsonPath '{jsonPath}': property '{part}' not found");
                         return versions;
                     }
                 }
-                
+
                 // Final element should be a number (single version) or array of numbers
                 if (current.ValueKind == JsonValueKind.Number)
                 {
@@ -729,7 +735,7 @@ public class JsonMirrorSource : IVersionSource
                 {
                     versions.Add(sv);
                 }
-                
+
                 return versions.Distinct().OrderByDescending(v => v).ToList();
             }
 
@@ -753,7 +759,7 @@ public class JsonMirrorSource : IVersionSource
     }
 
     /// <summary>
-    /// Parses version numbers from HTML using the configured regex pattern.
+    /// Parses version numbers from HTML using the configured regex pattern
     /// </summary>
     private static List<int> ParseVersionsFromHtml(string html, string? pattern, long minFileSize)
     {
@@ -783,7 +789,7 @@ public class JsonMirrorSource : IVersionSource
     }
 
     /// <summary>
-    /// Applies placeholder substitution to a URL template.
+    /// Applies placeholder substitution to a URL template
     /// </summary>
     private string ApplyPlaceholders(string template, string os, string arch, string branch,
         int version, int from, int to)
@@ -893,7 +899,7 @@ public class JsonMirrorSource : IVersionSource
     }
 
     /// <summary>
-    /// Extracts file entries from the cached JSON index.
+    /// Extracts file entries from the cached JSON index
     /// </summary>
     private async Task<Dictionary<string, string>> GetIndexFilesAsync(
         string os, string branch, string? group, CancellationToken ct)

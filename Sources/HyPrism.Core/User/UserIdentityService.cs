@@ -10,7 +10,7 @@ namespace HyPrism.Services.User;
 /// <summary>
 /// Manages user identities (UUID and username mappings).
 /// Handles UUID generation, username switching, and orphaned skin recovery.
-/// Delegates profile storage to <see cref="IProfileService"/>.
+/// Delegates profile storage to <see cref="IProfileService"/>
 /// </summary>
 public class UserIdentityService : IUserIdentityService
 {
@@ -20,12 +20,12 @@ public class UserIdentityService : IUserIdentityService
     private readonly IProfileService _profileService;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="UserIdentityService"/> class.
+    /// Initializes a new instance of the <see cref="UserIdentityService"/> class
     /// </summary>
-    /// <param name="configService">The configuration service.</param>
-    /// <param name="skinService">The skin management service.</param>
-    /// <param name="instanceService">The game instance service.</param>
-    /// <param name="profileService">The profile service for UUID/name lookups.</param>
+    /// <param name="configService">The configuration service</param>
+    /// <param name="skinService">The skin management service</param>
+    /// <param name="instanceService">The game instance service</param>
+    /// <param name="profileService">The profile service for UUID/name lookups</param>
     public UserIdentityService(
         IConfigService configService,
         ISkinService skinService,
@@ -64,7 +64,7 @@ public class UserIdentityService : IUserIdentityService
             return orphanedUuid;
         }
 
-        // No orphaned skins found — create a new UUID
+        // Create a new UUID when no orphaned skins are found
         var newUuid = Guid.NewGuid().ToString();
         _profileService.SetUUID(newUuid);
         Logger.Info("UUID", $"Created new UUID for user '{username}': {newUuid}");
@@ -104,7 +104,7 @@ public class UserIdentityService : IUserIdentityService
             return true;
         }
 
-        Logger.Warning("UUID", $"Cannot set UUID for non-active user '{username}' — use ProfileManagementService.UpdateProfile instead");
+        Logger.Warning("UUID", $"Cannot set UUID for non-active user '{username}'. Use ProfileManagementService.UpdateProfile instead");
         return false;
     }
 
@@ -156,7 +156,7 @@ public class UserIdentityService : IUserIdentityService
             return existingProfile.UUID;
         }
 
-        // Username doesn't exist — create new UUID and set as current
+        // Create a new UUID and make it current when the username does not exist
         var newUuid = Guid.NewGuid().ToString();
         _profileService.SetNick(username);
         _profileService.SetUUID(newUuid);

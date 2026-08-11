@@ -1,0 +1,27 @@
+---
+title: Обзор архитектуры
+description: Границы логики лаунчера, нативного UI, тестов и старого кода
+---
+
+# Обзор архитектуры
+
+HyPrism отделяет поведение лаунчера от его представления
+
+```text
+HyPrism.Desktop
+  Avalonia views, view models, controls, localization, styles
+        │
+        ▼
+HyPrism.Core
+  application orchestration, game services, user services,
+  infrastructure, integrations, platform abstractions, models
+        │
+        ▼
+filesystem, network services, Hytale, Java, operating system
+```
+
+`Bootstrapper.Initialize` создает контейнер dependency injection, регистрирует общие сервисы и принимает callback хоста для платформенных реализаций, включая файловые диалоги и буфер обмена
+
+Тесты находятся в корневом каталоге `Tests` и повторяют разделение на Core и Desktop
+
+Electron-лаунчер и генератор IPC находятся вне активной архитектуры и сохранены только как справочник для переноса

@@ -44,7 +44,12 @@ def project_files() -> list[Path]:
 
 def header_style(path: Path) -> str | None:
     relative = path.relative_to(ROOT).as_posix()
-    if relative == "LICENSE" or relative.startswith("Licenses/"):
+    if (
+        relative == "LICENSE"
+        or relative == "Docs/next-env.d.ts"
+        or relative == "Docs/pnpm-lock.yaml"
+        or relative.startswith("Licenses/")
+    ):
         return None
     if path.name in HASH_NAMES:
         return "hash"

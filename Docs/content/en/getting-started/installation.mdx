@@ -1,0 +1,35 @@
+---
+title: Installation
+description: Install a release build or run HyPrism from source
+---
+
+# Installation
+
+## Release builds
+
+Download the build for your platform from [GitHub Releases](https://github.com/hyprismteam/HyPrism/releases)
+
+| Platform | Current target | Common packages |
+| --- | --- | --- |
+| Windows | x64 | portable ZIP and installer |
+| Linux | x64 | AppImage, DEB, RPM, tar.xz, and Flatpak |
+| macOS | Apple Silicon | DMG |
+
+Release packaging still targets the legacy host while the Avalonia migration is in progress. Check the release notes before replacing an existing installation
+
+## Run the native desktop project
+
+Install the .NET 10 SDK, clone the repository, then run
+
+```bash
+dotnet restore HyPrism.sln
+dotnet run --project Sources/HyPrism.Desktop/HyPrism.Desktop.csproj
+```
+
+The desktop project references `HyPrism.Core` directly and does not require Node.js
+
+## Local data
+
+HyPrism resolves its writable application directory at runtime. Configuration, profiles, instances, caches, logs, mirrors, and downloaded support tools are stored below that directory
+
+Back up the application directory before testing migration code against an existing installation

@@ -1,0 +1,27 @@
+---
+title: Architecture overview
+description: The boundaries between launcher logic, native UI, tests, and legacy code
+---
+
+# Architecture overview
+
+HyPrism separates launcher behavior from presentation
+
+```text
+HyPrism.Desktop
+  Avalonia views, view models, controls, localization, styles
+        │
+        ▼
+HyPrism.Core
+  application orchestration, game services, user services,
+  infrastructure, integrations, platform abstractions, models
+        │
+        ▼
+filesystem, network services, Hytale, Java, operating system
+```
+
+`Bootstrapper.Initialize` creates the dependency injection container, registers shared services, and accepts a host callback for platform-specific implementations such as file dialogs and clipboard access
+
+Tests live in the top-level `Tests` directory and mirror the Core and Desktop split
+
+The Electron launcher and IPC generator sit outside the active architecture and remain only for migration reference

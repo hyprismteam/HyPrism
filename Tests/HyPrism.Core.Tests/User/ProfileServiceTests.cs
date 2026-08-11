@@ -96,7 +96,7 @@ public class ProfileServiceTests : IDisposable
     [Fact]
     public void CreateProfile_Duplicate_ReturnsTrue()
     {
-        // ProfileService does not enforce unique names — both calls succeed.
+        // ProfileService does not enforce unique names, so both calls succeed
         _svc.CreateProfile("DupeProfile");
         var result = _svc.CreateProfile("DupeProfile");
         Assert.True(result);

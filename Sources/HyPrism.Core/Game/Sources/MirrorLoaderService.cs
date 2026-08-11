@@ -11,7 +11,7 @@ namespace HyPrism.Services.Game.Sources;
 /// <summary>
 /// Loads mirror definitions from JSON meta files in the Mirrors directory.
 /// On first launch (directory missing or empty), generates default built-in mirror definitions.
-/// Users can add custom mirror files to appDir/Mirrors/ — the launcher reads them on startup.
+/// Users can add custom mirror files to appDir/Mirrors/ for the launcher to read on startup
 /// </summary>
 public static class MirrorLoaderService
 {
@@ -28,11 +28,11 @@ public static class MirrorLoaderService
 
     /// <summary>
     /// Loads all mirror sources from the Mirrors directory.
-    /// Generates default mirror files if directory is missing or empty.
+    /// Generates default mirror files if directory is missing or empty
     /// </summary>
-    /// <param name="appDir">Application data directory.</param>
-    /// <param name="httpClient">Shared HTTP client.</param>
-    /// <returns>List of IVersionSource instances created from mirror meta files.</returns>
+    /// <param name="appDir">Application data directory</param>
+    /// <param name="httpClient">Shared HTTP client</param>
+    /// <returns>List of IVersionSource instances created from mirror meta files</returns>
     public static List<IVersionSource> LoadAll(string appDir, HttpClient httpClient)
     {
         var mirrorsDir = Path.Combine(appDir, MirrorsDirName);
@@ -107,13 +107,13 @@ public static class MirrorLoaderService
     }
 
     /// <summary>
-    /// Gets the path to the Mirrors directory.
+    /// Gets the path to the Mirrors directory
     /// </summary>
     public static string GetMirrorsDirectory(string appDir)
         => Path.Combine(appDir, MirrorsDirName);
 
     /// <summary>
-    /// Gets a list of all mirror metadata (without creating sources).
+    /// Gets a list of all mirror metadata (without creating sources)
     /// </summary>
     public static List<MirrorMeta> GetAllMirrorMetas(string appDir)
     {
@@ -145,7 +145,7 @@ public static class MirrorLoaderService
     }
 
     /// <summary>
-    /// Saves a mirror metadata to a .mirror.json file.
+    /// Saves a mirror metadata to a .mirror.json file
     /// </summary>
     public static void SaveMirror(string appDir, MirrorMeta meta)
     {
@@ -165,7 +165,7 @@ public static class MirrorLoaderService
     }
 
     /// <summary>
-    /// Deletes a mirror by ID.
+    /// Deletes a mirror by ID
     /// </summary>
     public static bool DeleteMirror(string appDir, string mirrorId)
     {
@@ -187,7 +187,7 @@ public static class MirrorLoaderService
     }
 
     /// <summary>
-    /// Checks if a mirror with the given ID exists.
+    /// Checks if a mirror with the given ID exists
     /// </summary>
     public static bool MirrorExists(string appDir, string mirrorId)
     {
@@ -202,7 +202,7 @@ public static class MirrorLoaderService
     }
 
     /// <summary>
-    /// Generates default mirror JSON files for the built-in community mirrors.
+    /// Generates default mirror JSON files for the built-in community mirrors
     /// </summary>
     private static void GenerateDefaults(string mirrorsDir)
     {
@@ -231,7 +231,7 @@ public static class MirrorLoaderService
     /// <summary>
     /// Returns the built-in mirror definitions that were previously hardcoded.
     /// NOTE: As of this version, no default mirrors are shipped. Users must add mirrors manually
-    /// through Settings > Downloads or by placing .mirror.json files in the Mirrors folder.
+    /// through Settings > Downloads or by placing .mirror.json files in the Mirrors folder
     /// </summary>
     private static List<MirrorMeta> GetDefaultMirrors()
     {

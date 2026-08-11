@@ -21,21 +21,21 @@ using HyPrism.Services.Core.Infrastructure;
 namespace HyPrism.Services.Core.Integration;
 
 /// <summary>
-/// Defines the source of news items.
+/// Defines the source of news items
 /// </summary>
 public enum NewsSource
 {
-    /// <summary>Fetch news from all sources.</summary>
+    /// <summary>Fetch news from all sources</summary>
     All,
-    /// <summary>Fetch news from Hytale official blog only.</summary>
+    /// <summary>Fetch news from Hytale official blog only</summary>
     Hytale,
-    /// <summary>Fetch news from HyPrism GitHub releases only.</summary>
+    /// <summary>Fetch news from HyPrism GitHub releases only</summary>
     HyPrism
 }
 
 /// <summary>
 /// Fetches and aggregates news from Hytale's official blog API and HyPrism GitHub Releases.
-/// Uses memory and persistent parsed-object caches to reduce API calls and avoid repeating HTML parsing.
+/// Uses memory and persistent parsed-object caches to reduce API calls and avoid repeating HTML parsing
 /// </summary>
 public class NewsService : INewsService
 {
@@ -45,17 +45,17 @@ public class NewsService : INewsService
     private static readonly JsonSerializerOptions CacheJsonOptions = new(JsonSerializerDefaults.Web);
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="NewsService"/> class.
+    /// Initializes a new instance of the <see cref="NewsService"/> class
     /// </summary>
-    /// <param name="httpClient">The HTTP client for fetching news.</param>
-    /// <param name="appPath">Application paths used to place persistent news data under <c>Cache/News</c>.</param>
+    /// <param name="httpClient">The HTTP client for fetching news</param>
+    /// <param name="appPath">Application paths used to place persistent news data under <c>Cache/News</c></param>
     public NewsService(HttpClient httpClient, AppPathConfiguration? appPath = null)
     {
         _httpClient = httpClient;
         _newsCacheDirectory = appPath is null
             ? null
             : Path.Combine(appPath.AppDir, "Cache", "News");
-        
+
         // Ensure headers are set if they aren't already
         if (!_httpClient.DefaultRequestHeaders.Contains("User-Agent"))
         {
@@ -64,12 +64,12 @@ public class NewsService : INewsService
     }
     private const string HytaleNewsUrl = "https://hytale.com/news";
     private const string HyPrismReleasesUrl = "https://api.github.com/repos/hyprismteam/HyPrism/releases";
-    
+
     // Cache for HyPrism news to avoid GitHub API rate limits
     private List<NewsItemResponse>? _hyprismNewsCache;
     private DateTime _hyprismCacheTime = DateTime.MinValue;
     private static readonly SemaphoreSlim _hyprismLock = new(1, 1);
-    
+
     // Cache for Hytale news
     private List<NewsItemResponse>? _hytaleNewsCache;
     private DateTime _hytaleCacheTime = DateTime.MinValue;
@@ -81,13 +81,12 @@ public class NewsService : INewsService
         new(StringComparer.OrdinalIgnoreCase);
     private readonly ConcurrentDictionary<string, Lazy<Task<NewsArticleResponse?>>> _articleLoads =
         new(StringComparer.OrdinalIgnoreCase);
-    
+
     private const int CacheExpirationMinutes = 30;
     private static readonly TimeSpan ArticleDiskCacheLifetime = TimeSpan.FromDays(7);
     private const int ArticleCacheSchemaVersion = 1;
-    
-    // Legacy constructor removed in favor of DI
-    
+
+    /// <inheritdoc/>
     public async Task<List<NewsItemResponse>> GetNewsAsync(int count = 10, NewsSource source = NewsSource.All)
     {
         try
@@ -163,7 +162,7 @@ public class NewsService : INewsService
         try
         {
             // Check cache
-            if (_hytaleNewsCache != null && 
+            if (_hytaleNewsCache != null &&
                 (DateTime.Now - _hytaleCacheTime).TotalMinutes < CacheExpirationMinutes)
             {
                 return _hytaleNewsCache.Take(count).ToList();
@@ -778,13 +777,13 @@ public class NewsService : INewsService
     {
         if (_hyprismNewsCache != null && (DateTime.Now - _hyprismCacheTime).TotalMinutes < CacheExpirationMinutes)
             return _hyprismNewsCache.Take(count).ToList();
-            
+
         await _hyprismLock.WaitAsync();
         try
         {
             if (_hyprismNewsCache != null && (DateTime.Now - _hyprismCacheTime).TotalMinutes < CacheExpirationMinutes)
                 return _hyprismNewsCache.Take(count).ToList();
-                
+
             return await GetHyPrismNewsInternalAsync(count);
         }
         finally
@@ -801,21 +800,21 @@ public class NewsService : INewsService
             Logger.Info("News", "Using cached HyPrism news");
             return _hyprismNewsCache.Take(count).ToList();
         }
-        
+
         try
         {
             Logger.Info("News", "Fetching news from HyPrism GitHub...");
             var response = await _httpClient.GetStringAsync(HyPrismReleasesUrl);
-            
+
             using var jsonDoc = JsonDocument.Parse(response);
             var releases = jsonDoc.RootElement;
             var news = new List<NewsItemResponse>();
-            
+
             var itemCount = 0;
             foreach (var release in releases.EnumerateArray())
             {
                 if (itemCount >= count) break;
-                
+
                 try
                 {
                     var name = release.TryGetProperty("name", out var nameProp) ? nameProp.GetString() : null;
@@ -823,21 +822,21 @@ public class NewsService : INewsService
                     var body = release.TryGetProperty("body", out var bodyProp) ? bodyProp.GetString() : null;
                     var htmlUrl = release.TryGetProperty("html_url", out var urlProp) ? urlProp.GetString() : null;
                     var publishedAt = release.TryGetProperty("published_at", out var pubProp) ? pubProp.GetString() : null;
-                    
+
                     var title = !string.IsNullOrEmpty(name) ? name : tagName ?? "HyPrism Release";
                     title = title.Replace("(", "").Replace(")", "").Trim();
-                    
-                    var excerpt = !string.IsNullOrEmpty(body) 
+
+                    var excerpt = !string.IsNullOrEmpty(body)
                         ? body.Split('\n').FirstOrDefault()?.Trim() ?? "Click to see changelog."
                         : "Click to see changelog.";
-                    
+
                     // Remove markdown formatting from excerpt
                     excerpt = Regex.Replace(excerpt, @"[#*_`\[\]]", "");
                     if (excerpt.Length > 100)
                     {
                         excerpt = excerpt.Substring(0, 97) + "...";
                     }
-                    
+
                     news.Add(new NewsItemResponse
                     {
                         Title = $"HyPrism {title} release",
@@ -849,7 +848,7 @@ public class NewsService : INewsService
                         ImageUrl = _appIconPath,
                         Source = "hyprism"
                     });
-                    
+
                     itemCount++;
                 }
                 catch (Exception ex)
@@ -858,12 +857,12 @@ public class NewsService : INewsService
                     continue;
                 }
             }
-            
+
             // Update cache
             _hyprismNewsCache = news;
             _hyprismCacheTime = DateTime.Now;
             Logger.Success("News", "Successfully fetched HyPrism news");
-            
+
             return news;
         }
         catch (HttpRequestException ex)
@@ -884,20 +883,20 @@ public class NewsService : INewsService
             return new List<NewsItemResponse>();
         }
     }
-    
+
     private static DateTime ParseDate(string? dateString)
     {
         if (string.IsNullOrEmpty(dateString))
             return DateTime.MinValue;
-            
+
         if (DateTime.TryParse(dateString, out var date))
             return date;
-            
+
         return DateTime.MinValue;
     }
-    
+
     /// <summary>
-    /// Cleans news excerpt by removing HTML tags, duplicate title, and date prefixes.
+    /// Cleans news excerpt by removing HTML tags, duplicate title, and date prefixes
     /// </summary>
     public static string CleanNewsExcerpt(string? rawExcerpt, string? title)
     {

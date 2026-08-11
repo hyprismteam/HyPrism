@@ -16,32 +16,32 @@ using static HyPrism.Services.Core.App.LauncherPackageExtractor;
 namespace HyPrism.Services.Core.App;
 
 /// <summary>
-/// Manages HyPrism launcher updates via GitHub Releases.
+/// Manages HyPrism launcher updates via GitHub Releases
 /// </summary>
 /// <remarks>
 /// Checks GitHub releases API for new versions and handles the download,
-/// extraction, and restart process for self-updating.
+/// extraction, and restart process for self-updating
 /// </remarks>
 public class UpdateService : IUpdateService
 {
     private const string GitHubApiUrl = "https://api.github.com/repos/hyprismteam/HyPrism/releases";
-    
+
     private static readonly Lazy<string> _launcherVersion = new(() =>
     {
         var assembly = Assembly.GetExecutingAssembly();
         var infoVersion = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
-        
+
         if (!string.IsNullOrEmpty(infoVersion))
         {
             // Remove build metadata (e.g., "+abc123" suffix) if present
             var plusIndex = infoVersion.IndexOf('+');
             return plusIndex > 0 ? infoVersion[..plusIndex] : infoVersion;
         }
-        
+
         var version = assembly.GetName().Version;
         return version != null ? $"{version.Major}.{version.Minor}.{version.Build}" : "0.0.0";
     });
-    
+
     private readonly HttpClient _httpClient;
     private readonly IConfigService _configService;
     private readonly IVersionService _versionService;
@@ -49,23 +49,23 @@ public class UpdateService : IUpdateService
     private readonly IProgressNotificationService _progressNotificationService;
 
     /// <summary>
-    /// Raised when a launcher update is available.
+    /// Raised when a launcher update is available
     /// </summary>
     public event Action<object>? LauncherUpdateAvailable;
 
     /// <summary>
-    /// Raised during launcher update download/install to report progress.
+    /// Raised during launcher update download/install to report progress
     /// </summary>
     public event Action<object>? LauncherUpdateProgress;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="UpdateService"/> class.
+    /// Initializes a new instance of the <see cref="UpdateService"/> class
     /// </summary>
-    /// <param name="httpClient">The HTTP client for API requests.</param>
-    /// <param name="configService">The configuration service.</param>
-    /// <param name="versionService">The version service for version checks.</param>
-    /// <param name="instanceService">The instance service for path management.</param>
-    /// <param name="progressNotificationService">The progress notification service.</param>
+    /// <param name="httpClient">The HTTP client for API requests</param>
+    /// <param name="configService">The configuration service</param>
+    /// <param name="versionService">The version service for version checks</param>
+    /// <param name="instanceService">The instance service for path management</param>
+    /// <param name="progressNotificationService">The progress notification service</param>
     public UpdateService(
         HttpClient httpClient,
         IConfigService configService,
@@ -139,9 +139,9 @@ public class UpdateService : IUpdateService
     }
 
     /// <summary>
-    /// Gets the path to the latest game instance for the current branch.
+    /// Gets the path to the latest game instance for the current branch
     /// </summary>
-    /// <returns>The path to the latest instance directory.</returns>
+    /// <returns>The path to the latest instance directory</returns>
     private string GetLatestInstancePath()
     {
         #pragma warning disable CS0618 // Backward compatibility: VersionType kept for migration
@@ -158,18 +158,18 @@ public class UpdateService : IUpdateService
     #region Public API
 
     /// <summary>
-    /// Returns the current launcher version string.
+    /// Returns the current launcher version string
     /// </summary>
     public string GetLauncherVersion() => _launcherVersion.Value;
 
     /// <summary>
-    /// Gets the current launcher version (static accessor).
+    /// Gets the current launcher version (static accessor)
     /// </summary>
     public static string GetCurrentVersion() => _launcherVersion.Value;
 
     /// <summary>
     /// Checks GitHub for a newer published launcher release and raises
-    /// <c>LauncherUpdateAvailable</c> if one is found.
+    /// <c>LauncherUpdateAvailable</c> if one is found
     /// </summary>
     public async Task CheckForLauncherUpdatesAsync()
     {
@@ -189,7 +189,7 @@ public class UpdateService : IUpdateService
             if (!string.IsNullOrWhiteSpace(latestVersion) && IsNewerVersion(latestVersion, currentVersion))
             {
                 Logger.Info("Update", $"Update available: {currentVersion} -> {latestVersion}");
-                
+
                 // Pick the right asset for this platform
                 string? downloadUrl = null;
                 string? assetName = null;
@@ -214,7 +214,7 @@ public class UpdateService : IUpdateService
                     assetName = assetName,
                     releaseUrl = release.GetProperty("html_url").GetString() ?? ""
                 };
-                    
+
                 LauncherUpdateAvailable?.Invoke(updateInfo);
             }
             else
@@ -227,6 +227,8 @@ public class UpdateService : IUpdateService
             Logger.Error("Update", $"Error checking for updates: {ex.Message}");
         }
     }
+
+    /// <inheritdoc/>
     public async Task<bool> UpdateAsync(JsonElement[]? args)
     {
         string? downloadedUpdatePath = null;
@@ -243,13 +245,13 @@ public class UpdateService : IUpdateService
                 ? tagElement.GetString()
                 : null;
             var targetVersion = ParseVersionFromTag(tagName ?? string.Empty);
-            
+
             if (string.IsNullOrWhiteSpace(targetVersion))
             {
                 Logger.Error("Update", "The latest published release has no valid version tag");
                 return false;
             }
-            
+
             Logger.Info("Update", $"Downloading release {targetVersion} (current: {currentVersion})");
 
             if (!IsNewerVersion(targetVersion, currentVersion))
@@ -257,7 +259,7 @@ public class UpdateService : IUpdateService
                 Logger.Info("Update", $"No update needed (current: {currentVersion}, latest: {targetVersion})");
                 return false;
             }
-            
+
             string? downloadUrl = null;
             string? assetName = null;
             TryPickBestAssetForCurrentPlatform(targetRelease, out downloadUrl, out assetName);
@@ -308,7 +310,7 @@ public class UpdateService : IUpdateService
             await InstallUpdateAsync(targetPath);
 
             EmitLauncherUpdateProgress("install", 100, "Restarting launcher...", 0, 0);
-            
+
             return true;
         }
         catch (Exception ex)
@@ -329,10 +331,10 @@ public class UpdateService : IUpdateService
 
     /// <summary>
     /// Forces a reset of the stored latest instance version for the given branch,
-    /// triggering a game update check on next launch.
+    /// triggering a game update check on next launch
     /// </summary>
-    /// <param name="branch">The branch whose latest version entry should be reset (e.g. <c>"release"</c>).</param>
-    /// <returns><c>true</c> if the reset succeeded; <c>false</c> if no versions are available for the branch.</returns>
+    /// <param name="branch">The branch whose latest version entry should be reset (e.g. <c>"release"</c>)</param>
+    /// <returns><c>true</c> if the reset succeeded; <c>false</c> if no versions are available for the branch</returns>
     public async Task<bool> ForceUpdateLatestAsync(string branch)
     {
         try
@@ -342,7 +344,7 @@ public class UpdateService : IUpdateService
             if (versions.Count == 0) return false;
 
             var info = _instanceService.LoadLatestInfo(normalizedBranch);
-            
+
             if (info == null)
             {
                 // No version info, assume version 1 to force full update path
@@ -364,7 +366,7 @@ public class UpdateService : IUpdateService
                 _instanceService.SaveLatestInfo(normalizedBranch, forcedVersion);
                 Logger.Info("Update", $"Forced version to v{forcedVersion} to trigger update to v{latestVersion}");
             }
-            
+
             return true;
         }
         catch (Exception ex)
@@ -373,10 +375,10 @@ public class UpdateService : IUpdateService
             return false;
         }
     }
-    
+
     /// <summary>
     /// Duplicates the current latest instance as a versioned instance.
-    /// Creates a copy with the current version number.
+    /// Creates a copy with the current version number
     /// </summary>
     public async Task<bool> DuplicateLatestAsync(string branch)
     {
@@ -384,41 +386,41 @@ public class UpdateService : IUpdateService
         {
             var normalizedBranch = UtilityService.NormalizeVersionType(branch);
             var info = _instanceService.LoadLatestInfo(normalizedBranch);
-            
+
             if (info == null)
             {
                 Logger.Warning("Update", "Cannot duplicate latest: no version info found");
                 return false;
             }
-            
+
             var currentVersion = info.Version;
             var latestPath = GetLatestInstancePath();
-            
+
             if (!_instanceService.IsClientPresent(latestPath))
             {
                 Logger.Warning("Update", "Cannot duplicate latest: instance not found");
                 return false;
             }
-            
+
             // Get versioned instance path
             var versionedPath = _instanceService.ResolveInstancePath(normalizedBranch, currentVersion, true);
-            
+
             // Check if this version already exists
             if (_instanceService.IsClientPresent(versionedPath))
             {
                 Logger.Warning("Update", $"Version {currentVersion} already exists, skipping duplicate");
                 return false;
             }
-            
+
             // Copy the entire latest instance folder to versioned folder
             Logger.Info("Update", $"Duplicating latest (v{currentVersion}) to versioned instance...");
             UtilityService.CopyDirectory(latestPath, versionedPath);
-            
+
             // Save version info for the duplicated instance
             var versionInfoPath = Path.Combine(versionedPath, "version.json");
             var versionInfo = new { Version = currentVersion, Branch = normalizedBranch };
             File.WriteAllText(versionInfoPath, System.Text.Json.JsonSerializer.Serialize(versionInfo));
-            
+
             Logger.Success("Update", $"Duplicated latest to versioned instance v{currentVersion}");
             return true;
         }
@@ -659,7 +661,7 @@ rm -f ""$0""
         try
         {
             Logger.Info("Update", "Mounting DMG and installing...");
-            
+
             // Mount the DMG
             var mountProcess = Process.Start(new ProcessStartInfo
             {
@@ -669,22 +671,22 @@ rm -f ""$0""
                 UseShellExecute = false,
                 CreateNoWindow = true
             });
-            
+
             if (mountProcess == null)
             {
                 throw new Exception("Failed to mount DMG");
             }
-            
+
             await mountProcess.WaitForExitAsync();
             var mountOutput = await mountProcess.StandardOutput.ReadToEndAsync();
-            
+
             // Parse mount point from hdiutil output (last line, last column)
             var mountPoint = mountOutput.Split('\n', StringSplitOptions.RemoveEmptyEntries)
                 .LastOrDefault()?
                 .Split('\t', StringSplitOptions.RemoveEmptyEntries)
                 .LastOrDefault()?
                 .Trim();
-            
+
             if (string.IsNullOrWhiteSpace(mountPoint) || !Directory.Exists(mountPoint))
             {
                 throw new Exception($"Could not find mount point. Output: {mountOutput}");
@@ -692,7 +694,7 @@ rm -f ""$0""
 
             EmitLauncherUpdateProgress("install", 90, "Extracting update...", 0, 0);
             Logger.Info("Update", $"DMG mounted at: {mountPoint}");
-            
+
             // Find the .app in the mounted DMG
             var appInDmg = Directory.GetDirectories(mountPoint, "*.app").FirstOrDefault();
             if (string.IsNullOrWhiteSpace(appInDmg) || !Directory.Exists(appInDmg))
@@ -701,7 +703,7 @@ rm -f ""$0""
                 throw new Exception("No .app found in DMG");
             }
 
-            
+
             // Get current app path
             var currentExe = Environment.ProcessPath;
             if (string.IsNullOrEmpty(currentExe))
@@ -709,7 +711,7 @@ rm -f ""$0""
                 Process.Start("hdiutil", $"detach \"{mountPoint}\" -force");
                 throw new Exception("Could not determine current executable path");
             }
-            
+
             // Navigate up to get the .app bundle path
             var currentAppPath = currentExe;
             for (int i = 0; i < 3; i++) // Go up 3 levels to get to .app
@@ -717,16 +719,16 @@ rm -f ""$0""
                 currentAppPath = Path.GetDirectoryName(currentAppPath);
                 if (string.IsNullOrEmpty(currentAppPath)) break;
             }
-            
+
             if (string.IsNullOrEmpty(currentAppPath) || !currentAppPath.EndsWith(".app"))
             {
                 Process.Start("hdiutil", $"detach \"{mountPoint}\" -force");
                 throw new Exception($"Could not determine .app path from: {currentExe}");
             }
-            
+
             Logger.Info("Update", $"Current app: {currentAppPath}");
             Logger.Info("Update", $"New app: {appInDmg}");
-            
+
             // Create update script to replace app and restart
             var updateScript = Path.Combine(Path.GetTempPath(), "hyprism_update.sh");
             var scriptContent = $@"#!/bin/bash
@@ -737,10 +739,10 @@ hdiutil detach ""{mountPoint}"" -force
 open ""{currentAppPath}""
 rm -f ""$0""
 ";
-            
+
             File.WriteAllText(updateScript, scriptContent);
             Process.Start("chmod", $"+x \"{updateScript}\"")?.WaitForExit();
-            
+
             // Start the update script and exit
             Process.Start(new ProcessStartInfo
             {
@@ -749,7 +751,7 @@ rm -f ""$0""
                 UseShellExecute = false,
                 CreateNoWindow = true
             });
-            
+
             Logger.Info("Update", "Update script started");
         }
         catch (Exception ex)
@@ -870,13 +872,13 @@ del "%~f0"
                 InstallLinuxUpdate(candidate);
                 return;
             }
-            
+
             // For AppImage, just replace the file
             if (targetPath.EndsWith(".AppImage", StringComparison.OrdinalIgnoreCase))
             {
                 // Make the new AppImage executable
                 Process.Start("chmod", $"+x \"{targetPath}\"")?.WaitForExit();
-                
+
                 // Create update script
                 var updateScript = Path.Combine(Path.GetTempPath(), "hyprism_update.sh");
                 var scriptContent = $@"#!/bin/bash
@@ -889,7 +891,7 @@ rm -f ""$0""
 ";
                 File.WriteAllText(updateScript, scriptContent);
                 Process.Start("chmod", $"+x \"{updateScript}\"")?.WaitForExit();
-                
+
                 // Start the update script and exit
                 Process.Start(new ProcessStartInfo
                 {
@@ -898,7 +900,7 @@ rm -f ""$0""
                     UseShellExecute = false,
                     CreateNoWindow = true
                 });
-                
+
                 Logger.Info("Update", "Update script started");
             }
             else
@@ -1018,7 +1020,7 @@ rm -f ""$0""
 
     /// <summary>
     /// Wrapper Mode: Install or update the latest HyPrism binary from GitHub releases.
-    /// Downloads the appropriate release for the current OS and extracts it to wrapper directory.
+    /// Downloads the appropriate release for the current OS and extracts it to wrapper directory
     /// </summary>
     public async Task<bool> WrapperInstallLatest()
     {
@@ -1060,7 +1062,7 @@ rm -f ""$0""
 
             // Download archive
             _progressNotificationService.ReportDownloadProgress("wrapper-install", 0, "Downloading HyPrism...", null, 0, 100);
-            
+
             var response = await _httpClient.GetAsync(downloadUrl, HttpCompletionOption.ResponseHeadersRead);
             if (!response.IsSuccessStatusCode)
             {
@@ -1124,7 +1126,7 @@ rm -f ""$0""
     }
 
     /// <summary>
-    /// Wrapper Mode: Launch the installed HyPrism binary.
+    /// Wrapper Mode: Launch the installed HyPrism binary
     /// </summary>
     public async Task<bool> WrapperLaunch()
     {
@@ -1161,7 +1163,7 @@ rm -f ""$0""
     }
 
     /// <summary>
-    /// Helper: Get latest launcher version from GitHub releases API.
+    /// Helper: Get latest launcher version from GitHub releases API
     /// </summary>
     private async Task<string> GetLatestLauncherVersionFromGitHub()
     {

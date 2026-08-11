@@ -16,11 +16,11 @@ namespace HyPrism.Services.Game;
 
 /// <summary>
 /// Orchestrates the complete game download, update, and launch workflow.
-/// Acts as the primary coordinator between version checking, patching, and game launching.
+/// Acts as the primary coordinator between version checking, patching, and game launching
 /// </summary>
 /// <remarks>
 /// This service was refactored from a ~1000 line monolithic class into a coordinator
-/// that delegates to specialized services like IPatchManager and IGameLauncher.
+/// that delegates to specialized services like IPatchManager and IGameLauncher
 /// </remarks>
 public class GameSessionService : IGameSessionService
 {
@@ -37,25 +37,25 @@ public class GameSessionService : IGameSessionService
     private readonly IGameLauncher _gameLauncher;
     private readonly HttpClient _httpClient;
     private readonly string _appDir;
-    
+
     private volatile bool _cancelRequested;
     private CancellationTokenSource? _downloadCts;
     private readonly object _ctsLock = new();
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="GameSessionService"/> class.
+    /// Initializes a new instance of the <see cref="GameSessionService"/> class
     /// </summary>
-    /// <param name="configService">Service for accessing configuration.</param>
-    /// <param name="instanceService">Service for managing game instances.</param>
-    /// <param name="versionService">Service for version checking.</param>
-    /// <param name="launchService">Service for launch prerequisites (JRE, VC++).</param>
-    /// <param name="butlerService">Service for Butler patch tool.</param>
-    /// <param name="downloadService">Service for file downloads.</param>
-    /// <param name="progressService">Service for progress notifications.</param>
-    /// <param name="patchManager">Manager for differential updates.</param>
-    /// <param name="gameLauncher">Launcher for the game process.</param>
-    /// <param name="httpClient">HTTP client for network requests.</param>
-    /// <param name="appPath">Application path configuration.</param>
+    /// <param name="configService">Service for accessing configuration</param>
+    /// <param name="instanceService">Service for managing game instances</param>
+    /// <param name="versionService">Service for version checking</param>
+    /// <param name="launchService">Service for launch prerequisites (JRE, VC++)</param>
+    /// <param name="butlerService">Service for Butler patch tool</param>
+    /// <param name="downloadService">Service for file downloads</param>
+    /// <param name="progressService">Service for progress notifications</param>
+    /// <param name="patchManager">Manager for differential updates</param>
+    /// <param name="gameLauncher">Launcher for the game process</param>
+    /// <param name="httpClient">HTTP client for network requests</param>
+    /// <param name="appPath">Application path configuration</param>
     public GameSessionService(
         IConfigService configService,
         IInstanceService instanceService,
@@ -106,7 +106,7 @@ public class GameSessionService : IGameSessionService
             var selectedInstance = _instanceService.GetSelectedInstance();
             if (selectedInstance == null)
             {
-                Logger.Error("Download", "No instance selected — cannot launch. Select an instance first.");
+                Logger.Error("Download", "No instance selected. Select an instance before launching");
                 return new DownloadProgress { Error = "No instance selected" };
             }
 
@@ -126,7 +126,7 @@ public class GameSessionService : IGameSessionService
             bool gameIsInstalled = _instanceService.IsClientPresent(versionPath);
 
             // OPTIMIZATION: If game is already installed and this is NOT a "latest" instance,
-            // skip version fetching entirely — no network calls needed, just launch.
+            // Skip version fetching because an installed instance can launch without network requests
             if (gameIsInstalled && !isLatestInstance && targetVersion > 0)
             {
                 Logger.Success("Download", $"Fast path: Game already installed at v{targetVersion}, skipping version check");
@@ -160,7 +160,7 @@ public class GameSessionService : IGameSessionService
 
                 if (gameIsInstalled && instanceMeta.InstalledVersion > 0 && instanceMeta.InstalledVersion < instanceMeta.PendingVersion)
                 {
-                    // Game is partially patched — resume differential update
+                    // Resume the differential update for a partially patched game
                     Logger.Info("Download", $"Resuming differential update from v{instanceMeta.InstalledVersion} to v{instanceMeta.PendingVersion}");
                     try
                     {
@@ -176,7 +176,7 @@ public class GameSessionService : IGameSessionService
                 }
                 else if (!gameIsInstalled)
                 {
-                    // Client missing — full re-install needed, PendingVersion carries forward
+                    // Preserve PendingVersion while reinstalling a missing client
                     Logger.Info("Download", "Client not present despite PendingVersion, will re-install");
                 }
             }
@@ -218,6 +218,7 @@ public class GameSessionService : IGameSessionService
         }
     }
 
+    /// <inheritdoc/>
     public void CancelDownload()
     {
         _cancelRequested = true;
@@ -227,6 +228,7 @@ public class GameSessionService : IGameSessionService
         }
     }
 
+    /// <inheritdoc/>
     public void Dispose()
     {
         lock (_ctsLock)
@@ -239,7 +241,7 @@ public class GameSessionService : IGameSessionService
 
     /// <summary>
     /// Fast path for launching an already-installed game with a specific version (not "latest").
-    /// Skips version list fetching entirely — no network calls needed.
+    /// Skips version list fetching because no network calls are needed
     /// </summary>
     private async Task<DownloadProgress> HandleInstalledGameFastAsync(
         string versionPath, string branch, CancellationToken ct)
@@ -443,11 +445,11 @@ public class GameSessionService : IGameSessionService
                 Logger.Error("Download", $"Failed to get download URL: {ex.Message}");
                 return new DownloadProgress { Error = $"Failed to get download URL for v{targetVersion}: {ex.Message}" };
             }
-            
-            bool hasOfficialUrl = !string.IsNullOrEmpty(versionEntry.PwrUrl) 
-                && versionEntry.PwrUrl.Contains("game-patches.hytale.com") 
+
+            bool hasOfficialUrl = !string.IsNullOrEmpty(versionEntry.PwrUrl)
+                && versionEntry.PwrUrl.Contains("game-patches.hytale.com")
                 && versionEntry.PwrUrl.Contains("verify=");
-            
+
             string pwrPath = Path.Combine(_appDir, "Cache", $"{branch}_{(isLatestInstance ? "latest" : "version")}_{targetVersion}.pwr");
 
             Directory.CreateDirectory(Path.GetDirectoryName(pwrPath)!);
@@ -464,7 +466,7 @@ public class GameSessionService : IGameSessionService
                 // Pre-release official download failed, mirror requires diff-based approach
                 Logger.Info("Download", $"Switching to mirror diff chain for pre-release v{targetVersion}");
                 _progressService.ReportDownloadProgress("download", 5, "launch.detail.downloading_mirror", null, 0, 0);
-                
+
                 try
                 {
                     await _patchManager.ApplyDifferentialUpdateAsync(versionPath, branch, 0, targetVersion, ct);
@@ -815,7 +817,7 @@ public class GameSessionService : IGameSessionService
                     catch (Exception mirrorEx)
                     {
                         Logger.Error("Download", $"Mirror download also failed: {mirrorEx.Message}");
-                        
+
                         // If mirror returned 404, invalidate this version from cache
                         // to prevent showing unavailable versions to users
                         if (IsHttpNotFound(mirrorEx))
@@ -908,7 +910,7 @@ public class GameSessionService : IGameSessionService
 }
 
 /// <summary>
-/// Thrown when a pre-release download fails from official and the mirror requires diff-based download.
+/// Thrown when a pre-release download fails from official and the mirror requires diff-based download
 /// </summary>
 internal class MirrorDiffRequiredException : Exception
 {
