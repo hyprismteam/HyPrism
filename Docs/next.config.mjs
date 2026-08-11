@@ -4,7 +4,8 @@
 import nextra from 'nextra'
 
 const withNextra = nextra({
-  contentDirBasePath: '/docs'
+  contentDirBasePath: '/docs',
+  unstable_shouldAddLocaleToLinks: true
 })
 
 export default withNextra({

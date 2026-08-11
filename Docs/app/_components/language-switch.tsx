@@ -4,12 +4,12 @@
 'use client'
 
 import type { Locale } from '../_dictionaries/types'
+import { localeChangeEvent } from './locale-context'
 
 type LanguageSwitchProps = Readonly<{
   activeLocale: Locale
   label: string
   languages: Record<Locale, string>
-  onChange: (locale: Locale) => void
 }>
 
 const availableLocales: Locale[] = ['en', 'ru']
@@ -17,9 +17,20 @@ const availableLocales: Locale[] = ['en', 'ru']
 export function LanguageSwitch({
   activeLocale,
   label,
-  languages,
-  onChange
+  languages
 }: LanguageSwitchProps) {
+  function selectLocale(locale: Locale) {
+    if (locale === activeLocale) {
+      return
+    }
+
+    window.localStorage.setItem('hyprism-docs-locale', locale)
+    document.documentElement.dataset.docsReady = 'false'
+    document.documentElement.dataset.docsLocale = locale
+    document.documentElement.lang = locale
+    window.dispatchEvent(new CustomEvent(localeChangeEvent, { detail: locale }))
+  }
+
   return (
     <nav className="hyprism-language-switch" aria-label={label}>
       {availableLocales.map(locale => (
@@ -29,7 +40,7 @@ export function LanguageSwitch({
           aria-current={locale === activeLocale ? 'page' : undefined}
           aria-pressed={locale === activeLocale}
           aria-label={languages[locale]}
-          onClick={() => onChange(locale)}
+          onClick={() => selectLocale(locale)}
         >
           {locale.toUpperCase()}
         </button>

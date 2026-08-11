@@ -54,6 +54,10 @@
   color: white;
 }
 
+html:not([data-docs-ready='true']) .hyprism-docs-shell {
+  visibility: hidden;
+}
+
 .hyprism-locale-entry {
   align-items: center;
   background:

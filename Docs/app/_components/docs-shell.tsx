@@ -13,15 +13,11 @@ import EnglishDictionary from '../_dictionaries/en'
 import RussianDictionary from '../_dictionaries/ru'
 import type { Dictionary, Locale } from '../_dictionaries/types'
 import { LanguageSwitch } from './language-switch'
-
-type LocalizedPage = Readonly<{
-  content: ReactNode
-  pageMap: PageMapItem[]
-  title: string
-}>
+import { DocsLocaleContext, localeChangeEvent } from './locale-context'
 
 type DocsShellProps = Readonly<{
-  pages: Record<Locale, LocalizedPage>
+  children: ReactNode
+  pageMaps: Record<Locale, PageMapItem[]>
 }>
 
 const dictionaries: Record<Locale, Dictionary> = {
@@ -38,24 +34,27 @@ function getPreferredLocale(): Locale {
   return window.navigator.language.toLowerCase().startsWith('ru') ? 'ru' : 'en'
 }
 
-export function DocsShell({ pages }: DocsShellProps) {
+export function DocsShell({ children, pageMaps }: DocsShellProps) {
   const [locale, setLocale] = useState<Locale>('en')
   const dictionary = dictionaries[locale]
-  const page = pages[locale]
 
   useEffect(() => {
     setLocale(getPreferredLocale())
+
+    function handleLocaleChange(event: Event) {
+      setLocale((event as CustomEvent<Locale>).detail)
+    }
+
+    window.addEventListener(localeChangeEvent, handleLocaleChange)
+    return () => window.removeEventListener(localeChangeEvent, handleLocaleChange)
   }, [])
 
   useEffect(() => {
-    document.documentElement.lang = locale
-    document.title = `${page.title} | HyPrism`
-  }, [locale, page.title])
-
-  function selectLocale(nextLocale: Locale) {
-    window.localStorage.setItem('hyprism-docs-locale', nextLocale)
-    setLocale(nextLocale)
-  }
+    if (document.documentElement.dataset.docsLocale === locale) {
+      document.documentElement.lang = locale
+      document.documentElement.dataset.docsReady = 'true'
+    }
+  }, [locale])
 
   const navbar = (
     <Navbar
@@ -74,11 +73,9 @@ export function DocsShell({ pages }: DocsShellProps) {
         activeLocale={locale}
         label={dictionary.languageSwitcher}
         languages={dictionary.languages}
-        onChange={selectLocale}
       />
     </Navbar>
   )
-
   const search = (
     <Search
       placeholder={dictionary.search.placeholder}
@@ -89,25 +86,28 @@ export function DocsShell({ pages }: DocsShellProps) {
   )
 
   return (
-    <Layout
-      key={locale}
-      navbar={navbar}
-      pageMap={page.pageMap}
-      docsRepositoryBase="https://github.com/hyprismteam/HyPrism/tree/main/Docs"
-      footer={<Footer>{dictionary.footer}</Footer>}
-      search={search}
-      editLink={dictionary.editPage}
-      feedback={{ content: dictionary.feedback, labels: 'documentation' }}
-      lastUpdated={<LastUpdated locale={locale}>{dictionary.lastUpdated}</LastUpdated>}
-      themeSwitch={dictionary.theme}
-      toc={{
-        title: dictionary.toc.title,
-        backToTop: dictionary.toc.backToTop
-      }}
-      copyPageButton={false}
-      sidebar={{ autoCollapse: true, defaultMenuCollapseLevel: 1 }}
-    >
-      {page.content}
-    </Layout>
+    <DocsLocaleContext.Provider value={locale}>
+      <div className="hyprism-docs-shell">
+        <Layout
+          navbar={navbar}
+          pageMap={pageMaps[locale]}
+          docsRepositoryBase="https://github.com/hyprismteam/HyPrism/tree/main/Docs"
+          footer={<Footer>{dictionary.footer}</Footer>}
+          search={search}
+          editLink={dictionary.editPage}
+          feedback={{ content: dictionary.feedback, labels: 'documentation' }}
+          lastUpdated={<LastUpdated locale={locale}>{dictionary.lastUpdated}</LastUpdated>}
+          themeSwitch={dictionary.theme}
+          toc={{
+            title: dictionary.toc.title,
+            backToTop: dictionary.toc.backToTop
+          }}
+          copyPageButton={false}
+          sidebar={{ autoCollapse: true, defaultMenuCollapseLevel: 1 }}
+        >
+          {children}
+        </Layout>
+      </div>
+    </DocsLocaleContext.Provider>
   )
 }
