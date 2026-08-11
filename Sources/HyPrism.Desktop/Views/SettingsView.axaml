@@ -484,14 +484,29 @@ SPDX-License-Identifier: GPL-3.0-only
             <StackPanel Spacing="10">
               <TextBlock Text="{Binding VisualTitle}" Classes="settingsCategoryHeading" />
               <Border Classes="settingsGroup">
-                <StackPanel>
-                <Border Classes="settingsRow">
-                  <StackPanel Spacing="12">
-                    <TextBlock Text="{Binding BackgroundLabel}" Classes="settingsLabel" />
-                    <ItemsControl ItemsSource="{Binding Backgrounds}">
+                <Border Classes="settingsRow last">
+                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="24">
+                    <StackPanel Spacing="3">
+                      <TextBlock Text="{Binding HideNewsLabel}" Classes="settingsLabel" />
+                      <TextBlock Text="{Binding HideNewsHint}" Classes="settingsHint" />
+                    </StackPanel>
+                    <ToggleSwitch Grid.Column="1" IsChecked="{Binding DisableNews}" />
+                  </Grid>
+                </Border>
+              </Border>
+            </StackPanel>
+
+            <StackPanel Spacing="10">
+              <TextBlock Text="{Binding BackgroundLabel}" Classes="settingsCategoryHeading" />
+              <Border Classes="settingsGroup">
+                <Border Classes="settingsRow last">
+                  <ItemsControl x:Name="BackgroundPicker"
+                                ItemsSource="{Binding Backgrounds}"
+                                HorizontalAlignment="Stretch"
+                                SizeChanged="OnBackgroundPickerSizeChanged">
                       <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
-                          <WrapPanel Orientation="Horizontal" ItemWidth="178" ItemHeight="112" />
+                          <WrapPanel Orientation="Horizontal" />
                         </ItemsPanelTemplate>
                       </ItemsControl.ItemsPanel>
                       <ItemsControl.ItemTemplate>
@@ -515,19 +530,8 @@ SPDX-License-Identifier: GPL-3.0-only
                           </Button>
                         </DataTemplate>
                       </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                  </StackPanel>
+                  </ItemsControl>
                 </Border>
-                <Border Classes="settingsRow last">
-                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="24">
-                    <StackPanel Spacing="3">
-                      <TextBlock Text="{Binding HideNewsLabel}" Classes="settingsLabel" />
-                      <TextBlock Text="{Binding HideNewsHint}" Classes="settingsHint" />
-                    </StackPanel>
-                    <ToggleSwitch Grid.Column="1" IsChecked="{Binding DisableNews}" />
-                  </Grid>
-                </Border>
-                </StackPanel>
               </Border>
             </StackPanel>
           </StackPanel>

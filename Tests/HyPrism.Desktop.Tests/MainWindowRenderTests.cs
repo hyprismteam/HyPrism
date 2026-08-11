@@ -1895,9 +1895,31 @@ public sealed class MainWindowRenderTests
         Assert.True(viewModel.Settings.Backgrounds[0].IsAuto);
         Assert.Equal(3, viewModel.Settings.Backgrounds[0].Previews.Count);
         Assert.Equal(
-            7,
-            settingsView.GetVisualDescendants().OfType<Button>().Count(
-                button => button.IsEffectivelyVisible && button.Classes.Contains("backgroundChoice")));
+            2,
+            settingsView.GetVisualDescendants().OfType<Border>().Count(
+                border => border.IsEffectivelyVisible && border.Classes.Contains("settingsGroup")));
+        var visualCategoryHeadings = settingsView.GetVisualDescendants()
+            .OfType<TextBlock>()
+            .Where(text => text.IsEffectivelyVisible && text.Classes.Contains("settingsCategoryHeading"))
+            .Select(text => text.Text)
+            .ToArray();
+        Assert.Equal(2, visualCategoryHeadings.Length);
+        Assert.Equal(viewModel.Settings.VisualTitle, visualCategoryHeadings[0]);
+        Assert.Equal(viewModel.Settings.BackgroundLabel, visualCategoryHeadings[1]);
+        var backgroundChoices = settingsView.GetVisualDescendants()
+            .OfType<Button>()
+            .Where(button => button.IsEffectivelyVisible && button.Classes.Contains("backgroundChoice"))
+            .ToArray();
+        Assert.Equal(7, backgroundChoices.Length);
+        Assert.All(backgroundChoices, choice =>
+        {
+            Assert.InRange(choice.Bounds.Width / choice.Bounds.Height, 1.76, 1.79);
+            Assert.True(choice.Bounds.Width >= 120);
+        });
+        var firstBackgroundRowY = backgroundChoices[0].TranslatePoint(default, settingsView)!.Value.Y;
+        var backgroundsInFirstRow = backgroundChoices.Count(choice =>
+            Math.Abs(choice.TranslatePoint(default, settingsView)!.Value.Y - firstBackgroundRowY) < 1);
+        Assert.Equal(width == 1920 ? 5 : 3, backgroundsInFirstRow);
         var visualSettingsPreviewPath = Environment.GetEnvironmentVariable(
             "HYPRISM_VISUAL_SETTINGS_RENDER_OUTPUT");
         if (!string.IsNullOrWhiteSpace(visualSettingsPreviewPath) && width == 1280)

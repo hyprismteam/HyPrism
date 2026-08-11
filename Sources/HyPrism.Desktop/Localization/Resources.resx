@@ -2374,7 +2374,7 @@ You may need to reinstall the game if switching drives.</value>
     <value>Or choose a static background:</value>
   </data>
   <data name="settings.visualSettings.title" xml:space="preserve">
-    <value>Visual Settings</value>
+    <value>Personalization</value>
   </data>
   <data name="settings.visuals" xml:space="preserve">
     <value>Visuals</value>

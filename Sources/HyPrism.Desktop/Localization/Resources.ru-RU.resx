@@ -2371,7 +2371,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>Или выберите статичный фон:</value>
   </data>
   <data name="settings.visualSettings.title" xml:space="preserve">
-    <value>Визуальные настройки</value>
+    <value>Персонализация</value>
   </data>
   <data name="settings.visuals" xml:space="preserve">
     <value>Визуал</value>

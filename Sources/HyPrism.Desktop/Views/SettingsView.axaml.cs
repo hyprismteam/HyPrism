@@ -6,6 +6,7 @@ using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using HyPrism.Desktop.ViewModels;
 
 namespace HyPrism.Desktop.Views;
@@ -16,6 +17,7 @@ public sealed partial class SettingsView : UserControl
 
     private bool? _usesCompactLayout;
     private bool _compactContentOpen;
+    private double _backgroundPickerWidth;
 
     private TranslateTransform MainTranslation
         => (TranslateTransform)SettingsMain.RenderTransform!;
@@ -83,6 +85,48 @@ public sealed partial class SettingsView : UserControl
 
     private void OnCompactSettingsBackClicked(object? sender, RoutedEventArgs e)
         => TryCloseCompactContent();
+
+    private void OnBackgroundPickerSizeChanged(object? sender, SizeChangedEventArgs e)
+    {
+        if (e.NewSize.Width <= 0 || Math.Abs(_backgroundPickerWidth - e.NewSize.Width) < 0.5)
+            return;
+
+        _backgroundPickerWidth = e.NewSize.Width;
+        Dispatcher.UIThread.Post(
+            () => UpdateBackgroundPickerLayout(e.NewSize.Width),
+            DispatcherPriority.Loaded);
+    }
+
+    private void UpdateBackgroundPickerLayout(double availableWidth)
+    {
+        const double targetSlotWidth = 185;
+        const double minimumSlotWidth = 150;
+        const double tileMargin = 12;
+
+        var maximumColumns = Math.Max(1, (int)Math.Floor(availableWidth / minimumSlotWidth));
+        var columns = Math.Clamp(
+            (int)Math.Round(availableWidth / targetSlotWidth, MidpointRounding.AwayFromZero),
+            1,
+            maximumColumns);
+        var slotWidth = Math.Floor((availableWidth - 1) / columns);
+        var tileWidth = Math.Max(120, slotWidth - tileMargin);
+        var tileHeight = Math.Round(tileWidth * 9 / 16);
+
+        var panel = BackgroundPicker.GetVisualDescendants().OfType<WrapPanel>().FirstOrDefault();
+        if (panel is not null)
+        {
+            panel.ItemWidth = slotWidth;
+            panel.ItemHeight = tileHeight + tileMargin;
+        }
+
+        foreach (var button in BackgroundPicker.GetVisualDescendants()
+                     .OfType<Button>()
+                     .Where(button => button.Classes.Contains("backgroundChoice")))
+        {
+            button.Width = tileWidth;
+            button.Height = tileHeight;
+        }
+    }
 
     public bool TryCloseCompactContent()
     {
