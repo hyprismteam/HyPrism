@@ -279,7 +279,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <DataTemplate x:Key="NewsFeedTemplate" x:DataType="vm:MainWindowViewModel">
       <Grid Background="Transparent">
         <StackPanel IsVisible="{Binding IsNewsLoading}"
-                    Margin="24,28"
+                    Margin="14,18"
                     Spacing="12">
           <Grid Height="88" ColumnDefinitions="116,*" ColumnSpacing="16">
             <Border Classes="skeleton" CornerRadius="12" />
@@ -326,15 +326,16 @@ SPDX-License-Identifier: GPL-3.0-only
                                      Classes="newsFeedScroll"
                                      HorizontalScrollBarVisibility="Disabled"
                                      VerticalScrollBarVisibility="Auto">
-          <StackPanel Margin="24">
+          <StackPanel x:Name="NewsFeedItems" Margin="14,18">
             <ContentControl Content="{Binding FeaturedNews}"
+                            Margin="0,0,0,2"
                             ContentTemplate="{StaticResource NewsListItemTemplate}" />
 
             <ItemsControl ItemsSource="{Binding LatestNews}"
                           ItemTemplate="{StaticResource NewsListItemTemplate}">
               <ItemsControl.ItemsPanel>
                 <ItemsPanelTemplate>
-                  <StackPanel />
+                  <StackPanel Spacing="2" />
                 </ItemsPanelTemplate>
               </ItemsControl.ItemsPanel>
             </ItemsControl>

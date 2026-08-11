@@ -943,6 +943,11 @@ public sealed class MainWindowRenderTests
         var dashboard = Assert.Single(
             window.GetVisualDescendants().OfType<DashboardView>());
         Assert.True(dashboard.IsEffectivelyVisible);
+        Assert.False(dashboard.ClipToBounds);
+        var dashboardSurface = dashboard.FindControl<Border>("DashboardSurface");
+        Assert.NotNull(dashboardSurface);
+        Assert.True(dashboardSurface!.ClipToBounds);
+        Assert.Equal(new CornerRadius(23), dashboardSurface.CornerRadius);
         Assert.Equal(width >= 1280, viewModel.IsDashboardQuickStripVisible);
         var dashboardAction = Assert.Single(
             dashboard.GetVisualDescendants().OfType<Button>(),
@@ -1123,6 +1128,23 @@ public sealed class MainWindowRenderTests
             .OfType<ScrollViewer>()
             .Single(scrollViewer => scrollViewer.Classes.Contains("newsFeedScroll"));
         Assert.Equal(ScrollBarVisibility.Auto, feedScrollViewer.VerticalScrollBarVisibility);
+        var newsFeedItems = activeNewsShell.GetVisualDescendants()
+            .OfType<StackPanel>()
+            .Single(panel => panel.Name == "NewsFeedItems");
+        Assert.Equal(new Thickness(14, 18), newsFeedItems.Margin);
+        var firstNewsItemPosition = newsListItems[0].TranslatePoint(default, feedScrollViewer);
+        Assert.NotNull(firstNewsItemPosition);
+        Assert.InRange(firstNewsItemPosition!.Value.X, 13.5, 14.5);
+        for (var index = 1; index < newsListItems.Length; index++)
+        {
+            var previousPosition = newsListItems[index - 1].TranslatePoint(default, feedScrollViewer);
+            var currentPosition = newsListItems[index].TranslatePoint(default, feedScrollViewer);
+            Assert.NotNull(previousPosition);
+            Assert.NotNull(currentPosition);
+            var gap = currentPosition!.Value.Y -
+                      (previousPosition!.Value.Y + newsListItems[index - 1].Bounds.Height);
+            Assert.InRange(gap, 1.5, 2.5);
+        }
         AssertUsesApplicationScrollBar(feedScrollViewer);
 
         await viewModel.FeaturedNews!.OpenCommand.ExecuteAsync(null);

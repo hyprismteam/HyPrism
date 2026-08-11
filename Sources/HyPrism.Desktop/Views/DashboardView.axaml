@@ -10,8 +10,11 @@ SPDX-License-Identifier: GPL-3.0-only
              x:Name="DashboardRoot"
              x:DataType="vm:MainWindowViewModel"
              Classes.compact="{Binding IsCompactDashboardLayout}"
-             ClipToBounds="True">
-  <Grid Background="#0D0E10">
+             ClipToBounds="False">
+  <Border x:Name="DashboardSurface"
+          CornerRadius="23"
+          ClipToBounds="True">
+    <Grid Background="#0D0E10">
     <Image Source="{Binding DashboardBackground}"
            Stretch="UniformToFill"
            Opacity="0.72">
@@ -228,6 +231,7 @@ SPDX-License-Identifier: GPL-3.0-only
           </ItemsControl>
         </Grid>
       </Border>
+      </Grid>
     </Grid>
-  </Grid>
+  </Border>
 </UserControl>
