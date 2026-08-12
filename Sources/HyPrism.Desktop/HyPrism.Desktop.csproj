@@ -31,12 +31,6 @@ SPDX-License-Identifier: GPL-3.0-only
 
   <ItemGroup>
     <AvaloniaResource Include="Assets/**" />
-    <AvaloniaResource Include="../HyPrism.Launcher/Frontend/src/assets/backgrounds/*"
-                      Link="Assets/Backgrounds/%(Filename)%(Extension)" />
-    <AvaloniaResource Include="../HyPrism.Launcher/Frontend/src/assets/images/logo.png"
-                      Link="Assets/Images/logo.png" />
-    <AvaloniaResource Include="../HyPrism.Launcher/Frontend/src/assets/images/appicon.png"
-                      Link="Assets/Images/appicon.png" />
   </ItemGroup>
 
 </Project>
