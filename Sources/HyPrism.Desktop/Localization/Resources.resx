@@ -96,6 +96,9 @@ You may need to reinstall the game if switching drives.</value>
   <data name="common.cancel" xml:space="preserve">
     <value>Cancel</value>
   </data>
+  <data name="common.remove" xml:space="preserve">
+    <value>Remove</value>
+  </data>
   <data name="common.clear" xml:space="preserve">
     <value>Clear</value>
   </data>
@@ -1882,7 +1885,7 @@ You may need to reinstall the game if switching drives.</value>
     <value>How downloads work</value>
   </data>
   <data name="settings.downloads.howDownloadsWorkDescription" xml:space="preserve">
-    <value>HyPrism automatically selects the fastest available source to download game files. Press "Test Speed" to check your connection.</value>
+    <value>HyPrism prefers the official source and automatically selects an available community mirror when a fallback is needed</value>
   </data>
   <data name="settings.downloads.launchAfterDownload" xml:space="preserve">
     <value>Launch game after download</value>
@@ -1916,6 +1919,87 @@ You may need to reinstall the game if switching drives.</value>
   </data>
   <data name="settings.downloads.refreshMirrors" xml:space="preserve">
     <value>Refresh mirrors</value>
+  </data>
+  <data name="settings.downloads.behavior" xml:space="preserve">
+    <value>Behavior</value>
+  </data>
+  <data name="settings.downloads.sources" xml:space="preserve">
+    <value>Download sources</value>
+  </data>
+  <data name="settings.downloads.sourcesHint" xml:space="preserve">
+    <value>The official Hytale source and trusted community mirrors</value>
+  </data>
+  <data name="settings.downloads.officialSourceConnected" xml:space="preserve">
+    <value>Account connected</value>
+  </data>
+  <data name="settings.downloads.officialSourceRequiresAccount" xml:space="preserve">
+    <value>Hytale account required</value>
+  </data>
+  <data name="settings.downloads.addSource" xml:space="preserve">
+    <value>Add source</value>
+  </data>
+  <data name="settings.downloads.addSourceTitle" xml:space="preserve">
+    <value>Connect a download source</value>
+  </data>
+  <data name="settings.downloads.addSourceHint" xml:space="preserve">
+    <value>Enter its public address and HyPrism will detect the supported mirror format</value>
+  </data>
+  <data name="settings.downloads.sourceUrlPlaceholder" xml:space="preserve">
+    <value>https://mirror.example.com</value>
+  </data>
+  <data name="settings.downloads.noSources" xml:space="preserve">
+    <value>No additional sources</value>
+  </data>
+  <data name="settings.downloads.noSourcesHint" xml:space="preserve">
+    <value>The official Hytale source remains available for connected accounts</value>
+  </data>
+  <data name="settings.downloads.deleteSourceTitle" xml:space="preserve">
+    <value>Remove this source?</value>
+  </data>
+  <data name="settings.downloads.deleteSourceHint" xml:space="preserve">
+    <value>Its local definition will be deleted and it will no longer be used for downloads</value>
+  </data>
+  <data name="settings.downloads.sourceManagementUnavailable" xml:space="preserve">
+    <value>Download source management is unavailable in this session</value>
+  </data>
+  <data name="settings.downloads.invalidSourceUrl" xml:space="preserve">
+    <value>Enter an HTTPS address or a local HTTP address</value>
+  </data>
+  <data name="settings.downloads.sourceAlreadyExists" xml:space="preserve">
+    <value>This download source is already configured</value>
+  </data>
+  <data name="settings.downloads.detectingSource" xml:space="preserve">
+    <value>Checking source compatibility</value>
+  </data>
+  <data name="settings.downloads.sourceDetectionFailed" xml:space="preserve">
+    <value>HyPrism could not detect a compatible mirror at this address</value>
+  </data>
+  <data name="settings.downloads.sourceSaveFailed" xml:space="preserve">
+    <value>The download source could not be saved</value>
+  </data>
+  <data name="settings.downloads.sourceReadFailed" xml:space="preserve">
+    <value>The saved download sources could not be read</value>
+  </data>
+  <data name="settings.downloads.sourceRemoveFailed" xml:space="preserve">
+    <value>The download source could not be removed</value>
+  </data>
+  <data name="settings.downloads.sourceAdded" xml:space="preserve">
+    <value>Download source added</value>
+  </data>
+  <data name="settings.downloads.sourceRemoved" xml:space="preserve">
+    <value>Download source removed</value>
+  </data>
+  <data name="settings.downloads.sourceEnabled" xml:space="preserve">
+    <value>Download source enabled</value>
+  </data>
+  <data name="settings.downloads.sourceDisabled" xml:space="preserve">
+    <value>Download source disabled</value>
+  </data>
+  <data name="settings.downloads.sourceTypeJsonIndex" xml:space="preserve">
+    <value>JSON index</value>
+  </data>
+  <data name="settings.downloads.sourceTypePattern" xml:space="preserve">
+    <value>URL template</value>
   </data>
   <data name="settings.downloads.testSpeed" xml:space="preserve">
     <value>Test Speed</value>

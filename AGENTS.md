@@ -29,7 +29,7 @@ An agent MUST:
 - Do not end the final sentence of a section or list item with a period
 - Run `pnpm install` in `Docs/` when dependencies change
 - Validate content and types with `pnpm check` in `Docs/`
-- Validate the static export with `PAGES_BASE_PATH=/HyPrism pnpm build` in `Docs/`
+- Validate the Docusaurus static export with `PAGES_BASE_PATH=/HyPrism pnpm build` in `Docs/`
 - Use commit messages starting with `docs:` when a commit contains only documentation changes
 - Include a short documentation checklist in the pull request description
 
@@ -39,7 +39,7 @@ Before merging changes, ensure the following:
 
 - [ ] Documentation updated (user / developer / API) for the change
 - [ ] `pnpm check` passes in `Docs/`
-- [ ] The Nextra static export builds for the `/HyPrism` base path
+- [ ] The Docusaurus static export builds for the `/HyPrism` base path
 - [ ] Spell-check or lint docs and code
 - [ ] README updated if needed
 

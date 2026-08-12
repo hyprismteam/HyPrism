@@ -12,7 +12,7 @@ Settings use the same adaptive master-detail layout as the news reader. Wide win
 | Category | Purpose |
 | --- | --- |
 | General | language, music, launch behavior, announcements, and news visibility |
-| Downloads | download source behavior and instance storage |
+| Downloads | launch-after-install behavior and official or community download sources |
 | Java | bundled or custom runtime, initial memory, maximum memory, and extra arguments |
 | Appearance | background selection and interface personalization |
 | Network | online mode, authentication server, and DualAuth |
@@ -22,6 +22,16 @@ Settings use the same adaptive master-detail layout as the news reader. Wide win
 | About | project and license information |
 
 Java heap arguments such as `-Xms` and `-Xmx` are managed by the memory controls and are rejected in the free-form arguments field
+
+## Download sources
+
+The Downloads page shows the official Hytale source and community mirrors together in the **Download sources** category. A connected Hytale account is required for the official source
+
+To add a community source, select **Add source**, enter its public HTTPS address, and let HyPrism detect the mirror format. The source becomes available immediately after a successful check
+
+Each community source can be enabled, disabled, or removed. HyPrism prefers the official source and selects an available enabled mirror when a fallback is needed
+
+Only add sources you trust. The regular form does not request custom authorization headers or expose the generated JSON definition
 
 The About page shows the installed launcher version, the latest commit in `main`, project and community links, the core team, an adaptive row of recent contributors, the source-code license, the Hytale EULA, visual credits, and the disclaimer
 

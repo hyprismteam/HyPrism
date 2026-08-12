@@ -9,7 +9,7 @@ description: Restore, build, and run the native launcher
 
 - .NET 10 SDK
 - Git
-- Node.js 22 and pnpm only when working on the documentation or obsolete Electron reference
+- Node.js 22 and pnpm only when working on the documentation
 
 ## Native launcher
 
@@ -25,7 +25,7 @@ dotnet run --project Sources/HyPrism.Desktop/HyPrism.Desktop.csproj
 dotnet build HyPrism.sln
 ```
 
-The solution still includes the obsolete Electron host and IPC generator. Build `HyPrism.Desktop` directly when validating native-only work
+The solution contains `HyPrism.Core`, `HyPrism.Desktop`, and their test projects
 
 ## Documentation
 

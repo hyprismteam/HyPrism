@@ -9,7 +9,7 @@ description: Восстановление, сборка и запуск нати
 
 - .NET 10 SDK
 - Git
-- Node.js 22 и pnpm только для документации или устаревшего Electron-эталона
+- Node.js 22 и pnpm только для документации
 
 ## Нативный лаунчер
 
@@ -25,7 +25,7 @@ dotnet run --project Sources/HyPrism.Desktop/HyPrism.Desktop.csproj
 dotnet build HyPrism.sln
 ```
 
-Solution пока содержит устаревший Electron-хост и генератор IPC. Для проверки нативных изменений собирайте `HyPrism.Desktop` напрямую
+Solution содержит `HyPrism.Core`, `HyPrism.Desktop` и их тестовые проекты
 
 ## Документация
 

@@ -16,6 +16,8 @@ using HyPrism.Core.Application.Progress;
 using HyPrism.Core.Game;
 using HyPrism.Core.Game.Instances;
 using HyPrism.Core.Game.Launch;
+using HyPrism.Core.Game.Sources;
+using HyPrism.Core.Game.Versions;
 using HyPrism.Core.Accounts;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -57,7 +59,10 @@ public sealed partial class App : Application
                 services.GetRequiredService<HttpClient>(),
                 localizer,
                 filePicker,
-                services.GetRequiredService<IGitHubClient>());
+                services.GetRequiredService<IGitHubClient>(),
+                services.GetRequiredService<IMirrorCatalog>(),
+                services.GetRequiredService<IMirrorDiscovery>(),
+                services.GetRequiredService<IGameVersionCatalog>());
 
             mainWindow.DataContext = _mainWindowViewModel;
             desktop.MainWindow = mainWindow;

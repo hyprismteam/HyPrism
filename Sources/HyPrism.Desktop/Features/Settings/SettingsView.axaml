@@ -179,6 +179,35 @@ SPDX-License-Identifier: GPL-3.0-only
       </Button>
     </DataTemplate>
 
+    <DataTemplate x:Key="MirrorSourceTemplate" x:DataType="vm:MirrorSourceViewModel">
+      <Border Classes="settingsRow mirrorSourceRow"
+              Classes.last="{Binding IsLast}">
+        <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="14">
+          <StackPanel Spacing="4" VerticalAlignment="Center">
+            <TextBlock Text="{Binding Name}"
+                       Classes="settingsLabel"
+                       TextTrimming="CharacterEllipsis" />
+            <TextBlock Classes="settingsHint"
+                       TextTrimming="CharacterEllipsis">
+              <Run Text="{Binding Endpoint}" />
+              <Run Text="  ·  " />
+              <Run Text="{Binding SourceType}" />
+            </TextBlock>
+          </StackPanel>
+          <ToggleSwitch Grid.Column="1"
+                        IsChecked="{Binding IsEnabled}"
+                        VerticalAlignment="Center" />
+          <Button Grid.Column="2"
+                  Classes="mirrorRemove"
+                  Command="{Binding DataContext.RequestDeleteMirrorCommand, ElementName=SettingsRoot}"
+                  CommandParameter="{Binding}"
+                  ToolTip.Tip="{Binding DataContext.RemoveLabel, ElementName=SettingsRoot}">
+            <TextBlock Text="×" FontSize="22" FontWeight="Normal" />
+          </Button>
+        </Grid>
+      </Border>
+    </DataTemplate>
+
     <DataTemplate x:Key="AboutTeamMemberTemplate" x:DataType="vm:AboutTeamMemberViewModel">
       <Button Classes="aboutTeamMember"
               Command="{Binding DataContext.OpenTeamMemberCommand, ElementName=SettingsRoot}"
@@ -400,24 +429,136 @@ SPDX-License-Identifier: GPL-3.0-only
             </StackPanel>
           </StackPanel>
 
-          <StackPanel Spacing="10" IsVisible="{Binding IsDownloads}">
-            <TextBlock Text="{Binding DownloadsTitle}" Classes="settingsCategoryHeading" />
-            <Border Classes="settingsGroup">
-              <StackPanel>
-                <Border Classes="settingsRow">
-                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="24">
-                    <StackPanel Spacing="3">
-                      <TextBlock Text="{Binding LaunchAfterDownloadLabel}" Classes="settingsLabel" />
-                      <TextBlock Text="{Binding LaunchAfterDownloadHint}" Classes="settingsHint" />
+          <StackPanel Spacing="22" IsVisible="{Binding IsDownloads}">
+            <StackPanel Spacing="10">
+              <TextBlock Text="{Binding DownloadBehaviorTitle}" Classes="settingsCategoryHeading" />
+              <Border Classes="settingsGroup">
+                <StackPanel>
+                  <Border Classes="settingsRow">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="24">
+                      <StackPanel Spacing="3">
+                        <TextBlock Text="{Binding LaunchAfterDownloadLabel}" Classes="settingsLabel" />
+                        <TextBlock Text="{Binding LaunchAfterDownloadHint}" Classes="settingsHint" />
+                      </StackPanel>
+                      <ToggleSwitch Grid.Column="1" IsChecked="{Binding LaunchAfterDownload}" />
+                    </Grid>
+                  </Border>
+                  <Border Classes="settingsRow last">
+                    <TextBlock Text="{Binding DownloadsInfo}" Classes="settingsHint" />
+                  </Border>
+                </StackPanel>
+              </Border>
+            </StackPanel>
+
+            <StackPanel Spacing="10">
+              <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16" Margin="4,0,4,2">
+                <StackPanel Spacing="2">
+                  <TextBlock Text="{Binding DownloadSourcesTitle}"
+                             Classes="settingsCategoryHeading"
+                             Margin="0" />
+                  <TextBlock Text="{Binding DownloadSourcesHint}" Classes="settingsHint" />
+                </StackPanel>
+                <Button Grid.Column="1"
+                        Classes="sourceAdd"
+                        Command="{Binding ShowAddMirrorCommand}">
+                  <StackPanel Orientation="Horizontal" Spacing="8">
+                    <TextBlock Text="+" FontSize="20" VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding AddSourceLabel}" VerticalAlignment="Center" />
+                  </StackPanel>
+                </Button>
+              </Grid>
+
+              <Border Classes="settingsGroup">
+                <StackPanel>
+                  <Border Classes="settingsRow">
+                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="14">
+                      <Border Classes="sourceIndicator official">
+                        <TextBlock Text="H" FontWeight="Bold" />
+                      </Border>
+                      <StackPanel Grid.Column="1" Spacing="3" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding OfficialSourceLabel}" Classes="settingsLabel" />
+                        <TextBlock Text="{Binding OfficialSourceHint}" Classes="settingsHint" />
+                      </StackPanel>
+                      <Border Grid.Column="2" Classes="sourceStatus" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding OfficialSourceStatus}" />
+                      </Border>
+                    </Grid>
+                  </Border>
+                  <ItemsControl ItemsSource="{Binding MirrorSources}"
+                                ItemTemplate="{StaticResource MirrorSourceTemplate}"
+                                IsVisible="{Binding HasMirrors}" />
+                  <Border Classes="settingsRow last" IsVisible="{Binding HasNoMirrors}">
+                    <StackPanel Spacing="4" HorizontalAlignment="Center" Margin="12,8">
+                      <TextBlock Text="{Binding NoSourcesLabel}"
+                                 Classes="settingsLabel"
+                                 HorizontalAlignment="Center" />
+                      <TextBlock Text="{Binding NoSourcesHint}"
+                                 Classes="settingsHint"
+                                 TextAlignment="Center"
+                                 HorizontalAlignment="Center" />
                     </StackPanel>
-                    <ToggleSwitch Grid.Column="1" IsChecked="{Binding LaunchAfterDownload}" />
+                  </Border>
+                </StackPanel>
+              </Border>
+
+              <Border Classes="settingsGroup"
+                      IsVisible="{Binding IsAddingMirror}">
+                <StackPanel>
+                  <Border Classes="settingsRow">
+                    <StackPanel Spacing="5">
+                      <TextBlock Text="{Binding AddSourceTitle}" Classes="settingsLabel" />
+                      <TextBlock Text="{Binding AddSourceHint}" Classes="settingsHint" />
+                    </StackPanel>
+                  </Border>
+                  <Border Classes="settingsRow last">
+                    <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">
+                      <TextBox Text="{Binding MirrorUrl}"
+                               PlaceholderText="{Binding MirrorUrlPlaceholder}"
+                               IsEnabled="{Binding !IsMirrorOperationBusy}" />
+                      <Button Grid.Column="1"
+                              Classes="sourceCancel"
+                              Command="{Binding CancelAddMirrorCommand}"
+                              IsEnabled="{Binding !IsMirrorOperationBusy}"
+                              Content="{Binding CancelLabel}" />
+                      <Button Grid.Column="2"
+                              Classes="settingsAction"
+                              Command="{Binding AddMirrorCommand}"
+                              IsEnabled="{Binding !IsMirrorOperationBusy}"
+                              Content="{Binding AddSourceLabel}" />
+                    </Grid>
+                  </Border>
+                  <ProgressBar Classes="sourceProgress"
+                               IsIndeterminate="True"
+                               IsVisible="{Binding IsMirrorOperationBusy}" />
+                </StackPanel>
+              </Border>
+
+              <Border Classes="settingsGroup" IsVisible="{Binding HasPendingMirrorDelete}">
+                <Border Classes="settingsRow last">
+                  <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">
+                    <StackPanel Spacing="3">
+                      <TextBlock Text="{Binding DeleteSourceTitle}" Classes="settingsLabel" />
+                      <TextBlock Text="{Binding DeleteSourceHint}" Classes="settingsHint" />
+                    </StackPanel>
+                    <Button Grid.Column="1"
+                            Classes="sourceCancel"
+                            Command="{Binding CancelDeleteMirrorCommand}"
+                            Content="{Binding CancelLabel}" />
+                    <Button Grid.Column="2"
+                            Classes="sourceRemoveConfirm"
+                            Command="{Binding ConfirmDeleteMirrorCommand}"
+                            Content="{Binding RemoveLabel}" />
                   </Grid>
                 </Border>
-                <Border Classes="settingsRow last">
-                  <TextBlock Text="{Binding DownloadsInfo}" Classes="settingsHint" />
-                </Border>
-              </StackPanel>
-            </Border>
+              </Border>
+
+              <TextBlock Text="{Binding MirrorOperationStatus}"
+                         Classes="sourceOperationStatus"
+                         IsVisible="{Binding HasMirrorOperationStatus}" />
+              <TextBlock Text="{Binding MirrorOperationError}"
+                         Classes="sourceOperationError"
+                         IsVisible="{Binding HasMirrorOperationError}" />
+            </StackPanel>
           </StackPanel>
 
           <StackPanel Spacing="22" IsVisible="{Binding IsJava}">

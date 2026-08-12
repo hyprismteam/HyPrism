@@ -953,6 +953,115 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="Padding" Value="0" />
   </Style>
 
+  <Style Selector="Border.settingsRow.mirrorSourceRow">
+    <Setter Property="MinHeight" Value="74" />
+  </Style>
+
+  <Style Selector="Border.sourceIndicator">
+    <Setter Property="Width" Value="36" />
+    <Setter Property="Height" Value="36" />
+    <Setter Property="CornerRadius" Value="10" />
+    <Setter Property="Background" Value="#1D2A21" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="HorizontalAlignment" Value="Center" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+
+  <Style Selector="Border.sourceIndicator TextBlock">
+    <Setter Property="Foreground" Value="#76D899" />
+    <Setter Property="HorizontalAlignment" Value="Center" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+
+  <Style Selector="Border.sourceStatus">
+    <Setter Property="Padding" Value="10,6" />
+    <Setter Property="CornerRadius" Value="999" />
+    <Setter Property="Background" Value="#151F19" />
+  </Style>
+
+  <Style Selector="Border.sourceStatus TextBlock">
+    <Setter Property="Foreground" Value="#8DD6A5" />
+    <Setter Property="FontSize" Value="11" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+
+  <Style Selector="Button.sourceAdd, Button.sourceCancel, Button.mirrorRemove, Button.sourceRemoveConfirm">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="FocusAdorner" Value="{x:Null}" />
+    <Setter Property="Cursor" Value="Hand" />
+    <Setter Property="RenderTransform" Value="{x:Null}" />
+    <Setter Property="Transitions">
+      <Transitions>
+        <BrushTransition Property="Foreground" Duration="0:0:0.16" />
+        <BrushTransition Property="Background" Duration="0:0:0.16" />
+      </Transitions>
+    </Setter>
+  </Style>
+
+  <Style Selector="Button.sourceAdd">
+    <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+    <Setter Property="Padding" Value="10,6" />
+  </Style>
+
+  <Style Selector="Button.sourceAdd:pointerover">
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+
+  <Style Selector="Button.sourceCancel">
+    <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+    <Setter Property="Padding" Value="14,8" />
+  </Style>
+
+  <Style Selector="Button.sourceCancel:pointerover">
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+
+  <Style Selector="Button.mirrorRemove">
+    <Setter Property="Width" Value="34" />
+    <Setter Property="Height" Value="34" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="Foreground" Value="#72757B" />
+  </Style>
+
+  <Style Selector="Button.mirrorRemove:pointerover">
+    <Setter Property="Foreground" Value="#EF9999" />
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+
+  <Style Selector="Button.sourceRemoveConfirm">
+    <Setter Property="Foreground" Value="#F0A2A2" />
+    <Setter Property="Padding" Value="14,8" />
+  </Style>
+
+  <Style Selector="Button.sourceRemoveConfirm:pointerover">
+    <Setter Property="Foreground" Value="#FFD0D0" />
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+
+  <Style Selector="ProgressBar.sourceProgress">
+    <Setter Property="Height" Value="2" />
+    <Setter Property="Margin" Value="18,0" />
+    <Setter Property="Foreground" Value="#7DCCA0" />
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+
+  <Style Selector="TextBlock.sourceOperationStatus, TextBlock.sourceOperationError">
+    <Setter Property="Margin" Value="4,2,4,0" />
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="TextWrapping" Value="Wrap" />
+  </Style>
+
+  <Style Selector="TextBlock.sourceOperationStatus">
+    <Setter Property="Foreground" Value="#86D2A0" />
+  </Style>
+
+  <Style Selector="TextBlock.sourceOperationError">
+    <Setter Property="Foreground" Value="#EE9A9A" />
+  </Style>
+
   <Style Selector="TextBlock.settingsLabel">
     <Setter Property="FontSize" Value="14" />
     <Setter Property="FontWeight" Value="SemiBold" />

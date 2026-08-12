@@ -18,6 +18,8 @@ using HyPrism.Core.Application.Progress;
 using HyPrism.Core.Game;
 using HyPrism.Core.Game.Instances;
 using HyPrism.Core.Game.Launch;
+using HyPrism.Core.Game.Sources;
+using HyPrism.Core.Game.Versions;
 using HyPrism.Core.Accounts;
 
 namespace HyPrism.Desktop.Shell;
@@ -46,6 +48,9 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     private readonly IExternalUriLauncher _uriLauncher;
     private readonly IFilePicker? _filePicker;
     private readonly IGitHubClient? _gitHubClient;
+    private readonly IMirrorCatalog? _mirrorCatalog;
+    private readonly IMirrorDiscovery? _mirrorDiscovery;
+    private readonly IGameVersionCatalog? _versionCatalog;
     private readonly HttpClient _httpClient;
     private readonly StringLocalizer _localizer;
     private InstanceInfo? _selectedInstance;
@@ -198,7 +203,10 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         HttpClient httpClient,
         StringLocalizer localizer,
         IFilePicker? filePicker = null,
-        IGitHubClient? gitHubClient = null)
+        IGitHubClient? gitHubClient = null,
+        IMirrorCatalog? mirrorCatalog = null,
+        IMirrorDiscovery? mirrorDiscovery = null,
+        IGameVersionCatalog? versionCatalog = null)
     {
         _instances = instances;
         _gameLaunchCoordinator = gameLaunchCoordinator;
@@ -210,6 +218,9 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         _uriLauncher = uriLauncher;
         _filePicker = filePicker;
         _gitHubClient = gitHubClient;
+        _mirrorCatalog = mirrorCatalog;
+        _mirrorDiscovery = mirrorDiscovery;
+        _versionCatalog = versionCatalog;
         _httpClient = httpClient;
         _localizer = localizer;
         _localizer.LanguageChanged += ApplyLanguage;
@@ -866,7 +877,15 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     }
 
     private SettingsViewModel CreateSettingsViewModel()
-        => new(_settingsStore, _uriLauncher, _localizer, _filePicker, _gitHubClient);
+        => new(
+            _settingsStore,
+            _uriLauncher,
+            _localizer,
+            _filePicker,
+            _gitHubClient,
+            _mirrorCatalog,
+            _mirrorDiscovery,
+            _versionCatalog);
 
     private void ApplyLanguage(string language)
     {

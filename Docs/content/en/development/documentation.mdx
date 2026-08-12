@@ -1,11 +1,11 @@
 ---
 title: Documentation site
-description: Work locally with Nextra and publish the static site to GitHub Pages
+description: Work locally with Docusaurus and publish the static site to GitHub Pages
 ---
 
 # Documentation site
 
-The documentation is a Nextra 4 application stored entirely under `Docs`
+The documentation is a Docusaurus 3 application stored entirely under `Docs`
 
 ## Local development
 
@@ -23,9 +23,9 @@ Open `http://localhost:3000/HyPrism/docs/`. The local development server uses th
 
 English pages live under `content/en`, Russian pages live under `content/ru`, and both trees must contain matching routes. Both translations are exported under the same `/docs` URL
 
-Interface translations for search, navigation helpers, themes, the table of contents, and the footer live under `app/_dictionaries`. The language switch updates the page without changing its URL and stores the preference in the browser
+Interface translations for search, navigation, the table of contents, and page actions live in `src/i18n.ts`. The language switch updates the page without changing its URL and stores the preference in the browser
 
-The `dev`, `check`, and `build` commands generate `app/_components/mdx-registry.generated.ts` from both language trees. Add the matching MDX files and never edit the generated registry by hand. Generation fails when a route is missing from either language
+The `plugins/localized-docs` build plugin discovers MDX pages and navigation metadata directly from both language trees. There is no page registry to update. Add matching MDX files and matching `_meta.ts` navigation entries when a page belongs in the sidebar. Development and production builds fail when a route is missing from either language
 
 ## Production build
 
@@ -36,7 +36,7 @@ pnpm check
 pnpm build
 ```
 
-Next.js exports static files to `Docs/out`
+Docusaurus exports static files to `Docs/out`
 
 ## GitHub Pages path
 

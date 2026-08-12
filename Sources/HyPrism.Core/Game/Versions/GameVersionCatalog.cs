@@ -23,7 +23,9 @@ public class GameVersionCatalog : IGameVersionCatalog
     private readonly string _appDir;
     private readonly IConfigStore _configStore;
     private readonly HttpClient _httpClient;
+    private readonly IMirrorCatalog? _mirrorCatalog;
     private readonly List<IVersionSource> _sources;
+    private readonly object _sourceSync = new();
     private readonly SemaphoreSlim _versionFetchLock = new(1, 1);
 
     // Keep direct references for source-specific operations
@@ -31,7 +33,7 @@ public class GameVersionCatalog : IGameVersionCatalog
     private readonly List<IVersionSource> _mirrorSources = new();
 
     // Selected mirror for downloads (set after speed test)
-    private IVersionSource? _selectedMirror;
+    private volatile IVersionSource? _selectedMirror;
 
     /// <summary>
     /// In-memory cache of versions and patch data, backed by on-disk files
@@ -46,11 +48,13 @@ public class GameVersionCatalog : IGameVersionCatalog
         IConfigStore configStore,
         HttpClient httpClient,
         HytaleVersionSource? hytaleSource = null,
-        IEnumerable<IVersionSource>? mirrorSources = null)
+        IEnumerable<IVersionSource>? mirrorSources = null,
+        IMirrorCatalog? mirrorCatalog = null)
     {
         _appDir = appDir;
         _configStore = configStore;
         _httpClient = httpClient;
+        _mirrorCatalog = mirrorCatalog;
 
         // Build source list
         _sources = new List<IVersionSource>();
@@ -61,6 +65,7 @@ public class GameVersionCatalog : IGameVersionCatalog
             _sources.Add(hytaleSource);
         }
 
+        mirrorSources ??= mirrorCatalog?.CreateEnabledSources();
         if (mirrorSources != null)
         {
             foreach (var mirror in mirrorSources.Where(m => m.Type == VersionSourceType.Mirror))
@@ -74,9 +79,9 @@ public class GameVersionCatalog : IGameVersionCatalog
         _sources.Sort((a, b) => a.Priority.CompareTo(b.Priority));
 
         // Initialise cache (must be done after _mirrorSources is populated)
-        _cache = new VersionCache(appDir, () => _mirrorSources.Select(m => m.SourceId));
+        _cache = new VersionCache(appDir, GetMirrorSourceIdsSnapshot);
 
-        foreach (var source in _sources)
+        foreach (var source in GetSourcesSnapshot())
         {
             Logger.Debug("Version", $"Source {source.SourceId}: full={source.LayoutInfo.FullBuildLocation}; patch={source.LayoutInfo.PatchLocation}; cache={source.LayoutInfo.CachePolicy}");
         }
@@ -159,7 +164,7 @@ public class GameVersionCatalog : IGameVersionCatalog
         patchSnapshot.FetchedAtUtc = DateTime.UtcNow;
 
         // Fetch versions AND patches from ALL sources
-        foreach (var source in _sources)
+        foreach (var source in GetSourcesSnapshot())
         {
             if (!source.IsAvailable)
             {
@@ -632,7 +637,7 @@ public class GameVersionCatalog : IGameVersionCatalog
     {
         var normalizedBranch = NormalizeBranch(branch);
         return _selectedMirror?.IsDiffBasedBranch(normalizedBranch) ??
-               _mirrorSources.FirstOrDefault()?.IsDiffBasedBranch(normalizedBranch) ?? false;
+               GetMirrorSourcesSnapshot().FirstOrDefault()?.IsDiffBasedBranch(normalizedBranch) ?? false;
     }
 
     /// <summary>
@@ -714,7 +719,7 @@ public class GameVersionCatalog : IGameVersionCatalog
             candidates.Add(preferred);
         }
 
-        foreach (var mirror in _mirrorSources)
+        foreach (var mirror in GetMirrorSourcesSnapshot())
         {
             if (!candidates.Contains(mirror))
             {
@@ -891,11 +896,12 @@ public class GameVersionCatalog : IGameVersionCatalog
     /// </summary>
     public async Task<MirrorSpeedTestResult> TestMirrorSpeedAsync(string mirrorId, bool forceRefresh = false, CancellationToken ct = default)
     {
-        var mirror = _mirrorSources.FirstOrDefault(m => m.SourceId.Equals(mirrorId, StringComparison.OrdinalIgnoreCase));
+        var mirrors = GetMirrorSourcesSnapshot();
+        var mirror = mirrors.FirstOrDefault(m => m.SourceId.Equals(mirrorId, StringComparison.OrdinalIgnoreCase));
 
         if (mirror == null)
         {
-            Logger.Warning("Version", $"TestMirrorSpeedAsync: mirror '{mirrorId}' not found in {_mirrorSources.Count} loaded sources");
+            Logger.Warning("Version", $"TestMirrorSpeedAsync: mirror '{mirrorId}' not found in {mirrors.Count} loaded sources");
             return new MirrorSpeedTestResult
             {
                 MirrorId = mirrorId,
@@ -958,7 +964,9 @@ public class GameVersionCatalog : IGameVersionCatalog
     /// </summary>
     public List<(string Id, string Name)> GetAvailableMirrors()
     {
-        return _mirrorSources.Select(m => (m.SourceId, m.GetCachedSpeedTest()?.MirrorName ?? m.SourceId)).ToList();
+        return GetMirrorSourcesSnapshot()
+            .Select(m => (m.SourceId, m.GetCachedSpeedTest()?.MirrorName ?? m.SourceId))
+            .ToList();
     }
 
     /// <summary>
@@ -967,26 +975,27 @@ public class GameVersionCatalog : IGameVersionCatalog
     /// </summary>
     public async Task<IVersionSource?> SelectBestMirrorAsync(CancellationToken ct = default)
     {
-        if (_mirrorSources.Count == 0)
+        var mirrors = GetMirrorSourcesSnapshot();
+        if (mirrors.Count == 0)
         {
             Logger.Warning("Version", "No mirrors available for selection");
             return null;
         }
 
         // If only one mirror, use it
-        if (_mirrorSources.Count == 1)
+        if (mirrors.Count == 1)
         {
-            _selectedMirror = _mirrorSources[0];
+            _selectedMirror = mirrors[0];
             Logger.Info("Version", $"Only one mirror available: {_selectedMirror.SourceId}");
             return _selectedMirror;
         }
 
-        Logger.Info("Version", $"Testing {_mirrorSources.Count} mirrors to select the best one...");
+        Logger.Info("Version", $"Testing {mirrors.Count} mirrors to select the best one...");
 
         var results = new List<(IVersionSource Source, MirrorSpeedTestResult Result)>();
 
         // Test all mirrors concurrently
-        var tasks = _mirrorSources.Select(async mirror =>
+        var tasks = mirrors.Select(async mirror =>
         {
             try
             {
@@ -1020,7 +1029,7 @@ public class GameVersionCatalog : IGameVersionCatalog
         if (availableMirrors.Count == 0)
         {
             Logger.Warning("Version", "No mirrors passed speed test, using first available");
-            _selectedMirror = _mirrorSources[0];
+            _selectedMirror = mirrors[0];
             return _selectedMirror;
         }
 
@@ -1047,31 +1056,29 @@ public class GameVersionCatalog : IGameVersionCatalog
     {
         Logger.Info("Version", "Reloading mirror sources from disk...");
 
-        // Remove old mirrors from sources
-        foreach (var oldMirror in _mirrorSources)
+        lock (_sourceSync)
         {
-            _sources.Remove(oldMirror);
+            foreach (var oldMirror in _mirrorSources)
+                _sources.Remove(oldMirror);
+            _mirrorSources.Clear();
+
+            _selectedMirror = null;
+
+            var freshMirrors = _mirrorCatalog?.CreateEnabledSources()
+                               ?? MirrorCatalogLoader.LoadAll(_appDir, _httpClient);
+
+            foreach (var mirror in freshMirrors.Where(m => m.Type == VersionSourceType.Mirror))
+            {
+                _mirrorSources.Add(mirror);
+                _sources.Add(mirror);
+            }
+
+            _sources.Sort((a, b) => a.Priority.CompareTo(b.Priority));
         }
-        _mirrorSources.Clear();
 
-        // Reset selected mirror
-        _selectedMirror = null;
+        Logger.Success("Version", $"Reloaded {EnabledMirrorCount} mirror sources");
 
-        // Load fresh mirrors from disk
-        var freshMirrors = MirrorCatalogLoader.LoadAll(_appDir, _httpClient);
-
-        foreach (var mirror in freshMirrors.Where(m => m.Type == VersionSourceType.Mirror))
-        {
-            _mirrorSources.Add(mirror);
-            _sources.Add(mirror);
-        }
-
-        // Re-sort by priority
-        _sources.Sort((a, b) => a.Priority.CompareTo(b.Priority));
-
-        Logger.Success("Version", $"Reloaded {_mirrorSources.Count} mirror sources");
-
-        foreach (var source in _mirrorSources)
+        foreach (var source in GetMirrorSourcesSnapshot())
         {
             Logger.Debug("Version", $"Mirror {source.SourceId}: priority={source.Priority}");
         }
@@ -1091,7 +1098,29 @@ public class GameVersionCatalog : IGameVersionCatalog
     }
 
     /// <inheritdoc/>
-    public int EnabledMirrorCount => _mirrorSources.Count;
+    public int EnabledMirrorCount
+    {
+        get
+        {
+            lock (_sourceSync)
+                return _mirrorSources.Count;
+        }
+    }
+
+    private List<IVersionSource> GetSourcesSnapshot()
+    {
+        lock (_sourceSync)
+            return [.. _sources];
+    }
+
+    private List<IVersionSource> GetMirrorSourcesSnapshot()
+    {
+        lock (_sourceSync)
+            return [.. _mirrorSources];
+    }
+
+    private IEnumerable<string> GetMirrorSourceIdsSnapshot()
+        => GetMirrorSourcesSnapshot().Select(source => source.SourceId).ToArray();
 
     /// <inheritdoc/>
     public void ClearVersionCache()

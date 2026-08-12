@@ -37,6 +37,7 @@ node_modules/
 .next/
 Docs/out/
 Docs/.next/
+Docs/.docusaurus/
 Docs/.pagefind/
 Docs/AGENTS.md
 Docs/CLAUDE.md

@@ -9,13 +9,23 @@ HyPrism supports the official Hytale source and optional JSON-defined mirrors ad
 
 A mirror definition describes its identity, enabled state, priority, request headers, platform mappings, version list endpoint, full image endpoint, and optional differential patch endpoint
 
-## Discovery
+## Storage
 
-`IMirrorDiscovery` can inspect a compatible endpoint and infer a candidate schema. Review the generated definition before saving it
+Definitions are stored as `<id>.mirror.json` files in the `Mirrors` directory under the application data directory. `IMirrorCatalog` validates identifiers and schema shape before writing a definition
+
+The regular Settings UI manages these files through Core and never edits JSON directly. Advanced setups can still provide a compatible definition manually
+
+## Discovery and UI flow
+
+`IMirrorDiscovery` inspects a public HTTPS endpoint and infers a candidate schema. Desktop validates the address, rejects duplicate endpoints, assigns a unique local identifier, saves the definition through `IMirrorCatalog`, and reloads the runtime sources
+
+Plain HTTP is accepted only for loopback addresses used during local development
 
 ## Runtime selection
 
-`IGameVersionCatalog` loads enabled mirror definitions, preloads source metadata, caches speed tests, and selects an available source. The obsolete `PreferredMirror` configuration value is ignored because selection is automatic
+`IGameVersionCatalog` loads enabled mirror definitions, preloads source metadata, caches speed tests, and selects an available source. Enabling, disabling, adding, or removing a source reloads the runtime source list without restarting the launcher
+
+The obsolete `PreferredMirror` configuration value is ignored because selection is automatic
 
 ## Security
 

@@ -44,4 +44,4 @@ Use `<inheritdoc/>` on an implementation only when the interface documents the c
 - keep Avalonia resources and presentation state in `HyPrism.Desktop`
 - depend on interfaces at host boundaries
 - use async I/O and pass cancellation tokens through network or long-running work
-- do not add new features to the obsolete Electron host
+- keep presentation-specific dependencies out of Core

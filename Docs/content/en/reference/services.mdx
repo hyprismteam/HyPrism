@@ -11,7 +11,7 @@ description: Responsibilities and placement of the public HyPrism.Core contracts
 | --- | --- | --- |
 | Configuration | `IConfigStore` | shared launcher and game configuration persistence |
 | Progress | `IProgressReporter` | download, game state, and error events |
-| Versions | `IGameVersionCatalog`, `IVersionSource` | version lists, source selection, cache, and patches |
+| Versions | `IGameVersionCatalog`, `IVersionSource`, `IMirrorCatalog`, `IMirrorDiscovery` | version lists, source selection, mirror persistence and discovery, cache, and patches |
 | Instances | `IInstanceRepository`, `IInstanceMigrator` | paths, metadata, selection, import, and migration |
 | Downloads | `IFileDownloader`, `IPatchManager`, `IButlerClient` | transfer, file size checks, patching, and Butler |
 | Launch | `IGameInstallationWorkflow`, `IGameLaunchCoordinator`, `IGameLauncher` | orchestration from selection to process start |
@@ -28,8 +28,6 @@ Contracts live beside their feature implementation. `Application/Ports` is reser
 Prefer the narrowest contract required by a consumer. Avoid resolving dependencies from the container inside domain code
 
 Interactive OAuth does not depend on a browser service in Core. The host passes an asynchronous URI launcher into the launch operation, and Core uses it only when an official account requires authorization
-
-Launcher self-update and clipboard compatibility code belongs to the obsolete Electron host. The active Core graph does not register or expose this legacy code
 
 Avalonia preferences are exposed by `IDesktopSettingsStore` in `HyPrism.Desktop`. Core components that require launch configuration consume `IConfigStore` directly
 

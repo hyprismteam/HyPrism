@@ -93,6 +93,9 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="common.cancel" xml:space="preserve">
     <value>Отмена</value>
   </data>
+  <data name="common.remove" xml:space="preserve">
+    <value>Удалить</value>
+  </data>
   <data name="common.clear" xml:space="preserve">
     <value>Очистить</value>
   </data>
@@ -1879,7 +1882,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>Как работают загрузки</value>
   </data>
   <data name="settings.downloads.howDownloadsWorkDescription" xml:space="preserve">
-    <value>HyPrism автоматически выбирает самый быстрый доступный источник для загрузки файлов игры. Нажмите "Тест скорости" для проверки соединения.</value>
+    <value>HyPrism предпочитает официальный источник и автоматически выбирает доступное зеркало сообщества, когда нужен резервный источник</value>
   </data>
   <data name="settings.downloads.launchAfterDownload" xml:space="preserve">
     <value>Запускать игру после загрузки</value>
@@ -1913,6 +1916,87 @@ SPDX-License-Identifier: GPL-3.0-only
   </data>
   <data name="settings.downloads.refreshMirrors" xml:space="preserve">
     <value>Обновить зеркала</value>
+  </data>
+  <data name="settings.downloads.behavior" xml:space="preserve">
+    <value>Поведение</value>
+  </data>
+  <data name="settings.downloads.sources" xml:space="preserve">
+    <value>Источники загрузки</value>
+  </data>
+  <data name="settings.downloads.sourcesHint" xml:space="preserve">
+    <value>Официальный источник Hytale и доверенные зеркала сообщества</value>
+  </data>
+  <data name="settings.downloads.officialSourceConnected" xml:space="preserve">
+    <value>Аккаунт подключен</value>
+  </data>
+  <data name="settings.downloads.officialSourceRequiresAccount" xml:space="preserve">
+    <value>Нужен Hytale-аккаунт</value>
+  </data>
+  <data name="settings.downloads.addSource" xml:space="preserve">
+    <value>Добавить источник</value>
+  </data>
+  <data name="settings.downloads.addSourceTitle" xml:space="preserve">
+    <value>Подключение источника</value>
+  </data>
+  <data name="settings.downloads.addSourceHint" xml:space="preserve">
+    <value>Введите его публичный адрес, а HyPrism определит поддерживаемый формат зеркала</value>
+  </data>
+  <data name="settings.downloads.sourceUrlPlaceholder" xml:space="preserve">
+    <value>https://mirror.example.com</value>
+  </data>
+  <data name="settings.downloads.noSources" xml:space="preserve">
+    <value>Нет дополнительных источников</value>
+  </data>
+  <data name="settings.downloads.noSourcesHint" xml:space="preserve">
+    <value>Официальный источник Hytale останется доступен для подключенных аккаунтов</value>
+  </data>
+  <data name="settings.downloads.deleteSourceTitle" xml:space="preserve">
+    <value>Удалить этот источник?</value>
+  </data>
+  <data name="settings.downloads.deleteSourceHint" xml:space="preserve">
+    <value>Его локальное описание будет удалено, и он больше не будет использоваться для загрузок</value>
+  </data>
+  <data name="settings.downloads.sourceManagementUnavailable" xml:space="preserve">
+    <value>Управление источниками недоступно в этом сеансе</value>
+  </data>
+  <data name="settings.downloads.invalidSourceUrl" xml:space="preserve">
+    <value>Введите HTTPS-адрес или локальный HTTP-адрес</value>
+  </data>
+  <data name="settings.downloads.sourceAlreadyExists" xml:space="preserve">
+    <value>Этот источник уже добавлен</value>
+  </data>
+  <data name="settings.downloads.detectingSource" xml:space="preserve">
+    <value>Проверка совместимости источника</value>
+  </data>
+  <data name="settings.downloads.sourceDetectionFailed" xml:space="preserve">
+    <value>HyPrism не смог определить совместимое зеркало по этому адресу</value>
+  </data>
+  <data name="settings.downloads.sourceSaveFailed" xml:space="preserve">
+    <value>Не удалось сохранить источник загрузки</value>
+  </data>
+  <data name="settings.downloads.sourceReadFailed" xml:space="preserve">
+    <value>Не удалось прочитать сохраненные источники загрузки</value>
+  </data>
+  <data name="settings.downloads.sourceRemoveFailed" xml:space="preserve">
+    <value>Не удалось удалить источник загрузки</value>
+  </data>
+  <data name="settings.downloads.sourceAdded" xml:space="preserve">
+    <value>Источник загрузки добавлен</value>
+  </data>
+  <data name="settings.downloads.sourceRemoved" xml:space="preserve">
+    <value>Источник загрузки удален</value>
+  </data>
+  <data name="settings.downloads.sourceEnabled" xml:space="preserve">
+    <value>Источник загрузки включен</value>
+  </data>
+  <data name="settings.downloads.sourceDisabled" xml:space="preserve">
+    <value>Источник загрузки отключен</value>
+  </data>
+  <data name="settings.downloads.sourceTypeJsonIndex" xml:space="preserve">
+    <value>JSON-индекс</value>
+  </data>
+  <data name="settings.downloads.sourceTypePattern" xml:space="preserve">
+    <value>URL-шаблон</value>
   </data>
   <data name="settings.downloads.testSpeed" xml:space="preserve">
     <value>Тест скорости</value>

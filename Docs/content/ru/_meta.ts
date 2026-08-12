@@ -1,9 +1,7 @@
 // Copyright (C) 2026 HyPrism Launcher
 // SPDX-License-Identifier: GPL-3.0-only
 
-import type { MetaRecord } from 'nextra'
-
-const meta: MetaRecord = {
+const meta = {
   index: 'Обзор',
   'getting-started': 'Начало работы',
   'user-guide': 'Руководство пользователя',

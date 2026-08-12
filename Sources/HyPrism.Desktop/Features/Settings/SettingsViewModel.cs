@@ -13,6 +13,8 @@ using HyPrism.Desktop.Features.About;
 using HyPrism.Desktop.Platform;
 using HyPrism.Core.Infrastructure;
 using HyPrism.Core.Game.Launch;
+using HyPrism.Core.Game.Sources;
+using HyPrism.Core.Game.Versions;
 
 namespace HyPrism.Desktop.Features.Settings;
 
@@ -40,6 +42,9 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     private readonly StringLocalizer _localizer;
     private readonly IFilePicker? _filePicker;
     private readonly IGitHubClient? _gitHubClient;
+    private readonly IMirrorCatalog? _mirrorCatalog;
+    private readonly IMirrorDiscovery? _mirrorDiscovery;
+    private readonly IGameVersionCatalog? _versionCatalog;
     private bool _updatingJavaMemory;
     private bool _updatingJavaArguments;
     private bool _aboutDataLoadStarted;
@@ -101,19 +106,37 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     [ObservableProperty] private string _aboutLatestCommitSha = string.Empty;
     [ObservableProperty] private string _aboutLatestCommitHint = string.Empty;
     [ObservableProperty] private string _aboutContributorOverflow = string.Empty;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasMirrorOperationError))]
+    private string _mirrorOperationError = string.Empty;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasMirrorOperationStatus))]
+    private string _mirrorOperationStatus = string.Empty;
+    [ObservableProperty] private string _mirrorUrl = string.Empty;
+    [ObservableProperty] private bool _isAddingMirror;
+    [ObservableProperty] private bool _isMirrorOperationBusy;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasPendingMirrorDelete))]
+    private MirrorSourceViewModel? _pendingMirrorDelete;
 
     public SettingsViewModel(
         IDesktopSettingsStore settings,
         IExternalUriLauncher uriLauncher,
         StringLocalizer localizer,
         IFilePicker? filePicker = null,
-        IGitHubClient? gitHubClient = null)
+        IGitHubClient? gitHubClient = null,
+        IMirrorCatalog? mirrorCatalog = null,
+        IMirrorDiscovery? mirrorDiscovery = null,
+        IGameVersionCatalog? versionCatalog = null)
     {
         _settings = settings;
         _uriLauncher = uriLauncher;
         _localizer = localizer;
         _filePicker = filePicker;
         _gitHubClient = gitHubClient;
+        _mirrorCatalog = mirrorCatalog;
+        _mirrorDiscovery = mirrorDiscovery;
+        _versionCatalog = versionCatalog;
 
         Categories = new ObservableCollection<SettingCategoryViewModel>(
         [
@@ -185,6 +208,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         _gameEnvironmentVariables = settings.GameEnvironmentVariables;
 
         RefreshLocalization();
+        ReloadMirrorItems();
     }
 
     public ObservableCollection<SettingCategoryViewModel> Categories { get; }
@@ -193,6 +217,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     public ObservableCollection<SettingChoiceViewModel> GpuPreferences { get; }
     public ObservableCollection<AboutTeamMemberViewModel> AboutTeamMembers { get; }
     public ObservableCollection<AboutContributorViewModel> AboutContributors { get; } = [];
+    public ObservableCollection<MirrorSourceViewModel> MirrorSources { get; } = [];
 
     public int DetectedSystemMemoryMb { get; }
     public double MinimumJavaRamMb => MinimumJavaMemoryMb;
@@ -204,6 +229,11 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     public bool HasJavaArgumentsError => !string.IsNullOrWhiteSpace(JavaArgumentsError);
     public string JavaMaximumRamValue => FormatMemory(JavaMaximumRamMb);
     public string JavaInitialRamValue => FormatMemory(JavaInitialRamMb);
+    public bool HasMirrors => MirrorSources.Count > 0;
+    public bool HasNoMirrors => MirrorSources.Count == 0;
+    public bool HasMirrorOperationError => !string.IsNullOrWhiteSpace(MirrorOperationError);
+    public bool HasMirrorOperationStatus => !string.IsNullOrWhiteSpace(MirrorOperationStatus);
+    public bool HasPendingMirrorDelete => PendingMirrorDelete is not null;
 
     public string PageTitle { get; private set; } = string.Empty;
     public string PageDescription { get; private set; } = string.Empty;
@@ -228,6 +258,22 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     public string LaunchAfterDownloadLabel { get; private set; } = string.Empty;
     public string LaunchAfterDownloadHint { get; private set; } = string.Empty;
     public string DownloadsInfo { get; private set; } = string.Empty;
+    public string DownloadBehaviorTitle { get; private set; } = string.Empty;
+    public string DownloadSourcesTitle { get; private set; } = string.Empty;
+    public string DownloadSourcesHint { get; private set; } = string.Empty;
+    public string OfficialSourceLabel { get; private set; } = string.Empty;
+    public string OfficialSourceHint { get; private set; } = string.Empty;
+    public string OfficialSourceStatus { get; private set; } = string.Empty;
+    public string AddSourceLabel { get; private set; } = string.Empty;
+    public string AddSourceTitle { get; private set; } = string.Empty;
+    public string AddSourceHint { get; private set; } = string.Empty;
+    public string MirrorUrlPlaceholder { get; private set; } = string.Empty;
+    public string CancelLabel { get; private set; } = string.Empty;
+    public string RemoveLabel { get; private set; } = string.Empty;
+    public string NoSourcesLabel { get; private set; } = string.Empty;
+    public string NoSourcesHint { get; private set; } = string.Empty;
+    public string DeleteSourceTitle { get; private set; } = string.Empty;
+    public string DeleteSourceHint { get; private set; } = string.Empty;
     public string MusicLabel { get; private set; } = string.Empty;
     public string MusicHint { get; private set; } = string.Empty;
     public string BackgroundLabel { get; private set; } = string.Empty;
@@ -322,6 +368,24 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         LaunchAfterDownloadLabel = _localizer["settings.downloads.launchAfterDownload"];
         LaunchAfterDownloadHint = _localizer["settings.downloads.launchAfterDownloadHint"];
         DownloadsInfo = _localizer["settings.downloads.howDownloadsWorkDescription"];
+        DownloadBehaviorTitle = _localizer["settings.downloads.behavior"];
+        DownloadSourcesTitle = _localizer["settings.downloads.sources"];
+        DownloadSourcesHint = _localizer["settings.downloads.sourcesHint"];
+        OfficialSourceLabel = _localizer["settings.downloads.officialSource"];
+        OfficialSourceHint = _localizer["settings.downloads.officialSourceHint"];
+        OfficialSourceStatus = _localizer[_versionCatalog?.HasOfficialAccount == true
+            ? "settings.downloads.officialSourceConnected"
+            : "settings.downloads.officialSourceRequiresAccount"];
+        AddSourceLabel = _localizer["settings.downloads.addSource"];
+        AddSourceTitle = _localizer["settings.downloads.addSourceTitle"];
+        AddSourceHint = _localizer["settings.downloads.addSourceHint"];
+        MirrorUrlPlaceholder = _localizer["settings.downloads.sourceUrlPlaceholder"];
+        CancelLabel = _localizer["common.cancel"];
+        RemoveLabel = _localizer["common.remove"];
+        NoSourcesLabel = _localizer["settings.downloads.noSources"];
+        NoSourcesHint = _localizer["settings.downloads.noSourcesHint"];
+        DeleteSourceTitle = _localizer["settings.downloads.deleteSourceTitle"];
+        DeleteSourceHint = _localizer["settings.downloads.deleteSourceHint"];
         MusicLabel = _localizer["desktopSettings.music"];
         MusicHint = _localizer["desktopSettings.musicHint"];
         BackgroundLabel = _localizer["settings.visualSettings.background"];
@@ -411,6 +475,8 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         UpdateChoiceDisplay(GpuPreferences, "dedicated", _localizer["settings.graphicsSettings.gpu_dedicated"]);
         UpdateChoiceDisplay(GpuPreferences, "integrated", _localizer["settings.graphicsSettings.gpu_integrated"]);
         UpdateChoiceDisplay(GpuPreferences, "auto", _localizer["settings.graphicsSettings.gpu_auto"]);
+        foreach (var mirror in MirrorSources)
+            mirror.UpdateSourceType(GetMirrorSourceType(mirror.Definition));
 
         OnPropertyChanged(string.Empty);
     }
@@ -490,6 +556,125 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
 
         if (string.Equals(category.Id, "about", StringComparison.Ordinal))
             _ = LoadAboutDataAsync();
+        else if (string.Equals(category.Id, "downloads", StringComparison.Ordinal))
+            ReloadMirrorItems();
+    }
+
+    [RelayCommand]
+    private void ShowAddMirror()
+    {
+        IsAddingMirror = true;
+        PendingMirrorDelete = null;
+        MirrorOperationError = string.Empty;
+        MirrorOperationStatus = string.Empty;
+    }
+
+    [RelayCommand]
+    private void CancelAddMirror()
+    {
+        IsAddingMirror = false;
+        MirrorUrl = string.Empty;
+        MirrorOperationError = string.Empty;
+    }
+
+    [RelayCommand]
+    private async Task AddMirror()
+    {
+        if (IsMirrorOperationBusy)
+            return;
+
+        if (_mirrorCatalog is null || _mirrorDiscovery is null || _versionCatalog is null)
+        {
+            MirrorOperationError = _localizer["settings.downloads.sourceManagementUnavailable"];
+            return;
+        }
+
+        var normalizedUrl = NormalizeMirrorUrl(MirrorUrl);
+        if (!IsAllowedMirrorUrl(normalizedUrl, out var uri))
+        {
+            MirrorOperationError = _localizer["settings.downloads.invalidSourceUrl"];
+            return;
+        }
+
+        if (MirrorSources.Any(source => EndpointsEqual(source.Endpoint, uri)))
+        {
+            MirrorOperationError = _localizer["settings.downloads.sourceAlreadyExists"];
+            return;
+        }
+
+        IsMirrorOperationBusy = true;
+        MirrorOperationError = string.Empty;
+        MirrorOperationStatus = _localizer["settings.downloads.detectingSource"];
+        try
+        {
+            var result = await _mirrorDiscovery.DiscoverMirrorAsync(normalizedUrl);
+            if (!result.Success || result.Mirror is null)
+            {
+                if (!string.IsNullOrWhiteSpace(result.Error))
+                    Logger.Debug("Settings", $"Download source discovery failed: {result.Error}");
+                MirrorOperationError = _localizer["settings.downloads.sourceDetectionFailed"];
+                return;
+            }
+
+            var existing = _mirrorCatalog.GetAll();
+            result.Mirror.Id = CreateUniqueMirrorId(result.Mirror.Id, existing.Select(item => item.Id));
+            result.Mirror.Priority = existing.Count == 0
+                ? 100
+                : Math.Max(100, existing.Max(item => item.Priority) + 10);
+            result.Mirror.Enabled = true;
+            _mirrorCatalog.Save(result.Mirror);
+            _versionCatalog.ReloadMirrorSources();
+
+            MirrorUrl = string.Empty;
+            IsAddingMirror = false;
+            MirrorOperationStatus = _localizer["settings.downloads.sourceAdded"];
+            ReloadMirrorItems(clearStatus: false);
+        }
+        catch (OperationCanceledException)
+        {
+            MirrorOperationError = _localizer["settings.downloads.sourceDetectionFailed"];
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning("Settings", $"Failed to add download source: {ex.Message}");
+            MirrorOperationError = _localizer["settings.downloads.sourceSaveFailed"];
+        }
+        finally
+        {
+            IsMirrorOperationBusy = false;
+        }
+    }
+
+    [RelayCommand]
+    private void RequestDeleteMirror(MirrorSourceViewModel? mirror)
+    {
+        PendingMirrorDelete = mirror;
+        IsAddingMirror = false;
+        MirrorOperationError = string.Empty;
+    }
+
+    [RelayCommand]
+    private void CancelDeleteMirror() => PendingMirrorDelete = null;
+
+    [RelayCommand]
+    private void ConfirmDeleteMirror()
+    {
+        if (PendingMirrorDelete is null || _mirrorCatalog is null || _versionCatalog is null)
+            return;
+
+        try
+        {
+            _mirrorCatalog.Delete(PendingMirrorDelete.Id);
+            _versionCatalog.ReloadMirrorSources();
+            PendingMirrorDelete = null;
+            MirrorOperationStatus = _localizer["settings.downloads.sourceRemoved"];
+            ReloadMirrorItems(clearStatus: false);
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning("Settings", $"Failed to remove download source: {ex.Message}");
+            MirrorOperationError = _localizer["settings.downloads.sourceRemoveFailed"];
+        }
     }
 
     [RelayCommand]
@@ -765,6 +950,136 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     }
 
     private void ShowSaved() => StatusMessage = "✓";
+
+    private void ReloadMirrorItems(bool clearStatus = true)
+    {
+        if (clearStatus)
+        {
+            MirrorOperationError = string.Empty;
+            MirrorOperationStatus = string.Empty;
+        }
+
+        MirrorSources.Clear();
+        if (_mirrorCatalog is not null)
+        {
+            try
+            {
+                var mirrors = _mirrorCatalog.GetAll();
+                for (var index = 0; index < mirrors.Count; index++)
+                {
+                    var mirror = mirrors[index];
+                    MirrorSources.Add(new MirrorSourceViewModel(
+                        mirror,
+                        GetMirrorSourceType(mirror),
+                        index == mirrors.Count - 1,
+                        PersistMirrorEnabledState));
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning("Settings", $"Failed to read download sources: {ex.Message}");
+                MirrorOperationError = _localizer["settings.downloads.sourceReadFailed"];
+            }
+        }
+
+        OnPropertyChanged(nameof(HasMirrors));
+        OnPropertyChanged(nameof(HasNoMirrors));
+        OfficialSourceStatus = _localizer[_versionCatalog?.HasOfficialAccount == true
+            ? "settings.downloads.officialSourceConnected"
+            : "settings.downloads.officialSourceRequiresAccount"];
+        OnPropertyChanged(nameof(OfficialSourceStatus));
+    }
+
+    private void PersistMirrorEnabledState(MirrorSourceViewModel source)
+    {
+        if (_mirrorCatalog is null || _versionCatalog is null)
+            return;
+
+        try
+        {
+            _mirrorCatalog.Save(source.Definition);
+            _versionCatalog.ReloadMirrorSources();
+            MirrorOperationError = string.Empty;
+            MirrorOperationStatus = source.IsEnabled
+                ? _localizer["settings.downloads.sourceEnabled"]
+                : _localizer["settings.downloads.sourceDisabled"];
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning("Settings", $"Failed to update download source: {ex.Message}");
+            source.SetEnabledWithoutNotification(!source.IsEnabled);
+            MirrorOperationError = _localizer["settings.downloads.sourceSaveFailed"];
+        }
+    }
+
+    private string GetMirrorSourceType(HyPrism.Core.Models.MirrorMeta mirror)
+        => _localizer[mirror.SourceType == "json-index"
+            ? "settings.downloads.sourceTypeJsonIndex"
+            : "settings.downloads.sourceTypePattern"];
+
+    private static string NormalizeMirrorUrl(string value)
+    {
+        var normalized = value.Trim();
+        return normalized.Contains("://", StringComparison.Ordinal)
+            ? normalized
+            : $"https://{normalized}";
+    }
+
+    private static bool IsAllowedMirrorUrl(string value, out Uri uri)
+    {
+        if (!Uri.TryCreate(value, UriKind.Absolute, out uri!))
+            return false;
+
+        if (uri.Scheme == Uri.UriSchemeHttps)
+            return true;
+
+        return uri.Scheme == Uri.UriSchemeHttp && uri.IsLoopback;
+    }
+
+    private static bool EndpointsEqual(string existingEndpoint, Uri candidate)
+    {
+        if (!Uri.TryCreate(existingEndpoint, UriKind.Absolute, out var existing))
+            return false;
+
+        return string.Equals(existing.Scheme, candidate.Scheme, StringComparison.OrdinalIgnoreCase) &&
+               string.Equals(existing.Host, candidate.Host, StringComparison.OrdinalIgnoreCase) &&
+               existing.Port == candidate.Port &&
+               string.Equals(
+                   existing.AbsolutePath.TrimEnd('/'),
+                   candidate.AbsolutePath.TrimEnd('/'),
+                   StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string CreateUniqueMirrorId(string candidate, IEnumerable<string> existingIds)
+    {
+        var sanitized = new string(candidate
+            .Trim()
+            .ToLowerInvariant()
+            .Select(character => char.IsAsciiLetterOrDigit(character) || character is '.' or '-' or '_'
+                ? character
+                : '-')
+            .ToArray())
+            .Trim('-', '.', '_');
+        if (sanitized.Length == 0)
+            sanitized = "mirror";
+        if (!char.IsAsciiLetterOrDigit(sanitized[0]))
+            sanitized = $"mirror-{sanitized}";
+        if (sanitized.Length > 56)
+            sanitized = sanitized[..56].TrimEnd('-', '.', '_');
+
+        var used = existingIds.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        if (!used.Contains(sanitized))
+            return sanitized;
+
+        for (var suffix = 2; suffix < 10_000; suffix++)
+        {
+            var unique = $"{sanitized}-{suffix}";
+            if (!used.Contains(unique))
+                return unique;
+        }
+
+        return $"mirror-{Guid.NewGuid():N}";
+    }
 
     private void PersistJavaMemory()
     {

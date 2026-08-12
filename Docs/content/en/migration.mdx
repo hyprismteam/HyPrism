@@ -1,32 +1,32 @@
 ---
 title: Avalonia migration
-description: What is native today and what still depends on obsolete reference code
+description: Current state of the native desktop transition
 ---
 
 # Avalonia migration
 
-HyPrism is moving from Electron.NET and React to a native Avalonia 12 interface. The launcher domain remains in .NET 10 and is shared through `HyPrism.Core`
+HyPrism moved from Electron.NET and React to a native Avalonia 12 application. The old launcher and IPC generator have been removed from the repository
 
 ## Current state
 
 | Area | State | Notes |
 | --- | --- | --- |
-| Core launcher logic | retained | game, user, download, version, mirror, and platform services stay in .NET |
+| Core launcher logic | active | game, user, download, version, mirror, and platform behavior lives in .NET |
 | Dashboard | native | responsive launch surface and background selection |
 | News | native | adaptive feed, full article reader, caching, rich content, and external links |
-| Settings | native | adaptive categories, localization, Java memory controls, and background picker |
-| Instances | pending UI | Core services are present, navigation currently shows a placeholder |
-| Mods | pending UI | Core services are present, navigation currently shows a placeholder |
-| Profiles | pending UI | Core services are present, navigation currently shows a placeholder |
-| Onboarding | pending UI | legacy flow is not yet replaced |
-| Packaging | transitional | release scripts still contain Electron-oriented paths and tooling |
+| Settings | native | adaptive categories, localization, Java memory controls, background picker, and download sources |
+| Instances | pending UI | Core behavior is present, navigation currently shows a placeholder |
+| Mods | pending UI | Core behavior is present, navigation currently shows a placeholder |
+| Profiles | pending UI | Core behavior is present, navigation currently shows a placeholder |
+| Onboarding | pending UI | the native flow is not implemented yet |
+| Packaging | native | release and development workflows target `HyPrism.Desktop` |
 
 ## Architectural boundary
 
-The native desktop host resolves Core services through dependency injection and calls C# interfaces directly. It does not use the Electron IPC bridge or generated `ipc.ts`
+The desktop host resolves Core components through dependency injection and calls C# interfaces directly. There is no IPC bridge or generated TypeScript contract
 
-`HyPrism.Launcher`, its React frontend, and `HyPrism.IpcGen` are obsolete migration references. They may explain old behavior but must not receive new product features
+Historical behavior can be recovered from version control when it is still useful. New functionality belongs to `HyPrism.Core` or `HyPrism.Desktop`
 
-## Definition of parity
+## Remaining parity work
 
-The migration is complete when every user workflow has a native page, release packaging starts the Avalonia host on all supported platforms, tests cover the critical flows, and no runtime path depends on Electron or the generated TypeScript bridge
+The host migration is complete. Feature parity work remains for Instances, Mods, Profiles, and onboarding, and each of those workflows must be implemented directly in Avalonia

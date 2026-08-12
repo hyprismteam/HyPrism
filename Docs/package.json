@@ -4,26 +4,43 @@
   "private": true,
   "packageManager": "pnpm@11.21.0",
   "scripts": {
-    "generate:mdx-registry": "python3 ../Scripts/generate_mdx_registry.py",
-    "predev": "pnpm generate:mdx-registry",
-    "dev": "next dev",
-    "prebuild": "pnpm generate:mdx-registry",
-    "build": "next build",
-    "precheck": "pnpm generate:mdx-registry",
-    "check": "python3 ../Scripts/check_documentation.py && next typegen && tsc --noEmit",
+    "dev": "docusaurus start --host 0.0.0.0",
+    "build": "docusaurus build --out-dir out",
+    "check": "python3 ../Scripts/check_documentation.py && tsc --noEmit",
+    "clear": "docusaurus clear",
+    "serve": "docusaurus serve --dir out",
     "lint:content": "python3 ../Scripts/check_documentation.py"
   },
   "dependencies": {
-    "next": "16.3.0",
-    "nextra": "4.6.1",
-    "nextra-theme-docs": "4.6.1",
+    "@docusaurus/core": "3.10.2",
+    "@docusaurus/faster": "3.10.2",
+    "@docusaurus/plugin-content-docs": "3.10.2",
+    "@docusaurus/preset-classic": "3.10.2",
+    "@mdx-js/react": "3.1.1",
+    "clsx": "2.1.1",
+    "gray-matter": "4.0.3",
+    "prism-react-renderer": "2.4.1",
     "react": "19.2.8",
     "react-dom": "19.2.8"
   },
   "devDependencies": {
-    "@types/mdx": "2.0.14",
-    "@types/node": "^24.0.0",
-    "@types/react": "^19.0.0",
-    "typescript": "^5.9.0"
+    "@docusaurus/module-type-aliases": "3.10.2",
+    "@docusaurus/tsconfig": "3.10.2",
+    "@docusaurus/types": "3.10.2",
+    "@types/node": "24.10.13",
+    "@types/react": "19.2.18",
+    "typescript": "6.0.3"
+  },
+  "browserslist": {
+    "production": [
+      ">0.5%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 3 chrome version",
+      "last 3 firefox version",
+      "last 5 safari version"
+    ]
   }
 }

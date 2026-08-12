@@ -16,9 +16,9 @@ public static class Logger
     private const int MaxLogEntries = 100;
     
     /// <summary>
-    /// The original stdout TextWriter, captured before Console.Out is replaced by
-    /// ElectronLogInterceptor. Logger writes directly to this stream so output is
-    /// visible even when Console.IsOutputRedirected is true.
+    /// The original stdout TextWriter, captured before another component replaces
+    /// Console.Out. Logger writes directly to this stream so output remains visible
+    /// even when Console.IsOutputRedirected is true.
     /// Call <see cref="CaptureOriginalConsole"/> early in Program.Main, before
     /// Console.SetOut is invoked.
     /// </summary>

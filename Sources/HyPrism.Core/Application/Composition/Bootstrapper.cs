@@ -64,6 +64,14 @@ public static class Bootstrapper
                 new JsonConfigStore(sp.GetRequiredService<AppPathConfiguration>().AppDir));
             services.AddSingleton<IConfigStore>(sp => sp.GetRequiredService<JsonConfigStore>());
 
+            services.AddSingleton(sp =>
+                new MirrorCatalog(
+                    sp.GetRequiredService<AppPathConfiguration>().AppDir,
+                    sp.GetRequiredService<HttpClient>()));
+            services.AddSingleton<IMirrorCatalog>(sp => sp.GetRequiredService<MirrorCatalog>());
+            services.AddSingleton(sp => new MirrorDiscovery(sp.GetRequiredService<HttpClient>()));
+            services.AddSingleton<IMirrorDiscovery>(sp => sp.GetRequiredService<MirrorDiscovery>());
+
             #endregion
 
             #region Data & Utility Services
@@ -100,9 +108,7 @@ public static class Bootstrapper
                     sp.GetRequiredService<IConfigStore>(),
                     sp.GetRequiredService<HttpClient>(),
                     sp.GetRequiredService<HytaleVersionSource>(),
-                    MirrorCatalogLoader.LoadAll(
-                        sp.GetRequiredService<AppPathConfiguration>().AppDir,
-                        sp.GetRequiredService<HttpClient>())));
+                    mirrorCatalog: sp.GetRequiredService<IMirrorCatalog>()));
             services.AddSingleton<IGameVersionCatalog>(sp => sp.GetRequiredService<GameVersionCatalog>());
 
             services.AddSingleton(sp =>

@@ -44,8 +44,8 @@ public sealed class GameLaunchCoordinator(
         if (!string.IsNullOrWhiteSpace(instanceId))
             instances.SetSelectedInstance(instanceId);
 
-        // Preserve the current launch behavior while moving orchestration out of
-        // the Electron IPC adapter. Install/update remains a separate UI action.
+        // Install and update remain separate UI actions, so this operation launches
+        // only an instance whose selected version is already installed.
         var selectedInstance = instances.GetSelectedInstance();
         if (selectedInstance != null)
         {

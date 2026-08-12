@@ -25,7 +25,7 @@ description: Domain features, contracts, and orchestration owned by the launcher
 - `Game/Assets` manages avatar data required by profiles and game launch
 - `Game/Mods` searches and installs CurseForge or local mods
 - `Game/Patching` owns the Butler client used for differential updates
-- `Game/Sources` implements official and JSON mirror sources
+- `Game/Sources` implements official and JSON mirror sources, mirror discovery, and validated mirror persistence
 
 ## Accounts
 
@@ -33,13 +33,11 @@ description: Domain features, contracts, and orchestration owned by the launcher
 
 ## Dependency rule
 
-Core may expose host capabilities through interfaces, but it must not reference Avalonia, Electron, or any presentation model
+Core may expose host capabilities through interfaces, but it must not reference Avalonia or any presentation model
 
 OAuth remains UI-neutral: Core creates the authorization URI and accepts a host callback for presenting it. Opening a browser is owned by the active application host
 
-The obsolete Electron updater and clipboard adapter live in `HyPrism.Launcher` and are not part of the active Core architecture
-
-Core resolves profile directories but never opens a system file manager. Native file dialogs and system memory detection belong to `HyPrism.Desktop`; the obsolete host keeps private compatibility adapters for its old IPC surface
+Core resolves profile directories but never opens a system file manager. Native file dialogs and system memory detection belong to `HyPrism.Desktop`
 
 Game launch depends only on `IGpuProvider` and `GpuAdapterInfo`. Each host owns the concrete adapter discovery implementation
 

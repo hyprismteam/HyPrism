@@ -16,9 +16,6 @@ SPDX-License-Identifier: GPL-3.0-only
 
 > Disclaimer: HyPrism has no any connection to [PrismLauncher](https://github.com/PrismLauncher/PrismLauncher). HyPrism is an application that is being developed **INDEPENDENTLY** of the PrismLauncher project or its team. Thank you for your understanding
 
-<img src="https://raw.githubusercontent.com/hyprismteam/HyPrism/refs/heads/main/Frontend/public/preview_launcher.png" alt="HyPrism Dashboard"/>
-<p align='center'><img width='400px' src="https://raw.githubusercontent.com/hyprismteam/HyPrism/refs/heads/main/Frontend/public/news.png" alt="HyPrism News"/><img width='400px' src="https://raw.githubusercontent.com/hyprismteam/HyPrism/refs/heads/main/Frontend/public/profiles.png" alt="HyPrism Profiles"/><img width='400px' src="https://raw.githubusercontent.com/hyprismteam/HyPrism/refs/heads/main/Frontend/public/settings.png" alt="HyPrism Settings"/></p>
-
 ## Installation
 
 Downloads are available in [Releases](https://github.com/hyprismteam/HyPrism/releases)
@@ -30,34 +27,29 @@ Downloads are available in [Releases](https://github.com/hyprismteam/HyPrism/rel
 ## Build Instructions
 
 **Requirements:**
+
 - .NET 10.0 SDK
-- Node.JS 20+ (legacy Electron UI only)
+- Node.js 22 and pnpm when working on the documentation
 
 **Build:**
+
 ```bash
 # Clone the repository
 git clone https://github.com/hyprismteam/HyPrism.git
 cd HyPrism
 
-# Build the native Avalonia preview
-dotnet build Sources/HyPrism.Desktop/HyPrism.Desktop.csproj
+# Build the application and tests
+dotnet build HyPrism.sln
 
-# Run the native launcher
+# Run the launcher
 dotnet run --project Sources/HyPrism.Desktop/HyPrism.Desktop.csproj
-
-# Run the legacy Electron launcher during the migration
-dotnet run --project Sources/HyPrism.Launcher/HyPrism.Launcher.csproj
 ```
 
-The Avalonia 12 interface is being developed alongside the existing Electron UI
-Both hosts use the same .NET services; Electron remains the release host until
-feature and packaging parity is reached
+HyPrism uses a .NET 10 Core library and a native Avalonia 12 desktop application
 
 ## Docs
 
-We provide a comprehensive glossary of the basic principles of operation and interaction with the project in [English](Docs/English) and [Russian](Docs/Russian) languages:
-- **If you are a regular user**, be sure to familiarise yourself with [user-related docs](Docs/English/User)
-- **If you would like to contribute to the development** of the launcher, please refer to the [technical documentation](Docs/English/Technical)
+The English and Russian documentation is available on the [HyPrism documentation site](https://hyprismteam.github.io/HyPrism/docs/). Its Docusaurus sources live in [`Docs/content`](Docs/content)
 
 ## Credits & Contributors
 
