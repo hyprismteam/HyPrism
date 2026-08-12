@@ -3,7 +3,7 @@ Copyright (C) 2026 HyPrism Launcher
 SPDX-License-Identifier: GPL-3.0-only
 -->
 
-<img src="https://raw.githubusercontent.com/hyprismteam/HyPrism/refs/heads/main/Frontend/src/assets/images/preview_logo.png" alt="HyPrism Logo" height="128" />
+<img src="https://raw.githubusercontent.com/hyprismteam/HyPrism/refs/heads/main/Sources/HyPrism.Desktop/Assets/Images/logo.png" alt="HyPrism Logo" height="128" />
 
   *A multiplatform Hytale launcher with mod manager and more!*
 
