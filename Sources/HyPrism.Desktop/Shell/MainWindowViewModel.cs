@@ -38,6 +38,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     private const int MaximumNewsCount = 30;
     private const int CompactTransitionMilliseconds = 320;
     private const int ArticleSkeletonDelayMilliseconds = 180;
+    private static readonly TimeSpan InstanceVersionCacheMaxAge = TimeSpan.FromMinutes(15);
 
     private readonly IInstanceRepository _instances;
     private readonly IGameLaunchCoordinator _gameLaunchCoordinator;
@@ -194,7 +195,6 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     private int _compactNewsPageIndex;
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsDashboardQuickStripVisible))]
     private bool _isCompactDashboardLayout;
 
     [ObservableProperty]
@@ -214,6 +214,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     private bool _isInstanceCreatorOpen;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasInstanceCreationError))]
     private string _instanceCreationError = string.Empty;
 
     public MainWindowViewModel(
@@ -272,7 +273,6 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         RefreshInstances();
     }
 
-    public ObservableCollection<InstanceItemViewModel> Instances { get; } = [];
     public ObservableCollection<InstanceItemViewModel> AllInstances { get; } = [];
     public ObservableCollection<InstanceVersionItemViewModel> AvailableInstanceVersions { get; } = [];
     public ObservableCollection<NewsItemViewModel> LatestNews { get; } = [];
@@ -294,10 +294,14 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     public string ReleaseLabel => _localizer["common.release"];
     public string PreReleaseLabel => _localizer["common.preRelease"];
     public string InstancesSectionLabel => _localizer["instances.title"];
-    public string AddInstanceLabel => _localizer["instances.addInstance"];
+    public string SelectVersionLabel => _localizer["instances.selectVersion"];
     public string CreateInstanceLabel => _localizer["instances.create"];
     public string CreateInstanceTitle => _localizer["instances.createInstance"];
+    public string NewInstanceTitle => _localizer["instances.newInstance"];
+    public string NewInstanceHint => _localizer["instances.newInstanceHint"];
     public string CreateInstanceHint => _localizer["instances.createInstanceHint"];
+    public string InstanceBranchHint => _localizer["instances.branchHint"];
+    public string InstanceVersionHint => _localizer["instances.versionHint"];
     public string CancelLabel => _localizer["common.cancel"];
     public string NewsLoadingLabel => _localizer["news.loading"];
     public string NewsEmptyLabel => _localizer["news.noNewsFound"];
@@ -306,6 +310,12 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     public string ArticleLoadingLabel => _localizer["news.articleLoading"];
     public string SelectArticleLabel => _localizer["news.selectArticle"];
     public string LoadMoreLabel => _localizer["news.loadMore"];
+    public string HomeWelcomeTitle => _localizer["home.welcomeTitle"];
+    public string HomeWelcomeHint => _localizer["home.welcomeHint"];
+    public string HomeCurrentInstanceLabel => _localizer["home.currentInstance"];
+    public string HomeInstanceHint => _localizer["home.instanceHint"];
+    public string HomeCreateInstanceLabel => _localizer["home.createInstance"];
+    public string HomeManageInstancesLabel => _localizer["home.manageInstances"];
 
     public bool IsDashboard => CurrentPage == DashboardPage;
     public bool IsInstances => CurrentPage == InstancesPage;
@@ -314,15 +324,14 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     public bool IsProfiles => CurrentPage == ProfilesPage;
     public bool IsSettings => CurrentPage == SettingsPage;
     public bool IsPlaceholderPage => !IsDashboard && !IsInstances && !IsNews && !IsSettings;
-    public bool HasDashboardInstances => Instances.Count > 0;
     public bool HasInstances => AllInstances.Count > 0;
+    public bool HasSelectedInstance => _selectedInstance is not null;
     public bool HasAvailableInstanceVersions => AvailableInstanceVersions.Count > 0;
+    public bool HasInstanceCreationError => !string.IsNullOrWhiteSpace(InstanceCreationError);
     public bool CanCreateInstance => !IsInstanceVersionsLoading && SelectedNewInstanceVersion is not null;
     public bool IsCreateReleaseBranch =>
         string.Equals(NewInstanceBranch, "release", StringComparison.OrdinalIgnoreCase);
     public bool IsCreatePreReleaseBranch => !IsCreateReleaseBranch;
-    public bool IsDashboardQuickStripVisible =>
-        HasDashboardInstances && !IsCompactDashboardLayout;
     public bool IsGlobalActivityVisible => IsActivityVisible && !IsDashboard;
     public bool IsPrimarySelectAction => _selectedInstance is null;
     public bool IsPrimaryStopAction => IsGameRunning || (IsBusy && CanCancelActivity);
@@ -376,8 +385,6 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
 
         if (IsNews)
             _ = LoadNewsAsync();
-        else if (IsInstances && !HasInstances)
-            OpenInstanceCreator();
     }
 
     [RelayCommand]
@@ -510,9 +517,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
             else
             {
                 _instances.SetSelectedInstance(_selectedInstance.Id);
-                var result = await _installationWorkflow.DownloadAndLaunchAsync(
-                    () => _settingsStore.LaunchAfterDownload,
-                    _uriLauncher.LaunchAsync);
+                var result = await _installationWorkflow.DownloadAndLaunchAsync(_uriLauncher.LaunchAsync);
 
                 if (!result.Success && !result.Cancelled && !string.IsNullOrWhiteSpace(result.Error))
                     ShowError(result.Error);
@@ -543,7 +548,6 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
             if (_selectedInstance is not null && _instances.GetSelectedInstance() is null)
                 _instances.SetSelectedInstance(_selectedInstance.Id);
 
-            Instances.Clear();
             AllInstances.Clear();
             var presentedInstances = items
                 .OrderByDescending(instance => instance.Id == _selectedInstance?.Id)
@@ -568,14 +572,8 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
                 AllInstances.Add(item);
             }
 
-            foreach (var item in presentedInstances.Take(3))
-            {
-                Instances.Add(item);
-            }
-
-            OnPropertyChanged(nameof(HasDashboardInstances));
             OnPropertyChanged(nameof(HasInstances));
-            OnPropertyChanged(nameof(IsDashboardQuickStripVisible));
+            OnPropertyChanged(nameof(HasSelectedInstance));
 
             if (_selectedInstance is not null)
             {
@@ -596,6 +594,16 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     {
         _instanceVersionsCancellation?.Cancel();
         _instanceVersionsCancellation?.Dispose();
+        _instanceVersionsCancellation = null;
+
+        if (_versionCatalog is not null &&
+            _versionCatalog.TryGetCachedVersions(branch, InstanceVersionCacheMaxAge, out var cachedVersions))
+        {
+            IsInstanceVersionsLoading = false;
+            ApplyAvailableInstanceVersions(cachedVersions);
+            return;
+        }
+
         _instanceVersionsCancellation = new CancellationTokenSource();
         var cancellationToken = _instanceVersionsCancellation.Token;
 
@@ -615,14 +623,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
             if (cancellationToken.IsCancellationRequested)
                 return;
 
-            foreach (var version in versions.Take(12))
-            {
-                AvailableInstanceVersions.Add(new InstanceVersionItemViewModel(
-                    version,
-                    IsSelected: version == versions.FirstOrDefault()));
-            }
-
-            SelectedNewInstanceVersion = AvailableInstanceVersions.FirstOrDefault();
+            ApplyAvailableInstanceVersions(versions);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -639,6 +640,23 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
                 OnPropertyChanged(nameof(HasAvailableInstanceVersions));
             }
         }
+    }
+
+    private void ApplyAvailableInstanceVersions(IReadOnlyList<int> versions)
+    {
+        SelectedNewInstanceVersion = null;
+        AvailableInstanceVersions.Clear();
+
+        var selectedVersion = versions.FirstOrDefault();
+        foreach (var version in versions.Take(12))
+        {
+            AvailableInstanceVersions.Add(new InstanceVersionItemViewModel(
+                version,
+                IsSelected: version == selectedVersion));
+        }
+
+        SelectedNewInstanceVersion = AvailableInstanceVersions.FirstOrDefault();
+        OnPropertyChanged(nameof(HasAvailableInstanceVersions));
     }
 
     private void RefreshAvailableInstanceVersionSelection(int selectedVersion)

@@ -26,6 +26,15 @@ description: Avalonia views, view models, localization, and native controls
 - custom controls handle rich news content, smooth scrolling, and animated combo boxes
 - `.resx` files under `Localization` provide UI strings for every supported culture
 
+## UI foundation
+
+Reusable desktop presentation is split into two layers:
+
+- `Styles/Tokens.axaml` defines surface, text, interaction, semantic status, toggle, and popup colors
+- `Styles/Controls.axaml` defines the shared animated ComboBox, ComboBox items, toggle switches, settings rows, and segmented controls
+
+Feature views opt into reusable controls with `uiComboBox`, `uiToggle`, `uiSettingsGroup`, `uiSettingsRow`, and `uiSegmentedControl` classes. New interaction colors and animation timings belong in this foundation instead of feature-scoped styles
+
 The desktop project uses compiled bindings by default. View models expose state and commands while code-behind is limited to control behavior that depends on Avalonia input, layout, or animation primitives
 
 External links and file dialogs stay in Desktop. URI presentation is passed to Core as an asynchronous callback only for interactive OAuth, while file selection is consumed directly by Desktop view models

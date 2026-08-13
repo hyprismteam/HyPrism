@@ -2,10 +2,10 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 using HyPrism.Core.Application.Progress;
-using HyPrism.Core.Infrastructure;
 using HyPrism.Core.Game.Instances;
 using HyPrism.Core.Game.Launch;
 using HyPrism.Core.Accounts;
+using HyPrism.Core.Infrastructure;
 
 namespace HyPrism.Core.Game;
 
@@ -16,7 +16,6 @@ public sealed class GameLaunchCoordinator(
     IGameInstallationWorkflow gameSession,
     IGameProcessTracker processService,
     IInstanceRepository instances,
-    IConfigStore configStore,
     IProgressReporter progress) : IGameLaunchCoordinator
 {
     private const int ExitSuccess = 0;
@@ -29,7 +28,6 @@ public sealed class GameLaunchCoordinator(
     /// <inheritdoc/>
     public async Task LaunchAsync(
         string? instanceId = null,
-        bool? launchAfterDownload = null,
         AuthUriPresenter? authorizationUriPresenter = null)
     {
         if (processService.IsGameRunning())
@@ -37,9 +35,6 @@ public sealed class GameLaunchCoordinator(
             Logger.Warning("Game", "Game launch request ignored - game already running");
             return;
         }
-
-        var shouldLaunchAfterDownload =
-            launchAfterDownload ?? configStore.Configuration.LaunchAfterDownload;
 
         if (!string.IsNullOrWhiteSpace(instanceId))
             instances.SetSelectedInstance(instanceId);
@@ -65,17 +60,9 @@ public sealed class GameLaunchCoordinator(
 
         try
         {
-            var result = await gameSession.DownloadAndLaunchAsync(
-                () => shouldLaunchAfterDownload,
-                authorizationUriPresenter);
+            var result = await gameSession.DownloadAndLaunchAsync(authorizationUriPresenter);
 
             if (result.Cancelled || string.Equals(result.Error, "Cancelled", StringComparison.OrdinalIgnoreCase))
-            {
-                progress.ReportGameStateChanged("stopped", ExitSuccess);
-                return;
-            }
-
-            if (result.Success && !shouldLaunchAfterDownload)
             {
                 progress.ReportGameStateChanged("stopped", ExitSuccess);
                 return;

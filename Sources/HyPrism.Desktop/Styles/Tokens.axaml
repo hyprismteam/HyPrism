@@ -19,6 +19,33 @@ SPDX-License-Identifier: GPL-3.0-only
   <SolidColorBrush x:Key="AccentBrush" Color="#F5F5F6" />
   <SolidColorBrush x:Key="AccentSoftBrush" Color="#18FFFFFF" />
 
+  <!-- Interactive control surfaces -->
+  <SolidColorBrush x:Key="ControlSurfaceBrush" Color="#141517" />
+  <SolidColorBrush x:Key="ControlSurfaceHoverBrush" Color="#1A1B1E" />
+  <SolidColorBrush x:Key="ControlSurfaceActiveBrush" Color="#1D1E21" />
+  <SolidColorBrush x:Key="ControlGroupBrush" Color="#151618" />
+  <SolidColorBrush x:Key="ControlTrackBrush" Color="#303237" />
+  <SolidColorBrush x:Key="ControlTrackHoverBrush" Color="#3B3E43" />
+  <SolidColorBrush x:Key="SegmentedTrackBrush" Color="#292A2D" />
+  <SolidColorBrush x:Key="ControlSelectionBrush" Color="#55565A" />
+  <SolidColorBrush x:Key="ControlKnobBrush" Color="#F4F5F6" />
+  <SolidColorBrush x:Key="ControlKnobHoverBrush" Color="#FFFFFF" />
+
+  <!-- Semantic states -->
+  <SolidColorBrush x:Key="SuccessBrush" Color="#68CD8E" />
+  <SolidColorBrush x:Key="SuccessSoftBrush" Color="#A9E8BE" />
+  <SolidColorBrush x:Key="DangerBrush" Color="#E78383" />
+  <SolidColorBrush x:Key="DangerSoftBrush" Color="#FF9696" />
+  <SolidColorBrush x:Key="WarningBrush" Color="#FFC54D" />
+  <SolidColorBrush x:Key="ToggleOnBrush" Color="#35A85B" />
+  <SolidColorBrush x:Key="ToggleOnHoverBrush" Color="#43BC6B" />
+
+  <!-- Overlays and component states -->
+  <SolidColorBrush x:Key="ItemHoverBrush" Color="#10FFFFFF" />
+  <SolidColorBrush x:Key="ItemSelectedBrush" Color="#1DFFFFFF" />
+  <SolidColorBrush x:Key="ItemSelectedHoverBrush" Color="#27FFFFFF" />
+  <BoxShadows x:Key="PopupShadow">0 12 36 0 #80000000</BoxShadows>
+
   <SolidColorBrush x:Key="ScrollBarBackgroundPointerOver" Color="Transparent" />
   <SolidColorBrush x:Key="ScrollBarTrackFill" Color="Transparent" />
   <SolidColorBrush x:Key="ScrollBarTrackStroke" Color="Transparent" />

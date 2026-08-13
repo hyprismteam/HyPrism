@@ -283,7 +283,7 @@ You may need to reinstall the game if switching drives.</value>
     <value>Show announcements</value>
   </data>
   <data name="dock.dashboard" xml:space="preserve">
-    <value>Dashboard</value>
+    <value>Home</value>
   </data>
   <data name="dock.instances" xml:space="preserve">
     <value>Instances</value>
@@ -302,6 +302,24 @@ You may need to reinstall the game if switching drives.</value>
   </data>
   <data name="dock.settings" xml:space="preserve">
     <value>Settings</value>
+  </data>
+  <data name="home.createInstance" xml:space="preserve">
+    <value>Create an instance</value>
+  </data>
+  <data name="home.currentInstance" xml:space="preserve">
+    <value>Current instance</value>
+  </data>
+  <data name="home.instanceHint" xml:space="preserve">
+    <value>Manage its version and files in Instances, then return here whenever you are ready to play</value>
+  </data>
+  <data name="home.manageInstances" xml:space="preserve">
+    <value>Manage instances</value>
+  </data>
+  <data name="home.welcomeHint" xml:space="preserve">
+    <value>Create an instance to choose a Hytale version, download its files, and begin your next adventure</value>
+  </data>
+  <data name="home.welcomeTitle" xml:space="preserve">
+    <value>Welcome to HyPrism</value>
   </data>
   <data name="error.copyError" xml:space="preserve">
     <value>Copy Error</value>
@@ -340,7 +358,22 @@ You may need to reinstall the game if switching drives.</value>
     <value>Create Instance</value>
   </data>
   <data name="instances.createInstanceHint" xml:space="preserve">
-    <value>Download and set up a new game instance</value>
+    <value>Set up your first game instance with the button below</value>
+  </data>
+  <data name="instances.newInstance" xml:space="preserve">
+    <value>New Instance</value>
+  </data>
+  <data name="instances.newInstanceHint" xml:space="preserve">
+    <value>Choose a branch and game version for your new instance</value>
+  </data>
+  <data name="instances.branchHint" xml:space="preserve">
+    <value>Stable or pre-release builds</value>
+  </data>
+  <data name="instances.versionHint" xml:space="preserve">
+    <value>Game version to install</value>
+  </data>
+  <data name="instances.selectVersion" xml:space="preserve">
+    <value>Select version</value>
   </data>
   <data name="instances.creating" xml:space="preserve">
     <value>Creating...</value>
@@ -356,9 +389,6 @@ You may need to reinstall the game if switching drives.</value>
   </data>
   <data name="instances.deleted" xml:space="preserve">
     <value>Instance deleted</value>
-  </data>
-  <data name="instances.downloadFromDashboard" xml:space="preserve">
-    <value>Download a game version from the Dashboard</value>
   </data>
   <data name="instances.editInstance" xml:space="preserve">
     <value>Edit Instance</value>
@@ -608,9 +638,6 @@ You may need to reinstall the game if switching drives.</value>
   </data>
   <data name="launch.option.cancel" xml:space="preserve">
     <value>Cancel game launch/download process</value>
-  </data>
-  <data name="launch.option.runAfterDownload" xml:space="preserve">
-    <value>Run game after download</value>
   </data>
   <data name="launch.state.complete" xml:space="preserve">
     <value>Complete</value>
@@ -1869,12 +1896,6 @@ You may need to reinstall the game if switching drives.</value>
   <data name="settings.downloads.howDownloadsWorkDescription" xml:space="preserve">
     <value>HyPrism prioritizes the official download source and automatically selects the fastest added user mirror when the official source is unavailable</value>
   </data>
-  <data name="settings.downloads.launchAfterDownload" xml:space="preserve">
-    <value>Launch game after download</value>
-  </data>
-  <data name="settings.downloads.launchAfterDownloadHint" xml:space="preserve">
-    <value>When enabled, the launcher will start the game automatically after installing the selected instance.</value>
-  </data>
   <data name="settings.downloads.mirrorUrlHint" xml:space="preserve">
     <value>Enter the base URL of a Hytale mirror. The launcher will attempt to auto-detect the configuration.</value>
   </data>
@@ -1901,9 +1922,6 @@ You may need to reinstall the game if switching drives.</value>
   </data>
   <data name="settings.downloads.refreshMirrors" xml:space="preserve">
     <value>Refresh mirrors</value>
-  </data>
-  <data name="settings.downloads.behavior" xml:space="preserve">
-    <value>Behavior</value>
   </data>
   <data name="settings.downloads.sources" xml:space="preserve">
     <value>Download sources</value>

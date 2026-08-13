@@ -327,9 +327,6 @@ Vous devrez peut-être réinstaller le jeu si vous changez de lecteur.</value>
   <data name="instances.deleted" xml:space="preserve">
     <value>Instance supprimée</value>
   </data>
-  <data name="instances.downloadFromDashboard" xml:space="preserve">
-    <value>Télécharge une version du jeu depuis l'Accueil</value>
-  </data>
   <data name="instances.editInstance" xml:space="preserve">
     <value>Modifier l'Instance</value>
   </data>
@@ -578,9 +575,6 @@ Vous devrez peut-être réinstaller le jeu si vous changez de lecteur.</value>
   </data>
   <data name="launch.option.cancel" xml:space="preserve">
     <value>Annuler le lancement/téléchargement du jeu</value>
-  </data>
-  <data name="launch.option.runAfterDownload" xml:space="preserve">
-    <value>Lancer le jeu après le téléchargement</value>
   </data>
   <data name="launch.state.complete" xml:space="preserve">
     <value>Terminé</value>
@@ -1745,12 +1739,6 @@ Vous devrez peut-être réinstaller le jeu si vous changez de lecteur.</value>
   </data>
   <data name="settings.downloads.howDownloadsWorkDescription" xml:space="preserve">
     <value>HyPrism sélectionne automatiquement la source la plus rapide disponible pour télécharger les fichiers du jeu. Appuyez sur "Test Vitesse" pour vérifier votre connexion.</value>
-  </data>
-  <data name="settings.downloads.launchAfterDownload" xml:space="preserve">
-    <value>Lancer le jeu après téléchargement</value>
-  </data>
-  <data name="settings.downloads.launchAfterDownloadHint" xml:space="preserve">
-    <value>Lorsqu'activé, le lanceur démarrera automatiquement le jeu après avoir installé l'instance sélectionnée.</value>
   </data>
   <data name="settings.downloads.mirrorUrlHint" xml:space="preserve">
     <value>Entrez l'URL de base d'un miroir Hytale. Le lanceur tentera de détecter automatiquement la configuration.</value>

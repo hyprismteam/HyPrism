@@ -125,7 +125,7 @@ SPDX-License-Identifier: GPL-3.0-only
                       Height="11"
                       HorizontalAlignment="Center"
                       VerticalAlignment="Center"
-                      Fill="#FFC54D"
+                      Fill="{DynamicResource WarningBrush}"
                       Stretch="Uniform"
                       Data="M 2,1 L 8,6 L 2,11 Z" />
                 <Path IsVisible="{Binding IsDetailsExpanded}"
@@ -133,7 +133,7 @@ SPDX-License-Identifier: GPL-3.0-only
                       Height="7"
                       HorizontalAlignment="Center"
                       VerticalAlignment="Center"
-                      Fill="#FFC54D"
+                      Fill="{DynamicResource WarningBrush}"
                       Stretch="Uniform"
                       Data="M 1,2 L 6,8 L 11,2 Z" />
                 <StackPanel Grid.Column="1"
@@ -312,7 +312,7 @@ SPDX-License-Identifier: GPL-3.0-only
 
         <TextBlock IsVisible="{Binding HasNewsError}"
                    Text="{Binding NewsError}"
-                   Foreground="#FF9696"
+                   Foreground="{DynamicResource DangerSoftBrush}"
                    HorizontalAlignment="Center"
                    VerticalAlignment="Center"
                    MaxWidth="420"
@@ -454,7 +454,7 @@ SPDX-License-Identifier: GPL-3.0-only
                       MaxWidth="420"
                       Spacing="12">
             <TextBlock Text="{Binding NewsArticleError}"
-                       Foreground="#FF9696"
+                       Foreground="{DynamicResource DangerSoftBrush}"
                        TextAlignment="Center" />
           </StackPanel>
         </Grid>

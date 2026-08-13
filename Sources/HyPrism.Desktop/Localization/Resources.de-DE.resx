@@ -253,7 +253,7 @@ Bei Laufwerkswechsel muss das Spiel möglicherweise neu installiert werden.</val
     <value>Ankündigungen anzeigen</value>
   </data>
   <data name="dock.dashboard" xml:space="preserve">
-    <value>Dashboard</value>
+    <value>Startseite</value>
   </data>
   <data name="dock.instances" xml:space="preserve">
     <value>Instanzen</value>
@@ -326,9 +326,6 @@ Bei Laufwerkswechsel muss das Spiel möglicherweise neu installiert werden.</val
   </data>
   <data name="instances.deleted" xml:space="preserve">
     <value>Instanz gelöscht</value>
-  </data>
-  <data name="instances.downloadFromDashboard" xml:space="preserve">
-    <value>Spielversion vom Dashboard herunterladen</value>
   </data>
   <data name="instances.editInstance" xml:space="preserve">
     <value>Instanz bearbeiten</value>
@@ -578,9 +575,6 @@ Bei Laufwerkswechsel muss das Spiel möglicherweise neu installiert werden.</val
   </data>
   <data name="launch.option.cancel" xml:space="preserve">
     <value>Spiel-Start/Download abbrechen</value>
-  </data>
-  <data name="launch.option.runAfterDownload" xml:space="preserve">
-    <value>Spiel nach Download starten</value>
   </data>
   <data name="launch.state.complete" xml:space="preserve">
     <value>Fertig</value>
@@ -1745,12 +1739,6 @@ Bei Laufwerkswechsel muss das Spiel möglicherweise neu installiert werden.</val
   </data>
   <data name="settings.downloads.howDownloadsWorkDescription" xml:space="preserve">
     <value>HyPrism wählt automatisch die schnellste verfügbare Quelle zum Herunterladen von Spieldateien. Drücke "Geschwindigkeit testen", um deine Verbindung zu überprüfen.</value>
-  </data>
-  <data name="settings.downloads.launchAfterDownload" xml:space="preserve">
-    <value>Spiel nach Download starten</value>
-  </data>
-  <data name="settings.downloads.launchAfterDownloadHint" xml:space="preserve">
-    <value>Wenn aktiviert, startet der Launcher das Spiel automatisch nach der Installation der ausgewählten Instanz.</value>
   </data>
   <data name="settings.downloads.mirrorUrlHint" xml:space="preserve">
     <value>Gib die Basis-URL eines Hytale-Spiegels ein. Der Launcher versucht, die Konfiguration automatisch zu erkennen.</value>

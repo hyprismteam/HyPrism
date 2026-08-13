@@ -21,6 +21,7 @@ SPDX-License-Identifier: GPL-3.0-only
 
   <Application.Styles>
     <FluentTheme />
+    <StyleInclude Source="avares://HyPrism.Desktop/Styles/Controls.axaml" />
     <StyleInclude Source="avares://HyPrism.Desktop/Styles/Styles.axaml" />
   </Application.Styles>
 </Application>

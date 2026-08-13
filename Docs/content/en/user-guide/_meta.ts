@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 export default {
-  dashboard: 'Dashboard',
+  dashboard: 'Home',
   news: 'News',
   settings: 'Settings',
   'instances-profiles-mods': 'Instances, profiles, and mods'

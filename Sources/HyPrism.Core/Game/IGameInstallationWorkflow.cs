@@ -13,13 +13,11 @@ namespace HyPrism.Core.Game;
 public interface IGameInstallationWorkflow : IDisposable
 {
     /// <summary>
-    /// Downloads/updates the game and optionally launches it upon completion
+    /// Downloads/updates the game and launches it upon completion
     /// </summary>
-    /// <param name="launchAfterDownloadProvider">Optional function that returns whether to launch the game after download completes</param>
     /// <param name="authorizationUriPresenter">Optional host callback used when an official account requires interactive authorization</param>
     /// <returns>A <see cref="DownloadProgress"/> object for tracking download state and progress</returns>
     Task<DownloadProgress> DownloadAndLaunchAsync(
-        Func<bool>? launchAfterDownloadProvider = null,
         AuthUriPresenter? authorizationUriPresenter = null);
 
     /// <summary>

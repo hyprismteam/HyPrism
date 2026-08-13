@@ -327,9 +327,6 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="instances.deleted" xml:space="preserve">
     <value>Екземпляр видалено</value>
   </data>
-  <data name="instances.downloadFromDashboard" xml:space="preserve">
-    <value>Завантажити версію гри з панелі інструментів</value>
-  </data>
   <data name="instances.editInstance" xml:space="preserve">
     <value>Редагувати екземпляр</value>
   </data>
@@ -578,9 +575,6 @@ SPDX-License-Identifier: GPL-3.0-only
   </data>
   <data name="launch.option.cancel" xml:space="preserve">
     <value>Скасувати запуск/завантаження гри</value>
-  </data>
-  <data name="launch.option.runAfterDownload" xml:space="preserve">
-    <value>Запустити гру після завантаження</value>
   </data>
   <data name="launch.state.complete" xml:space="preserve">
     <value>Готово</value>
@@ -1745,12 +1739,6 @@ SPDX-License-Identifier: GPL-3.0-only
   </data>
   <data name="settings.downloads.howDownloadsWorkDescription" xml:space="preserve">
     <value>HyPrism автоматично вибирає найшвидше доступне джерело для завантаження файлів гри. Натисніть «Тест швидкості», щоб перевірити з'єднання.</value>
-  </data>
-  <data name="settings.downloads.launchAfterDownload" xml:space="preserve">
-    <value>Запустити гру після завантаження</value>
-  </data>
-  <data name="settings.downloads.launchAfterDownloadHint" xml:space="preserve">
-    <value>Коли увімкнено, лаунчер автоматично запустить гру після встановлення вибраного екземпляра.</value>
   </data>
   <data name="settings.downloads.mirrorUrlHint" xml:space="preserve">
     <value>Введіть базову URL дзеркала Hytale. Лаунчер спробує автоматично визначити конфігурацію.</value>

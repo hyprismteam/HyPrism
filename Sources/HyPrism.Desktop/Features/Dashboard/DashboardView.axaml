@@ -45,88 +45,54 @@ SPDX-License-Identifier: GPL-3.0-only
       </Border.Background>
     </Border>
 
-    <Grid RowDefinitions="*,Auto">
-      <StackPanel Grid.Row="0"
+    <Grid>
+      <StackPanel
                   Classes="dashboardHero"
-                  Width="620"
-                  MaxWidth="620"
-                  Margin="28,24"
+                  Width="660"
+                  MaxWidth="660"
+                  Margin="44,32"
                   HorizontalAlignment="Center"
                   VerticalAlignment="Center"
-                  Spacing="8">
-        <Border Classes="dashboardStatus" HorizontalAlignment="Center">
-          <TextBlock Text="{Binding SelectedInstanceState}"
-                     FontSize="12"
-                     FontWeight="SemiBold"
-                     TextWrapping="NoWrap" />
-        </Border>
-
-        <TextBlock Classes="dashboardTitle"
-                   Text="{Binding SelectedInstanceName}"
-                   Margin="0,4,0,0"
-                   FontWeight="Bold"
-                   MaxLines="2"
-                   TextAlignment="Center"
-                   TextTrimming="CharacterEllipsis" />
-        <TextBlock Text="{Binding SelectedInstanceMeta}"
-                   Foreground="#D0D1D5"
-                   FontSize="14"
-                   FontWeight="Medium"
-                   HorizontalAlignment="Center"
-                   TextAlignment="Center"
-                   TextWrapping="NoWrap" />
-
-        <StackPanel Margin="0,18,0,0"
-                    Orientation="Horizontal"
+                  Spacing="16">
+        <StackPanel IsVisible="{Binding !HasSelectedInstance}"
                     HorizontalAlignment="Center"
-                    Spacing="12">
-          <Button Classes="dashboardInstance"
-                  IsVisible="{Binding HasDashboardInstances}"
-                  Command="{Binding OpenInstancesCommand}"
-                  ToolTip.Tip="{Binding InstancesLabel}">
-            <Path Width="22"
-                  Height="22"
-                  Stretch="Uniform"
-                  Data="{StaticResource InstancesIcon}" />
-          </Button>
-
-          <Button Classes="primary dashboardPrimary"
-                  IsEnabled="{Binding CanRunPrimaryAction}"
-                  Command="{Binding PrimaryActionCommand}">
+                    MaxWidth="500"
+                    Spacing="14">
+          <Border Classes="dashboardHeroIcon" HorizontalAlignment="Center">
+            <Path Width="32" Height="32" Stretch="Uniform" Data="{StaticResource InstancesFilledIcon}" />
+          </Border>
+          <TextBlock Text="{Binding HomeWelcomeTitle}" Classes="dashboardTitle" FontWeight="Bold" TextAlignment="Center" />
+          <TextBlock Text="{Binding HomeWelcomeHint}" Classes="dashboardSubtitle" TextAlignment="Center" TextWrapping="Wrap" />
+          <Button Classes="primary dashboardPrimary" HorizontalAlignment="Center" Margin="0,10,0,0" Command="{Binding PrimaryActionCommand}">
             <StackPanel Orientation="Horizontal" Spacing="10">
-              <Path IsVisible="{Binding IsPrimarySelectAction}"
-                    Classes="actionIcon"
-                    Width="18"
-                    Height="18"
-                    Stretch="Uniform"
-                    Data="{StaticResource InstancesFilledIcon}" />
-              <Path IsVisible="{Binding IsPrimaryPlayAction}"
-                    Classes="actionIcon"
-                    Width="18"
-                    Height="18"
-                    Stretch="Uniform"
-                    Data="{StaticResource PlayIcon}" />
-              <Path IsVisible="{Binding IsPrimaryDownloadAction}"
-                    Classes="actionIcon"
-                    Width="18"
-                    Height="18"
-                    Stretch="Uniform"
-                    Data="{StaticResource DownloadIcon}" />
-              <Path IsVisible="{Binding IsPrimaryStopAction}"
-                    Classes="actionIcon"
-                    Width="16"
-                    Height="16"
-                    Stretch="Uniform"
-                    Data="{StaticResource StopIcon}" />
-              <Ellipse IsVisible="{Binding IsPrimaryPendingAction}"
-                       Width="9"
-                       Height="9"
-                       Fill="#111111" />
-              <TextBlock Text="{Binding PrimaryActionText}"
-                         VerticalAlignment="Center"
-                         TextWrapping="NoWrap" />
+              <Path Classes="actionIcon" Width="18" Height="18" Stretch="Uniform" Data="{StaticResource InstancesFilledIcon}" />
+              <TextBlock Text="{Binding HomeCreateInstanceLabel}" VerticalAlignment="Center" />
             </StackPanel>
           </Button>
+        </StackPanel>
+
+        <StackPanel IsVisible="{Binding HasSelectedInstance}" HorizontalAlignment="Center" MaxWidth="580" Spacing="13">
+          <TextBlock Text="{Binding HomeCurrentInstanceLabel}" Classes="eyebrow" HorizontalAlignment="Center" />
+          <TextBlock Classes="dashboardTitle" Text="{Binding SelectedInstanceName}" FontWeight="Bold" MaxLines="2" TextAlignment="Center" TextTrimming="CharacterEllipsis" />
+          <TextBlock Text="{Binding SelectedInstanceMeta}" Classes="dashboardSubtitle" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="NoWrap" />
+          <Border Classes="dashboardInstanceSummary" Margin="0,12,0,0">
+            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="14">
+              <Border Classes="dashboardInstanceGlyph"><Path Width="24" Height="24" Stretch="Uniform" Data="{StaticResource InstancesIcon}" /></Border>
+              <TextBlock Grid.Column="1" Text="{Binding HomeInstanceHint}" Classes="dashboardSubtitle" VerticalAlignment="Center" TextWrapping="Wrap" />
+            </Grid>
+          </Border>
+          <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="10" Margin="0,4,0,0">
+            <Button Classes="primary dashboardPrimary" IsEnabled="{Binding CanRunPrimaryAction}" Command="{Binding PrimaryActionCommand}">
+              <StackPanel Orientation="Horizontal" Spacing="10">
+                <Path IsVisible="{Binding IsPrimaryPlayAction}" Classes="actionIcon" Width="18" Height="18" Stretch="Uniform" Data="{StaticResource PlayIcon}" />
+                <Path IsVisible="{Binding IsPrimaryDownloadAction}" Classes="actionIcon" Width="18" Height="18" Stretch="Uniform" Data="{StaticResource DownloadIcon}" />
+                <Path IsVisible="{Binding IsPrimaryStopAction}" Classes="actionIcon" Width="16" Height="16" Stretch="Uniform" Data="{StaticResource StopIcon}" />
+                <Ellipse IsVisible="{Binding IsPrimaryPendingAction}" Width="9" Height="9" Fill="#111111" />
+                <TextBlock Text="{Binding PrimaryActionText}" VerticalAlignment="Center" TextWrapping="NoWrap" />
+              </StackPanel>
+            </Button>
+            <Button Classes="dashboardManage" Command="{Binding OpenInstancesCommand}"><TextBlock Text="{Binding HomeManageInstancesLabel}" /></Button>
+          </StackPanel>
         </StackPanel>
 
         <Border Classes="dashboardActivity"
@@ -159,80 +125,7 @@ SPDX-License-Identifier: GPL-3.0-only
           </StackPanel>
         </Border>
       </StackPanel>
-
-      <Border Grid.Row="1"
-              IsVisible="{Binding IsDashboardQuickStripVisible}"
-              Background="#D00B0C0E"
-              Padding="28,18,28,22">
-        <Grid Classes="dashboardQuickStrip"
-              MaxWidth="1050"
-              HorizontalAlignment="Stretch"
-              RowDefinitions="Auto,Auto"
-              RowSpacing="12">
-          <Button Classes="dashboardLink"
-                  HorizontalAlignment="Left"
-                  Command="{Binding OpenInstancesCommand}">
-            <StackPanel Orientation="Horizontal" Spacing="7">
-              <TextBlock Text="{Binding InstancesLabel}"
-                         FontSize="17"
-                         FontWeight="SemiBold" />
-              <Path Width="13"
-                    Height="13"
-                    Stretch="Uniform"
-                    Data="{StaticResource NextIcon}" />
-            </StackPanel>
-          </Button>
-
-          <ItemsControl Grid.Row="1" ItemsSource="{Binding Instances}">
-            <ItemsControl.ItemsPanel>
-              <ItemsPanelTemplate>
-                <UniformGrid Columns="3" />
-              </ItemsPanelTemplate>
-            </ItemsControl.ItemsPanel>
-            <ItemsControl.ItemTemplate>
-              <DataTemplate x:DataType="dashboard:InstanceItemViewModel">
-                <Button Classes="dashboardQuickInstance"
-                        Classes.selected="{Binding IsSelected}"
-                        Command="{Binding DataContext.SelectDashboardInstanceCommand, ElementName=DashboardRoot}"
-                        CommandParameter="{Binding Id}">
-                  <Grid ColumnDefinitions="42,*,Auto" ColumnSpacing="12">
-                    <Border Width="42"
-                            Height="42"
-                            CornerRadius="12"
-                            Background="#14FFFFFF">
-                      <TextBlock Text="{Binding Initial}"
-                                 HorizontalAlignment="Center"
-                                 VerticalAlignment="Center"
-                                 FontWeight="Bold" />
-                    </Border>
-                    <StackPanel Grid.Column="1"
-                                VerticalAlignment="Center"
-                                Spacing="2">
-                      <TextBlock Text="{Binding Name}"
-                                 FontWeight="SemiBold"
-                                 TextTrimming="CharacterEllipsis"
-                                 TextWrapping="NoWrap" />
-                      <TextBlock Text="{Binding Branch}"
-                                 Classes="muted"
-                                 FontSize="12"
-                                 TextTrimming="CharacterEllipsis"
-                                 TextWrapping="NoWrap" />
-                    </StackPanel>
-                    <Ellipse Grid.Column="2"
-                             IsVisible="{Binding IsSelected}"
-                             Width="6"
-                             Height="6"
-                             Margin="8,0"
-                             VerticalAlignment="Center"
-                             Fill="{DynamicResource TextPrimaryBrush}" />
-                  </Grid>
-                </Button>
-              </DataTemplate>
-            </ItemsControl.ItemTemplate>
-          </ItemsControl>
-        </Grid>
-      </Border>
-      </Grid>
+    </Grid>
     </Grid>
   </Border>
 </UserControl>

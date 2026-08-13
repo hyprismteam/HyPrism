@@ -327,9 +327,6 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="instances.deleted" xml:space="preserve">
     <value>Экзэмпляр выдалены</value>
   </data>
-  <data name="instances.downloadFromDashboard" xml:space="preserve">
-    <value>Спампуйце версію гульні з галоўнай старонкі</value>
-  </data>
   <data name="instances.editInstance" xml:space="preserve">
     <value>Рэдагаваць экзэмпляр</value>
   </data>
@@ -578,9 +575,6 @@ SPDX-License-Identifier: GPL-3.0-only
   </data>
   <data name="launch.option.cancel" xml:space="preserve">
     <value>Скасаваць запуск/загрузку гульні</value>
-  </data>
-  <data name="launch.option.runAfterDownload" xml:space="preserve">
-    <value>Запусціць гульню пасля загрузкі</value>
   </data>
   <data name="launch.state.complete" xml:space="preserve">
     <value>Гатова</value>
@@ -1745,12 +1739,6 @@ SPDX-License-Identifier: GPL-3.0-only
   </data>
   <data name="settings.downloads.howDownloadsWorkDescription" xml:space="preserve">
     <value>HyPrism аўтаматычна выбірае найхутчэйшую даступную крыніцу для загрузкі файлаў гульні. Націсніце «Тэст хуткасці», каб праверыць злучэнне.</value>
-  </data>
-  <data name="settings.downloads.launchAfterDownload" xml:space="preserve">
-    <value>Запусціць гульню пасля загрузкі</value>
-  </data>
-  <data name="settings.downloads.launchAfterDownloadHint" xml:space="preserve">
-    <value>Калі ўключана, лаўнчар аўтаматычна запусціць гульню пасля ўсталявання выбранага экзэмпляра.</value>
   </data>
   <data name="settings.downloads.mirrorUrlHint" xml:space="preserve">
     <value>Увядзіце базавы URL люстэрка Hytale. Лаўнчар паспрабуе аўтаматычна вызначыць канфігурацыю.</value>

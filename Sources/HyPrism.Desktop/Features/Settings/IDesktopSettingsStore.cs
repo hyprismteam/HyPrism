@@ -20,9 +20,6 @@ public interface IDesktopSettingsStore
     /// <summary>Gets or sets whether Desktop closes after starting the game</summary>
     bool CloseAfterLaunch { get; set; }
 
-    /// <summary>Gets or sets whether a freshly installed game starts automatically</summary>
-    bool LaunchAfterDownload { get; set; }
-
     /// <summary>Gets or sets whether Discord announcements are displayed</summary>
     bool ShowDiscordAnnouncements { get; set; }
 

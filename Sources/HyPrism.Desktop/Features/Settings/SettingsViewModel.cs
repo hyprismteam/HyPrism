@@ -72,7 +72,6 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     [ObservableProperty] private BackgroundChoiceViewModel _selectedBackground;
     [ObservableProperty] private SettingChoiceViewModel _selectedGpuPreference;
     [ObservableProperty] private bool _closeAfterLaunch;
-    [ObservableProperty] private bool _launchAfterDownload;
     [ObservableProperty] private bool _showAlphaMods;
     [ObservableProperty] private bool _musicEnabled;
     [ObservableProperty] private bool _disableNews;
@@ -180,7 +179,6 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         UpdateSelectedBackgroundState();
         _selectedGpuPreference = FindChoice(GpuPreferences, settings.GpuPreference);
         _closeAfterLaunch = settings.CloseAfterLaunch;
-        _launchAfterDownload = settings.LaunchAfterDownload;
         _showAlphaMods = settings.ShowAlphaMods;
         _musicEnabled = settings.MusicEnabled;
         _disableNews = settings.DisableNews;
@@ -254,10 +252,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     public string CloseAfterLaunchHint { get; private set; } = string.Empty;
     public string AlphaModsLabel { get; private set; } = string.Empty;
     public string AlphaModsHint { get; private set; } = string.Empty;
-    public string LaunchAfterDownloadLabel { get; private set; } = string.Empty;
-    public string LaunchAfterDownloadHint { get; private set; } = string.Empty;
     public string DownloadsInfo { get; private set; } = string.Empty;
-    public string DownloadBehaviorTitle { get; private set; } = string.Empty;
     public string DownloadSourcesTitle { get; private set; } = string.Empty;
     public string SourceLinkColumn { get; private set; } = string.Empty;
     public string SourceTypeColumn { get; private set; } = string.Empty;
@@ -367,10 +362,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         CloseAfterLaunchHint = _localizer["settings.generalSettings.closeLauncherHint"];
         AlphaModsLabel = _localizer["settings.generalSettings.showAlphaMods"];
         AlphaModsHint = _localizer["settings.generalSettings.showAlphaModsHint"];
-        LaunchAfterDownloadLabel = _localizer["settings.downloads.launchAfterDownload"];
-        LaunchAfterDownloadHint = _localizer["settings.downloads.launchAfterDownloadHint"];
         DownloadsInfo = _localizer["settings.downloads.howDownloadsWorkDescription"];
-        DownloadBehaviorTitle = _localizer["settings.downloads.behavior"];
         DownloadSourcesTitle = _localizer["settings.downloads.sources"];
         SourceLinkColumn = _localizer["settings.downloads.columnLink"];
         SourceTypeColumn = _localizer["settings.downloads.columnType"];
@@ -512,7 +504,6 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     }
     partial void OnSelectedGpuPreferenceChanged(SettingChoiceViewModel value) => _settings.GpuPreference = value.Value;
     partial void OnCloseAfterLaunchChanged(bool value) => _settings.CloseAfterLaunch = value;
-    partial void OnLaunchAfterDownloadChanged(bool value) => _settings.LaunchAfterDownload = value;
     partial void OnShowAlphaModsChanged(bool value) => _settings.ShowAlphaMods = value;
     partial void OnMusicEnabledChanged(bool value) => _settings.MusicEnabled = value;
     partial void OnDisableNewsChanged(bool value) => _settings.DisableNews = value;

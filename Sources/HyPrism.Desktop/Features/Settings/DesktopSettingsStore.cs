@@ -43,13 +43,6 @@ public sealed class DesktopSettingsStore(IConfigStore configStore) : IDesktopSet
     }
 
     /// <inheritdoc/>
-    public bool LaunchAfterDownload
-    {
-        get => configStore.Configuration.LaunchAfterDownload;
-        set => Save(config => config.LaunchAfterDownload = value);
-    }
-
-    /// <inheritdoc/>
     public bool ShowDiscordAnnouncements
     {
         get => configStore.Configuration.ShowDiscordAnnouncements;

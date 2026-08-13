@@ -680,7 +680,6 @@ public sealed class MainWindowRenderTests
                 Name = "HyPrism Player",
                 IsOfficial = isOfficialProfile
             });
-        settings.SetupGet(service => service.LaunchAfterDownload).Returns(true);
         settings.SetupGet(service => service.AvailableBackgrounds).Returns(
             ["bg_1.jpg", "bg_2.jpg", "bg_3.jpg", "bg_4.png", "bg_5.jpg", "bg_6.png"]);
         github.Setup(service => service.GetContributorsAsync()).ReturnsAsync(
@@ -979,10 +978,9 @@ public sealed class MainWindowRenderTests
         Assert.NotNull(dashboardSurface);
         Assert.True(dashboardSurface!.ClipToBounds);
         Assert.Equal(new CornerRadius(23), dashboardSurface.CornerRadius);
-        Assert.Equal(width >= 1280, viewModel.IsDashboardQuickStripVisible);
         var dashboardAction = Assert.Single(
             dashboard.GetVisualDescendants().OfType<Button>(),
-            button => button.Classes.Contains("dashboardPrimary"));
+            button => button.Classes.Contains("dashboardPrimary") && button.IsEffectivelyVisible);
         Assert.DoesNotContain(
             dashboardAction.GetVisualDescendants(),
             visual => visual.RenderTransform is ScaleTransform);

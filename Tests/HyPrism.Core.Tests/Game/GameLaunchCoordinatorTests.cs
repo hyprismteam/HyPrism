@@ -3,7 +3,6 @@
 
 using HyPrism.Core.Models;
 using HyPrism.Core.Application.Progress;
-using HyPrism.Core.Infrastructure;
 using HyPrism.Core.Game;
 using HyPrism.Core.Game.Instances;
 using HyPrism.Core.Game.Launch;
@@ -16,46 +15,30 @@ public sealed class GameLaunchCoordinatorTests
     private readonly Mock<IGameInstallationWorkflow> _gameSession = new();
     private readonly Mock<IGameProcessTracker> _gameProcess = new();
     private readonly Mock<IInstanceRepository> _instances = new();
-    private readonly Mock<IConfigStore> _config = new();
     private readonly Mock<IProgressReporter> _progress = new();
 
     [Fact]
-    public async Task LaunchAsync_UsesRequestedInstanceAndPreference()
+    public async Task LaunchAsync_UsesRequestedInstanceAndForwardsAuthorizationPresenter()
     {
         var instance = CreateInstalledInstance();
-        Func<bool>? preference = null;
         AuthUriPresenter uriLauncher = (_, _) => Task.FromResult(true);
         AuthUriPresenter? forwardedUriLauncher = null;
 
         _gameProcess.Setup(service => service.IsGameRunning()).Returns(false);
-        _config.SetupGet(service => service.Configuration)
-            .Returns(new Config { LaunchAfterDownload = true });
         _instances.Setup(service => service.GetSelectedInstance()).Returns(instance);
         _instances.Setup(service => service.GetInstancePathById(instance.Id)).Returns("/game");
         _instances.Setup(service => service.IsClientPresent("/game")).Returns(true);
         _gameSession
-            .Setup(service => service.DownloadAndLaunchAsync(
-                It.IsAny<Func<bool>>(),
-                It.IsAny<AuthUriPresenter?>()))
-            .Callback<Func<bool>?, AuthUriPresenter?>((value, launcher) =>
-            {
-                preference = value;
-                forwardedUriLauncher = launcher;
-            })
+            .Setup(service => service.DownloadAndLaunchAsync(It.IsAny<AuthUriPresenter?>()))
+            .Callback<AuthUriPresenter?>(launcher => forwardedUriLauncher = launcher)
             .ReturnsAsync(new DownloadProgress { Success = true });
 
         await CreateSubject().LaunchAsync(
             instance.Id,
-            launchAfterDownload: false,
             authorizationUriPresenter: uriLauncher);
 
         _instances.Verify(service => service.SetSelectedInstance(instance.Id), Times.Once);
-        Assert.NotNull(preference);
-        Assert.False(preference!());
         Assert.Same(uriLauncher, forwardedUriLauncher);
-        _progress.Verify(
-            service => service.ReportGameStateChanged("stopped", 0),
-            Times.Once);
     }
 
     [Fact]
@@ -64,7 +47,6 @@ public sealed class GameLaunchCoordinatorTests
         var instance = CreateInstalledInstance();
 
         _gameProcess.Setup(service => service.IsGameRunning()).Returns(false);
-        _config.SetupGet(service => service.Configuration).Returns(new Config());
         _instances.Setup(service => service.GetSelectedInstance()).Returns(instance);
         _instances.Setup(service => service.GetInstancePathById(instance.Id)).Returns("/game");
         _instances.Setup(service => service.IsClientPresent("/game")).Returns(false);
@@ -78,9 +60,7 @@ public sealed class GameLaunchCoordinatorTests
                 It.Is<string>(value => value.Contains(instance.Name))),
             Times.Once);
         _gameSession.Verify(
-            service => service.DownloadAndLaunchAsync(
-                It.IsAny<Func<bool>>(),
-                It.IsAny<AuthUriPresenter?>()),
+            service => service.DownloadAndLaunchAsync(It.IsAny<AuthUriPresenter?>()),
             Times.Never);
     }
 
@@ -90,14 +70,11 @@ public sealed class GameLaunchCoordinatorTests
         var instance = CreateInstalledInstance();
 
         _gameProcess.Setup(service => service.IsGameRunning()).Returns(false);
-        _config.SetupGet(service => service.Configuration).Returns(new Config());
         _instances.Setup(service => service.GetSelectedInstance()).Returns(instance);
         _instances.Setup(service => service.GetInstancePathById(instance.Id)).Returns("/game");
         _instances.Setup(service => service.IsClientPresent("/game")).Returns(true);
         _gameSession
-            .Setup(service => service.DownloadAndLaunchAsync(
-                It.IsAny<Func<bool>>(),
-                It.IsAny<AuthUriPresenter?>()))
+            .Setup(service => service.DownloadAndLaunchAsync(It.IsAny<AuthUriPresenter?>()))
             .ReturnsAsync(new DownloadProgress
             {
                 Success = false,
@@ -116,7 +93,6 @@ public sealed class GameLaunchCoordinatorTests
             _gameSession.Object,
             _gameProcess.Object,
             _instances.Object,
-            _config.Object,
             _progress.Object);
 
     private static InstanceInfo CreateInstalledInstance()

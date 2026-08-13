@@ -64,46 +64,6 @@ SPDX-License-Identifier: GPL-3.0-only
       </Grid>
     </DataTemplate>
 
-    <ControlTheme x:Key="SettingsComboBoxItemTheme" TargetType="ComboBoxItem">
-      <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
-      <Setter Property="Background" Value="Transparent" />
-      <Setter Property="BorderThickness" Value="0" />
-      <Setter Property="CornerRadius" Value="9" />
-      <Setter Property="Margin" Value="0,2" />
-      <Setter Property="Padding" Value="12,9" />
-      <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-      <Setter Property="Template">
-        <ControlTemplate>
-          <ContentPresenter x:Name="PART_ContentPresenter"
-                            Content="{TemplateBinding Content}"
-                            ContentTemplate="{TemplateBinding ContentTemplate}"
-                            Foreground="{TemplateBinding Foreground}"
-                            Background="{TemplateBinding Background}"
-                            BorderThickness="0"
-                            CornerRadius="{TemplateBinding CornerRadius}"
-                            Padding="{TemplateBinding Padding}"
-                            HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}">
-            <ContentPresenter.Transitions>
-              <Transitions>
-                <BrushTransition Property="Background" Duration="0:0:0.16" />
-                <BrushTransition Property="Foreground" Duration="0:0:0.16" />
-              </Transitions>
-            </ContentPresenter.Transitions>
-          </ContentPresenter>
-        </ControlTemplate>
-      </Setter>
-      <Style Selector="^:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-        <Setter Property="Background" Value="#10FFFFFF" />
-        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
-      </Style>
-      <Style Selector="^:selected /template/ ContentPresenter#PART_ContentPresenter">
-        <Setter Property="Background" Value="#1DFFFFFF" />
-        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
-      </Style>
-      <Style Selector="^:selected:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-        <Setter Property="Background" Value="#27FFFFFF" />
-      </Style>
-    </ControlTheme>
 
     <ControlTheme x:Key="JavaSliderTrackButtonTheme" TargetType="RepeatButton">
       <Setter Property="Template">
@@ -212,7 +172,7 @@ SPDX-License-Identifier: GPL-3.0-only
     </DataTemplate>
 
     <DataTemplate x:Key="MirrorSourceTemplate" x:DataType="vm:MirrorSourceViewModel">
-      <Border Classes="settingsRow mirrorSourceRow"
+      <Border Classes="uiSettingsRow settingsRow mirrorSourceRow"
               Classes.last="{Binding IsLast}">
         <Grid ColumnDefinitions="2.3*,1.05*,1.15*,70,Auto,Auto" ColumnSpacing="14">
           <TextBlock Text="{Binding Endpoint}"
@@ -237,6 +197,7 @@ SPDX-License-Identifier: GPL-3.0-only
                      Text="{Binding Ping}"
                      Classes="sourceTableValue ping" />
           <ToggleSwitch Grid.Column="4"
+                        Classes="uiToggle"
                         IsChecked="{Binding IsEnabled}"
                         VerticalAlignment="Center" />
           <Button Grid.Column="5"
@@ -270,7 +231,7 @@ SPDX-License-Identifier: GPL-3.0-only
           </Border>
           <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
             <TextBlock Text="{Binding DisplayName}"
-                       Classes="settingsLabel"
+                       Classes="uiSettingsLabel settingsLabel"
                        MaxLines="1"
                        TextTrimming="CharacterEllipsis" />
             <TextBlock Text="{Binding Role}"
@@ -393,7 +354,7 @@ SPDX-License-Identifier: GPL-3.0-only
                      FontSize="20"
                      HorizontalAlignment="Right"
                      VerticalAlignment="Center"
-                     Foreground="#A9E8BE" />
+                     Foreground="{DynamicResource SuccessSoftBrush}" />
         </Grid>
       </Border>
 
@@ -409,17 +370,18 @@ SPDX-License-Identifier: GPL-3.0-only
           <StackPanel Spacing="22" IsVisible="{Binding IsGeneral}">
             <StackPanel Spacing="10">
               <TextBlock Text="{Binding LanguageCategoryTitle}" Classes="settingsCategoryHeading" />
-              <Border Classes="settingsGroup">
-                <Border Classes="settingsRow">
+              <Border Classes="uiSettingsGroup settingsGroup">
+                <Border Classes="uiSettingsRow settingsRow">
                   <Grid ColumnDefinitions="*,220" ColumnSpacing="24">
                     <StackPanel Spacing="3" VerticalAlignment="Center">
-                      <TextBlock Text="{Binding LanguageLabel}" Classes="settingsLabel" />
-                      <TextBlock Text="{Binding LanguageHint}" Classes="settingsHint" />
+                      <TextBlock Text="{Binding LanguageLabel}" Classes="uiSettingsLabel settingsLabel" />
+                      <TextBlock Text="{Binding LanguageHint}" Classes="uiSettingsHint settingsHint" />
                     </StackPanel>
                     <controls:FadingComboBox Grid.Column="1"
+                                             Classes="uiComboBox"
                                              ItemsSource="{Binding Languages}"
                                              ItemTemplate="{StaticResource SettingChoiceTemplate}"
-                                             ItemContainerTheme="{StaticResource SettingsComboBoxItemTheme}"
+                                             ItemContainerTheme="{StaticResource UiComboBoxItemTheme}"
                                              SelectedItem="{Binding SelectedLanguage}" />
                   </Grid>
                 </Border>
@@ -428,42 +390,42 @@ SPDX-License-Identifier: GPL-3.0-only
 
             <StackPanel Spacing="10">
               <TextBlock Text="{Binding GeneralTitle}" Classes="settingsCategoryHeading" />
-              <Border Classes="settingsGroup">
+              <Border Classes="uiSettingsGroup settingsGroup">
                 <StackPanel>
-                <Border Classes="settingsRow">
+                <Border Classes="uiSettingsRow settingsRow">
                   <Grid ColumnDefinitions="*,Auto" ColumnSpacing="24">
                     <StackPanel Spacing="3">
-                      <TextBlock Text="{Binding CloseAfterLaunchLabel}" Classes="settingsLabel" />
-                      <TextBlock Text="{Binding CloseAfterLaunchHint}" Classes="settingsHint" />
+                      <TextBlock Text="{Binding CloseAfterLaunchLabel}" Classes="uiSettingsLabel settingsLabel" />
+                      <TextBlock Text="{Binding CloseAfterLaunchHint}" Classes="uiSettingsHint settingsHint" />
                     </StackPanel>
-                    <ToggleSwitch Grid.Column="1" IsChecked="{Binding CloseAfterLaunch}" />
+                    <ToggleSwitch Grid.Column="1" Classes="uiToggle" IsChecked="{Binding CloseAfterLaunch}" />
                   </Grid>
                 </Border>
-                <Border Classes="settingsRow">
+                <Border Classes="uiSettingsRow settingsRow">
                   <Grid ColumnDefinitions="*,Auto" ColumnSpacing="24">
                     <StackPanel Spacing="3">
-                      <TextBlock Text="{Binding AlphaModsLabel}" Classes="settingsLabel" />
-                      <TextBlock Text="{Binding AlphaModsHint}" Classes="settingsHint" />
+                      <TextBlock Text="{Binding AlphaModsLabel}" Classes="uiSettingsLabel settingsLabel" />
+                      <TextBlock Text="{Binding AlphaModsHint}" Classes="uiSettingsHint settingsHint" />
                     </StackPanel>
-                    <ToggleSwitch Grid.Column="1" IsChecked="{Binding ShowAlphaMods}" />
+                    <ToggleSwitch Grid.Column="1" Classes="uiToggle" IsChecked="{Binding ShowAlphaMods}" />
                   </Grid>
                 </Border>
-                <Border Classes="settingsRow">
+                <Border Classes="uiSettingsRow settingsRow">
                   <Grid ColumnDefinitions="*,Auto" ColumnSpacing="24">
                     <StackPanel Spacing="3">
-                      <TextBlock Text="{Binding DiscordAnnouncementsLabel}" Classes="settingsLabel" />
-                      <TextBlock Text="{Binding DiscordAnnouncementsHint}" Classes="settingsHint" />
+                      <TextBlock Text="{Binding DiscordAnnouncementsLabel}" Classes="uiSettingsLabel settingsLabel" />
+                      <TextBlock Text="{Binding DiscordAnnouncementsHint}" Classes="uiSettingsHint settingsHint" />
                     </StackPanel>
-                    <ToggleSwitch Grid.Column="1" IsChecked="{Binding ShowDiscordAnnouncements}" />
+                    <ToggleSwitch Grid.Column="1" Classes="uiToggle" IsChecked="{Binding ShowDiscordAnnouncements}" />
                   </Grid>
                 </Border>
-                <Border Classes="settingsRow last">
+                <Border Classes="uiSettingsRow settingsRow last">
                   <Grid ColumnDefinitions="*,Auto" ColumnSpacing="24">
                     <StackPanel Spacing="3">
-                      <TextBlock Text="{Binding MusicLabel}" Classes="settingsLabel" />
-                      <TextBlock Text="{Binding MusicHint}" Classes="settingsHint" />
+                      <TextBlock Text="{Binding MusicLabel}" Classes="uiSettingsLabel settingsLabel" />
+                      <TextBlock Text="{Binding MusicHint}" Classes="uiSettingsHint settingsHint" />
                     </StackPanel>
-                    <ToggleSwitch Grid.Column="1" IsChecked="{Binding MusicEnabled}" />
+                    <ToggleSwitch Grid.Column="1" Classes="uiToggle" IsChecked="{Binding MusicEnabled}" />
                   </Grid>
                 </Border>
                 </StackPanel>
@@ -472,23 +434,6 @@ SPDX-License-Identifier: GPL-3.0-only
           </StackPanel>
 
           <StackPanel Spacing="22" IsVisible="{Binding IsDownloads}">
-            <StackPanel Spacing="10">
-              <TextBlock Text="{Binding DownloadBehaviorTitle}" Classes="settingsCategoryHeading" />
-              <Border Classes="settingsGroup">
-                <StackPanel>
-                  <Border Classes="settingsRow last">
-                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="24">
-                      <StackPanel Spacing="3">
-                        <TextBlock Text="{Binding LaunchAfterDownloadLabel}" Classes="settingsLabel" />
-                        <TextBlock Text="{Binding LaunchAfterDownloadHint}" Classes="settingsHint" />
-                      </StackPanel>
-                      <ToggleSwitch Grid.Column="1" IsChecked="{Binding LaunchAfterDownload}" />
-                    </Grid>
-                  </Border>
-                </StackPanel>
-              </Border>
-            </StackPanel>
-
             <StackPanel Spacing="10">
               <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16" Margin="4,0,4,2">
                 <TextBlock Text="{Binding DownloadSourcesTitle}"
@@ -508,7 +453,7 @@ SPDX-License-Identifier: GPL-3.0-only
                 </Button>
               </Grid>
 
-              <Border Classes="settingsGroup">
+              <Border Classes="uiSettingsGroup settingsGroup">
                 <StackPanel>
                   <Border Classes="sourceTableHeader">
                     <Grid ColumnDefinitions="2.3*,1.05*,1.15*,70,82" ColumnSpacing="14">
@@ -518,7 +463,7 @@ SPDX-License-Identifier: GPL-3.0-only
                       <TextBlock Grid.Column="3" Text="{Binding SourcePingColumn}" />
                     </Grid>
                   </Border>
-                  <Border Classes="settingsRow"
+                  <Border Classes="uiSettingsRow settingsRow"
                           Classes.last="{Binding HasNoMirrors}">
                     <Grid ColumnDefinitions="2.3*,1.05*,1.15*,70,82" ColumnSpacing="14">
                       <TextBlock Text="{Binding OfficialSourceLink}"
@@ -551,16 +496,16 @@ SPDX-License-Identifier: GPL-3.0-only
               <TextBlock Text="{Binding DownloadsInfo}"
                          Classes="settingsHint sourceSelectionHint" />
 
-              <Border Classes="settingsGroup"
+              <Border Classes="uiSettingsGroup settingsGroup"
                       IsVisible="{Binding IsAddingMirror}">
                 <StackPanel>
-                  <Border Classes="settingsRow">
+                  <Border Classes="uiSettingsRow settingsRow">
                     <StackPanel Spacing="5">
-                      <TextBlock Text="{Binding AddSourceTitle}" Classes="settingsLabel" />
-                      <TextBlock Text="{Binding AddSourceHint}" Classes="settingsHint" />
+                      <TextBlock Text="{Binding AddSourceTitle}" Classes="uiSettingsLabel settingsLabel" />
+                      <TextBlock Text="{Binding AddSourceHint}" Classes="uiSettingsHint settingsHint" />
                     </StackPanel>
                   </Border>
-                  <Border Classes="settingsRow last">
+                  <Border Classes="uiSettingsRow settingsRow last">
                     <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">
                       <TextBox Text="{Binding MirrorUrl}"
                                PlaceholderText="{Binding MirrorUrlPlaceholder}"
@@ -583,12 +528,12 @@ SPDX-License-Identifier: GPL-3.0-only
                 </StackPanel>
               </Border>
 
-              <Border Classes="settingsGroup" IsVisible="{Binding HasPendingMirrorDelete}">
-                <Border Classes="settingsRow last">
+              <Border Classes="uiSettingsGroup settingsGroup" IsVisible="{Binding HasPendingMirrorDelete}">
+                <Border Classes="uiSettingsRow settingsRow last">
                   <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">
                     <StackPanel Spacing="3">
-                      <TextBlock Text="{Binding DeleteSourceTitle}" Classes="settingsLabel" />
-                      <TextBlock Text="{Binding DeleteSourceHint}" Classes="settingsHint" />
+                      <TextBlock Text="{Binding DeleteSourceTitle}" Classes="uiSettingsLabel settingsLabel" />
+                      <TextBlock Text="{Binding DeleteSourceHint}" Classes="uiSettingsHint settingsHint" />
                     </StackPanel>
                     <Button Grid.Column="1"
                             Classes="sourceCancel"
@@ -614,9 +559,9 @@ SPDX-License-Identifier: GPL-3.0-only
           <StackPanel Spacing="22" IsVisible="{Binding IsJava}">
             <StackPanel Spacing="10">
               <TextBlock Text="{Binding JavaRuntimeLabel}" Classes="settingsCategoryHeading" />
-              <Border Classes="settingsGroup">
+              <Border Classes="uiSettingsGroup settingsGroup">
                 <StackPanel>
-                  <Border Classes="settingsRow runtime">
+                  <Border Classes="uiSettingsRow settingsRow runtime">
                     <Button Classes="javaRuntimeOption"
                             Classes.selected="{Binding UseBundledJava}"
                             Command="{Binding SelectBundledJavaCommand}">
@@ -625,13 +570,13 @@ SPDX-License-Identifier: GPL-3.0-only
                           <Ellipse Classes="javaRadioDot" IsVisible="{Binding UseBundledJava}" />
                         </Border>
                         <StackPanel Grid.Column="1" Spacing="2">
-                          <TextBlock Text="{Binding BundledJavaLabel}" Classes="settingsLabel" />
-                          <TextBlock Text="{Binding BundledJavaHint}" Classes="settingsHint" />
+                          <TextBlock Text="{Binding BundledJavaLabel}" Classes="uiSettingsLabel settingsLabel" />
+                          <TextBlock Text="{Binding BundledJavaHint}" Classes="uiSettingsHint settingsHint" />
                         </StackPanel>
                       </Grid>
                     </Button>
                   </Border>
-                  <Border Classes="settingsRow runtime last">
+                  <Border Classes="uiSettingsRow settingsRow runtime last">
                     <StackPanel>
                       <Button Classes="javaRuntimeOption"
                               Classes.selected="{Binding UseCustomJava}"
@@ -641,8 +586,8 @@ SPDX-License-Identifier: GPL-3.0-only
                             <Ellipse Classes="javaRadioDot" IsVisible="{Binding UseCustomJava}" />
                           </Border>
                           <StackPanel Grid.Column="1" Spacing="2">
-                            <TextBlock Text="{Binding CustomJavaLabel}" Classes="settingsLabel" />
-                            <TextBlock Text="{Binding CustomJavaHint}" Classes="settingsHint" />
+                            <TextBlock Text="{Binding CustomJavaLabel}" Classes="uiSettingsLabel settingsLabel" />
+                            <TextBlock Text="{Binding CustomJavaHint}" Classes="uiSettingsHint settingsHint" />
                           </StackPanel>
                         </Grid>
                       </Button>
@@ -668,12 +613,12 @@ SPDX-License-Identifier: GPL-3.0-only
 
             <StackPanel Spacing="10">
               <TextBlock Text="{Binding RamAllocationLabel}" Classes="settingsCategoryHeading" />
-              <Border Classes="settingsGroup">
+              <Border Classes="uiSettingsGroup settingsGroup">
                 <StackPanel>
-                  <Border Classes="settingsRow">
+                  <Border Classes="uiSettingsRow settingsRow">
                     <StackPanel Spacing="10">
                       <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
-                        <TextBlock Text="{Binding MaximumRamLabel}" Classes="settingsLabel" VerticalAlignment="Center" />
+                        <TextBlock Text="{Binding MaximumRamLabel}" Classes="uiSettingsLabel settingsLabel" VerticalAlignment="Center" />
                         <TextBlock Grid.Column="1" Text="{Binding JavaMaximumRamValue}" Classes="javaMemoryValue" />
                       </Grid>
                       <Slider x:Name="JavaMaximumMemorySlider"
@@ -685,10 +630,10 @@ SPDX-License-Identifier: GPL-3.0-only
                               Value="{Binding JavaMaximumRamMb, Mode=TwoWay}" />
                     </StackPanel>
                   </Border>
-                  <Border Classes="settingsRow last">
+                  <Border Classes="uiSettingsRow settingsRow last">
                     <StackPanel Spacing="10">
                       <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
-                        <TextBlock Text="{Binding InitialRamLabel}" Classes="settingsLabel" VerticalAlignment="Center" />
+                        <TextBlock Text="{Binding InitialRamLabel}" Classes="uiSettingsLabel settingsLabel" VerticalAlignment="Center" />
                         <TextBlock Grid.Column="1" Text="{Binding JavaInitialRamValue}" Classes="javaMemoryValue" />
                       </Grid>
                       <Slider x:Name="JavaInitialMemorySlider"
@@ -706,10 +651,10 @@ SPDX-License-Identifier: GPL-3.0-only
 
             <StackPanel Spacing="10">
               <TextBlock Text="{Binding JavaArgumentsLabel}" Classes="settingsCategoryHeading" />
-              <Border Classes="settingsGroup">
-                <Border Classes="settingsRow last">
+              <Border Classes="uiSettingsGroup settingsGroup">
+                <Border Classes="uiSettingsRow settingsRow last">
                   <StackPanel Spacing="10">
-                    <TextBlock Text="{Binding JavaArgumentsHint}" Classes="settingsHint" />
+                    <TextBlock Text="{Binding JavaArgumentsHint}" Classes="uiSettingsHint settingsHint" />
                     <TextBox Text="{Binding JavaArguments}"
                              PlaceholderText="{Binding JavaArgumentsPlaceholder}"
                              AcceptsReturn="True"
@@ -728,14 +673,14 @@ SPDX-License-Identifier: GPL-3.0-only
           <StackPanel Spacing="22" IsVisible="{Binding IsVisual}">
             <StackPanel Spacing="10">
               <TextBlock Text="{Binding VisualTitle}" Classes="settingsCategoryHeading" />
-              <Border Classes="settingsGroup">
-                <Border Classes="settingsRow last">
+              <Border Classes="uiSettingsGroup settingsGroup">
+                <Border Classes="uiSettingsRow settingsRow last">
                   <Grid ColumnDefinitions="*,Auto" ColumnSpacing="24">
                     <StackPanel Spacing="3">
-                      <TextBlock Text="{Binding HideNewsLabel}" Classes="settingsLabel" />
-                      <TextBlock Text="{Binding HideNewsHint}" Classes="settingsHint" />
+                      <TextBlock Text="{Binding HideNewsLabel}" Classes="uiSettingsLabel settingsLabel" />
+                      <TextBlock Text="{Binding HideNewsHint}" Classes="uiSettingsHint settingsHint" />
                     </StackPanel>
-                    <ToggleSwitch Grid.Column="1" IsChecked="{Binding DisableNews}" />
+                    <ToggleSwitch Grid.Column="1" Classes="uiToggle" IsChecked="{Binding DisableNews}" />
                   </Grid>
                 </Border>
               </Border>
@@ -743,8 +688,8 @@ SPDX-License-Identifier: GPL-3.0-only
 
             <StackPanel Spacing="10">
               <TextBlock Text="{Binding BackgroundLabel}" Classes="settingsCategoryHeading" />
-              <Border Classes="settingsGroup">
-                <Border Classes="settingsRow last">
+              <Border Classes="uiSettingsGroup settingsGroup">
+                <Border Classes="uiSettingsRow settingsRow last">
                   <ItemsControl x:Name="BackgroundPicker"
                                 ItemsSource="{Binding Backgrounds}"
                                 HorizontalAlignment="Stretch"
@@ -784,15 +729,15 @@ SPDX-License-Identifier: GPL-3.0-only
           <StackPanel Spacing="22" IsVisible="{Binding IsNetwork}">
             <StackPanel Spacing="10">
               <TextBlock Text="{Binding NetworkTitle}" Classes="settingsCategoryHeading" />
-              <Border Classes="settingsGroup">
+              <Border Classes="uiSettingsGroup settingsGroup">
                 <StackPanel>
-                <Border Classes="settingsRow last">
+                <Border Classes="uiSettingsRow settingsRow last">
                   <Grid ColumnDefinitions="*,Auto" ColumnSpacing="24">
                     <StackPanel Spacing="3">
-                      <TextBlock Text="{Binding OnlineModeLabel}" Classes="settingsLabel" />
-                      <TextBlock Text="{Binding OnlineModeHint}" Classes="settingsHint" />
+                      <TextBlock Text="{Binding OnlineModeLabel}" Classes="uiSettingsLabel settingsLabel" />
+                      <TextBlock Text="{Binding OnlineModeHint}" Classes="uiSettingsHint settingsHint" />
                     </StackPanel>
-                    <ToggleSwitch Grid.Column="1" IsChecked="{Binding OnlineMode}" />
+                    <ToggleSwitch Grid.Column="1" Classes="uiToggle" IsChecked="{Binding OnlineMode}" />
                   </Grid>
                 </Border>
                 </StackPanel>
@@ -801,10 +746,10 @@ SPDX-License-Identifier: GPL-3.0-only
 
             <StackPanel Spacing="10">
               <TextBlock Text="{Binding AuthServerLabel}" Classes="settingsCategoryHeading" />
-              <Border Classes="settingsGroup">
-                <Border Classes="settingsRow last">
+              <Border Classes="uiSettingsGroup settingsGroup">
+                <Border Classes="uiSettingsRow settingsRow last">
                   <StackPanel Spacing="10">
-                    <TextBlock Text="{Binding AuthServerHint}" Classes="settingsHint" />
+                    <TextBlock Text="{Binding AuthServerHint}" Classes="uiSettingsHint settingsHint" />
                     <TextBox Text="{Binding AuthDomain}" />
                     <Button Classes="settingsAction" Command="{Binding SaveNetworkCommand}" HorizontalAlignment="Right">
                       <TextBlock Text="{Binding SaveLabel}" />
@@ -817,16 +762,17 @@ SPDX-License-Identifier: GPL-3.0-only
 
           <StackPanel Spacing="10" IsVisible="{Binding IsGraphics}">
             <TextBlock Text="{Binding GpuLabel}" Classes="settingsCategoryHeading" />
-            <Border Classes="settingsGroup">
-              <Border Classes="settingsRow last">
+            <Border Classes="uiSettingsGroup settingsGroup">
+              <Border Classes="uiSettingsRow settingsRow last">
                 <Grid ColumnDefinitions="*,220" ColumnSpacing="24">
                   <StackPanel Spacing="3" VerticalAlignment="Center">
-                    <TextBlock Text="{Binding GpuHint}" Classes="settingsHint" />
+                    <TextBlock Text="{Binding GpuHint}" Classes="uiSettingsHint settingsHint" />
                   </StackPanel>
                   <controls:FadingComboBox Grid.Column="1"
+                                           Classes="uiComboBox"
                                            ItemsSource="{Binding GpuPreferences}"
                                            ItemTemplate="{StaticResource SettingChoiceTemplate}"
-                                           ItemContainerTheme="{StaticResource SettingsComboBoxItemTheme}"
+                                           ItemContainerTheme="{StaticResource UiComboBoxItemTheme}"
                                            SelectedItem="{Binding SelectedGpuPreference}" />
                 </Grid>
               </Border>
@@ -836,8 +782,8 @@ SPDX-License-Identifier: GPL-3.0-only
           <StackPanel Spacing="22" IsVisible="{Binding IsVariables}">
             <StackPanel Spacing="10">
               <TextBlock Text="{Binding EnvPresetsLabel}" Classes="settingsCategoryHeading" />
-              <Border Classes="settingsGroup">
-                <Border Classes="settingsRow last">
+              <Border Classes="uiSettingsGroup settingsGroup">
+                <Border Classes="uiSettingsRow settingsRow last">
                   <StackPanel Spacing="8">
                     <Border Classes="settingsCodeLine"><TextBlock Text="SDL_VIDEODRIVER=x11" FontFamily="JetBrains Mono" /></Border>
                     <Border Classes="settingsCodeLine"><TextBlock Text="VK_LOADER_LAYERS_DISABLE=all" FontFamily="JetBrains Mono" /></Border>
@@ -848,10 +794,10 @@ SPDX-License-Identifier: GPL-3.0-only
 
             <StackPanel Spacing="10">
               <TextBlock Text="{Binding EnvLabel}" Classes="settingsCategoryHeading" />
-              <Border Classes="settingsGroup">
-                <Border Classes="settingsRow last">
+              <Border Classes="uiSettingsGroup settingsGroup">
+                <Border Classes="uiSettingsRow settingsRow last">
                   <StackPanel Spacing="10">
-                    <TextBlock Text="{Binding EnvHint}" Classes="settingsHint" />
+                    <TextBlock Text="{Binding EnvHint}" Classes="uiSettingsHint settingsHint" />
                     <TextBox Text="{Binding GameEnvironmentVariables}" AcceptsReturn="True" MinHeight="150" FontFamily="JetBrains Mono" />
                     <Button Classes="settingsAction" Command="{Binding SaveVariablesCommand}" HorizontalAlignment="Right">
                       <TextBlock Text="{Binding SaveLabel}" />
@@ -864,10 +810,10 @@ SPDX-License-Identifier: GPL-3.0-only
 
           <StackPanel Spacing="10" IsVisible="{Binding IsData}">
             <TextBlock Text="{Binding InstanceFolderLabel}" Classes="settingsCategoryHeading" />
-            <Border Classes="settingsGroup">
-              <Border Classes="settingsRow last">
+            <Border Classes="uiSettingsGroup settingsGroup">
+              <Border Classes="uiSettingsRow settingsRow last">
                 <StackPanel Spacing="5">
-                  <TextBlock Text="{Binding InstanceFolder}" Classes="settingsHint" TextWrapping="Wrap" />
+                  <TextBlock Text="{Binding InstanceFolder}" Classes="uiSettingsHint settingsHint" TextWrapping="Wrap" />
                 </StackPanel>
               </Border>
             </Border>
@@ -876,28 +822,28 @@ SPDX-License-Identifier: GPL-3.0-only
           <StackPanel Spacing="22" IsVisible="{Binding IsAbout}">
             <StackPanel Spacing="10">
               <TextBlock Text="{Binding AboutProjectTitle}" Classes="settingsCategoryHeading" />
-              <Border Classes="settingsGroup">
+              <Border Classes="uiSettingsGroup settingsGroup">
                 <StackPanel>
-                  <Border Classes="settingsRow aboutRow">
+                  <Border Classes="uiSettingsRow settingsRow aboutRow">
                     <Grid MinHeight="66" Margin="18,0" ColumnDefinitions="*,Auto" ColumnSpacing="18">
                       <StackPanel Spacing="3" VerticalAlignment="Center">
-                        <TextBlock Text="{Binding AboutCurrentVersionLabel}" Classes="settingsLabel" />
-                        <TextBlock Text="{Binding AboutCurrentVersionHint}" Classes="settingsHint" />
+                        <TextBlock Text="{Binding AboutCurrentVersionLabel}" Classes="uiSettingsLabel settingsLabel" />
+                        <TextBlock Text="{Binding AboutCurrentVersionHint}" Classes="uiSettingsHint settingsHint" />
                       </StackPanel>
                       <Border Grid.Column="1" Classes="aboutLicenseValue">
                         <TextBlock Text="{Binding AboutCurrentVersion}" />
                       </Border>
                     </Grid>
                   </Border>
-                  <Border Classes="settingsRow aboutRow">
+                  <Border Classes="uiSettingsRow settingsRow aboutRow">
                     <Button Classes="aboutLink"
                             Command="{Binding OpenLatestCommitCommand}"
                             IsEnabled="{Binding HasAboutLatestCommit}">
                       <Grid ColumnDefinitions="*,Auto" ColumnSpacing="18">
                         <StackPanel Spacing="3">
-                          <TextBlock Text="{Binding AboutLatestCommitLabel}" Classes="settingsLabel" />
+                          <TextBlock Text="{Binding AboutLatestCommitLabel}" Classes="uiSettingsLabel settingsLabel" />
                           <TextBlock Text="{Binding AboutLatestCommitHint}"
-                                     Classes="settingsHint"
+                                     Classes="uiSettingsHint settingsHint"
                                      MaxLines="1"
                                      TextTrimming="CharacterEllipsis" />
                         </StackPanel>
@@ -909,23 +855,23 @@ SPDX-License-Identifier: GPL-3.0-only
                       </Grid>
                     </Button>
                   </Border>
-                  <Border Classes="settingsRow aboutRow">
+                  <Border Classes="uiSettingsRow settingsRow aboutRow">
                     <Button Classes="aboutLink" Command="{Binding OpenGitHubCommand}">
                       <Grid ColumnDefinitions="*,Auto" ColumnSpacing="18">
                         <StackPanel Spacing="3">
-                          <TextBlock Text="GitHub" Classes="settingsLabel" />
-                          <TextBlock Text="{Binding AboutGitHubHint}" Classes="settingsHint" />
+                          <TextBlock Text="GitHub" Classes="uiSettingsLabel settingsLabel" />
+                          <TextBlock Text="{Binding AboutGitHubHint}" Classes="uiSettingsHint settingsHint" />
                         </StackPanel>
                         <Path Grid.Column="1" Classes="aboutOpenIcon" Data="{StaticResource OpenIcon}" />
                       </Grid>
                     </Button>
                   </Border>
-                  <Border Classes="settingsRow aboutRow last">
+                  <Border Classes="uiSettingsRow settingsRow aboutRow last">
                     <Button Classes="aboutLink" Command="{Binding OpenDocumentationCommand}">
                       <Grid ColumnDefinitions="*,Auto" ColumnSpacing="18">
                         <StackPanel Spacing="3">
-                          <TextBlock Text="{Binding AboutDocumentationLabel}" Classes="settingsLabel" />
-                          <TextBlock Text="{Binding AboutDocumentationHint}" Classes="settingsHint" />
+                          <TextBlock Text="{Binding AboutDocumentationLabel}" Classes="uiSettingsLabel settingsLabel" />
+                          <TextBlock Text="{Binding AboutDocumentationHint}" Classes="uiSettingsHint settingsHint" />
                         </StackPanel>
                         <Path Grid.Column="1" Classes="aboutOpenIcon" Data="{StaticResource OpenIcon}" />
                       </Grid>
@@ -937,25 +883,25 @@ SPDX-License-Identifier: GPL-3.0-only
 
             <StackPanel Spacing="10">
               <TextBlock Text="{Binding AboutCommunityTitle}" Classes="settingsCategoryHeading" />
-              <Border Classes="settingsGroup">
+              <Border Classes="uiSettingsGroup settingsGroup">
                 <StackPanel>
-                  <Border Classes="settingsRow aboutRow">
+                  <Border Classes="uiSettingsRow settingsRow aboutRow">
                     <Button Classes="aboutLink" Command="{Binding OpenDiscordCommand}">
                       <Grid ColumnDefinitions="*,Auto" ColumnSpacing="18">
                         <StackPanel Spacing="3">
-                          <TextBlock Text="Discord" Classes="settingsLabel" />
-                          <TextBlock Text="{Binding AboutDiscordHint}" Classes="settingsHint" />
+                          <TextBlock Text="Discord" Classes="uiSettingsLabel settingsLabel" />
+                          <TextBlock Text="{Binding AboutDiscordHint}" Classes="uiSettingsHint settingsHint" />
                         </StackPanel>
                         <Path Grid.Column="1" Classes="aboutOpenIcon" Data="{StaticResource OpenIcon}" />
                       </Grid>
                     </Button>
                   </Border>
-                  <Border Classes="settingsRow aboutRow last">
+                  <Border Classes="uiSettingsRow settingsRow aboutRow last">
                     <Button Classes="aboutLink" Command="{Binding OpenBugReportCommand}">
                       <Grid ColumnDefinitions="*,Auto" ColumnSpacing="18">
                         <StackPanel Spacing="3">
-                          <TextBlock Text="{Binding BugReportLabel}" Classes="settingsLabel" />
-                          <TextBlock Text="{Binding AboutBugReportHint}" Classes="settingsHint" />
+                          <TextBlock Text="{Binding BugReportLabel}" Classes="uiSettingsLabel settingsLabel" />
+                          <TextBlock Text="{Binding AboutBugReportHint}" Classes="uiSettingsHint settingsHint" />
                         </StackPanel>
                         <Path Grid.Column="1" Classes="aboutOpenIcon" Data="{StaticResource OpenIcon}" />
                       </Grid>
@@ -1013,14 +959,14 @@ SPDX-License-Identifier: GPL-3.0-only
 
             <StackPanel Spacing="10">
               <TextBlock Text="{Binding AboutLegalTitle}" Classes="settingsCategoryHeading" />
-              <Border Classes="settingsGroup">
+              <Border Classes="uiSettingsGroup settingsGroup">
                 <StackPanel>
-                  <Border Classes="settingsRow aboutRow">
+                  <Border Classes="uiSettingsRow settingsRow aboutRow">
                     <Button Classes="aboutLink" Command="{Binding OpenLicenseCommand}">
                       <Grid ColumnDefinitions="*,Auto" ColumnSpacing="18">
                         <StackPanel Spacing="3">
-                          <TextBlock Text="{Binding AboutLicenseLabel}" Classes="settingsLabel" />
-                          <TextBlock Text="{Binding AboutLicenseHint}" Classes="settingsHint" />
+                          <TextBlock Text="{Binding AboutLicenseLabel}" Classes="uiSettingsLabel settingsLabel" />
+                          <TextBlock Text="{Binding AboutLicenseHint}" Classes="uiSettingsHint settingsHint" />
                         </StackPanel>
                         <Border Grid.Column="1" Classes="aboutLicenseValue">
                           <TextBlock Text="GPL-3.0-only" />
@@ -1028,23 +974,23 @@ SPDX-License-Identifier: GPL-3.0-only
                       </Grid>
                     </Button>
                   </Border>
-                  <Border Classes="settingsRow aboutRow">
+                  <Border Classes="uiSettingsRow settingsRow aboutRow">
                     <Button Classes="aboutLink" Command="{Binding OpenHytaleEulaCommand}">
                       <Grid ColumnDefinitions="*,Auto" ColumnSpacing="18">
                         <StackPanel Spacing="3">
-                          <TextBlock Text="{Binding AboutHytaleEulaLabel}" Classes="settingsLabel" />
-                          <TextBlock Text="{Binding AboutHytaleEulaHint}" Classes="settingsHint" />
+                          <TextBlock Text="{Binding AboutHytaleEulaLabel}" Classes="uiSettingsLabel settingsLabel" />
+                          <TextBlock Text="{Binding AboutHytaleEulaHint}" Classes="uiSettingsHint settingsHint" />
                         </StackPanel>
                         <Path Grid.Column="1" Classes="aboutOpenIcon" Data="{StaticResource OpenIcon}" />
                       </Grid>
                     </Button>
                   </Border>
-                  <Border Classes="settingsRow aboutRow last">
+                  <Border Classes="uiSettingsRow settingsRow aboutRow last">
                     <Button Classes="aboutLink" Command="{Binding OpenIcons8Command}">
                       <Grid ColumnDefinitions="*,Auto" ColumnSpacing="18">
                         <StackPanel Spacing="3">
-                          <TextBlock Text="{Binding AboutCreditsLabel}" Classes="settingsLabel" />
-                          <TextBlock Text="{Binding AboutCreditsHint}" Classes="settingsHint" />
+                          <TextBlock Text="{Binding AboutCreditsLabel}" Classes="uiSettingsLabel settingsLabel" />
+                          <TextBlock Text="{Binding AboutCreditsHint}" Classes="uiSettingsHint settingsHint" />
                         </StackPanel>
                         <Path Grid.Column="1" Classes="aboutOpenIcon" Data="{StaticResource OpenIcon}" />
                       </Grid>

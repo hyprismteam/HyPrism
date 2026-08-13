@@ -253,7 +253,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>显示公告</value>
   </data>
   <data name="dock.dashboard" xml:space="preserve">
-    <value>主页</value>
+    <value>首页</value>
   </data>
   <data name="dock.instances" xml:space="preserve">
     <value>实例</value>
@@ -326,9 +326,6 @@ SPDX-License-Identifier: GPL-3.0-only
   </data>
   <data name="instances.deleted" xml:space="preserve">
     <value>实例已删除</value>
-  </data>
-  <data name="instances.downloadFromDashboard" xml:space="preserve">
-    <value>从主页下载游戏版本</value>
   </data>
   <data name="instances.editInstance" xml:space="preserve">
     <value>编辑实例</value>
@@ -578,9 +575,6 @@ SPDX-License-Identifier: GPL-3.0-only
   </data>
   <data name="launch.option.cancel" xml:space="preserve">
     <value>取消游戏启动/下载</value>
-  </data>
-  <data name="launch.option.runAfterDownload" xml:space="preserve">
-    <value>下载完成后启动游戏</value>
   </data>
   <data name="launch.state.complete" xml:space="preserve">
     <value>完成</value>
@@ -1745,12 +1739,6 @@ SPDX-License-Identifier: GPL-3.0-only
   </data>
   <data name="settings.downloads.howDownloadsWorkDescription" xml:space="preserve">
     <value>HyPrism 自动选择最快的可用源来下载游戏文件。点击「测试速度」检查您的连接。</value>
-  </data>
-  <data name="settings.downloads.launchAfterDownload" xml:space="preserve">
-    <value>下载后启动游戏</value>
-  </data>
-  <data name="settings.downloads.launchAfterDownloadHint" xml:space="preserve">
-    <value>启用后，启动器将在安装所选实例后自动启动游戏。</value>
   </data>
   <data name="settings.downloads.mirrorUrlHint" xml:space="preserve">
     <value>输入 Hytale 镜像的基础 URL。启动器将尝试自动检测配置。</value>

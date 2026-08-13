@@ -5,5 +5,5 @@ export default {
   dashboard: 'Главная',
   news: 'Новости',
   settings: 'Настройки',
-  'instances-profiles-mods': 'Игры, профили и моды'
+  'instances-profiles-mods': 'Экземпляры, профили и моды'
 }

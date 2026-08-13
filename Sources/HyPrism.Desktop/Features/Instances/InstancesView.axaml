@@ -8,11 +8,19 @@ SPDX-License-Identifier: GPL-3.0-only
              xmlns:shell="using:HyPrism.Desktop.Shell"
              xmlns:dashboard="using:HyPrism.Desktop.Features.Dashboard"
              xmlns:instances="using:HyPrism.Desktop.Features.Instances"
+             xmlns:controls="using:HyPrism.Desktop.Controls"
+             xmlns:easing="using:Avalonia.Animation.Easings"
              x:Class="HyPrism.Desktop.Features.Instances.InstancesView"
              x:Name="InstancesRoot"
              x:DataType="shell:MainWindowViewModel">
-  <Grid Classes="instancesPage" ColumnDefinitions="306,*">
-    <Border Classes="instancesListPane">
+  <UserControl.Resources>
+    <DataTemplate x:Key="InstanceVersionTemplate" x:DataType="instances:InstanceVersionItemViewModel">
+      <TextBlock Text="{Binding Label}" VerticalAlignment="Center" />
+    </DataTemplate>
+
+  </UserControl.Resources>
+  <Grid x:Name="InstancesLayout" Classes="instancesPage" ColumnDefinitions="306,*" RowDefinitions="*">
+    <Border x:Name="InstancesListPane" Classes="instancesListPane" Grid.Row="0" IsVisible="{Binding HasInstances}">
       <Grid RowDefinitions="Auto,*,Auto">
         <Grid Margin="22,22,18,14" ColumnDefinitions="*,Auto" VerticalAlignment="Center">
           <TextBlock Text="{Binding InstancesSectionLabel}"
@@ -22,7 +30,10 @@ SPDX-License-Identifier: GPL-3.0-only
           <Button Grid.Column="1"
                   Classes="instancesAdd"
                   Command="{Binding OpenInstanceCreatorCommand}">
-            <TextBlock Text="{Binding AddInstanceLabel}" />
+            <StackPanel Orientation="Horizontal" Spacing="7">
+              <Path Width="17" Height="17" Stretch="Uniform" Data="{StaticResource GestureSelectIcon}" />
+              <TextBlock Text="{Binding SelectVersionLabel}" />
+            </StackPanel>
           </Button>
         </Grid>
 
@@ -86,18 +97,41 @@ SPDX-License-Identifier: GPL-3.0-only
       </Grid>
     </Border>
 
-    <Grid Grid.Column="1">
-      <StackPanel IsVisible="{Binding !HasInstances}"
+    <Grid x:Name="InstancesContent" Grid.Column="1" Grid.Row="0" ClipToBounds="True">
+      <Grid x:Name="InstancesOverview">
+        <Grid.Transitions>
+          <Transitions>
+            <DoubleTransition Property="Opacity" Duration="0:0:0.18">
+              <DoubleTransition.Easing>
+                <easing:CubicEaseInOut />
+              </DoubleTransition.Easing>
+            </DoubleTransition>
+          </Transitions>
+        </Grid.Transitions>
+        <Grid.RenderTransform>
+          <TranslateTransform>
+            <TranslateTransform.Transitions>
+              <Transitions>
+                <DoubleTransition Property="X" Duration="0:0:0.18">
+                  <DoubleTransition.Easing>
+                    <easing:CubicEaseInOut />
+                  </DoubleTransition.Easing>
+                </DoubleTransition>
+              </Transitions>
+            </TranslateTransform.Transitions>
+          </TranslateTransform>
+        </Grid.RenderTransform>
+        <StackPanel IsVisible="{Binding !HasInstances}"
+                  Classes="instancesEmptyState"
                   HorizontalAlignment="Center"
                   VerticalAlignment="Center"
-                  MaxWidth="390"
-                  Spacing="10">
-        <Path Width="46"
-              Height="46"
-              HorizontalAlignment="Center"
-              Fill="#24FFFFFF"
-              Stretch="Uniform"
-              Data="{StaticResource InstancesFilledIcon}" />
+                  MaxWidth="520"
+                  Spacing="12">
+        <Image Width="56"
+               Height="56"
+               HorizontalAlignment="Center"
+               Source="avares://HyPrism.Desktop/Assets/Fluent/puzzle.png"
+               Stretch="Uniform" />
         <TextBlock Text="{Binding CreateInstanceTitle}"
                    HorizontalAlignment="Center"
                    FontSize="22"
@@ -111,160 +145,243 @@ SPDX-License-Identifier: GPL-3.0-only
                 HorizontalAlignment="Center"
                 Margin="0,14,0,0"
                 Command="{Binding OpenInstanceCreatorCommand}">
-          <TextBlock Text="{Binding AddInstanceLabel}" />
-        </Button>
-      </StackPanel>
-
-      <Grid IsVisible="{Binding HasInstances}"
-            Margin="48,42"
-            MaxWidth="800"
-            HorizontalAlignment="Center"
-            VerticalAlignment="Top"
-            RowDefinitions="Auto,Auto,Auto"
-            RowSpacing="16">
-        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="20">
-          <StackPanel Spacing="5">
-            <TextBlock Text="{Binding SelectedInstanceName}"
-                       FontSize="30"
-                       FontWeight="Bold"
-                       TextTrimming="CharacterEllipsis"
-                       TextWrapping="NoWrap" />
-            <TextBlock Text="{Binding SelectedInstanceMeta}"
-                       Classes="muted"
-                       FontSize="14" />
+          <StackPanel Orientation="Horizontal" Spacing="10">
+            <Path Classes="actionIcon" Width="18" Height="18" Stretch="Uniform" Data="{StaticResource GestureSelectIcon}" />
+            <TextBlock Text="{Binding SelectVersionLabel}" />
           </StackPanel>
-          <Border Grid.Column="1" Classes="instancesStatus" VerticalAlignment="Center">
-            <TextBlock Text="{Binding SelectedInstanceState}"
-                       FontSize="12"
-                       FontWeight="SemiBold"
-                       TextWrapping="NoWrap" />
-          </Border>
-        </Grid>
+        </Button>
+        </StackPanel>
 
-        <Border Grid.Row="1" Classes="instancesDetails">
-          <Grid ColumnDefinitions="*,1,*">
-            <StackPanel Margin="20,17" Spacing="4">
-              <TextBlock Text="{Binding BranchLabel}" Classes="eyebrow" />
-              <TextBlock Text="{Binding SelectedInstanceBranch}" FontWeight="SemiBold" />
-            </StackPanel>
-            <Border Grid.Column="1" Width="1" Background="#14000000" />
-            <StackPanel Grid.Column="2" Margin="20,17" Spacing="4">
-              <TextBlock Text="{Binding VersionLabel}" Classes="eyebrow" />
-              <TextBlock Text="{Binding SelectedInstanceVersion}" FontWeight="SemiBold" />
+        <Grid IsVisible="{Binding HasInstances}"
+              Margin="48,42,48,54"
+              MaxWidth="800"
+              HorizontalAlignment="Center"
+              VerticalAlignment="Top"
+              RowDefinitions="Auto,Auto,Auto"
+              RowSpacing="16">
+          <Grid ColumnDefinitions="*" ColumnSpacing="20">
+            <StackPanel Spacing="5">
+              <TextBlock Text="{Binding SelectedInstanceName}"
+                         FontSize="30"
+                         FontWeight="Bold"
+                         TextTrimming="CharacterEllipsis"
+                         TextWrapping="NoWrap" />
+              <TextBlock Text="{Binding SelectedInstanceMeta}"
+                         Classes="muted"
+                         FontSize="14" />
             </StackPanel>
           </Grid>
-        </Border>
 
-        <StackPanel Grid.Row="2" Spacing="12">
-          <Button Classes="primary"
-                  HorizontalAlignment="Left"
-                  IsEnabled="{Binding CanRunPrimaryAction}"
-                  Command="{Binding PrimaryActionCommand}">
-            <StackPanel Orientation="Horizontal" Spacing="10">
-              <Path IsVisible="{Binding IsPrimaryPlayAction}"
-                    Width="18" Height="18" Stretch="Uniform" Data="{StaticResource PlayIcon}" />
-              <Path IsVisible="{Binding IsPrimaryDownloadAction}"
-                    Width="18" Height="18" Stretch="Uniform" Data="{StaticResource DownloadIcon}" />
-              <TextBlock Text="{Binding PrimaryActionText}" VerticalAlignment="Center" />
-            </StackPanel>
-          </Button>
-
-          <Border Classes="instancesProgress" IsVisible="{Binding IsActivityVisible}">
-            <StackPanel Spacing="9">
-              <Grid ColumnDefinitions="*,Auto">
-                <TextBlock Text="{Binding ActivityTitle}" FontWeight="SemiBold" />
-                <TextBlock Grid.Column="1" Text="{Binding ActivityProgressText}" FontWeight="SemiBold" />
-              </Grid>
-              <TextBlock Text="{Binding ActivityDetail}" Classes="muted" FontSize="12" />
-              <ProgressBar Minimum="0" Maximum="100" Value="{Binding ActivityProgress}" />
-            </StackPanel>
+          <Border Grid.Row="1" Classes="instancesDetails">
+            <Grid ColumnDefinitions="*,1,*">
+              <StackPanel Margin="20,17" Spacing="4">
+                <TextBlock Text="{Binding BranchLabel}" Classes="eyebrow" />
+                <TextBlock Text="{Binding SelectedInstanceBranch}" FontWeight="SemiBold" />
+              </StackPanel>
+              <Border Grid.Column="1" Width="1" Background="#14000000" />
+              <StackPanel Grid.Column="2" Margin="20,17" Spacing="4">
+                <TextBlock Text="{Binding VersionLabel}" Classes="eyebrow" />
+                <TextBlock Text="{Binding SelectedInstanceVersion}" FontWeight="SemiBold" />
+              </StackPanel>
+            </Grid>
           </Border>
-        </StackPanel>
+
+          <StackPanel Grid.Row="2" Spacing="12">
+            <Button Classes="primary"
+                    HorizontalAlignment="Left"
+                    IsEnabled="{Binding CanRunPrimaryAction}"
+                    Command="{Binding PrimaryActionCommand}">
+              <StackPanel Orientation="Horizontal" Spacing="10">
+                <Path IsVisible="{Binding IsPrimaryPlayAction}"
+                      Width="18" Height="18" Stretch="Uniform" Data="{StaticResource PlayIcon}" />
+                <Path IsVisible="{Binding IsPrimaryDownloadAction}"
+                      Width="18" Height="18" Stretch="Uniform" Data="{StaticResource DownloadIcon}" />
+                <TextBlock Text="{Binding PrimaryActionText}" VerticalAlignment="Center" />
+              </StackPanel>
+            </Button>
+
+            <Border Classes="instancesProgress" IsVisible="{Binding IsActivityVisible}">
+              <StackPanel Spacing="9">
+                <Grid ColumnDefinitions="*,Auto">
+                  <TextBlock Text="{Binding ActivityTitle}" FontWeight="SemiBold" />
+                  <TextBlock Grid.Column="1" Text="{Binding ActivityProgressText}" FontWeight="SemiBold" />
+                </Grid>
+                <TextBlock Text="{Binding ActivityDetail}" Classes="muted" FontSize="12" />
+                <ProgressBar Minimum="0" Maximum="100" Value="{Binding ActivityProgress}" />
+              </StackPanel>
+            </Border>
+          </StackPanel>
+        </Grid>
       </Grid>
 
-      <Border IsVisible="{Binding IsInstanceCreatorOpen}"
-              Classes="instancesCreatorOverlay">
-        <Border Classes="instancesCreator" Width="520" HorizontalAlignment="Center" VerticalAlignment="Center">
-          <Grid RowDefinitions="Auto,*,Auto">
-            <Grid Margin="22,20,18,16" ColumnDefinitions="*,Auto">
-              <StackPanel Spacing="4">
-                <TextBlock Text="{Binding CreateInstanceTitle}" FontSize="20" FontWeight="Bold" />
-                <TextBlock Text="{Binding CreateInstanceHint}" Classes="muted" FontSize="12" />
+      <Border x:Name="InstanceCreatorScreen"
+              Classes="instancesWizardScreen"
+              IsVisible="False"
+              Opacity="0">
+        <Border.Transitions>
+          <Transitions>
+            <DoubleTransition Property="Opacity" Duration="0:0:0.18">
+              <DoubleTransition.Easing>
+                <easing:CubicEaseInOut />
+              </DoubleTransition.Easing>
+            </DoubleTransition>
+          </Transitions>
+        </Border.Transitions>
+        <Border.RenderTransform>
+          <TranslateTransform X="36">
+            <TranslateTransform.Transitions>
+              <Transitions>
+                <DoubleTransition Property="X" Duration="0:0:0.18">
+                  <DoubleTransition.Easing>
+                    <easing:CubicEaseInOut />
+                  </DoubleTransition.Easing>
+                </DoubleTransition>
+              </Transitions>
+            </TranslateTransform.Transitions>
+          </TranslateTransform>
+        </Border.RenderTransform>
+        <StackPanel Classes="instancesWizardContent"
+                    Width="560"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Margin="32"
+                    Spacing="12">
+            <Image Width="64"
+                   Height="64"
+                   HorizontalAlignment="Center"
+                   Source="avares://HyPrism.Desktop/Assets/Fluent/wrench.png"
+                   Stretch="Uniform" />
+            <TextBlock Text="{Binding NewInstanceTitle}"
+                       HorizontalAlignment="Center"
+                       FontSize="26"
+                       FontWeight="Bold"
+                       TextAlignment="Center" />
+            <TextBlock Text="{Binding NewInstanceHint}"
+                       Classes="muted"
+                       MaxWidth="460"
+                       HorizontalAlignment="Center"
+                       TextAlignment="Center"
+                       TextWrapping="Wrap" />
+
+            <Border Classes="uiSettingsGroup" Margin="0,16,0,0">
+              <StackPanel>
+                <Border Classes="uiSettingsRow" MinHeight="72">
+                  <Grid ColumnDefinitions="*,236" ColumnSpacing="24">
+                    <StackPanel Spacing="3" VerticalAlignment="Center">
+                      <TextBlock Text="{Binding BranchLabel}"
+                                 Classes="uiSettingsLabel" />
+                      <TextBlock Text="{Binding InstanceBranchHint}"
+                                 Classes="uiSettingsHint" />
+                    </StackPanel>
+                    <Border Grid.Column="1" Classes="uiSegmentedControl">
+                      <Grid x:Name="BranchSwitchTrack"
+                            ColumnDefinitions="*,*"
+                            SizeChanged="OnBranchSwitchSizeChanged">
+                        <Border x:Name="BranchSelectionIndicator"
+                                Grid.Column="0"
+                                Classes="uiSegmentedIndicator"
+                                IsHitTestVisible="False">
+                          <Border.RenderTransform>
+                            <TranslateTransform>
+                              <TranslateTransform.Transitions>
+                                <Transitions>
+                                  <DoubleTransition Property="X" Duration="0:0:0.2" />
+                                </Transitions>
+                              </TranslateTransform.Transitions>
+                            </TranslateTransform>
+                          </Border.RenderTransform>
+                        </Border>
+                        <Button Grid.Column="0"
+                                Classes="uiSegmentedItem"
+                                HorizontalAlignment="Stretch"
+                                Classes.selected="{Binding IsCreateReleaseBranch}"
+                                Content="{Binding ReleaseLabel}"
+                                Command="{Binding SetNewInstanceBranchCommand}"
+                                CommandParameter="release" />
+                        <Button Grid.Column="1"
+                                Classes="uiSegmentedItem"
+                                HorizontalAlignment="Stretch"
+                                Classes.selected="{Binding IsCreatePreReleaseBranch}"
+                                Content="{Binding PreReleaseLabel}"
+                                Command="{Binding SetNewInstanceBranchCommand}"
+                                CommandParameter="pre-release" />
+                      </Grid>
+                    </Border>
+                  </Grid>
+                </Border>
+
+                <Border Classes="uiSettingsRow last" MinHeight="72">
+                  <Grid ColumnDefinitions="*,236" ColumnSpacing="24">
+                    <StackPanel Spacing="3" VerticalAlignment="Center">
+                      <TextBlock Text="{Binding VersionLabel}"
+                                 Classes="uiSettingsLabel" />
+                      <TextBlock Text="{Binding InstanceVersionHint}"
+                                 Classes="uiSettingsHint" />
+                    </StackPanel>
+                    <Border Grid.Column="1" Classes="instancesVersionPicker">
+                      <Grid>
+                        <controls:FadingComboBox x:Name="InstanceVersionComboBox"
+                                                 Classes="uiComboBox"
+                                                 ItemsSource="{Binding AvailableInstanceVersions}"
+                                                 ItemTemplate="{StaticResource InstanceVersionTemplate}"
+                                                 ItemContainerTheme="{StaticResource UiComboBoxItemTheme}"
+                                                 SelectedItem="{Binding SelectedNewInstanceVersion, Mode=TwoWay}"
+                                                 IsEnabled="{Binding HasAvailableInstanceVersions}"
+                                                 MaxDropDownHeight="220">
+                          <controls:FadingComboBox.Transitions>
+                            <Transitions>
+                              <DoubleTransition Property="Opacity" Duration="0:0:0.16" />
+                            </Transitions>
+                          </controls:FadingComboBox.Transitions>
+                        </controls:FadingComboBox>
+                        <Path x:Name="VersionLoadingSpinner"
+                              Classes="instancesVersionSpinner"
+                              Width="18"
+                              Height="18"
+                              Data="M9,1 A8,8 0 1 1 1,9"
+                              Stretch="Uniform"
+                              HorizontalAlignment="Center"
+                              VerticalAlignment="Center"
+                              IsHitTestVisible="False"
+                              Opacity="0">
+                          <Path.Transitions>
+                            <Transitions>
+                              <DoubleTransition Property="Opacity" Duration="0:0:0.16" />
+                            </Transitions>
+                          </Path.Transitions>
+                          <Path.RenderTransform>
+                            <RotateTransform />
+                          </Path.RenderTransform>
+                        </Path>
+                      </Grid>
+                    </Border>
+                  </Grid>
+                </Border>
               </StackPanel>
-              <Button Grid.Column="1" Classes="instancesClose" Command="{Binding CloseInstanceCreatorCommand}">
-                <Path Width="16" Height="16" Stretch="Uniform" Data="{StaticResource CloseIcon}" />
+            </Border>
+
+            <TextBlock Text="{Binding InstanceCreationError}"
+                       Margin="4,0"
+                       Foreground="{DynamicResource DangerSoftBrush}"
+                       TextAlignment="Center"
+                       TextWrapping="Wrap"
+                       IsVisible="{Binding HasInstanceCreationError}" />
+
+            <StackPanel Orientation="Horizontal"
+                        HorizontalAlignment="Center"
+                        Margin="0,10,0,0"
+                        Spacing="10">
+              <Button Classes="instancesHeaderAction cancel"
+                      Command="{Binding CloseInstanceCreatorCommand}">
+                <TextBlock Text="{Binding BackLabel}" />
               </Button>
-            </Grid>
-
-            <StackPanel Grid.Row="1" Margin="22,4,22,18" Spacing="15">
-              <StackPanel Spacing="8">
-                <TextBlock Text="{Binding BranchLabel}" Classes="eyebrow" />
-                <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
-                  <Button Classes="instancesBranch"
-                          Classes.selected="{Binding IsCreateReleaseBranch}"
-                          Command="{Binding SetNewInstanceBranchCommand}"
-                          CommandParameter="release">
-                    <TextBlock Text="{Binding ReleaseLabel}" />
-                  </Button>
-                  <Button Grid.Column="1"
-                          Classes="instancesBranch"
-                          Classes.selected="{Binding IsCreatePreReleaseBranch}"
-                          Command="{Binding SetNewInstanceBranchCommand}"
-                          CommandParameter="pre-release">
-                    <TextBlock Text="{Binding PreReleaseLabel}" />
-                  </Button>
-                </Grid>
-              </StackPanel>
-
-              <StackPanel Spacing="8">
-                <TextBlock Text="{Binding VersionLabel}" Classes="eyebrow" />
-                <TextBlock IsVisible="{Binding IsInstanceVersionsLoading}"
-                           Text="{Binding NewsLoadingLabel}"
-                           Classes="muted" />
-                <TextBlock IsVisible="{Binding !HasAvailableInstanceVersions}"
-                           Text="{Binding InstanceCreationError}"
-                           Foreground="#FF9696"
-                           TextWrapping="Wrap" />
-                <ItemsControl IsVisible="{Binding HasAvailableInstanceVersions}"
-                              ItemsSource="{Binding AvailableInstanceVersions}">
-                  <ItemsControl.ItemsPanel>
-                    <ItemsPanelTemplate>
-                      <WrapPanel ItemWidth="112" ItemHeight="38" />
-                    </ItemsPanelTemplate>
-                  </ItemsControl.ItemsPanel>
-                  <ItemsControl.ItemTemplate>
-                    <DataTemplate x:DataType="instances:InstanceVersionItemViewModel">
-                      <Button Classes="instancesVersion"
-                              Classes.selected="{Binding IsSelected}"
-                              Command="{Binding DataContext.SelectNewInstanceVersionCommand, ElementName=InstancesRoot}"
-                              CommandParameter="{Binding}">
-                        <TextBlock Text="{Binding Label}" HorizontalAlignment="Center" />
-                      </Button>
-                    </DataTemplate>
-                  </ItemsControl.ItemTemplate>
-                </ItemsControl>
-              </StackPanel>
+              <Button Classes="instancesHeaderAction create"
+                      IsEnabled="{Binding CanCreateInstance}"
+                      Command="{Binding CreateInstanceCommand}">
+                <TextBlock Text="{Binding CreateInstanceLabel}" />
+              </Button>
             </StackPanel>
-
-            <Grid Grid.Row="2" Margin="22,16" ColumnDefinitions="*,Auto" ColumnSpacing="12">
-              <TextBlock Text="{Binding InstanceCreationError}"
-                         Foreground="#FF9696"
-                         VerticalAlignment="Center"
-                         MaxLines="2"
-                         TextTrimming="CharacterEllipsis" />
-              <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10">
-                <Button Classes="instancesSecondary" Command="{Binding CloseInstanceCreatorCommand}">
-                  <TextBlock Text="{Binding CancelLabel}" />
-                </Button>
-                <Button Classes="primary"
-                        IsEnabled="{Binding CanCreateInstance}"
-                        Command="{Binding CreateInstanceCommand}">
-                  <TextBlock Text="{Binding CreateInstanceLabel}" />
-                </Button>
-              </StackPanel>
-            </Grid>
-          </Grid>
-        </Border>
+        </StackPanel>
       </Border>
     </Grid>
   </Grid>

@@ -9,7 +9,9 @@ The Core contains the working domain logic for all three areas. The native insta
 
 ## Instances
 
-The native instance manager lists local installations, highlights the active instance, and creates an installation target by selecting a release channel and available version. Creating an instance does not download game files immediately. Select it and use the main action to download or launch it
+The native instance manager lists local installations, highlights the active instance, and creates an installation target by selecting a release channel and available version. It uses a two-column layout in wide windows and a stacked one-column layout when space is limited. With no instances, the list pane is removed so the create action has the full page
+
+When no instances exist, the page starts with the first step of an instance wizard. Selecting **Select version** uses a phased transition that removes the first step before showing a configuration screen with a wrench icon, title, explanation, branch switch, and version picker. The branch switch uses a light gray sliding selection. The version picker shows a spinner only while uncached data is loading. Switching to a branch with fresh cached versions updates the picker immediately without another catalog request. Creating an instance does not download game files immediately. Select it and use the main action to download or launch it
 
 Core can also migrate legacy layouts, change versions, import ZIP archives, and delete installations
 

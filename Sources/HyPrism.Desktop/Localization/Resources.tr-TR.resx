@@ -327,9 +327,6 @@ Sürücü değiştirirseniz oyunu yeniden yüklemeniz gerekebilir.</value>
   <data name="instances.deleted" xml:space="preserve">
     <value>Örnek silindi</value>
   </data>
-  <data name="instances.downloadFromDashboard" xml:space="preserve">
-    <value>Ana sayfadan bir oyun sürümü indirin</value>
-  </data>
   <data name="instances.editInstance" xml:space="preserve">
     <value>Örneği Düzenle</value>
   </data>
@@ -578,9 +575,6 @@ Sürücü değiştirirseniz oyunu yeniden yüklemeniz gerekebilir.</value>
   </data>
   <data name="launch.option.cancel" xml:space="preserve">
     <value>Oyun başlatma/indirme işlemini iptal et</value>
-  </data>
-  <data name="launch.option.runAfterDownload" xml:space="preserve">
-    <value>İndirme sonrası oyunu başlat</value>
   </data>
   <data name="launch.state.complete" xml:space="preserve">
     <value>Tamamlandı</value>
@@ -1745,12 +1739,6 @@ Sürücü değiştirirseniz oyunu yeniden yüklemeniz gerekebilir.</value>
   </data>
   <data name="settings.downloads.howDownloadsWorkDescription" xml:space="preserve">
     <value>HyPrism, oyun dosyalarını indirmek için en hızlı kaynağı otomatik olarak seçer. Bağlantınızı kontrol etmek için "Hızı Test Et" düğmesine basın.</value>
-  </data>
-  <data name="settings.downloads.launchAfterDownload" xml:space="preserve">
-    <value>İndirmeden sonra oyunu başlat</value>
-  </data>
-  <data name="settings.downloads.launchAfterDownloadHint" xml:space="preserve">
-    <value>Etkinleştirildiğinde, başlatıcı seçilen örneği yükledikten sonra oyunu otomatik olarak başlatır.</value>
   </data>
   <data name="settings.downloads.mirrorUrlHint" xml:space="preserve">
     <value>Hytale aynasının temel URL'sini girin. Başlatıcı yapılandırmayı otomatik olarak algılamaya çalışacaktır.</value>

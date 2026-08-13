@@ -87,7 +87,6 @@ public class GameInstallationWorkflow : IGameInstallationWorkflow
 
     /// <inheritdoc/>
     public async Task<DownloadProgress> DownloadAndLaunchAsync(
-        Func<bool>? launchAfterDownloadProvider = null,
         AuthUriPresenter? authorizationUriPresenter = null)
     {
         CancellationTokenSource cts;
@@ -178,7 +177,6 @@ public class GameInstallationWorkflow : IGameInstallationWorkflow
                             branch,
                             isLatestInstance,
                             instanceMeta.PendingVersion,
-                            launchAfterDownloadProvider,
                             cts.Token,
                             authorizationUriPresenter);
                     }
@@ -218,7 +216,6 @@ public class GameInstallationWorkflow : IGameInstallationWorkflow
                 branch,
                 isLatestInstance,
                 targetVersion,
-                launchAfterDownloadProvider,
                 cts.Token,
                 authorizationUriPresenter);
         }
@@ -415,7 +412,6 @@ public class GameInstallationWorkflow : IGameInstallationWorkflow
     private async Task<DownloadProgress> HandleFreshInstallAsync(
         string versionPath, string branch, bool isLatestInstance,
         int targetVersion,
-        Func<bool>? launchAfterDownloadProvider,
         CancellationToken ct,
         AuthUriPresenter? authorizationUriPresenter)
     {
@@ -467,7 +463,6 @@ public class GameInstallationWorkflow : IGameInstallationWorkflow
                 branch,
                 isLatestInstance,
                 targetVersion,
-                launchAfterDownloadProvider,
                 ct,
                 authorizationUriPresenter);
         }
@@ -517,7 +512,6 @@ public class GameInstallationWorkflow : IGameInstallationWorkflow
                         branch,
                         isLatestInstance,
                         targetVersion,
-                        launchAfterDownloadProvider,
                         ct,
                         authorizationUriPresenter);
                 }
@@ -558,7 +552,6 @@ public class GameInstallationWorkflow : IGameInstallationWorkflow
                     branch,
                     isLatestInstance,
                     targetVersion,
-                    launchAfterDownloadProvider,
                     ct,
                     authorizationUriPresenter);
             }
@@ -589,7 +582,6 @@ public class GameInstallationWorkflow : IGameInstallationWorkflow
             branch,
             isLatestInstance,
             targetVersion,
-            launchAfterDownloadProvider,
             ct,
             authorizationUriPresenter);
     }
@@ -599,7 +591,6 @@ public class GameInstallationWorkflow : IGameInstallationWorkflow
         string branch,
         bool isLatestInstance,
         int targetVersion,
-        Func<bool>? launchAfterDownloadProvider,
         CancellationToken ct,
         AuthUriPresenter? authorizationUriPresenter)
     {
@@ -620,13 +611,6 @@ public class GameInstallationWorkflow : IGameInstallationWorkflow
         await EnsureRuntimeDependenciesAsync(ct);
 
         ct.ThrowIfCancellationRequested();
-
-        var shouldLaunchAfterDownload = launchAfterDownloadProvider?.Invoke() ?? true;
-        if (!shouldLaunchAfterDownload)
-        {
-            _progress.ReportDownloadProgress("complete", 100, "launch.detail.done", null, 0, 0);
-            return new DownloadProgress { Success = true, Progress = 100 };
-        }
 
         _progress.ReportDownloadProgress("complete", 100, "launch.detail.launching_game", null, 0, 0);
 

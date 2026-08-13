@@ -253,7 +253,7 @@ Potrebbe essere necessario reinstallare il gioco se si cambia drive.</value>
     <value>Mostra annunci</value>
   </data>
   <data name="dock.dashboard" xml:space="preserve">
-    <value>Dashboard</value>
+    <value>Home</value>
   </data>
   <data name="dock.instances" xml:space="preserve">
     <value>Istanze</value>
@@ -326,9 +326,6 @@ Potrebbe essere necessario reinstallare il gioco se si cambia drive.</value>
   </data>
   <data name="instances.deleted" xml:space="preserve">
     <value>Istanza eliminata</value>
-  </data>
-  <data name="instances.downloadFromDashboard" xml:space="preserve">
-    <value>Scarica una versione del gioco dalla Dashboard</value>
   </data>
   <data name="instances.editInstance" xml:space="preserve">
     <value>Modifica istanza</value>
@@ -578,9 +575,6 @@ Potrebbe essere necessario reinstallare il gioco se si cambia drive.</value>
   </data>
   <data name="launch.option.cancel" xml:space="preserve">
     <value>Annulla avvio/scaricamento del gioco</value>
-  </data>
-  <data name="launch.option.runAfterDownload" xml:space="preserve">
-    <value>Avvia il gioco dopo lo scaricamento</value>
   </data>
   <data name="launch.state.complete" xml:space="preserve">
     <value>Completato</value>
@@ -1745,12 +1739,6 @@ Potrebbe essere necessario reinstallare il gioco se si cambia drive.</value>
   </data>
   <data name="settings.downloads.howDownloadsWorkDescription" xml:space="preserve">
     <value>HyPrism seleziona automaticamente la fonte più veloce disponibile per scaricare i file di gioco. Premi "Test Velocità" per verificare la tua connessione.</value>
-  </data>
-  <data name="settings.downloads.launchAfterDownload" xml:space="preserve">
-    <value>Avvia il gioco dopo il download</value>
-  </data>
-  <data name="settings.downloads.launchAfterDownloadHint" xml:space="preserve">
-    <value>Quando attivato, il launcher avvierà automaticamente il gioco dopo aver installato l'istanza selezionata.</value>
   </data>
   <data name="settings.downloads.mirrorUrlHint" xml:space="preserve">
     <value>Inserisci l'URL base di un mirror Hytale. Il launcher tenterà di rilevare automaticamente la configurazione.</value>

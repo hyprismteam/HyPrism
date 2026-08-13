@@ -253,7 +253,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>お知らせを表示</value>
   </data>
   <data name="dock.dashboard" xml:space="preserve">
-    <value>ダッシュボード</value>
+    <value>ホーム</value>
   </data>
   <data name="dock.instances" xml:space="preserve">
     <value>インスタンス</value>
@@ -326,9 +326,6 @@ SPDX-License-Identifier: GPL-3.0-only
   </data>
   <data name="instances.deleted" xml:space="preserve">
     <value>インスタンスを削除しました</value>
-  </data>
-  <data name="instances.downloadFromDashboard" xml:space="preserve">
-    <value>ダッシュボードからゲームバージョンをダウンロード</value>
   </data>
   <data name="instances.editInstance" xml:space="preserve">
     <value>インスタンスを編集</value>
@@ -578,9 +575,6 @@ SPDX-License-Identifier: GPL-3.0-only
   </data>
   <data name="launch.option.cancel" xml:space="preserve">
     <value>ゲームの起動/ダウンロードをキャンセル</value>
-  </data>
-  <data name="launch.option.runAfterDownload" xml:space="preserve">
-    <value>ダウンロード後にゲームを起動する</value>
   </data>
   <data name="launch.state.complete" xml:space="preserve">
     <value>完了</value>
@@ -1745,12 +1739,6 @@ SPDX-License-Identifier: GPL-3.0-only
   </data>
   <data name="settings.downloads.howDownloadsWorkDescription" xml:space="preserve">
     <value>HyPrismはゲームファイルをダウンロードするために最速のソースを自動的に選択します。「速度テスト」を押して接続を確認してください。</value>
-  </data>
-  <data name="settings.downloads.launchAfterDownload" xml:space="preserve">
-    <value>ダウンロード後にゲームを起動</value>
-  </data>
-  <data name="settings.downloads.launchAfterDownloadHint" xml:space="preserve">
-    <value>有効にすると、選択したインスタンスのインストール後にランチャーが自動的にゲームを起動します。</value>
   </data>
   <data name="settings.downloads.mirrorUrlHint" xml:space="preserve">
     <value>HytaleミラーのベースURLを入力してください。ランチャーが設定を自動検出します。</value>

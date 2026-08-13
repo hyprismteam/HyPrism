@@ -54,12 +54,6 @@ public class Config
     public bool CloseAfterLaunch { get; set; } = false;
 
     /// <summary>
-    /// If true (default), the launcher will launch the game automatically after download/install completes.
-    /// If false, the launcher will only download/install and leave the game stopped.
-    /// </summary>
-    public bool LaunchAfterDownload { get; set; } = true;
-    
-    /// <summary>
     /// If true, Discord announcements will be shown in the launcher.
     /// </summary>
     public bool ShowDiscordAnnouncements { get; set; } = true;

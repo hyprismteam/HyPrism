@@ -327,9 +327,6 @@ Você pode precisar reinstalar o jogo se trocar de unidade.</value>
   <data name="instances.deleted" xml:space="preserve">
     <value>Instância excluída</value>
   </data>
-  <data name="instances.downloadFromDashboard" xml:space="preserve">
-    <value>Baixe uma versão do jogo no Dashboard</value>
-  </data>
   <data name="instances.editInstance" xml:space="preserve">
     <value>Editar Instância</value>
   </data>
@@ -578,9 +575,6 @@ Você pode precisar reinstalar o jogo se trocar de unidade.</value>
   </data>
   <data name="launch.option.cancel" xml:space="preserve">
     <value>Cancelar processo de inicialização/download do jogo</value>
-  </data>
-  <data name="launch.option.runAfterDownload" xml:space="preserve">
-    <value>Iniciar o jogo após o download</value>
   </data>
   <data name="launch.state.complete" xml:space="preserve">
     <value>Completo</value>
@@ -1745,12 +1739,6 @@ Você pode precisar reinstalar o jogo se trocar de unidade.</value>
   </data>
   <data name="settings.downloads.howDownloadsWorkDescription" xml:space="preserve">
     <value>O HyPrism seleciona automaticamente a fonte mais rápida disponível para baixar os arquivos do jogo. Pressione "Testar Velocidade" para verificar sua conexão.</value>
-  </data>
-  <data name="settings.downloads.launchAfterDownload" xml:space="preserve">
-    <value>Iniciar jogo após download</value>
-  </data>
-  <data name="settings.downloads.launchAfterDownloadHint" xml:space="preserve">
-    <value>Quando ativado, o launcher iniciará o jogo automaticamente após instalar a instância selecionada.</value>
   </data>
   <data name="settings.downloads.mirrorUrlHint" xml:space="preserve">
     <value>Digite a URL base de um espelho Hytale. O launcher tentará detectar automaticamente a configuração.</value>

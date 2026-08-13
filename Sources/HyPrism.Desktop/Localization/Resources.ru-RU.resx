@@ -283,7 +283,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>Главная</value>
   </data>
   <data name="dock.instances" xml:space="preserve">
-    <value>Игры</value>
+    <value>Экземпляры</value>
   </data>
   <data name="dock.logs" xml:space="preserve">
     <value>Логи</value>
@@ -299,6 +299,24 @@ SPDX-License-Identifier: GPL-3.0-only
   </data>
   <data name="dock.settings" xml:space="preserve">
     <value>Настройки</value>
+  </data>
+  <data name="home.createInstance" xml:space="preserve">
+    <value>Создать экземпляр</value>
+  </data>
+  <data name="home.currentInstance" xml:space="preserve">
+    <value>Текущий экземпляр</value>
+  </data>
+  <data name="home.instanceHint" xml:space="preserve">
+    <value>Управляйте версией и файлами в разделе «Экземпляры», а сюда возвращайтесь, когда будете готовы играть</value>
+  </data>
+  <data name="home.manageInstances" xml:space="preserve">
+    <value>Управление экземплярами</value>
+  </data>
+  <data name="home.welcomeHint" xml:space="preserve">
+    <value>Создайте экземпляр, выберите версию Hytale, скачайте файлы и отправляйтесь в новое приключение</value>
+  </data>
+  <data name="home.welcomeTitle" xml:space="preserve">
+    <value>Добро пожаловать в HyPrism</value>
   </data>
   <data name="error.copyError" xml:space="preserve">
     <value>Скопировать ошибку</value>
@@ -337,7 +355,22 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>Создать экземпляр</value>
   </data>
   <data name="instances.createInstanceHint" xml:space="preserve">
-    <value>Скачайте и настройте новый экземпляр игры</value>
+    <value>Настройте первый экземпляр игры с помощью кнопки ниже</value>
+  </data>
+  <data name="instances.newInstance" xml:space="preserve">
+    <value>Новый экземпляр</value>
+  </data>
+  <data name="instances.newInstanceHint" xml:space="preserve">
+    <value>Выберите ветку и версию игры для нового экземпляра</value>
+  </data>
+  <data name="instances.branchHint" xml:space="preserve">
+    <value>Стабильная или предварительная ветка</value>
+  </data>
+  <data name="instances.versionHint" xml:space="preserve">
+    <value>Версия игры для установки</value>
+  </data>
+  <data name="instances.selectVersion" xml:space="preserve">
+    <value>Выбрать версию</value>
   </data>
   <data name="instances.creating" xml:space="preserve">
     <value>Создание...</value>
@@ -353,9 +386,6 @@ SPDX-License-Identifier: GPL-3.0-only
   </data>
   <data name="instances.deleted" xml:space="preserve">
     <value>Экземпляр удалён</value>
-  </data>
-  <data name="instances.downloadFromDashboard" xml:space="preserve">
-    <value>Скачайте версию игры с главной страницы</value>
   </data>
   <data name="instances.editInstance" xml:space="preserve">
     <value>Редактировать экземпляр</value>
@@ -605,9 +635,6 @@ SPDX-License-Identifier: GPL-3.0-only
   </data>
   <data name="launch.option.cancel" xml:space="preserve">
     <value>Отменить запуск/загрузку игры</value>
-  </data>
-  <data name="launch.option.runAfterDownload" xml:space="preserve">
-    <value>Запустить игру после загрузки</value>
   </data>
   <data name="launch.state.complete" xml:space="preserve">
     <value>Готово</value>
@@ -1866,12 +1893,6 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="settings.downloads.howDownloadsWorkDescription" xml:space="preserve">
     <value>HyPrism отдает приоритет официальному источнику загрузки, а при его недоступности автоматически выбирает самое быстрое из добавленных пользовательских зеркал</value>
   </data>
-  <data name="settings.downloads.launchAfterDownload" xml:space="preserve">
-    <value>Запускать игру после загрузки</value>
-  </data>
-  <data name="settings.downloads.launchAfterDownloadHint" xml:space="preserve">
-    <value>Если включено, лаунчер автоматически запустит игру после установки выбранного экземпляра.</value>
-  </data>
   <data name="settings.downloads.mirrorUrlHint" xml:space="preserve">
     <value>Введите базовый URL зеркала Hytale. Лаунчер попытается автоматически определить конфигурацию.</value>
   </data>
@@ -1898,9 +1919,6 @@ SPDX-License-Identifier: GPL-3.0-only
   </data>
   <data name="settings.downloads.refreshMirrors" xml:space="preserve">
     <value>Обновить зеркала</value>
-  </data>
-  <data name="settings.downloads.behavior" xml:space="preserve">
-    <value>Поведение</value>
   </data>
   <data name="settings.downloads.sources" xml:space="preserve">
     <value>Источники загрузки</value>

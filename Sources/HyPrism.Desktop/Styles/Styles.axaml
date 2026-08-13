@@ -216,18 +216,30 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="RenderTransform" Value="{x:Null}" />
   </Style>
 
+  <Style Selector="Button.dashboardManage">
+    <Setter Property="Height" Value="56" />
+    <Setter Property="Padding" Value="20,0" />
+    <Setter Property="Background" Value="#1C000000" />
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+    <Setter Property="BorderBrush" Value="#1FFFFFFF" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="18" />
+    <Setter Property="Cursor" Value="Hand" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="RenderTransform" Value="{x:Null}" />
+  </Style>
+
+  <Style Selector="Button.dashboardManage:pointerover">
+    <Setter Property="Background" Value="#30000000" />
+    <Setter Property="RenderTransform" Value="{x:Null}" />
+  </Style>
+
   <Style Selector="Button.dashboardInstance:pressed">
     <Setter Property="RenderTransform" Value="{x:Null}" />
   </Style>
 
   <Style Selector="Button.dashboardInstance Path">
     <Setter Property="Fill" Value="{Binding $parent[Button].Foreground}" />
-  </Style>
-
-  <Style Selector="Border.dashboardStatus">
-    <Setter Property="Background" Value="#26000000" />
-    <Setter Property="CornerRadius" Value="10" />
-    <Setter Property="Padding" Value="10,5" />
   </Style>
 
   <Style Selector="Border.dashboardActivity">
@@ -240,6 +252,30 @@ SPDX-License-Identifier: GPL-3.0-only
 
   <Style Selector="TextBlock.dashboardTitle">
     <Setter Property="FontSize" Value="40" />
+  </Style>
+
+  <Style Selector="Border.dashboardHeroIcon, Border.dashboardInstanceGlyph">
+    <Setter Property="Background" Value="#1AFFFFFF" />
+    <Setter Property="CornerRadius" Value="18" />
+    <Setter Property="Padding" Value="16" />
+  </Style>
+
+  <Style Selector="Border.dashboardHeroIcon Path, Border.dashboardInstanceGlyph Path">
+    <Setter Property="Fill" Value="{DynamicResource TextPrimaryBrush}" />
+  </Style>
+
+  <Style Selector="TextBlock.dashboardSubtitle">
+    <Setter Property="Foreground" Value="#D0D1D5" />
+    <Setter Property="FontSize" Value="14" />
+    <Setter Property="FontWeight" Value="Medium" />
+  </Style>
+
+  <Style Selector="Border.dashboardInstanceSummary">
+    <Setter Property="Background" Value="#A5141517" />
+    <Setter Property="BorderBrush" Value="#18FFFFFF" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="18" />
+    <Setter Property="Padding" Value="16" />
   </Style>
 
   <Style Selector="Button.dashboardQuickInstance">
@@ -791,7 +827,7 @@ SPDX-License-Identifier: GPL-3.0-only
   </Style>
 
   <Style Selector="news|NewsRichTextBlock.articleDetailsSummary">
-    <Setter Property="Foreground" Value="#FFC54D" />
+    <Setter Property="Foreground" Value="{DynamicResource WarningBrush}" />
     <Setter Property="FontSize" Value="16" />
     <Setter Property="FontWeight" Value="Bold" />
   </Style>
@@ -995,11 +1031,11 @@ SPDX-License-Identifier: GPL-3.0-only
   </Style>
 
   <Style Selector="PathIcon.sourceAvailabilityIcon.available">
-    <Setter Property="Foreground" Value="#68CD8E" />
+    <Setter Property="Foreground" Value="{DynamicResource SuccessBrush}" />
   </Style>
 
   <Style Selector="PathIcon.sourceAvailabilityIcon.unavailable">
-    <Setter Property="Foreground" Value="#E78383" />
+    <Setter Property="Foreground" Value="{DynamicResource DangerBrush}" />
   </Style>
 
   <Style Selector="TextBlock.sourceSelectionHint">
@@ -1544,7 +1580,7 @@ SPDX-License-Identifier: GPL-3.0-only
   </Style>
 
   <Style Selector="settings|SettingsView TextBox">
-    <Setter Property="Background" Value="#141517" />
+    <Setter Property="Background" Value="{DynamicResource ControlSurfaceBrush}" />
     <Setter Property="BorderBrush" Value="Transparent" />
     <Setter Property="BorderThickness" Value="0" />
     <Setter Property="FocusAdorner" Value="{x:Null}" />
@@ -1553,7 +1589,7 @@ SPDX-License-Identifier: GPL-3.0-only
   </Style>
 
   <Style Selector="settings|SettingsView TextBox /template/ Border#PART_BorderElement">
-    <Setter Property="Background" Value="#141517" />
+    <Setter Property="Background" Value="{DynamicResource ControlSurfaceBrush}" />
     <Setter Property="BorderBrush" Value="Transparent" />
     <Setter Property="BorderThickness" Value="0" />
     <Setter Property="Transitions">
@@ -1564,249 +1600,17 @@ SPDX-License-Identifier: GPL-3.0-only
   </Style>
 
   <Style Selector="settings|SettingsView TextBox:pointerover /template/ Border#PART_BorderElement">
-    <Setter Property="Background" Value="#1A1B1E" />
+    <Setter Property="Background" Value="{DynamicResource ControlSurfaceHoverBrush}" />
     <Setter Property="BorderBrush" Value="Transparent" />
     <Setter Property="BorderThickness" Value="0" />
   </Style>
 
   <Style Selector="settings|SettingsView TextBox:focus /template/ Border#PART_BorderElement">
-    <Setter Property="Background" Value="#1D1E21" />
+    <Setter Property="Background" Value="{DynamicResource ControlSurfaceActiveBrush}" />
     <Setter Property="BorderBrush" Value="Transparent" />
     <Setter Property="BorderThickness" Value="0" />
   </Style>
 
-  <Style Selector="settings|SettingsView :is(ComboBox)">
-    <Setter Property="HorizontalAlignment" Value="Stretch" />
-    <Setter Property="VerticalAlignment" Value="Center" />
-    <Setter Property="HorizontalContentAlignment" Value="Left" />
-    <Setter Property="Background" Value="#141517" />
-    <Setter Property="BorderBrush" Value="Transparent" />
-    <Setter Property="BorderThickness" Value="0" />
-    <Setter Property="FocusAdorner" Value="{x:Null}" />
-    <Setter Property="CornerRadius" Value="11" />
-    <Setter Property="MinHeight" Value="44" />
-    <Setter Property="Padding" Value="14,6,42,6" />
-  </Style>
-
-  <Style Selector="settings|SettingsView controls|FadingComboBox">
-    <Setter Property="Template">
-      <ControlTemplate>
-        <DataValidationErrors>
-          <Grid ColumnDefinitions="*,32">
-            <Border x:Name="Background"
-                    Grid.ColumnSpan="2"
-                    Background="{TemplateBinding Background}"
-                    BorderBrush="{TemplateBinding BorderBrush}"
-                    BorderThickness="{TemplateBinding BorderThickness}"
-                    CornerRadius="{TemplateBinding CornerRadius}" />
-            <Border x:Name="HighlightBackground"
-                    Grid.ColumnSpan="2"
-                    Background="Transparent"
-                    BorderBrush="Transparent"
-                    BorderThickness="0"
-                    CornerRadius="{TemplateBinding CornerRadius}"
-                    IsVisible="False" />
-            <ContentControl x:Name="ContentPresenter"
-                            Grid.Column="0"
-                            Content="{TemplateBinding SelectionBoxItem}"
-                            ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
-                            Margin="{TemplateBinding Padding}"
-                            HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
-                            VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
-            <PathIcon x:Name="DropDownGlyph"
-                      Grid.Column="1"
-                      IsHitTestVisible="False"
-                      HorizontalAlignment="Right"
-                      VerticalAlignment="Center" />
-            <Popup x:Name="PART_Popup"
-                   WindowManagerAddShadowHint="False"
-                   IsOpen="{Binding IsPopupVisible, RelativeSource={RelativeSource TemplatedParent}}"
-                   MinWidth="{Binding Bounds.Width, RelativeSource={RelativeSource TemplatedParent}}"
-                   MaxHeight="{TemplateBinding MaxDropDownHeight}"
-                   PlacementTarget="Background"
-                   VerticalOffset="8"
-                   IsLightDismissEnabled="False"
-                   IsHitTestVisible="{TemplateBinding IsDropDownOpen}"
-                   InheritsTransform="True">
-              <Border x:Name="PopupBorder"
-                      Background="#1D1E21"
-                      HorizontalAlignment="Stretch"
-                      IsHitTestVisible="{TemplateBinding IsDropDownOpen}">
-                <ScrollViewer HorizontalScrollBarVisibility="Disabled"
-                              VerticalScrollBarVisibility="Auto"
-                              IsScrollChainingEnabled="False">
-                  <ItemsPresenter x:Name="PART_ItemsPresenter"
-                                  ItemsPanel="{TemplateBinding ItemsPanel}" />
-                </ScrollViewer>
-              </Border>
-            </Popup>
-          </Grid>
-        </DataValidationErrors>
-      </ControlTemplate>
-    </Setter>
-  </Style>
-
-  <Style Selector="settings|SettingsView :is(ComboBox) /template/ Border#Background">
-    <Setter Property="Background" Value="#141517" />
-    <Setter Property="BorderBrush" Value="Transparent" />
-    <Setter Property="BorderThickness" Value="0" />
-    <Setter Property="Transitions">
-      <Transitions>
-        <BrushTransition Property="Background" Duration="0:0:0.18" />
-      </Transitions>
-    </Setter>
-  </Style>
-
-  <Style Selector="settings|SettingsView :is(ComboBox):pointerover /template/ Border#Background">
-    <Setter Property="Background" Value="#1A1B1E" />
-    <Setter Property="BorderBrush" Value="Transparent" />
-  </Style>
-
-  <Style Selector="settings|SettingsView :is(ComboBox):dropdownopen /template/ Border#Background">
-    <Setter Property="Background" Value="#1D1E21" />
-  </Style>
-
-  <Style Selector="settings|SettingsView :is(ComboBox):focus-visible /template/ Border#HighlightBackground">
-    <Setter Property="IsVisible" Value="False" />
-    <Setter Property="BorderThickness" Value="0" />
-  </Style>
-
-  <Style Selector="settings|SettingsView :is(ComboBox) /template/ PathIcon#DropDownGlyph">
-    <Setter Property="Data" Value="{StaticResource ExpandMoreIcon}" />
-    <Setter Property="Width" Value="14" />
-    <Setter Property="Height" Value="14" />
-    <Setter Property="Margin" Value="0,0,14,0" />
-    <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
-    <Setter Property="RenderTransform" Value="rotate(0deg)" />
-    <Setter Property="RenderTransformOrigin" Value="50%,50%" />
-    <Setter Property="Transitions">
-      <Transitions>
-        <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.2" />
-        <BrushTransition Property="Foreground" Duration="0:0:0.18" />
-      </Transitions>
-    </Setter>
-  </Style>
-
-  <Style Selector="settings|SettingsView :is(ComboBox):pointerover /template/ PathIcon#DropDownGlyph">
-    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
-  </Style>
-
-  <Style Selector="settings|SettingsView :is(ComboBox):dropdownopen /template/ PathIcon#DropDownGlyph">
-    <Setter Property="RenderTransform" Value="rotate(180deg)" />
-    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
-  </Style>
-
-  <Style Selector="settings|SettingsView :is(ComboBox) /template/ Border#PopupBorder">
-    <Setter Property="Background" Value="#1D1E21" />
-    <Setter Property="BorderBrush" Value="Transparent" />
-    <Setter Property="BorderThickness" Value="0" />
-    <Setter Property="CornerRadius" Value="18" />
-    <Setter Property="Padding" Value="6" />
-    <Setter Property="Opacity" Value="1" />
-    <Setter Property="BoxShadow" Value="0 12 36 0 #80000000" />
-    <Setter Property="Transitions">
-      <Transitions>
-        <DoubleTransition Property="Opacity" Duration="0:0:0.19">
-          <DoubleTransition.Easing>
-            <easing:CubicEaseInOut />
-          </DoubleTransition.Easing>
-        </DoubleTransition>
-      </Transitions>
-    </Setter>
-  </Style>
-
-  <Style Selector="settings|SettingsView ToggleSwitch">
-    <Setter Property="Width" Value="48" />
-    <Setter Property="Height" Value="28" />
-    <Setter Property="MinWidth" Value="48" />
-    <Setter Property="HorizontalAlignment" Value="Right" />
-    <Setter Property="VerticalAlignment" Value="Center" />
-    <Setter Property="Background" Value="Transparent" />
-    <Setter Property="BorderThickness" Value="0" />
-    <Setter Property="FocusAdorner" Value="{x:Null}" />
-    <Setter Property="Cursor" Value="Hand" />
-    <Setter Property="OnContent" Value="{x:Null}" />
-    <Setter Property="OffContent" Value="{x:Null}" />
-    <Setter Property="KnobTransitions">
-      <Transitions>
-        <DoubleTransition Property="Canvas.Left" Duration="0:0:0.22">
-          <DoubleTransition.Easing>
-            <easing:CubicEaseInOut />
-          </DoubleTransition.Easing>
-        </DoubleTransition>
-      </Transitions>
-    </Setter>
-    <Setter Property="Template">
-      <ControlTemplate>
-        <Grid Width="48" Height="28" Background="Transparent">
-          <Border x:Name="SettingsSwitchTrack"
-                  Width="46"
-                  Height="26"
-                  HorizontalAlignment="Center"
-                  VerticalAlignment="Center"
-                  Background="#303237"
-                  BorderThickness="0"
-                  CornerRadius="13">
-            <Border.Transitions>
-              <Transitions>
-                <BrushTransition Property="Background" Duration="0:0:0.18" />
-              </Transitions>
-            </Border.Transitions>
-          </Border>
-          <Canvas x:Name="PART_SwitchKnob"
-                  Width="22"
-                  Height="28"
-                  Margin="2,0,0,0"
-                  HorizontalAlignment="Left"
-                  VerticalAlignment="Center">
-            <Grid x:Name="PART_MovingKnobs" Width="22" Height="28">
-              <Grid.Transitions>
-                <Transitions>
-                  <DoubleTransition Property="Canvas.Left" Duration="0:0:0.22">
-                    <DoubleTransition.Easing>
-                      <easing:CubicEaseInOut />
-                    </DoubleTransition.Easing>
-                  </DoubleTransition>
-                </Transitions>
-              </Grid.Transitions>
-              <Ellipse x:Name="SettingsSwitchKnob"
-                       Width="18"
-                       Height="18"
-                       HorizontalAlignment="Center"
-                       VerticalAlignment="Center"
-                       Fill="#F4F5F6">
-                <Ellipse.Transitions>
-                  <Transitions>
-                    <BrushTransition Property="Fill" Duration="0:0:0.18" />
-                  </Transitions>
-                </Ellipse.Transitions>
-              </Ellipse>
-            </Grid>
-          </Canvas>
-        </Grid>
-      </ControlTemplate>
-    </Setter>
-  </Style>
-
-  <Style Selector="settings|SettingsView ToggleSwitch:pointerover /template/ Border#SettingsSwitchTrack">
-    <Setter Property="Background" Value="#3B3E43" />
-  </Style>
-
-  <Style Selector="settings|SettingsView ToggleSwitch:checked /template/ Border#SettingsSwitchTrack">
-    <Setter Property="Background" Value="#35A85B" />
-  </Style>
-
-  <Style Selector="settings|SettingsView ToggleSwitch:checked:pointerover /template/ Border#SettingsSwitchTrack">
-    <Setter Property="Background" Value="#43BC6B" />
-  </Style>
-
-  <Style Selector="settings|SettingsView ToggleSwitch:pointerover /template/ Ellipse#SettingsSwitchKnob">
-    <Setter Property="Fill" Value="#FFFFFF" />
-  </Style>
-
-  <Style Selector="settings|SettingsView ToggleSwitch:disabled">
-    <Setter Property="Opacity" Value="0.45" />
-  </Style>
 
   <Style Selector="instances|InstancesView">
     <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
@@ -1876,12 +1680,6 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="BorderThickness" Value="0,1,0,0" />
   </Style>
 
-  <Style Selector="instances|InstancesView Border.instancesStatus">
-    <Setter Property="Padding" Value="10,6" />
-    <Setter Property="CornerRadius" Value="12" />
-    <Setter Property="Background" Value="#14FFFFFF" />
-  </Style>
-
   <Style Selector="instances|InstancesView Border.instancesDetails">
     <Setter Property="Background" Value="{DynamicResource NavigationPaneBrush}" />
     <Setter Property="CornerRadius" Value="18" />
@@ -1893,54 +1691,71 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="Padding" Value="16" />
   </Style>
 
-  <Style Selector="instances|InstancesView Border.instancesCreatorOverlay">
-    <Setter Property="Background" Value="#B8090A0C" />
+  <Style Selector="instances|InstancesView Border.instancesWizardScreen">
+    <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
   </Style>
 
-  <Style Selector="instances|InstancesView Border.instancesCreator">
-    <Setter Property="Background" Value="{DynamicResource NavigationPaneBrush}" />
-    <Setter Property="CornerRadius" Value="22" />
-    <Setter Property="BoxShadow" Value="0 22 60 0 #88000000" />
-  </Style>
-
-  <Style Selector="instances|InstancesView Button.instancesClose">
-    <Setter Property="Width" Value="34" />
-    <Setter Property="Height" Value="34" />
-    <Setter Property="Padding" Value="0" />
-    <Setter Property="Background" Value="Transparent" />
+  <Style Selector="instances|InstancesView Button.instancesHeaderAction">
+    <Setter Property="Height" Value="36" />
+    <Setter Property="MinWidth" Value="88" />
+    <Setter Property="Padding" Value="14,0" />
+    <Setter Property="Background" Value="#343539" />
     <Setter Property="BorderThickness" Value="0" />
-    <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
-  </Style>
-
-  <Style Selector="instances|InstancesView Button.instancesClose:pointerover">
-    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="CornerRadius" Value="10" />
     <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
-  </Style>
-
-  <Style Selector="instances|InstancesView Button.instancesBranch, instances|InstancesView Button.instancesVersion, instances|InstancesView Button.instancesSecondary">
-    <Setter Property="Height" Value="38" />
-    <Setter Property="Padding" Value="12,0" />
-    <Setter Property="Background" Value="Transparent" />
-    <Setter Property="BorderThickness" Value="0" />
-    <Setter Property="CornerRadius" Value="12" />
-    <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="RenderTransform" Value="{x:Null}" />
     <Setter Property="Transitions">
       <Transitions>
         <BrushTransition Property="Background" Duration="0:0:0.16" />
         <BrushTransition Property="Foreground" Duration="0:0:0.16" />
       </Transitions>
     </Setter>
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Background="{TemplateBinding Background}"
+                CornerRadius="{TemplateBinding CornerRadius}">
+          <ContentPresenter Content="{TemplateBinding Content}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}"
+                            Foreground="{TemplateBinding Foreground}"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            HorizontalContentAlignment="Center"
+                            VerticalContentAlignment="Center" />
+        </Border>
+      </ControlTemplate>
+    </Setter>
   </Style>
 
-  <Style Selector="instances|InstancesView Button.instancesBranch:pointerover, instances|InstancesView Button.instancesVersion:pointerover, instances|InstancesView Button.instancesSecondary:pointerover">
-    <Setter Property="Background" Value="#10FFFFFF" />
-    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+  <Style Selector="instances|InstancesView Button.instancesHeaderAction:pointerover">
+    <Setter Property="Background" Value="#414247" />
+    <Setter Property="RenderTransform" Value="{x:Null}" />
   </Style>
 
-  <Style Selector="instances|InstancesView Button.instancesBranch.selected, instances|InstancesView Button.instancesVersion.selected">
-    <Setter Property="Background" Value="#1AFFFFFF" />
-    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
-    <Setter Property="FontWeight" Value="SemiBold" />
+  <Style Selector="instances|InstancesView Button.instancesHeaderAction.create">
+    <Setter Property="Background" Value="{DynamicResource TextPrimaryBrush}" />
+    <Setter Property="Foreground" Value="#111111" />
+  </Style>
+
+  <Style Selector="instances|InstancesView Button.instancesHeaderAction.create:disabled">
+    <Setter Property="Opacity" Value="0.45" />
+  </Style>
+
+
+  <Style Selector="instances|InstancesView Border.instancesVersionPicker">
+    <Setter Property="Height" Value="44" />
+    <Setter Property="Background" Value="{DynamicResource ControlSurfaceBrush}" />
+    <Setter Property="CornerRadius" Value="11" />
+  </Style>
+
+  <Style Selector="instances|InstancesView Path.instancesVersionSpinner">
+    <Setter Property="Fill" Value="Transparent" />
+    <Setter Property="Stroke" Value="{DynamicResource AccentBrush}" />
+    <Setter Property="StrokeThickness" Value="2" />
+    <Setter Property="StrokeLineCap" Value="Round" />
+    <Setter Property="RenderTransformOrigin" Value="50%,50%" />
   </Style>
 
 </Styles>
