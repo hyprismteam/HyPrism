@@ -531,9 +531,6 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="launch.detail.patch_applied" xml:space="preserve">
     <value>Патч {0} паспяхова ўжыты</value>
   </data>
-  <data name="launch.detail.patching_class_files" xml:space="preserve">
-    <value>Патчынг class-файлаў...</value>
-  </data>
   <data name="launch.detail.patching_client" xml:space="preserve">
     <value>Патчынг кліента...</value>
   </data>
@@ -546,9 +543,6 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="launch.detail.patching_init" xml:space="preserve">
     <value>Ініцыялізацыя патчара...</value>
   </data>
-  <data name="launch.detail.patching_server" xml:space="preserve">
-    <value>Патчынг сервера...</value>
-  </data>
   <data name="launch.detail.preparing_download" xml:space="preserve">
     <value>Падрыхтоўка загрузкі...</value>
   </data>
@@ -558,20 +552,8 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="launch.detail.reading_client_binary" xml:space="preserve">
     <value>Чытанне бінарніка кліента...</value>
   </data>
-  <data name="launch.detail.reading_server_jar" xml:space="preserve">
-    <value>Чытанне server JAR...</value>
-  </data>
-  <data name="launch.detail.replacing_original_jar" xml:space="preserve">
-    <value>Замена арыгінальнага JAR...</value>
-  </data>
   <data name="launch.detail.resigning" xml:space="preserve">
     <value>Перападпісанне бінарнікаў...</value>
-  </data>
-  <data name="launch.detail.server_already_patched" xml:space="preserve">
-    <value>Сервер ужо прапачаны</value>
-  </data>
-  <data name="launch.detail.server_jar_patched" xml:space="preserve">
-    <value>Server JAR прапачаны</value>
   </data>
   <data name="launch.detail.started" xml:space="preserve">
     <value>Гульня запушчана!</value>
@@ -1405,7 +1387,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>Афлайн-рэжым (націсніце для ўключэння анлайн)</value>
   </data>
   <data name="onlineToggle.online" xml:space="preserve">
-    <value>Анлайн-рэжым</value>
+    <value>Сеткавы рэжым</value>
   </data>
   <data name="onlineToggle.onlineClickDisable" xml:space="preserve">
     <value>Анлайн-рэжым (націсніце для адключэння)</value>
@@ -1836,23 +1818,11 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="settings.generalSettings.closeLauncherHint" xml:space="preserve">
     <value>Закрываць лаўнчар пры старце гульні</value>
   </data>
-  <data name="settings.generalSettings.dualAuth" xml:space="preserve">
-    <value>DualAuth (Эксперыментальны)</value>
-  </data>
-  <data name="settings.generalSettings.dualAuthHint" xml:space="preserve">
-    <value>Выкарыстоўвае Java Agent для аўтэнтыфікацыі сервера ў рантайме замест статычнай мадыфікацыі JAR. Можа выклікаць вылеты і праблемы з падключэннем.</value>
-  </data>
   <data name="settings.generalSettings.launcherStorage" xml:space="preserve">
     <value>Сховішча лаўнчара</value>
   </data>
   <data name="settings.generalSettings.launcherStorageHint" xml:space="preserve">
     <value>Дзе захоўваюцца гульні і дадзеныя.</value>
-  </data>
-  <data name="settings.generalSettings.legacyPatching" xml:space="preserve">
-    <value>Легасі патчынг</value>
-  </data>
-  <data name="settings.generalSettings.legacyPatchingHint" xml:space="preserve">
-    <value>Выкарыстоўвае статычную мадыфікацыю JAR для аўтэнтыфікацыі сервера замест DualAuth Java Agent. Больш сумяшчальны, але менш гнуткі варыянт.</value>
   </data>
   <data name="settings.generalSettings.showAlphaMods" xml:space="preserve">
     <value>Паказваць альфа-моды</value>
@@ -2143,7 +2113,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>Анлайн-рэжым</value>
   </data>
   <data name="settings.networkSettings.onlineModeHint" xml:space="preserve">
-    <value>Падключыцца да сервераў аўтэнтыфікацыі для мультыплэера.</value>
+    <value>Выкарыстоўваць сервіс аўтэнтыфікацыі і дадзеныя акаўнта; пры адключэнні HyPrism стварае лакальную OmniAuth-сесію</value>
   </data>
   <data name="settings.profile.avatar" xml:space="preserve">
     <value>Аватар</value>

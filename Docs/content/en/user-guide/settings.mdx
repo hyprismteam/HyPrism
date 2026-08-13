@@ -5,7 +5,7 @@ description: Configure launcher behavior, Java, networking, appearance, and stor
 
 # Settings
 
-Settings use the same adaptive master-detail layout as the news reader. Wide windows keep categories beside their content. Compact windows show one page at a time and support the Back button or Escape
+Settings use the same adaptive master-detail layout as the news reader. Wide windows keep categories beside their content and constrain the selected page to a centered readable column. Compact windows show one page at a time, use the available width, and support the Back button or Escape
 
 ## Categories
 
@@ -15,7 +15,7 @@ Settings use the same adaptive master-detail layout as the news reader. Wide win
 | Downloads | launch-after-install behavior and official or community download sources |
 | Java | bundled or custom runtime, initial memory, maximum memory, and extra arguments |
 | Appearance | background selection and interface personalization |
-| Network | online mode, authentication server, and DualAuth |
+| Network | connected or autonomous authentication for local profiles |
 | Graphics | preferred GPU for game launch |
 | Variables | environment variables passed to the game process |
 | Data | application and instance storage locations |
@@ -23,13 +23,23 @@ Settings use the same adaptive master-detail layout as the news reader. Wide win
 
 Java heap arguments such as `-Xms` and `-Xmx` are managed by the memory controls and are rejected in the free-form arguments field
 
+## Local profile authentication
+
+Connected mode requests a session from the configured authentication service and keeps its account-data integration available. Autonomous mode starts a dedicated Local Node process on `https://h.localhost:8443`, creates an ephemeral OmniAuth identity, and redirects the client service endpoints to that node
+
+Local Node attaches to the game process after launch. Closing HyPrism does not interrupt an active autonomous game session, and the node exits automatically when the game closes. Its isolated diagnostics are stored in `LocalNode/local-node.log` below the HyPrism application data directory
+
+Both modes use the DualAuth Agent for the embedded server. HyPrism no longer modifies `HytaleServer.jar`. Installations left by an older release are restored from their backup before launch
+
+The Local Node persists profiles, saved skins, and presence preferences on the device. It unlocks all character creator items found in the active instance's `Assets.zip`, while cosmetic choices remain local. Centralized friends, parties, invites, global presence, cloud cosmetic synchronization, and server discovery return compatible empty states because there is no shared backend. Direct friend joins still depend on a reachable host through LAN, UPnP, IPv6, port forwarding, or a VPN such as Tailscale
+
 ## Download sources
 
-The Downloads page shows the official Hytale source and community mirrors together in the **Download sources** category. A connected Hytale account is required for the official source
+The Downloads page shows the official Hytale source and community mirrors in one table under **Download sources**. Its columns show the endpoint link, source type, current availability, and lightweight request latency. A connected Hytale account is required for the official source
 
-To add a community source, select **Add source**, enter its public HTTPS address, and let HyPrism detect the mirror format. The source becomes available immediately after a successful check
+To add a community source, select **Add**, enter its public HTTPS address, and let HyPrism detect the mirror format. The source becomes available immediately after a successful check
 
-Each community source can be enabled, disabled, or removed. HyPrism prefers the official source and selects an available enabled mirror when a fallback is needed
+Each user-provided source can be enabled, disabled, or removed. HyPrism prioritizes the official download source and automatically selects the fastest added user mirror when the official source is unavailable
 
 Only add sources you trust. The regular form does not request custom authorization headers or expose the generated JSON definition
 

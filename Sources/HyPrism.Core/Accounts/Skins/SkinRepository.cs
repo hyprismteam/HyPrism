@@ -209,12 +209,14 @@ public class SkinRepository : ISkinRepository
     {
         try
         {
-            var config = _configStore.Configuration;
-            var currentUuid = config.UUID;
-            if (string.IsNullOrEmpty(currentUuid) || string.IsNullOrEmpty(config.Nick))
+            var selectedProfileId = _configStore.Configuration.SelectedProfileId;
+            var selectedProfile = _profiles.GetProfiles()
+                .FirstOrDefault(profile => profile.Id == selectedProfileId);
+            if (selectedProfile is null)
             {
                 return;
             }
+            var currentUuid = selectedProfile.UUID;
 
             // Get the current instance's UserData path
             var versionPath = TryGetCurrentExistingInstancePath();
@@ -243,7 +245,6 @@ public class SkinRepository : ISkinRepository
             // Get all existing UUIDs from Profiles
             var knownUuids = new HashSet<string>(
                 _profiles.GetProfiles().Select(p => p.UUID)
-                    .Concat(new[] { config.UUID ?? "" })
                     .Where(u => !string.IsNullOrEmpty(u)),
                 StringComparer.OrdinalIgnoreCase
             );
@@ -278,13 +279,13 @@ public class SkinRepository : ISkinRepository
             }
 
             Logger.Info("Startup", $"Found orphaned skin with UUID {orphanedUuid}");
-            Logger.Info("Startup", $"Current user '{config.Nick}' has no skin - recovering orphaned skin");
+            Logger.Info("Startup", $"Selected profile '{selectedProfile.Name}' has no skin, recovering orphaned skin");
 
-            // Strategy: Update the current user's UUID to match the orphaned skin
-            config.UUID = orphanedUuid;
-            _configStore.SaveConfig();
+            // Strategy: Update the selected profile UUID to match the orphaned skin
+            if (!_profiles.SetUUID(orphanedUuid))
+                return;
 
-            Logger.Success("Startup", $"Recovered orphaned skin! User '{config.Nick}' now uses UUID {orphanedUuid}");
+            Logger.Success("Startup", $"Recovered orphaned skin for '{selectedProfile.Name}' with UUID {orphanedUuid}");
         }
         catch (Exception ex)
         {
@@ -297,7 +298,6 @@ public class SkinRepository : ISkinRepository
     {
         try
         {
-            var config = _configStore.Configuration;
             // Get the current instance's UserData path
             var versionPath = TryGetCurrentExistingInstancePath();
             if (string.IsNullOrWhiteSpace(versionPath))
@@ -315,7 +315,6 @@ public class SkinRepository : ISkinRepository
             // Get all existing UUIDs from Profiles
             var knownUuids = new HashSet<string>(
                 _profiles.GetProfiles().Select(p => p.UUID)
-                    .Concat(new[] { config.UUID ?? "" })
                     .Where(u => !string.IsNullOrEmpty(u)),
                 StringComparer.OrdinalIgnoreCase
             );
@@ -387,7 +386,6 @@ public class SkinRepository : ISkinRepository
     {
         try
         {
-            var config = _configStore.Configuration;
             var orphanedUuid = FindOrphanedSkinUuid();
 
             if (string.IsNullOrEmpty(orphanedUuid))

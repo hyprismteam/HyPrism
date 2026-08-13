@@ -5,18 +5,24 @@ description: Current Core capabilities and native UI availability
 
 # Instances, profiles, and mods
 
-The Core already contains the working domain logic for all three areas, but their Avalonia pages are not complete yet
+The Core contains the working domain logic for all three areas. The native instance manager is available, while profile and mod pages are still being completed
 
 ## Instances
 
-Core can discover installed instances, migrate legacy layouts, create stable instance metadata, select an active instance, change versions, import ZIP archives, and delete installations
+The native instance manager lists local installations, highlights the active instance, and creates an installation target by selecting a release channel and available version. Creating an instance does not download game files immediately. Select it and use the main action to download or launch it
+
+Core can also migrate legacy layouts, change versions, import ZIP archives, and delete installations
 
 ## Profiles
 
 Core supports offline and official profiles, stable profile identifiers, per-profile data, identity switching, avatar backups, skin recovery, and authentication session storage
 
+The complete profile list is stored in `Profiles/profiles.json`. `config.json` contains only `SelectedProfileId`, so creating, selecting, renaming, and deleting a profile always changes the multi-profile store instead of a second launcher identity
+
+Launching requires an existing selected profile with a valid name and UUID. HyPrism does not silently create an identity during launch
+
 ## Mods
 
 Core integrates with CurseForge for search, categories, file resolution, installation, local file import, changelogs, and update checks scoped to an instance
 
-Their native pages are still being built. Historical interaction behavior can be inspected in version control when it is useful
+The native profile and mod pages are still being built. Historical interaction behavior can be inspected in version control when it is useful

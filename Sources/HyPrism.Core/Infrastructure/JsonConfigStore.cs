@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 using System.Text.Json;
+using HyPrism.Core.Accounts;
 using HyPrism.Core.Models;
 
 namespace HyPrism.Core.Infrastructure;
@@ -44,22 +45,16 @@ public class JsonConfigStore : IConfigStore
       if (File.Exists(_configPath))
       {
         var json = File.ReadAllText(_configPath);
+        json = LegacyProfileConfigMigration.Migrate(
+          Path.GetDirectoryName(_configPath)!,
+          json,
+          out var profileConfigMigrated);
         config = JsonSerializer.Deserialize<Config>(json) ?? new Config();
 
         Logger.Info("Config", $"Loaded config - Language: '{config.Language}'");
 
         // Apply migrations
-        bool needsSave = false;
-
-        // Migration: Ensure UUID exists
-        if (string.IsNullOrEmpty(config.UUID))
-        {
-          config.UUID = Guid.NewGuid().ToString();
-          needsSave = true;
-          Logger.Info("Config", $"Generated UUID during migration: {config.UUID}");
-        }
-
-        // Default nick to random name if empty or placeholder
+        bool needsSave = profileConfigMigrated;
 
         // Migration: Migrate legacy "latest" branch to release
 #pragma warning disable CS0618 // Using obsolete fields for migration
@@ -69,14 +64,6 @@ public class JsonConfigStore : IConfigStore
           needsSave = true;
         }
 #pragma warning restore CS0618
-
-        // Default nick to random name if empty or placeholder
-        if (string.IsNullOrWhiteSpace(config.Nick) || config.Nick == "Player" || config.Nick == "Hyprism" || config.Nick == "HyPrism")
-        {
-          config.Nick = LauncherUtilities.GenerateRandomUsername();
-          needsSave = true;
-          Logger.Info("Config", $"Generated random username: {config.Nick}");
-        }
 
         if (needsSave)
         {
@@ -92,18 +79,8 @@ public class JsonConfigStore : IConfigStore
       Logger.Error("Config", $"Failed to load config: {ex.Message}");
     }
 
-    // New config - generate UUID and defaults
+    // New config starts without a selected profile. Onboarding owns profile creation
     config = new Config();
-    if (string.IsNullOrEmpty(config.UUID))
-    {
-      config.UUID = Guid.NewGuid().ToString();
-    }
-
-    // Default nick to random name
-    if (string.IsNullOrWhiteSpace(config.Nick) || config.Nick == "Player")
-    {
-      config.Nick = LauncherUtilities.GenerateRandomUsername();
-    }
 
     _config = config;
     SaveConfig();

@@ -53,9 +53,6 @@ public interface IDesktopSettingsStore
     /// <summary>Gets or sets the preferred GPU selection mode</summary>
     string GpuPreference { get; set; }
 
-    /// <summary>Gets or sets whether DualAuth is enabled</summary>
-    bool UseDualAuth { get; set; }
-
     /// <summary>Gets or sets custom environment variables passed to the game</summary>
     string GameEnvironmentVariables { get; set; }
 

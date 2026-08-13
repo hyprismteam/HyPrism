@@ -3,6 +3,7 @@
 
 export default {
   services: 'Core contracts',
+  'local-node': 'Local Node',
   configuration: 'Configuration',
   mirrors: 'Mirrors'
 }

@@ -531,9 +531,6 @@ Sürücü değiştirirseniz oyunu yeniden yüklemeniz gerekebilir.</value>
   <data name="launch.detail.patch_applied" xml:space="preserve">
     <value>Yama {0} başarıyla uygulandı</value>
   </data>
-  <data name="launch.detail.patching_class_files" xml:space="preserve">
-    <value>Class dosyaları yamalanıyor...</value>
-  </data>
   <data name="launch.detail.patching_client" xml:space="preserve">
     <value>İstemci ikili dosyası yamalanıyor...</value>
   </data>
@@ -546,9 +543,6 @@ Sürücü değiştirirseniz oyunu yeniden yüklemeniz gerekebilir.</value>
   <data name="launch.detail.patching_init" xml:space="preserve">
     <value>Yama aracı başlatılıyor...</value>
   </data>
-  <data name="launch.detail.patching_server" xml:space="preserve">
-    <value>Sunucu JAR dosyası yamalanıyor...</value>
-  </data>
   <data name="launch.detail.preparing_download" xml:space="preserve">
     <value>İndirme hazırlanıyor...</value>
   </data>
@@ -558,20 +552,8 @@ Sürücü değiştirirseniz oyunu yeniden yüklemeniz gerekebilir.</value>
   <data name="launch.detail.reading_client_binary" xml:space="preserve">
     <value>İstemci ikili dosyası okunuyor...</value>
   </data>
-  <data name="launch.detail.reading_server_jar" xml:space="preserve">
-    <value>Sunucu JAR okunuyor...</value>
-  </data>
-  <data name="launch.detail.replacing_original_jar" xml:space="preserve">
-    <value>Orijinal JAR değiştiriliyor...</value>
-  </data>
   <data name="launch.detail.resigning" xml:space="preserve">
     <value>İkili dosya yeniden imzalanıyor...</value>
-  </data>
-  <data name="launch.detail.server_already_patched" xml:space="preserve">
-    <value>Sunucu zaten yamalı</value>
-  </data>
-  <data name="launch.detail.server_jar_patched" xml:space="preserve">
-    <value>Sunucu JAR yamalandı</value>
   </data>
   <data name="launch.detail.started" xml:space="preserve">
     <value>Oyun başladı!</value>
@@ -1405,7 +1387,7 @@ Sürücü değiştirirseniz oyunu yeniden yüklemeniz gerekebilir.</value>
     <value>Çevrimdışı Mod (Çevrimiçi etkinleştirmek için tıklayın)</value>
   </data>
   <data name="onlineToggle.online" xml:space="preserve">
-    <value>Çevrimiçi Mod</value>
+    <value>Bağlı mod</value>
   </data>
   <data name="onlineToggle.onlineClickDisable" xml:space="preserve">
     <value>Çevrimiçi Mod (Devre dışı bırakmak için tıklayın)</value>
@@ -1836,23 +1818,11 @@ Sürücü değiştirirseniz oyunu yeniden yüklemeniz gerekebilir.</value>
   <data name="settings.generalSettings.closeLauncherHint" xml:space="preserve">
     <value>Oyun başladığında başlatıcıyı kapat</value>
   </data>
-  <data name="settings.generalSettings.dualAuth" xml:space="preserve">
-    <value>DualAuth (Deneysel)</value>
-  </data>
-  <data name="settings.generalSettings.dualAuthHint" xml:space="preserve">
-    <value>Statik JAR yaması yerine sunucu kimlik doğrulaması için çalışma zamanı Java Ajanı kullanır. Çökmelere veya bağlantı sorunlarına neden olabilir.</value>
-  </data>
   <data name="settings.generalSettings.launcherStorage" xml:space="preserve">
     <value>Başlatıcı Depolama</value>
   </data>
   <data name="settings.generalSettings.launcherStorageHint" xml:space="preserve">
     <value>Başlatıcı verileri ve oyun dosyalarının saklandığı konum.</value>
-  </data>
-  <data name="settings.generalSettings.legacyPatching" xml:space="preserve">
-    <value>Eski Yama</value>
-  </data>
-  <data name="settings.generalSettings.legacyPatchingHint" xml:space="preserve">
-    <value>DualAuth Java Ajanı yerine sunucu kimlik doğrulaması için statik JAR yaması kullanır. Daha uyumlu ancak daha az esnek.</value>
   </data>
   <data name="settings.generalSettings.showAlphaMods" xml:space="preserve">
     <value>Alfa Modları Göster</value>
@@ -2143,7 +2113,7 @@ Sürücü değiştirirseniz oyunu yeniden yüklemeniz gerekebilir.</value>
     <value>Çevrimiçi Mod</value>
   </data>
   <data name="settings.networkSettings.onlineModeHint" xml:space="preserve">
-    <value>Çok oyunculu için kimlik doğrulama sunucularına bağlan.</value>
+    <value>Kimlik doğrulama hizmetini ve hesap verilerini kullan; devre dışı bırakıldığında HyPrism yerel bir OmniAuth oturumu oluşturur</value>
   </data>
   <data name="settings.profile.avatar" xml:space="preserve">
     <value>Avatar</value>

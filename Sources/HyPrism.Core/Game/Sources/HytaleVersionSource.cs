@@ -374,8 +374,10 @@ public class HytaleVersionSource : IVersionSource
     #region Speed Testing
 
     private static readonly TimeSpan SpeedTestCacheTtl = TimeSpan.FromMinutes(10);
+    private static readonly TimeSpan AvailabilityCacheTtl = TimeSpan.FromMinutes(1);
     private readonly SemaphoreSlim _speedTestLock = new(1, 1);
     private MirrorSpeedTestResult? _speedTestResult;
+    private MirrorSpeedTestResult? _availabilityResult;
 
     /// <summary>
     /// Returns cached speed test result if still valid
@@ -520,6 +522,57 @@ public class HytaleVersionSource : IVersionSource
         {
             _speedTestLock.Release();
         }
+    }
+
+    /// <inheritdoc/>
+    public async Task<MirrorSpeedTestResult> ProbeAvailabilityAsync(CancellationToken ct = default)
+    {
+        if (_availabilityResult is not null &&
+            DateTime.UtcNow - _availabilityResult.TestedAt <= AvailabilityCacheTtl)
+        {
+            return _availabilityResult;
+        }
+
+        var result = new MirrorSpeedTestResult
+        {
+            MirrorId = SourceId,
+            MirrorUrl = "https://account-data.hytale.com",
+            MirrorName = "Hytale",
+            PingMs = -1,
+            TestedAt = DateTime.UtcNow
+        };
+
+        if (!IsAvailable)
+        {
+            _availabilityResult = result;
+            return result;
+        }
+
+        try
+        {
+            using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            timeout.CancelAfter(TimeSpan.FromSeconds(5));
+            var startedAt = DateTime.UtcNow;
+            using var request = new HttpRequestMessage(HttpMethod.Head, result.MirrorUrl);
+            using var response = await _httpClient.SendAsync(
+                request,
+                HttpCompletionOption.ResponseHeadersRead,
+                timeout.Token);
+            result.PingMs = Math.Max(0, (long)(DateTime.UtcNow - startedAt).TotalMilliseconds);
+            result.IsAvailable = response.IsSuccessStatusCode;
+        }
+        catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+        {
+            result.IsAvailable = false;
+        }
+        catch (HttpRequestException ex)
+        {
+            Logger.Debug("HytaleSource", $"Availability probe failed: {ex.Message}");
+            result.IsAvailable = false;
+        }
+
+        _availabilityResult = result;
+        return result;
     }
 
     #endregion

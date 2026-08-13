@@ -12,6 +12,7 @@ namespace HyPrism.Desktop.Features.Settings;
 public sealed partial class SettingsView : UserControl
 {
     private const double WideLayoutThreshold = 940;
+    private const double WideContentMaxWidth = 720;
 
     private bool? _usesCompactLayout;
     private bool _compactContentOpen;
@@ -41,6 +42,9 @@ public sealed partial class SettingsView : UserControl
         SettingsContentHost.Margin = compact
             ? new Thickness(24, 16, 24, 36)
             : new Thickness(32, 28, 32, 40);
+        SettingsContentHost.MaxWidth = compact
+            ? double.PositiveInfinity
+            : WideContentMaxWidth;
     }
 
     private void ApplyLayoutMode(bool compact, double width)

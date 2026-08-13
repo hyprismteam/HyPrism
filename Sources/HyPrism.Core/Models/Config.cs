@@ -10,11 +10,6 @@ public class Config
 {
     /// <summary>Launcher config schema version string.</summary>
     public string Version { get; set; } = "2.0.0";
-    /// <summary>Unique machine/installation identifier (UUID v4).</summary>
-    public string UUID { get; set; } = "";
-    /// <summary>Offline display name shown in-game and on the launcher.</summary>
-    public string Nick { get; set; } = "Hyprism";
-    
     /// <summary>
     /// ID of the currently selected instance to launch.
     /// Empty string means no instance selected (will prompt to create one).
@@ -27,13 +22,6 @@ public class Config
     /// </summary>
     public string SelectedProfileId { get; set; } = "";
 
-    /// <summary>
-    /// [DEPRECATED] Use SelectedProfileId instead.
-    /// Index-based active profile selection. Kept for backwards compatibility during migration.
-    /// </summary>
-    [Obsolete("Use SelectedProfileId instead")]
-    public int ActiveProfileIndex { get; set; } = -1;
-    
     /// <summary>
     /// [DEPRECATED] Instance cache moved to Instances/instances.json.
     /// Kept for reading old configs during migration only.
@@ -98,13 +86,14 @@ public class Config
     public string Language { get; set; } = "en-US";
     
     /// <summary>
-    /// If true, game will run in online mode (requires authentication).
-    /// If false, game runs in offline mode.
+    /// If true, local profiles request a session from the configured authentication service.
+    /// If false, local profiles use an ephemeral on-device OmniAuth session.
+    /// Official profiles always use official Hytale authentication.
     /// </summary>
     public bool OnlineMode { get; set; } = true;
     
     /// <summary>
-    /// Auth server domain for online mode (e.g., "sessions.sanasol.ws").
+    /// Authentication service domain used by connected local profiles (e.g., "sessions.sanasol.ws").
     /// </summary>
     public string AuthDomain { get; set; } = "sessions.sanasol.ws";
 
@@ -135,13 +124,6 @@ public class Config
     public bool ShowAlphaMods { get; set; } = false;
     
     /// <summary>
-    /// [DEPRECATED] Profile list moved to Profiles/profiles.json.
-    /// Kept for reading old configs during migration only.
-    /// </summary>
-    [Obsolete("Profile list is now stored in Profiles/profiles.json")]
-    public List<Profile>? Profiles { get; set; }
-
-    /// <summary>
     /// Whether the user has completed the initial onboarding flow.
     /// </summary>
     public bool HasCompletedOnboarding { get; set; } = false;
@@ -159,12 +141,6 @@ public class Config
     /// </summary>
     public string GameEnvironmentVariables { get; set; } = "";
     
-    /// <summary>
-    /// If true (default), uses DualAuth Java Agent for server authentication.
-    /// If false, uses legacy static JAR patching instead (opt-in via Settings).
-    /// </summary>
-    public bool UseDualAuth { get; set; } = true;
-
     /// <summary>
     /// CurseForge API key for mod manager functionality.
     /// Automatically fetched on first launch if not set.

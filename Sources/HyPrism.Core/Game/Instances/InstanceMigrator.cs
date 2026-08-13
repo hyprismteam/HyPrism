@@ -59,68 +59,20 @@ public class InstanceMigrator : IInstanceMigrator
                 var jsonConfig = LoadConfigFromPath(legacyConfigPath);
                 var tomlConfig = LoadConfigFromToml(legacyTomlPath);
 
-                // Prefer TOML if it has a custom nick (not default), or prefer whichever has custom data
-                Config? legacyConfig = null;
-                bool tomlHasCustomNick = tomlConfig != null && !string.IsNullOrWhiteSpace(tomlConfig.Nick)
-                    && !string.Equals(tomlConfig.Nick, "Hyprism", StringComparison.OrdinalIgnoreCase)
-                    && !string.Equals(tomlConfig.Nick, "Player", StringComparison.OrdinalIgnoreCase);
-                bool jsonHasCustomNick = jsonConfig != null && !string.IsNullOrWhiteSpace(jsonConfig.Nick)
-                    && !string.Equals(jsonConfig.Nick, "Hyprism", StringComparison.OrdinalIgnoreCase)
-                    && !string.Equals(jsonConfig.Nick, "Player", StringComparison.OrdinalIgnoreCase);
-
-                if (tomlHasCustomNick)
+                var legacyConfig = tomlConfig ?? jsonConfig;
+                if (legacyConfig is not null)
                 {
-                    legacyConfig = tomlConfig;
-                    Logger.Info("Migrate", $"Using legacy config.toml (has custom nick): nick={legacyConfig?.Nick}, uuid={legacyConfig?.UUID}");
-                }
-                else if (jsonHasCustomNick)
-                {
-                    legacyConfig = jsonConfig;
-                    Logger.Info("Migrate", $"Using legacy config.json (has custom nick): nick={legacyConfig?.Nick}, uuid={legacyConfig?.UUID}");
-                }
-                else if (tomlConfig != null)
-                {
-                    legacyConfig = tomlConfig;
-                    Logger.Info("Migrate", $"Using legacy config.toml: nick={legacyConfig?.Nick}, uuid={legacyConfig?.UUID}");
-                }
-                else if (jsonConfig != null)
-                {
-                    legacyConfig = jsonConfig;
-                    Logger.Info("Migrate", $"Using legacy config.json: nick={legacyConfig?.Nick}, uuid={legacyConfig?.UUID}");
+                    Logger.Info("Migrate", "Using legacy config for instance settings only");
                 }
                 else
                 {
                     Logger.Warning("Migrate", $"No valid config found in {legacyRoot}");
                 }
 
-                // Only merge legacy config when current user name is still a default/placeholder
-                bool allowMerge = string.IsNullOrWhiteSpace(config.Nick)
-                                  || string.Equals(config.Nick, "Hyprism", StringComparison.OrdinalIgnoreCase)
-                                  || string.Equals(config.Nick, "Player", StringComparison.OrdinalIgnoreCase);
-
-                if (!allowMerge)
-                {
-                    Logger.Info("Migrate", "Skipping legacy config merge because current nickname is custom.");
-                }
-
                 var updated = false;
 
-                if (legacyConfig != null && allowMerge)
+                if (legacyConfig != null)
                 {
-                    Logger.Info("Migrate", $"Merging legacy config: nick={legacyConfig.Nick}");
-                    if (!string.IsNullOrWhiteSpace(legacyConfig.Nick))
-                    {
-                        config.Nick = legacyConfig.Nick;
-                        updated = true;
-                        Logger.Success("Migrate", $"Migrated nickname: {legacyConfig.Nick}");
-                    }
-
-                    if (string.IsNullOrWhiteSpace(config.UUID) && !string.IsNullOrWhiteSpace(legacyConfig.UUID))
-                    {
-                        config.UUID = legacyConfig.UUID;
-                        updated = true;
-                    }
-
                     if (string.IsNullOrWhiteSpace(config.InstanceDirectory) && !string.IsNullOrWhiteSpace(legacyConfig.InstanceDirectory))
                     {
                         config.InstanceDirectory = legacyConfig.InstanceDirectory;
@@ -140,18 +92,6 @@ public class InstanceMigrator : IInstanceMigrator
                         updated = true;
                     }
                     #pragma warning restore CS0618
-                }
-
-                // Fallback: pick up a legacy uuid file if config lacked one
-                if (string.IsNullOrWhiteSpace(config.UUID))
-                {
-                    var legacyUuid = LoadLegacyUuid(legacyRoot);
-                    if (!string.IsNullOrWhiteSpace(legacyUuid))
-                    {
-                        config.UUID = legacyUuid;
-                        updated = true;
-                        Logger.Info("Migrate", "Recovered legacy UUID from legacy folder.");
-                    }
                 }
 
                 if (updated)
@@ -813,14 +753,6 @@ public class InstanceMigrator : IInstanceMigrator
 
                 switch (key)
                 {
-                    case "nick":
-                    case "name":
-                    case "username":
-                        cfg.Nick = val;
-                        break;
-                    case "uuid":
-                        cfg.UUID = val;
-                        break;
                     case "instance_directory":
                     case "instancedirectory":
                     case "instance_dir":
@@ -847,34 +779,6 @@ public class InstanceMigrator : IInstanceMigrator
         {
             return null;
         }
-    }
-
-    /// <summary>
-    /// Loads a UUID from legacy uuid.txt/uuid.dat files
-    /// </summary>
-    private static string? LoadLegacyUuid(string legacyRoot)
-    {
-        var candidates = new[] { "uuid.txt", "uuid", "uuid.dat" };
-        foreach (var name in candidates)
-        {
-            var path = Path.Combine(legacyRoot, name);
-            if (!File.Exists(path)) continue;
-
-            try
-            {
-                var content = File.ReadAllText(path).Trim();
-                if (!string.IsNullOrWhiteSpace(content) && Guid.TryParse(content, out var guid))
-                {
-                    return guid.ToString();
-                }
-            }
-            catch
-            {
-                // ignore malformed legacy uuid files
-            }
-        }
-
-        return null;
     }
 
     #endregion

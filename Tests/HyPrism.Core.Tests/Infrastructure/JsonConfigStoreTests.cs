@@ -34,40 +34,46 @@ public class JsonConfigStoreTests : IDisposable
         var svc = new JsonConfigStore(_tempDir);
 
         Assert.NotNull(svc.Configuration);
-        Assert.False(string.IsNullOrEmpty(svc.Configuration.UUID));
-        Assert.NotEmpty(svc.Configuration.Nick);
+        Assert.Empty(svc.Configuration.SelectedProfileId);
         Assert.True(File.Exists(Path.Combine(_tempDir, "config.json")));
+        AssertConfigContainsNoLegacyProfileFields();
     }
 
     [Fact]
-    public void Constructor_NoConfigFile_GeneratesValidUUID()
+    public void SaveConfig_PersistsSelectedProfileId()
     {
         var svc = new JsonConfigStore(_tempDir);
-        Assert.True(Guid.TryParse(svc.Configuration.UUID, out _), "UUID should be a valid GUID");
-    }
-
-
-    [Fact]
-    public void SaveConfig_PersistsToDisk()
-    {
-        var svc = new JsonConfigStore(_tempDir);
-        svc.Configuration.Nick = "TestPlayer";
+        svc.Configuration.SelectedProfileId = "profile-id";
         svc.SaveConfig();
 
         var json = File.ReadAllText(Path.Combine(_tempDir, "config.json"));
-        Assert.Contains("TestPlayer", json);
+        Assert.Contains("profile-id", json);
+        AssertConfigContainsNoLegacyProfileFields();
     }
 
     [Fact]
     public void Constructor_ExistingConfig_LoadsPersistedValues()
     {
-        var cfg = new Config { Nick = "SavedPlayer", UUID = Guid.NewGuid().ToString(), Language = "en-US" };
+        var profile = new Profile
+        {
+            Id = Guid.NewGuid().ToString(),
+            Name = "SavedPlayer",
+            UUID = Guid.NewGuid().ToString()
+        };
+        var profilesDirectory = Path.Combine(_tempDir, "Profiles");
+        Directory.CreateDirectory(profilesDirectory);
+        File.WriteAllText(
+            Path.Combine(profilesDirectory, "profiles.json"),
+            JsonSerializer.Serialize(new[] { profile }));
+
+        var cfg = new Config { SelectedProfileId = profile.Id, Language = "en-US" };
         File.WriteAllText(
             Path.Combine(_tempDir, "config.json"),
             JsonSerializer.Serialize(cfg));
 
         var svc = new JsonConfigStore(_tempDir);
-        Assert.Equal("SavedPlayer", svc.Configuration.Nick);
+        Assert.Equal(profile.Id, svc.Configuration.SelectedProfileId);
+        Assert.Equal("en-US", svc.Configuration.Language);
     }
 
 
@@ -75,7 +81,7 @@ public class JsonConfigStoreTests : IDisposable
     public void ResetConfig_ReplacesConfigWithDefaults()
     {
         var svc = new JsonConfigStore(_tempDir);
-        svc.Configuration.Nick = "CustomNick";
+        svc.Configuration.SelectedProfileId = "custom-profile";
         svc.Configuration.MusicEnabled = false;
 
         svc.ResetConfig();
@@ -112,31 +118,51 @@ public class JsonConfigStoreTests : IDisposable
 
 
     [Fact]
-    public void Constructor_ConfigWithoutUUID_MigratesAndSavesUUID()
+    public void Constructor_LegacyIdentity_MovesProfileToProfilesFileAndCleansConfig()
     {
-        var cfg = new Config { UUID = "", Nick = "OldPlayer", Language = "en-US" };
-        File.WriteAllText(
-            Path.Combine(_tempDir, "config.json"),
-            JsonSerializer.Serialize(cfg));
+        var uuid = Guid.NewGuid().ToString();
+        File.WriteAllText(Path.Combine(_tempDir, "config.json"), $$"""
+            {
+              "Nick": "СтарыйИгрок",
+              "UUID": "{{uuid}}",
+              "ActiveProfileIndex": 0,
+              "Language": "en-US"
+            }
+            """);
 
         var svc = new JsonConfigStore(_tempDir);
 
-        Assert.False(string.IsNullOrEmpty(svc.Configuration.UUID));
-        Assert.True(Guid.TryParse(svc.Configuration.UUID, out _));
+        var profilesPath = Path.Combine(_tempDir, "Profiles", "profiles.json");
+        var profiles = JsonSerializer.Deserialize<List<Profile>>(File.ReadAllText(profilesPath));
+
+        var profile = Assert.Single(profiles!);
+        Assert.Equal("СтарыйИгрок", profile.Name);
+        Assert.Equal(uuid, profile.UUID);
+        Assert.Equal(profile.Id, svc.Configuration.SelectedProfileId);
+        Assert.Contains("СтарыйИгрок", File.ReadAllText(profilesPath));
+        AssertConfigContainsNoLegacyProfileFields();
     }
 
-
     [Fact]
-    public void Constructor_UnknownLanguage_PreservesPresentationPreference()
+    public void Constructor_EmbeddedProfiles_MovesProfilesAndSelectedIndexOutOfConfig()
     {
-        var cfg = new Config { UUID = Guid.NewGuid().ToString(), Nick = "Player", Language = "xx-XX" };
-        File.WriteAllText(
-            Path.Combine(_tempDir, "config.json"),
-            JsonSerializer.Serialize(cfg));
+        var first = new Profile { Id = Guid.NewGuid().ToString(), Name = "First", UUID = Guid.NewGuid().ToString() };
+        var second = new Profile { Id = Guid.NewGuid().ToString(), Name = "Second", UUID = Guid.NewGuid().ToString() };
+        File.WriteAllText(Path.Combine(_tempDir, "config.json"), JsonSerializer.Serialize(new
+        {
+            Profiles = new[] { first, second },
+            ActiveProfileIndex = 1,
+            Language = "xx-XX"
+        }));
 
         var svc = new JsonConfigStore(_tempDir);
 
+        var profilesPath = Path.Combine(_tempDir, "Profiles", "profiles.json");
+        var profiles = JsonSerializer.Deserialize<List<Profile>>(File.ReadAllText(profilesPath));
+        Assert.Equal(2, profiles!.Count);
+        Assert.Equal(second.Id, svc.Configuration.SelectedProfileId);
         Assert.Equal("xx-XX", svc.Configuration.Language);
+        AssertConfigContainsNoLegacyProfileFields();
     }
 
 
@@ -148,6 +174,21 @@ public class JsonConfigStoreTests : IDisposable
         var svc = new JsonConfigStore(_tempDir);
 
         Assert.NotNull(svc.Configuration);
-        Assert.False(string.IsNullOrEmpty(svc.Configuration.UUID));
+        Assert.Empty(svc.Configuration.SelectedProfileId);
+        AssertConfigContainsNoLegacyProfileFields();
+    }
+
+    private void AssertConfigContainsNoLegacyProfileFields()
+    {
+        using var document = JsonDocument.Parse(
+            File.ReadAllText(Path.Combine(_tempDir, "config.json")));
+        var propertyNames = document.RootElement.EnumerateObject()
+            .Select(property => property.Name)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        Assert.DoesNotContain("Nick", propertyNames);
+        Assert.DoesNotContain("UUID", propertyNames);
+        Assert.DoesNotContain("Profiles", propertyNames);
+        Assert.DoesNotContain("ActiveProfileIndex", propertyNames);
     }
 }

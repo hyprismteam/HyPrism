@@ -561,9 +561,6 @@ You may need to reinstall the game if switching drives.</value>
   <data name="launch.detail.patch_applied" xml:space="preserve">
     <value>Patch {0} applied successfully</value>
   </data>
-  <data name="launch.detail.patching_class_files" xml:space="preserve">
-    <value>Patching class files...</value>
-  </data>
   <data name="launch.detail.patching_client" xml:space="preserve">
     <value>Patching Client Binary...</value>
   </data>
@@ -576,9 +573,6 @@ You may need to reinstall the game if switching drives.</value>
   <data name="launch.detail.patching_init" xml:space="preserve">
     <value>Initializing patcher...</value>
   </data>
-  <data name="launch.detail.patching_server" xml:space="preserve">
-    <value>Patching Server JAR...</value>
-  </data>
   <data name="launch.detail.preparing_download" xml:space="preserve">
     <value>Preparing download...</value>
   </data>
@@ -588,20 +582,8 @@ You may need to reinstall the game if switching drives.</value>
   <data name="launch.detail.reading_client_binary" xml:space="preserve">
     <value>Reading client binary...</value>
   </data>
-  <data name="launch.detail.reading_server_jar" xml:space="preserve">
-    <value>Reading server JAR...</value>
-  </data>
-  <data name="launch.detail.replacing_original_jar" xml:space="preserve">
-    <value>Replacing original JAR...</value>
-  </data>
   <data name="launch.detail.resigning" xml:space="preserve">
     <value>Re-signing binary...</value>
-  </data>
-  <data name="launch.detail.server_already_patched" xml:space="preserve">
-    <value>Server already patched</value>
-  </data>
-  <data name="launch.detail.server_jar_patched" xml:space="preserve">
-    <value>Server JAR patched</value>
   </data>
   <data name="launch.detail.started" xml:space="preserve">
     <value>Game started!</value>
@@ -1885,7 +1867,7 @@ You may need to reinstall the game if switching drives.</value>
     <value>How downloads work</value>
   </data>
   <data name="settings.downloads.howDownloadsWorkDescription" xml:space="preserve">
-    <value>HyPrism prefers the official source and automatically selects an available community mirror when a fallback is needed</value>
+    <value>HyPrism prioritizes the official download source and automatically selects the fastest added user mirror when the official source is unavailable</value>
   </data>
   <data name="settings.downloads.launchAfterDownload" xml:space="preserve">
     <value>Launch game after download</value>
@@ -1926,8 +1908,32 @@ You may need to reinstall the game if switching drives.</value>
   <data name="settings.downloads.sources" xml:space="preserve">
     <value>Download sources</value>
   </data>
-  <data name="settings.downloads.sourcesHint" xml:space="preserve">
-    <value>The official Hytale source and trusted community mirrors</value>
+  <data name="settings.downloads.columnLink" xml:space="preserve">
+    <value>Link</value>
+  </data>
+  <data name="settings.downloads.columnType" xml:space="preserve">
+    <value>Type</value>
+  </data>
+  <data name="settings.downloads.columnAvailability" xml:space="preserve">
+    <value>Availability</value>
+  </data>
+  <data name="settings.downloads.columnPing" xml:space="preserve">
+    <value>Ping</value>
+  </data>
+  <data name="settings.downloads.sourceTypeOfficial" xml:space="preserve">
+    <value>Official</value>
+  </data>
+  <data name="settings.downloads.checkingAvailability" xml:space="preserve">
+    <value>Checking</value>
+  </data>
+  <data name="settings.downloads.sourceAvailable" xml:space="preserve">
+    <value>Available</value>
+  </data>
+  <data name="settings.downloads.sourceUnavailable" xml:space="preserve">
+    <value>Unavailable</value>
+  </data>
+  <data name="settings.downloads.sourceDisabledState" xml:space="preserve">
+    <value>Disabled</value>
   </data>
   <data name="settings.downloads.officialSourceConnected" xml:space="preserve">
     <value>Account connected</value>
@@ -1938,6 +1944,9 @@ You may need to reinstall the game if switching drives.</value>
   <data name="settings.downloads.addSource" xml:space="preserve">
     <value>Add source</value>
   </data>
+  <data name="settings.downloads.add" xml:space="preserve">
+    <value>Add</value>
+  </data>
   <data name="settings.downloads.addSourceTitle" xml:space="preserve">
     <value>Connect a download source</value>
   </data>
@@ -1946,12 +1955,6 @@ You may need to reinstall the game if switching drives.</value>
   </data>
   <data name="settings.downloads.sourceUrlPlaceholder" xml:space="preserve">
     <value>https://mirror.example.com</value>
-  </data>
-  <data name="settings.downloads.noSources" xml:space="preserve">
-    <value>No additional sources</value>
-  </data>
-  <data name="settings.downloads.noSourcesHint" xml:space="preserve">
-    <value>The official Hytale source remains available for connected accounts</value>
   </data>
   <data name="settings.downloads.deleteSourceTitle" xml:space="preserve">
     <value>Remove this source?</value>
@@ -2040,23 +2043,11 @@ You may need to reinstall the game if switching drives.</value>
   <data name="settings.generalSettings.closeLauncherHint" xml:space="preserve">
     <value>Close launcher when game starts</value>
   </data>
-  <data name="settings.generalSettings.dualAuth" xml:space="preserve">
-    <value>DualAuth (Experimental)</value>
-  </data>
-  <data name="settings.generalSettings.dualAuthHint" xml:space="preserve">
-    <value>Uses a runtime Java Agent for server authentication instead of static JAR patching. May cause crashes or connection issues.</value>
-  </data>
   <data name="settings.generalSettings.launcherStorage" xml:space="preserve">
     <value>Launcher Storage</value>
   </data>
   <data name="settings.generalSettings.launcherStorageHint" xml:space="preserve">
     <value>Location where launcher data and game files are stored.</value>
-  </data>
-  <data name="settings.generalSettings.legacyPatching" xml:space="preserve">
-    <value>Legacy Patching</value>
-  </data>
-  <data name="settings.generalSettings.legacyPatchingHint" xml:space="preserve">
-    <value>Uses static JAR patching for server authentication instead of the DualAuth Java Agent. More compatible but less flexible.</value>
   </data>
   <data name="settings.generalSettings.mirrorDescription" xml:space="preserve">
     <value>Community mirror is used as alternative source for game files when official servers are unavailable.</value>
@@ -2395,10 +2386,10 @@ You may need to reinstall the game if switching drives.</value>
     <value>Official accounts can only use official Hytale authentication.</value>
   </data>
   <data name="settings.networkSettings.onlineMode" xml:space="preserve">
-    <value>Online Mode</value>
+    <value>Connected mode</value>
   </data>
   <data name="settings.networkSettings.onlineModeHint" xml:space="preserve">
-    <value>Connect to authentication servers for multiplayer.</value>
+    <value>Use the authentication service and account data; when disabled, HyPrism creates a local OmniAuth session</value>
   </data>
   <data name="settings.networkSettings.unofficialProfileNote" xml:space="preserve">
     <value>Unofficial accounts cannot use official Hytale authentication.</value>

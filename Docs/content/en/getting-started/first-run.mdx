@@ -11,7 +11,7 @@ On startup, HyPrism creates its application directory, loads `config.json`, migr
 
 1. Open **Settings** and choose the interface language
 2. Review the Java runtime and memory allocation
-3. Select online or offline identity behavior
+3. Select connected or autonomous identity behavior for a local profile
 4. Choose or create an instance when the native instance screen becomes available
 5. Start the game from the dashboard
 
@@ -19,7 +19,7 @@ The bundled runtime is the safe default. A custom Java executable can be selecte
 
 ## Authentication
 
-Online mode uses the official Hytale authentication flow and opens the system browser when interactive sign-in is required. Offline mode uses the selected local profile and does not provide official online entitlements
+Official profiles use the Hytale authentication flow and open the system browser when interactive sign-in is required. A local profile can request its session from the configured connected service or create an autonomous OmniAuth session on the device. OmniAuth does not grant official entitlements or centralized account features
 
 ## Downloads
 

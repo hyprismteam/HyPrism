@@ -25,5 +25,6 @@ SPDX-License-Identifier: Apache-2.0
   <StreamGeometry x:Key="MinimizeIcon">M270-120q-12.75 0-21.37-8.68-8.63-8.67-8.63-21.5 0-12.82 8.63-21.32 8.62-8.5 21.37-8.5h421q12.75 0 21.38 8.68 8.62 8.67 8.62 21.5 0 12.82-8.62 21.32-8.63 8.5-21.38 8.5H270Z</StreamGeometry>
   <StreamGeometry x:Key="MaximizeIcon">M180-120q-24 0-42-18t-18-42v-600q0-24 18-42t42-18h600q24 0 42 18t18 42v600q0 24-18 42t-42 18H180Zm0-60h600v-600H180v600Zm0 0v-600 600Z</StreamGeometry>
   <StreamGeometry x:Key="CloseIcon">M480-438 270-228q-9 9-21 9t-21-9q-9-9-9-21t9-21l210-210-210-210q-9-9-9-21t9-21q9-9 21-9t21 9l210 210 210-210q9-9 21-9t21 9q9 9 9 21t-9 21L522-480l210 210q9 9 9 21t-9 21q-9 9-21 9t-21-9L480-438Z</StreamGeometry>
+  <StreamGeometry x:Key="CheckIcon">M382-240 154-468l57-57 171 171 367-367 57 57-424 424Z</StreamGeometry>
   <StreamGeometry x:Key="ExpandMoreIcon">M480-360 280-560l56-56 144 144 144-144 56 56-200 200Z</StreamGeometry>
 </ResourceDictionary>

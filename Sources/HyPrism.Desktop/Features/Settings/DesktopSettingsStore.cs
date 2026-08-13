@@ -129,13 +129,6 @@ public sealed class DesktopSettingsStore(IConfigStore configStore) : IDesktopSet
     }
 
     /// <inheritdoc/>
-    public bool UseDualAuth
-    {
-        get => configStore.Configuration.UseDualAuth;
-        set => Save(config => config.UseDualAuth = value);
-    }
-
-    /// <inheritdoc/>
     public string GameEnvironmentVariables
     {
         get => configStore.Configuration.GameEnvironmentVariables;

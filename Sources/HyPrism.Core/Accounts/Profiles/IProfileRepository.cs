@@ -17,12 +17,6 @@ public interface IProfileRepository
     List<Profile> GetProfiles();
 
     /// <summary>
-    /// Gets the index of the currently active profile
-    /// </summary>
-    /// <returns>The zero-based index of the active profile, or -1 if no profile is selected</returns>
-    int GetActiveProfileIndex();
-
-    /// <summary>
     /// Gets the ID of the currently active profile
     /// </summary>
     /// <returns>The profile ID string, or empty if no profile is selected</returns>
@@ -51,13 +45,6 @@ public interface IProfileRepository
     bool DeleteProfile(string profileId);
 
     /// <summary>
-    /// Switches to a profile at the specified index
-    /// </summary>
-    /// <param name="index">The zero-based index of the profile to switch to</param>
-    /// <returns>True if the switch was successful; otherwise, false</returns>
-    bool SwitchProfile(int index);
-
-    /// <summary>
     /// Switches to a profile by its unique ID
     /// </summary>
     /// <param name="profileId">The profile ID to switch to</param>
@@ -72,12 +59,6 @@ public interface IProfileRepository
     /// <param name="newUuid">The new UUID for the profile, or null to keep existing</param>
     /// <returns>True if the update was successful; otherwise, false</returns>
     bool UpdateProfile(string profileId, string? newName, string? newUuid);
-
-    /// <summary>
-    /// Saves the current UUID and nickname as a new profile
-    /// </summary>
-    /// <returns>The created or updated profile, or null if save failed</returns>
-    Profile? SaveCurrentAsProfile();
 
     /// <summary>
     /// Duplicates an existing profile including all user data (mods, UserData folder)

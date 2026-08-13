@@ -3,6 +3,7 @@
 
 export default {
   services: 'Контракты Core',
+  'local-node': 'Local Node',
   configuration: 'Конфигурация',
   mirrors: 'Зеркала'
 }

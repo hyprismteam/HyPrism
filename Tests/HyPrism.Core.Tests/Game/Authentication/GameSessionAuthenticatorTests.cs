@@ -113,40 +113,6 @@ public class GameSessionAuthenticatorTests
     }
 
 
-    [Fact]
-    public async Task GetOfflineTokenAsync_SuccessResponse_ReturnsToken()
-    {
-        const string responseJson = """{"identityToken":"offline-token"}""";
-        var svc = new GameSessionAuthenticator(BuildClient(HttpStatusCode.OK, responseJson), "auth.example.com");
-
-        var token = await svc.GetOfflineTokenAsync("uuid", "Player");
-
-        Assert.Equal("offline-token", token);
-    }
-
-    [Fact]
-    public async Task GetOfflineTokenAsync_ServerError_ReturnsNull()
-    {
-        var svc = new GameSessionAuthenticator(BuildClient(HttpStatusCode.BadGateway, ""), "auth.example.com");
-
-        var token = await svc.GetOfflineTokenAsync("uuid", "Player");
-
-        Assert.Null(token);
-    }
-
-    [Fact]
-    public async Task GetOfflineTokenAsync_Cancelled_ThrowsOperationCanceledException()
-    {
-        using var cts = new CancellationTokenSource();
-        cts.Cancel();
-
-        var svc = new GameSessionAuthenticator(BuildClient(HttpStatusCode.OK, "{}"), "auth.example.com");
-
-        await Assert.ThrowsAsync<OperationCanceledException>(
-            () => svc.GetOfflineTokenAsync("uuid", "Player", cts.Token));
-    }
-
-
     private sealed class StubHttpHandler(HttpStatusCode status, string body) : HttpMessageHandler
     {
         protected override Task<HttpResponseMessage> SendAsync(

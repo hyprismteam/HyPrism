@@ -37,7 +37,7 @@ public interface IProfileManager
     bool SetUUID(string uuid);
 
     /// <summary>
-    /// Gets the UUID for the current user, generating a new one if none exists
+    /// Gets the UUID of the selected profile
     /// </summary>
     /// <returns>The current UUID</returns>
     string GetCurrentUuid();
@@ -100,12 +100,6 @@ public interface IProfileManager
     /// <param name="profileId">The unique identifier of the profile to switch to</param>
     /// <returns>True if the switch was successful; otherwise, false</returns>
     bool SwitchProfile(string profileId);
-
-    /// <summary>
-    /// Saves the current nickname and UUID as a new profile
-    /// </summary>
-    /// <returns>True if the profile was saved successfully; otherwise, false</returns>
-    bool SaveCurrentAsProfile();
 
     /// <summary>
     /// Gets the file system path for a specific profile

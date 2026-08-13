@@ -10,6 +10,8 @@ using HyPrism.Desktop.Platform;
 using HyPrism.Core;
 using HyPrism.Core.Infrastructure;
 using HyPrism.Core.Application.Ports;
+using HyPrism.Core.Game.Launch;
+using HyPrism.LocalNode;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HyPrism.Desktop;
@@ -37,6 +39,9 @@ internal static class Program
             services.AddSingleton<GpuProvider>();
             services.AddSingleton<IGpuProvider>(provider =>
                 provider.GetRequiredService<GpuProvider>());
+            services.AddSingleton<LocalNodeHost>();
+            services.AddSingleton<ILocalNodeService>(provider =>
+                provider.GetRequiredService<LocalNodeHost>());
         });
 
         BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);

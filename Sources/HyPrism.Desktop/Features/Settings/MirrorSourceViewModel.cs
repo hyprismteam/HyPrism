@@ -2,12 +2,14 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 using CommunityToolkit.Mvvm.ComponentModel;
+using HyPrism.Core.Game.Sources;
 using HyPrism.Core.Models;
 
 namespace HyPrism.Desktop.Features.Settings;
 
 public sealed partial class MirrorSourceViewModel : ObservableObject
 {
+    private SourceAvailabilityState _availabilityState;
     private readonly Action<MirrorSourceViewModel> _enabledChanged;
     private bool _suppressEnabledChanged;
 
@@ -15,6 +17,8 @@ public sealed partial class MirrorSourceViewModel : ObservableObject
         MirrorMeta definition,
         string sourceType,
         bool isLast,
+        string checkingLabel,
+        string disabledLabel,
         Action<MirrorSourceViewModel> enabledChanged)
     {
         Definition = definition;
@@ -25,6 +29,11 @@ public sealed partial class MirrorSourceViewModel : ObservableObject
         Endpoint = GetEndpoint(definition);
         SourceType = sourceType;
         IsLast = isLast;
+        _availability = definition.Enabled ? checkingLabel : disabledLabel;
+        _availabilityState = definition.Enabled
+            ? SourceAvailabilityState.Checking
+            : SourceAvailabilityState.Disabled;
+        _ping = "—";
         _isEnabled = definition.Enabled;
         _enabledChanged = enabledChanged;
     }
@@ -36,6 +45,11 @@ public sealed partial class MirrorSourceViewModel : ObservableObject
     public string Endpoint { get; }
     public string SourceType { get; private set; }
     public bool IsLast { get; }
+    public bool IsAvailable => _availabilityState == SourceAvailabilityState.Available;
+    public bool IsUnavailable => _availabilityState is SourceAvailabilityState.Disabled or SourceAvailabilityState.Unavailable;
+
+    [ObservableProperty] private string _availability;
+    [ObservableProperty] private string _ping;
 
     [ObservableProperty]
     private bool _isEnabled;
@@ -53,6 +67,53 @@ public sealed partial class MirrorSourceViewModel : ObservableObject
     {
         SourceType = sourceType;
         OnPropertyChanged(nameof(SourceType));
+    }
+
+    public void SetChecking(string label)
+    {
+        _availabilityState = SourceAvailabilityState.Checking;
+        Availability = label;
+        Ping = "—";
+        NotifyAvailabilityChanged();
+    }
+
+    public void SetDisabled(string label)
+    {
+        _availabilityState = SourceAvailabilityState.Disabled;
+        Availability = label;
+        Ping = "—";
+        NotifyAvailabilityChanged();
+    }
+
+    public void ApplyProbe(MirrorSpeedTestResult result, string availableLabel, string unavailableLabel)
+    {
+        _availabilityState = result.IsAvailable
+            ? SourceAvailabilityState.Available
+            : SourceAvailabilityState.Unavailable;
+        Availability = result.IsAvailable ? availableLabel : unavailableLabel;
+        Ping = result.IsAvailable && result.PingMs >= 0 ? $"{result.PingMs} ms" : "—";
+        NotifyAvailabilityChanged();
+    }
+
+    public void RefreshAvailabilityLabel(
+        string checkingLabel,
+        string disabledLabel,
+        string availableLabel,
+        string unavailableLabel)
+    {
+        Availability = _availabilityState switch
+        {
+            SourceAvailabilityState.Checking => checkingLabel,
+            SourceAvailabilityState.Disabled => disabledLabel,
+            SourceAvailabilityState.Available => availableLabel,
+            _ => unavailableLabel
+        };
+    }
+
+    private void NotifyAvailabilityChanged()
+    {
+        OnPropertyChanged(nameof(IsAvailable));
+        OnPropertyChanged(nameof(IsUnavailable));
     }
 
     public void SetEnabledWithoutNotification(bool value)
@@ -75,4 +136,12 @@ public sealed partial class MirrorSourceViewModel : ObservableObject
             ? endpoint.GetLeftPart(UriPartial.Path).TrimEnd('/')
             : rawEndpoint;
     }
+}
+
+internal enum SourceAvailabilityState
+{
+    Checking,
+    Disabled,
+    Available,
+    Unavailable
 }

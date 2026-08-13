@@ -18,7 +18,12 @@ public class ProfileManager : IProfileManager
     private readonly IConfigStore _configStore;
     private readonly IAvatarCache? _avatars;
 
-    private static readonly JsonSerializerOptions JsonOpts = new() { PropertyNameCaseInsensitive = true, WriteIndented = true };
+    private static readonly JsonSerializerOptions JsonOpts = new()
+    {
+        PropertyNameCaseInsensitive = true,
+        WriteIndented = true,
+        Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+    };
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ProfileManager"/> class.
@@ -35,15 +40,7 @@ public class ProfileManager : IProfileManager
 
     /// <inheritdoc/>
     public string GetNick()
-    {
-        // Primary: read from active profile
-        var nick = GetActiveProfileField(p => p.Name);
-        if (!string.IsNullOrEmpty(nick)) return nick;
-        // Fallback: legacy config field (kept in sync by SwitchProfile)
-        #pragma warning disable CS0618
-        return _configStore.Configuration.Nick;
-        #pragma warning restore CS0618
-    }
+        => GetActiveProfileField(profile => profile.Name) ?? string.Empty;
 
     /// <inheritdoc/>
     public bool SetNick(string nick)
@@ -51,16 +48,7 @@ public class ProfileManager : IProfileManager
         if (string.IsNullOrWhiteSpace(nick) || nick.Length > 16)
             return false;
 
-        var config = _configStore.Configuration;
-        #pragma warning disable CS0618
-        config.Nick = nick;
-        #pragma warning restore CS0618
-
-        // Also update the active profile in profiles.json
-        UpdateActiveProfileField(p => p.Name = nick);
-
-        _configStore.SaveConfig();
-        return true;
+        return UpdateActiveProfileField(profile => profile.Name = nick);
     }
 
     /// <inheritdoc/>
@@ -69,38 +57,13 @@ public class ProfileManager : IProfileManager
     /// <inheritdoc/>
     public bool SetUUID(string uuid)
     {
-        if (string.IsNullOrWhiteSpace(uuid))
-            return false;
-
-        var config = _configStore.Configuration;
-        #pragma warning disable CS0618
-        config.UUID = uuid;
-        #pragma warning restore CS0618
-
-        // Also update the active profile in profiles.json
-        UpdateActiveProfileField(p => p.UUID = uuid);
-
-        _configStore.SaveConfig();
-        return true;
+        return Guid.TryParse(uuid, out var parsed)
+               && UpdateActiveProfileField(profile => profile.UUID = parsed.ToString());
     }
 
     /// <inheritdoc/>
     public string GetCurrentUuid()
-    {
-        // Primary: read from active profile
-        var uuid = GetActiveProfileField(p => p.UUID);
-        if (!string.IsNullOrEmpty(uuid)) return uuid;
-        // Fallback: legacy config field
-        #pragma warning disable CS0618
-        uuid = _configStore.Configuration.UUID;
-        #pragma warning restore CS0618
-        if (string.IsNullOrEmpty(uuid))
-        {
-            uuid = GenerateNewUuid();
-            SetUUID(uuid);
-        }
-        return uuid;
-    }
+        => GetActiveProfileField(profile => profile.UUID) ?? string.Empty;
 
     /// <inheritdoc/>
     public string GenerateNewUuid()
@@ -263,15 +226,16 @@ public class ProfileManager : IProfileManager
     }
 
     /// <summary>Mutates the currently selected profile in the cache.</summary>
-    private void UpdateActiveProfileField(Action<Profile> mutate)
+    private bool UpdateActiveProfileField(Action<Profile> mutate)
     {
         var id = _configStore.Configuration.SelectedProfileId;
-        if (string.IsNullOrEmpty(id)) return;
+        if (string.IsNullOrEmpty(id)) return false;
         var profiles = ReadProfilesFromCache();
         var profile = profiles.FirstOrDefault(p => p.Id == id);
-        if (profile == null) return;
+        if (profile == null) return false;
         mutate(profile);
         WriteProfilesToCache(profiles);
+        return true;
     }
 
 
@@ -281,10 +245,27 @@ public class ProfileManager : IProfileManager
     /// <inheritdoc/>
     public bool CreateProfile(string name, string? uuid = null)
     {
+        if (string.IsNullOrWhiteSpace(name) || name.Trim().Length > 16)
+            return false;
+        var profileUuid = uuid ?? GenerateNewUuid();
+        if (!Guid.TryParse(profileUuid, out var parsedUuid))
+            return false;
+
         var profiles = ReadProfilesFromCache();
-        var profile = new Profile { Id = Guid.NewGuid().ToString(), Name = name, UUID = uuid ?? GenerateNewUuid(), CreatedAt = DateTime.UtcNow };
+        var profile = new Profile
+        {
+            Id = Guid.NewGuid().ToString(),
+            Name = name.Trim(),
+            UUID = parsedUuid.ToString(),
+            CreatedAt = DateTime.UtcNow
+        };
         profiles.Add(profile);
         WriteProfilesToCache(profiles);
+        if (string.IsNullOrWhiteSpace(_configStore.Configuration.SelectedProfileId))
+        {
+            _configStore.Configuration.SelectedProfileId = profile.Id;
+            _configStore.SaveConfig();
+        }
         return true;
     }
 
@@ -296,6 +277,11 @@ public class ProfileManager : IProfileManager
         if (profile == null) return false;
         profiles.Remove(profile);
         WriteProfilesToCache(profiles);
+        if (_configStore.Configuration.SelectedProfileId == profileId)
+        {
+            _configStore.Configuration.SelectedProfileId = profiles.FirstOrDefault()?.Id ?? string.Empty;
+            _configStore.SaveConfig();
+        }
         return true;
     }
 
@@ -304,27 +290,8 @@ public class ProfileManager : IProfileManager
     {
         var profile = ReadProfilesFromCache().FirstOrDefault(p => p.Id == profileId);
         if (profile == null) return false;
-        SetNick(profile.Name);
-        SetUUID(profile.UUID);
-        return true;
-    }
-
-    /// <inheritdoc/>
-    public bool SaveCurrentAsProfile()
-    {
-        var currentNick = GetNick();
-        var currentUuid = GetUUID();
-        var profiles = ReadProfilesFromCache();
-        var existing = profiles.FirstOrDefault(p => p.UUID == currentUuid);
-        if (existing != null)
-        {
-            existing.Name = currentNick;
-        }
-        else
-        {
-            profiles.Add(new Profile { Id = Guid.NewGuid().ToString(), Name = currentNick, UUID = currentUuid, CreatedAt = DateTime.UtcNow });
-        }
-        WriteProfilesToCache(profiles);
+        _configStore.Configuration.SelectedProfileId = profile.Id;
+        _configStore.SaveConfig();
         return true;
     }
 

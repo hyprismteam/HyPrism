@@ -531,9 +531,6 @@ Vous devrez peut-être réinstaller le jeu si vous changez de lecteur.</value>
   <data name="launch.detail.patch_applied" xml:space="preserve">
     <value>Patch {0} appliqué avec succès</value>
   </data>
-  <data name="launch.detail.patching_class_files" xml:space="preserve">
-    <value>Correction des fichiers class...</value>
-  </data>
   <data name="launch.detail.patching_client" xml:space="preserve">
     <value>Correction du binaire client...</value>
   </data>
@@ -546,9 +543,6 @@ Vous devrez peut-être réinstaller le jeu si vous changez de lecteur.</value>
   <data name="launch.detail.patching_init" xml:space="preserve">
     <value>Initialisation du patcher...</value>
   </data>
-  <data name="launch.detail.patching_server" xml:space="preserve">
-    <value>Correction du JAR serveur...</value>
-  </data>
   <data name="launch.detail.preparing_download" xml:space="preserve">
     <value>Préparation du téléchargement...</value>
   </data>
@@ -558,20 +552,8 @@ Vous devrez peut-être réinstaller le jeu si vous changez de lecteur.</value>
   <data name="launch.detail.reading_client_binary" xml:space="preserve">
     <value>Lecture du binaire client...</value>
   </data>
-  <data name="launch.detail.reading_server_jar" xml:space="preserve">
-    <value>Lecture du JAR serveur...</value>
-  </data>
-  <data name="launch.detail.replacing_original_jar" xml:space="preserve">
-    <value>Remplacement du JAR original...</value>
-  </data>
   <data name="launch.detail.resigning" xml:space="preserve">
     <value>Resignature du binaire...</value>
-  </data>
-  <data name="launch.detail.server_already_patched" xml:space="preserve">
-    <value>Serveur déjà corrigé</value>
-  </data>
-  <data name="launch.detail.server_jar_patched" xml:space="preserve">
-    <value>JAR serveur corrigé</value>
   </data>
   <data name="launch.detail.started" xml:space="preserve">
     <value>Jeu démarré !</value>
@@ -1405,7 +1387,7 @@ Vous devrez peut-être réinstaller le jeu si vous changez de lecteur.</value>
     <value>Mode Hors Ligne (Clique pour activer)</value>
   </data>
   <data name="onlineToggle.online" xml:space="preserve">
-    <value>Mode En Ligne</value>
+    <value>Mode connecté</value>
   </data>
   <data name="onlineToggle.onlineClickDisable" xml:space="preserve">
     <value>Mode En Ligne (Clique pour désactiver)</value>
@@ -1836,23 +1818,11 @@ Vous devrez peut-être réinstaller le jeu si vous changez de lecteur.</value>
   <data name="settings.generalSettings.closeLauncherHint" xml:space="preserve">
     <value>Fermer le lanceur quand le jeu démarre</value>
   </data>
-  <data name="settings.generalSettings.dualAuth" xml:space="preserve">
-    <value>DualAuth (Expérimental)</value>
-  </data>
-  <data name="settings.generalSettings.dualAuthHint" xml:space="preserve">
-    <value>Utilise un agent Java pour l'authentification serveur au lieu du patch statique du JAR. Peut provoquer des plantages ou des problèmes de connexion.</value>
-  </data>
   <data name="settings.generalSettings.launcherStorage" xml:space="preserve">
     <value>Stockage du Lanceur</value>
   </data>
   <data name="settings.generalSettings.launcherStorageHint" xml:space="preserve">
     <value>Emplacement où sont stockés les données du lanceur et les fichiers du jeu.</value>
-  </data>
-  <data name="settings.generalSettings.legacyPatching" xml:space="preserve">
-    <value>Patch Classique</value>
-  </data>
-  <data name="settings.generalSettings.legacyPatchingHint" xml:space="preserve">
-    <value>Utilise le patch statique du JAR pour l'authentification serveur au lieu de l'agent Java DualAuth. Plus compatible mais moins flexible.</value>
   </data>
   <data name="settings.generalSettings.showAlphaMods" xml:space="preserve">
     <value>Afficher les Mods Alpha</value>
@@ -2143,7 +2113,7 @@ Vous devrez peut-être réinstaller le jeu si vous changez de lecteur.</value>
     <value>Mode En Ligne</value>
   </data>
   <data name="settings.networkSettings.onlineModeHint" xml:space="preserve">
-    <value>Se connecter aux serveurs d'authentification pour le multijoueur.</value>
+    <value>Utiliser le service d'authentification et les données du compte ; si désactivé, HyPrism crée une session OmniAuth locale</value>
   </data>
   <data name="settings.profile.avatar" xml:space="preserve">
     <value>Avatar</value>

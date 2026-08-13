@@ -531,9 +531,6 @@ Bei Laufwerkswechsel muss das Spiel möglicherweise neu installiert werden.</val
   <data name="launch.detail.patch_applied" xml:space="preserve">
     <value>Patch {0} erfolgreich angewendet</value>
   </data>
-  <data name="launch.detail.patching_class_files" xml:space="preserve">
-    <value>Class-Dateien werden gepatcht...</value>
-  </data>
   <data name="launch.detail.patching_client" xml:space="preserve">
     <value>Patche Client-Binary...</value>
   </data>
@@ -546,9 +543,6 @@ Bei Laufwerkswechsel muss das Spiel möglicherweise neu installiert werden.</val
   <data name="launch.detail.patching_init" xml:space="preserve">
     <value>Patcher wird initialisiert...</value>
   </data>
-  <data name="launch.detail.patching_server" xml:space="preserve">
-    <value>Patche Server-JAR...</value>
-  </data>
   <data name="launch.detail.preparing_download" xml:space="preserve">
     <value>Download wird vorbereitet...</value>
   </data>
@@ -558,20 +552,8 @@ Bei Laufwerkswechsel muss das Spiel möglicherweise neu installiert werden.</val
   <data name="launch.detail.reading_client_binary" xml:space="preserve">
     <value>Client-Binärdatei wird gelesen...</value>
   </data>
-  <data name="launch.detail.reading_server_jar" xml:space="preserve">
-    <value>Server-JAR wird gelesen...</value>
-  </data>
-  <data name="launch.detail.replacing_original_jar" xml:space="preserve">
-    <value>Original-JAR wird ersetzt...</value>
-  </data>
   <data name="launch.detail.resigning" xml:space="preserve">
     <value>Signiere Binary neu...</value>
-  </data>
-  <data name="launch.detail.server_already_patched" xml:space="preserve">
-    <value>Server bereits gepatcht</value>
-  </data>
-  <data name="launch.detail.server_jar_patched" xml:space="preserve">
-    <value>Server-JAR gepatcht</value>
   </data>
   <data name="launch.detail.started" xml:space="preserve">
     <value>Spiel gestartet!</value>
@@ -1405,7 +1387,7 @@ Bei Laufwerkswechsel muss das Spiel möglicherweise neu installiert werden.</val
     <value>Offline-Modus (Zum Aktivieren von Online klicken)</value>
   </data>
   <data name="onlineToggle.online" xml:space="preserve">
-    <value>Online-Modus</value>
+    <value>Verbundener Modus</value>
   </data>
   <data name="onlineToggle.onlineClickDisable" xml:space="preserve">
     <value>Online-Modus (Zum Deaktivieren klicken)</value>
@@ -1836,23 +1818,11 @@ Bei Laufwerkswechsel muss das Spiel möglicherweise neu installiert werden.</val
   <data name="settings.generalSettings.closeLauncherHint" xml:space="preserve">
     <value>Launcher schließen, wenn das Spiel startet</value>
   </data>
-  <data name="settings.generalSettings.dualAuth" xml:space="preserve">
-    <value>DualAuth (Experimentell)</value>
-  </data>
-  <data name="settings.generalSettings.dualAuthHint" xml:space="preserve">
-    <value>Verwendet einen Java-Agenten zur Laufzeit für die Server-Authentifizierung anstelle von statischem JAR-Patching. Kann Abstürze oder Verbindungsprobleme verursachen.</value>
-  </data>
   <data name="settings.generalSettings.launcherStorage" xml:space="preserve">
     <value>Speicherort</value>
   </data>
   <data name="settings.generalSettings.launcherStorageHint" xml:space="preserve">
     <value>Wo Spiele und Daten gespeichert werden.</value>
-  </data>
-  <data name="settings.generalSettings.legacyPatching" xml:space="preserve">
-    <value>Legacy-Patching</value>
-  </data>
-  <data name="settings.generalSettings.legacyPatchingHint" xml:space="preserve">
-    <value>Verwendet statisches JAR-Patching zur Server-Authentifizierung anstelle des DualAuth Java-Agenten. Kompatibler, aber weniger flexibel.</value>
   </data>
   <data name="settings.generalSettings.showAlphaMods" xml:space="preserve">
     <value>Alpha-Mods anzeigen</value>
@@ -2143,7 +2113,7 @@ Bei Laufwerkswechsel muss das Spiel möglicherweise neu installiert werden.</val
     <value>Online-Modus</value>
   </data>
   <data name="settings.networkSettings.onlineModeHint" xml:space="preserve">
-    <value>Mit Authentifizierungsservern für Multiplayer verbinden.</value>
+    <value>Authentifizierungsdienst und Kontodaten verwenden; wenn deaktiviert, erstellt HyPrism eine lokale OmniAuth-Sitzung</value>
   </data>
   <data name="settings.profile.avatar" xml:space="preserve">
     <value>Avatar</value>

@@ -1978,7 +1978,7 @@ public sealed class MainWindowRenderTests
         var firstBackgroundRowY = backgroundChoices[0].TranslatePoint(default, settingsView)!.Value.Y;
         var backgroundsInFirstRow = backgroundChoices.Count(choice =>
             Math.Abs(choice.TranslatePoint(default, settingsView)!.Value.Y - firstBackgroundRowY) < 1);
-        Assert.Equal(width == 1920 ? 5 : 3, backgroundsInFirstRow);
+        Assert.Equal(width == 1920 ? 4 : 3, backgroundsInFirstRow);
         var visualSettingsPreviewPath = Environment.GetEnvironmentVariable(
             "HYPRISM_VISUAL_SETTINGS_RENDER_OUTPUT");
         if (!string.IsNullOrWhiteSpace(visualSettingsPreviewPath) && width == 1280)

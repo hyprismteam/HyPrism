@@ -3,6 +3,7 @@
 
 using HyPrism.Core.Game.Sources;
 using HyPrism.Core.Models;
+using System.Net;
 
 namespace HyPrism.Core.Tests.Game.Sources;
 
@@ -74,6 +75,30 @@ public sealed class MirrorCatalogTests
         }
     }
 
+    [Fact]
+    public async Task AvailabilityProbeUsesHeadersOnlyAndDoesNotDownloadGameData()
+    {
+        var appDir = CreateTemporaryDirectory();
+        try
+        {
+            var handler = new ProbeHandler();
+            var catalog = new MirrorCatalog(appDir, new HttpClient(handler));
+            catalog.Save(CreateMirror("probe-source", enabled: true));
+            var source = Assert.Single(catalog.CreateEnabledSources());
+
+            var result = await source.ProbeAvailabilityAsync();
+
+            Assert.True(result.IsAvailable);
+            Assert.True(result.PingMs >= 0);
+            Assert.Equal(1, handler.RequestCount);
+            Assert.Equal(HttpMethod.Head, handler.LastMethod);
+        }
+        finally
+        {
+            Directory.Delete(appDir, recursive: true);
+        }
+    }
+
     private static MirrorMeta CreateMirror(string id, bool enabled)
         => new()
         {
@@ -97,5 +122,23 @@ public sealed class MirrorCatalogTests
         var path = Path.Combine(Path.GetTempPath(), $"hyprism-mirror-tests-{Guid.NewGuid():N}");
         Directory.CreateDirectory(path);
         return path;
+    }
+
+    private sealed class ProbeHandler : HttpMessageHandler
+    {
+        public int RequestCount { get; private set; }
+        public HttpMethod? LastMethod { get; private set; }
+
+        protected override Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken)
+        {
+            RequestCount++;
+            LastMethod = request.Method;
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                RequestMessage = request
+            });
+        }
     }
 }

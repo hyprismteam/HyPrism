@@ -13,6 +13,38 @@ SPDX-License-Identifier: GPL-3.0-only
              x:DataType="vm:SettingsViewModel"
              SizeChanged="OnSettingsViewSizeChanged">
   <UserControl.Resources>
+    <ControlTheme x:Key="SourceAddButtonTheme" TargetType="Button">
+      <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Padding" Value="10,6" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+      <Setter Property="FocusAdorner" Value="{x:Null}" />
+      <Setter Property="Cursor" Value="Hand" />
+      <Setter Property="Transitions">
+        <Transitions>
+          <BrushTransition Property="Foreground" Duration="0:0:0.16" />
+        </Transitions>
+      </Setter>
+      <Setter Property="Template">
+        <ControlTemplate>
+          <ContentPresenter Content="{TemplateBinding Content}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}"
+                            Foreground="{TemplateBinding Foreground}"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            Padding="{TemplateBinding Padding}"
+                            HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                            VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
+        </ControlTemplate>
+      </Setter>
+      <Style Selector="^:pointerover, ^:pressed">
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+        <Setter Property="Background" Value="Transparent" />
+      </Style>
+    </ControlTheme>
+
     <DataTemplate x:Key="SettingChoiceTemplate" x:DataType="vm:SettingChoiceViewModel">
       <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
         <Border Width="24"
@@ -182,22 +214,32 @@ SPDX-License-Identifier: GPL-3.0-only
     <DataTemplate x:Key="MirrorSourceTemplate" x:DataType="vm:MirrorSourceViewModel">
       <Border Classes="settingsRow mirrorSourceRow"
               Classes.last="{Binding IsLast}">
-        <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="14">
-          <StackPanel Spacing="4" VerticalAlignment="Center">
-            <TextBlock Text="{Binding Name}"
-                       Classes="settingsLabel"
-                       TextTrimming="CharacterEllipsis" />
-            <TextBlock Classes="settingsHint"
-                       TextTrimming="CharacterEllipsis">
-              <Run Text="{Binding Endpoint}" />
-              <Run Text="  ·  " />
-              <Run Text="{Binding SourceType}" />
-            </TextBlock>
-          </StackPanel>
-          <ToggleSwitch Grid.Column="1"
+        <Grid ColumnDefinitions="2.3*,1.05*,1.15*,70,Auto,Auto" ColumnSpacing="14">
+          <TextBlock Text="{Binding Endpoint}"
+                     Classes="sourceTableValue link"
+                     ToolTip.Tip="{Binding Name}"
+                     TextTrimming="CharacterEllipsis" />
+          <TextBlock Grid.Column="1"
+                     Text="{Binding SourceType}"
+                     Classes="sourceTableValue"
+                     TextTrimming="CharacterEllipsis" />
+          <Grid Grid.Column="2"
+                Classes="sourceAvailability"
+                ToolTip.Tip="{Binding Availability}">
+            <PathIcon Data="{StaticResource CheckIcon}"
+                      Classes="sourceAvailabilityIcon available"
+                      IsVisible="{Binding IsAvailable}" />
+            <PathIcon Data="{StaticResource CloseIcon}"
+                      Classes="sourceAvailabilityIcon unavailable"
+                      IsVisible="{Binding IsUnavailable}" />
+          </Grid>
+          <TextBlock Grid.Column="3"
+                     Text="{Binding Ping}"
+                     Classes="sourceTableValue ping" />
+          <ToggleSwitch Grid.Column="4"
                         IsChecked="{Binding IsEnabled}"
                         VerticalAlignment="Center" />
-          <Button Grid.Column="2"
+          <Button Grid.Column="5"
                   Classes="mirrorRemove"
                   Command="{Binding DataContext.RequestDeleteMirrorCommand, ElementName=SettingsRoot}"
                   CommandParameter="{Binding}"
@@ -362,13 +404,13 @@ SPDX-License-Identifier: GPL-3.0-only
                     VerticalScrollBarVisibility="Auto">
         <Grid x:Name="SettingsContentHost"
               Margin="32,28,32,40"
-              MaxWidth="980"
+              MaxWidth="720"
               HorizontalAlignment="Stretch">
           <StackPanel Spacing="22" IsVisible="{Binding IsGeneral}">
             <StackPanel Spacing="10">
               <TextBlock Text="{Binding LanguageCategoryTitle}" Classes="settingsCategoryHeading" />
               <Border Classes="settingsGroup">
-                <Border Classes="settingsRow last">
+                <Border Classes="settingsRow">
                   <Grid ColumnDefinitions="*,220" ColumnSpacing="24">
                     <StackPanel Spacing="3" VerticalAlignment="Center">
                       <TextBlock Text="{Binding LanguageLabel}" Classes="settingsLabel" />
@@ -434,7 +476,7 @@ SPDX-License-Identifier: GPL-3.0-only
               <TextBlock Text="{Binding DownloadBehaviorTitle}" Classes="settingsCategoryHeading" />
               <Border Classes="settingsGroup">
                 <StackPanel>
-                  <Border Classes="settingsRow">
+                  <Border Classes="settingsRow last">
                     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="24">
                       <StackPanel Spacing="3">
                         <TextBlock Text="{Binding LaunchAfterDownloadLabel}" Classes="settingsLabel" />
@@ -443,63 +485,71 @@ SPDX-License-Identifier: GPL-3.0-only
                       <ToggleSwitch Grid.Column="1" IsChecked="{Binding LaunchAfterDownload}" />
                     </Grid>
                   </Border>
-                  <Border Classes="settingsRow last">
-                    <TextBlock Text="{Binding DownloadsInfo}" Classes="settingsHint" />
-                  </Border>
                 </StackPanel>
               </Border>
             </StackPanel>
 
             <StackPanel Spacing="10">
               <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16" Margin="4,0,4,2">
-                <StackPanel Spacing="2">
-                  <TextBlock Text="{Binding DownloadSourcesTitle}"
-                             Classes="settingsCategoryHeading"
-                             Margin="0" />
-                  <TextBlock Text="{Binding DownloadSourcesHint}" Classes="settingsHint" />
-                </StackPanel>
+                <TextBlock Text="{Binding DownloadSourcesTitle}"
+                           Classes="settingsCategoryHeading"
+                           Margin="0"
+                           VerticalAlignment="Center" />
                 <Button Grid.Column="1"
                         Classes="sourceAdd"
+                        Theme="{StaticResource SourceAddButtonTheme}"
                         Command="{Binding ShowAddMirrorCommand}">
                   <StackPanel Orientation="Horizontal" Spacing="8">
                     <TextBlock Text="+" FontSize="20" VerticalAlignment="Center" />
-                    <TextBlock Text="{Binding AddSourceLabel}" VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding AddSourceButtonLabel}"
+                               FontWeight="SemiBold"
+                               VerticalAlignment="Center" />
                   </StackPanel>
                 </Button>
               </Grid>
 
               <Border Classes="settingsGroup">
                 <StackPanel>
-                  <Border Classes="settingsRow">
-                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="14">
-                      <Border Classes="sourceIndicator official">
-                        <TextBlock Text="H" FontWeight="Bold" />
-                      </Border>
-                      <StackPanel Grid.Column="1" Spacing="3" VerticalAlignment="Center">
-                        <TextBlock Text="{Binding OfficialSourceLabel}" Classes="settingsLabel" />
-                        <TextBlock Text="{Binding OfficialSourceHint}" Classes="settingsHint" />
-                      </StackPanel>
-                      <Border Grid.Column="2" Classes="sourceStatus" VerticalAlignment="Center">
-                        <TextBlock Text="{Binding OfficialSourceStatus}" />
-                      </Border>
+                  <Border Classes="sourceTableHeader">
+                    <Grid ColumnDefinitions="2.3*,1.05*,1.15*,70,82" ColumnSpacing="14">
+                      <TextBlock Text="{Binding SourceLinkColumn}" />
+                      <TextBlock Grid.Column="1" Text="{Binding SourceTypeColumn}" />
+                      <TextBlock Grid.Column="2" Text="{Binding SourceAvailabilityColumn}" />
+                      <TextBlock Grid.Column="3" Text="{Binding SourcePingColumn}" />
+                    </Grid>
+                  </Border>
+                  <Border Classes="settingsRow"
+                          Classes.last="{Binding HasNoMirrors}">
+                    <Grid ColumnDefinitions="2.3*,1.05*,1.15*,70,82" ColumnSpacing="14">
+                      <TextBlock Text="{Binding OfficialSourceLink}"
+                                 Classes="sourceTableValue link"
+                                 TextTrimming="CharacterEllipsis" />
+                      <TextBlock Grid.Column="1"
+                                 Text="{Binding OfficialSourceType}"
+                                 Classes="sourceTableValue" />
+                      <Grid Grid.Column="2"
+                            Classes="sourceAvailability"
+                            ToolTip.Tip="{Binding OfficialSourceAvailability}">
+                        <PathIcon Data="{StaticResource CheckIcon}"
+                                  Classes="sourceAvailabilityIcon available"
+                                  IsVisible="{Binding OfficialSourceIsAvailable}" />
+                        <PathIcon Data="{StaticResource CloseIcon}"
+                                  Classes="sourceAvailabilityIcon unavailable"
+                                  IsVisible="{Binding OfficialSourceIsUnavailable}" />
+                      </Grid>
+                      <TextBlock Grid.Column="3"
+                                 Text="{Binding OfficialSourcePing}"
+                                 Classes="sourceTableValue ping" />
                     </Grid>
                   </Border>
                   <ItemsControl ItemsSource="{Binding MirrorSources}"
                                 ItemTemplate="{StaticResource MirrorSourceTemplate}"
                                 IsVisible="{Binding HasMirrors}" />
-                  <Border Classes="settingsRow last" IsVisible="{Binding HasNoMirrors}">
-                    <StackPanel Spacing="4" HorizontalAlignment="Center" Margin="12,8">
-                      <TextBlock Text="{Binding NoSourcesLabel}"
-                                 Classes="settingsLabel"
-                                 HorizontalAlignment="Center" />
-                      <TextBlock Text="{Binding NoSourcesHint}"
-                                 Classes="settingsHint"
-                                 TextAlignment="Center"
-                                 HorizontalAlignment="Center" />
-                    </StackPanel>
-                  </Border>
                 </StackPanel>
               </Border>
+
+              <TextBlock Text="{Binding DownloadsInfo}"
+                         Classes="settingsHint sourceSelectionHint" />
 
               <Border Classes="settingsGroup"
                       IsVisible="{Binding IsAddingMirror}">
@@ -736,22 +786,13 @@ SPDX-License-Identifier: GPL-3.0-only
               <TextBlock Text="{Binding NetworkTitle}" Classes="settingsCategoryHeading" />
               <Border Classes="settingsGroup">
                 <StackPanel>
-                <Border Classes="settingsRow">
+                <Border Classes="settingsRow last">
                   <Grid ColumnDefinitions="*,Auto" ColumnSpacing="24">
                     <StackPanel Spacing="3">
                       <TextBlock Text="{Binding OnlineModeLabel}" Classes="settingsLabel" />
                       <TextBlock Text="{Binding OnlineModeHint}" Classes="settingsHint" />
                     </StackPanel>
                     <ToggleSwitch Grid.Column="1" IsChecked="{Binding OnlineMode}" />
-                  </Grid>
-                </Border>
-                <Border Classes="settingsRow last">
-                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="24">
-                    <StackPanel Spacing="3">
-                      <TextBlock Text="{Binding DualAuthLabel}" Classes="settingsLabel" />
-                      <TextBlock Text="{Binding DualAuthHint}" Classes="settingsHint" />
-                    </StackPanel>
-                    <ToggleSwitch Grid.Column="1" IsChecked="{Binding UseDualAuth}" />
                   </Grid>
                 </Border>
                 </StackPanel>

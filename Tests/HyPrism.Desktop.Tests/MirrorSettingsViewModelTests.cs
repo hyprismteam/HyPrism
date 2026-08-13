@@ -39,6 +39,16 @@ public sealed class MirrorSettingsViewModelTests
                     Success = true,
                     Mirror = CreateMirror()
                 });
+            versions
+                .Setup(service => service.ProbeSourceAvailabilityAsync(
+                    "detected-source",
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new MirrorSpeedTestResult
+                {
+                    MirrorId = "detected-source",
+                    IsAvailable = true,
+                    PingMs = 42
+                });
 
             using var viewModel = new SettingsViewModel(
                 settings.Object,
@@ -57,6 +67,12 @@ public sealed class MirrorSettingsViewModelTests
             Assert.Equal("https://mirror.example.com/hytale", source.Endpoint);
             Assert.True(source.IsEnabled);
             Assert.Single(catalog.GetAll());
+
+            viewModel.SelectCategoryCommand.Execute(
+                viewModel.Categories.Single(category => category.Id == "downloads"));
+            source = Assert.Single(viewModel.MirrorSources);
+            await WaitUntilAsync(() => source.Ping == "42 ms");
+            Assert.Equal("Available", source.Availability);
 
             source.IsEnabled = false;
             Assert.False(Assert.Single(catalog.GetAll()).Enabled);
@@ -105,4 +121,12 @@ public sealed class MirrorSettingsViewModelTests
                 }
             }
         };
+
+    private static async Task WaitUntilAsync(Func<bool> condition)
+    {
+        for (var attempt = 0; attempt < 20 && !condition(); attempt++)
+            await Task.Delay(10);
+
+        Assert.True(condition());
+    }
 }

@@ -20,8 +20,9 @@ description: Domain features, contracts, and orchestration owned by the launcher
 - `Game/Versions` resolves official and mirror version metadata and caches source results
 - `Game/Download` streams files, applies patch sequences, and reports progress
 - `Game/Instances` owns instance metadata, paths, selection, import, deletion, and migrations
-- `Game/Launch` prepares Java, authentication, patching, environment variables, and the game process
-- `Game/Authentication` obtains compatible game session tokens
+- `Game/Launch` prepares Java, client endpoint redirection, the DualAuth Agent, environment variables, and the game process
+- `Game/Authentication` obtains connected game sessions or issues self-contained OmniAuth tokens through the Local Node
+- `HyPrism.LocalNode` hosts the autonomous session, account, installed cosmetics catalog, configuration, and empty-state social compatibility surface
 - `Game/Assets` manages avatar data required by profiles and game launch
 - `Game/Mods` searches and installs CurseForge or local mods
 - `Game/Patching` owns the Butler client used for differential updates
@@ -42,3 +43,13 @@ Core resolves profile directories but never opens a system file manager. Native 
 Game launch depends only on `IGpuProvider` and `GpuAdapterInfo`. Each host owns the concrete adapter discovery implementation
 
 News parsing, GitHub metadata, and the Discord Rich Presence adapter belong to `HyPrism.Desktop`. Core only consumes `IDiscordPresence` as a host capability while reporting launcher and game activity
+
+## Local Node
+
+`HyPrism.Desktop` owns a `LocalNodeHost` process controller behind the Core `ILocalNodeService` contract. Autonomous launch starts the dedicated `HyPrism.LocalNode` executable before patching the client, then transfers lifetime ownership to the game PID through the loopback control plane
+
+The host listens only on `https://h.localhost:8443`. The 16-character endpoint lets `ClientPatcher` redirect session, account-data, telemetry, live-config, social, server-discovery, and socket-gateway prefixes to one loopback authority without changing the length of the embedded domain segment
+
+OmniAuth signing keys live only for the dedicated node process attached to the active game. The identity handoff includes the private Ed25519 JWK required by DualAuth, while JWKS, authorization grants, and access tokens expose only public key material. Account, skin, and presence preferences persist below the application data directory
+
+The companion clears ASP.NET logging providers and writes its own bounded file log. Closing Desktop releases only launcher-side process handles, while the node continues monitoring the game and shuts itself down when that process exits

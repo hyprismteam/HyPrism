@@ -9,12 +9,11 @@ namespace HyPrism.Core.Accounts;
 
 /// <summary>
 /// Manages user identities (UUID and username mappings).
-/// Handles UUID generation, username switching, and orphaned skin recovery.
+/// Handles profile identity lookup, profile switching, and orphaned skin recovery.
 /// Delegates profile storage to <see cref="IProfileManager"/>
 /// </summary>
 public class UserIdentityProvider : IUserIdentityProvider
 {
-    private readonly IConfigStore _configStore;
     private readonly ISkinRepository _skins;
     private readonly IInstanceRepository _instances;
     private readonly IProfileManager _profiles;
@@ -22,17 +21,14 @@ public class UserIdentityProvider : IUserIdentityProvider
     /// <summary>
     /// Initializes a new instance of the <see cref="UserIdentityProvider"/> class
     /// </summary>
-    /// <param name="configStore">The configuration service</param>
     /// <param name="skins">The skin management service</param>
     /// <param name="instances">The game instance service</param>
     /// <param name="profiles">The profile service for UUID/name lookups</param>
     public UserIdentityProvider(
-        IConfigStore configStore,
         ISkinRepository skins,
         IInstanceRepository instances,
         IProfileManager profiles)
     {
-        _configStore = configStore;
         _skins = skins;
         _instances = instances;
         _profiles = profiles;
@@ -51,25 +47,7 @@ public class UserIdentityProvider : IUserIdentityProvider
         if (existingProfile != null)
             return existingProfile.UUID;
 
-        // Check current active profile
-        if (_profiles.GetNick().Equals(username, StringComparison.OrdinalIgnoreCase))
-            return _profiles.GetCurrentUuid();
-
-        // Before creating a new UUID, check if there are orphaned skin files we should adopt
-        var orphanedUuid = _skins.FindOrphanedSkinUuid();
-        if (!string.IsNullOrEmpty(orphanedUuid))
-        {
-            Logger.Info("UUID", $"Recovered orphaned skin UUID for user '{username}': {orphanedUuid}");
-            _profiles.SetUUID(orphanedUuid);
-            return orphanedUuid;
-        }
-
-        // Create a new UUID when no orphaned skins are found
-        var newUuid = Guid.NewGuid().ToString();
-        _profiles.SetUUID(newUuid);
-        Logger.Info("UUID", $"Created new UUID for user '{username}': {newUuid}");
-
-        return newUuid;
+        return string.Empty;
     }
 
     /// <inheritdoc/>
@@ -99,9 +77,10 @@ public class UserIdentityProvider : IUserIdentityProvider
         // If it's the current active profile, update through IProfileManager
         if (username.Equals(_profiles.GetNick(), StringComparison.OrdinalIgnoreCase))
         {
-            _profiles.SetUUID(parsed.ToString());
-            Logger.Info("UUID", $"Set UUID for current user '{username}': {parsed}");
-            return true;
+            var updated = _profiles.SetUUID(parsed.ToString());
+            if (updated)
+                Logger.Info("UUID", $"Set UUID for current user '{username}': {parsed}");
+            return updated;
         }
 
         Logger.Warning("UUID", $"Cannot set UUID for non-active user '{username}'. Use JsonProfileRepository.UpdateProfile instead");
@@ -135,8 +114,12 @@ public class UserIdentityProvider : IUserIdentityProvider
     /// <inheritdoc/>
     public string ResetCurrentUserUuid()
     {
+        if (string.IsNullOrWhiteSpace(_profiles.GetCurrentUuid()))
+            return string.Empty;
+
         var newUuid = Guid.NewGuid().ToString();
-        _profiles.SetUUID(newUuid);
+        if (!_profiles.SetUUID(newUuid))
+            return string.Empty;
         Logger.Info("UUID", $"Reset UUID for current user '{_profiles.GetNick()}': {newUuid}");
         return newUuid;
     }
@@ -156,10 +139,16 @@ public class UserIdentityProvider : IUserIdentityProvider
             return existingProfile.UUID;
         }
 
-        // Create a new UUID and make it current when the username does not exist
+        // Create a complete profile when the username does not exist
         var newUuid = Guid.NewGuid().ToString();
-        _profiles.SetNick(username);
-        _profiles.SetUUID(newUuid);
+        if (!_profiles.CreateProfile(username, newUuid))
+            return null;
+
+        var createdProfile = _profiles.GetProfiles()
+            .FirstOrDefault(profile => profile.UUID == newUuid);
+        if (createdProfile is null || !_profiles.SwitchProfile(createdProfile.Id))
+            return null;
+
         Logger.Info("UUID", $"Created new user '{username}' with UUID {newUuid}");
         return newUuid;
     }

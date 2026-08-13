@@ -12,15 +12,14 @@ namespace HyPrism.Core.Accounts;
 public interface IUserIdentityProvider
 {
     /// <summary>
-    /// Gets the UUID for a specific username, creating a new one if it doesn't exist.
-    /// Attempts to recover orphaned skin data when creating a new UUID
+    /// Gets the UUID for a profile with the specified username
     /// </summary>
     /// <param name="username">The username to get the UUID for</param>
-    /// <returns>The UUID associated with the username</returns>
+    /// <returns>The UUID associated with the username, or an empty string if no profile exists</returns>
     string GetUuidForUser(string username);
 
     /// <summary>
-    /// Gets the UUID for the current user based on the current nickname
+    /// Gets the UUID for the selected profile
     /// </summary>
     /// <returns>The current user's UUID</returns>
     string GetCurrentUuid();

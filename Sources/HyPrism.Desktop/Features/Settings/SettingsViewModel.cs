@@ -50,6 +50,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     private bool _aboutDataLoadStarted;
     private bool _aboutDataLoaded;
     private bool _disposed;
+    private CancellationTokenSource? _sourceProbeCancellation;
     private int _aboutContributorSlotCapacity = 9;
     private GitHubCommit? _latestMainCommit;
     private readonly List<AboutContributorViewModel> _aboutContributorPool = [];
@@ -77,7 +78,6 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     [ObservableProperty] private bool _disableNews;
     [ObservableProperty] private bool _showDiscordAnnouncements;
     [ObservableProperty] private bool _onlineMode;
-    [ObservableProperty] private bool _useDualAuth;
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(UseBundledJava))]
     private bool _useCustomJava;
@@ -186,7 +186,6 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         _disableNews = settings.DisableNews;
         _showDiscordAnnouncements = settings.ShowDiscordAnnouncements;
         _onlineMode = settings.OnlineMode;
-        _useDualAuth = settings.UseDualAuth;
         _useCustomJava = settings.UseCustomJava;
         _authDomain = settings.AuthDomain;
         _customJavaPath = settings.CustomJavaPath;
@@ -260,18 +259,23 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     public string DownloadsInfo { get; private set; } = string.Empty;
     public string DownloadBehaviorTitle { get; private set; } = string.Empty;
     public string DownloadSourcesTitle { get; private set; } = string.Empty;
-    public string DownloadSourcesHint { get; private set; } = string.Empty;
-    public string OfficialSourceLabel { get; private set; } = string.Empty;
-    public string OfficialSourceHint { get; private set; } = string.Empty;
-    public string OfficialSourceStatus { get; private set; } = string.Empty;
+    public string SourceLinkColumn { get; private set; } = string.Empty;
+    public string SourceTypeColumn { get; private set; } = string.Empty;
+    public string SourceAvailabilityColumn { get; private set; } = string.Empty;
+    public string SourcePingColumn { get; private set; } = string.Empty;
+    public string OfficialSourceLink => "https://account-data.hytale.com";
+    public string OfficialSourceType { get; private set; } = string.Empty;
+    public string OfficialSourceAvailability { get; private set; } = string.Empty;
+    public string OfficialSourcePing { get; private set; } = "—";
+    public bool OfficialSourceIsAvailable { get; private set; }
+    public bool OfficialSourceIsUnavailable { get; private set; }
+    public string AddSourceButtonLabel { get; private set; } = string.Empty;
     public string AddSourceLabel { get; private set; } = string.Empty;
     public string AddSourceTitle { get; private set; } = string.Empty;
     public string AddSourceHint { get; private set; } = string.Empty;
     public string MirrorUrlPlaceholder { get; private set; } = string.Empty;
     public string CancelLabel { get; private set; } = string.Empty;
     public string RemoveLabel { get; private set; } = string.Empty;
-    public string NoSourcesLabel { get; private set; } = string.Empty;
-    public string NoSourcesHint { get; private set; } = string.Empty;
     public string DeleteSourceTitle { get; private set; } = string.Empty;
     public string DeleteSourceHint { get; private set; } = string.Empty;
     public string MusicLabel { get; private set; } = string.Empty;
@@ -285,8 +289,6 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     public string OnlineModeHint { get; private set; } = string.Empty;
     public string AuthServerLabel { get; private set; } = string.Empty;
     public string AuthServerHint { get; private set; } = string.Empty;
-    public string DualAuthLabel { get; private set; } = string.Empty;
-    public string DualAuthHint { get; private set; } = string.Empty;
     public string JavaRuntimeLabel { get; private set; } = string.Empty;
     public string BundledJavaLabel { get; private set; } = string.Empty;
     public string BundledJavaHint { get; private set; } = string.Empty;
@@ -370,20 +372,21 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         DownloadsInfo = _localizer["settings.downloads.howDownloadsWorkDescription"];
         DownloadBehaviorTitle = _localizer["settings.downloads.behavior"];
         DownloadSourcesTitle = _localizer["settings.downloads.sources"];
-        DownloadSourcesHint = _localizer["settings.downloads.sourcesHint"];
-        OfficialSourceLabel = _localizer["settings.downloads.officialSource"];
-        OfficialSourceHint = _localizer["settings.downloads.officialSourceHint"];
-        OfficialSourceStatus = _localizer[_versionCatalog?.HasOfficialAccount == true
-            ? "settings.downloads.officialSourceConnected"
+        SourceLinkColumn = _localizer["settings.downloads.columnLink"];
+        SourceTypeColumn = _localizer["settings.downloads.columnType"];
+        SourceAvailabilityColumn = _localizer["settings.downloads.columnAvailability"];
+        SourcePingColumn = _localizer["settings.downloads.columnPing"];
+        OfficialSourceType = _localizer["settings.downloads.sourceTypeOfficial"];
+        OfficialSourceAvailability = _localizer[_versionCatalog?.HasOfficialAccount == true
+            ? "settings.downloads.checkingAvailability"
             : "settings.downloads.officialSourceRequiresAccount"];
+        AddSourceButtonLabel = _localizer["settings.downloads.add"];
         AddSourceLabel = _localizer["settings.downloads.addSource"];
         AddSourceTitle = _localizer["settings.downloads.addSourceTitle"];
         AddSourceHint = _localizer["settings.downloads.addSourceHint"];
         MirrorUrlPlaceholder = _localizer["settings.downloads.sourceUrlPlaceholder"];
         CancelLabel = _localizer["common.cancel"];
         RemoveLabel = _localizer["common.remove"];
-        NoSourcesLabel = _localizer["settings.downloads.noSources"];
-        NoSourcesHint = _localizer["settings.downloads.noSourcesHint"];
         DeleteSourceTitle = _localizer["settings.downloads.deleteSourceTitle"];
         DeleteSourceHint = _localizer["settings.downloads.deleteSourceHint"];
         MusicLabel = _localizer["desktopSettings.music"];
@@ -397,8 +400,6 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         OnlineModeHint = _localizer["settings.networkSettings.onlineModeHint"];
         AuthServerLabel = _localizer["settings.networkSettings.authServer"];
         AuthServerHint = _localizer["settings.networkSettings.authServerHint"];
-        DualAuthLabel = _localizer["settings.generalSettings.dualAuth"];
-        DualAuthHint = _localizer["settings.generalSettings.dualAuthHint"];
         JavaRuntimeLabel = _localizer["settings.javaSettings.javaRuntime"];
         BundledJavaLabel = _localizer["settings.javaSettings.useBundledJava"];
         BundledJavaHint = _localizer["settings.javaSettings.useBundledJavaHint"];
@@ -476,9 +477,18 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         UpdateChoiceDisplay(GpuPreferences, "integrated", _localizer["settings.graphicsSettings.gpu_integrated"]);
         UpdateChoiceDisplay(GpuPreferences, "auto", _localizer["settings.graphicsSettings.gpu_auto"]);
         foreach (var mirror in MirrorSources)
+        {
             mirror.UpdateSourceType(GetMirrorSourceType(mirror.Definition));
+            mirror.RefreshAvailabilityLabel(
+                _localizer["settings.downloads.checkingAvailability"],
+                _localizer["settings.downloads.sourceDisabledState"],
+                _localizer["settings.downloads.sourceAvailable"],
+                _localizer["settings.downloads.sourceUnavailable"]);
+        }
 
         OnPropertyChanged(string.Empty);
+        if (IsDownloads)
+            _ = ProbeDownloadSourcesAsync();
     }
 
     partial void OnSelectedLanguageChanged(SettingChoiceViewModel value)
@@ -508,7 +518,6 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     partial void OnDisableNewsChanged(bool value) => _settings.DisableNews = value;
     partial void OnShowDiscordAnnouncementsChanged(bool value) => _settings.ShowDiscordAnnouncements = value;
     partial void OnOnlineModeChanged(bool value) => _settings.OnlineMode = value;
-    partial void OnUseDualAuthChanged(bool value) => _settings.UseDualAuth = value;
     partial void OnUseCustomJavaChanged(bool value)
     {
         JavaPathError = string.Empty;
@@ -972,6 +981,8 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
                         mirror,
                         GetMirrorSourceType(mirror),
                         index == mirrors.Count - 1,
+                        _localizer["settings.downloads.checkingAvailability"],
+                        _localizer["settings.downloads.sourceDisabledState"],
                         PersistMirrorEnabledState));
                 }
             }
@@ -984,10 +995,19 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
 
         OnPropertyChanged(nameof(HasMirrors));
         OnPropertyChanged(nameof(HasNoMirrors));
-        OfficialSourceStatus = _localizer[_versionCatalog?.HasOfficialAccount == true
-            ? "settings.downloads.officialSourceConnected"
+        OfficialSourceAvailability = _localizer[_versionCatalog?.HasOfficialAccount == true
+            ? "settings.downloads.checkingAvailability"
             : "settings.downloads.officialSourceRequiresAccount"];
-        OnPropertyChanged(nameof(OfficialSourceStatus));
+        OfficialSourcePing = "—";
+        OfficialSourceIsAvailable = false;
+        OfficialSourceIsUnavailable = _versionCatalog?.HasOfficialAccount != true;
+        OnPropertyChanged(nameof(OfficialSourceAvailability));
+        OnPropertyChanged(nameof(OfficialSourcePing));
+        OnPropertyChanged(nameof(OfficialSourceIsAvailable));
+        OnPropertyChanged(nameof(OfficialSourceIsUnavailable));
+
+        if (IsDownloads)
+            _ = ProbeDownloadSourcesAsync();
     }
 
     private void PersistMirrorEnabledState(MirrorSourceViewModel source)
@@ -1003,6 +1023,15 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
             MirrorOperationStatus = source.IsEnabled
                 ? _localizer["settings.downloads.sourceEnabled"]
                 : _localizer["settings.downloads.sourceDisabled"];
+            if (source.IsEnabled)
+            {
+                source.SetChecking(_localizer["settings.downloads.checkingAvailability"]);
+                _ = ProbeMirrorAsync(source, CancellationToken.None);
+            }
+            else
+            {
+                source.SetDisabled(_localizer["settings.downloads.sourceDisabledState"]);
+            }
         }
         catch (Exception ex)
         {
@@ -1016,6 +1045,96 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         => _localizer[mirror.SourceType == "json-index"
             ? "settings.downloads.sourceTypeJsonIndex"
             : "settings.downloads.sourceTypePattern"];
+
+    private async Task ProbeDownloadSourcesAsync()
+    {
+        if (_versionCatalog is null)
+            return;
+
+        _sourceProbeCancellation?.Cancel();
+        _sourceProbeCancellation?.Dispose();
+        _sourceProbeCancellation = new CancellationTokenSource();
+        var ct = _sourceProbeCancellation.Token;
+
+        var probes = new List<Task>();
+        if (_versionCatalog.HasOfficialAccount)
+            probes.Add(ProbeOfficialSourceAsync(ct));
+        foreach (var source in MirrorSources.Where(source => source.IsEnabled))
+            probes.Add(ProbeMirrorAsync(source, ct));
+
+        try
+        {
+            await Task.WhenAll(probes);
+        }
+        catch (OperationCanceledException)
+        {
+        }
+    }
+
+    private async Task ProbeOfficialSourceAsync(CancellationToken ct)
+    {
+        try
+        {
+            var result = await _versionCatalog!.ProbeSourceAvailabilityAsync("hytale", ct);
+            if (ct.IsCancellationRequested)
+                return;
+
+            OfficialSourceAvailability = _localizer[result.IsAvailable
+                ? "settings.downloads.sourceAvailable"
+                : "settings.downloads.sourceUnavailable"];
+            OfficialSourcePing = result.IsAvailable && result.PingMs >= 0 ? $"{result.PingMs} ms" : "—";
+            OfficialSourceIsAvailable = result.IsAvailable;
+            OfficialSourceIsUnavailable = !result.IsAvailable;
+            OnPropertyChanged(nameof(OfficialSourceAvailability));
+            OnPropertyChanged(nameof(OfficialSourcePing));
+            OnPropertyChanged(nameof(OfficialSourceIsAvailable));
+            OnPropertyChanged(nameof(OfficialSourceIsUnavailable));
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+        }
+        catch (Exception ex)
+        {
+            Logger.Debug("Settings", $"Official source probe failed: {ex.Message}");
+            OfficialSourceAvailability = _localizer["settings.downloads.sourceUnavailable"];
+            OfficialSourcePing = "—";
+            OfficialSourceIsAvailable = false;
+            OfficialSourceIsUnavailable = true;
+            OnPropertyChanged(nameof(OfficialSourceAvailability));
+            OnPropertyChanged(nameof(OfficialSourcePing));
+            OnPropertyChanged(nameof(OfficialSourceIsAvailable));
+            OnPropertyChanged(nameof(OfficialSourceIsUnavailable));
+        }
+    }
+
+    private async Task ProbeMirrorAsync(MirrorSourceViewModel source, CancellationToken ct)
+    {
+        try
+        {
+            var result = await _versionCatalog!.ProbeSourceAvailabilityAsync(source.Id, ct);
+            if (!ct.IsCancellationRequested && source.IsEnabled && MirrorSources.Contains(source))
+            {
+                source.ApplyProbe(
+                    result,
+                    _localizer["settings.downloads.sourceAvailable"],
+                    _localizer["settings.downloads.sourceUnavailable"]);
+            }
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+        }
+        catch (Exception ex)
+        {
+            Logger.Debug("Settings", $"Download source probe failed for {source.Id}: {ex.Message}");
+            if (source.IsEnabled && MirrorSources.Contains(source))
+            {
+                source.ApplyProbe(
+                    new MirrorSpeedTestResult { IsAvailable = false, PingMs = -1 },
+                    _localizer["settings.downloads.sourceAvailable"],
+                    _localizer["settings.downloads.sourceUnavailable"]);
+            }
+        }
+    }
 
     private static string NormalizeMirrorUrl(string value)
     {
@@ -1191,6 +1310,8 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
             return;
 
         _disposed = true;
+        _sourceProbeCancellation?.Cancel();
+        _sourceProbeCancellation?.Dispose();
         foreach (var member in AboutTeamMembers)
             member.Dispose();
         foreach (var contributor in _aboutContributorPool)

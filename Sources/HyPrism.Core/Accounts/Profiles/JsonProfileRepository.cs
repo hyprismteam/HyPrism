@@ -52,7 +52,8 @@ public class JsonProfileRepository : IProfileRepository
     private static readonly JsonSerializerOptions _profileJsonOpts = new()
     {
         PropertyNameCaseInsensitive = true,
-        WriteIndented = true
+        WriteIndented = true,
+        Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
     };
 
     #endregion
@@ -61,8 +62,7 @@ public class JsonProfileRepository : IProfileRepository
     private string GetProfileCachePath() => Path.Combine(GetProfilesFolder(), "profiles.json");
 
     /// <summary>
-    /// Loads the profile list from profiles.json.
-    /// On first run migrates from the deprecated config.Profiles field
+    /// Loads the profile list from profiles.json
     /// </summary>
     private List<Profile> LoadProfilesFromCache()
     {
@@ -78,27 +78,6 @@ public class JsonProfileRepository : IProfileRepository
                 Logger.Warning("Profile", $"Failed to read profiles.json: {ex.Message}");
             }
         }
-
-        // Migration: seed from deprecated config.Profiles if present
-        #pragma warning disable CS0618
-        var config = _configStore.Configuration;
-        if (config.Profiles?.Count > 0)
-        {
-            Logger.Info("Profile", $"Migrating {config.Profiles.Count} profiles from config to profiles.json");
-            var migrated = config.Profiles.ToList();
-            SaveProfilesToCache(migrated);
-            config.Profiles = null;
-
-            // Migrate ActiveProfileIndex → SelectedProfileId
-            if (config.ActiveProfileIndex >= 0 && config.ActiveProfileIndex < migrated.Count
-                && string.IsNullOrEmpty(config.SelectedProfileId))
-            {
-                config.SelectedProfileId = migrated[config.ActiveProfileIndex].Id;
-            }
-            _configStore.SaveConfig();
-            return migrated;
-        }
-        #pragma warning restore CS0618
 
         return new List<Profile>();
     }
@@ -192,14 +171,6 @@ public class JsonProfileRepository : IProfileRepository
     }
 
     /// <inheritdoc/>
-    public int GetActiveProfileIndex()
-    {
-        var id = GetSelectedProfileId();
-        if (string.IsNullOrEmpty(id)) return -1;
-        return LoadProfilesFromCache().FindIndex(p => p.Id == id);
-    }
-
-    /// <inheritdoc/>
     /// <remarks>Validates name length (1-16 characters) and UUID format before creation</remarks>
     public Profile? CreateProfile(string name, string uuid, bool isOfficial = false)
     {
@@ -243,10 +214,6 @@ public class JsonProfileRepository : IProfileRepository
             if (profiles.Count == 1 || string.IsNullOrEmpty(config.SelectedProfileId))
             {
                 config.SelectedProfileId = profile.Id;
-                #pragma warning disable CS0618
-                config.UUID = profile.UUID;
-                config.Nick = profile.Name;
-                #pragma warning restore CS0618
                 Logger.Info("Profile", $"Auto-activated new profile '{profile.Name}'");
             }
 
@@ -290,10 +257,6 @@ public class JsonProfileRepository : IProfileRepository
             if (config.SelectedProfileId == profileId)
             {
                 config.SelectedProfileId = "";
-                #pragma warning disable CS0618
-                config.UUID = "";
-                config.Nick = "";
-                #pragma warning restore CS0618
             }
             _configStore.SaveConfig();
 
@@ -306,24 +269,6 @@ public class JsonProfileRepository : IProfileRepository
         catch (Exception ex)
         {
             Logger.Error("Profile", $"Failed to delete profile: {ex.Message}");
-            return false;
-        }
-    }
-
-    /// <inheritdoc/>
-    /// <remarks>Compatibility wrapper that switches by index position in the cached list</remarks>
-    public bool SwitchProfile(int index)
-    {
-        try
-        {
-            var profiles = LoadProfilesFromCache();
-            if (index < 0 || index >= profiles.Count)
-                return false;
-            return SwitchProfile(profiles[index].Id);
-        }
-        catch (Exception ex)
-        {
-            Logger.Error("Profile", $"Failed to switch profile (by index): {ex.Message}");
             return false;
         }
     }
@@ -349,10 +294,6 @@ public class JsonProfileRepository : IProfileRepository
 
             var config = _configStore.Configuration;
             config.SelectedProfileId = profile.Id;
-            #pragma warning disable CS0618
-            config.UUID = profile.UUID;
-            config.Nick = profile.Name;
-            #pragma warning restore CS0618
 
             // Auth domain handling
             if (profile.IsOfficial)
@@ -397,17 +338,6 @@ public class JsonProfileRepository : IProfileRepository
 
             SaveProfilesToCache(profiles);
 
-            // If this is the active profile, also update config UUID/Nick for legacy compat
-            var config = _configStore.Configuration;
-            if (config.SelectedProfileId == profileId)
-            {
-                #pragma warning disable CS0618
-                config.UUID = profile.UUID;
-                config.Nick = profile.Name;
-                #pragma warning restore CS0618
-                _configStore.SaveConfig();
-            }
-
             // Update profile on disk
             UpdateProfileOnDisk(profile);
 
@@ -419,32 +349,6 @@ public class JsonProfileRepository : IProfileRepository
             Logger.Error("Profile", $"Failed to update profile: {ex.Message}");
             return false;
         }
-    }
-
-    /// <inheritdoc/>
-    /// <remarks>Updates existing profile if UUID already exists, otherwise creates new</remarks>
-    public Profile? SaveCurrentAsProfile()
-    {
-        var config = _configStore.Configuration;
-        #pragma warning disable CS0618
-        var uuid = config.UUID;
-        var name = config.Nick;
-        #pragma warning restore CS0618
-
-        if (string.IsNullOrWhiteSpace(uuid) || string.IsNullOrWhiteSpace(name))
-            return null;
-
-        var profiles = LoadProfilesFromCache();
-        var existing = profiles.FirstOrDefault(p => p.UUID == uuid);
-        if (existing != null)
-        {
-            existing.Name = name;
-            SaveProfilesToCache(profiles);
-            UpdateProfileOnDisk(existing);
-            return existing;
-        }
-
-        return CreateProfile(name, uuid);
     }
 
     /// <inheritdoc/>
@@ -653,38 +557,6 @@ public class JsonProfileRepository : IProfileRepository
         {
             var profile = GetSelectedProfile();
 
-            // Fallback: find profile matching current UUID
-            if (profile == null)
-            {
-                #pragma warning disable CS0618
-                var uuid = _configStore.Configuration.UUID;
-                #pragma warning restore CS0618
-                if (!string.IsNullOrWhiteSpace(uuid))
-                {
-                    var profiles = LoadProfilesFromCache();
-                    profile = profiles.FirstOrDefault(p => p.UUID == uuid);
-                    if (profile != null)
-                    {
-                        _configStore.Configuration.SelectedProfileId = profile.Id;
-                        _configStore.SaveConfig();
-                        Logger.Info("Profile", $"Auto-activated profile '{profile.Name}' by UUID match");
-                    }
-                }
-            }
-
-            // Last resort: activate first profile
-            if (profile == null)
-            {
-                var profiles = LoadProfilesFromCache();
-                profile = profiles.FirstOrDefault();
-                if (profile != null)
-                {
-                    _configStore.Configuration.SelectedProfileId = profile.Id;
-                    _configStore.SaveConfig();
-                    Logger.Info("Profile", $"Auto-activated first profile '{profile.Name}'");
-                }
-            }
-
             if (profile == null)
             {
                 Logger.Warning("Profile", "No active profile folder is available");
@@ -710,7 +582,11 @@ public class JsonProfileRepository : IProfileRepository
                         createdAt = DateTime.UtcNow.ToString("o")
                     };
                     var infoPath = Path.Combine(profileDir, "profile.json");
-                    var json = System.Text.Json.JsonSerializer.Serialize(profileInfo, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+                    var json = System.Text.Json.JsonSerializer.Serialize(profileInfo, new System.Text.Json.JsonSerializerOptions
+                    {
+                        WriteIndented = true,
+                        Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+                    });
                     File.WriteAllText(infoPath, json);
                     Logger.Info("Profile", $"Created profile info file: {infoPath}");
                 }

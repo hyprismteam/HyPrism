@@ -166,6 +166,14 @@ public interface IVersionSource
     Task<MirrorSpeedTestResult> TestSpeedAsync(CancellationToken ct = default);
 
     /// <summary>
+    /// Checks source availability and latency without downloading game data
+    /// </summary>
+    /// <param name="ct">Token used to cancel the network request</param>
+    /// <returns>The current availability and request latency</returns>
+    /// <exception cref="OperationCanceledException">Thrown when the operation is cancelled</exception>
+    Task<MirrorSpeedTestResult> ProbeAvailabilityAsync(CancellationToken ct = default);
+
+    /// <summary>
     /// Gets the cached speed test result if still valid
     /// </summary>
     /// <returns>Cached speed test result, or null if expired/missing</returns>

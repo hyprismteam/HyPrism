@@ -558,9 +558,6 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="launch.detail.patch_applied" xml:space="preserve">
     <value>Патч {0} успешно применен</value>
   </data>
-  <data name="launch.detail.patching_class_files" xml:space="preserve">
-    <value>Патчинг class-файлов...</value>
-  </data>
   <data name="launch.detail.patching_client" xml:space="preserve">
     <value>Патчинг клиента...</value>
   </data>
@@ -573,9 +570,6 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="launch.detail.patching_init" xml:space="preserve">
     <value>Инициализация патчера...</value>
   </data>
-  <data name="launch.detail.patching_server" xml:space="preserve">
-    <value>Патчинг сервера...</value>
-  </data>
   <data name="launch.detail.preparing_download" xml:space="preserve">
     <value>Подготовка загрузки...</value>
   </data>
@@ -585,20 +579,8 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="launch.detail.reading_client_binary" xml:space="preserve">
     <value>Чтение бинарника клиента...</value>
   </data>
-  <data name="launch.detail.reading_server_jar" xml:space="preserve">
-    <value>Чтение server JAR...</value>
-  </data>
-  <data name="launch.detail.replacing_original_jar" xml:space="preserve">
-    <value>Замена оригинального JAR...</value>
-  </data>
   <data name="launch.detail.resigning" xml:space="preserve">
     <value>Переподписание бинарников...</value>
-  </data>
-  <data name="launch.detail.server_already_patched" xml:space="preserve">
-    <value>Сервер уже пропатчен</value>
-  </data>
-  <data name="launch.detail.server_jar_patched" xml:space="preserve">
-    <value>Server JAR пропатчен</value>
   </data>
   <data name="launch.detail.started" xml:space="preserve">
     <value>Игра запущена!</value>
@@ -1882,7 +1864,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>Как работают загрузки</value>
   </data>
   <data name="settings.downloads.howDownloadsWorkDescription" xml:space="preserve">
-    <value>HyPrism предпочитает официальный источник и автоматически выбирает доступное зеркало сообщества, когда нужен резервный источник</value>
+    <value>HyPrism отдает приоритет официальному источнику загрузки, а при его недоступности автоматически выбирает самое быстрое из добавленных пользовательских зеркал</value>
   </data>
   <data name="settings.downloads.launchAfterDownload" xml:space="preserve">
     <value>Запускать игру после загрузки</value>
@@ -1923,8 +1905,32 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="settings.downloads.sources" xml:space="preserve">
     <value>Источники загрузки</value>
   </data>
-  <data name="settings.downloads.sourcesHint" xml:space="preserve">
-    <value>Официальный источник Hytale и доверенные зеркала сообщества</value>
+  <data name="settings.downloads.columnLink" xml:space="preserve">
+    <value>Ссылка</value>
+  </data>
+  <data name="settings.downloads.columnType" xml:space="preserve">
+    <value>Тип</value>
+  </data>
+  <data name="settings.downloads.columnAvailability" xml:space="preserve">
+    <value>Доступность</value>
+  </data>
+  <data name="settings.downloads.columnPing" xml:space="preserve">
+    <value>Пинг</value>
+  </data>
+  <data name="settings.downloads.sourceTypeOfficial" xml:space="preserve">
+    <value>Официальный</value>
+  </data>
+  <data name="settings.downloads.checkingAvailability" xml:space="preserve">
+    <value>Проверка</value>
+  </data>
+  <data name="settings.downloads.sourceAvailable" xml:space="preserve">
+    <value>Доступен</value>
+  </data>
+  <data name="settings.downloads.sourceUnavailable" xml:space="preserve">
+    <value>Недоступен</value>
+  </data>
+  <data name="settings.downloads.sourceDisabledState" xml:space="preserve">
+    <value>Отключен</value>
   </data>
   <data name="settings.downloads.officialSourceConnected" xml:space="preserve">
     <value>Аккаунт подключен</value>
@@ -1935,6 +1941,9 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="settings.downloads.addSource" xml:space="preserve">
     <value>Добавить источник</value>
   </data>
+  <data name="settings.downloads.add" xml:space="preserve">
+    <value>Добавить</value>
+  </data>
   <data name="settings.downloads.addSourceTitle" xml:space="preserve">
     <value>Подключение источника</value>
   </data>
@@ -1943,12 +1952,6 @@ SPDX-License-Identifier: GPL-3.0-only
   </data>
   <data name="settings.downloads.sourceUrlPlaceholder" xml:space="preserve">
     <value>https://mirror.example.com</value>
-  </data>
-  <data name="settings.downloads.noSources" xml:space="preserve">
-    <value>Нет дополнительных источников</value>
-  </data>
-  <data name="settings.downloads.noSourcesHint" xml:space="preserve">
-    <value>Официальный источник Hytale останется доступен для подключенных аккаунтов</value>
   </data>
   <data name="settings.downloads.deleteSourceTitle" xml:space="preserve">
     <value>Удалить этот источник?</value>
@@ -2037,23 +2040,11 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="settings.generalSettings.closeLauncherHint" xml:space="preserve">
     <value>Закрывать лаунчер при запуске игры</value>
   </data>
-  <data name="settings.generalSettings.dualAuth" xml:space="preserve">
-    <value>DualAuth (Экспериментальный)</value>
-  </data>
-  <data name="settings.generalSettings.dualAuthHint" xml:space="preserve">
-    <value>Использует Java Agent для авторизации сервера в рантайме вместо статической модификации JAR. Может вызывать вылеты и проблемы с подключением.</value>
-  </data>
   <data name="settings.generalSettings.launcherStorage" xml:space="preserve">
     <value>Папка лаунчера</value>
   </data>
   <data name="settings.generalSettings.launcherStorageHint" xml:space="preserve">
     <value>Где хранятся игры и данные.</value>
-  </data>
-  <data name="settings.generalSettings.legacyPatching" xml:space="preserve">
-    <value>Легаси патчинг</value>
-  </data>
-  <data name="settings.generalSettings.legacyPatchingHint" xml:space="preserve">
-    <value>Использует статическую модификацию JAR для авторизации сервера вместо DualAuth Java Agent. Более совместимый, но менее гибкий вариант.</value>
   </data>
   <data name="settings.generalSettings.mirrorDescription" xml:space="preserve">
     <value>Комьюнити зеркало используется как альтернативный источник файлов игры, когда официальные серверы недоступны.</value>
@@ -2392,10 +2383,10 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>Официальные аккаунты могут использовать только официальную авторизацию Hytale.</value>
   </data>
   <data name="settings.networkSettings.onlineMode" xml:space="preserve">
-    <value>Онлайн-режим</value>
+    <value>Сетевой режим</value>
   </data>
   <data name="settings.networkSettings.onlineModeHint" xml:space="preserve">
-    <value>Подключение к серверам авторизации для мультиплеера.</value>
+    <value>Использовать сервис авторизации и данные аккаунта; при отключении HyPrism создает локальную OmniAuth-сессию</value>
   </data>
   <data name="settings.networkSettings.unofficialProfileNote" xml:space="preserve">
     <value>Неофициальные аккаунты не могут использовать официальную авторизацию Hytale.</value>

@@ -10,12 +10,13 @@ HyPrism keeps durable state separate from data that can be recreated
 | Location | Contents | Safe to remove |
 | --- | --- | --- |
 | `config.json` | launcher preferences and selected identifiers | no, unless resetting settings is intended |
-| `Profiles/` | profile metadata and profile-scoped data | no |
+| `Profiles/profiles.json` | complete profile list and identity metadata | no |
+| `Profiles/<profile-id>/` | profile-scoped skins, avatars, and session data | no |
 | `Instances/` | instance registry and game installations | no |
 | `Mirrors/` | user-provided mirror metadata | only if custom mirrors are no longer needed |
 | `Cache/News/` | parsed articles and downloaded article images | yes |
 | logs | diagnostic output | yes, when HyPrism is closed |
 
-Legacy index-based profile and instance fields remain readable for migration but stable string identifiers are the current source of truth
+`config.json` stores only `SelectedProfileId` for profile selection. Legacy identity fields are consumed by a one-time load migration and are not represented in the runtime configuration model
 
 Never place access tokens or a CurseForge key in documentation, fixtures, or source control

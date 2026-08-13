@@ -20,8 +20,9 @@ description: Доменные области, контракты и оркест
 - `Game/Versions` получает метаданные версий из официального источника и зеркал
 - `Game/Download` загружает файлы, применяет патчи и сообщает прогресс
 - `Game/Instances` управляет метаданными, путями, выбором, импортом, удалением и миграциями экземпляров
-- `Game/Launch` подготавливает Java, авторизацию, патчинг, окружение и игровой процесс
-- `Game/Authentication` получает совместимые игровые токены
+- `Game/Launch` подготавливает Java, перенаправление endpoint клиента, DualAuth Agent, окружение и игровой процесс
+- `Game/Authentication` получает сетевые игровые сессии или выпускает self-contained токены OmniAuth через Local Node
+- `HyPrism.LocalNode` хостит автономные session, account, каталог установленной косметики, configuration и empty-state social API
 - `Game/Assets` управляет данными аватаров, нужными профилям и запуску игры
 - `Game/Mods` ищет и устанавливает моды CurseForge или локальные файлы
 - `Game/Patching` содержит клиент Butler для дифференциальных обновлений
@@ -42,3 +43,13 @@ Core получает путь каталога профиля, но не отк
 Запуск игры зависит только от `IGpuProvider` и `GpuAdapterInfo`. Конкретная реализация поиска адаптеров принадлежит каждому хосту
 
 Парсинг новостей, данные GitHub и адаптер Discord Rich Presence принадлежат `HyPrism.Desktop`. Core использует только `IDiscordPresence` как возможность хоста при отправке состояния лаунчера и игры
+
+## Local Node
+
+`HyPrism.Desktop` владеет контроллером процесса `LocalNodeHost` через Core-контракт `ILocalNodeService`. Автономный запуск поднимает отдельный executable `HyPrism.LocalNode` до патча клиента, а затем передает владение lifetime PID игры через loopback control plane
+
+Хост слушает только `https://h.localhost:8443`. Endpoint длиной 16 символов позволяет `ClientPatcher` направить session, account-data, telemetry, live-config, social, server-discovery и socket-gateway префиксы к одному loopback authority без изменения длины встроенного сегмента домена
+
+Ключи подписи OmniAuth живут только в отдельном процессе ноды, привязанном к активной игре. Исходный identity handoff содержит приватный Ed25519 JWK, нужный DualAuth, а JWKS, authorization grant и access token отдают только публичный ключ. Данные аккаунта, скинов и настроек presence сохраняются в каталоге данных приложения
+
+Вспомогательный процесс очищает провайдеры логирования ASP.NET и пишет собственный ограниченный по размеру файловый лог. Закрытие Desktop освобождает только process handles лаунчера, а нода продолжает следить за игрой и самостоятельно завершается после выхода этого процесса

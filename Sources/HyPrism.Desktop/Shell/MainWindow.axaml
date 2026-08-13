@@ -7,6 +7,7 @@ SPDX-License-Identifier: GPL-3.0-only
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:shell="using:HyPrism.Desktop.Shell"
         xmlns:dashboard="using:HyPrism.Desktop.Features.Dashboard"
+        xmlns:instances="using:HyPrism.Desktop.Features.Instances"
         xmlns:controls="using:HyPrism.Desktop.Controls"
         xmlns:news="using:HyPrism.Desktop.Features.News"
         xmlns:settings="using:HyPrism.Desktop.Features.Settings"
@@ -711,6 +712,8 @@ SPDX-License-Identifier: GPL-3.0-only
               ClipToBounds="True">
         <Grid>
           <dashboard:DashboardView IsVisible="{Binding IsDashboard}" />
+
+          <instances:InstancesView IsVisible="{Binding IsInstances}" />
 
           <Grid x:Name="NewsResponsiveLayout"
                 IsVisible="{Binding IsNews}"

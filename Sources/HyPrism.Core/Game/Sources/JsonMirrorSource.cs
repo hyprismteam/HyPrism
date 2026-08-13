@@ -34,9 +34,11 @@ public class JsonMirrorSource : IVersionSource
     private DateTime _jsonIndexCachedAt = DateTime.MinValue;
 
     private MirrorSpeedTestResult? _speedTestResult;
+    private MirrorSpeedTestResult? _availabilityResult;
 
     private TimeSpan CacheTtl => TimeSpan.FromMinutes(_meta.Cache.IndexTtlMinutes);
     private TimeSpan SpeedTestCacheTtl => TimeSpan.FromMinutes(_meta.Cache.SpeedTestTtlMinutes);
+    private static readonly TimeSpan AvailabilityCacheTtl = TimeSpan.FromMinutes(1);
 
     /// <summary>
     /// Creates a version source backed by a JSON mirror descriptor
@@ -390,6 +392,67 @@ public class JsonMirrorSource : IVersionSource
         {
             _speedTestLock.Release();
         }
+    }
+
+    /// <inheritdoc/>
+    public async Task<MirrorSpeedTestResult> ProbeAvailabilityAsync(CancellationToken ct = default)
+    {
+        if (_availabilityResult is not null &&
+            DateTime.UtcNow - _availabilityResult.TestedAt <= AvailabilityCacheTtl)
+        {
+            return _availabilityResult;
+        }
+
+        var pingUrl = _meta.SpeedTest.PingUrl
+            ?? (_meta.SourceType == "json-index" ? _meta.JsonIndex?.ApiUrl : _meta.Pattern?.BaseUrl)
+            ?? string.Empty;
+        var result = new MirrorSpeedTestResult
+        {
+            MirrorId = SourceId,
+            MirrorUrl = pingUrl,
+            MirrorName = _meta.Name,
+            PingMs = -1,
+            TestedAt = DateTime.UtcNow
+        };
+
+        try
+        {
+            using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            timeout.CancelAfter(TimeSpan.FromSeconds(_meta.SpeedTest.PingTimeoutSeconds));
+            var startedAt = DateTime.UtcNow;
+            using var headRequest = await CreateRequestWithHeadersAsync(HttpMethod.Head, pingUrl, timeout.Token);
+            using var headResponse = await _httpClient.SendAsync(
+                headRequest,
+                HttpCompletionOption.ResponseHeadersRead,
+                timeout.Token);
+            result.PingMs = Math.Max(0, (long)(DateTime.UtcNow - startedAt).TotalMilliseconds);
+
+            var statusCode = (int)headResponse.StatusCode;
+            result.IsAvailable = headResponse.IsSuccessStatusCode || statusCode is 400 or 405 or 422;
+            if (!result.IsAvailable)
+            {
+                startedAt = DateTime.UtcNow;
+                using var getRequest = await CreateRequestWithHeadersAsync(HttpMethod.Get, pingUrl, timeout.Token);
+                using var getResponse = await _httpClient.SendAsync(
+                    getRequest,
+                    HttpCompletionOption.ResponseHeadersRead,
+                    timeout.Token);
+                result.PingMs = Math.Max(0, (long)(DateTime.UtcNow - startedAt).TotalMilliseconds);
+                result.IsAvailable = getResponse.IsSuccessStatusCode;
+            }
+        }
+        catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+        {
+            result.IsAvailable = false;
+        }
+        catch (HttpRequestException ex)
+        {
+            Logger.Debug($"Mirror:{SourceId}", $"Availability probe failed: {ex.Message}");
+            result.IsAvailable = false;
+        }
+
+        _availabilityResult = result;
+        return result;
     }
 
     #endregion

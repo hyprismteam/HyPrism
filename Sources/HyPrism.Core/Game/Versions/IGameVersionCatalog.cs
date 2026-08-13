@@ -202,6 +202,15 @@ public interface IGameVersionCatalog
     Task<MirrorSpeedTestResult> TestOfficialSpeedAsync(bool forceRefresh = false, CancellationToken ct = default);
 
     /// <summary>
+    /// Checks availability and latency for an active source without downloading game data
+    /// </summary>
+    /// <param name="sourceId">The source identifier, including <c>hytale</c> for the official source</param>
+    /// <param name="ct">Token used to cancel the network request</param>
+    /// <returns>The current availability and request latency</returns>
+    /// <exception cref="OperationCanceledException">Thrown when the operation is cancelled</exception>
+    Task<MirrorSpeedTestResult> ProbeSourceAvailabilityAsync(string sourceId, CancellationToken ct = default);
+
+    /// <summary>
     /// Gets a list of all available mirrors
     /// </summary>
     /// <returns>List of tuples with mirror ID and display name</returns>

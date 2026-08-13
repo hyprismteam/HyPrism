@@ -147,4 +147,127 @@ public class ClientPatcherTests : IDisposable
         var ex = Record.Exception(() => new ClientPatcher(null));
         Assert.Null(ex);
     }
+
+    [Fact]
+    public void PatchClient_LocalNodeTarget_RoutesAllKnownServicePrefixesToLoopback()
+    {
+        var clientPath = Path.Combine(_gameDir, "HytaleClient");
+        string[] values =
+        [
+            OriginalDomain,
+            "https://sessions.",
+            "https://account-data.",
+            "https://telemetry.",
+            "https://liveconfig.",
+            "https://server-discovery.",
+            "https://social.",
+            "wss://socket-gateway."
+        ];
+        File.WriteAllBytes(clientPath, values.SelectMany(value => ToLengthPrefixed(value)).ToArray());
+
+        var result = new ClientPatcher("h.localhost:8443").PatchClient(clientPath);
+
+        Assert.True(result.Success, result.Error);
+        var patched = File.ReadAllBytes(clientPath);
+        AssertContains(patched, ToLengthPrefixed("lhost:8443"));
+        Assert.Equal(6, CountOccurrences(patched, ToLengthPrefixed("https://h.loca")));
+        AssertContains(patched, ToLengthPrefixed("wss://h.loca"));
+    }
+
+    [Fact]
+    public void PatchClient_WhenTargetChanges_RestoresOriginalBeforeRepatching()
+    {
+        var clientPath = Path.Combine(_gameDir, "HytaleClient");
+        File.WriteAllBytes(clientPath, ToLengthPrefixed(OriginalDomain)
+            .Concat(ToLengthPrefixed("https://sessions."))
+            .ToArray());
+        var localPatcher = new ClientPatcher("h.localhost:8443");
+        var connectedPatcher = new ClientPatcher("sanasol.ws");
+        Assert.True(localPatcher.PatchClient(clientPath).Success);
+
+        var result = connectedPatcher.PatchClient(clientPath);
+
+        Assert.True(result.Success, result.Error);
+        Assert.True(connectedPatcher.IsPatchedAlready(clientPath));
+        Assert.False(localPatcher.IsPatchedAlready(clientPath));
+        AssertContains(File.ReadAllBytes(clientPath), ToLengthPrefixed("sanasol.ws"));
+    }
+
+    [Fact]
+    public void PatchClient_LocalNodeTargetWithoutServicePrefixes_FailsWithoutWriting()
+    {
+        var clientPath = CreateFakeBinary(_gameDir, "HytaleClient", lengthPrefixed: true);
+        var original = File.ReadAllBytes(clientPath);
+
+        var result = new ClientPatcher("h.localhost:8443").PatchClient(clientPath);
+
+        Assert.False(result.Success);
+        Assert.Contains("length-prefixed service URLs", result.Error);
+        Assert.Equal(original, File.ReadAllBytes(clientPath));
+    }
+
+    [Fact]
+    public void PatchClient_LocalNodeTarget_PatchesNativeAotFrozenStringsWithoutChangingMetadata()
+    {
+        var clientPath = Path.Combine(_gameDir, "HytaleClient");
+        const byte metadata = 0x89;
+        var frozenDomain = ToFrozenString(OriginalDomain, metadata);
+        var frozenSessions = ToFrozenString("https://sessions.", metadata);
+        var frozenAccountData = ToFrozenString("https://account-data.", metadata);
+        File.WriteAllBytes(clientPath, frozenDomain
+            .Concat(frozenSessions)
+            .Concat(frozenAccountData)
+            .ToArray());
+
+        var result = new ClientPatcher("h.localhost:8443").PatchClient(clientPath);
+
+        Assert.True(result.Success, result.Error);
+        var patched = File.ReadAllBytes(clientPath);
+        AssertContains(patched, ToFrozenPattern("lhost:8443"));
+        Assert.Equal(2, CountOccurrences(patched, ToFrozenPattern("https://h.loca")));
+        Assert.Equal(3, patched.Count(value => value == metadata));
+    }
+
+    private static byte[] ToLengthPrefixed(string value)
+    {
+        var bytes = new List<byte> { (byte)value.Length, 0, 0, 0 };
+        foreach (var character in value)
+        {
+            bytes.Add((byte)character);
+            bytes.Add(0);
+        }
+
+        return bytes.ToArray();
+    }
+
+    private static byte[] ToFrozenString(string value, byte metadata)
+        => ToFrozenPattern(value).Append(metadata).ToArray();
+
+    private static byte[] ToFrozenPattern(string value)
+    {
+        var bytes = new List<byte>
+        {
+            (byte)value.Length,
+            0,
+            0,
+            0
+        };
+        var utf16 = Encoding.Unicode.GetBytes(value);
+        bytes.AddRange(utf16[..^1]);
+        return bytes.ToArray();
+    }
+
+    private static void AssertContains(byte[] data, byte[] value)
+        => Assert.True(CountOccurrences(data, value) > 0);
+
+    private static int CountOccurrences(byte[] data, byte[] value)
+    {
+        var count = 0;
+        for (var index = 0; index <= data.Length - value.Length; index++)
+        {
+            if (data.AsSpan(index, value.Length).SequenceEqual(value))
+                count++;
+        }
+        return count;
+    }
 }

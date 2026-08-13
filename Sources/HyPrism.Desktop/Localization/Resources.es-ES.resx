@@ -531,9 +531,6 @@ Es posible que necesites reinstalar el juego si cambias de unidad.</value>
   <data name="launch.detail.patch_applied" xml:space="preserve">
     <value>Parche {0} aplicado con éxito</value>
   </data>
-  <data name="launch.detail.patching_class_files" xml:space="preserve">
-    <value>Parcheando archivos class...</value>
-  </data>
   <data name="launch.detail.patching_client" xml:space="preserve">
     <value>Parcheando binario del cliente...</value>
   </data>
@@ -546,9 +543,6 @@ Es posible que necesites reinstalar el juego si cambias de unidad.</value>
   <data name="launch.detail.patching_init" xml:space="preserve">
     <value>Inicializando parcheador...</value>
   </data>
-  <data name="launch.detail.patching_server" xml:space="preserve">
-    <value>Parcheando JAR del servidor...</value>
-  </data>
   <data name="launch.detail.preparing_download" xml:space="preserve">
     <value>Preparando descarga...</value>
   </data>
@@ -558,20 +552,8 @@ Es posible que necesites reinstalar el juego si cambias de unidad.</value>
   <data name="launch.detail.reading_client_binary" xml:space="preserve">
     <value>Leyendo binario del cliente...</value>
   </data>
-  <data name="launch.detail.reading_server_jar" xml:space="preserve">
-    <value>Leyendo JAR del servidor...</value>
-  </data>
-  <data name="launch.detail.replacing_original_jar" xml:space="preserve">
-    <value>Reemplazando JAR original...</value>
-  </data>
   <data name="launch.detail.resigning" xml:space="preserve">
     <value>Volviendo a firmar binario...</value>
-  </data>
-  <data name="launch.detail.server_already_patched" xml:space="preserve">
-    <value>Servidor ya parcheado</value>
-  </data>
-  <data name="launch.detail.server_jar_patched" xml:space="preserve">
-    <value>JAR del servidor parcheado</value>
   </data>
   <data name="launch.detail.started" xml:space="preserve">
     <value>¡Juego iniciado!</value>
@@ -1405,7 +1387,7 @@ Es posible que necesites reinstalar el juego si cambias de unidad.</value>
     <value>Modo Sin Conexión (Clic para activar online)</value>
   </data>
   <data name="onlineToggle.online" xml:space="preserve">
-    <value>Modo Online</value>
+    <value>Modo conectado</value>
   </data>
   <data name="onlineToggle.onlineClickDisable" xml:space="preserve">
     <value>Modo Online (Clic para desactivar)</value>
@@ -1836,23 +1818,11 @@ Es posible que necesites reinstalar el juego si cambias de unidad.</value>
   <data name="settings.generalSettings.closeLauncherHint" xml:space="preserve">
     <value>Cerrar al iniciar el juego.</value>
   </data>
-  <data name="settings.generalSettings.dualAuth" xml:space="preserve">
-    <value>DualAuth (Experimental)</value>
-  </data>
-  <data name="settings.generalSettings.dualAuthHint" xml:space="preserve">
-    <value>Usa un agente Java en tiempo de ejecución para la autenticación del servidor en lugar de parcheo estático del JAR. Puede causar fallos o problemas de conexión.</value>
-  </data>
   <data name="settings.generalSettings.launcherStorage" xml:space="preserve">
     <value>Almacenamiento</value>
   </data>
   <data name="settings.generalSettings.launcherStorageHint" xml:space="preserve">
     <value>Ubicación de datos y juegos.</value>
-  </data>
-  <data name="settings.generalSettings.legacyPatching" xml:space="preserve">
-    <value>Parcheo Legado</value>
-  </data>
-  <data name="settings.generalSettings.legacyPatchingHint" xml:space="preserve">
-    <value>Usa parcheo estático del JAR para la autenticación del servidor en lugar del agente Java DualAuth. Más compatible pero menos flexible.</value>
   </data>
   <data name="settings.generalSettings.showAlphaMods" xml:space="preserve">
     <value>Mostrar Mods Alpha</value>
@@ -2143,7 +2113,7 @@ Es posible que necesites reinstalar el juego si cambias de unidad.</value>
     <value>Modo Online</value>
   </data>
   <data name="settings.networkSettings.onlineModeHint" xml:space="preserve">
-    <value>Conectar a servidores de autenticación para multijugador.</value>
+    <value>Usar el servicio de autenticación y los datos de la cuenta; al desactivarlo, HyPrism crea una sesión OmniAuth local</value>
   </data>
   <data name="settings.profile.avatar" xml:space="preserve">
     <value>Avatar</value>

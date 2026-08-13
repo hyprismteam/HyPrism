@@ -34,6 +34,7 @@ public class ProfileManagerTests : IDisposable
     [Fact]
     public void SetNick_ValidNick_ReturnsTrueAndPersists()
     {
+        CreateSelectedProfile();
         var result = _svc.SetNick("Tester");
         Assert.True(result);
         Assert.Equal("Tester", _svc.GetNick());
@@ -54,22 +55,25 @@ public class ProfileManagerTests : IDisposable
     [Fact]
     public void SetNick_MaxLength_ReturnsTrue()
     {
+        CreateSelectedProfile();
         Assert.True(_svc.SetNick("1234567890123456")); // exactly 16 chars
     }
 
 
     [Fact]
-    public void GetUUID_ReturnsNonEmpty()
+    public void GetUUID_WithoutSelectedProfile_ReturnsEmpty()
     {
-        Assert.False(string.IsNullOrEmpty(_svc.GetUUID()));
+        Assert.Empty(_svc.GetUUID());
     }
 
     [Fact]
     public void SetUUID_ValidGuid_ReturnsTrueAndPersists()
     {
+        CreateSelectedProfile();
         var uuid = Guid.NewGuid().ToString();
         var result = _svc.SetUUID(uuid);
         Assert.True(result);
+        Assert.Equal(uuid, _svc.GetUUID());
     }
 
     [Fact]
@@ -80,9 +84,9 @@ public class ProfileManagerTests : IDisposable
     }
 
     [Fact]
-    public void GetCurrentUuid_AlwaysReturnsNonEmpty()
+    public void GetCurrentUuid_WithoutSelectedProfile_ReturnsEmpty()
     {
-        Assert.False(string.IsNullOrEmpty(_svc.GetCurrentUuid()));
+        Assert.Empty(_svc.GetCurrentUuid());
     }
 
 
@@ -91,6 +95,7 @@ public class ProfileManagerTests : IDisposable
     {
         var result = _svc.CreateProfile("TestProfile");
         Assert.True(result);
+        Assert.Equal(_svc.GetProfiles().Single().Id, _config.Configuration.SelectedProfileId);
     }
 
     [Fact]
@@ -151,6 +156,7 @@ public class ProfileManagerTests : IDisposable
     [Fact]
     public void GetAvatarDirectory_ReturnsNonEmptyPath()
     {
+        CreateSelectedProfile();
         var dir = _svc.GetAvatarDirectory();
         Assert.False(string.IsNullOrEmpty(dir));
     }
@@ -178,5 +184,10 @@ public class ProfileManagerTests : IDisposable
         var profile = new Profile { Id = Guid.NewGuid().ToString(), Name = "PathTest" };
         var path = _svc.GetProfilePath(profile);
         Assert.True(Path.IsPathRooted(path));
+    }
+
+    private void CreateSelectedProfile()
+    {
+        Assert.True(_svc.CreateProfile("InitialProfile"));
     }
 }

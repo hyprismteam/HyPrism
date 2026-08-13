@@ -149,13 +149,13 @@ public static class Bootstrapper
                     sp.GetRequiredService<IProgressReporter>(),
                     sp.GetRequiredService<IDiscordPresence>(),
                     sp.GetRequiredService<ISkinRepository>(),
-                    sp.GetRequiredService<IUserIdentityProvider>(),
                     sp.GetRequiredService<IAvatarCache>(),
                     sp.GetRequiredService<HttpClient>(),
                     sp.GetRequiredService<IHytaleAuthenticator>(),
                     sp.GetRequiredService<IGpuProvider>(),
                     sp.GetRequiredService<AppPathConfiguration>(),
-                    sp.GetRequiredService<IProfileManager>()));
+                    sp.GetRequiredService<IProfileManager>(),
+                    sp.GetRequiredService<ILocalNodeService>()));
             services.AddSingleton<IGameLauncher>(sp => sp.GetRequiredService<GameLauncher>());
 
             services.AddSingleton(sp =>
@@ -197,7 +197,6 @@ public static class Bootstrapper
 
             services.AddSingleton(sp =>
                 new UserIdentityProvider(
-                    sp.GetRequiredService<IConfigStore>(),
                     sp.GetRequiredService<ISkinRepository>(),
                     sp.GetRequiredService<IInstanceRepository>(),
                     sp.GetRequiredService<IProfileManager>()));

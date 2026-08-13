@@ -1,0 +1,67 @@
+---
+title: Local Node
+description: Autonomous OmniAuth and local Hytale compatibility endpoints
+---
+
+# Local Node
+
+Autonomous mode runs `HyPrism.LocalNode` as a dedicated companion process at `https://h.localhost:8443`. It is bound to loopback, rejects unexpected Host headers, limits request bodies to 2 MB, and does not require a separately deployed `hytale-auth-server`
+
+## Launch flow
+
+1. `GameLauncher` selects `Assets.zip` from the instance and starts the Local Node before patching or launching the game
+2. The node creates one ephemeral Ed25519 key pair for the selected local profile
+3. The launcher obtains identity and session tokens from `POST /v1/sessions`
+4. `ClientPatcher` redirects known Hytale service prefixes to the loopback authority
+5. The game receives scoped certificate trust through `SSL_CERT_FILE` and a Java PKCS#12 trust store
+6. DualAuth validates the embedded JWK and handles remote server handshakes without asking the remote server to contact the player's loopback node
+7. After the game starts, the launcher transfers Local Node lifetime ownership to the game PID
+8. The node remains available if the launcher closes and stops itself when the game process exits
+
+The client patch supports both regular length-prefixed strings and Linux NativeAOT frozen strings where the final character borders runtime metadata. Frozen replacements preserve that metadata byte. The patch can switch between connected and autonomous targets, and HyPrism restores the stable original backup before applying a different target
+
+## Endpoint groups
+
+| Group | Routes |
+| --- | --- |
+| Readiness and keys | `/health`, `/.well-known/jwks.json`, `/jwks.json` |
+| Sessions | `/v1/sessions`, `/game-session`, `/game-session/new`, `/game-session/child`, `/game-session/refresh`, `/game-session/authorize`, `/server-join/auth-grant`, `/server-join/auth-token`, `/game-session/exchange`, `/validate`, `/server/auto-auth` |
+| Lifecycle control | `/v1/lifecycle/attach`, `/v1/lifecycle/stop` with the per-process launcher secret |
+| Account data | `/my-account/game-profile`, `/my-account/get-profiles`, `/my-account/get-launcher-data`, `/profile/uuid/{uuid}`, `/profile/username/{username}` |
+| Avatars and cosmetics | `/my-account/skin`, `/my-account/cosmetics`, `/account-data/skin/{uuid}`, `/player-skins`, `/player-skins/active`, `/player-skins/{skinId}` |
+| Compatibility | configs, live config, telemetry, empty-state social routes, presence settings, and empty server listings |
+
+Authorization grants and access tokens contain the public embedded JWK but never its private `d` value. Access tokens copy the requested certificate fingerprint into `cnf.x5t#S256`. JWKS contains public keys for active sessions only
+
+Child-session and refresh calls issue fresh token pairs with the existing profile key. During `/game-session/authorize`, the Bearer token proves the player's session while the identity token in the request body identifies the target server. This matches the upstream singleplayer handshake and prevents a server identity from being mistaken for the player session
+
+Identity tokens, authorization grants, and server access tokens carry the active character payload in the string-valued `skin` claim used by the upstream server. The embedded server reads this claim during player setup, while the account and player-skin endpoints continue to back the menu editor
+
+`/my-account/cosmetics` follows the `sanasol/hytale-auth-server` response shape. The node reads each character creator category from the active instance's `Assets.zip` and returns all installed item IDs as unlocked. It falls back to the small upstream compatibility catalog only when the archive is unavailable or invalid
+
+## Storage and trust
+
+Local data is stored below the HyPrism application data directory in `LocalNode`
+
+| File | Purpose |
+| --- | --- |
+| `accounts.json` | local profiles, saved skins, active skin, and presence preferences |
+| `h.localhost.pfx` | persistent loopback TLS certificate and private key |
+| `h.localhost.crt` | PEM public certificate |
+| `client-ca-bundle.pem` | Unix CA bundle inherited by the game process |
+| `client-trust.p12` | Java trust store inherited by embedded server JVMs |
+| `local-node.log` | isolated startup, lifecycle, session-route status, timing, and failure events |
+| `local-node.previous.log` | previous isolated log after size-based rotation |
+| `unimplemented-requests.ndjson` | method, path, and query-key journal for unknown client calls, without headers, values, or bodies |
+
+The TLS certificate rotates when it is invalid, has the wrong host, or has fewer than seven valid days remaining. Windows adds the public certificate to the current user's root store. Unix and Java trust are scoped through environment variables passed to the launched game process
+
+ASP.NET logging providers are disabled for the companion process, so server request diagnostics do not share the static HyPrism logger or its console stream. The launcher reports only process startup, readiness, attachment, and exceptional control failures while detailed node events stay in `local-node.log`. Authentication routes record only method, path, response status, and duration without headers, tokens, or request bodies
+
+The embedded host receives the active game directory automatically. When running `HyPrism.LocalNode` as a standalone process, pass `--assets-path /absolute/path/to/Assets.zip` to expose the complete installed cosmetics catalog
+
+## Limits
+
+Local Node is a single-device compatibility backend, not a decentralized social network. It cannot provide globally unique names, a shared friends graph, cross-device presence, invitations, cloud synchronization of cosmetics, public discovery, or NAT traversal without another coordination layer
+
+The endpoint shapes are based on the open `sanasol/hytale-auth-server` compatibility surface. Automated tests cover the local HTTPS session, account, JWKS, grant exchange, certificate binding, avatar persistence, and client patch transitions. End-to-end verification against every future proprietary Hytale client build still requires a compatible installed client

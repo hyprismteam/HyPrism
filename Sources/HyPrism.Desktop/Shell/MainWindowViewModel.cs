@@ -9,6 +9,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using HyPrism.Desktop.Features.About;
 using HyPrism.Desktop.Features.Dashboard;
+using HyPrism.Desktop.Features.Instances;
 using HyPrism.Desktop.Features.News;
 using HyPrism.Desktop.Features.Settings;
 using HyPrism.Desktop.Localization;
@@ -61,6 +62,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     private CancellationTokenSource _articleImagesCancellation = new();
     private CancellationTokenSource _articlePresentationCancellation = new();
     private CancellationTokenSource _compactNewsTransitionCancellation = new();
+    private CancellationTokenSource? _instanceVersionsCancellation;
     private bool _hasLoadedNews;
     private bool _canLoadMoreNews = true;
     private readonly bool _isOfficialProfile;
@@ -91,6 +93,12 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
 
     [ObservableProperty]
     private string _selectedInstanceState = string.Empty;
+
+    [ObservableProperty]
+    private string _selectedInstanceBranch = string.Empty;
+
+    [ObservableProperty]
+    private string _selectedInstanceVersion = string.Empty;
 
     [ObservableProperty]
     private Bitmap? _dashboardBackground;
@@ -189,6 +197,25 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     [NotifyPropertyChangedFor(nameof(IsDashboardQuickStripVisible))]
     private bool _isCompactDashboardLayout;
 
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsCreateReleaseBranch))]
+    [NotifyPropertyChangedFor(nameof(IsCreatePreReleaseBranch))]
+    private string _newInstanceBranch = "release";
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanCreateInstance))]
+    private bool _isInstanceVersionsLoading;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanCreateInstance))]
+    private InstanceVersionItemViewModel? _selectedNewInstanceVersion;
+
+    [ObservableProperty]
+    private bool _isInstanceCreatorOpen;
+
+    [ObservableProperty]
+    private string _instanceCreationError = string.Empty;
+
     public MainWindowViewModel(
         IInstanceRepository instances,
         IProfileManager profiles,
@@ -246,6 +273,8 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     }
 
     public ObservableCollection<InstanceItemViewModel> Instances { get; } = [];
+    public ObservableCollection<InstanceItemViewModel> AllInstances { get; } = [];
+    public ObservableCollection<InstanceVersionItemViewModel> AvailableInstanceVersions { get; } = [];
     public ObservableCollection<NewsItemViewModel> LatestNews { get; } = [];
     public SettingsViewModel Settings
     {
@@ -262,8 +291,14 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     public string SelectInstanceLabel => _localizer["main.selectInstance"];
     public string VersionLabel => _localizer["common.version"];
     public string BranchLabel => _localizer["common.branch"];
+    public string ReleaseLabel => _localizer["common.release"];
+    public string PreReleaseLabel => _localizer["common.preRelease"];
     public string InstancesSectionLabel => _localizer["instances.title"];
     public string AddInstanceLabel => _localizer["instances.addInstance"];
+    public string CreateInstanceLabel => _localizer["instances.create"];
+    public string CreateInstanceTitle => _localizer["instances.createInstance"];
+    public string CreateInstanceHint => _localizer["instances.createInstanceHint"];
+    public string CancelLabel => _localizer["common.cancel"];
     public string NewsLoadingLabel => _localizer["news.loading"];
     public string NewsEmptyLabel => _localizer["news.noNewsFound"];
     public string BackLabel => _localizer["common.back"];
@@ -278,8 +313,14 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     public bool IsNews => CurrentPage == NewsPage;
     public bool IsProfiles => CurrentPage == ProfilesPage;
     public bool IsSettings => CurrentPage == SettingsPage;
-    public bool IsPlaceholderPage => !IsDashboard && !IsNews && !IsSettings;
+    public bool IsPlaceholderPage => !IsDashboard && !IsInstances && !IsNews && !IsSettings;
     public bool HasDashboardInstances => Instances.Count > 0;
+    public bool HasInstances => AllInstances.Count > 0;
+    public bool HasAvailableInstanceVersions => AvailableInstanceVersions.Count > 0;
+    public bool CanCreateInstance => !IsInstanceVersionsLoading && SelectedNewInstanceVersion is not null;
+    public bool IsCreateReleaseBranch =>
+        string.Equals(NewInstanceBranch, "release", StringComparison.OrdinalIgnoreCase);
+    public bool IsCreatePreReleaseBranch => !IsCreateReleaseBranch;
     public bool IsDashboardQuickStripVisible =>
         HasDashboardInstances && !IsCompactDashboardLayout;
     public bool IsGlobalActivityVisible => IsActivityVisible && !IsDashboard;
@@ -335,11 +376,76 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
 
         if (IsNews)
             _ = LoadNewsAsync();
+        else if (IsInstances && !HasInstances)
+            OpenInstanceCreator();
     }
 
     [RelayCommand]
     private void OpenInstances()
         => Navigate(InstancesPage);
+
+    [RelayCommand]
+    private void OpenInstanceCreator()
+    {
+        IsInstanceCreatorOpen = true;
+        InstanceCreationError = string.Empty;
+        _ = LoadInstanceVersionsAsync(NewInstanceBranch);
+    }
+
+    [RelayCommand]
+    private void CloseInstanceCreator()
+    {
+        IsInstanceCreatorOpen = false;
+        InstanceCreationError = string.Empty;
+    }
+
+    [RelayCommand]
+    private void SetNewInstanceBranch(string? branch)
+    {
+        if (string.IsNullOrWhiteSpace(branch) ||
+            string.Equals(NewInstanceBranch, branch, StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        NewInstanceBranch = branch;
+        InstanceCreationError = string.Empty;
+        _ = LoadInstanceVersionsAsync(branch);
+    }
+
+    [RelayCommand]
+    private void SelectNewInstanceVersion(InstanceVersionItemViewModel? version)
+    {
+        if (version is null || version.Version == SelectedNewInstanceVersion?.Version)
+            return;
+
+        SelectedNewInstanceVersion = version;
+        RefreshAvailableInstanceVersionSelection(version.Version);
+    }
+
+    [RelayCommand]
+    private void CreateInstance()
+    {
+        if (IsInstanceVersionsLoading || SelectedNewInstanceVersion is null)
+            return;
+
+        try
+        {
+            var version = SelectedNewInstanceVersion.Version;
+            var instance = _instances.CreateInstanceMeta(
+                NewInstanceBranch,
+                version,
+                $"{FormatBranch(NewInstanceBranch)} {FormatVersion(version)}");
+            _instances.SetSelectedInstance(instance.Id);
+            _selectedInstance = _instances.FindInstanceById(instance.Id);
+            IsInstanceCreatorOpen = false;
+            RefreshInstances();
+        }
+        catch (Exception ex)
+        {
+            InstanceCreationError = ex.Message;
+        }
+    }
 
     [RelayCommand]
     private void SelectDashboardInstance(string? instanceId)
@@ -438,24 +544,37 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
                 _instances.SetSelectedInstance(_selectedInstance.Id);
 
             Instances.Clear();
-            foreach (var instance in items
-                         .OrderByDescending(instance => instance.Id == _selectedInstance?.Id)
-                         .Take(3))
-            {
-                var path = _instances.GetInstancePathById(instance.Id);
-                var installed = !string.IsNullOrWhiteSpace(path) && _instances.IsClientPresent(path);
-                instance.IsInstalled = installed;
+            AllInstances.Clear();
+            var presentedInstances = items
+                .OrderByDescending(instance => instance.Id == _selectedInstance?.Id)
+                .Select(instance =>
+                {
+                    var path = _instances.GetInstancePathById(instance.Id);
+                    var installed = !string.IsNullOrWhiteSpace(path) && _instances.IsClientPresent(path);
+                    instance.IsInstalled = installed;
 
-                Instances.Add(new InstanceItemViewModel(
-                    instance.Id,
-                    instance.Name,
-                    FormatVersion(instance.Version),
-                    FormatBranch(instance.Branch),
-                    installed,
-                    instance.Id == _selectedInstance?.Id));
+                    return new InstanceItemViewModel(
+                        instance.Id,
+                        instance.Name,
+                        FormatVersion(instance.Version),
+                        FormatBranch(instance.Branch),
+                        installed,
+                        instance.Id == _selectedInstance?.Id);
+                })
+                .ToList();
+
+            foreach (var item in presentedInstances)
+            {
+                AllInstances.Add(item);
+            }
+
+            foreach (var item in presentedInstances.Take(3))
+            {
+                Instances.Add(item);
             }
 
             OnPropertyChanged(nameof(HasDashboardInstances));
+            OnPropertyChanged(nameof(HasInstances));
             OnPropertyChanged(nameof(IsDashboardQuickStripVisible));
 
             if (_selectedInstance is not null)
@@ -471,6 +590,67 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         {
             ShowError(ex.Message);
         }
+    }
+
+    private async Task LoadInstanceVersionsAsync(string branch)
+    {
+        _instanceVersionsCancellation?.Cancel();
+        _instanceVersionsCancellation?.Dispose();
+        _instanceVersionsCancellation = new CancellationTokenSource();
+        var cancellationToken = _instanceVersionsCancellation.Token;
+
+        IsInstanceVersionsLoading = true;
+        SelectedNewInstanceVersion = null;
+        AvailableInstanceVersions.Clear();
+
+        try
+        {
+            if (_versionCatalog is null)
+            {
+                InstanceCreationError = "The version catalog is unavailable";
+                return;
+            }
+
+            var versions = await _versionCatalog.GetVersionListAsync(branch, cancellationToken);
+            if (cancellationToken.IsCancellationRequested)
+                return;
+
+            foreach (var version in versions.Take(12))
+            {
+                AvailableInstanceVersions.Add(new InstanceVersionItemViewModel(
+                    version,
+                    IsSelected: version == versions.FirstOrDefault()));
+            }
+
+            SelectedNewInstanceVersion = AvailableInstanceVersions.FirstOrDefault();
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+        }
+        catch (Exception ex)
+        {
+            InstanceCreationError = ex.Message;
+        }
+        finally
+        {
+            if (!cancellationToken.IsCancellationRequested)
+            {
+                IsInstanceVersionsLoading = false;
+                OnPropertyChanged(nameof(HasAvailableInstanceVersions));
+            }
+        }
+    }
+
+    private void RefreshAvailableInstanceVersionSelection(int selectedVersion)
+    {
+        for (var index = 0; index < AvailableInstanceVersions.Count; index++)
+        {
+            var option = AvailableInstanceVersions[index];
+            AvailableInstanceVersions[index] = option with { IsSelected = option.Version == selectedVersion };
+        }
+
+        SelectedNewInstanceVersion = AvailableInstanceVersions
+            .FirstOrDefault(option => option.Version == selectedVersion);
     }
 
     private async Task LoadNewsAsync()
@@ -843,6 +1023,8 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
             SelectedInstanceName = SelectInstanceLabel;
             SelectedInstanceMeta = _localizer["instances.noInstances"];
             SelectedInstanceState = _localizer["instances.status.unknown"];
+            SelectedInstanceBranch = string.Empty;
+            SelectedInstanceVersion = string.Empty;
             PrimaryActionText = SelectInstanceLabel;
             CanRunPrimaryAction = !IsBusy;
             NotifyPrimaryActionStateChanged();
@@ -851,6 +1033,8 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
 
         SelectedInstanceName = _selectedInstance.Name;
         SelectedInstanceMeta = $"{FormatBranch(_selectedInstance.Branch)}  ·  {FormatVersion(_selectedInstance.Version)}";
+        SelectedInstanceBranch = FormatBranch(_selectedInstance.Branch);
+        SelectedInstanceVersion = FormatVersion(_selectedInstance.Version);
         SelectedInstanceState = _selectedInstance.IsInstalled
             ? _localizer["instances.status.ready"]
             : _localizer["instances.status.notInstalled"];
@@ -1027,6 +1211,8 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         _articlePresentationCancellation.Dispose();
         _compactNewsTransitionCancellation.Cancel();
         _compactNewsTransitionCancellation.Dispose();
+        _instanceVersionsCancellation?.Cancel();
+        _instanceVersionsCancellation?.Dispose();
         SelectedNewsArticle = null;
         foreach (var article in _articleViewModelCache.Values)
             article.Dispose();

@@ -531,9 +531,6 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="launch.detail.patch_applied" xml:space="preserve">
     <value>패치 {0}가 성공적으로 적용되었습니다</value>
   </data>
-  <data name="launch.detail.patching_class_files" xml:space="preserve">
-    <value>class 파일 패치 중...</value>
-  </data>
   <data name="launch.detail.patching_client" xml:space="preserve">
     <value>클라이언트 바이너리 패치 중...</value>
   </data>
@@ -546,9 +543,6 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="launch.detail.patching_init" xml:space="preserve">
     <value>패처 초기화 중...</value>
   </data>
-  <data name="launch.detail.patching_server" xml:space="preserve">
-    <value>서버 JAR 패치 중...</value>
-  </data>
   <data name="launch.detail.preparing_download" xml:space="preserve">
     <value>다운로드 준비 중...</value>
   </data>
@@ -558,20 +552,8 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="launch.detail.reading_client_binary" xml:space="preserve">
     <value>클라이언트 바이너리 읽는 중...</value>
   </data>
-  <data name="launch.detail.reading_server_jar" xml:space="preserve">
-    <value>서버 JAR 읽는 중...</value>
-  </data>
-  <data name="launch.detail.replacing_original_jar" xml:space="preserve">
-    <value>원본 JAR 교체 중...</value>
-  </data>
   <data name="launch.detail.resigning" xml:space="preserve">
     <value>바이너리 재서명 중...</value>
-  </data>
-  <data name="launch.detail.server_already_patched" xml:space="preserve">
-    <value>서버는 이미 패치됨</value>
-  </data>
-  <data name="launch.detail.server_jar_patched" xml:space="preserve">
-    <value>서버 JAR 패치됨</value>
   </data>
   <data name="launch.detail.started" xml:space="preserve">
     <value>게임이 시작되었습니다!</value>
@@ -1405,7 +1387,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>오프라인 모드 (클릭하여 온라인 활성화)</value>
   </data>
   <data name="onlineToggle.online" xml:space="preserve">
-    <value>온라인 모드</value>
+    <value>연결 모드</value>
   </data>
   <data name="onlineToggle.onlineClickDisable" xml:space="preserve">
     <value>온라인 모드 (클릭하여 비활성화)</value>
@@ -1836,23 +1818,11 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="settings.generalSettings.closeLauncherHint" xml:space="preserve">
     <value>게임 시작 시 런처 종료</value>
   </data>
-  <data name="settings.generalSettings.dualAuth" xml:space="preserve">
-    <value>DualAuth (실험적)</value>
-  </data>
-  <data name="settings.generalSettings.dualAuthHint" xml:space="preserve">
-    <value>정적 JAR 패치 대신 런타임 Java 에이전트를 사용하여 서버 인증을 수행합니다. 충돌이나 연결 문제가 발생할 수 있습니다.</value>
-  </data>
   <data name="settings.generalSettings.launcherStorage" xml:space="preserve">
     <value>런처 저장소</value>
   </data>
   <data name="settings.generalSettings.launcherStorageHint" xml:space="preserve">
     <value>런처 데이터와 게임 파일이 저장되는 위치입니다.</value>
-  </data>
-  <data name="settings.generalSettings.legacyPatching" xml:space="preserve">
-    <value>레거시 패칭</value>
-  </data>
-  <data name="settings.generalSettings.legacyPatchingHint" xml:space="preserve">
-    <value>DualAuth Java 에이전트 대신 정적 JAR 패치를 사용하여 서버 인증을 수행합니다. 더 호환되지만 덜 유연합니다.</value>
   </data>
   <data name="settings.generalSettings.showAlphaMods" xml:space="preserve">
     <value>알파 모드 표시</value>
@@ -2143,7 +2113,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>온라인 모드</value>
   </data>
   <data name="settings.networkSettings.onlineModeHint" xml:space="preserve">
-    <value>멀티플레이어를 위해 인증 서버에 연결합니다.</value>
+    <value>인증 서비스와 계정 데이터를 사용합니다. 비활성화하면 HyPrism이 로컬 OmniAuth 세션을 생성합니다</value>
   </data>
   <data name="settings.profile.avatar" xml:space="preserve">
     <value>아바타</value>

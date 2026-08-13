@@ -37,12 +37,12 @@ public class GameLauncher : IGameLauncher
     private readonly IProgressReporter _progress;
     private readonly IDiscordPresence _discord;
     private readonly ISkinRepository _skins;
-    private readonly IUserIdentityProvider _identity;
     private readonly IAvatarCache _avatars;
     private readonly HttpClient _httpClient;
     private readonly IHytaleAuthenticator _hytaleGameSessionAuthenticator;
     private readonly IGpuProvider _gpuProvider;
     private readonly IProfileManager _profiles;
+    private readonly ILocalNodeService _localNode;
     private readonly string _appDir;
 
     private Config _config => _configStore.Configuration;
@@ -51,11 +51,7 @@ public class GameLauncher : IGameLauncher
     /// Stores the DualAuth agent path after download, used when building process start info
     /// </summary>
     private string? _dualAuthAgentPath;
-
-    /// <summary>
-    /// Stores the offline token fetched from auth server, passed as HYTALE_OFFLINE_TOKEN env var
-    /// </summary>
-    private string? _offlineToken;
+    private string? _launchedProfileUuid;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GameLauncher"/> class
@@ -67,13 +63,13 @@ public class GameLauncher : IGameLauncher
     /// <param name="progress">Service for progress notifications</param>
     /// <param name="discord">Service for Discord Rich Presence</param>
     /// <param name="skins">Service for skin protection</param>
-    /// <param name="identity">Service for user identity management</param>
     /// <param name="avatars">Service for avatar backup</param>
     /// <param name="httpClient">HTTP client for authentication requests</param>
     /// <param name="hytaleGameSessionAuthenticator">Service for official Hytale OAuth authentication</param>
     /// <param name="gpuProvider">Service for GPU detection</param>
     /// <param name="appPath">Application path configuration</param>
     /// <param name="profiles">Service for the active launcher profile</param>
+    /// <param name="localNode">Loopback authentication service for autonomous profiles</param>
     public GameLauncher(
         IConfigStore configStore,
         IRuntimeProvisioner runtime,
@@ -82,13 +78,13 @@ public class GameLauncher : IGameLauncher
         IProgressReporter progress,
         IDiscordPresence discord,
         ISkinRepository skins,
-        IUserIdentityProvider identity,
         IAvatarCache avatars,
         HttpClient httpClient,
         IHytaleAuthenticator hytaleGameSessionAuthenticator,
         IGpuProvider gpuProvider,
         AppPathConfiguration appPath,
-        IProfileManager profiles)
+        IProfileManager profiles,
+        ILocalNodeService localNode)
     {
         _configStore = configStore;
         _runtime = runtime;
@@ -97,13 +93,13 @@ public class GameLauncher : IGameLauncher
         _progress = progress;
         _discord = discord;
         _skins = skins;
-        _identity = identity;
         _avatars = avatars;
         _httpClient = httpClient;
         _hytaleGameSessionAuthenticator = hytaleGameSessionAuthenticator;
         _gpuProvider = gpuProvider;
         _appDir = appPath.AppDir;
         _profiles = profiles;
+        _localNode = localNode;
         _gameProcess.ProcessExited += OnGameProcessExited;
     }
 
@@ -114,12 +110,16 @@ public class GameLauncher : IGameLauncher
         {
             Logger.Info("Game", "Game process exited, performing cleanup...");
 
-            var uuid = _identity.GetUuidForUser(_config.Nick);
             _skins.StopSkinProtection();
-            _skins.BackupProfileSkinData(uuid);
+            if (!string.IsNullOrWhiteSpace(_launchedProfileUuid))
+            {
+                _skins.BackupProfileSkinData(_launchedProfileUuid);
 
-            // Copy the latest game avatar to persistent backup
-            _avatars.BackupAvatar(uuid);
+                // Copy the latest game avatar to persistent backup
+                _avatars.BackupAvatar(_launchedProfileUuid);
+            }
+
+            _launchedProfileUuid = null;
 
             _discord.SetPresence(PresenceState.Idle);
             _progress.ReportGameStateChanged("stopped", 0);
@@ -139,10 +139,13 @@ public class GameLauncher : IGameLauncher
     {
         Logger.Info("Game", $"Preparing to launch from {versionPath}");
 
-        // Validate profile/server compatibility before proceeding
-        string sessionUuid = _identity.GetUuidForUser(_config.Nick);
-        var currentProfile = _profiles.GetProfiles().FirstOrDefault(p => p.UUID == sessionUuid);
-        bool isOfficialProfile = currentProfile?.IsOfficial == true;
+        // Resolve identity exclusively through the explicitly selected profile
+        var currentProfile = GetSelectedProfileOrThrow();
+        string sessionUuid = currentProfile.UUID;
+        string profileName = currentProfile.Name;
+        bool isOfficialProfile = currentProfile.IsOfficial;
+
+        var effectiveAuthDomain = GetEffectiveCustomAuthDomain(logFallback: false);
 
         if (!isOfficialProfile && IsOfficialDomain(_config.AuthDomain) && _config.OnlineMode)
         {
@@ -150,15 +153,21 @@ public class GameLauncher : IGameLauncher
         }
 
         // Check auth server availability before proceeding (only for online mode with custom auth)
-        if (_config.OnlineMode && !isOfficialProfile && !IsOfficialDomain(_config.AuthDomain))
+        if (_config.OnlineMode && !isOfficialProfile)
         {
-            var authAvailable = await CheckAuthServerAvailabilityAsync(_config.AuthDomain, ct);
+            var authAvailable = await CheckAuthServerAvailabilityAsync(effectiveAuthDomain!, ct);
             if (!authAvailable)
             {
-                var errorMessage = $"Authentication server '{_config.AuthDomain}' is not reachable. Please check your network connection or auth server settings.";
+                var errorMessage = $"Authentication server '{effectiveAuthDomain}' is not reachable. Please check your network connection or auth server settings.";
                 Logger.Error("Game", errorMessage);
                 throw new Exception(errorMessage);
             }
+        }
+
+        if (!isOfficialProfile && !_config.OnlineMode)
+        {
+            Logger.Info("Game", $"Starting autonomous Local Node at {_localNode.Issuer}");
+            await _localNode.EnsureReadyAsync(versionPath, ct);
         }
 
         var (executable, workingDir) = ResolveExecutablePaths(versionPath);
@@ -184,20 +193,14 @@ public class GameLauncher : IGameLauncher
 
         _progress.ReportDownloadProgress("launching", 0, "launch.detail.authenticating_generic", null, 0, 0);
 
-        Logger.Info("Game", $"Using UUID for user '{_config.Nick}': {sessionUuid}");
+        Logger.Info("Game", $"Using UUID for selected profile '{profileName}': {sessionUuid}");
 
         var (identityToken, sessionToken, authPlayerName) = await AuthenticateAsync(
             sessionUuid,
+            profileName,
             authorizationUriPresenter,
             ct);
-        string launchPlayerName = ResolveLaunchPlayerName(authPlayerName, identityToken);
-
-        // When launching in offline mode, fetch an offline token for HYTALE_OFFLINE_TOKEN env var
-        bool willLaunchOffline = !_config.OnlineMode || string.IsNullOrEmpty(identityToken) || string.IsNullOrEmpty(sessionToken);
-        if (willLaunchOffline)
-        {
-            await FetchOfflineTokenAsync(sessionUuid, launchPlayerName);
-        }
+        string launchPlayerName = ResolveLaunchPlayerName(profileName, authPlayerName, identityToken);
 
         string javaPath = ResolveJavaPath();
         if (!File.Exists(javaPath)) throw new Exception($"Java not found at {javaPath}");
@@ -215,7 +218,7 @@ public class GameLauncher : IGameLauncher
 
         ct.ThrowIfCancellationRequested();
 
-        await StartAndMonitorProcessAsync(startInfo, sessionUuid);
+        await StartAndMonitorProcessAsync(startInfo, sessionUuid, launchPlayerName);
     }
 
     private static (string executable, string workingDir) ResolveExecutablePaths(string versionPath)
@@ -272,9 +275,33 @@ public class GameLauncher : IGameLauncher
     /// </summary>
     private bool IsOfficialServerMode()
     {
-        var currentUuid = _identity.GetUuidForUser(_config.Nick);
-        var currentProfile = _profiles.GetProfiles().FirstOrDefault(p => p.UUID == currentUuid);
+        var currentProfile = _profiles.GetProfiles()
+            .FirstOrDefault(profile => profile.Id == _config.SelectedProfileId);
         return currentProfile?.IsOfficial == true;
+    }
+
+    private Profile GetSelectedProfileOrThrow()
+    {
+        if (string.IsNullOrWhiteSpace(_config.SelectedProfileId))
+        {
+            throw new InvalidOperationException("Create or select a profile before launching the game");
+        }
+
+        var profile = _profiles.GetProfiles()
+            .FirstOrDefault(candidate => candidate.Id == _config.SelectedProfileId);
+        if (profile is null)
+        {
+            throw new InvalidOperationException(
+                $"Selected profile '{_config.SelectedProfileId}' does not exist");
+        }
+
+        if (string.IsNullOrWhiteSpace(profile.Name) || !Guid.TryParse(profile.UUID, out _))
+        {
+            throw new InvalidOperationException(
+                $"Selected profile '{profile.Id}' has an invalid name or UUID");
+        }
+
+        return profile;
     }
 
     private static bool IsOfficialDomain(string? domain)
@@ -331,11 +358,18 @@ public class GameLauncher : IGameLauncher
         }
     }
 
-    private string? GetEffectiveCustomAuthDomain(bool logFallback)
+    private string GetEffectiveCustomAuthDomain(bool logFallback)
     {
         var configuredDomain = _config.AuthDomain?.Trim();
         if (string.IsNullOrWhiteSpace(configuredDomain))
-            return null;
+        {
+            if (logFallback)
+            {
+                Logger.Warning("Game", $"No custom auth domain is configured. Using '{DefaultCustomAuthDomain}'.");
+            }
+
+            return DefaultCustomAuthDomain;
+        }
 
         if (IsOfficialDomain(configuredDomain))
         {
@@ -391,10 +425,9 @@ public class GameLauncher : IGameLauncher
             return;
         }
 
-        var effectiveAuthDomain = GetEffectiveCustomAuthDomain(logFallback: true);
-        if (string.IsNullOrWhiteSpace(effectiveAuthDomain)) return;
-
-        bool useDualAuth = _config.UseDualAuth;
+        var effectiveAuthDomain = _config.OnlineMode
+            ? GetEffectiveCustomAuthDomain(logFallback: true)
+            : _localNode.EndpointDomain;
 
         _progress.ReportDownloadProgress("patching", 0, "launch.detail.patching_init", null, 0, 0);
         try
@@ -406,128 +439,67 @@ public class GameLauncher : IGameLauncher
             }
 
             Logger.Info("Game", $"Patching binary: hytale.com -> {baseDomain}");
-            Logger.Info("Game", $"Server patching mode: {(useDualAuth ? "DualAuth (experimental)" : "Legacy JAR patching")}");
+            Logger.Info("Game", "Server authentication mode: DualAuth Agent");
             _progress.ReportDownloadProgress("patching", 10, "launch.detail.patching_client", null, 0, 0);
 
             var patcher = new ClientPatcher(baseDomain);
 
-            if (useDualAuth)
+            // Restore installations created by releases that statically patched the server JAR.
+            // The current launch path always keeps the original server binary intact.
+            if (ClientPatcher.IsServerJarPatched(versionPath))
             {
-
-                // If server JAR was previously patched by legacy mode, restore it first
-                // so DualAuth agent works with the original (unmodified) JAR.
-                if (ClientPatcher.IsServerJarPatched(versionPath))
-                {
-                    Logger.Info("Game", "Restoring server JAR from legacy patch before applying DualAuth");
-                    ClientPatcher.RestoreServerJarFromBackup(versionPath, (msg, progress) =>
-                    {
-                        Logger.Info("Patcher", progress.HasValue ? $"{msg} ({progress}%)" : msg);
-                    });
-                }
-
-                var patchResult = patcher.EnsureClientPatched(versionPath, (msg, progress) =>
+                Logger.Info("Game", "Restoring server JAR from a legacy static patch");
+                var restoreResult = ClientPatcher.RestoreServerJarFromBackup(versionPath, (msg, progress) =>
                 {
                     Logger.Info("Patcher", progress.HasValue ? $"{msg} ({progress}%)" : msg);
-                    if (progress.HasValue)
-                    {
-                        int mapped = 10 + (int)(progress.Value * 0.5);
-                        _progress.ReportDownloadProgress("patching", mapped, msg, null, 0, 0);
-                    }
                 });
 
-                // DualAuth agent handles server-side auth flow at runtime.
-                // Always check for a newer version before launch; falls back to local check
-                // if GitHub API is unreachable.
-                Logger.Info("Game", $"Checking DualAuth agent version for auth domain: {baseDomain}");
-                _progress.ReportDownloadProgress("patching", 65, "launch.detail.dualauth_setup", null, 0, 0);
-
-                try
+                if (!restoreResult.Success)
                 {
-                    var dualAuthResult = await DualAuthAgent.EnsureAgentUpToDateAsync(_appDir, (msg, progress) =>
-                    {
-                        Logger.Info("DualAuth", progress.HasValue ? $"{msg} ({progress}%)" : msg);
-                        if (progress.HasValue)
-                        {
-                            int mapped = 65 + (int)(progress.Value * 0.25);
-                            _progress.ReportDownloadProgress("patching", mapped, msg, null, 0, 0);
-                        }
-                    });
-
-                    if (dualAuthResult.Success)
-                    {
-                        _dualAuthAgentPath = dualAuthResult.AgentPath;
-                        Logger.Success("Game", $"DualAuth agent ready: {_dualAuthAgentPath}");
-                    }
-                    else
-                    {
-                        Logger.Warning("Game", $"DualAuth agent setup failed: {dualAuthResult.Error}");
-                        Logger.Warning("Game", "Server authentication may not work correctly without DualAuth");
-                    }
-                }
-                catch (Exception dualAuthEx)
-                {
-                    Logger.Warning("Game", $"Error setting up DualAuth: {dualAuthEx.Message}");
-                }
-
-                if (patchResult.Success && patchResult.PatchCount > 0 && RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-                {
-                    try
-                    {
-                        _progress.ReportDownloadProgress("patching", 95, "launch.detail.resigning", null, 0, 0);
-                        Logger.Info("Game", "Re-signing patched binary...");
-                        string appBundle = Path.Combine(versionPath, "Client", "Hytale.app");
-                        bool signed = ClientPatcher.SignMacOSBinary(appBundle);
-                        if (signed) Logger.Success("Game", "Binary re-signed successfully");
-                        else Logger.Warning("Game", "Binary signing failed - game may not launch");
-                    }
-                    catch (Exception signEx)
-                    {
-                        Logger.Warning("Game", $"Error re-signing binary: {signEx.Message}");
-                    }
+                    throw new InvalidOperationException(
+                        $"Could not restore the original HytaleServer.jar: {restoreResult.Error}");
                 }
             }
-            else
+
+            var patchResult = patcher.EnsureClientPatched(versionPath, (msg, progress) =>
             {
-                // This proven approach statically modifies the JAR to replace
-                // sessions.hytale.com with sessions.<custom-domain>.
-                // Also clear DualAuth agent path to prevent agent injection.
-                _dualAuthAgentPath = null;
-
-                var patchResult = patcher.EnsureAllPatched(versionPath, (msg, progress) =>
+                Logger.Info("Patcher", progress.HasValue ? $"{msg} ({progress}%)" : msg);
+                if (progress.HasValue)
                 {
-                    Logger.Info("Patcher", progress.HasValue ? $"{msg} ({progress}%)" : msg);
-                    if (progress.HasValue)
-                    {
-                        int mapped = 10 + (int)(progress.Value * 0.85);
-                        _progress.ReportDownloadProgress("patching", mapped, msg, null, 0, 0);
-                    }
-                });
-
-                if (!patchResult.Success)
-                {
-                    Logger.Warning("Game", $"Legacy patching had issues: {patchResult.Error}");
+                    int mapped = 10 + (int)(progress.Value * 0.5);
+                    _progress.ReportDownloadProgress("patching", mapped, msg, null, 0, 0);
                 }
-                else
-                {
-                    Logger.Success("Game", $"Legacy patching complete (client + server JAR). Patches applied: {patchResult.PatchCount}");
-                }
+            });
 
-                if (patchResult.Success && patchResult.PatchCount > 0 && RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-                {
-                    try
-                    {
-                        _progress.ReportDownloadProgress("patching", 95, "launch.detail.resigning", null, 0, 0);
-                        Logger.Info("Game", "Re-signing patched binary...");
-                        string appBundle = Path.Combine(versionPath, "Client", "Hytale.app");
-                        bool signed = ClientPatcher.SignMacOSBinary(appBundle);
-                        if (signed) Logger.Success("Game", "Binary re-signed successfully");
-                        else Logger.Warning("Game", "Binary signing failed - game may not launch");
-                    }
-                    catch (Exception signEx)
-                    {
-                        Logger.Warning("Game", $"Error re-signing binary: {signEx.Message}");
-                    }
-                }
+            if (!patchResult.Success)
+            {
+                throw new InvalidOperationException($"Could not prepare the Hytale client: {patchResult.Error}");
+            }
+
+            Logger.Info("Game", $"Preparing DualAuth agent for auth domain: {baseDomain}");
+            _progress.ReportDownloadProgress("patching", 65, "launch.detail.dualauth_setup", null, 0, 0);
+
+            var dualAuthResult = _config.OnlineMode
+                ? await DualAuthAgent.EnsureAgentUpToDateAsync(_appDir, ReportDualAuthProgress)
+                : await DualAuthAgent.EnsureAgentAvailableAsync(_appDir, ReportDualAuthProgress);
+
+            if (!dualAuthResult.Success || string.IsNullOrWhiteSpace(dualAuthResult.AgentPath))
+            {
+                throw new InvalidOperationException(
+                    $"DualAuth Agent is required for local profiles: {dualAuthResult.Error}");
+            }
+
+            _dualAuthAgentPath = dualAuthResult.AgentPath;
+            Logger.Success("Game", $"DualAuth agent ready: {_dualAuthAgentPath}");
+
+            if (patchResult.PatchCount > 0 && RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                _progress.ReportDownloadProgress("patching", 95, "launch.detail.resigning", null, 0, 0);
+                Logger.Info("Game", "Re-signing patched binary...");
+                string appBundle = Path.Combine(versionPath, "Client", "Hytale.app");
+                bool signed = ClientPatcher.SignMacOSBinary(appBundle);
+                if (signed) Logger.Success("Game", "Binary re-signed successfully");
+                else Logger.Warning("Game", "Binary signing failed - game may not launch");
             }
 
             _progress.ReportDownloadProgress("patching", 100, "launch.detail.patching_complete", null, 0, 0);
@@ -538,13 +510,24 @@ public class GameLauncher : IGameLauncher
         }
         catch (Exception ex)
         {
-            Logger.Warning("Game", $"Error during binary patching: {ex.Message}");
-            // Non-fatal, try to launch anyway
+            Logger.Error("Game", $"Error while preparing authentication: {ex.Message}");
+            throw;
+        }
+
+        void ReportDualAuthProgress(string message, int? progress)
+        {
+            Logger.Info("DualAuth", progress.HasValue ? $"{message} ({progress}%)" : message);
+            if (progress.HasValue)
+            {
+                int mapped = 65 + (int)(progress.Value * 0.25);
+                _progress.ReportDownloadProgress("patching", mapped, message, null, 0, 0);
+            }
         }
     }
 
     private async Task<(string? identityToken, string? sessionToken, string? authPlayerName)> AuthenticateAsync(
         string sessionUuid,
+        string profileName,
         AuthUriPresenter? authorizationUriPresenter,
         CancellationToken cancellationToken)
     {
@@ -606,10 +589,18 @@ public class GameLauncher : IGameLauncher
             return (identityToken, sessionToken, authPlayerName);
         }
 
-        // Use a configured custom authentication domain for non-official profiles
+        if (!_config.OnlineMode)
+        {
+            var omniSession = await _localNode.CreateSessionAsync(
+                sessionUuid,
+                profileName,
+                cancellationToken);
+            Logger.Success("Game", $"Local Node OmniAuth session created, expires at {omniSession.ExpiresAt:O}");
+            return (omniSession.IdentityToken, omniSession.SessionToken, profileName);
+        }
+
+        // Use a configured custom authentication domain for connected non-official profiles
         var effectiveAuthDomain = GetEffectiveCustomAuthDomain(logFallback: true);
-        if (!_config.OnlineMode || string.IsNullOrWhiteSpace(effectiveAuthDomain))
-            return (identityToken, sessionToken, authPlayerName);
 
         _progress.ReportDownloadProgress("launching", 20, "launch.detail.authenticating", [effectiveAuthDomain], 0, 0);
         Logger.Info("Game", $"Online mode enabled - fetching auth tokens from {effectiveAuthDomain}...");
@@ -617,7 +608,7 @@ public class GameLauncher : IGameLauncher
         try
         {
             var authService = new GameSessionAuthenticator(_httpClient, effectiveAuthDomain);
-            var tokenResult = await authService.GetGameSessionTokenAsync(sessionUuid, _config.Nick);
+            var tokenResult = await authService.GetGameSessionTokenAsync(sessionUuid, profileName);
 
             if (tokenResult.Success && !string.IsNullOrEmpty(tokenResult.Token))
             {
@@ -628,60 +619,23 @@ public class GameLauncher : IGameLauncher
             }
             else
             {
-                Logger.Warning("Game", $"Could not get auth token: {tokenResult.Error}");
+                throw new InvalidOperationException(
+                    $"Authentication service did not create a game session: {tokenResult.Error}");
             }
         }
         catch (Exception ex)
         {
             Logger.Error("Game", $"Error fetching auth token: {ex.Message}");
+            throw;
         }
 
         return (identityToken, sessionToken, authPlayerName);
     }
 
-    /// <summary>
-    /// Fetches an offline token from the custom auth server for HYTALE_OFFLINE_TOKEN env var.
-    /// Required by Hytale client v2026.02.26+ for offline/singleplayer mode.
-    /// Only attempts the fetch when a custom auth server is configured and reachable
-    /// </summary>
-    private async Task FetchOfflineTokenAsync(string uuid, string playerName)
-    {
-        var effectiveAuthDomain = GetEffectiveCustomAuthDomain(logFallback: false);
-        if (string.IsNullOrWhiteSpace(effectiveAuthDomain))
-        {
-            Logger.Info("Game", "Skipping offline token fetch because no custom auth server is configured");
-            return;
-        }
-
-        Logger.Info("Game", $"Fetching offline token from {effectiveAuthDomain}...");
-        _progress.ReportDownloadProgress("launching", 25, "launch.detail.offline_token", null, 0, 0);
-
-        try
-        {
-            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
-            var authService = new GameSessionAuthenticator(_httpClient, effectiveAuthDomain);
-            _offlineToken = await authService.GetOfflineTokenAsync(uuid, playerName, cts.Token);
-
-            if (!string.IsNullOrEmpty(_offlineToken))
-            {
-                Logger.Success("Game", "Offline token obtained and ready as HYTALE_OFFLINE_TOKEN");
-            }
-            else
-            {
-                Logger.Warning("Game", "Could not obtain offline token. The game may report that offline mode requires a token");
-            }
-        }
-        catch (OperationCanceledException)
-        {
-            Logger.Warning("Game", "Offline token fetch timed out after 5 seconds. Continuing without it");
-        }
-        catch (Exception ex)
-        {
-            Logger.Warning("Game", $"Error fetching offline token: {ex.Message}");
-        }
-    }
-
-    private string ResolveLaunchPlayerName(string? authPlayerName, string? identityToken)
+    private static string ResolveLaunchPlayerName(
+        string profileName,
+        string? authPlayerName,
+        string? identityToken)
     {
         string? tokenPlayerName = TryExtractPlayerNameFromJwt(identityToken);
 
@@ -689,11 +643,11 @@ public class GameLauncher : IGameLauncher
             ? authPlayerName.Trim()
             : !string.IsNullOrWhiteSpace(tokenPlayerName)
                 ? tokenPlayerName.Trim()
-                : _config.Nick;
+                : profileName;
 
-        if (!string.Equals(resolved, _config.Nick, StringComparison.Ordinal))
+        if (!string.Equals(resolved, profileName, StringComparison.Ordinal))
         {
-            Logger.Warning("Game", $"Using token player name '{resolved}' instead of configured nickname '{_config.Nick}' to satisfy server authentication checks");
+            Logger.Warning("Game", $"Using token player name '{resolved}' instead of selected profile name '{profileName}' to satisfy server authentication checks");
         }
 
         return resolved;
@@ -857,11 +811,15 @@ public class GameLauncher : IGameLauncher
             ApplyGpuEnvironment(startInfo);
             ApplyDualAuthEnvironment(startInfo);
             ApplyUserJavaArguments(startInfo);
+            if (!_config.OnlineMode && !IsOfficialServerMode())
+                _localNode.ApplyClientTrust(startInfo);
             return startInfo;
         }
 
         var unixStartInfo = BuildUnixStartInfo(executable, workingDir, versionPath, userDataDir, javaPath, sessionUuid, identityToken, sessionToken, launchPlayerName);
         ApplyUserJavaArguments(unixStartInfo);
+        if (!_config.OnlineMode && !IsOfficialServerMode())
+            _localNode.ApplyClientTrust(unixStartInfo);
         return unixStartInfo;
     }
 
@@ -882,15 +840,14 @@ public class GameLauncher : IGameLauncher
         => JvmArgumentBuilder.Sanitize(args);
 
     /// <summary>
-    /// Applies DualAuth environment variables for custom auth server authentication.
-    /// Only applies when DualAuth mode is enabled in settings
+    /// Applies DualAuth environment variables for local-profile authentication
     /// </summary>
     private void ApplyDualAuthEnvironment(ProcessStartInfo startInfo)
     {
-        if (!_config.UseDualAuth || string.IsNullOrEmpty(_dualAuthAgentPath) || IsOfficialServerMode())
+        if (string.IsNullOrEmpty(_dualAuthAgentPath) || IsOfficialServerMode())
             return;
 
-        string authDomain = DeriveAuthDomain(GetEffectiveCustomAuthDomain(logFallback: false));
+        string authDomain = GetDualAuthDomain();
 
         DualAuthAgent.ApplyToProcess(startInfo, _dualAuthAgentPath, authDomain, trustOfficialIssuers: true);
         Logger.Info("Game", $"DualAuth environment applied to process (auth domain: {authDomain})");
@@ -911,6 +868,11 @@ public class GameLauncher : IGameLauncher
 
         return $"auth.{baseDomain}";
     }
+
+    private string GetDualAuthDomain()
+        => _config.OnlineMode
+            ? DeriveAuthDomain(GetEffectiveCustomAuthDomain(logFallback: false))
+            : _localNode.EndpointDomain;
 
     /// <summary>
     /// Applies GPU environment variables to a ProcessStartInfo based on the configured GPU preference.
@@ -965,7 +927,7 @@ public class GameLauncher : IGameLauncher
         startInfo.ArgumentList.Add("--name");
         startInfo.ArgumentList.Add(launchPlayerName);
 
-        if (_config.OnlineMode && !string.IsNullOrEmpty(identityToken) && !string.IsNullOrEmpty(sessionToken))
+        if (!string.IsNullOrEmpty(identityToken) && !string.IsNullOrEmpty(sessionToken))
         {
             startInfo.ArgumentList.Add("--auth-mode");
             startInfo.ArgumentList.Add("authenticated");
@@ -983,12 +945,6 @@ public class GameLauncher : IGameLauncher
             startInfo.ArgumentList.Add("offline");
             startInfo.ArgumentList.Add("--uuid");
             startInfo.ArgumentList.Add(sessionUuid);
-
-            if (!string.IsNullOrEmpty(_offlineToken))
-            {
-                startInfo.Environment["HYTALE_OFFLINE_TOKEN"] = _offlineToken;
-                Logger.Info("Game", "Set HYTALE_OFFLINE_TOKEN environment variable");
-            }
 
             Logger.Info("Game", $"Using offline mode with UUID: {sessionUuid}");
         }
@@ -1010,7 +966,7 @@ public class GameLauncher : IGameLauncher
             $"--name \"{launchPlayerName}\""
         };
 
-        if (_config.OnlineMode && !string.IsNullOrEmpty(identityToken) && !string.IsNullOrEmpty(sessionToken))
+        if (!string.IsNullOrEmpty(identityToken) && !string.IsNullOrEmpty(sessionToken))
         {
             gameArgs.Add("--auth-mode authenticated");
             gameArgs.Add($"--uuid \"{sessionUuid}\"");
@@ -1061,13 +1017,20 @@ if [[ -n ""$USER_JAVA_TOOL_OPTIONS"" ]]; then
         COMBINED_JAVA_TOOL_OPTIONS=""$USER_JAVA_TOOL_OPTIONS""
     fi
 fi
+if [[ -n ""$HYPRISM_LOCAL_NODE_JAVA_OPTIONS"" ]]; then
+    if [[ -n ""$COMBINED_JAVA_TOOL_OPTIONS"" ]]; then
+        COMBINED_JAVA_TOOL_OPTIONS=""$COMBINED_JAVA_TOOL_OPTIONS $HYPRISM_LOCAL_NODE_JAVA_OPTIONS""
+    else
+        COMBINED_JAVA_TOOL_OPTIONS=""$HYPRISM_LOCAL_NODE_JAVA_OPTIONS""
+    fi
+fi
 if [[ -n ""$COMBINED_JAVA_TOOL_OPTIONS"" ]]; then
     ENV_ARGS+=(""JAVA_TOOL_OPTIONS=$COMBINED_JAVA_TOOL_OPTIONS"")
 fi
+[[ -n ""$HYPRISM_LOCAL_NODE_CA_BUNDLE"" ]] && ENV_ARGS+=(""SSL_CERT_FILE=$HYPRISM_LOCAL_NODE_CA_BUNDLE"")
 [[ -n ""$DUALAUTH_AUTH_DOMAIN"" ]] && ENV_ARGS+=(""HYTALE_AUTH_DOMAIN=$DUALAUTH_AUTH_DOMAIN"")
 [[ -n ""$DUALAUTH_TRUST_ALL"" ]] && ENV_ARGS+=(""HYTALE_TRUST_ALL_ISSUERS=$DUALAUTH_TRUST_ALL"")
 [[ -n ""$DUALAUTH_TRUST_OFFICIAL"" ]] && ENV_ARGS+=(""HYTALE_TRUST_OFFICIAL=$DUALAUTH_TRUST_OFFICIAL"")
-{BuildOfflineTokenEnvLine()}
 {BuildCustomEnvLines()}
 exec env ""${{ENV_ARGS[@]}}"" ""{executable}"" {argsString}
 ";
@@ -1220,14 +1183,6 @@ export __NV_PRIME_RENDER_OFFLOAD=0
     /// Builds custom environment variable lines for the Unix launch script.
     /// Parses KEY=VALUE pairs from config and adds them to ENV_ARGS
     /// </summary>
-    private string BuildOfflineTokenEnvLine()
-    {
-        if (string.IsNullOrEmpty(_offlineToken))
-            return "";
-
-        return $"ENV_ARGS+=(HYTALE_OFFLINE_TOKEN=\"{_offlineToken}\")\n";
-    }
-
     private string BuildCustomEnvLines()
     {
         var customEnv = _config.GameEnvironmentVariables?.Trim();
@@ -1308,14 +1263,13 @@ export __NV_PRIME_RENDER_OFFLOAD=0
     /// Builds DualAuth environment variable lines for the Unix launch script.
     /// Returns a string with variable assignments to be placed before 'exec env'.
     /// Each variable is quoted individually to handle paths with spaces.
-    /// Only active when DualAuth mode is enabled in settings
     /// </summary>
     private string BuildDualAuthEnvLines()
     {
-        if (!_config.UseDualAuth || string.IsNullOrEmpty(_dualAuthAgentPath) || IsOfficialServerMode())
-            return "# No DualAuth (legacy patching mode, official server, or agent unavailable)\nDUALAUTH_JAVA_TOOL_OPTIONS=\"\"\nDUALAUTH_AUTH_DOMAIN=\"\"\nDUALAUTH_TRUST_ALL=\"\"\nDUALAUTH_TRUST_OFFICIAL=\"\"\n\n";
+        if (string.IsNullOrEmpty(_dualAuthAgentPath) || IsOfficialServerMode())
+            return "# No DualAuth for official profiles\nDUALAUTH_JAVA_TOOL_OPTIONS=\"\"\nDUALAUTH_AUTH_DOMAIN=\"\"\nDUALAUTH_TRUST_ALL=\"\"\nDUALAUTH_TRUST_OFFICIAL=\"\"\n\n";
 
-        string authDomain = DeriveAuthDomain(GetEffectiveCustomAuthDomain(logFallback: false));
+        string authDomain = GetDualAuthDomain();
 
         Logger.Info("Game", $"DualAuth env lines for Unix script: {authDomain}");
 
@@ -1341,7 +1295,10 @@ DUALAUTH_TRUST_OFFICIAL=""true""
     private static string EscapeForBashDoubleQuoted(string value)
         => JvmArgumentBuilder.EscapeForBash(value);
 
-    private async Task StartAndMonitorProcessAsync(ProcessStartInfo startInfo, string sessionUuid)
+    private async Task StartAndMonitorProcessAsync(
+        ProcessStartInfo startInfo,
+        string sessionUuid,
+        string profileName)
     {
 
         Process? process = null;
@@ -1423,11 +1380,15 @@ DUALAUTH_TRUST_OFFICIAL=""true""
             process.BeginOutputReadLine();
             process.BeginErrorReadLine();
 
+            if (!_config.OnlineMode && !IsOfficialServerMode())
+                await _localNode.AttachGameProcessAsync(process.Id);
+
             // Transfer ownership to GameProcessTracker (it will handle disposal and notify subscribers)
+            _launchedProfileUuid = sessionUuid;
             _gameProcess.SetGameProcess(process);
             Logger.Success("Game", $"Game started with PID: {process.Id}");
 
-            _discord.SetPresence(PresenceState.Playing, $"Playing as {_config.Nick}");
+            _discord.SetPresence(PresenceState.Playing, $"Playing as {profileName}");
             _progress.ReportGameStateChanged("started", process.Id);
             _progress.ReportDownloadProgress("launching", 100, "launch.detail.waiting_for_window", null, 0, 0);
 
@@ -1449,7 +1410,29 @@ DUALAUTH_TRUST_OFFICIAL=""true""
             // Cleanup process if failed before transferring to GameProcessTracker
             if (process != null && _gameProcess.GetGameProcess() != process)
             {
+                try
+                {
+                    if (!process.HasExited)
+                        process.Kill(entireProcessTree: true);
+                }
+                catch
+                {
+                }
                 try { process.Dispose(); } catch { }
+            }
+
+            if (!_config.OnlineMode
+                && !IsOfficialServerMode()
+                && (process is null || _gameProcess.GetGameProcess() != process))
+            {
+                try
+                {
+                    await _localNode.StopAsync();
+                }
+                catch (Exception stopException)
+                {
+                    Logger.Warning("LocalNode", $"Could not stop after failed game launch: {stopException.Message}");
+                }
             }
 
             _progress.ReportError("launch", "Failed to start game", ex.Message);

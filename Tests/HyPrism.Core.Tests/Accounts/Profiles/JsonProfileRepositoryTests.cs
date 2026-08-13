@@ -142,14 +142,6 @@ public class JsonProfileRepositoryTests : IDisposable
     }
 
     [Fact]
-    public void SwitchProfile_ByIndex_OutOfRange_ReturnsFalse()
-    {
-        var result = _svc.SwitchProfile(999);
-        Assert.False(result);
-    }
-
-
-    [Fact]
     public void UpdateProfile_ValidId_ReturnsTrue()
     {
         var uuid = Guid.NewGuid().ToString();
@@ -199,10 +191,4 @@ public class JsonProfileRepositoryTests : IDisposable
         Assert.NotNull(id);
     }
 
-    [Fact]
-    public void GetActiveProfileIndex_Initially_ReturnsValidIndex()
-    {
-        var idx = _svc.GetActiveProfileIndex();
-        Assert.True(idx >= -1);
-    }
 }

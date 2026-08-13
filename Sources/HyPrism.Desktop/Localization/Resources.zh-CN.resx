@@ -531,9 +531,6 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="launch.detail.patch_applied" xml:space="preserve">
     <value>补丁 {0} 应用成功</value>
   </data>
-  <data name="launch.detail.patching_class_files" xml:space="preserve">
-    <value>正在修补 class 文件...</value>
-  </data>
   <data name="launch.detail.patching_client" xml:space="preserve">
     <value>正在给客户端二进制文件打补丁...</value>
   </data>
@@ -546,9 +543,6 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="launch.detail.patching_init" xml:space="preserve">
     <value>正在初始化补丁器...</value>
   </data>
-  <data name="launch.detail.patching_server" xml:space="preserve">
-    <value>正在给服务器 JAR 打补丁...</value>
-  </data>
   <data name="launch.detail.preparing_download" xml:space="preserve">
     <value>正在准备下载...</value>
   </data>
@@ -558,20 +552,8 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="launch.detail.reading_client_binary" xml:space="preserve">
     <value>正在读取客户端二进制文件...</value>
   </data>
-  <data name="launch.detail.reading_server_jar" xml:space="preserve">
-    <value>正在读取服务器 JAR...</value>
-  </data>
-  <data name="launch.detail.replacing_original_jar" xml:space="preserve">
-    <value>正在替换原始 JAR...</value>
-  </data>
   <data name="launch.detail.resigning" xml:space="preserve">
     <value>正在重新签名二进制文件...</value>
-  </data>
-  <data name="launch.detail.server_already_patched" xml:space="preserve">
-    <value>服务器已打过补丁</value>
-  </data>
-  <data name="launch.detail.server_jar_patched" xml:space="preserve">
-    <value>服务器 JAR 已打补丁</value>
   </data>
   <data name="launch.detail.started" xml:space="preserve">
     <value>游戏已启动！</value>
@@ -1405,7 +1387,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>离线模式（点击启用在线）</value>
   </data>
   <data name="onlineToggle.online" xml:space="preserve">
-    <value>在线模式</value>
+    <value>联网模式</value>
   </data>
   <data name="onlineToggle.onlineClickDisable" xml:space="preserve">
     <value>在线模式（点击禁用）</value>
@@ -1836,23 +1818,11 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="settings.generalSettings.closeLauncherHint" xml:space="preserve">
     <value>游戏启动时自动关闭启动器</value>
   </data>
-  <data name="settings.generalSettings.dualAuth" xml:space="preserve">
-    <value>DualAuth（实验性）</value>
-  </data>
-  <data name="settings.generalSettings.dualAuthHint" xml:space="preserve">
-    <value>使用运行时 Java 代理进行服务器身份验证，而不是静态 JAR 补丁。可能导致崩溃或连接问题。</value>
-  </data>
   <data name="settings.generalSettings.launcherStorage" xml:space="preserve">
     <value>存储位置</value>
   </data>
   <data name="settings.generalSettings.launcherStorageHint" xml:space="preserve">
     <value>启动器数据和游戏文件的存储位置。</value>
-  </data>
-  <data name="settings.generalSettings.legacyPatching" xml:space="preserve">
-    <value>传统补丁</value>
-  </data>
-  <data name="settings.generalSettings.legacyPatchingHint" xml:space="preserve">
-    <value>使用静态 JAR 补丁进行服务器身份验证，而不是 DualAuth Java 代理。兼容性更好但灵活性较低。</value>
   </data>
   <data name="settings.generalSettings.showAlphaMods" xml:space="preserve">
     <value>显示 Alpha 模组</value>
@@ -2143,7 +2113,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>在线模式</value>
   </data>
   <data name="settings.networkSettings.onlineModeHint" xml:space="preserve">
-    <value>连接到认证服务器以进行多人游戏。</value>
+    <value>使用认证服务和账户数据；禁用后 HyPrism 将创建本地 OmniAuth 会话</value>
   </data>
   <data name="settings.profile.avatar" xml:space="preserve">
     <value>头像</value>

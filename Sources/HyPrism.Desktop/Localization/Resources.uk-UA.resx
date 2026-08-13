@@ -531,9 +531,6 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="launch.detail.patch_applied" xml:space="preserve">
     <value>Патч {0} успішно застосовано</value>
   </data>
-  <data name="launch.detail.patching_class_files" xml:space="preserve">
-    <value>Патчинг class-файлів...</value>
-  </data>
   <data name="launch.detail.patching_client" xml:space="preserve">
     <value>Патчінг клієнта...</value>
   </data>
@@ -546,9 +543,6 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="launch.detail.patching_init" xml:space="preserve">
     <value>Ініціалізація патчера...</value>
   </data>
-  <data name="launch.detail.patching_server" xml:space="preserve">
-    <value>Патчінг сервера...</value>
-  </data>
   <data name="launch.detail.preparing_download" xml:space="preserve">
     <value>Підготовка завантаження...</value>
   </data>
@@ -558,20 +552,8 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="launch.detail.reading_client_binary" xml:space="preserve">
     <value>Читання бінарника клієнта...</value>
   </data>
-  <data name="launch.detail.reading_server_jar" xml:space="preserve">
-    <value>Читання server JAR...</value>
-  </data>
-  <data name="launch.detail.replacing_original_jar" xml:space="preserve">
-    <value>Заміна оригінального JAR...</value>
-  </data>
   <data name="launch.detail.resigning" xml:space="preserve">
     <value>Перепідписання бінарників...</value>
-  </data>
-  <data name="launch.detail.server_already_patched" xml:space="preserve">
-    <value>Сервер уже пропатчено</value>
-  </data>
-  <data name="launch.detail.server_jar_patched" xml:space="preserve">
-    <value>Server JAR пропатчено</value>
   </data>
   <data name="launch.detail.started" xml:space="preserve">
     <value>Гру запущено!</value>
@@ -1836,23 +1818,11 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="settings.generalSettings.closeLauncherHint" xml:space="preserve">
     <value>Закрити після запуску гри.</value>
   </data>
-  <data name="settings.generalSettings.dualAuth" xml:space="preserve">
-    <value>DualAuth (Експериментальний)</value>
-  </data>
-  <data name="settings.generalSettings.dualAuthHint" xml:space="preserve">
-    <value>Використовує Java Agent для автентифікації сервера під час виконання замість статичної модифікації JAR. Може спричинити вильоти та проблеми з підключенням.</value>
-  </data>
   <data name="settings.generalSettings.launcherStorage" xml:space="preserve">
     <value>Сховище лаунчера</value>
   </data>
   <data name="settings.generalSettings.launcherStorageHint" xml:space="preserve">
     <value>Де зберігаються ігри та дані.</value>
-  </data>
-  <data name="settings.generalSettings.legacyPatching" xml:space="preserve">
-    <value>Легасі патчинг</value>
-  </data>
-  <data name="settings.generalSettings.legacyPatchingHint" xml:space="preserve">
-    <value>Використовує статичну модифікацію JAR для автентифікації сервера замість DualAuth Java Agent. Більш сумісний, але менш гнучкий варіант.</value>
   </data>
   <data name="settings.generalSettings.showAlphaMods" xml:space="preserve">
     <value>Показати альфа-моди</value>
@@ -2140,10 +2110,10 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>Поточний сервер</value>
   </data>
   <data name="settings.networkSettings.onlineMode" xml:space="preserve">
-    <value>Онлайн-режим</value>
+    <value>Мережевий режим</value>
   </data>
   <data name="settings.networkSettings.onlineModeHint" xml:space="preserve">
-    <value>Підключення до серверів автентифікації для багатокористувацького режиму.</value>
+    <value>Використовувати сервіс автентифікації та дані облікового запису; після вимкнення HyPrism створює локальну OmniAuth-сесію</value>
   </data>
   <data name="settings.profile.avatar" xml:space="preserve">
     <value>Аватар</value>

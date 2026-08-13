@@ -27,6 +27,7 @@ SPDX-License-Identifier: GPL-3.0-only
 
   <ItemGroup>
     <ProjectReference Include="../HyPrism.Core/HyPrism.Core.csproj" />
+    <ProjectReference Include="../HyPrism.LocalNode/HyPrism.LocalNode.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -138,7 +138,7 @@ public static class DualAuthAgent
 
     /// <summary>
     /// Ensures the DualAuth agent is present and up-to-date before each launch.
-    /// Checks GitHub for a newer release; if found, downloads the new agent and removes the old one.
+    /// Checks GitHub for a newer release and replaces the installed file only after a valid download.
     /// Falls back to <see cref="EnsureAgentAvailableAsync"/> if the GitHub API is unreachable
     /// </summary>
     public static async Task<DualAuthResult> EnsureAgentUpToDateAsync(
@@ -188,13 +188,6 @@ public static class DualAuthAgent
             progressCallback?.Invoke($"Downloading DualAuth Agent {latestTag}...", 0);
         }
 
-        // Delete old agent before downloading new one
-        if (File.Exists(agentPath))
-        {
-            try { File.Delete(agentPath); }
-            catch (Exception ex) { Logger.Warning("DualAuth", $"Could not delete old agent: {ex.Message}"); }
-        }
-
         var tempPath = agentPath + ".tmp";
         try
         {
@@ -228,7 +221,7 @@ public static class DualAuthAgent
             Logger.Error("DualAuth", $"Failed to download updated agent: {ex.Message}");
             if (File.Exists(tempPath)) File.Delete(tempPath);
 
-            // If agent still exists (deletion failed earlier), return success
+            // Keep using the installed agent when an update cannot be downloaded
             if (IsAgentAvailable(appDir))
                 return new DualAuthResult { Success = true, AgentPath = agentPath, AlreadyExists = true };
 
@@ -347,9 +340,8 @@ public static class DualAuthAgent
             return new DualAuthResult { Success = false, Error = error };
         }
 
-        // Move to final location
-        if (File.Exists(agentPath)) File.Delete(agentPath);
-        File.Move(tempPath, agentPath);
+        // Replace the final file only after the temporary download passed validation
+        File.Move(tempPath, agentPath, overwrite: true);
 
         progressCallback?.Invoke("DualAuth Agent ready", 100);
         Logger.Success("DualAuth", $"Agent downloaded successfully: {agentPath}");

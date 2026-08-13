@@ -959,6 +959,31 @@ public class GameVersionCatalog : IGameVersionCatalog
         return await _hytaleSource.TestSpeedAsync(ct);
     }
 
+    /// <inheritdoc/>
+    public Task<MirrorSpeedTestResult> ProbeSourceAvailabilityAsync(
+        string sourceId,
+        CancellationToken ct = default)
+    {
+        IVersionSource? source = string.Equals(sourceId, "hytale", StringComparison.OrdinalIgnoreCase)
+            ? _hytaleSource
+            : GetMirrorSourcesSnapshot().FirstOrDefault(candidate =>
+                string.Equals(candidate.SourceId, sourceId, StringComparison.OrdinalIgnoreCase));
+
+        if (source is null || !source.IsAvailable)
+        {
+            return Task.FromResult(new MirrorSpeedTestResult
+            {
+                MirrorId = sourceId,
+                MirrorName = sourceId,
+                PingMs = -1,
+                IsAvailable = false,
+                TestedAt = DateTime.UtcNow
+            });
+        }
+
+        return source.ProbeAvailabilityAsync(ct);
+    }
+
     /// <summary>
     /// Gets all available mirrors
     /// </summary>
