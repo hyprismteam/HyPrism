@@ -28,13 +28,15 @@ public sealed class LocalNodeServiceFactory(AppPathConfiguration appPath) : ILoc
             "Sessions",
             Guid.NewGuid().ToString("N"));
         var certificateDirectory = Path.Combine(_appPath.AppDir, "LocalNode", "Certificate");
+        var accountDataDirectory = Path.Combine(_appPath.AppDir, "LocalNode");
         Directory.CreateDirectory(sessionDirectory);
 
         return new LocalNodeHost(new LocalNodeOptions(
             sessionDirectory,
             LocalNodeEndpoint.Hostname,
             FindAvailablePort(),
-            CertificateDirectory: certificateDirectory));
+            CertificateDirectory: certificateDirectory,
+            AccountDataDirectory: accountDataDirectory));
     }
 
     private int FindAvailablePort()

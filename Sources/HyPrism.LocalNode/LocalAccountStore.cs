@@ -18,7 +18,7 @@ public sealed class LocalAccountStore
 
     private readonly SemaphoreSlim _gate = new(1, 1);
     private readonly string _path;
-    private LocalAccountState? _state;
+    private readonly string _lockPath;
 
     /// <summary>
     /// Creates a store below the Local Node data directory
@@ -27,6 +27,7 @@ public sealed class LocalAccountStore
     {
         Directory.CreateDirectory(dataDirectory);
         _path = Path.Combine(dataDirectory, "accounts.json");
+        _lockPath = Path.Combine(dataDirectory, "accounts.lock");
     }
 
     /// <summary>
@@ -37,6 +38,7 @@ public sealed class LocalAccountStore
         await _gate.WaitAsync(cancellationToken);
         try
         {
+            await using var fileLock = await AcquireFileLockAsync(cancellationToken);
             var state = await LoadAsync(cancellationToken);
             if (!state.Profiles.TryGetValue(uuid, out var profile))
             {
@@ -66,6 +68,7 @@ public sealed class LocalAccountStore
         await _gate.WaitAsync(cancellationToken);
         try
         {
+            await using var fileLock = await AcquireFileLockAsync(cancellationToken);
             var state = await LoadAsync(cancellationToken);
             return state.Profiles.TryGetValue(uuid, out var profile) ? profile.Clone() : null;
         }
@@ -83,6 +86,7 @@ public sealed class LocalAccountStore
         await _gate.WaitAsync(cancellationToken);
         try
         {
+            await using var fileLock = await AcquireFileLockAsync(cancellationToken);
             var state = await LoadAsync(cancellationToken);
             return state.Profiles.Values
                 .FirstOrDefault(profile => string.Equals(profile.Username, username, StringComparison.OrdinalIgnoreCase))
@@ -102,6 +106,7 @@ public sealed class LocalAccountStore
         await _gate.WaitAsync(cancellationToken);
         try
         {
+            await using var fileLock = await AcquireFileLockAsync(cancellationToken);
             var state = await LoadAsync(cancellationToken);
             if (!state.Profiles.TryGetValue(uuid, out var profile))
             {
@@ -142,6 +147,7 @@ public sealed class LocalAccountStore
         await _gate.WaitAsync(cancellationToken);
         try
         {
+            await using var fileLock = await AcquireFileLockAsync(cancellationToken);
             var state = await LoadAsync(cancellationToken);
             if (!state.Profiles.TryGetValue(uuid, out var profile))
             {
@@ -171,6 +177,7 @@ public sealed class LocalAccountStore
         await _gate.WaitAsync(cancellationToken);
         try
         {
+            await using var fileLock = await AcquireFileLockAsync(cancellationToken);
             var state = await LoadAsync(cancellationToken);
             if (!state.Profiles.TryGetValue(uuid, out var profile))
             {
@@ -209,6 +216,7 @@ public sealed class LocalAccountStore
         await _gate.WaitAsync(cancellationToken);
         try
         {
+            await using var fileLock = await AcquireFileLockAsync(cancellationToken);
             var state = await LoadAsync(cancellationToken);
             if (!state.Profiles.TryGetValue(uuid, out var profile))
                 return false;
@@ -240,6 +248,7 @@ public sealed class LocalAccountStore
         await _gate.WaitAsync(cancellationToken);
         try
         {
+            await using var fileLock = await AcquireFileLockAsync(cancellationToken);
             var state = await LoadAsync(cancellationToken);
             if (!state.Profiles.TryGetValue(uuid, out var profile))
                 return false;
@@ -273,6 +282,7 @@ public sealed class LocalAccountStore
         await _gate.WaitAsync(cancellationToken);
         try
         {
+            await using var fileLock = await AcquireFileLockAsync(cancellationToken);
             var state = await LoadAsync(cancellationToken);
             if (!state.Profiles.TryGetValue(uuid, out var profile))
                 return false;
@@ -297,25 +307,37 @@ public sealed class LocalAccountStore
 
     private async Task<LocalAccountState> LoadAsync(CancellationToken cancellationToken)
     {
-        if (_state is not null)
-            return _state;
         if (!File.Exists(_path))
-            return _state = new LocalAccountState();
+            return new LocalAccountState();
 
         try
         {
             await using var stream = File.OpenRead(_path);
-            _state = await JsonSerializer.DeserializeAsync<LocalAccountState>(stream, SerializerOptions, cancellationToken)
+            return await JsonSerializer.DeserializeAsync<LocalAccountState>(stream, SerializerOptions, cancellationToken)
                 ?? new LocalAccountState();
         }
         catch (JsonException)
         {
             var backupPath = _path + $".corrupt-{DateTimeOffset.UtcNow:yyyyMMddHHmmss}";
             File.Move(_path, backupPath, overwrite: true);
-            _state = new LocalAccountState();
+            return new LocalAccountState();
         }
+    }
 
-        return _state;
+    private async Task<FileStream> AcquireFileLockAsync(CancellationToken cancellationToken)
+    {
+        while (true)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            try
+            {
+                return new FileStream(_lockPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
+            }
+            catch (IOException)
+            {
+                await Task.Delay(TimeSpan.FromMilliseconds(25), cancellationToken);
+            }
+        }
     }
 
     private async Task SaveAsync(LocalAccountState state, CancellationToken cancellationToken)

@@ -76,6 +76,56 @@ public sealed class LocalNodeHostTests
     }
 
     [Fact]
+    public async Task AccountStore_PersistsProfilesAcrossIsolatedNodeSessions()
+    {
+        var rootDirectory = Path.Combine(Path.GetTempPath(), "HyPrismLocalNodeAccountsTests_" + Guid.NewGuid());
+        try
+        {
+            var accountDirectory = Path.Combine(rootDirectory, "LocalNode");
+            var firstSession = new LocalAccountStore(accountDirectory);
+            var secondSession = new LocalAccountStore(accountDirectory);
+            using var firstSkin = JsonDocument.Parse("{\"haircut\":\"Quiff.Black\"}");
+            using var secondSkin = JsonDocument.Parse("{\"haircut\":\"Morning.Brown\"}");
+
+            await Task.WhenAll(
+                firstSession.SaveSkinAsync(
+                    "550e8400-e29b-41d4-a716-446655440000",
+                    "FirstPlayer",
+                    firstSkin.RootElement),
+                secondSession.SaveSkinAsync(
+                    "660e8400-e29b-41d4-a716-446655440000",
+                    "SecondPlayer",
+                    secondSkin.RootElement));
+
+            var restoredStore = new LocalAccountStore(accountDirectory);
+            var firstProfile = await restoredStore.FindByUuidAsync("550e8400-e29b-41d4-a716-446655440000");
+            var secondProfile = await restoredStore.FindByUuidAsync("660e8400-e29b-41d4-a716-446655440000");
+
+            Assert.Equal("{\"haircut\":\"Quiff.Black\"}", firstProfile!.SkinJson);
+            Assert.Equal("{\"haircut\":\"Morning.Brown\"}", secondProfile!.SkinJson);
+        }
+        finally
+        {
+            if (Directory.Exists(rootDirectory))
+                Directory.Delete(rootDirectory, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void Options_Parse_PreservesSharedAccountDirectory()
+    {
+        var accountDirectory = Path.Combine(Path.GetTempPath(), "HyPrismSharedAccounts");
+
+        var options = LocalNodeOptions.Parse(
+        [
+            "--data-directory", Path.Combine(Path.GetTempPath(), "HyPrismSession"),
+            "--account-data-directory", accountDirectory
+        ]);
+
+        Assert.Equal(Path.GetFullPath(accountDirectory), options.AccountDataDirectory);
+    }
+
+    [Fact]
     public async Task Host_ExecutesAutonomousSessionAndAccountFlow()
     {
         var dataDirectory = Path.Combine(Path.GetTempPath(), "HyPrismLocalNodeTests_" + Guid.NewGuid());

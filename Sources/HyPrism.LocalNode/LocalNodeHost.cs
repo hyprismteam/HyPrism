@@ -244,6 +244,10 @@ public sealed class LocalNodeHost : ILocalNodeService, IAsyncDisposable
             startInfo,
             "--certificate-directory",
             LocalNodeCertificateStore.GetCertificateDirectory(_options));
+        AddArgument(
+            startInfo,
+            "--account-data-directory",
+            _options.AccountDataDirectory ?? _options.DataDirectory);
         AddArgument(startInfo, "--owner-pid", Environment.ProcessId.ToString());
         AddArgument(startInfo, "--control-secret", _controlSecret);
         if (!string.IsNullOrWhiteSpace(assetsPath))

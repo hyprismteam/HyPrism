@@ -15,7 +15,8 @@ public sealed record LocalNodeOptions(
     string? AssetsPath = null,
     int? OwnerProcessId = null,
     string? ControlSecret = null,
-    string? CertificateDirectory = null)
+    string? CertificateDirectory = null,
+    string? AccountDataDirectory = null)
 {
     /// <summary>
     /// Gets the canonical issuer URI emitted in OmniAuth tokens
@@ -68,6 +69,9 @@ public sealed record LocalNodeOptions(
         var certificateDirectory = values.TryGetValue("certificate-directory", out var configuredCertificateDirectory)
             ? Path.GetFullPath(configuredCertificateDirectory)
             : null;
+        var accountDataDirectory = values.TryGetValue("account-data-directory", out var configuredAccountDataDirectory)
+            ? Path.GetFullPath(configuredAccountDataDirectory)
+            : null;
         var unknownArgument = values.Keys.FirstOrDefault(name =>
             !string.Equals(name, "data-directory", StringComparison.OrdinalIgnoreCase) &&
             !string.Equals(name, "hostname", StringComparison.OrdinalIgnoreCase) &&
@@ -75,7 +79,8 @@ public sealed record LocalNodeOptions(
             !string.Equals(name, "assets-path", StringComparison.OrdinalIgnoreCase) &&
             !string.Equals(name, "owner-pid", StringComparison.OrdinalIgnoreCase) &&
             !string.Equals(name, "control-secret", StringComparison.OrdinalIgnoreCase) &&
-            !string.Equals(name, "certificate-directory", StringComparison.OrdinalIgnoreCase));
+            !string.Equals(name, "certificate-directory", StringComparison.OrdinalIgnoreCase) &&
+            !string.Equals(name, "account-data-directory", StringComparison.OrdinalIgnoreCase));
         if (unknownArgument is not null)
         {
             throw new ArgumentException($"Argument '--{unknownArgument}' is not supported", nameof(args));
@@ -110,6 +115,7 @@ public sealed record LocalNodeOptions(
             assetsPath,
             ownerProcessId,
             controlSecret,
-            certificateDirectory);
+            certificateDirectory,
+            accountDataDirectory);
     }
 }

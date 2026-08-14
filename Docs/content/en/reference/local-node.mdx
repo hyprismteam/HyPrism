@@ -41,13 +41,14 @@ Identity tokens, authorization grants, and server access tokens carry the active
 
 ## Storage and trust
 
-Each autonomous launch stores its runtime state below `LocalNode/Sessions/<session-id>` in the HyPrism application data directory. This prevents control secrets, logs, trust bundles, and account state from colliding between concurrently running local sessions
+Each autonomous launch stores its runtime state below `LocalNode/Sessions/<session-id>` in the HyPrism application data directory. This prevents control secrets, logs, and trust bundles from colliding between concurrently running local sessions. Local profiles, selected skins, and presence preferences remain in the shared `LocalNode/accounts.json` file, keyed by the stable UUID of the selected launcher profile
 
 The TLS certificate authority is intentionally shared at `LocalNode/Certificate`. It signs the `h.localhost` server certificate, which is valid for the hostname rather than a particular port. Every Local Node endpoint can therefore use the same trusted chain without another system trust prompt
 
 | File | Purpose |
 | --- | --- |
-| `accounts.json` | local profiles, saved skins, active skin, and presence preferences for this launch session |
+| `accounts.json` | shared local profiles, saved skins, active skin, and presence preferences keyed by launcher-profile UUID |
+| `accounts.lock` | short-lived cross-process lock that serializes changes to shared local profiles |
 | `hyprism-local-ca.pfx` | shared local certificate authority and private key in `LocalNode/Certificate` |
 | `hyprism-local-ca.crt` | shared PEM public certificate authority in `LocalNode/Certificate` |
 | `h.localhost.pfx` | shared server TLS certificate and private key signed by the local authority |
@@ -65,7 +66,7 @@ On macOS, the first autonomous launch asks the user to approve the HyPrism local
 
 ASP.NET logging providers are disabled for the companion process, so server request diagnostics do not share the static HyPrism logger or its console stream. The launcher reports only process startup, readiness, attachment, and exceptional control failures while detailed node events stay in `local-node.log`. Authentication routes record only method, path, response status, and duration without headers, tokens, or request bodies
 
-The embedded host receives the active game directory and shared certificate directory automatically. When running `HyPrism.LocalNode` as a standalone process, pass `--assets-path /absolute/path/to/Assets.zip` to expose the complete installed cosmetics catalog and `--certificate-directory /absolute/path/to/Certificate` to reuse an existing trusted local certificate authority
+The embedded host receives the active game directory plus shared certificate and account directories automatically. When running `HyPrism.LocalNode` as a standalone process, pass `--assets-path /absolute/path/to/Assets.zip` to expose the complete installed cosmetics catalog, `--certificate-directory /absolute/path/to/Certificate` to reuse an existing trusted local certificate authority, and `--account-data-directory /absolute/path/to/LocalNode` to reuse local profiles and skins
 
 ## Limits
 

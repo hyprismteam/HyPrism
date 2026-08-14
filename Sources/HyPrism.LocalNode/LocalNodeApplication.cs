@@ -41,7 +41,7 @@ public static class LocalNodeApplication
         LocalNodeProcessLifetime? processLifetime = null)
     {
         sessions ??= new LocalSessionRegistry(options.Issuer);
-        accounts ??= new LocalAccountStore(options.DataDirectory);
+        accounts ??= new LocalAccountStore(options.AccountDataDirectory ?? options.DataDirectory);
         cosmetics ??= new LocalCosmeticsCatalog(options.AssetsPath, log);
 
         var builder = WebApplication.CreateSlimBuilder(new WebApplicationOptions
