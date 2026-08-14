@@ -35,6 +35,27 @@ SPDX-License-Identifier: GPL-3.0-only
 
   <Style Selector="Button">
     <Setter Property="FontFamily" Value="{DynamicResource GoogleSansFont}" />
+    <Setter Property="Cursor" Value="Hand" />
+  </Style>
+
+  <Style Selector="Button:disabled">
+    <Setter Property="Cursor" Value="Arrow" />
+  </Style>
+
+  <Style Selector="ComboBox">
+    <Setter Property="Cursor" Value="Hand" />
+  </Style>
+
+  <Style Selector="ComboBox:disabled">
+    <Setter Property="Cursor" Value="Arrow" />
+  </Style>
+
+  <Style Selector="Slider">
+    <Setter Property="Cursor" Value="Hand" />
+  </Style>
+
+  <Style Selector="Slider:disabled">
+    <Setter Property="Cursor" Value="Arrow" />
   </Style>
 
   <Style Selector="Button.nav">
@@ -867,7 +888,7 @@ SPDX-License-Identifier: GPL-3.0-only
   </Style>
 
   <Style Selector="Button.settingsRailCategory:pointerover">
-    <Setter Property="Background" Value="#08FFFFFF" />
+    <Setter Property="Background" Value="{DynamicResource NavigationItemHoverBrush}" />
     <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
     <Setter Property="RenderTransform" Value="{x:Null}" />
   </Style>
@@ -877,7 +898,7 @@ SPDX-License-Identifier: GPL-3.0-only
   </Style>
 
   <Style Selector="Button.settingsRailCategory.selected">
-    <Setter Property="Background" Value="#12FFFFFF" />
+    <Setter Property="Background" Value="{DynamicResource NavigationItemSelectedBrush}" />
     <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
   </Style>
 
@@ -913,7 +934,7 @@ SPDX-License-Identifier: GPL-3.0-only
   </Style>
 
   <Style Selector="Button.settingsRailCategory.compact.selected:pointerover">
-    <Setter Property="Background" Value="#08FFFFFF" />
+    <Setter Property="Background" Value="{DynamicResource NavigationItemHoverBrush}" />
     <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
   </Style>
 
@@ -1603,8 +1624,53 @@ SPDX-License-Identifier: GPL-3.0-only
   </Style>
 
   <Style Selector="instances|InstancesView Button.instancesListItem">
-    <Setter Property="Background" Value="{DynamicResource NavigationPaneBrush}" />
+    <Setter Property="Background" Value="Transparent" />
     <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+  </Style>
+
+  <Style Selector="instances|InstancesView.compact Button.instancesListItem">
+    <Setter Property="Height" Value="78" />
+    <Setter Property="Padding" Value="16,10" />
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+  </Style>
+
+  <Style Selector="instances|InstancesView.compact Grid.instancesListItemLayout">
+    <Setter Property="ColumnSpacing" Value="14" />
+  </Style>
+
+  <Style Selector="instances|InstancesView Grid.instancesListIdentity">
+    <Setter Property="ColumnSpacing" Value="0" />
+  </Style>
+
+  <Style Selector="instances|InstancesView.compact Grid.instancesListIdentity">
+    <Setter Property="ColumnSpacing" Value="14" />
+  </Style>
+
+  <Style Selector="instances|InstancesView Image.instancesListGameIcon">
+    <Setter Property="Width" Value="0" />
+    <Setter Property="Height" Value="0" />
+    <Setter Property="IsVisible" Value="False" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+
+  <Style Selector="instances|InstancesView.compact Image.instancesListGameIcon">
+    <Setter Property="Width" Value="38" />
+    <Setter Property="Height" Value="38" />
+    <Setter Property="IsVisible" Value="True" />
+  </Style>
+
+  <Style Selector="instances|InstancesView Button.instancesListItem:pointerover">
+    <Setter Property="Background" Value="{DynamicResource NavigationItemHoverBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+  </Style>
+
+  <Style Selector="instances|InstancesView.wide Button.instancesListItem.managed">
+    <Setter Property="Background" Value="{DynamicResource NavigationItemSelectedBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+  </Style>
+
+  <Style Selector="instances|InstancesView.wide Button.instancesListItem.managed:pointerover">
+    <Setter Property="Background" Value="{DynamicResource NavigationItemSelectedHoverBrush}" />
   </Style>
 
   <Style Selector="instances|InstancesView Button.instancesListItem.dragging">
@@ -1616,11 +1682,16 @@ SPDX-License-Identifier: GPL-3.0-only
   </Style>
 
   <Style Selector="instances|InstancesView Border.instancesListDragTarget">
-    <Setter Property="Width" Value="32" />
-    <Setter Property="Height" Value="44" />
+    <Setter Property="Width" Value="40" />
+    <Setter Property="Height" Value="40" />
     <Setter Property="Background" Value="Transparent" />
     <Setter Property="HorizontalAlignment" Value="Center" />
     <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+
+  <Style Selector="instances|InstancesView.compact Border.instancesListDragTarget">
+    <Setter Property="Width" Value="44" />
+    <Setter Property="Height" Value="44" />
   </Style>
 
   <Style Selector="instances|InstancesView Path.instancesListHandle, instances|InstancesView Path.instancesListMore">
@@ -1633,13 +1704,12 @@ SPDX-License-Identifier: GPL-3.0-only
 
   <Style Selector="instances|InstancesView Button.instancesAddRow">
     <Setter Property="Background" Value="{DynamicResource NavigationPaneBrush}" />
-    <Setter Property="BorderBrush" Value="{DynamicResource SurfaceBrush}" />
-    <Setter Property="BorderThickness" Value="0,0,0,3" />
+    <Setter Property="BorderThickness" Value="0" />
     <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
   </Style>
 
   <Style Selector="instances|InstancesView.compact Button.instancesAddRow">
-    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Background" Value="Transparent" />
   </Style>
 
   <Style Selector="instances|InstancesView Button.instancesAddRow Path">
@@ -1736,6 +1806,25 @@ SPDX-License-Identifier: GPL-3.0-only
 
   <Style Selector="instances|InstancesView.compact StackPanel.wideInstanceActions">
     <Setter Property="IsVisible" Value="False" />
+  </Style>
+
+  <Style Selector="instances|InstancesView.compact Border.wideInstanceSplitAction">
+    <Setter Property="IsVisible" Value="False" />
+  </Style>
+
+  <Style Selector="instances|InstancesView Image.instanceGameIcon">
+    <Setter Property="Width" Value="144" />
+    <Setter Property="Height" Value="144" />
+    <Setter Property="HorizontalAlignment" Value="Center" />
+  </Style>
+
+  <Style Selector="instances|InstancesView.compact Image.instanceGameIcon">
+    <Setter Property="IsVisible" Value="False" />
+  </Style>
+
+  <Style Selector="instances|InstancesView Image.compactInstanceGameIcon">
+    <Setter Property="Width" Value="30" />
+    <Setter Property="Height" Value="30" />
   </Style>
 
   <Style Selector="instances|InstancesView Border.compactInstanceSplitAction">

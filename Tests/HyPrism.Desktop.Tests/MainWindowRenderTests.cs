@@ -989,9 +989,17 @@ public sealed class MainWindowRenderTests
 
         window.Show();
         var frame = window.CaptureRenderedFrame();
+        var handCursor = new Cursor(StandardCursorType.Hand).ToString();
+        var arrowCursor = new Cursor(StandardCursorType.Arrow).ToString();
 
         Assert.NotNull(frame);
         Assert.Equal(new PixelSize(width, height), frame!.PixelSize);
+        Assert.All(
+            window.GetVisualDescendants().OfType<Button>().Where(button => button.IsEnabled),
+            button => Assert.Equal(handCursor, button.Cursor?.ToString()));
+        Assert.All(
+            window.GetVisualDescendants().OfType<ComboBox>().Where(comboBox => comboBox.IsEnabled),
+            comboBox => Assert.Equal(handCursor, comboBox.Cursor?.ToString()));
 
         var dashboard = Assert.Single(
             window.GetVisualDescendants().OfType<DashboardView>());
@@ -1099,6 +1107,7 @@ public sealed class MainWindowRenderTests
         viewModel.NavigateCommand.Execute("instances");
         Dispatcher.UIThread.RunJobs();
         var instancesView = Assert.Single(window.GetVisualDescendants().OfType<InstancesView>());
+        var usesCompactInstancesLayout = instancesView.Bounds.Width < 940;
         Assert.True(instancesView.IsEffectivelyVisible);
         Assert.DoesNotContain(
             instancesView.GetVisualDescendants().OfType<TextBlock>(),
@@ -1106,6 +1115,13 @@ public sealed class MainWindowRenderTests
         var instanceListGroup = Assert.Single(
             instancesView.GetVisualDescendants().OfType<StackPanel>(),
             panel => panel.Classes.Contains("instancesListGroup"));
+        var instancesScroll = Assert.Single(
+            instancesView.GetVisualDescendants().OfType<ScrollViewer>(),
+            scroll => scroll.Classes.Contains("instancesScroll"));
+        Assert.Equal(new Thickness(14, 18, 4, 18), instancesScroll.Margin);
+        Assert.Equal(Avalonia.Layout.HorizontalAlignment.Stretch, instancesScroll.HorizontalContentAlignment);
+        Assert.Equal(new Thickness(0, 0, 10, 0), instanceListGroup.Margin);
+        Assert.Equal(2, instanceListGroup.Spacing);
         Assert.Single(
             instanceListGroup.GetVisualDescendants().OfType<Button>(),
             button => button.Classes.Contains("instancesAddRow"));
@@ -1117,18 +1133,104 @@ public sealed class MainWindowRenderTests
             instanceListGroup.GetVisualDescendants().OfType<Avalonia.Controls.Shapes.Path>(),
             path => path.Classes.Contains("instancesListHandle"));
         Assert.Equal(14, instanceDragHandle.Bounds.Width);
-        Assert.Null(instanceDragHandle.Cursor);
+        Assert.Equal(arrowCursor, instanceDragHandle.Cursor?.ToString());
         var instanceDragTarget = Assert.Single(
             instanceListGroup.GetVisualDescendants().OfType<Border>(),
             border => border.Classes.Contains("instancesListDragTarget"));
-        Assert.Equal(32, instanceDragTarget.Bounds.Width);
-        Assert.Equal(44, instanceDragTarget.Bounds.Height);
-        Assert.Null(instanceDragTarget.Cursor);
+        Assert.Equal(usesCompactInstancesLayout ? 44 : 40, instanceDragTarget.Bounds.Width);
+        Assert.Equal(usesCompactInstancesLayout ? 44 : 40, instanceDragTarget.Bounds.Height);
+        Assert.Equal(arrowCursor, instanceDragTarget.Cursor?.ToString());
+        var managedInstanceRow = Assert.Single(
+            instanceListGroup.GetVisualDescendants().OfType<Button>(),
+            button => button.Classes.Contains("instancesListItem") && button.Classes.Contains("managed"));
+        Assert.Equal(handCursor, managedInstanceRow.Cursor?.ToString());
+        Assert.Equal(usesCompactInstancesLayout ? 78 : 72, managedInstanceRow.Bounds.Height);
+        Assert.Equal(new CornerRadius(11), managedInstanceRow.CornerRadius);
+        if (!usesCompactInstancesLayout)
+        {
+            await Task.Delay(220);
+            _ = window.CaptureRenderedFrame();
+            Dispatcher.UIThread.RunJobs();
+        }
+        Assert.Equal(
+            usesCompactInstancesLayout ? Colors.Transparent : Color.Parse("#12FFFFFF"),
+            Assert.IsAssignableFrom<ISolidColorBrush>(managedInstanceRow.Background).Color);
+        var managedInstanceTitle = Assert.Single(
+            managedInstanceRow.GetVisualDescendants().OfType<TextBlock>(),
+            text => text.Classes.Contains("instancesListTitle"));
+        var managedInstanceDescription = Assert.Single(
+            managedInstanceRow.GetVisualDescendants().OfType<TextBlock>(),
+            text => text.Classes.Contains("settingsCategoryDescription"));
+        Assert.Equal(15, managedInstanceTitle.FontSize);
+        Assert.Equal(11, managedInstanceDescription.FontSize);
+        var managedInstanceGameIcon = Assert.Single(
+            managedInstanceRow.GetVisualDescendants().OfType<Image>(),
+            image => image.Classes.Contains("instancesListGameIcon"));
+        Assert.NotNull(managedInstanceGameIcon.Source);
+        Assert.Equal(usesCompactInstancesLayout, managedInstanceGameIcon.IsVisible);
+        Assert.Equal(usesCompactInstancesLayout ? 38 : 0, managedInstanceGameIcon.Width);
+        Assert.Equal(usesCompactInstancesLayout ? 38 : 0, managedInstanceGameIcon.Height);
+        var managedInstanceRowPoint = managedInstanceRow.TranslatePoint(
+            new Point(managedInstanceRow.Bounds.Width / 2, managedInstanceRow.Bounds.Height / 2),
+            window);
+        Assert.NotNull(managedInstanceRowPoint);
+        window.MouseMove(managedInstanceRowPoint!.Value);
+        Dispatcher.UIThread.RunJobs();
+        Assert.True(managedInstanceRow.IsPointerOver);
+        await Task.Delay(220);
+        _ = window.CaptureRenderedFrame();
+        Dispatcher.UIThread.RunJobs();
+        Assert.Equal(
+            Color.Parse(usesCompactInstancesLayout ? "#08FFFFFF" : "#18FFFFFF"),
+            Assert.IsAssignableFrom<ISolidColorBrush>(managedInstanceRow.Background).Color);
+
+        var inactiveInstance = new InstanceItemViewModel(
+            "inactive-preview",
+            "Inactive Preview",
+            "v41",
+            "Pre-Release",
+            false,
+            false);
+        viewModel.AllInstances.Add(inactiveInstance);
+        Dispatcher.UIThread.RunJobs();
+        var inactiveInstanceRow = Assert.Single(
+            instanceListGroup.GetVisualDescendants().OfType<Button>(),
+            button => button.Classes.Contains("instancesListItem") && !button.Classes.Contains("managed"));
+        Assert.Equal(
+            Colors.Transparent,
+            Assert.IsAssignableFrom<ISolidColorBrush>(inactiveInstanceRow.Background).Color);
+        var inactiveInstanceRowPoint = inactiveInstanceRow.TranslatePoint(
+            new Point(inactiveInstanceRow.Bounds.Width / 2, inactiveInstanceRow.Bounds.Height / 2),
+            window);
+        Assert.NotNull(inactiveInstanceRowPoint);
+        window.MouseMove(inactiveInstanceRowPoint!.Value);
+        Dispatcher.UIThread.RunJobs();
+        Assert.True(inactiveInstanceRow.IsPointerOver);
+        await Task.Delay(220);
+        _ = window.CaptureRenderedFrame();
+        Dispatcher.UIThread.RunJobs();
+        Assert.Equal(
+            Color.Parse("#08FFFFFF"),
+            Assert.IsAssignableFrom<ISolidColorBrush>(inactiveInstanceRow.Background).Color);
+        window.MouseMove(new Point(0, 0));
+        Dispatcher.UIThread.RunJobs();
+        viewModel.AllInstances.Remove(inactiveInstance);
+        Dispatcher.UIThread.RunJobs();
+
         var addInstanceRow = Assert.Single(
             instanceListGroup.GetVisualDescendants().OfType<Button>(),
             button => button.Classes.Contains("instancesAddRow"));
         Assert.Equal(default, addInstanceRow.CornerRadius);
-        Assert.Equal(width < 1280 ? default : new Thickness(0, 0, 0, 3), addInstanceRow.BorderThickness);
+        Assert.Equal(default, addInstanceRow.BorderThickness);
+        Assert.Contains(
+            addInstanceRow.GetVisualDescendants().OfType<TextBlock>(),
+            text => text.Text == viewModel.NewInstanceTitle);
+        if (usesCompactInstancesLayout)
+        {
+            Assert.Equal(
+                Colors.Transparent,
+                Assert.IsAssignableFrom<ISolidColorBrush>(addInstanceRow.Background).Color);
+        }
         Assert.Equal(
             14,
             Assert.Single(addInstanceRow.GetVisualDescendants().OfType<Avalonia.Controls.Shapes.Path>()).Bounds.Width);
@@ -1184,6 +1286,25 @@ public sealed class MainWindowRenderTests
         Assert.DoesNotContain(
             instancesView.GetVisualDescendants().OfType<Button>(),
             button => button.Classes.Contains("instanceLaunch"));
+        var instanceGameIcon = Assert.Single(
+            instancesView.GetVisualDescendants().OfType<Image>(),
+            image => image.Classes.Contains("instanceGameIcon"));
+        Assert.Equal(144, instanceGameIcon.Width);
+        Assert.Equal(144, instanceGameIcon.Height);
+        Assert.NotNull(instanceGameIcon.Source);
+        Assert.Equal(instancesView.Bounds.Width >= 940, instanceGameIcon.IsVisible);
+        var compactInstanceGameIcon = Assert.Single(
+            instancesView.GetVisualDescendants().OfType<Image>(),
+            image => image.Classes.Contains("compactInstanceGameIcon"));
+        Assert.Equal(30, compactInstanceGameIcon.Width);
+        Assert.Equal(30, compactInstanceGameIcon.Height);
+        Assert.NotNull(compactInstanceGameIcon.Source);
+        var instanceSummary = Assert.Single(
+            instancesView.GetVisualDescendants().OfType<StackPanel>(),
+            panel => panel.Classes.Contains("instanceSummary"));
+        var instanceHubContent = instancesView.FindControl<StackPanel>("InstanceHubContent");
+        Assert.NotNull(instanceHubContent);
+        Assert.Equal(instanceHubContent!.Spacing, instanceSummary.Spacing);
 
         var instancesContent = instancesView.FindControl<Grid>("InstancesContent");
         var instancesListPane = instancesView.FindControl<Border>("InstancesListPane");
@@ -1197,6 +1318,8 @@ public sealed class MainWindowRenderTests
         var wideInstanceActions = instancesView.FindControl<StackPanel>("WideInstanceActions");
         Assert.NotNull(instancesContent);
         Assert.NotNull(instancesListPane);
+        if (!usesCompactInstancesLayout)
+            Assert.Equal(276, instancesListPane!.Bounds.Width);
         Assert.NotNull(compactInstanceToolbar);
         Assert.NotNull(compactInstancePrimaryAction);
         Assert.NotNull(compactInstanceMoreButton);
@@ -1206,12 +1329,21 @@ public sealed class MainWindowRenderTests
         Assert.NotNull(wideInstanceActions);
         Assert.Equal(Avalonia.Layout.HorizontalAlignment.Center, wideInstanceActions!.HorizontalAlignment);
         var instanceContentTranslation = Assert.IsType<TranslateTransform>(instancesContent!.RenderTransform);
-        var usesCompactInstancesLayout = instancesView.Bounds.Width < 940;
         Assert.Equal(usesCompactInstancesLayout, compactInstanceToolbar!.IsVisible);
 
         if (usesCompactInstancesLayout)
         {
             Assert.True(instanceContentTranslation.X > 0);
+            var compactListPreviewPath = Environment.GetEnvironmentVariable(
+                "HYPRISM_INSTANCES_COMPACT_LIST_RENDER_OUTPUT");
+            if (!string.IsNullOrWhiteSpace(compactListPreviewPath))
+            {
+                var compactListFrame = window.CaptureRenderedFrame();
+                Assert.NotNull(compactListFrame);
+                compactListFrame!.Save(compactListPreviewPath, PngBitmapEncoderOptions.Default);
+                Assert.True(File.Exists(compactListPreviewPath));
+            }
+
             var instanceButton = instancesListPane!.GetVisualDescendants()
                 .OfType<Button>()
                 .Single(button => button.Classes.Contains("instancesListItem"));
@@ -1222,9 +1354,8 @@ public sealed class MainWindowRenderTests
             Assert.False(wideInstanceActions.IsVisible);
             Assert.True(compactInstanceSplitAction.IsEffectivelyVisible);
             Assert.True(compactInstancePrimaryAction!.IsEffectivelyVisible);
+            Assert.True(compactInstanceGameIcon.IsEffectivelyVisible);
 
-            var instanceHubContent = instancesView.FindControl<StackPanel>("InstanceHubContent");
-            Assert.NotNull(instanceHubContent);
             var compactActionRight = compactInstanceSplitAction.TranslatePoint(
                 new Point(compactInstanceSplitAction.Bounds.Width, 0),
                 window);
@@ -1315,6 +1446,7 @@ public sealed class MainWindowRenderTests
             Assert.True(instancesContent.IsHitTestVisible);
             Assert.True(wideInstanceActions.IsEffectivelyVisible);
             Assert.False(compactInstanceSplitAction.IsEffectivelyVisible);
+            Assert.False(compactInstanceGameIcon.IsEffectivelyVisible);
         }
 
         var instanceHub = instancesView.FindControl<Grid>("InstanceHubScreen");

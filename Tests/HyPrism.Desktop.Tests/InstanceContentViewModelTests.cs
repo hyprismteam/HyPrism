@@ -136,6 +136,7 @@ public sealed class InstanceContentViewModelTests
         await WaitUntilAsync(() => viewModel.InstalledMods.Count == 1);
         Assert.Equal("Launch Instance", viewModel.SelectedInstanceName);
         Assert.Equal("Managed Instance", viewModel.ManagedInstanceName);
+        Assert.Equal(managed.Id, Assert.Single(viewModel.AllInstances, instance => instance.IsManaged).Id);
         Assert.Equal("1", viewModel.InstanceModsCountText);
         Assert.Equal("0", viewModel.InstanceWorldsCountText);
         Assert.Equal("1 h 2 min", viewModel.ManagedInstancePlayTime);
@@ -159,6 +160,7 @@ public sealed class InstanceContentViewModelTests
 
         viewModel.OpenInstanceDetailsCommand.Execute(other.Id);
         Assert.Equal("Other Instance", viewModel.ManagedInstanceName);
+        Assert.Equal(other.Id, Assert.Single(viewModel.AllInstances, instance => instance.IsManaged).Id);
         Assert.Equal("Not Installed", viewModel.ManagedInstanceState);
         Assert.False(viewModel.IsManagedInstanceInstalled);
         Assert.Equal("Launch Instance", viewModel.SelectedInstanceName);
@@ -166,6 +168,7 @@ public sealed class InstanceContentViewModelTests
 
         viewModel.OpenInstanceDetailsCommand.Execute(managed.Id);
         Assert.Equal("Ready", viewModel.ManagedInstanceState);
+        Assert.Equal(managed.Id, Assert.Single(viewModel.AllInstances, instance => instance.IsManaged).Id);
         Assert.True(viewModel.IsManagedInstanceInstalled);
         await viewModel.OpenManagedInstanceFolderCommand.ExecuteAsync(null);
         await viewModel.RunManagedInstanceCommand.ExecuteAsync(null);
@@ -178,6 +181,7 @@ public sealed class InstanceContentViewModelTests
 
         viewModel.OpenInstanceDetailsCommand.Execute(other.Id);
         Assert.Equal("Not Installed", viewModel.ManagedInstanceState);
+        Assert.Equal(other.Id, Assert.Single(viewModel.AllInstances, instance => instance.IsManaged).Id);
         Assert.False(viewModel.IsManagedInstanceInstalled);
         await viewModel.RunManagedInstanceCommand.ExecuteAsync(null);
         installationWorkflow.Verify(service => service.DownloadAndLaunchInstanceAsync(

@@ -16,6 +16,7 @@ SPDX-License-Identifier: GPL-3.0-only
       <Setter Property="Margin" Value="0,2" />
       <Setter Property="Padding" Value="12,9" />
       <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+      <Setter Property="Cursor" Value="Hand" />
       <Setter Property="Template">
         <ControlTemplate>
           <ContentPresenter x:Name="PART_ContentPresenter"
@@ -258,6 +259,7 @@ SPDX-License-Identifier: GPL-3.0-only
 
   <Style Selector="ToggleSwitch.uiToggle:disabled">
     <Setter Property="Opacity" Value="0.45" />
+    <Setter Property="Cursor" Value="Arrow" />
   </Style>
 
   <Style Selector="Border.uiSettingsGroup">

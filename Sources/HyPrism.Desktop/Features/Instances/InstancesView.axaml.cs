@@ -113,6 +113,7 @@ public sealed partial class InstancesView : UserControl
         var compact = width < WideLayoutThreshold;
         var hasInstances = viewModel.HasInstances;
         Classes.Set("compact", compact);
+        Classes.Set("wide", !compact);
 
         var layoutModeChanged = _usesCompactLayout != compact;
         if (layoutModeChanged)
@@ -156,7 +157,7 @@ public sealed partial class InstancesView : UserControl
 
         if (!compact)
         {
-            InstancesLayout.ColumnDefinitions[0].Width = new GridLength(306);
+            InstancesLayout.ColumnDefinitions[0].Width = new GridLength(276);
             InstancesLayout.ColumnDefinitions[1].Width = new GridLength(1, GridUnitType.Star);
             Grid.SetColumn(InstancesListPane, 0);
             Grid.SetColumn(InstancesContent, 1);

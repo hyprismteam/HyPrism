@@ -19,38 +19,59 @@ SPDX-License-Identifier: GPL-3.0-only
     </DataTemplate>
 
   </UserControl.Resources>
-  <Grid x:Name="InstancesLayout" Classes="instancesPage" ColumnDefinitions="306,*" RowDefinitions="*">
+  <Grid x:Name="InstancesLayout" Classes="instancesPage" ColumnDefinitions="276,*" RowDefinitions="*">
     <Border x:Name="InstancesListPane" Classes="instancesListPane" Grid.Row="0" IsVisible="{Binding HasInstances}">
       <Grid>
         <ScrollViewer Classes="instancesScroll"
+                      Margin="14,18,4,18"
+                      HorizontalContentAlignment="Stretch"
                       HorizontalScrollBarVisibility="Disabled"
                       VerticalScrollBarVisibility="Auto">
-          <StackPanel Classes="instancesListGroup">
+          <StackPanel Classes="instancesListGroup"
+                      Margin="0,0,10,0"
+                      Spacing="2">
               <ItemsControl x:Name="InstancesItems" ItemsSource="{Binding AllInstances}">
+                <ItemsControl.ItemsPanel>
+                  <ItemsPanelTemplate>
+                    <StackPanel HorizontalAlignment="Stretch" Spacing="2" />
+                  </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
                 <ItemsControl.ItemTemplate>
                   <DataTemplate x:DataType="dashboard:InstanceItemViewModel">
-                    <Button Classes="uiSettingsNavigationRow instancesListItem"
+                    <Button Classes="settingsRailCategory instancesListItem"
+                            Classes.managed="{Binding IsManaged}"
                             Click="OnInstanceClicked"
                             Command="{Binding DataContext.OpenInstanceDetailsCommand, ElementName=InstancesRoot}"
                             CommandParameter="{Binding Id}">
-                      <Grid ColumnDefinitions="28,*,22" ColumnSpacing="9">
+                      <Grid Classes="instancesListItemLayout" ColumnDefinitions="Auto,*,22" ColumnSpacing="12">
                         <Border Classes="instancesListDragTarget"
+                                Cursor="Arrow"
                                 PointerPressed="OnInstanceDragHandlePressed"
                                 PointerMoved="OnInstanceDragHandleMoved"
                                 PointerReleased="OnInstanceDragHandleReleased">
                           <Path Classes="instancesListHandle"
                                 Data="{StaticResource DragIndicatorIcon}" />
                         </Border>
-                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
-                          <TextBlock Text="{Binding Name}"
-                                     Classes="uiSettingsLabel instancesListTitle"
-                                     TextTrimming="CharacterEllipsis"
-                                     TextWrapping="NoWrap" />
-                          <TextBlock Text="{Binding Branch}"
-                                     Classes="uiSettingsHint"
-                                     TextTrimming="CharacterEllipsis"
-                                     TextWrapping="NoWrap" />
-                        </StackPanel>
+                        <Grid Grid.Column="1"
+                              Classes="instancesListIdentity"
+                              ColumnDefinitions="Auto,*">
+                          <Image Classes="instancesListGameIcon"
+                                 Source="avares://HyPrism.Desktop/Assets/Game/grass.png"
+                                 Stretch="Uniform"
+                                 IsHitTestVisible="False" />
+                          <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="4">
+                            <TextBlock Text="{Binding Name}"
+                                       Classes="settingsCategoryTitle instancesListTitle"
+                                       FontSize="15"
+                                       FontWeight="SemiBold"
+                                       TextTrimming="CharacterEllipsis"
+                                       TextWrapping="NoWrap" />
+                            <TextBlock Text="{Binding Branch}"
+                                       Classes="settingsCategoryDescription"
+                                       TextTrimming="CharacterEllipsis"
+                                       TextWrapping="NoWrap" />
+                          </StackPanel>
+                        </Grid>
                         <Path Grid.Column="2"
                               Classes="instancesListMore"
                               Data="{StaticResource MoreVerticalIcon}" />
@@ -67,7 +88,7 @@ SPDX-License-Identifier: GPL-3.0-only
                             HorizontalAlignment="Center"
                             Spacing="9">
                   <Path Width="14" Height="14" Stretch="Uniform" Data="{StaticResource AddIcon}" />
-                  <TextBlock Text="{Binding SelectVersionLabel}"
+                  <TextBlock Text="{Binding NewInstanceTitle}"
                              Classes="uiSettingsLabel"
                              VerticalAlignment="Center" />
                 </StackPanel>
@@ -183,16 +204,23 @@ SPDX-License-Identifier: GPL-3.0-only
                     <TextBlock Text="{Binding BackLabel}" VerticalAlignment="Center" />
                   </StackPanel>
                 </Button>
-                <TextBlock Grid.Column="1"
-                           Classes="articleToolbarTitle"
-                           Text="{Binding ManagedInstanceName}"
-                           MaxWidth="280"
-                           MaxLines="1"
-                           TextTrimming="CharacterEllipsis"
-                           FontSize="16"
-                           FontWeight="SemiBold"
-                           HorizontalAlignment="Center"
-                           VerticalAlignment="Center" />
+                <StackPanel Grid.Column="1"
+                            Orientation="Horizontal"
+                            Spacing="9"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center">
+                  <Image Classes="compactInstanceGameIcon"
+                         Source="avares://HyPrism.Desktop/Assets/Game/grass.png"
+                         Stretch="Uniform" />
+                  <TextBlock Classes="articleToolbarTitle"
+                             Text="{Binding ManagedInstanceName}"
+                             MaxWidth="240"
+                             MaxLines="1"
+                             TextTrimming="CharacterEllipsis"
+                             FontSize="16"
+                             FontWeight="SemiBold"
+                             VerticalAlignment="Center" />
+                </StackPanel>
 
                 <Border Grid.Column="2"
                         Classes="compactInstanceSplitAction"
@@ -288,14 +316,20 @@ SPDX-License-Identifier: GPL-3.0-only
               </Grid>
             </Border>
 
-            <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+            <ScrollViewer Grid.Row="1"
+                          HorizontalScrollBarVisibility="Disabled"
+                          VerticalScrollBarVisibility="Auto">
               <StackPanel Classes="instanceHubContent"
                           x:Name="InstanceHubContent"
                           Margin="32,28,32,40"
                           MaxWidth="720"
                           HorizontalAlignment="Stretch"
                           Spacing="22">
-                <StackPanel Classes="instanceSummary" Spacing="16">
+                <StackPanel Classes="instanceSummary" Spacing="22">
+                  <Image Classes="instanceGameIcon"
+                         Source="avares://HyPrism.Desktop/Assets/Game/grass.png"
+                         Stretch="Uniform" />
+
                   <Border Classes="wideInstanceSplitAction"
                           HorizontalAlignment="Center">
                     <StackPanel x:Name="WideInstanceActions"

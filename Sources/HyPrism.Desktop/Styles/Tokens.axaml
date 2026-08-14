@@ -44,6 +44,9 @@ SPDX-License-Identifier: GPL-3.0-only
   <SolidColorBrush x:Key="ItemHoverBrush" Color="#10FFFFFF" />
   <SolidColorBrush x:Key="ItemSelectedBrush" Color="#1DFFFFFF" />
   <SolidColorBrush x:Key="ItemSelectedHoverBrush" Color="#27FFFFFF" />
+  <SolidColorBrush x:Key="NavigationItemHoverBrush" Color="#08FFFFFF" />
+  <SolidColorBrush x:Key="NavigationItemSelectedBrush" Color="#12FFFFFF" />
+  <SolidColorBrush x:Key="NavigationItemSelectedHoverBrush" Color="#18FFFFFF" />
   <BoxShadows x:Key="PopupShadow">0 12 36 0 #80000000</BoxShadows>
 
   <SolidColorBrush x:Key="ScrollBarBackgroundPointerOver" Color="Transparent" />

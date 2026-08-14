@@ -638,9 +638,21 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
 
         RefreshInstanceInstalledState(instance);
         _managedInstance = instance;
+        UpdateManagedInstanceListSelection(instance.Id);
         InstanceSection = string.Empty;
         UpdateManagedInstancePresentation();
         RefreshManagedInstanceContent();
+    }
+
+    private void UpdateManagedInstanceListSelection(string managedInstanceId)
+    {
+        for (var index = 0; index < AllInstances.Count; index++)
+        {
+            var item = AllInstances[index];
+            var isManaged = string.Equals(item.Id, managedInstanceId, StringComparison.Ordinal);
+            if (item.IsManaged != isManaged)
+                AllInstances[index] = item with { IsManaged = isManaged };
+        }
     }
 
     [RelayCommand]
@@ -860,7 +872,11 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
             _instances.SyncInstancesWithConfig();
             var items = _instances.GetCachedInstances();
             var selectedInstanceId = _instances.GetSelectedInstance()?.Id;
-            var managedInstanceId = _managedInstance?.Id;
+            var requestedManagedInstanceId = _managedInstance?.Id;
+            var managedInstance = items.FirstOrDefault(instance =>
+                    string.Equals(instance.Id, requestedManagedInstanceId, StringComparison.Ordinal))
+                ?? items.FirstOrDefault();
+            var managedInstanceId = managedInstance?.Id;
 
             AllInstances.Clear();
             var presentedInstances = items
@@ -873,7 +889,8 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
                         instance.Name,
                         FormatVersion(instance.Version),
                         FormatBranch(instance.Branch),
-                        instance.IsInstalled);
+                        instance.IsInstalled,
+                        string.Equals(instance.Id, managedInstanceId, StringComparison.Ordinal));
                 })
                 .ToList();
 
@@ -884,9 +901,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
 
             _selectedInstance = items.FirstOrDefault(instance =>
                 string.Equals(instance.Id, selectedInstanceId, StringComparison.Ordinal));
-            _managedInstance = items.FirstOrDefault(instance =>
-                    string.Equals(instance.Id, managedInstanceId, StringComparison.Ordinal))
-                ?? items.FirstOrDefault();
+            _managedInstance = managedInstance;
 
             OnPropertyChanged(nameof(HasInstances));
             OnPropertyChanged(nameof(HasSelectedInstance));
