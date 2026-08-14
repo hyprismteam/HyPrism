@@ -5,11 +5,11 @@ description: Autonomous OmniAuth and local Hytale compatibility endpoints
 
 # Local Node
 
-Autonomous mode runs `HyPrism.LocalNode` as a dedicated companion process at `https://h.localhost:8443`. It is bound to loopback, rejects unexpected Host headers, limits request bodies to 2 MB, and does not require a separately deployed `hytale-auth-server`
+Autonomous mode runs `HyPrism.LocalNode` as a dedicated companion process on a loopback endpoint such as `https://h.localhost:8443`. Each autonomous game launch receives its own free port in the `8443` to `9999` range, so multiple local sessions can run together. The node rejects unexpected Host headers, limits request bodies to 2 MB, and does not require a separately deployed `hytale-auth-server`
 
 ## Launch flow
 
-1. `GameLauncher` selects `Assets.zip` from the instance and starts the Local Node before patching or launching the game
+1. `GameLauncher` allocates an isolated Local Node endpoint, selects `Assets.zip` from the instance, and starts the node before patching or launching the game
 2. The node creates one ephemeral Ed25519 key pair for the selected local profile
 3. The launcher obtains identity and session tokens from `POST /v1/sessions`
 4. `ClientPatcher` redirects known Hytale service prefixes to the loopback authority
@@ -41,13 +41,15 @@ Identity tokens, authorization grants, and server access tokens carry the active
 
 ## Storage and trust
 
-Local data is stored below the HyPrism application data directory in `LocalNode`
+Each autonomous launch stores its runtime state below `LocalNode/Sessions/<session-id>` in the HyPrism application data directory. This prevents control secrets, logs, trust bundles, and account state from colliding between concurrently running local sessions
+
+The TLS certificate is intentionally shared at `LocalNode/Certificate`. It is valid for the `h.localhost` hostname, not for a particular port, so every Local Node endpoint can use the same trusted certificate without another system trust prompt
 
 | File | Purpose |
 | --- | --- |
-| `accounts.json` | local profiles, saved skins, active skin, and presence preferences |
-| `h.localhost.pfx` | persistent loopback TLS certificate and private key |
-| `h.localhost.crt` | PEM public certificate |
+| `accounts.json` | local profiles, saved skins, active skin, and presence preferences for this launch session |
+| `h.localhost.pfx` | shared loopback TLS certificate and private key in `LocalNode/Certificate` |
+| `h.localhost.crt` | shared PEM public certificate in `LocalNode/Certificate` |
 | `client-ca-bundle.pem` | Unix CA bundle inherited by the game process |
 | `client-trust.p12` | Java trust store inherited by embedded server JVMs |
 | `macos-trusted.crt` | copy of the certificate currently registered in macOS user trust settings |
@@ -68,3 +70,11 @@ The embedded host receives the active game directory automatically. When running
 Local Node is a single-device compatibility backend, not a decentralized social network. It cannot provide globally unique names, a shared friends graph, cross-device presence, invitations, cloud synchronization of cosmetics, public discovery, or NAT traversal without another coordination layer
 
 The endpoint shapes are based on the open `sanasol/hytale-auth-server` compatibility surface. Automated tests cover the local HTTPS session, account, JWKS, grant exchange, certificate binding, avatar persistence, and client patch transitions. End-to-end verification against every future proprietary Hytale client build still requires a compatible installed client
+
+## Concurrent launches
+
+HyPrism treats each game instance as a separate launch target. A single instance cannot be started twice, because its client files and user data are shared, but different instance directories can run with different authentication modes at the same time. For example, one instance can use Local Node, another a custom authentication service, and a third official authentication
+
+The launcher keeps a runtime process registry with the PID, process start time, instance, and profile. When HyPrism starts again after it was closed, it restores only entries whose process is still alive and whose start time still matches. Stale entries and reused PIDs are removed automatically
+
+Official authentication is deliberately restricted to one running client per Hytale account owner. HyPrism serializes official authentication between launcher processes and refuses a second launch when the restored process registry already contains that account

@@ -39,9 +39,9 @@ internal static class Program
             services.AddSingleton<GpuProvider>();
             services.AddSingleton<IGpuProvider>(provider =>
                 provider.GetRequiredService<GpuProvider>());
-            services.AddSingleton<LocalNodeHost>();
-            services.AddSingleton<ILocalNodeService>(provider =>
-                provider.GetRequiredService<LocalNodeHost>());
+            services.AddSingleton<LocalNodeServiceFactory>();
+            services.AddSingleton<ILocalNodeServiceFactory>(provider =>
+                provider.GetRequiredService<LocalNodeServiceFactory>());
         });
 
         BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);

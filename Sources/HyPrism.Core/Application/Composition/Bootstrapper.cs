@@ -117,7 +117,8 @@ public static class Bootstrapper
                     sp.GetRequiredService<HttpClient>()));
             services.AddSingleton<IRuntimeProvisioner>(sp => sp.GetRequiredService<RuntimeProvisioner>());
 
-            services.AddSingleton<GameProcessTracker>();
+            services.AddSingleton(sp => new GameProcessTracker(
+                sp.GetRequiredService<AppPathConfiguration>()));
             services.AddSingleton<IGameProcessTracker>(sp => sp.GetRequiredService<GameProcessTracker>());
 
             services.AddSingleton(sp =>
@@ -155,7 +156,7 @@ public static class Bootstrapper
                     sp.GetRequiredService<IGpuProvider>(),
                     sp.GetRequiredService<AppPathConfiguration>(),
                     sp.GetRequiredService<IProfileManager>(),
-                    sp.GetRequiredService<ILocalNodeService>()));
+                    sp.GetRequiredService<ILocalNodeServiceFactory>()));
             services.AddSingleton<IGameLauncher>(sp => sp.GetRequiredService<GameLauncher>());
 
             services.AddSingleton(sp =>

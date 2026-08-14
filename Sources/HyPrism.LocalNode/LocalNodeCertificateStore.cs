@@ -13,6 +13,7 @@ public static class LocalNodeCertificateStore
 {
     private const string CertificateFileName = "h.localhost.pfx";
     private const string PublicCertificateFileName = "h.localhost.crt";
+    private static readonly object CertificateLock = new();
 
     /// <summary>
     /// Loads the persistent loopback certificate or creates it on first use
@@ -22,52 +23,55 @@ public static class LocalNodeCertificateStore
     /// <exception cref="CryptographicException">Thrown when the certificate cannot be generated or loaded</exception>
     public static X509Certificate2 LoadOrCreate(LocalNodeOptions options)
     {
-        var certificatePath = GetCertificatePath(options);
-        Directory.CreateDirectory(options.DataDirectory);
-
-        if (TryLoadCurrentCertificate(certificatePath, options.Hostname, out var currentCertificate))
+        lock (CertificateLock)
         {
-            EnsurePublicCertificate(options, currentCertificate);
-            return currentCertificate;
+            var certificatePath = GetCertificatePath(options);
+            Directory.CreateDirectory(GetCertificateDirectory(options));
+
+            if (TryLoadCurrentCertificate(certificatePath, options.Hostname, out var currentCertificate))
+            {
+                EnsurePublicCertificate(options, currentCertificate);
+                return currentCertificate;
+            }
+
+            PreserveInvalidCertificate(certificatePath);
+
+            using var key = ECDsa.Create(ECCurve.NamedCurves.nistP256);
+            var request = new CertificateRequest(
+                $"CN={options.Hostname}",
+                key,
+                HashAlgorithmName.SHA256);
+
+            request.CertificateExtensions.Add(new X509BasicConstraintsExtension(false, false, 0, false));
+            request.CertificateExtensions.Add(new X509KeyUsageExtension(X509KeyUsageFlags.DigitalSignature, false));
+            request.CertificateExtensions.Add(new X509EnhancedKeyUsageExtension(
+                [new Oid("1.3.6.1.5.5.7.3.1")],
+                false));
+
+            var subjectAlternativeNames = new SubjectAlternativeNameBuilder();
+            subjectAlternativeNames.AddDnsName(options.Hostname);
+            subjectAlternativeNames.AddDnsName("localhost");
+            request.CertificateExtensions.Add(subjectAlternativeNames.Build());
+
+            using var generated = request.CreateSelfSigned(DateTimeOffset.UtcNow.AddDays(-1), DateTimeOffset.UtcNow.AddYears(2));
+            File.WriteAllBytes(certificatePath, generated.Export(X509ContentType.Pfx));
+            ProtectPrivateKey(certificatePath);
+            EnsurePublicCertificate(options, generated);
+
+            return X509CertificateLoader.LoadPkcs12FromFile(
+                certificatePath,
+                password: null,
+                X509KeyStorageFlags.Exportable);
         }
-
-        PreserveInvalidCertificate(certificatePath);
-
-        using var key = ECDsa.Create(ECCurve.NamedCurves.nistP256);
-        var request = new CertificateRequest(
-            $"CN={options.Hostname}",
-            key,
-            HashAlgorithmName.SHA256);
-
-        request.CertificateExtensions.Add(new X509BasicConstraintsExtension(false, false, 0, false));
-        request.CertificateExtensions.Add(new X509KeyUsageExtension(X509KeyUsageFlags.DigitalSignature, false));
-        request.CertificateExtensions.Add(new X509EnhancedKeyUsageExtension(
-            [new Oid("1.3.6.1.5.5.7.3.1")],
-            false));
-
-        var subjectAlternativeNames = new SubjectAlternativeNameBuilder();
-        subjectAlternativeNames.AddDnsName(options.Hostname);
-        subjectAlternativeNames.AddDnsName("localhost");
-        request.CertificateExtensions.Add(subjectAlternativeNames.Build());
-
-        using var generated = request.CreateSelfSigned(DateTimeOffset.UtcNow.AddDays(-1), DateTimeOffset.UtcNow.AddYears(2));
-        File.WriteAllBytes(certificatePath, generated.Export(X509ContentType.Pfx));
-        ProtectPrivateKey(certificatePath);
-        EnsurePublicCertificate(options, generated);
-
-        return X509CertificateLoader.LoadPkcs12FromFile(
-            certificatePath,
-            password: null,
-            X509KeyStorageFlags.Exportable);
     }
 
     /// <summary>
-    /// Gets the persistent certificate path for a Local Node data directory
+    /// Gets the persistent certificate path for the Local Node certificate store
     /// </summary>
     /// <param name="options">Endpoint and storage options for the Local Node</param>
     /// <returns>Absolute PFX file path</returns>
     public static string GetCertificatePath(LocalNodeOptions options)
-        => Path.Combine(options.DataDirectory, CertificateFileName);
+        => Path.Combine(GetCertificateDirectory(options), CertificateFileName);
 
     /// <summary>
     /// Gets the PEM-encoded public certificate path for user-store trust installation
@@ -75,7 +79,15 @@ public static class LocalNodeCertificateStore
     /// <param name="options">Endpoint and storage options for the Local Node</param>
     /// <returns>Absolute public certificate path</returns>
     public static string GetPublicCertificatePath(LocalNodeOptions options)
-        => Path.Combine(options.DataDirectory, PublicCertificateFileName);
+        => Path.Combine(GetCertificateDirectory(options), PublicCertificateFileName);
+
+    /// <summary>
+    /// Gets the directory shared by Local Nodes that use the same loopback certificate
+    /// </summary>
+    public static string GetCertificateDirectory(LocalNodeOptions options)
+        => string.IsNullOrWhiteSpace(options.CertificateDirectory)
+            ? options.DataDirectory
+            : options.CertificateDirectory;
 
     private static void EnsurePublicCertificate(LocalNodeOptions options, X509Certificate2 certificate)
     {

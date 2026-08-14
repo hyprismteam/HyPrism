@@ -14,7 +14,8 @@ public sealed record LocalNodeOptions(
     int Port,
     string? AssetsPath = null,
     int? OwnerProcessId = null,
-    string? ControlSecret = null)
+    string? ControlSecret = null,
+    string? CertificateDirectory = null)
 {
     /// <summary>
     /// Gets the canonical issuer URI emitted in OmniAuth tokens

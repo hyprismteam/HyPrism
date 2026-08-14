@@ -61,6 +61,8 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     private readonly List<NewsItemViewModel> _allNews = [];
     private readonly Dictionary<string, NewsArticleViewModel> _articleViewModelCache =
         new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, int> _busyInstanceCounts =
+        new(StringComparer.OrdinalIgnoreCase);
     private CancellationTokenSource _newsImagesCancellation = new();
     private CancellationTokenSource _articleImagesCancellation = new();
     private CancellationTokenSource _articlePresentationCancellation = new();
@@ -73,6 +75,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     private DateTime? _managedInstanceGameStartedAtUtc;
     private string? _managedInstanceActionInstanceId;
     private long _managedInstanceActionGeneration;
+    private readonly HashSet<long> _completedManagedActivityGenerations = [];
     private bool _managedInstanceActionStartedWithInstall;
     private bool _isManagedInstanceCancellationArmed;
     private string? _modsLoadedForInstanceId;
@@ -340,6 +343,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         _progress.DownloadProgressChanged += OnDownloadProgressChanged;
         _progress.GameStateChanged += OnGameStateChanged;
         _progress.ErrorOccurred += OnErrorOccurred;
+        IsGameRunning = _gameProcess.IsGameRunning();
 
         _managedInstanceActionTimer = new DispatcherTimer
         {
@@ -486,15 +490,27 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
             _managedInstance.Id,
             _managedInstanceActionInstanceId,
             StringComparison.OrdinalIgnoreCase);
-    public bool IsManagedInstanceActionRunning => IsManagedInstanceActionActive && IsGameRunning;
+    public bool IsManagedInstanceActionRunning => IsManagedInstanceActionActive && IsManagedInstanceRunning;
+    private bool IsManagedInstanceRunning => _managedInstance is not null
+        && (_gameProcess.IsInstanceRunning(_managedInstance.Id)
+            || (IsGameRunning && string.Equals(
+                _managedInstance.Id,
+                _gameSessionInstanceId,
+                StringComparison.OrdinalIgnoreCase)));
+    private bool IsSelectedInstanceRunning => _selectedInstance is not null
+        && (_gameProcess.IsInstanceRunning(_selectedInstance.Id)
+            || (IsGameRunning && string.Equals(
+                _selectedInstance.Id,
+                _gameSessionInstanceId,
+                StringComparison.OrdinalIgnoreCase)));
     public bool IsManagedInstanceCancellationArmed =>
         IsManagedInstanceActionActive && _isManagedInstanceCancellationArmed;
     public bool CanRunManagedInstanceAction =>
         _managedInstance is not null &&
-        ((!IsBusy && !IsGameRunning) || IsManagedInstanceActionActive);
+        ((!IsInstanceBusy(_managedInstance.Id) && !IsManagedInstanceRunning) || IsManagedInstanceActionActive);
     public bool CanOpenManagedInstanceFolder => _managedInstance is not null;
     public bool CanDeleteManagedInstance =>
-        _managedInstance is not null && !IsBusy && !IsGameRunning;
+        _managedInstance is not null && !IsInstanceBusy(_managedInstance.Id) && !IsManagedInstanceRunning;
     public bool IsInstanceOverviewSection => string.IsNullOrEmpty(InstanceSection);
     public bool IsInstanceModsSection => InstanceSection == "mods";
     public bool IsInstanceBrowseSection => InstanceSection == "browse";
@@ -515,11 +531,15 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         string.Equals(NewInstanceBranch, "release", StringComparison.OrdinalIgnoreCase);
     public bool IsCreatePreReleaseBranch => !IsCreateReleaseBranch;
     public bool IsPrimarySelectAction => _selectedInstance is null;
-    public bool IsPrimaryStopAction => IsGameRunning || (IsBusy && CanCancelActivity);
+    public bool IsPrimaryStopAction => IsSelectedInstanceRunning || (IsBusy && CanCancelActivity);
     public bool IsPrimaryDownloadAction =>
-        !IsBusy && !IsGameRunning && _selectedInstance is { IsInstalled: false };
+        _selectedInstance is { IsInstalled: false }
+        && !IsInstanceBusy(_selectedInstance.Id)
+        && !IsSelectedInstanceRunning;
     public bool IsPrimaryPlayAction =>
-        !IsBusy && !IsGameRunning && _selectedInstance is { IsInstalled: true };
+        _selectedInstance is { IsInstalled: true }
+        && !IsInstanceBusy(_selectedInstance.Id)
+        && !IsSelectedInstanceRunning;
     public bool IsPrimaryPendingAction => IsBusy && !CanCancelActivity;
     public bool HasFeaturedNews => FeaturedNews is not null;
     public bool HasNewsError => !string.IsNullOrWhiteSpace(NewsError);
@@ -777,8 +797,8 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
             if (!IsManagedInstanceCancellationArmed)
                 return;
 
-            if (IsGameRunning)
-                _gameProcess.ExitGame();
+            if (IsManagedInstanceRunning)
+                _gameProcess.ExitGame(instance.Id);
             else
                 CancelActivity();
 
@@ -791,7 +811,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         _managedInstanceActionStartedWithInstall = !instance.IsInstalled;
         var actionGeneration = ++_managedInstanceActionGeneration;
         _isManagedInstanceCancellationArmed = false;
-        IsBusy = true;
+        BeginInstanceActivity(instance.Id);
         CanCancelActivity = true;
         IsActivityVisible = true;
         ActivityProgress = 0;
@@ -823,14 +843,16 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         {
             if (actionGeneration == _managedInstanceActionGeneration)
             {
-                IsBusy = false;
                 CanCancelActivity = false;
                 RefreshInstances();
-                if (!IsGameRunning)
+                if (!IsManagedInstanceRunning)
                     EndManagedInstanceAction();
                 else
                     NotifyManagedInstanceActionStateChanged();
             }
+
+            if (!_completedManagedActivityGenerations.Remove(actionGeneration))
+                EndInstanceActivity(instance.Id);
         }
     }
 
@@ -866,19 +888,23 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private async Task PrimaryActionAsync()
     {
-        if (_selectedInstance is null)
+        if (_selectedInstance is not { } instance)
         {
             Navigate(InstancesPage);
             return;
         }
 
-        if (IsGameRunning)
+        if (_gameProcess.IsInstanceRunning(instance.Id)
+            || (IsGameRunning && string.Equals(
+                instance.Id,
+                _gameSessionInstanceId,
+                StringComparison.OrdinalIgnoreCase)))
         {
-            _gameProcess.ExitGame();
+            _gameProcess.ExitGame(instance.Id);
             return;
         }
 
-        if (IsBusy)
+        if (IsInstanceBusy(instance.Id))
         {
             if (CanCancelActivity)
                 CancelActivity();
@@ -886,27 +912,27 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
             return;
         }
 
-        IsBusy = true;
-        CanCancelActivity = !_selectedInstance.IsInstalled;
+        BeginInstanceActivity(instance.Id);
+        CanCancelActivity = !instance.IsInstalled;
         IsActivityVisible = true;
         ActivityProgress = 0;
         ActivityProgressText = "0%";
         ActivityTitle = _localizer["common.loading"];
-        ActivityDetail = _selectedInstance.Name;
-        _gameSessionInstanceId = _selectedInstance.Id;
+        ActivityDetail = instance.Name;
+        _gameSessionInstanceId = instance.Id;
         UpdateSelectedInstancePresentation();
 
         try
         {
-            if (_selectedInstance.IsInstalled)
+            if (instance.IsInstalled)
             {
                 await Task.Run(() => _gameLaunchCoordinator.LaunchAsync(
-                    _selectedInstance.Id,
+                    instance.Id,
                     authorizationUriPresenter: _uriLauncher.LaunchAsync));
             }
             else
             {
-                _instances.SetSelectedInstance(_selectedInstance.Id);
+                _instances.SetSelectedInstance(instance.Id);
                 var result = await Task.Run(() =>
                     _installationWorkflow.DownloadAndLaunchAsync(_uriLauncher.LaunchAsync));
 
@@ -916,15 +942,49 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         }
         finally
         {
-            IsBusy = false;
             CanCancelActivity = false;
             RefreshInstances();
+            EndInstanceActivity(instance.Id);
         }
     }
 
     [RelayCommand]
     private void CancelActivity()
         => _installationWorkflow.CancelDownload();
+
+    private bool IsInstanceBusy(string instanceId)
+        => !string.IsNullOrWhiteSpace(instanceId)
+        && _busyInstanceCounts.TryGetValue(instanceId, out var count)
+        && count > 0;
+
+    private void BeginInstanceActivity(string instanceId)
+    {
+        if (!string.IsNullOrWhiteSpace(instanceId))
+        {
+            _busyInstanceCounts.TryGetValue(instanceId, out var currentCount);
+            _busyInstanceCounts[instanceId] = currentCount + 1;
+        }
+        IsBusy = _busyInstanceCounts.Count > 0;
+        UpdateSelectedInstancePresentation();
+        NotifyManagedInstanceActionStateChanged();
+    }
+
+    private void EndInstanceActivity(string instanceId)
+    {
+        if (!string.IsNullOrWhiteSpace(instanceId))
+        {
+            if (_busyInstanceCounts.TryGetValue(instanceId, out var currentCount))
+            {
+                if (currentCount <= 1)
+                    _busyInstanceCounts.Remove(instanceId);
+                else
+                    _busyInstanceCounts[instanceId] = currentCount - 1;
+            }
+        }
+        IsBusy = _busyInstanceCounts.Count > 0;
+        UpdateSelectedInstancePresentation();
+        NotifyManagedInstanceActionStateChanged();
+    }
 
     private void RefreshInstances()
     {
@@ -1687,16 +1747,17 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         SelectedInstanceState = _selectedInstance.IsInstalled
             ? _localizer["instances.status.ready"]
             : _localizer["instances.status.notInstalled"];
-        PrimaryActionText = IsBusy
+        var selectedInstanceIsBusy = IsInstanceBusy(_selectedInstance.Id);
+        PrimaryActionText = selectedInstanceIsBusy
             ? CanCancelActivity
                 ? _localizer["main.cancel"]
                 : _localizer["common.loading"]
-            : IsGameRunning
+            : IsSelectedInstanceRunning
                 ? _localizer["main.stop"]
                 : _selectedInstance.IsInstalled
                     ? _localizer["main.play"]
                     : _localizer["main.download"];
-        CanRunPrimaryAction = !IsBusy || CanCancelActivity;
+        CanRunPrimaryAction = !selectedInstanceIsBusy || CanCancelActivity;
         NotifyPrimaryActionStateChanged();
     }
 
@@ -1903,12 +1964,16 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
             }
             else if (state == "stopped")
             {
+                var stoppedInstanceId = _gameSessionInstanceId;
+                if (IsManagedInstanceActionActive)
+                    _completedManagedActivityGenerations.Add(_managedInstanceActionGeneration);
                 RecordGameSessionPlayTime();
-                IsBusy = false;
                 CanCancelActivity = false;
+                if (!string.IsNullOrWhiteSpace(stoppedInstanceId))
+                    EndInstanceActivity(stoppedInstanceId);
             }
 
-            IsGameRunning = state is "started" or "running";
+            IsGameRunning = state is "started" or "running" || _gameProcess.IsGameRunning();
             if (state is "started" or "running" or "stopped")
                 IsActivityVisible = false;
 
@@ -1982,7 +2047,6 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         ActivityProgress = 0;
         ActivityProgressText = string.Empty;
         IsActivityVisible = true;
-        IsBusy = false;
         CanCancelActivity = false;
         UpdateSelectedInstancePresentation();
     }

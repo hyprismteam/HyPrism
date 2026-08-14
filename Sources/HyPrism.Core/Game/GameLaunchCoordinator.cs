@@ -18,6 +18,8 @@ public sealed class GameLaunchCoordinator(
     IInstanceRepository instances,
     IProgressReporter progress) : IGameLaunchCoordinator
 {
+    private readonly HashSet<string> _launchingInstanceIds = new(StringComparer.OrdinalIgnoreCase);
+    private readonly object _launchLock = new();
     private const int ExitSuccess = 0;
     private const int ErrorGenericLaunch = 1;
     private const int ErrorNotInstalled = 11;
@@ -30,12 +32,6 @@ public sealed class GameLaunchCoordinator(
         string? instanceId = null,
         AuthUriPresenter? authorizationUriPresenter = null)
     {
-        if (processService.IsGameRunning())
-        {
-            Logger.Warning("Game", "Game launch request ignored - game already running");
-            return;
-        }
-
         // Install and update remain separate UI actions, so this operation launches
         // only an instance whose selected version is already installed.
         var selectedInstance = string.IsNullOrWhiteSpace(instanceId)
@@ -43,6 +39,12 @@ public sealed class GameLaunchCoordinator(
             : instances.FindInstanceById(instanceId);
         if (selectedInstance != null)
         {
+            if (processService.IsInstanceRunning(selectedInstance.Id))
+            {
+                Logger.Warning("Game", $"Game launch request ignored - instance {selectedInstance.Id} is already running");
+                return;
+            }
+
             var versionPath = instances.GetInstancePathById(selectedInstance.Id);
             if (!string.IsNullOrEmpty(versionPath) && !instances.IsClientPresent(versionPath))
             {
@@ -52,6 +54,15 @@ public sealed class GameLaunchCoordinator(
                     "Game not installed",
                     $"Instance '{selectedInstance.Name}' has no game installed. Click UPDATE to install.");
                 return;
+            }
+
+            lock (_launchLock)
+            {
+                if (!_launchingInstanceIds.Add(selectedInstance.Id))
+                {
+                    Logger.Warning("Game", $"Game launch request ignored - instance {selectedInstance.Id} is already being prepared");
+                    return;
+                }
             }
         }
 
@@ -84,6 +95,14 @@ public sealed class GameLaunchCoordinator(
             Logger.Error("Game", $"Game launch failed: {ex.Message}");
             progress.ReportError("download", "Failed to install game", ex.ToString());
             progress.ReportGameStateChanged("stopped", ErrorLaunchFailed);
+        }
+        finally
+        {
+            if (selectedInstance is not null)
+            {
+                lock (_launchLock)
+                    _launchingInstanceIds.Remove(selectedInstance.Id);
+            }
         }
     }
 

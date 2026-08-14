@@ -9,13 +9,68 @@ using System.Net.Http.Json;
 using System.Net.Sockets;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
+using HyPrism.Core;
 using HyPrism.Core.Game.Authentication;
+using HyPrism.Core.Game.Launch;
 using HyPrism.LocalNode;
 
 namespace HyPrism.LocalNode.Tests;
 
 public sealed class LocalNodeHostTests
 {
+    [Fact]
+    public void Factory_CreatesNodesWithSeparateEndpointsAndStateDirectories()
+    {
+        var appDirectory = Path.Combine(Path.GetTempPath(), "HyPrismLocalNodeFactoryTests_" + Guid.NewGuid());
+        try
+        {
+            var factory = new LocalNodeServiceFactory(new AppPathConfiguration(appDirectory));
+            using var first = factory.Create();
+            using var second = factory.Create();
+
+            Assert.NotEqual(first.EndpointDomain, second.EndpointDomain);
+            Assert.NotEqual(first.Issuer, second.Issuer);
+        }
+        finally
+        {
+            if (Directory.Exists(appDirectory))
+                Directory.Delete(appDirectory, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void CertificateStore_UsesOneCertificateForSeparateSessionDirectories()
+    {
+        var rootDirectory = Path.Combine(Path.GetTempPath(), "HyPrismLocalNodeCertificateTests_" + Guid.NewGuid());
+        try
+        {
+            var certificateDirectory = Path.Combine(rootDirectory, "Certificate");
+            var firstOptions = new LocalNodeOptions(
+                Path.Combine(rootDirectory, "Sessions", "first"),
+                "h.localhost",
+                8443,
+                CertificateDirectory: certificateDirectory);
+            var secondOptions = new LocalNodeOptions(
+                Path.Combine(rootDirectory, "Sessions", "second"),
+                "h.localhost",
+                8444,
+                CertificateDirectory: certificateDirectory);
+
+            using var firstCertificate = LocalNodeCertificateStore.LoadOrCreate(firstOptions);
+            using var secondCertificate = LocalNodeCertificateStore.LoadOrCreate(secondOptions);
+
+            Assert.Equal(firstCertificate.Thumbprint, secondCertificate.Thumbprint);
+            Assert.Equal(
+                LocalNodeCertificateStore.GetCertificatePath(firstOptions),
+                LocalNodeCertificateStore.GetCertificatePath(secondOptions));
+        }
+        finally
+        {
+            if (Directory.Exists(rootDirectory))
+                Directory.Delete(rootDirectory, recursive: true);
+        }
+    }
+
     [Fact]
     public async Task Host_ExecutesAutonomousSessionAndAccountFlow()
     {

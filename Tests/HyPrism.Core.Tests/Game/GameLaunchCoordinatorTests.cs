@@ -67,6 +67,41 @@ public sealed class GameLaunchCoordinatorTests
     }
 
     [Fact]
+    public async Task LaunchAsync_WhenAnotherInstanceIsRunning_StillLaunchesRequestedInstance()
+    {
+        var instance = CreateInstalledInstance();
+
+        _gameProcess.Setup(service => service.IsInstanceRunning(instance.Id)).Returns(false);
+        _instances.Setup(service => service.FindInstanceById(instance.Id)).Returns(instance);
+        _instances.Setup(service => service.GetInstancePathById(instance.Id)).Returns("/game");
+        _instances.Setup(service => service.IsClientPresent("/game")).Returns(true);
+        _gameSession
+            .Setup(service => service.DownloadAndLaunchInstanceAsync(instance.Id, It.IsAny<AuthUriPresenter?>()))
+            .ReturnsAsync(new DownloadProgress { Success = true });
+
+        await CreateSubject().LaunchAsync(instance.Id);
+
+        _gameSession.Verify(service => service.DownloadAndLaunchInstanceAsync(
+            instance.Id,
+            It.IsAny<AuthUriPresenter?>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task LaunchAsync_WhenRequestedInstanceIsRunning_DoesNotLaunchItAgain()
+    {
+        var instance = CreateInstalledInstance();
+
+        _gameProcess.Setup(service => service.IsInstanceRunning(instance.Id)).Returns(true);
+        _instances.Setup(service => service.FindInstanceById(instance.Id)).Returns(instance);
+
+        await CreateSubject().LaunchAsync(instance.Id);
+
+        _gameSession.Verify(service => service.DownloadAndLaunchInstanceAsync(
+            It.IsAny<string>(),
+            It.IsAny<AuthUriPresenter?>()), Times.Never);
+    }
+
+    [Fact]
     public async Task LaunchAsync_MapsMirrorFailureToStableExitCode()
     {
         var instance = CreateInstalledInstance();

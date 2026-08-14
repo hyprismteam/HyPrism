@@ -25,5 +25,6 @@ public interface IGameLauncher
         string versionPath,
         string branch,
         CancellationToken ct = default,
-        AuthUriPresenter? authorizationUriPresenter = null);
+        AuthUriPresenter? authorizationUriPresenter = null,
+        string? instanceId = null);
 }

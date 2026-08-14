@@ -41,7 +41,9 @@ internal static class MacOsCertificateTrust
     {
         ArgumentNullException.ThrowIfNull(runCommand);
         var currentCertificatePath = LocalNodeCertificateStore.GetPublicCertificatePath(options);
-        var trustedCertificatePath = Path.Combine(options.DataDirectory, TrustedCertificateFileName);
+        var trustedCertificatePath = Path.Combine(
+            LocalNodeCertificateStore.GetCertificateDirectory(options),
+            TrustedCertificateFileName);
         using var publicCertificate = X509CertificateLoader.LoadCertificateFromFile(currentCertificatePath);
         if (!publicCertificate.RawData.AsSpan().SequenceEqual(certificate.RawData))
         {

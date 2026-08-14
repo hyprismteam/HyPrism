@@ -151,6 +151,7 @@ public class GameInstallationWorkflow : IGameInstallationWorkflow
                 return await HandleInstalledGameFastAsync(
                     versionPath,
                     branch,
+                    selectedInstance.Id,
                     cts.Token,
                     authorizationUriPresenter);
             }
@@ -223,6 +224,7 @@ public class GameInstallationWorkflow : IGameInstallationWorkflow
                     branch,
                     isLatestInstance,
                     versions,
+                    selectedInstance.Id,
                     cts.Token,
                     authorizationUriPresenter);
             }
@@ -286,6 +288,7 @@ public class GameInstallationWorkflow : IGameInstallationWorkflow
     private async Task<DownloadProgress> HandleInstalledGameFastAsync(
         string versionPath,
         string branch,
+        string instanceId,
         CancellationToken ct,
         AuthUriPresenter? authorizationUriPresenter)
     {
@@ -296,7 +299,7 @@ public class GameInstallationWorkflow : IGameInstallationWorkflow
         _progress.ReportDownloadProgress("complete", 100, "launch.detail.launching_game", null, 0, 0);
         try
         {
-            await _gameLauncher.LaunchGameAsync(versionPath, branch, ct, authorizationUriPresenter);
+            await _gameLauncher.LaunchGameAsync(versionPath, branch, ct, authorizationUriPresenter, instanceId);
             return new DownloadProgress { Success = true, Progress = 100 };
         }
         catch (Exception ex)
@@ -310,6 +313,7 @@ public class GameInstallationWorkflow : IGameInstallationWorkflow
     private async Task<DownloadProgress> HandleInstalledGameAsync(
         string versionPath, string branch, bool isLatestInstance,
         List<int> versions,
+        string instanceId,
         CancellationToken ct,
         AuthUriPresenter? authorizationUriPresenter)
     {
@@ -326,7 +330,7 @@ public class GameInstallationWorkflow : IGameInstallationWorkflow
         _progress.ReportDownloadProgress("complete", 100, "launch.detail.launching_game", null, 0, 0);
         try
         {
-            await _gameLauncher.LaunchGameAsync(versionPath, branch, ct, authorizationUriPresenter);
+            await _gameLauncher.LaunchGameAsync(versionPath, branch, ct, authorizationUriPresenter, instanceId);
             return new DownloadProgress { Success = true, Progress = 100 };
         }
         catch (Exception ex)
@@ -632,7 +636,13 @@ public class GameInstallationWorkflow : IGameInstallationWorkflow
 
         try
         {
-            await _gameLauncher.LaunchGameAsync(versionPath, branch, ct, authorizationUriPresenter);
+            var instanceId = _instances.GetInstanceMeta(versionPath)?.Id;
+            await _gameLauncher.LaunchGameAsync(
+                versionPath,
+                branch,
+                ct,
+                authorizationUriPresenter,
+                string.IsNullOrWhiteSpace(instanceId) ? null : instanceId);
 
             var cacheDir = Path.Combine(_appDir, "Cache");
             if (Directory.Exists(cacheDir))

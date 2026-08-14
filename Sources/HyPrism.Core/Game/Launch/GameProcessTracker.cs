@@ -2,83 +2,401 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 using System.Diagnostics;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.IO;
+using System.Text.Json;
+using HyPrism.Core.Infrastructure;
 
 namespace HyPrism.Core.Game.Launch;
 
 /// <summary>
-/// Manages the game process lifecycle including tracking, monitoring, and termination.
-/// Handles detection of running Hytale instances across different platforms
+/// Tracks every game process started by HyPrism and restores still-live entries after restart.
+/// Persisted entries are verified by PID and process start time before they are trusted, which
+/// prevents stale files and PID reuse from being reported as running games.
 /// </summary>
-public class GameProcessTracker : IGameProcessTracker
+public sealed class GameProcessTracker : IGameProcessTracker, IDisposable
 {
+    private const string RegistryFileName = "game-processes.json";
     private readonly object _processLock = new();
-    private Process? _gameProcess;
+    private readonly Dictionary<int, TrackedProcess> _processes = [];
+    private readonly string? _registryPath;
+    private bool _disposed;
+
+    /// <summary>
+    /// Creates an in-memory tracker. This overload is intended for tests and hosts without app storage.
+    /// </summary>
+    public GameProcessTracker()
+    {
+    }
+
+    /// <summary>
+    /// Creates a tracker backed by the launcher runtime registry.
+    /// </summary>
+    public GameProcessTracker(AppPathConfiguration appPath)
+    {
+        ArgumentNullException.ThrowIfNull(appPath);
+        _registryPath = Path.Combine(appPath.AppDir, "Runtime", RegistryFileName);
+        RestoreTrackedProcesses();
+    }
 
     /// <inheritdoc/>
     public event EventHandler? ProcessExited;
 
     /// <inheritdoc/>
-    public void SetGameProcess(Process? p)
+    public event EventHandler<GameProcessExitedEventArgs>? GameProcessExited;
+
+    /// <inheritdoc/>
+    public void SetGameProcess(Process? process)
     {
-        Process? previousProcess;
-        lock (_processLock)
-        {
-            if (ReferenceEquals(_gameProcess, p))
-                return;
-
-            previousProcess = _gameProcess;
-            if (previousProcess != null)
-                previousProcess.Exited -= OnGameProcessExited;
-
-            _gameProcess = p;
-            if (p != null)
-            {
-                p.Exited += OnGameProcessExited;
-                p.EnableRaisingEvents = true;
-            }
-        }
-
-        previousProcess?.Dispose();
-    }
-
-    private void OnGameProcessExited(object? sender, EventArgs e)
-    {
-        if (sender is not Process exitedProcess)
+        if (process is null)
             return;
 
+        TrackGameProcess(process, "legacy", "legacy");
+    }
+
+    /// <inheritdoc/>
+    public void TrackGameProcess(
+        Process process,
+        string instanceId,
+        string profileId,
+        string? officialAccountId = null)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        ArgumentNullException.ThrowIfNull(process);
+        ArgumentException.ThrowIfNullOrWhiteSpace(instanceId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(profileId);
+
+        var info = new GameProcessInfo(
+            process.Id,
+            GetProcessStartTimeUtc(process),
+            instanceId,
+            profileId,
+            officialAccountId,
+            DateTime.UtcNow);
+
         lock (_processLock)
         {
-            if (!ReferenceEquals(_gameProcess, exitedProcess))
-                return;
-
-            exitedProcess.Exited -= OnGameProcessExited;
-            _gameProcess = null;
+            RemoveProcessLocked(process.Id, disposeProcess: false);
+            process.EnableRaisingEvents = true;
+            process.Exited += OnGameProcessExited;
+            _processes.Add(process.Id, new TrackedProcess(process, info));
+            SaveRegistryLocked();
         }
-
-        exitedProcess.Dispose();
-        ProcessExited?.Invoke(this, EventArgs.Empty);
     }
 
     /// <inheritdoc/>
     public Process? GetGameProcess()
     {
         lock (_processLock)
-            return _gameProcess;
+        {
+            return _processes.Values
+                .OrderByDescending(tracked => tracked.Info.RegisteredAtUtc)
+                .Select(tracked => tracked.Process)
+                .FirstOrDefault(IsAlive);
+        }
+    }
+
+    /// <inheritdoc/>
+    public IReadOnlyCollection<GameProcessInfo> GetRunningProcesses()
+    {
+        lock (_processLock)
+        {
+            RemoveExitedProcessesLocked();
+            return _processes.Values
+                .Select(tracked => tracked.Info)
+                .OrderBy(tracked => tracked.RegisteredAtUtc)
+                .ToArray();
+        }
+    }
+
+    /// <inheritdoc/>
+    public bool IsInstanceRunning(string instanceId)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(instanceId);
+        lock (_processLock)
+        {
+            RemoveExitedProcessesLocked();
+            return _processes.Values.Any(tracked =>
+                string.Equals(tracked.Info.InstanceId, instanceId, StringComparison.OrdinalIgnoreCase));
+        }
     }
 
     /// <inheritdoc/>
     public bool IsGameRunning()
     {
-        var gameProcess = GetGameProcess();
-        if (gameProcess is null)
+        lock (_processLock)
+        {
+            RemoveExitedProcessesLocked();
+            return _processes.Count > 0;
+        }
+    }
+
+    /// <inheritdoc/>
+    public bool CheckForRunningGame()
+    {
+        if (IsGameRunning())
+            return true;
+
+        return ScanForOrphanedGameProcess();
+    }
+
+    /// <inheritdoc/>
+    public bool ExitGame()
+    {
+        Process? process;
+        lock (_processLock)
+        {
+            process = _processes.Values
+                .OrderByDescending(tracked => tracked.Info.RegisteredAtUtc)
+                .Select(tracked => tracked.Process)
+                .FirstOrDefault(IsAlive);
+        }
+
+        return StopProcess(process);
+    }
+
+    /// <inheritdoc/>
+    public bool ExitGame(string instanceId)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(instanceId);
+        Process? process;
+        lock (_processLock)
+        {
+            process = _processes.Values
+                .Where(tracked => string.Equals(
+                    tracked.Info.InstanceId,
+                    instanceId,
+                    StringComparison.OrdinalIgnoreCase))
+                .OrderByDescending(tracked => tracked.Info.RegisteredAtUtc)
+                .Select(tracked => tracked.Process)
+                .FirstOrDefault(IsAlive);
+        }
+
+        return StopProcess(process);
+    }
+
+    /// <inheritdoc/>
+    public void Dispose()
+    {
+        if (_disposed)
+            return;
+
+        lock (_processLock)
+        {
+            foreach (var tracked in _processes.Values)
+            {
+                tracked.Process.Exited -= OnGameProcessExited;
+                tracked.Process.Dispose();
+            }
+
+            _processes.Clear();
+            _disposed = true;
+        }
+    }
+
+    private void RestoreTrackedProcesses()
+    {
+        if (string.IsNullOrWhiteSpace(_registryPath) || !File.Exists(_registryPath))
+            return;
+
+        try
+        {
+            var records = JsonSerializer.Deserialize<List<GameProcessInfo>>(File.ReadAllText(_registryPath)) ?? [];
+            foreach (var record in records)
+            {
+                var process = TryRestoreProcess(record);
+                if (process is null)
+                    continue;
+
+                process.EnableRaisingEvents = true;
+                process.Exited += OnGameProcessExited;
+                _processes[process.Id] = new TrackedProcess(process, record);
+            }
+
+            lock (_processLock)
+                SaveRegistryLocked();
+
+            if (_processes.Count > 0)
+                Logger.Info("Game", $"Restored {_processes.Count} running game process(es) from the launch registry");
+        }
+        catch (Exception exception)
+        {
+            Logger.Warning("Game", $"Could not restore the game process registry: {exception.Message}");
+        }
+    }
+
+    private Process? TryRestoreProcess(GameProcessInfo record)
+    {
+        try
+        {
+            var process = Process.GetProcessById(record.ProcessId);
+            if (!IsAlive(process) || GetProcessStartTimeUtc(process) != record.ProcessStartedAtUtc)
+            {
+                process.Dispose();
+                return null;
+            }
+
+            return process;
+        }
+        catch (ArgumentException)
+        {
+            return null;
+        }
+        catch (InvalidOperationException)
+        {
+            return null;
+        }
+        catch (System.ComponentModel.Win32Exception)
+        {
+            return null;
+        }
+    }
+
+    private void OnGameProcessExited(object? sender, EventArgs eventArgs)
+    {
+        if (sender is not Process exitedProcess)
+            return;
+
+        GameProcessInfo? info;
+        lock (_processLock)
+        {
+            if (!_processes.TryGetValue(exitedProcess.Id, out var tracked)
+                || !ReferenceEquals(tracked.Process, exitedProcess))
+            {
+                return;
+            }
+
+            info = tracked.Info;
+            RemoveProcessLocked(exitedProcess.Id, disposeProcess: true);
+            SaveRegistryLocked();
+        }
+
+        GameProcessExited?.Invoke(this, new GameProcessExitedEventArgs(info));
+        ProcessExited?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void RemoveExitedProcessesLocked()
+    {
+        var exited = _processes.Values
+            .Where(tracked => !IsAlive(tracked.Process))
+            .Select(tracked => tracked.Process.Id)
+            .ToArray();
+        if (exited.Length == 0)
+            return;
+
+        foreach (var processId in exited)
+            RemoveProcessLocked(processId, disposeProcess: true);
+        SaveRegistryLocked();
+    }
+
+    private void RemoveProcessLocked(int processId, bool disposeProcess)
+    {
+        if (!_processes.Remove(processId, out var tracked))
+            return;
+
+        tracked.Process.Exited -= OnGameProcessExited;
+        if (disposeProcess)
+            tracked.Process.Dispose();
+    }
+
+    private void SaveRegistryLocked()
+    {
+        if (string.IsNullOrWhiteSpace(_registryPath))
+            return;
+
+        try
+        {
+            var directory = Path.GetDirectoryName(_registryPath)!;
+            Directory.CreateDirectory(directory);
+            var temporaryPath = _registryPath + ".tmp";
+            var content = JsonSerializer.Serialize(
+                _processes.Values.Select(tracked => tracked.Info).ToArray(),
+                new JsonSerializerOptions { WriteIndented = true });
+            File.WriteAllText(temporaryPath, content);
+            File.Move(temporaryPath, _registryPath, overwrite: true);
+        }
+        catch (Exception exception)
+        {
+            Logger.Warning("Game", $"Could not save the game process registry: {exception.Message}");
+        }
+    }
+
+    private bool ScanForOrphanedGameProcess()
+    {
+        try
+        {
+            var potentialProcesses = Process.GetProcessesByName("java")
+                .Concat(Process.GetProcessesByName("javaw"))
+                .Concat(Process.GetProcessesByName("java.real"))
+                .Concat(Process.GetProcessesByName("HytaleClient"))
+                .ToArray();
+
+            try
+            {
+                foreach (var process in potentialProcesses)
+                {
+                    try
+                    {
+                        if ((!string.IsNullOrEmpty(process.MainWindowTitle)
+                                && process.MainWindowTitle.Contains("Hytale", StringComparison.OrdinalIgnoreCase))
+                            || ProcessCommandLineContainsHytale(process.Id))
+                        {
+                            TrackGameProcess(process, "external", "external");
+                            return true;
+                        }
+                    }
+                    catch
+                    {
+                        // Process inspection can fail for a process that is exiting or belongs to another user.
+                    }
+                }
+            }
+            finally
+            {
+                foreach (var process in potentialProcesses)
+                {
+                    lock (_processLock)
+                    {
+                        if (!_processes.Values.Any(tracked => ReferenceEquals(tracked.Process, process)))
+                            process.Dispose();
+                    }
+                }
+            }
+        }
+        catch
+        {
+            // Process enumeration is best effort only.
+        }
+
+        return false;
+    }
+
+    private static bool ProcessCommandLineContainsHytale(int processId)
+    {
+        if (!OperatingSystem.IsLinux())
             return false;
 
         try
         {
-            return !gameProcess.HasExited;
+            var commandLinePath = $"/proc/{processId}/cmdline";
+            return File.Exists(commandLinePath)
+                && File.ReadAllText(commandLinePath).Contains("Hytale", StringComparison.OrdinalIgnoreCase);
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static DateTime GetProcessStartTimeUtc(Process process)
+        => process.StartTime.ToUniversalTime();
+
+    private static bool IsAlive(Process? process)
+    {
+        if (process is null)
+            return false;
+
+        try
+        {
+            return !process.HasExited;
         }
         catch (InvalidOperationException)
         {
@@ -86,100 +404,14 @@ public class GameProcessTracker : IGameProcessTracker
         }
     }
 
-    /// <inheritdoc/>
-    public bool CheckForRunningGame()
+    private static bool StopProcess(Process? process)
     {
-        if (IsGameRunning()) return true;
-
-        return ScanForOrphanedGameProcess();
-    }
-
-    private bool ScanForOrphanedGameProcess()
-    {
-        try
-        {
-            // Scan for java processes that look like Hytale
-            // Common names: "java", "javaw", "HytaleClient", "java.real" (wrapper)
-            var potentialProcesses = Process.GetProcessesByName("java")
-                .Concat(Process.GetProcessesByName("javaw"))
-                .Concat(Process.GetProcessesByName("java.real")) // Wrapper script target
-                .Concat(Process.GetProcessesByName("HytaleClient"))
-                .ToArray();
-
-            try
-            {
-                foreach (var p in potentialProcesses)
-                {
-                    try
-                    {
-                        // 1. Check Window Title (Works well on Windows, sometime on Linux/macOS)
-                        if (!string.IsNullOrEmpty(p.MainWindowTitle) &&
-                            p.MainWindowTitle.Contains("Hytale"))
-                        {
-                            SetGameProcess(p);
-                            return true;
-                        }
-
-                        // 2. Check Command Line (More reliable on Linux)
-                        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-                        {
-                            var cmdLine = GetLinuxCommandLine(p.Id);
-                            if (!string.IsNullOrEmpty(cmdLine) && cmdLine.Contains("Hytale"))
-                            {
-                                SetGameProcess(p);
-                                return true;
-                            }
-                        }
-                    }
-                    catch { /* Ignore access denied / exited process */ }
-                }
-            }
-            finally
-            {
-                // Dispose all processes that we didn't keep
-                foreach (var p in potentialProcesses)
-                {
-                    if (p != GetGameProcess())
-                    {
-                        try { p.Dispose(); } catch { }
-                    }
-                }
-            }
-        }
-        catch { /* Ignore enumeration errors */ }
-
-        return false;
-    }
-
-    private string? GetLinuxCommandLine(int pid)
-    {
-        try
-        {
-            string path = $"/proc/{pid}/cmdline";
-            if (File.Exists(path))
-            {
-                // cmdline arguments are null-terminated strings
-                var text = File.ReadAllText(path);
-                return text.Replace("\0", " ");
-            }
-        }
-        catch { }
-        return null;
-    }
-
-    /// <inheritdoc/>
-    public bool ExitGame()
-    {
-        var gameProcess = GetGameProcess();
-        if (gameProcess is null)
+        if (!IsAlive(process))
             return false;
 
         try
         {
-            if (gameProcess.HasExited)
-                return false;
-
-            gameProcess.Kill(entireProcessTree: true);
+            process!.Kill(entireProcessTree: true);
             return true;
         }
         catch (InvalidOperationException)
@@ -191,4 +423,6 @@ public class GameProcessTracker : IGameProcessTracker
             return false;
         }
     }
+
+    private sealed record TrackedProcess(Process Process, GameProcessInfo Info);
 }

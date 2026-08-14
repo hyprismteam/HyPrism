@@ -246,7 +246,7 @@ public sealed class InstanceContentViewModelTests
                     ? launchCompletion.Task
                     : replacementLaunchCompletion.Task;
             });
-        gameProcess.Setup(service => service.ExitGame()).Returns(true);
+        gameProcess.Setup(service => service.ExitGame(instance.Id)).Returns(true);
 
         using var viewModel = new MainWindowViewModel(
             instances.Object,
@@ -274,11 +274,11 @@ public sealed class InstanceContentViewModelTests
         Assert.Equal("Running", viewModel.ManagedInstanceActionStatusText);
 
         await viewModel.RunManagedInstanceCommand.ExecuteAsync(null);
-        gameProcess.Verify(service => service.ExitGame(), Times.Never);
+        gameProcess.Verify(service => service.ExitGame(instance.Id), Times.Never);
 
         viewModel.ArmManagedInstanceCancellation();
         await viewModel.RunManagedInstanceCommand.ExecuteAsync(null);
-        gameProcess.Verify(service => service.ExitGame(), Times.Once);
+        gameProcess.Verify(service => service.ExitGame(instance.Id), Times.Once);
 
         progress.Raise(service => service.GameStateChanged += null!, "stopped", 0);
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
