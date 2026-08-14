@@ -12,9 +12,9 @@ description: Ответственность и размещение публич
 | Конфигурация | `IConfigStore` | сохранение общей конфигурации лаунчера и игры |
 | Прогресс | `IProgressReporter` | события загрузки, состояния игры и ошибок |
 | Версии | `IGameVersionCatalog`, `IVersionSource`, `IMirrorCatalog`, `IMirrorDiscovery` | списки версий, выбор источников, хранение и обнаружение зеркал, кеш и патчи |
-| Экземпляры | `IInstanceRepository`, `IInstanceMigrator` | пути, метаданные, выбор, импорт и миграция |
+| Экземпляры | `IInstanceRepository`, `IInstanceMigrator` | пути, метаданные, сохраняемый порядок, выбор, импорт и миграция |
 | Загрузка | `IFileDownloader`, `IPatchManager`, `IButlerClient` | передача, проверка файлов, патчинг и Butler |
-| Запуск | `IGameInstallationWorkflow`, `IGameLaunchCoordinator`, `IGameLauncher` | путь от выбранного экземпляра до процесса игры |
+| Запуск | `IGameInstallationWorkflow`, `IGameLaunchCoordinator`, `IGameLauncher` | путь от выбранного или явно указанного экземпляра до процесса игры |
 | Процесс | `IGameProcessTracker` | отслеживание и корректное завершение процесса |
 | Моды | `IModManager` | поиск, установка, импорт, обновления и changelog |
 | Авторизация | `IHytaleAuthenticator`, `GameSessionAuthenticator` | официальные сессии, OAuth-запросы и игровые токены |

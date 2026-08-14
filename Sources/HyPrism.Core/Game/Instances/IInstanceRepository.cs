@@ -197,6 +197,12 @@ public interface IInstanceRepository
     List<InstanceInfo> GetCachedInstances();
 
     /// <summary>
+    /// Persists the display order of the cached instances
+    /// </summary>
+    /// <param name="instanceIds">Instance IDs in the desired display order</param>
+    void SetInstanceOrder(IReadOnlyList<string> instanceIds);
+
+    /// <summary>
     /// Finds an instance by its ID
     /// </summary>
     /// <param name="instanceId">The instance ID</param>

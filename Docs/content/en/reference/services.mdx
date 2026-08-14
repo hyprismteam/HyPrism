@@ -12,9 +12,9 @@ description: Responsibilities and placement of the public HyPrism.Core contracts
 | Configuration | `IConfigStore` | shared launcher and game configuration persistence |
 | Progress | `IProgressReporter` | download, game state, and error events |
 | Versions | `IGameVersionCatalog`, `IVersionSource`, `IMirrorCatalog`, `IMirrorDiscovery` | version lists, source selection, mirror persistence and discovery, cache, and patches |
-| Instances | `IInstanceRepository`, `IInstanceMigrator` | paths, metadata, selection, import, and migration |
+| Instances | `IInstanceRepository`, `IInstanceMigrator` | paths, metadata, persisted ordering, selection, import, and migration |
 | Downloads | `IFileDownloader`, `IPatchManager`, `IButlerClient` | transfer, file size checks, patching, and Butler |
-| Launch | `IGameInstallationWorkflow`, `IGameLaunchCoordinator`, `IGameLauncher` | orchestration from selection to process start |
+| Launch | `IGameInstallationWorkflow`, `IGameLaunchCoordinator`, `IGameLauncher` | orchestration from a selected or explicitly addressed instance to process start |
 | Process | `IGameProcessTracker` | process tracking and controlled exit |
 | Mods | `IModManager` | search, install, import, update checks, and changelog retrieval |
 | Authentication | `IHytaleAuthenticator`, `GameSessionAuthenticator` | official sessions, OAuth challenges, and game tokens |

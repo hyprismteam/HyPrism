@@ -86,8 +86,22 @@ public class GameInstallationWorkflow : IGameInstallationWorkflow
     private Config _config => _configStore.Configuration;
 
     /// <inheritdoc/>
-    public async Task<DownloadProgress> DownloadAndLaunchAsync(
+    public Task<DownloadProgress> DownloadAndLaunchAsync(
         AuthUriPresenter? authorizationUriPresenter = null)
+        => DownloadAndLaunchCoreAsync(null, authorizationUriPresenter);
+
+    /// <inheritdoc/>
+    public Task<DownloadProgress> DownloadAndLaunchInstanceAsync(
+        string instanceId,
+        AuthUriPresenter? authorizationUriPresenter = null)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(instanceId);
+        return DownloadAndLaunchCoreAsync(instanceId, authorizationUriPresenter);
+    }
+
+    private async Task<DownloadProgress> DownloadAndLaunchCoreAsync(
+        string? instanceId,
+        AuthUriPresenter? authorizationUriPresenter)
     {
         CancellationTokenSource cts;
         lock (_ctsLock)
@@ -105,11 +119,13 @@ public class GameInstallationWorkflow : IGameInstallationWorkflow
         {
             _progress.ReportDownloadProgress("preparing", 0, "launch.detail.preparing_session", null, 0, 0);
 
-            var selectedInstance = _instances.GetSelectedInstance();
+            var selectedInstance = string.IsNullOrWhiteSpace(instanceId)
+                ? _instances.GetSelectedInstance()
+                : _instances.FindInstanceById(instanceId);
             if (selectedInstance == null)
             {
-                Logger.Error("Download", "No instance selected. Select an instance before launching");
-                return new DownloadProgress { Error = "No instance selected" };
+                Logger.Error("Download", "No target instance is available for launch");
+                return new DownloadProgress { Error = "No target instance" };
             }
 
             var branch = LauncherUtilities.NormalizeVersionType(selectedInstance.Branch);

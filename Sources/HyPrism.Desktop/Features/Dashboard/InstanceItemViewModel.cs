@@ -8,8 +8,7 @@ public sealed record InstanceItemViewModel(
     string Name,
     string Version,
     string Branch,
-    bool IsInstalled,
-    bool IsSelected)
+    bool IsInstalled)
 {
     public string Initial => string.IsNullOrWhiteSpace(Name)
         ? "H"

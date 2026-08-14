@@ -15,4 +15,12 @@ public interface IExternalUriLauncher
     /// <param name="cancellationToken">Token checked before the platform request is dispatched</param>
     /// <returns><see langword="true"/> when the operating system accepts the request; otherwise, <see langword="false"/></returns>
     Task<bool> LaunchAsync(Uri uri, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Requests that the operating system open a local directory
+    /// </summary>
+    /// <param name="path">Absolute directory path to open</param>
+    /// <param name="cancellationToken">Token checked before the platform request is dispatched</param>
+    /// <returns><see langword="true"/> when the operating system accepts the request; otherwise, <see langword="false"/></returns>
+    Task<bool> LaunchDirectoryAsync(string path, CancellationToken cancellationToken = default);
 }

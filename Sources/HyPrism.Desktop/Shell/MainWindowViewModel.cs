@@ -57,6 +57,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     private readonly HttpClient _httpClient;
     private readonly StringLocalizer _localizer;
     private InstanceInfo? _selectedInstance;
+    private InstanceInfo? _managedInstance;
     private readonly List<NewsItemViewModel> _allNews = [];
     private readonly Dictionary<string, NewsArticleViewModel> _articleViewModelCache =
         new(StringComparer.OrdinalIgnoreCase);
@@ -66,6 +67,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     private CancellationTokenSource _compactNewsTransitionCancellation = new();
     private CancellationTokenSource? _instanceVersionsCancellation;
     private DateTime? _gameSessionStartedAtUtc;
+    private string? _gameSessionInstanceId;
     private string? _modsLoadedForInstanceId;
     private string? _worldsLoadedForInstanceId;
     private bool _hasLoadedNews;
@@ -109,6 +111,21 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     private string _selectedInstancePlayTime = string.Empty;
 
     [ObservableProperty]
+    private string _managedInstanceName = string.Empty;
+
+    [ObservableProperty]
+    private string _managedInstanceState = string.Empty;
+
+    [ObservableProperty]
+    private string _managedInstanceBranch = string.Empty;
+
+    [ObservableProperty]
+    private string _managedInstanceVersion = string.Empty;
+
+    [ObservableProperty]
+    private string _managedInstancePlayTime = string.Empty;
+
+    [ObservableProperty]
     private Bitmap? _dashboardBackground;
 
     [ObservableProperty]
@@ -121,9 +138,13 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     private bool _canCancelActivity;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanRunManagedInstanceAction))]
+    [NotifyPropertyChangedFor(nameof(CanDeleteManagedInstance))]
     private bool _isBusy;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanRunManagedInstanceAction))]
+    [NotifyPropertyChangedFor(nameof(CanDeleteManagedInstance))]
     private bool _isGameRunning;
 
     [ObservableProperty]
@@ -315,7 +336,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
 
         CurrentPageTitle = DashboardLabel;
         RefreshInstances();
-        RefreshSelectedInstanceContent();
+        RefreshManagedInstanceContent();
     }
 
     public ObservableCollection<InstanceItemViewModel> AllInstances { get; } = [];
@@ -395,6 +416,15 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     public string EnabledLabel => _localizer["instances.mods.enabled"];
     public string DisabledLabel => _localizer["instances.mods.disabled"];
     public string InstanceContentBackLabel => _localizer["instances.content.back"];
+    public string ManagedInstancePlayLabel => _localizer["instances.actions.play"];
+    public string ManagedInstanceInstallLabel => _localizer["instances.actions.install"];
+    public string ManagedInstanceOpenFolderLabel => _localizer["instances.actions.openFolder"];
+    public string ManagedInstanceDeleteLabel => _localizer["instances.actions.delete"];
+    public string ManagedInstanceDeleteTitle => _localizer["instances.actions.deleteTitle"];
+    public string ManagedInstanceDeleteHint =>
+        _localizer.Format("instances.actions.deleteHint", ManagedInstanceName);
+    public string ManagedInstanceActionLabel =>
+        IsManagedInstanceInstalled ? ManagedInstancePlayLabel : ManagedInstanceInstallLabel;
     public string InstanceStatusInfoLabel => _localizer["instances.info.status"];
     public string InstancePlayTimeInfoLabel => _localizer["instances.info.playtime"];
     public string InstanceModsInfoLabel => _localizer["instances.info.mods"];
@@ -410,7 +440,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         "worlds" => InstanceWorldsTitle,
         "console" => InstanceConsoleTitle,
         "logs" => InstanceLogsTitle,
-        _ => SelectedInstanceName
+        _ => ManagedInstanceName
     };
 
     public bool IsDashboard => CurrentPage == DashboardPage;
@@ -421,10 +451,17 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     public bool IsPlaceholderPage => !IsDashboard && !IsInstances && !IsNews && !IsSettings;
     public bool HasInstances => AllInstances.Count > 0;
     public bool HasSelectedInstance => _selectedInstance is not null;
+    public bool HasManagedInstance => _managedInstance is not null;
     public bool HasAvailableInstanceVersions => AvailableInstanceVersions.Count > 0;
     public bool HasInstanceCreationError => !string.IsNullOrWhiteSpace(InstanceCreationError);
     public bool HasInstanceContentError => !string.IsNullOrWhiteSpace(InstanceContentError);
     public bool IsSelectedInstanceInstalled => _selectedInstance?.IsInstalled == true;
+    public bool IsManagedInstanceInstalled => _managedInstance?.IsInstalled == true;
+    public bool CanRunManagedInstanceAction =>
+        _managedInstance is not null && !IsBusy && !IsGameRunning;
+    public bool CanOpenManagedInstanceFolder => _managedInstance is not null;
+    public bool CanDeleteManagedInstance =>
+        _managedInstance is not null && !IsBusy && !IsGameRunning;
     public bool IsInstanceOverviewSection => string.IsNullOrEmpty(InstanceSection);
     public bool IsInstanceModsSection => InstanceSection == "mods";
     public bool IsInstanceBrowseSection => InstanceSection == "browse";
@@ -435,11 +472,11 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     public bool HasModCatalogItems => ModCatalogItems.Count > 0;
     public bool HasInstanceWorlds => InstanceWorlds.Count > 0;
     public bool IsInstalledModsEmpty =>
-        IsSelectedInstanceInstalled && !IsInstanceModsLoading && !HasInstalledMods;
+        IsManagedInstanceInstalled && !IsInstanceModsLoading && !HasInstalledMods;
     public bool IsModCatalogEmpty =>
-        IsSelectedInstanceInstalled && !IsModCatalogLoading && !HasModCatalogItems;
+        IsManagedInstanceInstalled && !IsModCatalogLoading && !HasModCatalogItems;
     public bool IsInstanceWorldsEmpty =>
-        IsSelectedInstanceInstalled && !IsInstanceWorldsLoading && !HasInstanceWorlds;
+        IsManagedInstanceInstalled && !IsInstanceWorldsLoading && !HasInstanceWorlds;
     public bool CanCreateInstance => !IsInstanceVersionsLoading && SelectedNewInstanceVersion is not null;
     public bool IsCreateReleaseBranch =>
         string.Equals(NewInstanceBranch, "release", StringComparison.OrdinalIgnoreCase);
@@ -469,6 +506,29 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     public bool IsCompactNewsLayout => !IsWideNewsLayout;
     public bool HasMoreNews => _canLoadMoreNews && !IsLoadingMoreNews && _allNews.Count < MaximumNewsCount;
     public bool CanShowLoadMore => _canLoadMoreNews && _allNews.Count < MaximumNewsCount;
+
+    public void MoveInstance(string instanceId, int targetIndex)
+    {
+        var sourceIndex = -1;
+        for (var index = 0; index < AllInstances.Count; index++)
+        {
+            if (string.Equals(AllInstances[index].Id, instanceId, StringComparison.Ordinal))
+            {
+                sourceIndex = index;
+                break;
+            }
+        }
+
+        if (sourceIndex < 0 || AllInstances.Count < 2)
+            return;
+
+        targetIndex = Math.Clamp(targetIndex, 0, AllInstances.Count - 1);
+        if (sourceIndex == targetIndex)
+            return;
+
+        AllInstances.Move(sourceIndex, targetIndex);
+        _instances.SetInstanceOrder(AllInstances.Select(instance => instance.Id).ToArray());
+    }
 
     [RelayCommand]
     private void Navigate(string? page)
@@ -549,10 +609,11 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
                 NewInstanceBranch,
                 version,
                 $"{FormatBranch(NewInstanceBranch)} {FormatVersion(version)}");
-            _instances.SetSelectedInstance(instance.Id);
-            _selectedInstance = _instances.FindInstanceById(instance.Id);
+            _managedInstance = _instances.FindInstanceById(instance.Id);
             IsInstanceCreatorOpen = false;
+            InstanceSection = string.Empty;
             RefreshInstances();
+            RefreshManagedInstanceContent();
         }
         catch (Exception ex)
         {
@@ -561,10 +622,10 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     }
 
     [RelayCommand]
-    private void SelectDashboardInstance(string? instanceId)
+    private void OpenInstanceDetails(string? instanceId)
     {
-        if (string.IsNullOrWhiteSpace(instanceId) || IsBusy || IsGameRunning ||
-            string.Equals(_selectedInstance?.Id, instanceId, StringComparison.Ordinal))
+        if (string.IsNullOrWhiteSpace(instanceId) ||
+            string.Equals(_managedInstance?.Id, instanceId, StringComparison.Ordinal))
         {
             return;
         }
@@ -575,11 +636,11 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         if (instance is null)
             return;
 
-        _instances.SetSelectedInstance(instance.Id);
-        _selectedInstance = instance;
+        RefreshInstanceInstalledState(instance);
+        _managedInstance = instance;
         InstanceSection = string.Empty;
-        RefreshInstances();
-        RefreshSelectedInstanceContent();
+        UpdateManagedInstancePresentation();
+        RefreshManagedInstanceContent();
     }
 
     [RelayCommand]
@@ -593,12 +654,12 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         InstanceContentError = string.Empty;
 
         if (section == "mods" && !IsInstanceModsLoading &&
-            !string.Equals(_modsLoadedForInstanceId, _selectedInstance?.Id, StringComparison.Ordinal))
+            !string.Equals(_modsLoadedForInstanceId, _managedInstance?.Id, StringComparison.Ordinal))
             _ = LoadInstalledModsAsync();
         else if (section == "browse" && ModCatalogItems.Count == 0)
             _ = SearchModCatalogAsync();
         else if (section == "worlds" && !IsInstanceWorldsLoading &&
-                 !string.Equals(_worldsLoadedForInstanceId, _selectedInstance?.Id, StringComparison.Ordinal))
+                 !string.Equals(_worldsLoadedForInstanceId, _managedInstance?.Id, StringComparison.Ordinal))
             _ = LoadInstanceWorldsAsync();
     }
 
@@ -625,12 +686,12 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     private async Task InstallModAsync(ModCatalogItemViewModel? item)
     {
         if (item is null || item.IsInstalling || item.IsInstalled ||
-            _modManager is null || _selectedInstance?.IsInstalled != true)
+            _modManager is null || _managedInstance?.IsInstalled != true)
         {
             return;
         }
 
-        var instancePath = _instances.GetInstancePathById(_selectedInstance.Id);
+        var instancePath = _instances.GetInstancePathById(_managedInstance.Id);
         if (string.IsNullOrWhiteSpace(instancePath))
             return;
 
@@ -659,6 +720,75 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         {
             item.IsInstalling = false;
         }
+    }
+
+    [RelayCommand]
+    private async Task RunManagedInstanceAsync()
+    {
+        if (_managedInstance is not { } instance || !CanRunManagedInstanceAction)
+            return;
+
+        IsBusy = true;
+        CanCancelActivity = !instance.IsInstalled;
+        IsActivityVisible = true;
+        ActivityProgress = 0;
+        ActivityProgressText = "0%";
+        ActivityTitle = _localizer["common.loading"];
+        ActivityDetail = instance.Name;
+        _gameSessionInstanceId = instance.Id;
+
+        try
+        {
+            if (instance.IsInstalled)
+            {
+                await _gameLaunchCoordinator.LaunchAsync(
+                    instance.Id,
+                    authorizationUriPresenter: _uriLauncher.LaunchAsync);
+            }
+            else
+            {
+                var result = await _installationWorkflow.DownloadAndLaunchInstanceAsync(
+                    instance.Id,
+                    _uriLauncher.LaunchAsync);
+                if (!result.Success && !result.Cancelled && !string.IsNullOrWhiteSpace(result.Error))
+                    ShowError(result.Error);
+            }
+        }
+        finally
+        {
+            IsBusy = false;
+            CanCancelActivity = false;
+            RefreshInstances();
+        }
+    }
+
+    [RelayCommand]
+    private async Task OpenManagedInstanceFolderAsync()
+    {
+        if (_managedInstance is null)
+            return;
+
+        var path = _instances.GetInstancePathById(_managedInstance.Id);
+        if (!string.IsNullOrWhiteSpace(path))
+            await _uriLauncher.LaunchDirectoryAsync(path);
+    }
+
+    [RelayCommand]
+    private void DeleteManagedInstance()
+    {
+        if (_managedInstance is not { } instance || !CanDeleteManagedInstance)
+            return;
+
+        if (!_instances.DeleteGameById(instance.Id))
+        {
+            ShowError(_localizer["instances.deleteFailed"]);
+            return;
+        }
+
+        _managedInstance = null;
+        InstanceSection = string.Empty;
+        RefreshInstances();
+        RefreshManagedInstanceContent();
     }
 
     [RelayCommand]
@@ -691,6 +821,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         ActivityProgressText = "0%";
         ActivityTitle = _localizer["common.loading"];
         ActivityDetail = _selectedInstance.Name;
+        _gameSessionInstanceId = _selectedInstance.Id;
         UpdateSelectedInstancePresentation();
 
         try
@@ -728,29 +859,21 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         {
             _instances.SyncInstancesWithConfig();
             var items = _instances.GetCachedInstances();
-            _selectedInstance = _instances.GetSelectedInstance()
-                ?? items.FirstOrDefault(instance => instance.IsInstalled)
-                ?? items.FirstOrDefault();
-
-            if (_selectedInstance is not null && _instances.GetSelectedInstance() is null)
-                _instances.SetSelectedInstance(_selectedInstance.Id);
+            var selectedInstanceId = _instances.GetSelectedInstance()?.Id;
+            var managedInstanceId = _managedInstance?.Id;
 
             AllInstances.Clear();
             var presentedInstances = items
-                .OrderByDescending(instance => instance.Id == _selectedInstance?.Id)
                 .Select(instance =>
                 {
-                    var path = _instances.GetInstancePathById(instance.Id);
-                    var installed = !string.IsNullOrWhiteSpace(path) && _instances.IsClientPresent(path);
-                    instance.IsInstalled = installed;
+                    RefreshInstanceInstalledState(instance);
 
                     return new InstanceItemViewModel(
                         instance.Id,
                         instance.Name,
                         FormatVersion(instance.Version),
                         FormatBranch(instance.Branch),
-                        installed,
-                        instance.Id == _selectedInstance?.Id);
+                        instance.IsInstalled);
                 })
                 .ToList();
 
@@ -759,17 +882,24 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
                 AllInstances.Add(item);
             }
 
+            _selectedInstance = items.FirstOrDefault(instance =>
+                string.Equals(instance.Id, selectedInstanceId, StringComparison.Ordinal));
+            _managedInstance = items.FirstOrDefault(instance =>
+                    string.Equals(instance.Id, managedInstanceId, StringComparison.Ordinal))
+                ?? items.FirstOrDefault();
+
             OnPropertyChanged(nameof(HasInstances));
             OnPropertyChanged(nameof(HasSelectedInstance));
+            OnPropertyChanged(nameof(HasManagedInstance));
 
             if (_selectedInstance is not null)
-            {
-                var path = _instances.GetInstancePathById(_selectedInstance.Id);
-                _selectedInstance.IsInstalled =
-                    !string.IsNullOrWhiteSpace(path) && _instances.IsClientPresent(path);
-            }
+                RefreshInstanceInstalledState(_selectedInstance);
+
+            if (_managedInstance is not null)
+                RefreshInstanceInstalledState(_managedInstance);
 
             UpdateSelectedInstancePresentation();
+            UpdateManagedInstancePresentation();
         }
         catch (Exception ex)
         {
@@ -777,7 +907,14 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         }
     }
 
-    private void RefreshSelectedInstanceContent()
+    private void RefreshInstanceInstalledState(InstanceInfo instance)
+    {
+        var path = _instances.GetInstancePathById(instance.Id);
+        instance.IsInstalled =
+            !string.IsNullOrWhiteSpace(path) && _instances.IsClientPresent(path);
+    }
+
+    private void RefreshManagedInstanceContent()
     {
         InstalledMods.Clear();
         VisibleInstalledMods.Clear();
@@ -788,7 +925,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         InstanceContentError = string.Empty;
         NotifyInstanceContentCollectionsChanged();
 
-        if (_selectedInstance?.IsInstalled != true)
+        if (_managedInstance?.IsInstalled != true)
             return;
 
         _ = LoadInstalledModsAsync();
@@ -800,10 +937,10 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
 
     private async Task LoadInstalledModsAsync()
     {
-        if (_modManager is null || _selectedInstance?.IsInstalled != true)
+        if (_modManager is null || _managedInstance?.IsInstalled != true)
             return;
 
-        var instanceId = _selectedInstance.Id;
+        var instanceId = _managedInstance.Id;
         var instancePath = _instances.GetInstancePathById(instanceId);
         if (string.IsNullOrWhiteSpace(instancePath))
             return;
@@ -813,7 +950,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         try
         {
             var mods = await Task.Run(() => _modManager.GetInstanceInstalledMods(instancePath));
-            if (!string.Equals(_selectedInstance?.Id, instanceId, StringComparison.Ordinal))
+            if (!string.Equals(_managedInstance?.Id, instanceId, StringComparison.Ordinal))
                 return;
 
             InstalledMods.Clear();
@@ -843,16 +980,16 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
 
     private async Task LoadModCatalogAsync(string query)
     {
-        if (_modManager is null || _selectedInstance?.IsInstalled != true)
+        if (_modManager is null || _managedInstance?.IsInstalled != true)
             return;
 
-        var instanceId = _selectedInstance.Id;
+        var instanceId = _managedInstance.Id;
         IsModCatalogLoading = true;
         InstanceContentError = string.Empty;
         try
         {
             var result = await _modManager.SearchModsAsync(query.Trim(), 0, 24, [], 2, 1);
-            if (!string.Equals(_selectedInstance?.Id, instanceId, StringComparison.Ordinal))
+            if (!string.Equals(_managedInstance?.Id, instanceId, StringComparison.Ordinal))
                 return;
 
             var instancePath = _instances.GetInstancePathById(instanceId);
@@ -902,10 +1039,10 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
 
     private async Task LoadInstanceWorldsAsync()
     {
-        if (_selectedInstance?.IsInstalled != true)
+        if (_managedInstance?.IsInstalled != true)
             return;
 
-        var instanceId = _selectedInstance.Id;
+        var instanceId = _managedInstance.Id;
         var instancePath = _instances.GetInstancePathById(instanceId);
         if (string.IsNullOrWhiteSpace(instancePath))
             return;
@@ -915,7 +1052,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         try
         {
             var worlds = await Task.Run(() => ReadInstanceWorlds(instancePath));
-            if (!string.Equals(_selectedInstance?.Id, instanceId, StringComparison.Ordinal))
+            if (!string.Equals(_managedInstance?.Id, instanceId, StringComparison.Ordinal))
                 return;
 
             InstanceWorlds.Clear();
@@ -1487,6 +1624,38 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         NotifyPrimaryActionStateChanged();
     }
 
+    private void UpdateManagedInstancePresentation()
+    {
+        OnPropertyChanged(nameof(IsManagedInstanceInstalled));
+        OnPropertyChanged(nameof(CanRunManagedInstanceAction));
+        OnPropertyChanged(nameof(CanOpenManagedInstanceFolder));
+        OnPropertyChanged(nameof(CanDeleteManagedInstance));
+        OnPropertyChanged(nameof(ManagedInstanceActionLabel));
+        OnPropertyChanged(nameof(ManagedInstanceDeleteHint));
+        OnPropertyChanged(nameof(IsInstalledModsEmpty));
+        OnPropertyChanged(nameof(IsModCatalogEmpty));
+        OnPropertyChanged(nameof(IsInstanceWorldsEmpty));
+        OnPropertyChanged(nameof(InstanceSectionTitle));
+
+        if (_managedInstance is null)
+        {
+            ManagedInstanceName = string.Empty;
+            ManagedInstanceState = _localizer["instances.status.unknown"];
+            ManagedInstanceBranch = string.Empty;
+            ManagedInstanceVersion = string.Empty;
+            ManagedInstancePlayTime = FormatPlayTime(0);
+            return;
+        }
+
+        ManagedInstanceName = _managedInstance.Name;
+        ManagedInstanceBranch = FormatBranch(_managedInstance.Branch);
+        ManagedInstanceVersion = FormatVersion(_managedInstance.Version);
+        ManagedInstancePlayTime = FormatPlayTime(GetManagedInstancePlayTimeSeconds());
+        ManagedInstanceState = _managedInstance.IsInstalled
+            ? _localizer["instances.status.ready"]
+            : _localizer["instances.status.notInstalled"];
+    }
+
     private void NotifyPrimaryActionStateChanged()
     {
         OnPropertyChanged(nameof(IsPrimarySelectAction));
@@ -1530,6 +1699,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         if (!IsInstanceOverviewSection)
             DisplayedInstanceSectionTitle = InstanceSectionTitle;
         UpdateSelectedInstancePresentation();
+        UpdateManagedInstancePresentation();
         OnPropertyChanged(string.Empty);
     }
 
@@ -1547,6 +1717,18 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
             return 0;
 
         var instancePath = _instances.GetInstancePathById(_selectedInstance.Id);
+        if (string.IsNullOrWhiteSpace(instancePath))
+            return 0;
+
+        return Math.Max(0, _instances.GetInstanceMeta(instancePath)?.PlayTimeSeconds ?? 0);
+    }
+
+    private long GetManagedInstancePlayTimeSeconds()
+    {
+        if (_managedInstance is null)
+            return 0;
+
+        var instancePath = _instances.GetInstancePathById(_managedInstance.Id);
         if (string.IsNullOrWhiteSpace(instancePath))
             return 0;
 
@@ -1586,7 +1768,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
             if (state == "started")
                 _gameSessionStartedAtUtc ??= DateTime.UtcNow;
             else if (state == "stopped")
-                RecordSelectedInstancePlayTime();
+                RecordGameSessionPlayTime();
 
             IsGameRunning = state is "started" or "running";
             if (state is "started" or "running" or "stopped")
@@ -1596,13 +1778,16 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         });
     }
 
-    private void RecordSelectedInstancePlayTime()
+    private void RecordGameSessionPlayTime()
     {
-        if (_gameSessionStartedAtUtc is not { } startedAt || _selectedInstance is null)
+        if (_gameSessionStartedAtUtc is not { } startedAt ||
+            string.IsNullOrWhiteSpace(_gameSessionInstanceId))
             return;
 
         _gameSessionStartedAtUtc = null;
-        var instancePath = _instances.GetInstancePathById(_selectedInstance.Id);
+        var instanceId = _gameSessionInstanceId;
+        _gameSessionInstanceId = null;
+        var instancePath = _instances.GetInstancePathById(instanceId);
         if (string.IsNullOrWhiteSpace(instancePath))
             return;
 

@@ -25,19 +25,21 @@ public sealed class GameLaunchCoordinatorTests
         AuthUriPresenter? forwardedUriLauncher = null;
 
         _gameProcess.Setup(service => service.IsGameRunning()).Returns(false);
-        _instances.Setup(service => service.GetSelectedInstance()).Returns(instance);
+        _instances.Setup(service => service.FindInstanceById(instance.Id)).Returns(instance);
         _instances.Setup(service => service.GetInstancePathById(instance.Id)).Returns("/game");
         _instances.Setup(service => service.IsClientPresent("/game")).Returns(true);
         _gameSession
-            .Setup(service => service.DownloadAndLaunchAsync(It.IsAny<AuthUriPresenter?>()))
-            .Callback<AuthUriPresenter?>(launcher => forwardedUriLauncher = launcher)
+            .Setup(service => service.DownloadAndLaunchInstanceAsync(
+                instance.Id,
+                It.IsAny<AuthUriPresenter?>()))
+            .Callback<string, AuthUriPresenter?>((_, launcher) => forwardedUriLauncher = launcher)
             .ReturnsAsync(new DownloadProgress { Success = true });
 
         await CreateSubject().LaunchAsync(
             instance.Id,
             authorizationUriPresenter: uriLauncher);
 
-        _instances.Verify(service => service.SetSelectedInstance(instance.Id), Times.Once);
+        _instances.Verify(service => service.SetSelectedInstance(instance.Id), Times.Never);
         Assert.Same(uriLauncher, forwardedUriLauncher);
     }
 

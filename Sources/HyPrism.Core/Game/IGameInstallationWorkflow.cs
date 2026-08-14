@@ -21,6 +21,16 @@ public interface IGameInstallationWorkflow : IDisposable
         AuthUriPresenter? authorizationUriPresenter = null);
 
     /// <summary>
+    /// Downloads or updates a specific instance and launches it upon completion
+    /// </summary>
+    /// <param name="instanceId">Stable identifier of the target instance</param>
+    /// <param name="authorizationUriPresenter">Optional host callback used when an official account requires interactive authorization</param>
+    /// <returns>A <see cref="DownloadProgress"/> object for tracking download state and progress</returns>
+    Task<DownloadProgress> DownloadAndLaunchInstanceAsync(
+        string instanceId,
+        AuthUriPresenter? authorizationUriPresenter = null);
+
+    /// <summary>
     /// Cancels any ongoing download operation
     /// </summary>
     void CancelDownload();

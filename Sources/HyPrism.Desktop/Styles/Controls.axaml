@@ -89,17 +89,16 @@ SPDX-License-Identifier: GPL-3.0-only
                       IsHitTestVisible="False"
                       HorizontalAlignment="Right"
                       VerticalAlignment="Center" />
-            <Popup x:Name="PART_Popup"
-                   WindowManagerAddShadowHint="False"
-                   IsOpen="{Binding IsPopupVisible, RelativeSource={RelativeSource TemplatedParent}}"
-                   MinWidth="{Binding Bounds.Width, RelativeSource={RelativeSource TemplatedParent}}"
-                   MaxHeight="{TemplateBinding MaxDropDownHeight}"
-                   PlacementTarget="Background"
-                   VerticalOffset="8"
-                   IsLightDismissEnabled="False"
-                   IsHitTestVisible="{TemplateBinding IsDropDownOpen}"
-                   InheritsTransform="True">
+            <controls:FadingPopup x:Name="PART_Popup"
+                                  IsRequestedOpen="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+                                  MinWidth="{Binding Bounds.Width, RelativeSource={RelativeSource TemplatedParent}}"
+                                  MaxHeight="{TemplateBinding MaxDropDownHeight}"
+                                  PlacementTarget="{Binding RelativeSource={RelativeSource TemplatedParent}}"
+                                  VerticalOffset="8"
+                                  IsHitTestVisible="{TemplateBinding IsDropDownOpen}"
+                                  InheritsTransform="True">
               <Border x:Name="PopupBorder"
+                      Classes="uiPopupSurface"
                       Background="{DynamicResource ControlSurfaceActiveBrush}"
                       HorizontalAlignment="Stretch"
                       IsHitTestVisible="{TemplateBinding IsDropDownOpen}">
@@ -110,7 +109,7 @@ SPDX-License-Identifier: GPL-3.0-only
                                   ItemsPanel="{TemplateBinding ItemsPanel}" />
                 </ScrollViewer>
               </Border>
-            </Popup>
+            </controls:FadingPopup>
           </Grid>
         </DataValidationErrors>
       </ControlTemplate>
@@ -150,14 +149,13 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
   </Style>
 
-  <Style Selector="controls|FadingComboBox.uiComboBox /template/ Border#PopupBorder">
+  <Style Selector="Border.uiPopupSurface">
     <Setter Property="Background" Value="{DynamicResource ControlSurfaceActiveBrush}" />
     <Setter Property="BorderBrush" Value="Transparent" />
     <Setter Property="BorderThickness" Value="0" />
     <Setter Property="CornerRadius" Value="18" />
     <Setter Property="Padding" Value="6" />
     <Setter Property="Opacity" Value="1" />
-    <Setter Property="BoxShadow" Value="{StaticResource PopupShadow}" />
     <Setter Property="Transitions">
       <Transitions>
         <DoubleTransition Property="Opacity" Duration="0:0:0.19">
@@ -304,6 +302,7 @@ SPDX-License-Identifier: GPL-3.0-only
         <Border Background="{TemplateBinding Background}"
                 BorderBrush="{TemplateBinding BorderBrush}"
                 BorderThickness="{TemplateBinding BorderThickness}"
+                CornerRadius="{TemplateBinding CornerRadius}"
                 Padding="{TemplateBinding Padding}">
           <ContentPresenter Content="{TemplateBinding Content}"
                             ContentTemplate="{TemplateBinding ContentTemplate}"

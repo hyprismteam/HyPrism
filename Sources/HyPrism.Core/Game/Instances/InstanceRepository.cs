@@ -117,6 +117,26 @@ public class InstanceRepository : IInstanceRepository
     public List<InstanceInfo> GetCachedInstances() => LoadInstanceCache();
 
     /// <inheritdoc/>
+    public void SetInstanceOrder(IReadOnlyList<string> instanceIds)
+    {
+        ArgumentNullException.ThrowIfNull(instanceIds);
+
+        var cached = LoadInstanceCache();
+        var byId = cached.ToDictionary(instance => instance.Id, StringComparer.OrdinalIgnoreCase);
+        var ordered = new List<InstanceInfo>(cached.Count);
+        var addedIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var instanceId in instanceIds)
+        {
+            if (byId.TryGetValue(instanceId, out var instance) && addedIds.Add(instanceId))
+                ordered.Add(instance);
+        }
+
+        ordered.AddRange(cached.Where(instance => addedIds.Add(instance.Id)));
+        SaveInstanceCache(ordered);
+    }
+
+    /// <inheritdoc/>
     public string GetInstanceRoot()
     {
         var config = GetConfig();
@@ -1357,6 +1377,9 @@ public class InstanceRepository : IInstanceRepository
     public void SyncInstancesWithConfig()
     {
         var config = GetConfig();
+        var cachedOrder = LoadInstanceCache()
+            .Select((instance, index) => (instance.Id, index))
+            .ToDictionary(item => item.Id, item => item.index, StringComparer.OrdinalIgnoreCase);
         var discoveredById = new Dictionary<string, InstanceInfo>(StringComparer.OrdinalIgnoreCase);
 
         void ProcessInstanceDir(string instanceDir)
@@ -1416,8 +1439,9 @@ public class InstanceRepository : IInstanceRepository
         }
 
         var synced = discoveredById.Values
-            .OrderBy(i => i.Branch)
-            .ThenByDescending(i => i.Version)
+            .OrderBy(instance => cachedOrder.TryGetValue(instance.Id, out var index) ? index : int.MaxValue)
+            .ThenBy(instance => instance.Branch)
+            .ThenByDescending(instance => instance.Version)
             .ToList();
 
         SaveInstanceCache(synced);

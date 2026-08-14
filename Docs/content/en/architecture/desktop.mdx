@@ -23,7 +23,7 @@ description: Avalonia views, view models, localization, and native controls
 - `Features/Settings` owns the adaptive settings UI and Desktop preferences
 - `Platform` contains native URI, file picker, memory, and GPU adapters
 - `Integrations/Discord` implements the Core presence port and follows the Avalonia host lifetime
-- custom controls handle rich news content, smooth scrolling, and animated combo boxes
+- custom controls handle rich news content, smooth scrolling, animated combo boxes, and reusable fading popups
 - `.resx` files under `Localization` provide UI strings for every supported culture
 
 ## UI foundation
@@ -31,9 +31,9 @@ description: Avalonia views, view models, localization, and native controls
 Reusable desktop presentation is split into two layers:
 
 - `Styles/Tokens.axaml` defines surface, text, interaction, semantic status, toggle, and popup colors
-- `Styles/Controls.axaml` defines the shared animated ComboBox, ComboBox items, toggle switches, settings rows, and segmented controls
+- `Styles/Controls.axaml` defines the shared animated ComboBox, popup surface, ComboBox items, toggle switches, settings rows, and segmented controls
 
-Feature views opt into reusable controls with `uiComboBox`, `uiToggle`, `uiSettingsGroup`, `uiSettingsRow`, and `uiSegmentedControl` classes. New interaction colors and animation timings belong in this foundation instead of feature-scoped styles
+Feature views opt into reusable controls with `uiComboBox`, `uiPopupSurface`, `uiToggle`, `uiSettingsGroup`, `uiSettingsRow`, and `uiSegmentedControl` classes. `FadingPopup` owns opening, closing, light dismiss, keyboard dismiss, animation timing, and close retention for both ComboBox lists and feature menus. New interaction colors and animation timings belong in this foundation instead of feature-scoped styles
 
 The desktop project uses compiled bindings by default. View models expose state and commands while code-behind is limited to control behavior that depends on Avalonia input, layout, or animation primitives
 

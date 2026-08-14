@@ -360,6 +360,24 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="instances.branchHint" xml:space="preserve">
     <value>Стабильная или предварительная ветка</value>
   </data>
+  <data name="instances.actions.delete" xml:space="preserve">
+    <value>Удалить</value>
+  </data>
+  <data name="instances.actions.deleteHint" xml:space="preserve">
+    <value>Удалить «{0}» и все данные этого экземпляра? Это действие нельзя отменить.</value>
+  </data>
+  <data name="instances.actions.deleteTitle" xml:space="preserve">
+    <value>Удалить экземпляр?</value>
+  </data>
+  <data name="instances.actions.install" xml:space="preserve">
+    <value>Установить</value>
+  </data>
+  <data name="instances.actions.openFolder" xml:space="preserve">
+    <value>Открыть папку</value>
+  </data>
+  <data name="instances.actions.play" xml:space="preserve">
+    <value>Запустить</value>
+  </data>
   <data name="instances.versionHint" xml:space="preserve">
     <value>Версия игры для установки</value>
   </data>

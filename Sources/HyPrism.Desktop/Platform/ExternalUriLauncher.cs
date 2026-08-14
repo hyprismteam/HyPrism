@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 using Avalonia.Controls;
+using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using HyPrism.Core.Infrastructure;
 
@@ -48,6 +49,42 @@ public sealed class ExternalUriLauncher(Func<TopLevel?> topLevelProvider) : IExt
         }
     }
 
+    /// <inheritdoc/>
+    public async Task<bool> LaunchDirectoryAsync(
+        string path,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(path);
+        cancellationToken.ThrowIfCancellationRequested();
+
+        if (!Path.IsPathFullyQualified(path) || !Directory.Exists(path))
+        {
+            Logger.Warning("Launcher", $"Rejected unavailable directory: {path}");
+            return false;
+        }
+
+        try
+        {
+            if (!Dispatcher.UIThread.CheckAccess())
+            {
+                var launchTask = await Dispatcher.UIThread.InvokeAsync(
+                    () => LaunchDirectoryOnUiThreadAsync(path, cancellationToken));
+                return launchTask;
+            }
+
+            return await LaunchDirectoryOnUiThreadAsync(path, cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            Logger.Error("Launcher", $"Failed to open directory: {ex.Message}");
+            return false;
+        }
+    }
+
     private async Task<bool> LaunchOnUiThreadAsync(Uri uri, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -60,5 +97,21 @@ public sealed class ExternalUriLauncher(Func<TopLevel?> topLevelProvider) : IExt
 
         Logger.Info("Launcher", $"Opening external URI: {uri}");
         return await topLevel.Launcher.LaunchUriAsync(uri);
+    }
+
+    private async Task<bool> LaunchDirectoryOnUiThreadAsync(
+        string path,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var topLevel = topLevelProvider();
+        if (topLevel is null)
+        {
+            Logger.Warning("Launcher", "Cannot open a directory before the main window is available");
+            return false;
+        }
+
+        Logger.Info("Launcher", $"Opening directory: {path}");
+        return await topLevel.Launcher.LaunchDirectoryInfoAsync(new DirectoryInfo(path));
     }
 }

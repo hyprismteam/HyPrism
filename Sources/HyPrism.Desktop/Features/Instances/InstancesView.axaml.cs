@@ -6,9 +6,12 @@ using System.Diagnostics;
 using Avalonia;
 using Avalonia.Animation;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
+using HyPrism.Desktop.Features.Dashboard;
 using HyPrism.Desktop.Shell;
 
 namespace HyPrism.Desktop.Features.Instances;
@@ -28,6 +31,14 @@ public sealed partial class InstancesView : UserControl
     private CancellationTokenSource? _creatorAnimationCancellation;
     private CancellationTokenSource? _sectionAnimationCancellation;
     private CancellationTokenSource? _versionLoadingCancellation;
+    private Control? _instanceDragHandle;
+    private Button? _instanceDragRow;
+    private string? _draggedInstanceId;
+    private Point _instanceDragStart;
+    private Point _instanceDragStartInLayout;
+    private Point _instanceDragPreviewOrigin;
+    private int _instanceDragTargetIndex = -1;
+    private bool _isInstanceDragActive;
 
     public InstancesView()
     {
@@ -185,11 +196,131 @@ public sealed partial class InstancesView : UserControl
         OpenCompactContent();
     }
 
+    private void OnInstanceDragHandlePressed(object? sender, PointerPressedEventArgs args)
+    {
+        if (sender is not Border { DataContext: InstanceItemViewModel instance } handle ||
+            !args.GetCurrentPoint(handle).Properties.IsLeftButtonPressed)
+        {
+            return;
+        }
+
+        _instanceDragHandle = handle;
+        _instanceDragRow = handle.FindAncestorOfType<Button>();
+        _draggedInstanceId = instance.Id;
+        _instanceDragStart = args.GetPosition(InstancesItems);
+        _instanceDragStartInLayout = args.GetPosition(InstancesLayout);
+        _instanceDragPreviewOrigin = _instanceDragRow?.TranslatePoint(default, InstancesLayout) ?? default;
+        _instanceDragTargetIndex = -1;
+        _isInstanceDragActive = false;
+        InstanceDragPreviewName.Text = instance.Name;
+        InstanceDragPreviewBranch.Text = instance.Branch;
+        InstanceDragPreview.Width = _instanceDragRow?.Bounds.Width ?? InstancesListPane.Bounds.Width;
+        InstanceDragPreview.Height = _instanceDragRow?.Bounds.Height ?? 66;
+        args.Pointer.Capture(handle);
+        args.Handled = true;
+    }
+
+    private void OnInstanceDragHandleMoved(object? sender, PointerEventArgs args)
+    {
+        if (_instanceDragHandle is null || _draggedInstanceId is null)
+            return;
+
+        var position = args.GetPosition(InstancesItems);
+        if (!_isInstanceDragActive)
+        {
+            var delta = position - _instanceDragStart;
+            if (Math.Abs(delta.X) + Math.Abs(delta.Y) < 5)
+                return;
+
+            _isInstanceDragActive = true;
+            _instanceDragRow?.Classes.Add("dragging");
+            InstanceDragPreview.IsVisible = true;
+        }
+
+        UpdateInstanceDragPreview(args.GetPosition(InstancesLayout));
+        _instanceDragTargetIndex = GetInstanceDropTargetIndex(position.Y);
+        args.Handled = true;
+    }
+
+    private void OnInstanceDragHandleReleased(object? sender, PointerReleasedEventArgs args)
+    {
+        if (_isInstanceDragActive &&
+            _instanceDragTargetIndex >= 0 &&
+            _draggedInstanceId is not null &&
+            DataContext is MainWindowViewModel viewModel)
+        {
+            viewModel.MoveInstance(_draggedInstanceId, _instanceDragTargetIndex);
+        }
+
+        args.Pointer.Capture(null);
+        ResetInstanceDragState();
+        args.Handled = true;
+    }
+
+    private int GetInstanceDropTargetIndex(double pointerY)
+    {
+        var rows = InstancesItems.GetVisualDescendants()
+            .OfType<Button>()
+            .Where(button => button.Classes.Contains("instancesListItem"))
+            .Select(button => new
+            {
+                Button = button,
+                Origin = button.TranslatePoint(default, InstancesItems)
+            })
+            .Where(item => item.Origin.HasValue)
+            .OrderBy(item => item.Origin!.Value.Y)
+            .ToList();
+
+        for (var index = 0; index < rows.Count; index++)
+        {
+            var midpoint = rows[index].Origin!.Value.Y + rows[index].Button.Bounds.Height / 2;
+            if (pointerY < midpoint)
+                return index;
+        }
+
+        return Math.Max(0, rows.Count - 1);
+    }
+
+    private void UpdateInstanceDragPreview(Point pointerPosition)
+    {
+        var transform = (TranslateTransform)InstanceDragPreview.RenderTransform!;
+        transform.X =
+            _instanceDragPreviewOrigin.X + pointerPosition.X - _instanceDragStartInLayout.X + 10;
+        transform.Y =
+            _instanceDragPreviewOrigin.Y + pointerPosition.Y - _instanceDragStartInLayout.Y + 8;
+    }
+
+    private void ResetInstanceDragState()
+    {
+        _instanceDragRow?.Classes.Remove("dragging");
+        InstanceDragPreview.IsVisible = false;
+        InstanceDragPreviewName.Text = string.Empty;
+        InstanceDragPreviewBranch.Text = string.Empty;
+        _instanceDragHandle = null;
+        _instanceDragRow = null;
+        _draggedInstanceId = null;
+        _instanceDragTargetIndex = -1;
+        _isInstanceDragActive = false;
+    }
+
     private void OnOpenCreatorClicked(object? sender, RoutedEventArgs args)
     {
         if (_usesCompactLayout is true)
             OpenCompactContent();
     }
+
+    private void OnCloseDeleteInstanceFlyoutClicked(object? sender, RoutedEventArgs args)
+    {
+        DeleteInstanceButton.Flyout?.Hide();
+        CompactDeleteInstanceButton.Flyout?.Hide();
+        CompactInstanceMenuPopup.IsRequestedOpen = false;
+    }
+
+    private void OnCloseCompactInstanceMenuClicked(object? sender, RoutedEventArgs args)
+        => CompactInstanceMenuPopup.IsRequestedOpen = false;
+
+    private void OnToggleCompactInstanceMenuClicked(object? sender, RoutedEventArgs args)
+        => CompactInstanceMenuPopup.IsRequestedOpen = !CompactInstanceMenuPopup.IsRequestedOpen;
 
     private void OpenCompactContent()
     {

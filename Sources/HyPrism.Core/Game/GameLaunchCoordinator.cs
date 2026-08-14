@@ -36,12 +36,11 @@ public sealed class GameLaunchCoordinator(
             return;
         }
 
-        if (!string.IsNullOrWhiteSpace(instanceId))
-            instances.SetSelectedInstance(instanceId);
-
         // Install and update remain separate UI actions, so this operation launches
         // only an instance whose selected version is already installed.
-        var selectedInstance = instances.GetSelectedInstance();
+        var selectedInstance = string.IsNullOrWhiteSpace(instanceId)
+            ? instances.GetSelectedInstance()
+            : instances.FindInstanceById(instanceId);
         if (selectedInstance != null)
         {
             var versionPath = instances.GetInstancePathById(selectedInstance.Id);
@@ -60,7 +59,9 @@ public sealed class GameLaunchCoordinator(
 
         try
         {
-            var result = await gameSession.DownloadAndLaunchAsync(authorizationUriPresenter);
+            var result = string.IsNullOrWhiteSpace(instanceId)
+                ? await gameSession.DownloadAndLaunchAsync(authorizationUriPresenter)
+                : await gameSession.DownloadAndLaunchInstanceAsync(instanceId, authorizationUriPresenter);
 
             if (result.Cancelled || string.Equals(result.Error, "Cancelled", StringComparison.OrdinalIgnoreCase))
             {

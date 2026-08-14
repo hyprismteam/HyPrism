@@ -52,8 +52,10 @@ public sealed class MainWindowRenderTests
         });
 
         var launched = await launcher.LaunchAsync(new Uri("file:///tmp/hyprism"));
+        var openedDirectory = await launcher.LaunchDirectoryAsync("relative/path");
 
         Assert.False(launched);
+        Assert.False(openedDirectory);
         Assert.False(topLevelRequested);
     }
 
@@ -500,11 +502,12 @@ public sealed class MainWindowRenderTests
 
         fadingLanguageComboBox.IsDropDownOpen = true;
         Dispatcher.UIThread.RunJobs();
-        Assert.True(fadingLanguageComboBox.IsPopupVisible);
-        var languagePopup = fadingLanguageComboBox.GetVisualDescendants().OfType<Popup>().Single();
+        var languagePopup = fadingLanguageComboBox.GetVisualDescendants().OfType<FadingPopup>().Single();
+        Assert.True(languagePopup.IsOpen);
         var languagePopupBorder = Assert.IsType<Border>(languagePopup.Child);
         Assert.Equal(8, languagePopup.VerticalOffset);
         Assert.False(languagePopup.IsLightDismissEnabled);
+        Assert.True(languagePopup.WindowManagerAddShadowHint);
         Assert.Equal(new CornerRadius(18), languagePopupBorder.CornerRadius);
         Assert.Equal(
             Color.Parse("#1D1E21"),
@@ -512,6 +515,16 @@ public sealed class MainWindowRenderTests
         Assert.Equal(
             byte.MaxValue,
             Assert.IsAssignableFrom<ISolidColorBrush>(languagePopupBorder.Background).Color.A);
+        await Task.Delay(220);
+        Dispatcher.UIThread.RunJobs();
+        var settingsComboPreviewPath = Environment.GetEnvironmentVariable(
+            "HYPRISM_SETTINGS_COMBO_RENDER_OUTPUT");
+        if (!string.IsNullOrWhiteSpace(settingsComboPreviewPath))
+        {
+            window.CaptureRenderedFrame()!.Save(settingsComboPreviewPath, PngBitmapEncoderOptions.Default);
+            Assert.True(File.Exists(settingsComboPreviewPath));
+        }
+
         var languagePopupScrollBar = languagePopupBorder.GetVisualDescendants()
             .OfType<ScrollBar>()
             .Single(scrollBar => scrollBar.Orientation == Avalonia.Layout.Orientation.Vertical);
@@ -533,8 +546,7 @@ public sealed class MainWindowRenderTests
         Dispatcher.UIThread.RunJobs();
         Assert.Same(german, languageComboBox.SelectedItem);
         Assert.False(fadingLanguageComboBox.IsDropDownOpen);
-        Assert.True(fadingLanguageComboBox.IsPopupVisible);
-        Assert.Contains(":dropdownclosing", fadingLanguageComboBox.Classes);
+        Assert.True(languagePopup.IsOpen);
         Assert.Contains(
             languagePopupBorder.Transitions!,
             transition => transition is DoubleTransition { Property: { } property } &&
@@ -542,20 +554,29 @@ public sealed class MainWindowRenderTests
         await Task.Delay(90);
         Dispatcher.UIThread.RunJobs();
         Assert.NotNull(window.CaptureRenderedFrame());
-        Assert.True(fadingLanguageComboBox.IsPopupVisible);
+        Assert.True(languagePopup.IsOpen);
         Assert.Equal(0, languagePopupBorder.Opacity);
         await Task.Delay(150);
         Dispatcher.UIThread.RunJobs();
-        Assert.False(fadingLanguageComboBox.IsPopupVisible);
-        Assert.DoesNotContain(":dropdownclosing", fadingLanguageComboBox.Classes);
+        Assert.False(languagePopup.IsOpen);
 
         fadingLanguageComboBox.IsDropDownOpen = true;
         Dispatcher.UIThread.RunJobs();
         Assert.True(fadingLanguageComboBox.IsDropDownOpen);
-        Assert.True(fadingLanguageComboBox.IsPopupVisible);
-        fadingLanguageComboBox.IsDropDownOpen = false;
+        Assert.True(languagePopup.IsOpen);
+        await Task.Delay(220);
+        Dispatcher.UIThread.RunJobs();
+        var languageDismissPoint = new Point(20, 20);
+        window.MouseMove(languageDismissPoint);
+        window.MouseDown(languageDismissPoint, MouseButton.Left);
+        window.MouseUp(languageDismissPoint, MouseButton.Left);
+        Dispatcher.UIThread.RunJobs();
+        Assert.False(fadingLanguageComboBox.IsDropDownOpen);
+        Assert.False(languagePopup.IsRequestedOpen);
+        Assert.True(languagePopup.IsOpen);
         await Task.Delay(230);
         Dispatcher.UIThread.RunJobs();
+        Assert.False(languagePopup.IsOpen);
 
         var russian = viewModel.Settings.Languages.Single(choice => choice.Value == "ru-RU");
         languageComboBox.SelectedItem = russian;
@@ -1079,6 +1100,67 @@ public sealed class MainWindowRenderTests
         Dispatcher.UIThread.RunJobs();
         var instancesView = Assert.Single(window.GetVisualDescendants().OfType<InstancesView>());
         Assert.True(instancesView.IsEffectivelyVisible);
+        Assert.DoesNotContain(
+            instancesView.GetVisualDescendants().OfType<TextBlock>(),
+            textBlock => textBlock.Text == "Instances");
+        var instanceListGroup = Assert.Single(
+            instancesView.GetVisualDescendants().OfType<StackPanel>(),
+            panel => panel.Classes.Contains("instancesListGroup"));
+        Assert.Single(
+            instanceListGroup.GetVisualDescendants().OfType<Button>(),
+            button => button.Classes.Contains("instancesAddRow"));
+        Assert.Equal(
+            2,
+            instanceListGroup.GetVisualDescendants().OfType<Avalonia.Controls.Shapes.Path>()
+                .Count(path => path.Classes.Contains("instancesListHandle") || path.Classes.Contains("instancesListMore")));
+        var instanceDragHandle = Assert.Single(
+            instanceListGroup.GetVisualDescendants().OfType<Avalonia.Controls.Shapes.Path>(),
+            path => path.Classes.Contains("instancesListHandle"));
+        Assert.Equal(14, instanceDragHandle.Bounds.Width);
+        Assert.Null(instanceDragHandle.Cursor);
+        var instanceDragTarget = Assert.Single(
+            instanceListGroup.GetVisualDescendants().OfType<Border>(),
+            border => border.Classes.Contains("instancesListDragTarget"));
+        Assert.Equal(32, instanceDragTarget.Bounds.Width);
+        Assert.Equal(44, instanceDragTarget.Bounds.Height);
+        Assert.Null(instanceDragTarget.Cursor);
+        var addInstanceRow = Assert.Single(
+            instanceListGroup.GetVisualDescendants().OfType<Button>(),
+            button => button.Classes.Contains("instancesAddRow"));
+        Assert.Equal(default, addInstanceRow.CornerRadius);
+        Assert.Equal(width < 1280 ? default : new Thickness(0, 0, 0, 3), addInstanceRow.BorderThickness);
+        Assert.Equal(
+            14,
+            Assert.Single(addInstanceRow.GetVisualDescendants().OfType<Avalonia.Controls.Shapes.Path>()).Bounds.Width);
+
+        if (width >= 1280)
+        {
+            var dragPoint = instanceDragTarget.TranslatePoint(
+                new Point(instanceDragTarget.Bounds.Width - 3, instanceDragTarget.Bounds.Height / 2),
+                window);
+            Assert.NotNull(dragPoint);
+            var resolvedDragPoint = dragPoint!.Value;
+            var dragPreview = instancesView.FindControl<Border>("InstanceDragPreview");
+            Assert.NotNull(dragPreview);
+            window.MouseMove(resolvedDragPoint);
+            window.MouseDown(resolvedDragPoint, MouseButton.Left);
+            window.MouseMove(resolvedDragPoint + new Vector(36, 24));
+            Dispatcher.UIThread.RunJobs();
+            Assert.True(dragPreview!.IsVisible);
+            var dragPreviewPath = Environment.GetEnvironmentVariable("HYPRISM_INSTANCES_DRAG_RENDER_OUTPUT");
+            if (!string.IsNullOrWhiteSpace(dragPreviewPath))
+                window.CaptureRenderedFrame()!.Save(dragPreviewPath, PngBitmapEncoderOptions.Default);
+            window.MouseUp(resolvedDragPoint + new Vector(36, 24), MouseButton.Left);
+            Dispatcher.UIThread.RunJobs();
+            Assert.False(dragPreview.IsVisible);
+        }
+        var instanceActions = instancesView.GetVisualDescendants()
+            .OfType<Button>()
+            .Where(button => button.Classes.Contains("instanceAction"))
+            .ToList();
+        Assert.Equal(3, instanceActions.Count);
+        Assert.Single(instanceActions, button => button.Classes.Contains("primary"));
+        Assert.Single(instanceActions, button => button.Classes.Contains("danger"));
         var instanceMenuRows = instancesView.GetVisualDescendants()
             .OfType<Button>()
             .Where(button => button.Classes.Contains("instanceMenuRow"))
@@ -1086,6 +1168,17 @@ public sealed class MainWindowRenderTests
         Assert.Equal(
             5,
             instanceMenuRows.Count);
+        var instanceMenuIcons = instancesView.GetVisualDescendants()
+            .OfType<Image>()
+            .Where(image => image.Classes.Contains("instanceMenuIcon"))
+            .ToList();
+        Assert.Equal(5, instanceMenuIcons.Count);
+        Assert.All(instanceMenuIcons, icon =>
+        {
+            Assert.Equal(28, icon.Width);
+            Assert.Equal(28, icon.Height);
+            Assert.NotNull(icon.Source);
+        });
         Assert.All(instanceMenuRows.Take(4), row => Assert.InRange(row.Bounds.Height, 68.5, 69.5));
         Assert.InRange(instanceMenuRows[^1].Bounds.Height, 65.5, 66.5);
         Assert.DoesNotContain(
@@ -1095,9 +1188,23 @@ public sealed class MainWindowRenderTests
         var instancesContent = instancesView.FindControl<Grid>("InstancesContent");
         var instancesListPane = instancesView.FindControl<Border>("InstancesListPane");
         var compactInstanceToolbar = instancesView.FindControl<Border>("CompactInstanceToolbar");
+        var compactInstanceSplitAction = instancesView.GetVisualDescendants()
+            .OfType<Border>()
+            .Single(border => border.Classes.Contains("compactInstanceSplitAction"));
+        var compactInstancePrimaryAction = instancesView.FindControl<Button>("CompactInstancePrimaryAction");
+        var compactInstanceMoreButton = instancesView.FindControl<Button>("CompactInstanceMoreButton");
+        var compactInstanceMenuPopup = instancesView.FindControl<FadingPopup>("CompactInstanceMenuPopup");
+        var wideInstanceActions = instancesView.FindControl<StackPanel>("WideInstanceActions");
         Assert.NotNull(instancesContent);
         Assert.NotNull(instancesListPane);
         Assert.NotNull(compactInstanceToolbar);
+        Assert.NotNull(compactInstancePrimaryAction);
+        Assert.NotNull(compactInstanceMoreButton);
+        Assert.NotNull(compactInstanceMenuPopup);
+        Assert.True(compactInstanceMenuPopup!.WindowManagerAddShadowHint);
+        Assert.False(compactInstanceMenuPopup.IsLightDismissEnabled);
+        Assert.NotNull(wideInstanceActions);
+        Assert.Equal(Avalonia.Layout.HorizontalAlignment.Center, wideInstanceActions!.HorizontalAlignment);
         var instanceContentTranslation = Assert.IsType<TranslateTransform>(instancesContent!.RenderTransform);
         var usesCompactInstancesLayout = instancesView.Bounds.Width < 940;
         Assert.Equal(usesCompactInstancesLayout, compactInstanceToolbar!.IsVisible);
@@ -1112,6 +1219,87 @@ public sealed class MainWindowRenderTests
             await Task.Delay(360);
             Dispatcher.UIThread.RunJobs();
             Assert.Equal(0, instanceContentTranslation.X);
+            Assert.False(wideInstanceActions.IsVisible);
+            Assert.True(compactInstanceSplitAction.IsEffectivelyVisible);
+            Assert.True(compactInstancePrimaryAction!.IsEffectivelyVisible);
+
+            var instanceHubContent = instancesView.FindControl<StackPanel>("InstanceHubContent");
+            Assert.NotNull(instanceHubContent);
+            var compactActionRight = compactInstanceSplitAction.TranslatePoint(
+                new Point(compactInstanceSplitAction.Bounds.Width, 0),
+                window);
+            var compactContentRight = instanceHubContent!.TranslatePoint(
+                new Point(instanceHubContent.Bounds.Width, 0),
+                window);
+            Assert.NotNull(compactActionRight);
+            Assert.NotNull(compactContentRight);
+            Assert.InRange(
+                Math.Abs(compactActionRight!.Value.X - compactContentRight!.Value.X),
+                0,
+                0.5);
+
+            var compactMenuPoint = compactInstanceMoreButton!.TranslatePoint(
+                new Point(compactInstanceMoreButton.Bounds.Width / 2, compactInstanceMoreButton.Bounds.Height / 2),
+                window);
+            Assert.NotNull(compactMenuPoint);
+            window.MouseMove(compactMenuPoint!.Value);
+            window.MouseDown(compactMenuPoint.Value, MouseButton.Left);
+            window.MouseUp(compactMenuPoint.Value, MouseButton.Left);
+            Dispatcher.UIThread.RunJobs();
+            Assert.True(compactInstanceMenuPopup!.IsRequestedOpen);
+            Assert.True(compactInstanceMenuPopup.IsOpen);
+            await Task.Delay(220);
+            Dispatcher.UIThread.RunJobs();
+
+            var compactMenuPreviewPath = Environment.GetEnvironmentVariable(
+                "HYPRISM_INSTANCES_COMPACT_MENU_RENDER_OUTPUT");
+            if (!string.IsNullOrWhiteSpace(compactMenuPreviewPath))
+            {
+                window.CaptureRenderedFrame()!.Save(compactMenuPreviewPath, PngBitmapEncoderOptions.Default);
+                Assert.True(File.Exists(compactMenuPreviewPath));
+            }
+
+            window.MouseMove(compactMenuPoint.Value);
+            window.MouseDown(compactMenuPoint.Value, MouseButton.Left);
+            window.MouseUp(compactMenuPoint.Value, MouseButton.Left);
+            Dispatcher.UIThread.RunJobs();
+            Assert.False(compactInstanceMenuPopup.IsRequestedOpen);
+            Assert.True(compactInstanceMenuPopup.IsOpen);
+            await Task.Delay(90);
+            Dispatcher.UIThread.RunJobs();
+
+            var compactMenuClosingPreviewPath = Environment.GetEnvironmentVariable(
+                "HYPRISM_INSTANCES_COMPACT_MENU_CLOSING_RENDER_OUTPUT");
+            if (!string.IsNullOrWhiteSpace(compactMenuClosingPreviewPath))
+            {
+                window.CaptureRenderedFrame()!.Save(compactMenuClosingPreviewPath, PngBitmapEncoderOptions.Default);
+                Assert.True(File.Exists(compactMenuClosingPreviewPath));
+            }
+
+            await Task.Delay(140);
+            Dispatcher.UIThread.RunJobs();
+            Assert.False(compactInstanceMenuPopup.IsOpen);
+
+            window.MouseMove(compactMenuPoint.Value);
+            window.MouseDown(compactMenuPoint.Value, MouseButton.Left);
+            window.MouseUp(compactMenuPoint.Value, MouseButton.Left);
+            Dispatcher.UIThread.RunJobs();
+            Assert.True(compactInstanceMenuPopup.IsRequestedOpen);
+            Assert.True(compactInstanceMenuPopup.IsOpen);
+            await Task.Delay(220);
+            Dispatcher.UIThread.RunJobs();
+
+            var compactMenuDismissPoint = instanceHubContent!.TranslatePoint(new Point(40, 110), window);
+            Assert.NotNull(compactMenuDismissPoint);
+            window.MouseMove(compactMenuDismissPoint!.Value);
+            window.MouseDown(compactMenuDismissPoint.Value, MouseButton.Left);
+            window.MouseUp(compactMenuDismissPoint.Value, MouseButton.Left);
+            Dispatcher.UIThread.RunJobs();
+            Assert.False(compactInstanceMenuPopup.IsRequestedOpen);
+            Assert.True(compactInstanceMenuPopup.IsOpen);
+            await Task.Delay(230);
+            Dispatcher.UIThread.RunJobs();
+            Assert.False(compactInstanceMenuPopup.IsOpen);
 
             var compactPreviewPath = Environment.GetEnvironmentVariable("HYPRISM_INSTANCES_COMPACT_RENDER_OUTPUT");
             if (!string.IsNullOrWhiteSpace(compactPreviewPath) && width == 1024)
@@ -1125,6 +1313,8 @@ public sealed class MainWindowRenderTests
             Assert.Equal(0, instanceContentTranslation.X);
             Assert.True(instancesListPane!.IsHitTestVisible);
             Assert.True(instancesContent.IsHitTestVisible);
+            Assert.True(wideInstanceActions.IsEffectivelyVisible);
+            Assert.False(compactInstanceSplitAction.IsEffectivelyVisible);
         }
 
         var instanceHub = instancesView.FindControl<Grid>("InstanceHubScreen");
@@ -1135,6 +1325,7 @@ public sealed class MainWindowRenderTests
         Assert.NotNull(instanceHub);
         Assert.NotNull(instanceSection);
         Assert.True(instanceInfoGroup.IsVisible);
+        Assert.Equal(new CornerRadius(14), instanceInfoGroup.CornerRadius);
         Assert.Equal(
             4,
             instanceInfoGroup.GetVisualDescendants()

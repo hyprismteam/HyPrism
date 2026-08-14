@@ -11,9 +11,9 @@ namespace HyPrism.Core.Game;
 public interface IGameLaunchCoordinator
 {
     /// <summary>
-    /// Starts the selected instance
+    /// Starts the selected or explicitly addressed instance
     /// </summary>
-    /// <param name="instanceId">Stable instance identifier, or <see langword="null"/> to use the current selection</param>
+    /// <param name="instanceId">Stable instance identifier that does not change the current selection, or <see langword="null"/> to use the current selection</param>
     /// <param name="authorizationUriPresenter">Optional host callback used when an official account requires interactive authorization</param>
     /// <returns>A task that completes when launch coordination finishes</returns>
     /// <exception cref="InvalidOperationException">Thrown when no usable instance can be selected</exception>

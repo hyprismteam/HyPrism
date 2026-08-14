@@ -21,81 +21,59 @@ SPDX-License-Identifier: GPL-3.0-only
   </UserControl.Resources>
   <Grid x:Name="InstancesLayout" Classes="instancesPage" ColumnDefinitions="306,*" RowDefinitions="*">
     <Border x:Name="InstancesListPane" Classes="instancesListPane" Grid.Row="0" IsVisible="{Binding HasInstances}">
-      <Grid RowDefinitions="Auto,*,Auto">
-        <Grid Margin="22,22,18,14" ColumnDefinitions="*,Auto" VerticalAlignment="Center">
-          <TextBlock Text="{Binding InstancesSectionLabel}"
-                     FontSize="21"
-                     FontWeight="Bold"
-                     VerticalAlignment="Center" />
-          <Button Grid.Column="1"
-                  Classes="instancesAdd"
-                  Click="OnOpenCreatorClicked"
-                  Command="{Binding OpenInstanceCreatorCommand}">
-            <StackPanel Orientation="Horizontal" Spacing="7">
-              <Path Width="17" Height="17" Stretch="Uniform" Data="{StaticResource GestureSelectIcon}" />
-              <TextBlock Text="{Binding SelectVersionLabel}" />
-            </StackPanel>
-          </Button>
-        </Grid>
-
-        <ScrollViewer Grid.Row="1"
-                      Classes="instancesScroll"
+      <Grid>
+        <ScrollViewer Classes="instancesScroll"
                       HorizontalScrollBarVisibility="Disabled"
                       VerticalScrollBarVisibility="Auto">
-          <StackPanel Margin="12,0,12,16" Spacing="3">
-            <TextBlock IsVisible="{Binding !HasInstances}"
-                       Classes="muted"
-                       Text="{Binding SelectInstanceLabel}"
-                       Margin="12,20"
-                       TextAlignment="Center" />
-            <ItemsControl ItemsSource="{Binding AllInstances}">
-              <ItemsControl.ItemTemplate>
-                <DataTemplate x:DataType="dashboard:InstanceItemViewModel">
-                  <Button Classes="instancesListItem"
-                          Classes.selected="{Binding IsSelected}"
-                          Click="OnInstanceClicked"
-                          Command="{Binding DataContext.SelectDashboardInstanceCommand, ElementName=InstancesRoot}"
-                          CommandParameter="{Binding Id}">
-                    <Grid ColumnDefinitions="44,*,Auto" ColumnSpacing="12">
-                      <Border Classes="instancesListIcon">
-                        <TextBlock Text="{Binding Initial}"
-                                   HorizontalAlignment="Center"
-                                   VerticalAlignment="Center"
-                                   FontWeight="Bold" />
-                      </Border>
-                      <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
-                        <TextBlock Text="{Binding Name}"
-                                   FontWeight="SemiBold"
-                                   TextTrimming="CharacterEllipsis"
-                                   TextWrapping="NoWrap" />
-                        <TextBlock Text="{Binding Branch}"
-                                   Classes="muted"
-                                   FontSize="12"
-                                   TextTrimming="CharacterEllipsis"
-                                   TextWrapping="NoWrap" />
-                      </StackPanel>
-                      <Ellipse Grid.Column="2"
-                               IsVisible="{Binding IsSelected}"
-                               Width="6"
-                               Height="6"
-                               Margin="7,0"
-                               VerticalAlignment="Center"
-                               Fill="{DynamicResource TextPrimaryBrush}" />
-                    </Grid>
-                  </Button>
-                </DataTemplate>
-              </ItemsControl.ItemTemplate>
-            </ItemsControl>
+          <StackPanel Classes="instancesListGroup">
+              <ItemsControl x:Name="InstancesItems" ItemsSource="{Binding AllInstances}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="dashboard:InstanceItemViewModel">
+                    <Button Classes="uiSettingsNavigationRow instancesListItem"
+                            Click="OnInstanceClicked"
+                            Command="{Binding DataContext.OpenInstanceDetailsCommand, ElementName=InstancesRoot}"
+                            CommandParameter="{Binding Id}">
+                      <Grid ColumnDefinitions="28,*,22" ColumnSpacing="9">
+                        <Border Classes="instancesListDragTarget"
+                                PointerPressed="OnInstanceDragHandlePressed"
+                                PointerMoved="OnInstanceDragHandleMoved"
+                                PointerReleased="OnInstanceDragHandleReleased">
+                          <Path Classes="instancesListHandle"
+                                Data="{StaticResource DragIndicatorIcon}" />
+                        </Border>
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                          <TextBlock Text="{Binding Name}"
+                                     Classes="uiSettingsLabel instancesListTitle"
+                                     TextTrimming="CharacterEllipsis"
+                                     TextWrapping="NoWrap" />
+                          <TextBlock Text="{Binding Branch}"
+                                     Classes="uiSettingsHint"
+                                     TextTrimming="CharacterEllipsis"
+                                     TextWrapping="NoWrap" />
+                        </StackPanel>
+                        <Path Grid.Column="2"
+                              Classes="instancesListMore"
+                              Data="{StaticResource MoreVerticalIcon}" />
+                      </Grid>
+                    </Button>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+
+              <Button Classes="uiSettingsNavigationRow instancesAddRow last"
+                      Click="OnOpenCreatorClicked"
+                      Command="{Binding OpenInstanceCreatorCommand}">
+                <StackPanel Orientation="Horizontal"
+                            HorizontalAlignment="Center"
+                            Spacing="9">
+                  <Path Width="14" Height="14" Stretch="Uniform" Data="{StaticResource AddIcon}" />
+                  <TextBlock Text="{Binding SelectVersionLabel}"
+                             Classes="uiSettingsLabel"
+                             VerticalAlignment="Center" />
+                </StackPanel>
+              </Button>
           </StackPanel>
         </ScrollViewer>
-
-        <Border Grid.Row="2" Classes="instancesRootPath">
-          <TextBlock Text="{Binding InstancesSectionLabel}"
-                     Classes="muted"
-                     FontSize="11"
-                     TextTrimming="CharacterEllipsis"
-                     TextWrapping="NoWrap" />
-        </Border>
       </Grid>
     </Border>
 
@@ -207,7 +185,7 @@ SPDX-License-Identifier: GPL-3.0-only
                 </Button>
                 <TextBlock Grid.Column="1"
                            Classes="articleToolbarTitle"
-                           Text="{Binding SelectedInstanceName}"
+                           Text="{Binding ManagedInstanceName}"
                            MaxWidth="280"
                            MaxLines="1"
                            TextTrimming="CharacterEllipsis"
@@ -215,6 +193,98 @@ SPDX-License-Identifier: GPL-3.0-only
                            FontWeight="SemiBold"
                            HorizontalAlignment="Center"
                            VerticalAlignment="Center" />
+
+                <Border Grid.Column="2"
+                        Classes="compactInstanceSplitAction"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Center">
+                  <Grid ColumnDefinitions="Auto,36">
+                    <Button x:Name="CompactInstancePrimaryAction"
+                            Classes="compactInstanceActionPart main"
+                            IsEnabled="{Binding CanRunManagedInstanceAction}"
+                            Command="{Binding RunManagedInstanceCommand}">
+                      <StackPanel Orientation="Horizontal" Spacing="7">
+                        <Path Classes="compactInstanceActionIcon"
+                              IsVisible="{Binding IsManagedInstanceInstalled}"
+                              Data="{StaticResource PlayIcon}" />
+                        <Path Classes="compactInstanceActionIcon"
+                              IsVisible="{Binding !IsManagedInstanceInstalled}"
+                              Data="{StaticResource DownloadIcon}" />
+                        <TextBlock Text="{Binding ManagedInstanceActionLabel}"
+                                   VerticalAlignment="Center" />
+                      </StackPanel>
+                    </Button>
+
+                    <Button x:Name="CompactInstanceMoreButton"
+                            Grid.Column="1"
+                            Classes="compactInstanceActionPart menu"
+                            IsEnabled="{Binding CanDeleteManagedInstance}"
+                            Click="OnToggleCompactInstanceMenuClicked">
+                      <PathIcon Classes="compactInstanceActionChevron"
+                                Data="{StaticResource ExpandMoreIcon}" />
+                    </Button>
+
+                    <controls:FadingPopup x:Name="CompactInstanceMenuPopup"
+                                          Grid.Column="1"
+                                          Placement="BottomEdgeAlignedRight"
+                                          PlacementTarget="CompactInstanceMoreButton"
+                                          VerticalOffset="8">
+                      <Border Classes="uiPopupSurface compactInstanceActionFlyout">
+                        <StackPanel Spacing="2">
+                          <Button Classes="compactInstanceMenuAction"
+                                  IsEnabled="{Binding CanOpenManagedInstanceFolder}"
+                                  Command="{Binding OpenManagedInstanceFolderCommand}"
+                                  Click="OnCloseCompactInstanceMenuClicked">
+                            <StackPanel Orientation="Horizontal" Spacing="10">
+                              <Path Classes="compactInstanceMenuIcon"
+                                    Data="{StaticResource FolderOpenIcon}" />
+                              <TextBlock Text="{Binding ManagedInstanceOpenFolderLabel}"
+                                         VerticalAlignment="Center" />
+                            </StackPanel>
+                          </Button>
+
+                          <Button x:Name="CompactDeleteInstanceButton"
+                                  Classes="compactInstanceMenuAction danger"
+                                  IsEnabled="{Binding CanDeleteManagedInstance}">
+                            <Button.Flyout>
+                              <Flyout Placement="BottomEdgeAlignedRight">
+                                <Border Classes="instanceDeleteConfirmation">
+                                  <StackPanel Width="300" Spacing="12">
+                                    <TextBlock Text="{Binding ManagedInstanceDeleteTitle}"
+                                               FontSize="17"
+                                               FontWeight="SemiBold" />
+                                    <TextBlock Text="{Binding ManagedInstanceDeleteHint}"
+                                               Classes="muted"
+                                               TextWrapping="Wrap" />
+                                    <StackPanel Orientation="Horizontal"
+                                                HorizontalAlignment="Right"
+                                                Spacing="8">
+                                      <Button Classes="instanceConfirmAction"
+                                              Click="OnCloseDeleteInstanceFlyoutClicked">
+                                        <TextBlock Text="{Binding CancelLabel}" />
+                                      </Button>
+                                      <Button Classes="instanceConfirmAction danger"
+                                              Command="{Binding DeleteManagedInstanceCommand}"
+                                              Click="OnCloseDeleteInstanceFlyoutClicked">
+                                        <TextBlock Text="{Binding ManagedInstanceDeleteLabel}" />
+                                      </Button>
+                                    </StackPanel>
+                                  </StackPanel>
+                                </Border>
+                              </Flyout>
+                            </Button.Flyout>
+                            <StackPanel Orientation="Horizontal" Spacing="10">
+                              <Path Classes="compactInstanceMenuIcon"
+                                    Data="{StaticResource DeleteIcon}" />
+                              <TextBlock Text="{Binding ManagedInstanceDeleteLabel}"
+                                         VerticalAlignment="Center" />
+                            </StackPanel>
+                          </Button>
+                        </StackPanel>
+                      </Border>
+                    </controls:FadingPopup>
+                  </Grid>
+                </Border>
               </Grid>
             </Border>
 
@@ -225,19 +295,95 @@ SPDX-License-Identifier: GPL-3.0-only
                           MaxWidth="720"
                           HorizontalAlignment="Stretch"
                           Spacing="22">
-                <Border Classes="instanceInfoGroup">
+                <StackPanel Classes="instanceSummary" Spacing="16">
+                  <Border Classes="wideInstanceSplitAction"
+                          HorizontalAlignment="Center">
+                    <StackPanel x:Name="WideInstanceActions"
+                                Classes="instanceActions wideInstanceActions"
+                                Orientation="Horizontal"
+                                HorizontalAlignment="Center"
+                                Spacing="0">
+                  <Button Classes="instanceAction primary first"
+                          IsEnabled="{Binding CanRunManagedInstanceAction}"
+                          Command="{Binding RunManagedInstanceCommand}">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                      <Path Classes="instanceActionIcon"
+                            IsVisible="{Binding IsManagedInstanceInstalled}"
+                            Data="{StaticResource PlayIcon}" />
+                      <Path Classes="instanceActionIcon"
+                            IsVisible="{Binding !IsManagedInstanceInstalled}"
+                            Data="{StaticResource DownloadIcon}" />
+                      <TextBlock Text="{Binding ManagedInstanceActionLabel}"
+                                 VerticalAlignment="Center" />
+                    </StackPanel>
+                  </Button>
+
+                  <Border Classes="wideInstanceActionDivider" />
+
+                  <Button Classes="instanceAction secondary middle"
+                          IsEnabled="{Binding CanOpenManagedInstanceFolder}"
+                          Command="{Binding OpenManagedInstanceFolderCommand}">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                      <Path Classes="instanceActionIcon" Data="{StaticResource FolderOpenIcon}" />
+                      <TextBlock Text="{Binding ManagedInstanceOpenFolderLabel}"
+                                 VerticalAlignment="Center" />
+                    </StackPanel>
+                  </Button>
+
+                  <Border Classes="wideInstanceActionDivider" />
+
+                  <Button x:Name="DeleteInstanceButton"
+                          Classes="instanceAction secondary danger last"
+                          IsEnabled="{Binding CanDeleteManagedInstance}">
+                    <Button.Flyout>
+                      <Flyout Placement="BottomEdgeAlignedRight">
+                        <Border Classes="instanceDeleteConfirmation">
+                          <StackPanel Width="300" Spacing="12">
+                            <TextBlock Text="{Binding ManagedInstanceDeleteTitle}"
+                                       FontSize="17"
+                                       FontWeight="SemiBold" />
+                            <TextBlock Text="{Binding ManagedInstanceDeleteHint}"
+                                       Classes="muted"
+                                       TextWrapping="Wrap" />
+                            <StackPanel Orientation="Horizontal"
+                                        HorizontalAlignment="Right"
+                                        Spacing="8">
+                              <Button Classes="instanceConfirmAction"
+                                      Click="OnCloseDeleteInstanceFlyoutClicked">
+                                <TextBlock Text="{Binding CancelLabel}" />
+                              </Button>
+                              <Button Classes="instanceConfirmAction danger"
+                                      Command="{Binding DeleteManagedInstanceCommand}"
+                                      Click="OnCloseDeleteInstanceFlyoutClicked">
+                                <TextBlock Text="{Binding ManagedInstanceDeleteLabel}" />
+                              </Button>
+                            </StackPanel>
+                          </StackPanel>
+                        </Border>
+                      </Flyout>
+                    </Button.Flyout>
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                      <Path Classes="instanceActionIcon" Data="{StaticResource DeleteIcon}" />
+                      <TextBlock Text="{Binding ManagedInstanceDeleteLabel}"
+                                 VerticalAlignment="Center" />
+                    </StackPanel>
+                    </Button>
+                    </StackPanel>
+                  </Border>
+
+                  <Border Classes="instanceInfoGroup">
                   <Grid ColumnDefinitions="*,2,*" RowDefinitions="Auto,2,Auto">
                     <Border Classes="instanceInfoCell">
                       <StackPanel Spacing="3">
                         <TextBlock Text="{Binding InstanceStatusInfoLabel}" Classes="instanceInfoLabel" />
-                        <TextBlock Text="{Binding SelectedInstanceState}" Classes="instanceInfoValue" />
+                        <TextBlock Text="{Binding ManagedInstanceState}" Classes="instanceInfoValue" />
                       </StackPanel>
                     </Border>
                     <Border Grid.Column="1" Background="{DynamicResource SurfaceBrush}" />
                     <Border Grid.Column="2" Classes="instanceInfoCell">
                       <StackPanel Spacing="3">
                         <TextBlock Text="{Binding InstancePlayTimeInfoLabel}" Classes="instanceInfoLabel" />
-                        <TextBlock Text="{Binding SelectedInstancePlayTime}" Classes="instanceInfoValue" />
+                        <TextBlock Text="{Binding ManagedInstancePlayTime}" Classes="instanceInfoValue" />
                       </StackPanel>
                     </Border>
 
@@ -246,27 +392,30 @@ SPDX-License-Identifier: GPL-3.0-only
                     <Border Grid.Row="2" Classes="instanceInfoCell">
                       <StackPanel Spacing="3">
                         <TextBlock Text="{Binding VersionLabel}" Classes="instanceInfoLabel" />
-                        <TextBlock Text="{Binding SelectedInstanceVersion}" Classes="instanceInfoValue" />
+                        <TextBlock Text="{Binding ManagedInstanceVersion}" Classes="instanceInfoValue" />
                       </StackPanel>
                     </Border>
                     <Border Grid.Row="2" Grid.Column="1" Background="{DynamicResource SurfaceBrush}" />
                     <Border Grid.Row="2" Grid.Column="2" Classes="instanceInfoCell">
                       <StackPanel Spacing="3">
                         <TextBlock Text="{Binding BranchLabel}" Classes="instanceInfoLabel" />
-                        <TextBlock Text="{Binding SelectedInstanceBranch}" Classes="instanceInfoValue" />
+                        <TextBlock Text="{Binding ManagedInstanceBranch}" Classes="instanceInfoValue" />
                       </StackPanel>
                     </Border>
                   </Grid>
-                </Border>
+                  </Border>
+                </StackPanel>
 
                 <Border Classes="instanceMenuGroup">
                   <StackPanel>
                     <Button Classes="uiSettingsNavigationRow instanceMenuRow"
-                            IsEnabled="{Binding IsSelectedInstanceInstalled}"
+                            IsEnabled="{Binding IsManagedInstanceInstalled}"
                             Command="{Binding SelectInstanceSectionCommand}"
                             CommandParameter="mods">
                       <Grid ColumnDefinitions="28,*,Auto" ColumnSpacing="14">
-                        <Path Classes="instanceMenuIcon" Data="{StaticResource ModsIcon}" />
+                        <Image Classes="instanceMenuIcon"
+                               Source="avares://HyPrism.Desktop/Assets/Fluent/puzzle.png"
+                               Stretch="Uniform" />
                         <StackPanel Grid.Column="1" Spacing="3">
                           <TextBlock Text="{Binding InstanceModsTitle}" Classes="uiSettingsLabel instanceMenuTitle" />
                           <TextBlock Text="{Binding InstanceModsHint}" Classes="uiSettingsHint instanceMenuDescription" />
@@ -275,11 +424,13 @@ SPDX-License-Identifier: GPL-3.0-only
                       </Grid>
                     </Button>
                     <Button Classes="uiSettingsNavigationRow instanceMenuRow"
-                            IsEnabled="{Binding IsSelectedInstanceInstalled}"
+                            IsEnabled="{Binding IsManagedInstanceInstalled}"
                             Command="{Binding SelectInstanceSectionCommand}"
                             CommandParameter="browse">
                       <Grid ColumnDefinitions="28,*,Auto" ColumnSpacing="14">
-                        <Path Classes="instanceMenuIcon" Data="{StaticResource ModCatalogIcon}" />
+                        <Image Classes="instanceMenuIcon"
+                               Source="avares://HyPrism.Desktop/Assets/Fluent/compass.png"
+                               Stretch="Uniform" />
                         <StackPanel Grid.Column="1" Spacing="3">
                           <TextBlock Text="{Binding InstanceBrowseTitle}" Classes="uiSettingsLabel instanceMenuTitle" />
                           <TextBlock Text="{Binding InstanceBrowseHint}" Classes="uiSettingsHint instanceMenuDescription" />
@@ -288,11 +439,13 @@ SPDX-License-Identifier: GPL-3.0-only
                       </Grid>
                     </Button>
                     <Button Classes="uiSettingsNavigationRow instanceMenuRow"
-                            IsEnabled="{Binding IsSelectedInstanceInstalled}"
+                            IsEnabled="{Binding IsManagedInstanceInstalled}"
                             Command="{Binding SelectInstanceSectionCommand}"
                             CommandParameter="worlds">
                       <Grid ColumnDefinitions="28,*,Auto" ColumnSpacing="14">
-                        <Path Classes="instanceMenuIcon" Data="{StaticResource WorldsIcon}" />
+                        <Image Classes="instanceMenuIcon"
+                               Source="avares://HyPrism.Desktop/Assets/Fluent/map.png"
+                               Stretch="Uniform" />
                         <StackPanel Grid.Column="1" Spacing="3">
                           <TextBlock Text="{Binding InstanceWorldsTitle}" Classes="uiSettingsLabel instanceMenuTitle" />
                           <TextBlock Text="{Binding InstanceWorldsHint}" Classes="uiSettingsHint instanceMenuDescription" />
@@ -301,11 +454,13 @@ SPDX-License-Identifier: GPL-3.0-only
                       </Grid>
                     </Button>
                     <Button Classes="uiSettingsNavigationRow instanceMenuRow"
-                            IsEnabled="{Binding IsSelectedInstanceInstalled}"
+                            IsEnabled="{Binding IsManagedInstanceInstalled}"
                             Command="{Binding SelectInstanceSectionCommand}"
                             CommandParameter="console">
                       <Grid ColumnDefinitions="28,*,Auto" ColumnSpacing="14">
-                        <Path Classes="instanceMenuIcon" Data="{StaticResource ConsoleIcon}" />
+                        <Image Classes="instanceMenuIcon"
+                               Source="avares://HyPrism.Desktop/Assets/Fluent/console.png"
+                               Stretch="Uniform" />
                         <StackPanel Grid.Column="1" Spacing="3">
                           <TextBlock Text="{Binding InstanceConsoleTitle}" Classes="uiSettingsLabel instanceMenuTitle" />
                           <TextBlock Text="{Binding InstanceConsoleHint}" Classes="uiSettingsHint instanceMenuDescription" />
@@ -314,11 +469,13 @@ SPDX-License-Identifier: GPL-3.0-only
                       </Grid>
                     </Button>
                     <Button Classes="uiSettingsNavigationRow instanceMenuRow last"
-                            IsEnabled="{Binding IsSelectedInstanceInstalled}"
+                            IsEnabled="{Binding IsManagedInstanceInstalled}"
                             Command="{Binding SelectInstanceSectionCommand}"
                             CommandParameter="logs">
                       <Grid ColumnDefinitions="28,*,Auto" ColumnSpacing="14">
-                        <Path Classes="instanceMenuIcon" Data="{StaticResource LogsIcon}" />
+                        <Image Classes="instanceMenuIcon"
+                               Source="avares://HyPrism.Desktop/Assets/Fluent/log.png"
+                               Stretch="Uniform" />
                         <StackPanel Grid.Column="1" Spacing="3">
                           <TextBlock Text="{Binding InstanceLogsTitle}" Classes="uiSettingsLabel instanceMenuTitle" />
                           <TextBlock Text="{Binding InstanceLogsHint}" Classes="uiSettingsHint instanceMenuDescription" />
@@ -737,5 +894,36 @@ SPDX-License-Identifier: GPL-3.0-only
         </StackPanel>
       </Border>
     </Grid>
+
+    <Border x:Name="InstanceDragPreview"
+            Grid.ColumnSpan="2"
+            Classes="instancesDragPreview"
+            HorizontalAlignment="Left"
+            VerticalAlignment="Top"
+            IsVisible="False"
+            IsHitTestVisible="False"
+            ZIndex="100">
+      <Border.RenderTransform>
+        <TranslateTransform />
+      </Border.RenderTransform>
+      <Grid ColumnDefinitions="28,*,22" ColumnSpacing="9">
+        <Border Classes="instancesListDragTarget">
+          <Path Classes="instancesListHandle" Data="{StaticResource DragIndicatorIcon}" />
+        </Border>
+        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+          <TextBlock x:Name="InstanceDragPreviewName"
+                     Classes="uiSettingsLabel instancesListTitle"
+                     TextTrimming="CharacterEllipsis"
+                     TextWrapping="NoWrap" />
+          <TextBlock x:Name="InstanceDragPreviewBranch"
+                     Classes="uiSettingsHint"
+                     TextTrimming="CharacterEllipsis"
+                     TextWrapping="NoWrap" />
+        </StackPanel>
+        <Path Grid.Column="2"
+              Classes="instancesListMore"
+              Data="{StaticResource MoreVerticalIcon}" />
+      </Grid>
+    </Border>
   </Grid>
 </UserControl>

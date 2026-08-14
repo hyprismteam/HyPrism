@@ -1,6 +1,8 @@
 // Copyright (C) 2026 HyPrism Launcher
 // SPDX-License-Identifier: GPL-3.0-only
 
+using System.Text.Json.Serialization;
+
 namespace HyPrism.Core.Models;
 
 /// <summary>
@@ -99,5 +101,6 @@ public class InstanceInfo
     /// <summary>
     /// Whether the game files are actually installed (valid client/server executables exist).
     /// </summary>
-    public bool IsInstalled { get; set; } = true;
+    [JsonIgnore]
+    public bool IsInstalled { get; set; }
 }
