@@ -65,13 +65,17 @@ public sealed record LocalNodeOptions(
         var controlSecret = values.TryGetValue("control-secret", out var configuredControlSecret)
             ? configuredControlSecret
             : null;
+        var certificateDirectory = values.TryGetValue("certificate-directory", out var configuredCertificateDirectory)
+            ? Path.GetFullPath(configuredCertificateDirectory)
+            : null;
         var unknownArgument = values.Keys.FirstOrDefault(name =>
             !string.Equals(name, "data-directory", StringComparison.OrdinalIgnoreCase) &&
             !string.Equals(name, "hostname", StringComparison.OrdinalIgnoreCase) &&
             !string.Equals(name, "port", StringComparison.OrdinalIgnoreCase) &&
             !string.Equals(name, "assets-path", StringComparison.OrdinalIgnoreCase) &&
             !string.Equals(name, "owner-pid", StringComparison.OrdinalIgnoreCase) &&
-            !string.Equals(name, "control-secret", StringComparison.OrdinalIgnoreCase));
+            !string.Equals(name, "control-secret", StringComparison.OrdinalIgnoreCase) &&
+            !string.Equals(name, "certificate-directory", StringComparison.OrdinalIgnoreCase));
         if (unknownArgument is not null)
         {
             throw new ArgumentException($"Argument '--{unknownArgument}' is not supported", nameof(args));
@@ -105,6 +109,7 @@ public sealed record LocalNodeOptions(
             port,
             assetsPath,
             ownerProcessId,
-            controlSecret);
+            controlSecret,
+            certificateDirectory);
     }
 }

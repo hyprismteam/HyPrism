@@ -25,17 +25,20 @@ public sealed class LocalNodeTrustStore
     /// <summary>
     /// Prepares platform-specific trust material
     /// </summary>
-    public static LocalNodeTrustStore Prepare(LocalNodeOptions options, X509Certificate2 certificate)
+    public static LocalNodeTrustStore Prepare(
+        LocalNodeOptions options,
+        X509Certificate2 serverCertificate,
+        X509Certificate2 rootCertificate)
     {
-        var javaTrustStorePath = CreateJavaTrustStore(options, certificate);
+        var javaTrustStorePath = CreateJavaTrustStore(options, rootCertificate);
         if (OperatingSystem.IsWindows())
         {
-            InstallForCurrentWindowsUser(certificate);
+            InstallForCurrentWindowsUser(rootCertificate);
             return new LocalNodeTrustStore(null, javaTrustStorePath);
         }
 
         if (OperatingSystem.IsMacOS())
-            MacOsCertificateTrust.EnsureTrusted(options, certificate);
+            MacOsCertificateTrust.EnsureTrusted(options, serverCertificate, rootCertificate);
 
         var bundlePath = Path.Combine(options.DataDirectory, "client-ca-bundle.pem");
         var systemBundle = FindSystemBundle();
@@ -49,7 +52,7 @@ public sealed class LocalNodeTrustStore
         }
 
         using var writer = new StreamWriter(output, leaveOpen: true);
-        writer.Write(certificate.ExportCertificatePem());
+        writer.Write(rootCertificate.ExportCertificatePem());
         writer.Flush();
         if (!OperatingSystem.IsWindows())
             File.SetUnixFileMode(bundlePath, UnixFileMode.UserRead | UnixFileMode.UserWrite);

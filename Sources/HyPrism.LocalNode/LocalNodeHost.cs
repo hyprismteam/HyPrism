@@ -24,6 +24,7 @@ public sealed class LocalNodeHost : ILocalNodeService, IAsyncDisposable
     private Process? _nodeProcess;
     private HttpClient? _controlClient;
     private X509Certificate2? _certificate;
+    private X509Certificate2? _rootCertificate;
     private LocalNodeTrustStore? _trustStore;
     private bool _attachedToGame;
     private bool _disposed;
@@ -207,7 +208,8 @@ public sealed class LocalNodeHost : ILocalNodeService, IAsyncDisposable
     private void PrepareControlPlane()
     {
         _certificate ??= LocalNodeCertificateStore.LoadOrCreate(_options);
-        _trustStore ??= LocalNodeTrustStore.Prepare(_options, _certificate);
+        _rootCertificate ??= LocalNodeCertificateStore.LoadRootCertificate(_options);
+        _trustStore ??= LocalNodeTrustStore.Prepare(_options, _certificate, _rootCertificate);
         _controlClient ??= CreateControlClient(_certificate);
     }
 
@@ -238,6 +240,10 @@ public sealed class LocalNodeHost : ILocalNodeService, IAsyncDisposable
         AddArgument(startInfo, "--data-directory", _options.DataDirectory);
         AddArgument(startInfo, "--hostname", _options.Hostname);
         AddArgument(startInfo, "--port", _options.Port.ToString());
+        AddArgument(
+            startInfo,
+            "--certificate-directory",
+            LocalNodeCertificateStore.GetCertificateDirectory(_options));
         AddArgument(startInfo, "--owner-pid", Environment.ProcessId.ToString());
         AddArgument(startInfo, "--control-secret", _controlSecret);
         if (!string.IsNullOrWhiteSpace(assetsPath))
@@ -385,6 +391,8 @@ public sealed class LocalNodeHost : ILocalNodeService, IAsyncDisposable
         _controlClient = null;
         _certificate?.Dispose();
         _certificate = null;
+        _rootCertificate?.Dispose();
+        _rootCertificate = null;
         _startGate.Dispose();
     }
 

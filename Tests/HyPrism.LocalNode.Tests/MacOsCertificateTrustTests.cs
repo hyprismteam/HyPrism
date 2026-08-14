@@ -17,6 +17,7 @@ public sealed class MacOsCertificateTrustTests
         MacOsCertificateTrust.EnsureTrusted(
             fixture.Options,
             fixture.Certificate,
+            fixture.RootCertificate,
             arguments =>
             {
                 commands.Add(arguments.ToArray());
@@ -39,6 +40,7 @@ public sealed class MacOsCertificateTrustTests
         MacOsCertificateTrust.EnsureTrusted(
             fixture.Options,
             fixture.Certificate,
+            fixture.RootCertificate,
             arguments =>
             {
                 var command = arguments.ToArray();
@@ -54,7 +56,7 @@ public sealed class MacOsCertificateTrustTests
         Assert.Equal("ssl", ArgumentAfter(install, "-p"));
         Assert.Equal(fixture.Options.Hostname, ArgumentAfter(install, "-s"));
         Assert.Equal(
-            LocalNodeCertificateStore.GetPublicCertificatePath(fixture.Options),
+            LocalNodeCertificateStore.GetRootPublicCertificatePath(fixture.Options),
             install[^1]);
     }
 
@@ -64,13 +66,14 @@ public sealed class MacOsCertificateTrustTests
         using var oldFixture = CertificateFixture.Create();
         using var currentFixture = CertificateFixture.Create();
         var trustedCopy = Path.Combine(currentFixture.Options.DataDirectory, "macos-trusted.crt");
-        File.Copy(LocalNodeCertificateStore.GetPublicCertificatePath(oldFixture.Options), trustedCopy);
+        File.Copy(LocalNodeCertificateStore.GetRootPublicCertificatePath(oldFixture.Options), trustedCopy);
         var commands = new List<string[]>();
         var currentVerificationCount = 0;
 
         MacOsCertificateTrust.EnsureTrusted(
             currentFixture.Options,
             currentFixture.Certificate,
+            currentFixture.RootCertificate,
             arguments =>
             {
                 var command = arguments.ToArray();
@@ -87,7 +90,6 @@ public sealed class MacOsCertificateTrustTests
         Assert.Equal(
             [
                 "verify-cert",
-                "verify-cert",
                 "remove-trusted-cert",
                 "delete-certificate",
                 "add-trusted-cert",
@@ -96,7 +98,7 @@ public sealed class MacOsCertificateTrustTests
             commands.Select(item => item[0]));
 
         using var preserved = X509CertificateLoader.LoadCertificateFromFile(trustedCopy);
-        Assert.Equal(currentFixture.Certificate.Thumbprint, preserved.Thumbprint);
+        Assert.Equal(currentFixture.RootCertificate.Thumbprint, preserved.Thumbprint);
     }
 
     [Fact]
@@ -108,6 +110,7 @@ public sealed class MacOsCertificateTrustTests
             MacOsCertificateTrust.EnsureTrusted(
                 fixture.Options,
                 fixture.Certificate,
+                fixture.RootCertificate,
                 arguments => arguments[0] == "verify-cert"
                     ? new MacOsTrustCommandResult(1)
                     : new MacOsTrustCommandResult(1, StandardError: "User canceled")));
@@ -128,11 +131,13 @@ public sealed class MacOsCertificateTrustTests
         private CertificateFixture(
             string directory,
             LocalNodeOptions options,
-            X509Certificate2 certificate)
+            X509Certificate2 certificate,
+            X509Certificate2 rootCertificate)
         {
             Directory = directory;
             Options = options;
             Certificate = certificate;
+            RootCertificate = rootCertificate;
         }
 
         public string Directory { get; }
@@ -141,19 +146,21 @@ public sealed class MacOsCertificateTrustTests
 
         public X509Certificate2 Certificate { get; }
 
+        public X509Certificate2 RootCertificate { get; }
+
         public static CertificateFixture Create()
         {
             var directory = Path.Combine(Path.GetTempPath(), "HyPrismMacTrustTests_" + Guid.NewGuid());
             var options = new LocalNodeOptions(directory, "h.localhost", 8443);
-            return new CertificateFixture(
-                directory,
-                options,
-                LocalNodeCertificateStore.LoadOrCreate(options));
+            var certificate = LocalNodeCertificateStore.LoadOrCreate(options);
+            var rootCertificate = LocalNodeCertificateStore.LoadRootCertificate(options);
+            return new CertificateFixture(directory, options, certificate, rootCertificate);
         }
 
         public void Dispose()
         {
             Certificate.Dispose();
+            RootCertificate.Dispose();
             if (System.IO.Directory.Exists(Directory))
                 System.IO.Directory.Delete(Directory, recursive: true);
         }

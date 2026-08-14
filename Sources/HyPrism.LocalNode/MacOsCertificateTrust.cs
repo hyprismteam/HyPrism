@@ -16,9 +16,12 @@ internal static class MacOsCertificateTrust
     private const string SecurityExecutable = "/usr/bin/security";
 
     /// <summary>
-    /// Ensures Apple Security trusts the current Local Node certificate for its hostname
+    /// Ensures Apple Security trusts the local certificate authority for the Local Node hostname
     /// </summary>
-    internal static void EnsureTrusted(LocalNodeOptions options, X509Certificate2 certificate)
+    internal static void EnsureTrusted(
+        LocalNodeOptions options,
+        X509Certificate2 serverCertificate,
+        X509Certificate2 rootCertificate)
     {
         if (string.Equals(
                 Environment.GetEnvironmentVariable(SkipEnvironmentVariable),
@@ -28,7 +31,7 @@ internal static class MacOsCertificateTrust
             return;
         }
 
-        EnsureTrusted(options, certificate, RunSecurityCommand);
+        EnsureTrusted(options, serverCertificate, rootCertificate, RunSecurityCommand);
     }
 
     /// <summary>
@@ -36,22 +39,26 @@ internal static class MacOsCertificateTrust
     /// </summary>
     internal static void EnsureTrusted(
         LocalNodeOptions options,
-        X509Certificate2 certificate,
+        X509Certificate2 serverCertificate,
+        X509Certificate2 rootCertificate,
         Func<IReadOnlyList<string>, MacOsTrustCommandResult> runCommand)
     {
         ArgumentNullException.ThrowIfNull(runCommand);
-        var currentCertificatePath = LocalNodeCertificateStore.GetPublicCertificatePath(options);
+        var serverCertificatePath = LocalNodeCertificateStore.GetPublicCertificatePath(options);
+        var currentCertificatePath = LocalNodeCertificateStore.GetRootPublicCertificatePath(options);
         var trustedCertificatePath = Path.Combine(
             LocalNodeCertificateStore.GetCertificateDirectory(options),
             TrustedCertificateFileName);
+        using var publicServerCertificate = X509CertificateLoader.LoadCertificateFromFile(serverCertificatePath);
         using var publicCertificate = X509CertificateLoader.LoadCertificateFromFile(currentCertificatePath);
-        if (!publicCertificate.RawData.AsSpan().SequenceEqual(certificate.RawData))
+        if (!publicServerCertificate.RawData.AsSpan().SequenceEqual(serverCertificate.RawData)
+            || !publicCertificate.RawData.AsSpan().SequenceEqual(rootCertificate.RawData))
         {
             throw new InvalidOperationException(
-                "The public Local Node certificate does not match the active HTTPS certificate");
+                "The public Local Node certificate chain does not match the active HTTPS certificate");
         }
 
-        if (Verify(runCommand, currentCertificatePath, options.Hostname).ExitCode == 0)
+        if (Verify(runCommand, serverCertificatePath, options.Hostname).ExitCode == 0)
         {
             PreserveTrustedCertificate(currentCertificatePath, trustedCertificatePath);
             return;
@@ -60,8 +67,7 @@ internal static class MacOsCertificateTrust
         RemoveRotatedCertificate(
             runCommand,
             currentCertificatePath,
-            trustedCertificatePath,
-            options.Hostname);
+            trustedCertificatePath);
 
         var install = runCommand(
         [
@@ -78,7 +84,7 @@ internal static class MacOsCertificateTrust
                 install);
         }
 
-        var verification = Verify(runCommand, currentCertificatePath, options.Hostname);
+        var verification = Verify(runCommand, serverCertificatePath, options.Hostname);
         if (verification.ExitCode != 0)
         {
             throw CreateTrustException(
@@ -92,8 +98,7 @@ internal static class MacOsCertificateTrust
     private static void RemoveRotatedCertificate(
         Func<IReadOnlyList<string>, MacOsTrustCommandResult> runCommand,
         string currentCertificatePath,
-        string trustedCertificatePath,
-        string hostname)
+        string trustedCertificatePath)
     {
         if (!File.Exists(trustedCertificatePath)
             || File.ReadAllBytes(trustedCertificatePath).AsSpan()
@@ -103,15 +108,12 @@ internal static class MacOsCertificateTrust
         }
 
         using var oldCertificate = X509CertificateLoader.LoadCertificateFromFile(trustedCertificatePath);
-        if (Verify(runCommand, trustedCertificatePath, hostname).ExitCode == 0)
+        var removeTrust = runCommand(["remove-trusted-cert", trustedCertificatePath]);
+        if (removeTrust.ExitCode != 0)
         {
-            var removeTrust = runCommand(["remove-trusted-cert", trustedCertificatePath]);
-            if (removeTrust.ExitCode != 0)
-            {
-                throw CreateTrustException(
-                    "macOS did not remove the trust settings for the rotated Local Node certificate",
-                    removeTrust);
-            }
+            throw CreateTrustException(
+                "macOS did not remove the trust settings for the rotated Local Node certificate",
+                removeTrust);
         }
 
         runCommand(["delete-certificate", "-Z", oldCertificate.Thumbprint]);

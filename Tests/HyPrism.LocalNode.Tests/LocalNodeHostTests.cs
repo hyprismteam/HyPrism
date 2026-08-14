@@ -58,8 +58,12 @@ public sealed class LocalNodeHostTests
 
             using var firstCertificate = LocalNodeCertificateStore.LoadOrCreate(firstOptions);
             using var secondCertificate = LocalNodeCertificateStore.LoadOrCreate(secondOptions);
+            using var firstRootCertificate = LocalNodeCertificateStore.LoadRootCertificate(firstOptions);
+            using var secondRootCertificate = LocalNodeCertificateStore.LoadRootCertificate(secondOptions);
 
             Assert.Equal(firstCertificate.Thumbprint, secondCertificate.Thumbprint);
+            Assert.Equal(firstRootCertificate.Thumbprint, secondRootCertificate.Thumbprint);
+            Assert.Equal(firstRootCertificate.Subject, firstCertificate.Issuer);
             Assert.Equal(
                 LocalNodeCertificateStore.GetCertificatePath(firstOptions),
                 LocalNodeCertificateStore.GetCertificatePath(secondOptions));
@@ -204,11 +208,11 @@ public sealed class LocalNodeHostTests
                 var bundlePath = startInfo.Environment["SSL_CERT_FILE"];
                 Assert.True(File.Exists(bundlePath));
                 var bundle = await File.ReadAllTextAsync(bundlePath);
-                var localCertificate = await File.ReadAllTextAsync(
-                    LocalNodeCertificateStore.GetPublicCertificatePath(options));
-                Assert.EndsWith(localCertificate, bundle);
+                var localRootCertificate = await File.ReadAllTextAsync(
+                    LocalNodeCertificateStore.GetRootPublicCertificatePath(options));
+                Assert.EndsWith(localRootCertificate, bundle);
                 if (OperatingSystem.IsMacOS() && File.Exists("/etc/ssl/cert.pem"))
-                    Assert.True(bundle.Length > localCertificate.Length);
+                    Assert.True(bundle.Length > localRootCertificate.Length);
             }
         }
         finally

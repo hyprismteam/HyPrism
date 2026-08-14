@@ -43,13 +43,15 @@ Identity tokens, authorization grants, and server access tokens carry the active
 
 Each autonomous launch stores its runtime state below `LocalNode/Sessions/<session-id>` in the HyPrism application data directory. This prevents control secrets, logs, trust bundles, and account state from colliding between concurrently running local sessions
 
-The TLS certificate is intentionally shared at `LocalNode/Certificate`. It is valid for the `h.localhost` hostname, not for a particular port, so every Local Node endpoint can use the same trusted certificate without another system trust prompt
+The TLS certificate authority is intentionally shared at `LocalNode/Certificate`. It signs the `h.localhost` server certificate, which is valid for the hostname rather than a particular port. Every Local Node endpoint can therefore use the same trusted chain without another system trust prompt
 
 | File | Purpose |
 | --- | --- |
 | `accounts.json` | local profiles, saved skins, active skin, and presence preferences for this launch session |
-| `h.localhost.pfx` | shared loopback TLS certificate and private key in `LocalNode/Certificate` |
-| `h.localhost.crt` | shared PEM public certificate in `LocalNode/Certificate` |
+| `hyprism-local-ca.pfx` | shared local certificate authority and private key in `LocalNode/Certificate` |
+| `hyprism-local-ca.crt` | shared PEM public certificate authority in `LocalNode/Certificate` |
+| `h.localhost.pfx` | shared server TLS certificate and private key signed by the local authority |
+| `h.localhost.crt` | shared PEM server certificate signed by the local authority |
 | `client-ca-bundle.pem` | Unix CA bundle inherited by the game process |
 | `client-trust.p12` | Java trust store inherited by embedded server JVMs |
 | `macos-trusted.crt` | copy of the certificate currently registered in macOS user trust settings |
@@ -57,13 +59,13 @@ The TLS certificate is intentionally shared at `LocalNode/Certificate`. It is va
 | `local-node.previous.log` | previous isolated log after size-based rotation |
 | `unimplemented-requests.ndjson` | method, path, and query-key journal for unknown client calls, without headers, values, or bodies |
 
-The TLS certificate rotates when it is invalid, has the wrong host, or has fewer than seven valid days remaining. Windows adds the public certificate to the current user's root store. Linux and macOS pass a combined CA bundle to the game process for OpenSSL consumers, and Java receives a dedicated PKCS#12 trust store on every platform
+The `h.localhost` server certificate rotates when it is invalid, has the wrong host, is not signed by HyPrism's local certificate authority, or has fewer than seven valid days remaining. The certificate authority persists for ten years unless it is invalid. Windows adds that authority to the current user's root store. Linux and macOS pass a combined CA bundle to the game process for OpenSSL consumers, and Java receives a dedicated PKCS#12 trust store on every platform
 
-On macOS, the first autonomous launch asks the user to approve the certificate in Apple user trust settings. Trust is constrained to the `ssl` policy and the `h.localhost` hostname. HyPrism verifies the result before launching the game and removes the previous trust entry when the certificate rotates. Canceling the macOS security prompt stops the autonomous launch with an actionable error instead of weakening certificate validation
+On macOS, the first autonomous launch asks the user to approve the HyPrism local certificate authority in Apple user trust settings. The server certificate remains restricted to the `h.localhost` hostname. HyPrism verifies the full chain before launching the game and removes the previous root trust entry only when the authority rotates. Canceling the macOS security prompt stops the autonomous launch with an actionable error instead of weakening certificate validation
 
 ASP.NET logging providers are disabled for the companion process, so server request diagnostics do not share the static HyPrism logger or its console stream. The launcher reports only process startup, readiness, attachment, and exceptional control failures while detailed node events stay in `local-node.log`. Authentication routes record only method, path, response status, and duration without headers, tokens, or request bodies
 
-The embedded host receives the active game directory automatically. When running `HyPrism.LocalNode` as a standalone process, pass `--assets-path /absolute/path/to/Assets.zip` to expose the complete installed cosmetics catalog
+The embedded host receives the active game directory and shared certificate directory automatically. When running `HyPrism.LocalNode` as a standalone process, pass `--assets-path /absolute/path/to/Assets.zip` to expose the complete installed cosmetics catalog and `--certificate-directory /absolute/path/to/Certificate` to reuse an existing trusted local certificate authority
 
 ## Limits
 
