@@ -40,6 +40,11 @@ public class InstanceMeta
     public DateTime? LastPlayedAt { get; set; }
 
     /// <summary>
+    /// Total tracked play time for this instance in seconds.
+    /// </summary>
+    public long PlayTimeSeconds { get; set; }
+
+    /// <summary>
     /// Whether this is the "latest" rolling instance that auto-updates.
     /// </summary>
     public bool IsLatest { get; set; } = false;

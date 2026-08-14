@@ -594,7 +594,7 @@ SPDX-License-Identifier: GPL-3.0-only
           </StackPanel>
         </StackPanel>
 
-        <StackPanel Grid.Row="1" Spacing="2">
+        <StackPanel x:Name="PrimaryNavigation" Grid.Row="1" Spacing="2">
           <Button Classes="nav"
                   Classes.selected="{Binding IsDashboard}"
                   Command="{Binding NavigateCommand}"
@@ -619,19 +619,6 @@ SPDX-License-Identifier: GPL-3.0-only
                 <Path Classes="navIconFilled" Stretch="Uniform" Data="{StaticResource InstancesFilledIcon}" />
               </Grid>
               <TextBlock VerticalAlignment="Center" Text="{Binding InstancesLabel}" />
-            </StackPanel>
-          </Button>
-
-          <Button Classes="nav"
-                  Classes.selected="{Binding IsMods}"
-                  Command="{Binding NavigateCommand}"
-                  CommandParameter="mods">
-            <StackPanel Orientation="Horizontal" Spacing="14">
-              <Grid Width="21" Height="21">
-                <Path Classes="navIconOutline" Stretch="Uniform" Data="{StaticResource ModsIcon}" />
-                <Path Classes="navIconFilled" Stretch="Uniform" Data="{StaticResource ModsFilledIcon}" />
-              </Grid>
-              <TextBlock VerticalAlignment="Center" Text="{Binding ModsLabel}" />
             </StackPanel>
           </Button>
 

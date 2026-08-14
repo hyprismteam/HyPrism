@@ -75,24 +75,19 @@ SPDX-License-Identifier: GPL-3.0-only
           <TextBlock Text="{Binding HomeCurrentInstanceLabel}" Classes="eyebrow" HorizontalAlignment="Center" />
           <TextBlock Classes="dashboardTitle" Text="{Binding SelectedInstanceName}" FontWeight="Bold" MaxLines="2" TextAlignment="Center" TextTrimming="CharacterEllipsis" />
           <TextBlock Text="{Binding SelectedInstanceMeta}" Classes="dashboardSubtitle" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="NoWrap" />
-          <Border Classes="dashboardInstanceSummary" Margin="0,12,0,0">
-            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="14">
-              <Border Classes="dashboardInstanceGlyph"><Path Width="24" Height="24" Stretch="Uniform" Data="{StaticResource InstancesIcon}" /></Border>
-              <TextBlock Grid.Column="1" Text="{Binding HomeInstanceHint}" Classes="dashboardSubtitle" VerticalAlignment="Center" TextWrapping="Wrap" />
-            </Grid>
-          </Border>
-          <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="10" Margin="0,4,0,0">
-            <Button Classes="primary dashboardPrimary" IsEnabled="{Binding CanRunPrimaryAction}" Command="{Binding PrimaryActionCommand}">
-              <StackPanel Orientation="Horizontal" Spacing="10">
-                <Path IsVisible="{Binding IsPrimaryPlayAction}" Classes="actionIcon" Width="18" Height="18" Stretch="Uniform" Data="{StaticResource PlayIcon}" />
-                <Path IsVisible="{Binding IsPrimaryDownloadAction}" Classes="actionIcon" Width="18" Height="18" Stretch="Uniform" Data="{StaticResource DownloadIcon}" />
-                <Path IsVisible="{Binding IsPrimaryStopAction}" Classes="actionIcon" Width="16" Height="16" Stretch="Uniform" Data="{StaticResource StopIcon}" />
-                <Ellipse IsVisible="{Binding IsPrimaryPendingAction}" Width="9" Height="9" Fill="#111111" />
-                <TextBlock Text="{Binding PrimaryActionText}" VerticalAlignment="Center" TextWrapping="NoWrap" />
-              </StackPanel>
-            </Button>
-            <Button Classes="dashboardManage" Command="{Binding OpenInstancesCommand}"><TextBlock Text="{Binding HomeManageInstancesLabel}" /></Button>
-          </StackPanel>
+          <Button Classes="primary dashboardPrimary"
+                  HorizontalAlignment="Center"
+                  Margin="0,14,0,0"
+                  IsEnabled="{Binding CanRunPrimaryAction}"
+                  Command="{Binding PrimaryActionCommand}">
+            <StackPanel Orientation="Horizontal" Spacing="10">
+              <Path IsVisible="{Binding IsPrimaryPlayAction}" Classes="actionIcon" Width="18" Height="18" Stretch="Uniform" Data="{StaticResource PlayIcon}" />
+              <Path IsVisible="{Binding IsPrimaryDownloadAction}" Classes="actionIcon" Width="18" Height="18" Stretch="Uniform" Data="{StaticResource DownloadIcon}" />
+              <Path IsVisible="{Binding IsPrimaryStopAction}" Classes="actionIcon" Width="16" Height="16" Stretch="Uniform" Data="{StaticResource StopIcon}" />
+              <Ellipse IsVisible="{Binding IsPrimaryPendingAction}" Width="9" Height="9" Fill="#111111" />
+              <TextBlock Text="{Binding PrimaryActionText}" VerticalAlignment="Center" TextWrapping="NoWrap" />
+            </StackPanel>
+          </Button>
         </StackPanel>
 
         <Border Classes="dashboardActivity"

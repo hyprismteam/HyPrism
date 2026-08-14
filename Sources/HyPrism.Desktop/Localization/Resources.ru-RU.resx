@@ -306,12 +306,6 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="home.currentInstance" xml:space="preserve">
     <value>Текущий экземпляр</value>
   </data>
-  <data name="home.instanceHint" xml:space="preserve">
-    <value>Управляйте версией и файлами в разделе «Экземпляры», а сюда возвращайтесь, когда будете готовы играть</value>
-  </data>
-  <data name="home.manageInstances" xml:space="preserve">
-    <value>Управление экземплярами</value>
-  </data>
   <data name="home.welcomeHint" xml:space="preserve">
     <value>Создайте экземпляр, выберите версию Hytale, скачайте файлы и отправляйтесь в новое приключение</value>
   </data>
@@ -472,7 +466,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>Хранилище</value>
   </data>
   <data name="instances.tab.browse" xml:space="preserve">
-    <value>Обзор модов</value>
+    <value>Каталог</value>
   </data>
   <data name="instances.tab.content" xml:space="preserve">
     <value>Установленные моды</value>
@@ -2636,5 +2630,113 @@ SPDX-License-Identifier: GPL-3.0-only
   </data>
   <data name="desktopSettings.categories.appearance" xml:space="preserve">
     <value>Внешний вид</value>
+  </data>
+  <data name="instances.tab.mods" xml:space="preserve">
+    <value>Моды</value>
+  </data>
+  <data name="instances.mods.title" xml:space="preserve">
+    <value>Установленные моды</value>
+  </data>
+  <data name="instances.mods.hint" xml:space="preserve">
+    <value>Контент, установленный только для этого экземпляра</value>
+  </data>
+  <data name="instances.mods.search" xml:space="preserve">
+    <value>Поиск установленных модов</value>
+  </data>
+  <data name="instances.mods.emptyTitle" xml:space="preserve">
+    <value>Моды не установлены</value>
+  </data>
+  <data name="instances.mods.emptyHint" xml:space="preserve">
+    <value>Откройте каталог, чтобы найти контент для этого экземпляра</value>
+  </data>
+  <data name="instances.mods.install" xml:space="preserve">
+    <value>Установить</value>
+  </data>
+  <data name="instances.mods.installed" xml:space="preserve">
+    <value>Установлен</value>
+  </data>
+  <data name="instances.mods.enabled" xml:space="preserve">
+    <value>Включен</value>
+  </data>
+  <data name="instances.mods.disabled" xml:space="preserve">
+    <value>Отключен</value>
+  </data>
+  <data name="instances.mods.installFailed" xml:space="preserve">
+    <value>Не удалось установить выбранный мод</value>
+  </data>
+  <data name="instances.browse.title" xml:space="preserve">
+    <value>Каталог модов</value>
+  </data>
+  <data name="instances.browse.hint" xml:space="preserve">
+    <value>Поиск и установка контента CurseForge в этот экземпляр</value>
+  </data>
+  <data name="instances.browse.search" xml:space="preserve">
+    <value>Поиск в каталоге модов</value>
+  </data>
+  <data name="instances.browse.emptyTitle" xml:space="preserve">
+    <value>Моды не найдены</value>
+  </data>
+  <data name="instances.browse.emptyHint" xml:space="preserve">
+    <value>Измените запрос или проверьте настройку API CurseForge</value>
+  </data>
+  <data name="instances.worlds.title" xml:space="preserve">
+    <value>Миры</value>
+  </data>
+  <data name="instances.worlds.hint" xml:space="preserve">
+    <value>Сохраненные миры этого экземпляра</value>
+  </data>
+  <data name="instances.worlds.emptyTitle" xml:space="preserve">
+    <value>Миров пока нет</value>
+  </data>
+  <data name="instances.worlds.emptyHint" xml:space="preserve">
+    <value>Созданные в игре миры появятся здесь</value>
+  </data>
+  <data name="instances.content.notInstalledTitle" xml:space="preserve">
+    <value>Сначала установите экземпляр</value>
+  </data>
+  <data name="instances.content.notInstalledHint" xml:space="preserve">
+    <value>Моды и миры станут доступны после установки файлов игры</value>
+  </data>
+  <data name="instances.content.back" xml:space="preserve">
+    <value>Экземпляр</value>
+  </data>
+  <data name="instances.info.status" xml:space="preserve">
+    <value>Статус</value>
+  </data>
+  <data name="instances.info.playtime" xml:space="preserve">
+    <value>Время в игре</value>
+  </data>
+  <data name="instances.info.mods" xml:space="preserve">
+    <value>Моды</value>
+  </data>
+  <data name="instances.info.worlds" xml:space="preserve">
+    <value>Миры</value>
+  </data>
+  <data name="instances.info.playtimeValue" xml:space="preserve">
+    <value>{0} ч {1} мин</value>
+  </data>
+  <data name="instances.console.title" xml:space="preserve">
+    <value>Консоль</value>
+  </data>
+  <data name="instances.console.hint" xml:space="preserve">
+    <value>Команды и вывод выбранного экземпляра</value>
+  </data>
+  <data name="instances.console.emptyTitle" xml:space="preserve">
+    <value>Консоль пока недоступна</value>
+  </data>
+  <data name="instances.console.emptyHint" xml:space="preserve">
+    <value>Здесь появится консоль с привязкой к экземпляру</value>
+  </data>
+  <data name="instances.logs.title" xml:space="preserve">
+    <value>Логи</value>
+  </data>
+  <data name="instances.logs.hint" xml:space="preserve">
+    <value>Логи запуска и игры для этого экземпляра</value>
+  </data>
+  <data name="instances.logs.emptyTitle" xml:space="preserve">
+    <value>Логов экземпляра пока нет</value>
+  </data>
+  <data name="instances.logs.emptyHint" xml:space="preserve">
+    <value>Здесь появится история логов выбранного экземпляра</value>
   </data>
 </root>

@@ -309,12 +309,6 @@ You may need to reinstall the game if switching drives.</value>
   <data name="home.currentInstance" xml:space="preserve">
     <value>Current instance</value>
   </data>
-  <data name="home.instanceHint" xml:space="preserve">
-    <value>Manage its version and files in Instances, then return here whenever you are ready to play</value>
-  </data>
-  <data name="home.manageInstances" xml:space="preserve">
-    <value>Manage instances</value>
-  </data>
   <data name="home.welcomeHint" xml:space="preserve">
     <value>Create an instance to choose a Hytale version, download its files, and begin your next adventure</value>
   </data>
@@ -475,7 +469,7 @@ You may need to reinstall the game if switching drives.</value>
     <value>Storage</value>
   </data>
   <data name="instances.tab.browse" xml:space="preserve">
-    <value>Browse Mods</value>
+    <value>Discover</value>
   </data>
   <data name="instances.tab.content" xml:space="preserve">
     <value>Installed Mods</value>
@@ -2639,5 +2633,113 @@ You may need to reinstall the game if switching drives.</value>
   </data>
   <data name="desktopSettings.categories.appearance" xml:space="preserve">
     <value>Appearance</value>
+  </data>
+  <data name="instances.tab.mods" xml:space="preserve">
+    <value>Mods</value>
+  </data>
+  <data name="instances.mods.title" xml:space="preserve">
+    <value>Installed mods</value>
+  </data>
+  <data name="instances.mods.hint" xml:space="preserve">
+    <value>Content installed only for this instance</value>
+  </data>
+  <data name="instances.mods.search" xml:space="preserve">
+    <value>Search installed mods</value>
+  </data>
+  <data name="instances.mods.emptyTitle" xml:space="preserve">
+    <value>No mods installed</value>
+  </data>
+  <data name="instances.mods.emptyHint" xml:space="preserve">
+    <value>Open Discover to find content for this instance</value>
+  </data>
+  <data name="instances.mods.install" xml:space="preserve">
+    <value>Install</value>
+  </data>
+  <data name="instances.mods.installed" xml:space="preserve">
+    <value>Installed</value>
+  </data>
+  <data name="instances.mods.enabled" xml:space="preserve">
+    <value>Enabled</value>
+  </data>
+  <data name="instances.mods.disabled" xml:space="preserve">
+    <value>Disabled</value>
+  </data>
+  <data name="instances.mods.installFailed" xml:space="preserve">
+    <value>Could not install the selected mod</value>
+  </data>
+  <data name="instances.browse.title" xml:space="preserve">
+    <value>Discover mods</value>
+  </data>
+  <data name="instances.browse.hint" xml:space="preserve">
+    <value>Find and install CurseForge content into this instance</value>
+  </data>
+  <data name="instances.browse.search" xml:space="preserve">
+    <value>Search the mod catalog</value>
+  </data>
+  <data name="instances.browse.emptyTitle" xml:space="preserve">
+    <value>No mods found</value>
+  </data>
+  <data name="instances.browse.emptyHint" xml:space="preserve">
+    <value>Try a different query or check the CurseForge API configuration</value>
+  </data>
+  <data name="instances.worlds.title" xml:space="preserve">
+    <value>Worlds</value>
+  </data>
+  <data name="instances.worlds.hint" xml:space="preserve">
+    <value>Saved worlds that belong to this instance</value>
+  </data>
+  <data name="instances.worlds.emptyTitle" xml:space="preserve">
+    <value>No worlds yet</value>
+  </data>
+  <data name="instances.worlds.emptyHint" xml:space="preserve">
+    <value>Worlds created by the game will appear here</value>
+  </data>
+  <data name="instances.content.notInstalledTitle" xml:space="preserve">
+    <value>Install this instance first</value>
+  </data>
+  <data name="instances.content.notInstalledHint" xml:space="preserve">
+    <value>Mods and worlds become available after the game files are installed</value>
+  </data>
+  <data name="instances.content.back" xml:space="preserve">
+    <value>Instance</value>
+  </data>
+  <data name="instances.info.status" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="instances.info.playtime" xml:space="preserve">
+    <value>Play time</value>
+  </data>
+  <data name="instances.info.mods" xml:space="preserve">
+    <value>Mods</value>
+  </data>
+  <data name="instances.info.worlds" xml:space="preserve">
+    <value>Worlds</value>
+  </data>
+  <data name="instances.info.playtimeValue" xml:space="preserve">
+    <value>{0} h {1} min</value>
+  </data>
+  <data name="instances.console.title" xml:space="preserve">
+    <value>Console</value>
+  </data>
+  <data name="instances.console.hint" xml:space="preserve">
+    <value>Commands and live output for this instance</value>
+  </data>
+  <data name="instances.console.emptyTitle" xml:space="preserve">
+    <value>Console is not available yet</value>
+  </data>
+  <data name="instances.console.emptyHint" xml:space="preserve">
+    <value>Per-instance console tracking will be added here</value>
+  </data>
+  <data name="instances.logs.title" xml:space="preserve">
+    <value>Logs</value>
+  </data>
+  <data name="instances.logs.hint" xml:space="preserve">
+    <value>Launch and game logs for this instance</value>
+  </data>
+  <data name="instances.logs.emptyTitle" xml:space="preserve">
+    <value>No instance logs yet</value>
+  </data>
+  <data name="instances.logs.emptyHint" xml:space="preserve">
+    <value>Per-instance log history will appear here</value>
   </data>
 </root>

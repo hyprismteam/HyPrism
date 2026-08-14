@@ -8,6 +8,7 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
+using HyPrism.Desktop.Features.Instances;
 using HyPrism.Desktop.Features.Settings;
 
 namespace HyPrism.Desktop.Shell;
@@ -101,6 +102,17 @@ public sealed partial class MainWindow : Window
 
     protected override void OnKeyDown(KeyEventArgs e)
     {
+        if (e.Key == Key.Escape &&
+            DataContext is MainWindowViewModel { IsInstances: true } &&
+            this.GetVisualDescendants()
+                .OfType<InstancesView>()
+                .FirstOrDefault()
+                ?.TryNavigateBack() == true)
+        {
+            e.Handled = true;
+            return;
+        }
+
         if (e.Key == Key.Escape &&
             DataContext is MainWindowViewModel { IsSettings: true } &&
             this.GetVisualDescendants()

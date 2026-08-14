@@ -281,6 +281,57 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="BorderThickness" Value="0" />
   </Style>
 
+  <Style Selector="Button.uiSettingsNavigationRow">
+    <Setter Property="MinHeight" Value="66" />
+    <Setter Property="Padding" Value="18,14" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderBrush" Value="{DynamicResource SurfaceBrush}" />
+    <Setter Property="BorderThickness" Value="0,0,0,3" />
+    <Setter Property="CornerRadius" Value="0" />
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="RenderTransform" Value="{x:Null}" />
+    <Setter Property="Transitions">
+      <Transitions>
+        <BrushTransition Property="Background" Duration="0:0:0.16" />
+        <BrushTransition Property="Foreground" Duration="0:0:0.16" />
+      </Transitions>
+    </Setter>
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Background="{TemplateBinding Background}"
+                BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="{TemplateBinding BorderThickness}"
+                Padding="{TemplateBinding Padding}">
+          <ContentPresenter Content="{TemplateBinding Content}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}"
+                            HorizontalContentAlignment="Stretch"
+                            VerticalContentAlignment="Center" />
+        </Border>
+      </ControlTemplate>
+    </Setter>
+  </Style>
+
+  <Style Selector="Button.uiSettingsNavigationRow.last">
+    <Setter Property="BorderThickness" Value="0" />
+  </Style>
+
+  <Style Selector="Button.uiSettingsNavigationRow:pointerover">
+    <Setter Property="Background" Value="{DynamicResource ItemHoverBrush}" />
+    <Setter Property="RenderTransform" Value="{x:Null}" />
+  </Style>
+
+  <Style Selector="Button.uiSettingsNavigationRow:pressed">
+    <Setter Property="Background" Value="{DynamicResource ItemSelectedBrush}" />
+    <Setter Property="RenderTransform" Value="{x:Null}" />
+  </Style>
+
+  <Style Selector="Button.uiSettingsNavigationRow:disabled">
+    <Setter Property="Opacity" Value="0.42" />
+  </Style>
+
   <Style Selector="TextBlock.uiSettingsLabel">
     <Setter Property="FontSize" Value="14" />
     <Setter Property="FontWeight" Value="SemiBold" />

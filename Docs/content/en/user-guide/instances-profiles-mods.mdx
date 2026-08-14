@@ -11,6 +11,10 @@ The Core contains the working domain logic for all three areas. The native insta
 
 The native instance manager lists local installations, highlights the active instance, and creates an installation target by selecting a release channel and available version. It uses a two-column layout in wide windows and a stacked one-column layout when space is limited. With no instances, the list pane is removed so the create action has the full page
 
+Selecting an installed instance opens its own content workspace. A compact 2 by 2 information group shows status, branch, version, and tracked play time without repeating the instance name. Launching is not exposed from the instance workspace. The management group contains **Installed mods**, **Discover mods**, **Worlds**, **Console**, and **Logs**. Console and log destinations are ready for planned per-instance tracking, while installed mod search reads the selected instance manifest and files, catalog installs target that same instance, and the worlds screen reads directories from `UserData/Saves`
+
+The responsive structure matches Settings. Wide windows keep the instance list beside its workspace and use the phased transition when opening a content section. Compact windows show the instance list as the first page, slide the selected instance into the same space, and use the standard compact top toolbar and horizontal slide for nested content
+
 When no instances exist, the page starts with the first step of an instance wizard. Selecting **Select version** uses a phased transition that removes the first step before showing a configuration screen with a wrench icon, title, explanation, branch switch, and version picker. The branch switch uses a light gray sliding selection. The version picker shows a spinner only while uncached data is loading. Switching to a branch with fresh cached versions updates the picker immediately without another catalog request. Creating an instance does not download game files immediately. Select it and use the main action to download or launch it
 
 Core can also migrate legacy layouts, change versions, import ZIP archives, and delete installations
@@ -27,4 +31,6 @@ Launching requires an existing selected profile with a valid name and UUID. HyPr
 
 Core integrates with CurseForge for search, categories, file resolution, installation, local file import, changelogs, and update checks scoped to an instance
 
-The native profile and mod pages are still being built. Historical interaction behavior can be inspected in version control when it is useful
+Mods do not have a global navigation destination. Open an instance and use **Installed mods** to inspect its content or **Discover mods** to search and install new content. This keeps every mod operation attached to an explicit installation target
+
+The native profile page is still being built. Historical interaction behavior can be inspected in version control when it is useful

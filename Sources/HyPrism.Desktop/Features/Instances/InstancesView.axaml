@@ -29,6 +29,7 @@ SPDX-License-Identifier: GPL-3.0-only
                      VerticalAlignment="Center" />
           <Button Grid.Column="1"
                   Classes="instancesAdd"
+                  Click="OnOpenCreatorClicked"
                   Command="{Binding OpenInstanceCreatorCommand}">
             <StackPanel Orientation="Horizontal" Spacing="7">
               <Path Width="17" Height="17" Stretch="Uniform" Data="{StaticResource GestureSelectIcon}" />
@@ -52,6 +53,7 @@ SPDX-License-Identifier: GPL-3.0-only
                 <DataTemplate x:DataType="dashboard:InstanceItemViewModel">
                   <Button Classes="instancesListItem"
                           Classes.selected="{Binding IsSelected}"
+                          Click="OnInstanceClicked"
                           Command="{Binding DataContext.SelectDashboardInstanceCommand, ElementName=InstancesRoot}"
                           CommandParameter="{Binding Id}">
                     <Grid ColumnDefinitions="44,*,Auto" ColumnSpacing="12">
@@ -97,7 +99,25 @@ SPDX-License-Identifier: GPL-3.0-only
       </Grid>
     </Border>
 
-    <Grid x:Name="InstancesContent" Grid.Column="1" Grid.Row="0" ClipToBounds="True">
+    <Grid x:Name="InstancesContent"
+          Grid.Column="1"
+          Grid.Row="0"
+          ClipToBounds="True"
+          Background="{DynamicResource SurfaceBrush}"
+          ZIndex="1">
+      <Grid.RenderTransform>
+        <TranslateTransform>
+          <TranslateTransform.Transitions>
+            <Transitions>
+              <DoubleTransition Property="X" Duration="0:0:0.3">
+                <DoubleTransition.Easing>
+                  <easing:CubicEaseInOut />
+                </DoubleTransition.Easing>
+              </DoubleTransition>
+            </Transitions>
+          </TranslateTransform.Transitions>
+        </TranslateTransform>
+      </Grid.RenderTransform>
       <Grid x:Name="InstancesOverview">
         <Grid.Transitions>
           <Transitions>
@@ -152,65 +172,398 @@ SPDX-License-Identifier: GPL-3.0-only
         </Button>
         </StackPanel>
 
-        <Grid IsVisible="{Binding HasInstances}"
-              Margin="48,42,48,54"
-              MaxWidth="800"
-              HorizontalAlignment="Center"
-              VerticalAlignment="Top"
-              RowDefinitions="Auto,Auto,Auto"
-              RowSpacing="16">
-          <Grid ColumnDefinitions="*" ColumnSpacing="20">
-            <StackPanel Spacing="5">
-              <TextBlock Text="{Binding SelectedInstanceName}"
-                         FontSize="30"
-                         FontWeight="Bold"
-                         TextTrimming="CharacterEllipsis"
-                         TextWrapping="NoWrap" />
-              <TextBlock Text="{Binding SelectedInstanceMeta}"
-                         Classes="muted"
-                         FontSize="14" />
-            </StackPanel>
+        <Grid IsVisible="{Binding HasInstances}" ClipToBounds="True">
+          <Grid x:Name="InstanceHubScreen" RowDefinitions="Auto,*">
+            <Grid.Transitions>
+              <Transitions>
+                <DoubleTransition Property="Opacity" Duration="0:0:0.18">
+                  <DoubleTransition.Easing><easing:CubicEaseInOut /></DoubleTransition.Easing>
+                </DoubleTransition>
+              </Transitions>
+            </Grid.Transitions>
+            <Grid.RenderTransform>
+              <TranslateTransform>
+                <TranslateTransform.Transitions>
+                  <Transitions>
+                    <DoubleTransition Property="X" Duration="0:0:0.18">
+                      <DoubleTransition.Easing><easing:CubicEaseInOut /></DoubleTransition.Easing>
+                    </DoubleTransition>
+                  </Transitions>
+                </TranslateTransform.Transitions>
+              </TranslateTransform>
+            </Grid.RenderTransform>
+
+            <Border x:Name="CompactInstanceToolbar"
+                    Classes="articleToolbar compact scrolled"
+                    IsVisible="False">
+              <Grid ColumnDefinitions="*,Auto,*">
+                <Button Classes="articleBack" HorizontalAlignment="Left" Click="OnCompactInstanceBackClicked">
+                  <StackPanel Orientation="Horizontal" Spacing="9">
+                    <Path Width="12" Height="12" Stretch="Uniform" Data="{StaticResource NextIcon}">
+                      <Path.RenderTransform><RotateTransform Angle="180" /></Path.RenderTransform>
+                    </Path>
+                    <TextBlock Text="{Binding BackLabel}" VerticalAlignment="Center" />
+                  </StackPanel>
+                </Button>
+                <TextBlock Grid.Column="1"
+                           Classes="articleToolbarTitle"
+                           Text="{Binding SelectedInstanceName}"
+                           MaxWidth="280"
+                           MaxLines="1"
+                           TextTrimming="CharacterEllipsis"
+                           FontSize="16"
+                           FontWeight="SemiBold"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center" />
+              </Grid>
+            </Border>
+
+            <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+              <StackPanel Classes="instanceHubContent"
+                          x:Name="InstanceHubContent"
+                          Margin="32,28,32,40"
+                          MaxWidth="720"
+                          HorizontalAlignment="Stretch"
+                          Spacing="22">
+                <Border Classes="instanceInfoGroup">
+                  <Grid ColumnDefinitions="*,2,*" RowDefinitions="Auto,2,Auto">
+                    <Border Classes="instanceInfoCell">
+                      <StackPanel Spacing="3">
+                        <TextBlock Text="{Binding InstanceStatusInfoLabel}" Classes="instanceInfoLabel" />
+                        <TextBlock Text="{Binding SelectedInstanceState}" Classes="instanceInfoValue" />
+                      </StackPanel>
+                    </Border>
+                    <Border Grid.Column="1" Background="{DynamicResource SurfaceBrush}" />
+                    <Border Grid.Column="2" Classes="instanceInfoCell">
+                      <StackPanel Spacing="3">
+                        <TextBlock Text="{Binding InstancePlayTimeInfoLabel}" Classes="instanceInfoLabel" />
+                        <TextBlock Text="{Binding SelectedInstancePlayTime}" Classes="instanceInfoValue" />
+                      </StackPanel>
+                    </Border>
+
+                    <Border Grid.Row="1" Grid.ColumnSpan="3" Background="{DynamicResource SurfaceBrush}" />
+
+                    <Border Grid.Row="2" Classes="instanceInfoCell">
+                      <StackPanel Spacing="3">
+                        <TextBlock Text="{Binding VersionLabel}" Classes="instanceInfoLabel" />
+                        <TextBlock Text="{Binding SelectedInstanceVersion}" Classes="instanceInfoValue" />
+                      </StackPanel>
+                    </Border>
+                    <Border Grid.Row="2" Grid.Column="1" Background="{DynamicResource SurfaceBrush}" />
+                    <Border Grid.Row="2" Grid.Column="2" Classes="instanceInfoCell">
+                      <StackPanel Spacing="3">
+                        <TextBlock Text="{Binding BranchLabel}" Classes="instanceInfoLabel" />
+                        <TextBlock Text="{Binding SelectedInstanceBranch}" Classes="instanceInfoValue" />
+                      </StackPanel>
+                    </Border>
+                  </Grid>
+                </Border>
+
+                <Border Classes="instanceMenuGroup">
+                  <StackPanel>
+                    <Button Classes="uiSettingsNavigationRow instanceMenuRow"
+                            IsEnabled="{Binding IsSelectedInstanceInstalled}"
+                            Command="{Binding SelectInstanceSectionCommand}"
+                            CommandParameter="mods">
+                      <Grid ColumnDefinitions="28,*,Auto" ColumnSpacing="14">
+                        <Path Classes="instanceMenuIcon" Data="{StaticResource ModsIcon}" />
+                        <StackPanel Grid.Column="1" Spacing="3">
+                          <TextBlock Text="{Binding InstanceModsTitle}" Classes="uiSettingsLabel instanceMenuTitle" />
+                          <TextBlock Text="{Binding InstanceModsHint}" Classes="uiSettingsHint instanceMenuDescription" />
+                        </StackPanel>
+                        <Path Grid.Column="2" Classes="instanceMenuChevron" Data="{StaticResource NextIcon}" />
+                      </Grid>
+                    </Button>
+                    <Button Classes="uiSettingsNavigationRow instanceMenuRow"
+                            IsEnabled="{Binding IsSelectedInstanceInstalled}"
+                            Command="{Binding SelectInstanceSectionCommand}"
+                            CommandParameter="browse">
+                      <Grid ColumnDefinitions="28,*,Auto" ColumnSpacing="14">
+                        <Path Classes="instanceMenuIcon" Data="{StaticResource ModCatalogIcon}" />
+                        <StackPanel Grid.Column="1" Spacing="3">
+                          <TextBlock Text="{Binding InstanceBrowseTitle}" Classes="uiSettingsLabel instanceMenuTitle" />
+                          <TextBlock Text="{Binding InstanceBrowseHint}" Classes="uiSettingsHint instanceMenuDescription" />
+                        </StackPanel>
+                        <Path Grid.Column="2" Classes="instanceMenuChevron" Data="{StaticResource NextIcon}" />
+                      </Grid>
+                    </Button>
+                    <Button Classes="uiSettingsNavigationRow instanceMenuRow"
+                            IsEnabled="{Binding IsSelectedInstanceInstalled}"
+                            Command="{Binding SelectInstanceSectionCommand}"
+                            CommandParameter="worlds">
+                      <Grid ColumnDefinitions="28,*,Auto" ColumnSpacing="14">
+                        <Path Classes="instanceMenuIcon" Data="{StaticResource WorldsIcon}" />
+                        <StackPanel Grid.Column="1" Spacing="3">
+                          <TextBlock Text="{Binding InstanceWorldsTitle}" Classes="uiSettingsLabel instanceMenuTitle" />
+                          <TextBlock Text="{Binding InstanceWorldsHint}" Classes="uiSettingsHint instanceMenuDescription" />
+                        </StackPanel>
+                        <Path Grid.Column="2" Classes="instanceMenuChevron" Data="{StaticResource NextIcon}" />
+                      </Grid>
+                    </Button>
+                    <Button Classes="uiSettingsNavigationRow instanceMenuRow"
+                            IsEnabled="{Binding IsSelectedInstanceInstalled}"
+                            Command="{Binding SelectInstanceSectionCommand}"
+                            CommandParameter="console">
+                      <Grid ColumnDefinitions="28,*,Auto" ColumnSpacing="14">
+                        <Path Classes="instanceMenuIcon" Data="{StaticResource ConsoleIcon}" />
+                        <StackPanel Grid.Column="1" Spacing="3">
+                          <TextBlock Text="{Binding InstanceConsoleTitle}" Classes="uiSettingsLabel instanceMenuTitle" />
+                          <TextBlock Text="{Binding InstanceConsoleHint}" Classes="uiSettingsHint instanceMenuDescription" />
+                        </StackPanel>
+                        <Path Grid.Column="2" Classes="instanceMenuChevron" Data="{StaticResource NextIcon}" />
+                      </Grid>
+                    </Button>
+                    <Button Classes="uiSettingsNavigationRow instanceMenuRow last"
+                            IsEnabled="{Binding IsSelectedInstanceInstalled}"
+                            Command="{Binding SelectInstanceSectionCommand}"
+                            CommandParameter="logs">
+                      <Grid ColumnDefinitions="28,*,Auto" ColumnSpacing="14">
+                        <Path Classes="instanceMenuIcon" Data="{StaticResource LogsIcon}" />
+                        <StackPanel Grid.Column="1" Spacing="3">
+                          <TextBlock Text="{Binding InstanceLogsTitle}" Classes="uiSettingsLabel instanceMenuTitle" />
+                          <TextBlock Text="{Binding InstanceLogsHint}" Classes="uiSettingsHint instanceMenuDescription" />
+                        </StackPanel>
+                        <Path Grid.Column="2" Classes="instanceMenuChevron" Data="{StaticResource NextIcon}" />
+                      </Grid>
+                    </Button>
+                  </StackPanel>
+                </Border>
+
+                <Border Classes="instancesProgress" IsVisible="{Binding IsActivityVisible}">
+                  <StackPanel Spacing="9">
+                    <Grid ColumnDefinitions="*,Auto">
+                      <TextBlock Text="{Binding ActivityTitle}" FontWeight="SemiBold" />
+                      <TextBlock Grid.Column="1" Text="{Binding ActivityProgressText}" FontWeight="SemiBold" />
+                    </Grid>
+                    <TextBlock Text="{Binding ActivityDetail}" Classes="muted" FontSize="12" />
+                    <ProgressBar Minimum="0" Maximum="100" Value="{Binding ActivityProgress}" />
+                  </StackPanel>
+                </Border>
+              </StackPanel>
+            </ScrollViewer>
           </Grid>
 
-          <Border Grid.Row="1" Classes="instancesDetails">
-            <Grid ColumnDefinitions="*,1,*">
-              <StackPanel Margin="20,17" Spacing="4">
-                <TextBlock Text="{Binding BranchLabel}" Classes="eyebrow" />
-                <TextBlock Text="{Binding SelectedInstanceBranch}" FontWeight="SemiBold" />
-              </StackPanel>
-              <Border Grid.Column="1" Width="1" Background="#14000000" />
-              <StackPanel Grid.Column="2" Margin="20,17" Spacing="4">
-                <TextBlock Text="{Binding VersionLabel}" Classes="eyebrow" />
-                <TextBlock Text="{Binding SelectedInstanceVersion}" FontWeight="SemiBold" />
-              </StackPanel>
-            </Grid>
-          </Border>
+          <Grid x:Name="InstanceSectionScreen"
+                IsVisible="False"
+                Opacity="0"
+                RowDefinitions="Auto,*"
+                Background="{DynamicResource SurfaceBrush}"
+                ZIndex="2">
+            <Grid.Transitions>
+              <Transitions>
+                <DoubleTransition Property="Opacity" Duration="0:0:0.18">
+                  <DoubleTransition.Easing><easing:CubicEaseInOut /></DoubleTransition.Easing>
+                </DoubleTransition>
+              </Transitions>
+            </Grid.Transitions>
+            <Grid.RenderTransform>
+              <TranslateTransform X="28">
+                <TranslateTransform.Transitions>
+                  <Transitions>
+                    <DoubleTransition Property="X" Duration="0:0:0.18">
+                      <DoubleTransition.Easing><easing:CubicEaseInOut /></DoubleTransition.Easing>
+                    </DoubleTransition>
+                  </Transitions>
+                </TranslateTransform.Transitions>
+              </TranslateTransform>
+            </Grid.RenderTransform>
 
-          <StackPanel Grid.Row="2" Spacing="12">
-            <Button Classes="primary"
-                    HorizontalAlignment="Left"
-                    IsEnabled="{Binding CanRunPrimaryAction}"
-                    Command="{Binding PrimaryActionCommand}">
-              <StackPanel Orientation="Horizontal" Spacing="10">
-                <Path IsVisible="{Binding IsPrimaryPlayAction}"
-                      Width="18" Height="18" Stretch="Uniform" Data="{StaticResource PlayIcon}" />
-                <Path IsVisible="{Binding IsPrimaryDownloadAction}"
-                      Width="18" Height="18" Stretch="Uniform" Data="{StaticResource DownloadIcon}" />
-                <TextBlock Text="{Binding PrimaryActionText}" VerticalAlignment="Center" />
-              </StackPanel>
-            </Button>
-
-            <Border Classes="instancesProgress" IsVisible="{Binding IsActivityVisible}">
-              <StackPanel Spacing="9">
-                <Grid ColumnDefinitions="*,Auto">
-                  <TextBlock Text="{Binding ActivityTitle}" FontWeight="SemiBold" />
-                  <TextBlock Grid.Column="1" Text="{Binding ActivityProgressText}" FontWeight="SemiBold" />
-                </Grid>
-                <TextBlock Text="{Binding ActivityDetail}" Classes="muted" FontSize="12" />
-                <ProgressBar Minimum="0" Maximum="100" Value="{Binding ActivityProgress}" />
-              </StackPanel>
+            <Border Classes="articleToolbar compact scrolled">
+              <Grid ColumnDefinitions="*,Auto,*">
+                <Button Classes="articleBack"
+                        HorizontalAlignment="Left"
+                        Command="{Binding CloseInstanceSectionCommand}">
+                  <StackPanel Orientation="Horizontal" Spacing="9">
+                    <Path Width="12" Height="12" Stretch="Uniform" Data="{StaticResource NextIcon}">
+                      <Path.RenderTransform><RotateTransform Angle="180" /></Path.RenderTransform>
+                    </Path>
+                    <TextBlock Text="{Binding InstanceContentBackLabel}" />
+                  </StackPanel>
+                </Button>
+                <TextBlock Grid.Column="1"
+                           Classes="articleToolbarTitle"
+                           Text="{Binding DisplayedInstanceSectionTitle}"
+                           Margin="12,0"
+                           MaxWidth="280"
+                           MaxLines="1"
+                           TextTrimming="CharacterEllipsis"
+                           TextWrapping="NoWrap"
+                           FontSize="16"
+                           FontWeight="SemiBold"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"
+                           IsHitTestVisible="False" />
+              </Grid>
             </Border>
-          </StackPanel>
+
+            <Grid Grid.Row="1" Margin="24,18,24,28">
+              <Grid IsVisible="{Binding IsInstanceModsSection}" RowDefinitions="Auto,*" RowSpacing="12">
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                  <TextBox Classes="instanceSearch" PlaceholderText="{Binding InstanceModsSearchHint}" Text="{Binding InstalledModsSearchQuery, Mode=TwoWay}" />
+                  <Button Grid.Column="1" Classes="instanceToolbarAction" Command="{Binding RefreshInstanceModsCommand}" IsEnabled="{Binding !IsInstanceModsLoading}">
+                    <TextBlock Text="{Binding RefreshLabel}" />
+                  </Button>
+                </Grid>
+                <Border Grid.Row="1" Classes="instanceContentPanel">
+                  <Grid>
+                    <ProgressBar IsVisible="{Binding IsInstanceModsLoading}" IsIndeterminate="True" Width="180" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    <StackPanel IsVisible="{Binding IsInstalledModsEmpty}" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="9">
+                      <Image Width="48" Height="48" Source="avares://HyPrism.Desktop/Assets/Fluent/puzzle.png" />
+                      <TextBlock Text="{Binding InstanceModsEmptyTitle}" FontSize="19" FontWeight="SemiBold" TextAlignment="Center" />
+                      <TextBlock Text="{Binding InstanceModsEmptyHint}" Classes="muted" MaxWidth="390" TextAlignment="Center" TextWrapping="Wrap" />
+                    </StackPanel>
+                    <ScrollViewer IsVisible="{Binding HasInstalledMods}" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+                      <ItemsControl ItemsSource="{Binding VisibleInstalledMods}" Margin="10">
+                        <ItemsControl.ItemTemplate>
+                          <DataTemplate x:DataType="instances:InstanceModItemViewModel">
+                            <Border Classes="instanceModRow">
+                              <Grid ColumnDefinitions="44,*,Auto" ColumnSpacing="12">
+                                <Border Classes="instanceModIcon"><TextBlock Text="{Binding Initial}" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="Bold" /></Border>
+                                <StackPanel Grid.Column="1" Spacing="3" VerticalAlignment="Center">
+                                  <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                                  <StackPanel Orientation="Horizontal" Spacing="7">
+                                    <TextBlock Text="{Binding Version}" Classes="muted" FontSize="12" />
+                                    <TextBlock Text="·" Classes="muted" FontSize="12" />
+                                    <TextBlock Text="{Binding Author}" Classes="muted" FontSize="12" />
+                                  </StackPanel>
+                                </StackPanel>
+                                <Border Grid.Column="2" Classes="instanceModState enabled" IsVisible="{Binding IsEnabled}"><TextBlock Text="{Binding DataContext.EnabledLabel, ElementName=InstancesRoot}" /></Border>
+                                <Border Grid.Column="2" Classes="instanceModState" IsVisible="{Binding !IsEnabled}"><TextBlock Text="{Binding DataContext.DisabledLabel, ElementName=InstancesRoot}" /></Border>
+                              </Grid>
+                            </Border>
+                          </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                      </ItemsControl>
+                    </ScrollViewer>
+                  </Grid>
+                </Border>
+              </Grid>
+
+              <Grid IsVisible="{Binding IsInstanceBrowseSection}" RowDefinitions="Auto,*" RowSpacing="12">
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                  <TextBox Classes="instanceSearch" PlaceholderText="{Binding InstanceBrowseSearchHint}" Text="{Binding ModCatalogSearchQuery, Mode=TwoWay}" />
+                  <Button Grid.Column="1" Classes="instanceToolbarAction primarySmall" Command="{Binding SearchModCatalogCommand}" IsEnabled="{Binding !IsModCatalogLoading}">
+                    <TextBlock Text="{Binding InstanceBrowseLabel}" />
+                  </Button>
+                </Grid>
+                <Border Grid.Row="1" Classes="instanceContentPanel">
+                  <Grid>
+                    <ProgressBar IsVisible="{Binding IsModCatalogLoading}" IsIndeterminate="True" Width="180" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    <StackPanel IsVisible="{Binding IsModCatalogEmpty}" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="9">
+                      <Image Width="48" Height="48" Source="avares://HyPrism.Desktop/Assets/Fluent/puzzle.png" />
+                      <TextBlock Text="{Binding InstanceBrowseEmptyTitle}" FontSize="19" FontWeight="SemiBold" />
+                      <TextBlock Text="{Binding InstanceBrowseEmptyHint}" Classes="muted" MaxWidth="400" TextAlignment="Center" TextWrapping="Wrap" />
+                    </StackPanel>
+                    <ScrollViewer IsVisible="{Binding HasModCatalogItems}" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+                      <ItemsControl ItemsSource="{Binding ModCatalogItems}" Margin="10">
+                        <ItemsControl.ItemTemplate>
+                          <DataTemplate x:DataType="instances:ModCatalogItemViewModel">
+                            <Border Classes="instanceModRow">
+                              <Grid ColumnDefinitions="44,*,Auto" ColumnSpacing="12">
+                                <Border Classes="instanceModIcon"><TextBlock Text="{Binding Initial}" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="Bold" /></Border>
+                                <StackPanel Grid.Column="1" Spacing="3" VerticalAlignment="Center">
+                                  <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                                  <TextBlock Text="{Binding Summary}" Classes="muted" FontSize="12" MaxLines="1" TextTrimming="CharacterEllipsis" />
+                                  <TextBlock Text="{Binding Author}" Classes="muted" FontSize="11" />
+                                </StackPanel>
+                                <Button Grid.Column="2" Classes="instanceInstall" IsEnabled="{Binding CanInstall}" Command="{Binding DataContext.InstallModCommand, ElementName=InstancesRoot}" CommandParameter="{Binding}">
+                                  <Grid>
+                                    <TextBlock Text="{Binding DataContext.InstallLabel, ElementName=InstancesRoot}" IsVisible="{Binding CanInstall}" />
+                                    <TextBlock Text="{Binding DataContext.InstalledLabel, ElementName=InstancesRoot}" IsVisible="{Binding IsInstalled}" />
+                                    <ProgressBar IsIndeterminate="True" Width="42" IsVisible="{Binding IsInstalling}" />
+                                  </Grid>
+                                </Button>
+                              </Grid>
+                            </Border>
+                          </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                      </ItemsControl>
+                    </ScrollViewer>
+                  </Grid>
+                </Border>
+              </Grid>
+
+              <Grid IsVisible="{Binding IsInstanceWorldsSection}" RowDefinitions="Auto,*" RowSpacing="12">
+                <Button HorizontalAlignment="Right" Classes="instanceToolbarAction" Command="{Binding RefreshInstanceWorldsCommand}" IsEnabled="{Binding !IsInstanceWorldsLoading}">
+                  <TextBlock Text="{Binding RefreshLabel}" />
+                </Button>
+                <Border Grid.Row="1" Classes="instanceContentPanel">
+                  <Grid>
+                    <ProgressBar IsVisible="{Binding IsInstanceWorldsLoading}" IsIndeterminate="True" Width="180" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    <StackPanel IsVisible="{Binding IsInstanceWorldsEmpty}" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="9">
+                      <Image Width="48" Height="48" Source="avares://HyPrism.Desktop/Assets/Fluent/data.png" />
+                      <TextBlock Text="{Binding InstanceWorldsEmptyTitle}" FontSize="19" FontWeight="SemiBold" />
+                      <TextBlock Text="{Binding InstanceWorldsEmptyHint}" Classes="muted" MaxWidth="400" TextAlignment="Center" TextWrapping="Wrap" />
+                    </StackPanel>
+                    <ScrollViewer IsVisible="{Binding HasInstanceWorlds}" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+                      <ItemsControl ItemsSource="{Binding InstanceWorlds}" Margin="10">
+                        <ItemsControl.ItemTemplate>
+                          <DataTemplate x:DataType="instances:InstanceWorldItemViewModel">
+                            <Border Classes="instanceModRow">
+                              <Grid ColumnDefinitions="44,*,Auto" ColumnSpacing="12">
+                                <Border Classes="instanceModIcon"><TextBlock Text="{Binding Initial}" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="Bold" /></Border>
+                                <StackPanel Grid.Column="1" Spacing="3" VerticalAlignment="Center">
+                                  <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                                  <TextBlock Text="{Binding LastModified}" Classes="muted" FontSize="12" />
+                                </StackPanel>
+                                <TextBlock Grid.Column="2" Text="{Binding Size}" Classes="muted" FontSize="12" VerticalAlignment="Center" />
+                              </Grid>
+                            </Border>
+                          </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                      </ItemsControl>
+                    </ScrollViewer>
+                  </Grid>
+                </Border>
+              </Grid>
+
+              <Border IsVisible="{Binding IsInstanceConsoleSection}"
+                      Classes="instanceContentPanel">
+                <StackPanel HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Spacing="10">
+                  <Path Classes="instancePlaceholderIcon" Data="{StaticResource ConsoleIcon}" />
+                  <TextBlock Text="{Binding InstanceConsoleEmptyTitle}"
+                             FontSize="19"
+                             FontWeight="SemiBold"
+                             TextAlignment="Center" />
+                  <TextBlock Text="{Binding InstanceConsoleEmptyHint}"
+                             Classes="muted"
+                             MaxWidth="420"
+                             TextAlignment="Center"
+                             TextWrapping="Wrap" />
+                </StackPanel>
+              </Border>
+
+              <Border IsVisible="{Binding IsInstanceLogsSection}"
+                      Classes="instanceContentPanel">
+                <StackPanel HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Spacing="10">
+                  <Path Classes="instancePlaceholderIcon" Data="{StaticResource LogsIcon}" />
+                  <TextBlock Text="{Binding InstanceLogsEmptyTitle}"
+                             FontSize="19"
+                             FontWeight="SemiBold"
+                             TextAlignment="Center" />
+                  <TextBlock Text="{Binding InstanceLogsEmptyHint}"
+                             Classes="muted"
+                             MaxWidth="420"
+                             TextAlignment="Center"
+                             TextWrapping="Wrap" />
+                </StackPanel>
+              </Border>
+
+              <TextBlock Text="{Binding InstanceContentError}"
+                         IsVisible="{Binding HasInstanceContentError}"
+                         Foreground="{DynamicResource DangerSoftBrush}"
+                         Background="{DynamicResource SurfaceElevatedBrush}"
+                         Padding="12,8"
+                         Margin="12"
+                         HorizontalAlignment="Center"
+                         VerticalAlignment="Bottom"
+                         TextWrapping="Wrap" />
+            </Grid>
+          </Grid>
         </Grid>
       </Grid>
 

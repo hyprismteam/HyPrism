@@ -4,7 +4,9 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using Avalonia;
+using Avalonia.Animation;
 using Avalonia.Controls;
+using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Threading;
 using HyPrism.Desktop.Shell;
@@ -15,11 +17,16 @@ public sealed partial class InstancesView : UserControl
 {
     private const double WideLayoutThreshold = 940;
     private static readonly TimeSpan CreatorAnimationPhaseDuration = TimeSpan.FromMilliseconds(190);
+    private static readonly TimeSpan CompactSectionSlideDuration = TimeSpan.FromMilliseconds(300);
+    private static readonly TimeSpan WideSectionSlideDuration = TimeSpan.FromMilliseconds(180);
     private static readonly TimeSpan VersionLoadingFadeDuration = TimeSpan.FromMilliseconds(170);
     private readonly Stopwatch _versionSpinnerClock = new();
     private readonly DispatcherTimer _versionSpinnerTimer;
     private INotifyPropertyChanged? _viewModel;
+    private bool? _usesCompactLayout;
+    private bool _compactContentOpen;
     private CancellationTokenSource? _creatorAnimationCancellation;
+    private CancellationTokenSource? _sectionAnimationCancellation;
     private CancellationTokenSource? _versionLoadingCancellation;
 
     public InstancesView()
@@ -46,6 +53,7 @@ public sealed partial class InstancesView : UserControl
         UpdateLayout(Bounds.Width);
         UpdateBranchIndicator(animate: false);
         ApplyVersionLoadingStateImmediately();
+        ApplySectionStateImmediately();
 
         if (DataContext is MainWindowViewModel { IsInstanceCreatorOpen: true })
             _ = PlayCreatorOpenAnimationAsync();
@@ -60,6 +68,14 @@ public sealed partial class InstancesView : UserControl
 
         if (args.PropertyName is nameof(MainWindowViewModel.NewInstanceBranch))
             UpdateBranchIndicator(animate: true);
+
+        if (args.PropertyName is nameof(MainWindowViewModel.InstanceSection))
+        {
+            if (DataContext is MainWindowViewModel { IsInstanceOverviewSection: true })
+                _ = PlaySectionCloseAnimationAsync();
+            else
+                _ = PlaySectionOpenAnimationAsync();
+        }
 
         if (args.PropertyName is nameof(MainWindowViewModel.IsInstanceVersionsLoading))
         {
@@ -83,9 +99,17 @@ public sealed partial class InstancesView : UserControl
         if (width <= 0 || DataContext is not MainWindowViewModel viewModel)
             return;
 
-        var wide = width >= WideLayoutThreshold;
+        var compact = width < WideLayoutThreshold;
         var hasInstances = viewModel.HasInstances;
-        Classes.Set("compact", !wide);
+        Classes.Set("compact", compact);
+
+        var layoutModeChanged = _usesCompactLayout != compact;
+        if (layoutModeChanged)
+        {
+            var keepContentOpen = compact && _usesCompactLayout is false;
+            _usesCompactLayout = compact;
+            _compactContentOpen = keepContentOpen;
+        }
 
         if (!hasInstances)
         {
@@ -97,40 +121,117 @@ public sealed partial class InstancesView : UserControl
             Grid.SetColumnSpan(InstancesContent, 2);
             Grid.SetRow(InstancesContent, 0);
             Grid.SetRowSpan(InstancesContent, 1);
+            Grid.SetColumnSpan(InstancesContent, 2);
+            InstancesListPane.IsHitTestVisible = false;
+            InstancesContent.IsHitTestVisible = true;
+            CompactInstanceToolbar.IsVisible = false;
+            SetContentOffsetWithoutTransition(0);
+            if (layoutModeChanged)
+                ApplySectionStateImmediately();
             return;
         }
 
-        Grid.SetColumnSpan(InstancesContent, 1);
-        if (wide)
+        EnsureSingleLayoutRow();
+        InstancesLayout.RowDefinitions[0].Height = new GridLength(1, GridUnitType.Star);
+        Grid.SetRow(InstancesListPane, 0);
+        Grid.SetRow(InstancesContent, 0);
+        Grid.SetRowSpan(InstancesContent, 1);
+
+        InstanceHubContent.Margin = compact
+            ? new Thickness(24, 16, 24, 36)
+            : new Thickness(32, 28, 32, 40);
+        InstanceHubContent.MaxWidth = compact ? double.PositiveInfinity : 720;
+        CompactInstanceToolbar.IsVisible = compact;
+
+        if (!compact)
         {
-            EnsureSingleLayoutRow();
             InstancesLayout.ColumnDefinitions[0].Width = new GridLength(306);
             InstancesLayout.ColumnDefinitions[1].Width = new GridLength(1, GridUnitType.Star);
-            InstancesLayout.RowDefinitions[0].Height = new GridLength(1, GridUnitType.Star);
             Grid.SetColumn(InstancesListPane, 0);
-            Grid.SetRow(InstancesListPane, 0);
             Grid.SetColumn(InstancesContent, 1);
-            Grid.SetRow(InstancesContent, 0);
-            Grid.SetRowSpan(InstancesContent, 1);
+            Grid.SetColumnSpan(InstancesContent, 1);
+            InstancesListPane.IsHitTestVisible = true;
+            InstancesContent.IsHitTestVisible = true;
+            SetContentOffsetWithoutTransition(0);
+            if (layoutModeChanged)
+                ApplySectionStateImmediately();
             return;
         }
 
         InstancesLayout.ColumnDefinitions[0].Width = new GridLength(1, GridUnitType.Star);
         InstancesLayout.ColumnDefinitions[1].Width = new GridLength(0);
-        InstancesLayout.RowDefinitions[0].Height = new GridLength(220);
-        if (InstancesLayout.RowDefinitions.Count == 1)
-            InstancesLayout.RowDefinitions.Add(new RowDefinition(1, GridUnitType.Star));
         Grid.SetColumn(InstancesListPane, 0);
-        Grid.SetRow(InstancesListPane, 0);
         Grid.SetColumn(InstancesContent, 0);
-        Grid.SetRow(InstancesContent, 1);
+        Grid.SetColumnSpan(InstancesContent, 2);
         Grid.SetRowSpan(InstancesContent, 1);
+        InstancesListPane.IsHitTestVisible = !_compactContentOpen;
+        InstancesContent.IsHitTestVisible = _compactContentOpen;
+        SetContentOffsetWithoutTransition(_compactContentOpen ? 0 : width);
+        if (layoutModeChanged)
+            ApplySectionStateImmediately();
     }
 
     private void EnsureSingleLayoutRow()
     {
         while (InstancesLayout.RowDefinitions.Count > 1)
             InstancesLayout.RowDefinitions.RemoveAt(InstancesLayout.RowDefinitions.Count - 1);
+    }
+
+    private void OnInstanceClicked(object? sender, RoutedEventArgs args)
+    {
+        if (_usesCompactLayout is not true)
+            return;
+
+        OpenCompactContent();
+    }
+
+    private void OnOpenCreatorClicked(object? sender, RoutedEventArgs args)
+    {
+        if (_usesCompactLayout is true)
+            OpenCompactContent();
+    }
+
+    private void OpenCompactContent()
+    {
+        _compactContentOpen = true;
+        InstancesListPane.IsHitTestVisible = false;
+        InstancesContent.IsHitTestVisible = true;
+        ((TranslateTransform)InstancesContent.RenderTransform!).X = 0;
+    }
+
+    private void OnCompactInstanceBackClicked(object? sender, RoutedEventArgs args)
+        => TryCloseCompactContent();
+
+    public bool TryCloseCompactContent()
+    {
+        if (_usesCompactLayout is not true || !_compactContentOpen)
+            return false;
+
+        _compactContentOpen = false;
+        InstancesContent.IsHitTestVisible = false;
+        InstancesListPane.IsHitTestVisible = true;
+        ((TranslateTransform)InstancesContent.RenderTransform!).X = Bounds.Width;
+        return true;
+    }
+
+    public bool TryNavigateBack()
+    {
+        if (DataContext is MainWindowViewModel { IsInstanceOverviewSection: false } viewModel)
+        {
+            viewModel.CloseInstanceSectionCommand.Execute(null);
+            return true;
+        }
+
+        return TryCloseCompactContent();
+    }
+
+    private void SetContentOffsetWithoutTransition(double offset)
+    {
+        var translation = (TranslateTransform)InstancesContent.RenderTransform!;
+        var transitions = translation.Transitions;
+        translation.Transitions = null;
+        translation.X = offset;
+        translation.Transitions = transitions;
     }
 
     private async Task PlayCreatorOpenAnimationAsync()
@@ -261,6 +362,256 @@ public sealed partial class InstancesView : UserControl
         InstancesOverview.IsVisible = true;
         InstancesOverview.Transitions = transitions;
         overviewTranslation.Transitions = translationTransitions;
+    }
+
+    private async Task PlaySectionOpenAnimationAsync()
+    {
+        CancelSectionAnimation();
+        if (_usesCompactLayout is true)
+        {
+            await PlayCompactSectionOpenAnimationAsync();
+            return;
+        }
+
+        if (!InstanceHubScreen.IsVisible)
+        {
+            ApplySectionStateImmediately();
+            return;
+        }
+
+        _sectionAnimationCancellation = new CancellationTokenSource();
+        var cancellationToken = _sectionAnimationCancellation.Token;
+        var hubTranslation = (TranslateTransform)InstanceHubScreen.RenderTransform!;
+        var sectionTranslation = (TranslateTransform)InstanceSectionScreen.RenderTransform!;
+        SetSectionTranslationDuration(WideSectionSlideDuration);
+        InstanceHubScreen.IsHitTestVisible = false;
+        InstanceSectionScreen.IsHitTestVisible = false;
+        InstanceHubScreen.Opacity = 0;
+        hubTranslation.X = -28;
+
+        try
+        {
+            await Task.Delay(CreatorAnimationPhaseDuration, cancellationToken);
+            if (cancellationToken.IsCancellationRequested ||
+                DataContext is not MainWindowViewModel { IsInstanceOverviewSection: false })
+            {
+                return;
+            }
+
+            InstanceHubScreen.IsVisible = false;
+            PrepareSectionForEntry(sectionTranslation);
+            await Dispatcher.UIThread.InvokeAsync(static () => { }, DispatcherPriority.Loaded);
+            if (cancellationToken.IsCancellationRequested)
+                return;
+
+            InstanceSectionScreen.IsHitTestVisible = true;
+            InstanceSectionScreen.Opacity = 1;
+            sectionTranslation.X = 0;
+        }
+        catch (OperationCanceledException)
+        {
+            // A reverse section navigation replaces the pending transition
+        }
+    }
+
+    private async Task PlaySectionCloseAnimationAsync()
+    {
+        CancelSectionAnimation();
+        if (_usesCompactLayout is true)
+        {
+            await PlayCompactSectionCloseAnimationAsync();
+            return;
+        }
+
+        if (!InstanceSectionScreen.IsVisible)
+        {
+            ApplySectionStateImmediately();
+            return;
+        }
+
+        _sectionAnimationCancellation = new CancellationTokenSource();
+        var cancellationToken = _sectionAnimationCancellation.Token;
+        var sectionTranslation = (TranslateTransform)InstanceSectionScreen.RenderTransform!;
+        SetSectionTranslationDuration(WideSectionSlideDuration);
+        InstanceSectionScreen.IsHitTestVisible = false;
+        InstanceSectionScreen.Opacity = 0;
+        sectionTranslation.X = 28;
+
+        try
+        {
+            await Task.Delay(CreatorAnimationPhaseDuration, cancellationToken);
+            if (cancellationToken.IsCancellationRequested ||
+                DataContext is not MainWindowViewModel { IsInstanceOverviewSection: true })
+            {
+                return;
+            }
+
+            InstanceSectionScreen.IsVisible = false;
+            var hubTranslation = (TranslateTransform)InstanceHubScreen.RenderTransform!;
+            PrepareHubForEntry(hubTranslation);
+            await Dispatcher.UIThread.InvokeAsync(static () => { }, DispatcherPriority.Loaded);
+            if (cancellationToken.IsCancellationRequested)
+                return;
+
+            InstanceHubScreen.IsHitTestVisible = true;
+            InstanceHubScreen.Opacity = 1;
+            hubTranslation.X = 0;
+        }
+        catch (OperationCanceledException)
+        {
+            // Opening another section replaces the pending transition
+        }
+    }
+
+    private void ApplySectionStateImmediately()
+    {
+        CancelSectionAnimation();
+        var showHub = DataContext is not MainWindowViewModel { IsInstanceOverviewSection: false };
+        var hubTranslation = (TranslateTransform)InstanceHubScreen.RenderTransform!;
+        var sectionTranslation = (TranslateTransform)InstanceSectionScreen.RenderTransform!;
+        var hubTransitions = InstanceHubScreen.Transitions;
+        var sectionTransitions = InstanceSectionScreen.Transitions;
+        var hubTranslationTransitions = hubTranslation.Transitions;
+        var sectionTranslationTransitions = sectionTranslation.Transitions;
+        InstanceHubScreen.Transitions = null;
+        InstanceSectionScreen.Transitions = null;
+        hubTranslation.Transitions = null;
+        sectionTranslation.Transitions = null;
+        var compact = _usesCompactLayout is true;
+        InstanceHubScreen.IsVisible = compact || showHub;
+        InstanceHubScreen.IsHitTestVisible = showHub;
+        InstanceHubScreen.Opacity = compact || showHub ? 1 : 0;
+        hubTranslation.X = compact || showHub ? 0 : -28;
+        InstanceSectionScreen.IsVisible = !showHub;
+        InstanceSectionScreen.IsHitTestVisible = !showHub;
+        InstanceSectionScreen.Opacity = showHub ? 0 : 1;
+        sectionTranslation.X = showHub
+            ? compact ? GetSectionSlideDistance() : 28
+            : 0;
+        InstanceHubScreen.Transitions = hubTransitions;
+        InstanceSectionScreen.Transitions = sectionTransitions;
+        hubTranslation.Transitions = hubTranslationTransitions;
+        sectionTranslation.Transitions = sectionTranslationTransitions;
+        SetSectionTranslationDuration(compact ? CompactSectionSlideDuration : WideSectionSlideDuration);
+    }
+
+    private async Task PlayCompactSectionOpenAnimationAsync()
+    {
+        _sectionAnimationCancellation = new CancellationTokenSource();
+        var cancellationToken = _sectionAnimationCancellation.Token;
+        var sectionTranslation = (TranslateTransform)InstanceSectionScreen.RenderTransform!;
+        SetSectionTranslationDuration(CompactSectionSlideDuration);
+
+        InstanceHubScreen.IsVisible = true;
+        InstanceHubScreen.IsHitTestVisible = false;
+        InstanceHubScreen.Opacity = 1;
+        ((TranslateTransform)InstanceHubScreen.RenderTransform!).X = 0;
+        PrepareCompactSectionForEntry(sectionTranslation);
+
+        await Dispatcher.UIThread.InvokeAsync(static () => { }, DispatcherPriority.Loaded);
+        if (cancellationToken.IsCancellationRequested ||
+            DataContext is not MainWindowViewModel { IsInstanceOverviewSection: false })
+        {
+            return;
+        }
+
+        InstanceSectionScreen.IsHitTestVisible = true;
+        sectionTranslation.X = 0;
+    }
+
+    private async Task PlayCompactSectionCloseAnimationAsync()
+    {
+        if (!InstanceSectionScreen.IsVisible)
+        {
+            ApplySectionStateImmediately();
+            return;
+        }
+
+        _sectionAnimationCancellation = new CancellationTokenSource();
+        var cancellationToken = _sectionAnimationCancellation.Token;
+        var sectionTranslation = (TranslateTransform)InstanceSectionScreen.RenderTransform!;
+        SetSectionTranslationDuration(CompactSectionSlideDuration);
+        InstanceSectionScreen.IsHitTestVisible = false;
+        InstanceHubScreen.IsVisible = true;
+        InstanceHubScreen.IsHitTestVisible = false;
+        InstanceHubScreen.Opacity = 1;
+        ((TranslateTransform)InstanceHubScreen.RenderTransform!).X = 0;
+        sectionTranslation.X = GetSectionSlideDistance();
+
+        try
+        {
+            await Task.Delay(CompactSectionSlideDuration + TimeSpan.FromMilliseconds(20), cancellationToken);
+            if (cancellationToken.IsCancellationRequested ||
+                DataContext is not MainWindowViewModel { IsInstanceOverviewSection: true })
+            {
+                return;
+            }
+
+            InstanceSectionScreen.IsVisible = false;
+            InstanceSectionScreen.Opacity = 0;
+            InstanceHubScreen.IsHitTestVisible = true;
+        }
+        catch (OperationCanceledException)
+        {
+            // Opening a section again replaces the pending compact slide
+        }
+    }
+
+    private void PrepareCompactSectionForEntry(TranslateTransform translation)
+    {
+        var transitions = InstanceSectionScreen.Transitions;
+        var translationTransitions = translation.Transitions;
+        InstanceSectionScreen.Transitions = null;
+        translation.Transitions = null;
+        InstanceSectionScreen.Opacity = 1;
+        translation.X = GetSectionSlideDistance();
+        InstanceSectionScreen.IsVisible = true;
+        InstanceSectionScreen.Transitions = transitions;
+        translation.Transitions = translationTransitions;
+    }
+
+    private double GetSectionSlideDistance()
+        => Math.Max(1, InstancesContent.Bounds.Width > 0 ? InstancesContent.Bounds.Width : Bounds.Width);
+
+    private void SetSectionTranslationDuration(TimeSpan duration)
+    {
+        var translation = (TranslateTransform)InstanceSectionScreen.RenderTransform!;
+        var transition = translation.Transitions?.OfType<DoubleTransition>().FirstOrDefault();
+        if (transition is not null)
+            transition.Duration = duration;
+    }
+
+    private void PrepareSectionForEntry(TranslateTransform translation)
+    {
+        var transitions = InstanceSectionScreen.Transitions;
+        var translationTransitions = translation.Transitions;
+        InstanceSectionScreen.Transitions = null;
+        translation.Transitions = null;
+        InstanceSectionScreen.Opacity = 0;
+        translation.X = 28;
+        InstanceSectionScreen.IsVisible = true;
+        InstanceSectionScreen.Transitions = transitions;
+        translation.Transitions = translationTransitions;
+    }
+
+    private void PrepareHubForEntry(TranslateTransform translation)
+    {
+        var transitions = InstanceHubScreen.Transitions;
+        var translationTransitions = translation.Transitions;
+        InstanceHubScreen.Transitions = null;
+        translation.Transitions = null;
+        InstanceHubScreen.Opacity = 0;
+        translation.X = -28;
+        InstanceHubScreen.IsVisible = true;
+        InstanceHubScreen.Transitions = transitions;
+        translation.Transitions = translationTransitions;
+    }
+
+    private void CancelSectionAnimation()
+    {
+        _sectionAnimationCancellation?.Cancel();
+        _sectionAnimationCancellation?.Dispose();
+        _sectionAnimationCancellation = null;
     }
 
     private void OnBranchSwitchSizeChanged(object? sender, SizeChangedEventArgs args)

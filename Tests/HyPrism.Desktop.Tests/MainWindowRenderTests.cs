@@ -12,6 +12,7 @@ using Avalonia.Controls.Documents;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Threading;
@@ -19,6 +20,7 @@ using Avalonia.VisualTree;
 using CommunityToolkit.Mvvm.Input;
 using HyPrism.Desktop.Features.About;
 using HyPrism.Desktop.Features.Dashboard;
+using HyPrism.Desktop.Features.Instances;
 using HyPrism.Desktop.Features.News;
 using HyPrism.Desktop.Features.Settings;
 using HyPrism.Desktop.Localization;
@@ -982,6 +984,12 @@ public sealed class MainWindowRenderTests
             dashboard.GetVisualDescendants().OfType<Button>(),
             button => button.Classes.Contains("dashboardPrimary") && button.IsEffectivelyVisible);
         Assert.DoesNotContain(
+            dashboard.GetVisualDescendants().OfType<Button>(),
+            button => button.Classes.Contains("dashboardManage"));
+        Assert.DoesNotContain(
+            dashboard.GetVisualDescendants().OfType<Border>(),
+            border => border.Classes.Contains("dashboardInstanceSummary"));
+        Assert.DoesNotContain(
             dashboardAction.GetVisualDescendants(),
             visual => visual.RenderTransform is ScaleTransform);
         AssertNoPressScale(dashboardAction);
@@ -994,6 +1002,12 @@ public sealed class MainWindowRenderTests
         Assert.NotNull(window.FindControl<Border>("ResizeNorthEast")?.Cursor);
         Assert.NotNull(window.FindControl<Border>("ResizeSouthWest")?.Cursor);
         Assert.NotNull(window.FindControl<Border>("ResizeSouthEast")?.Cursor);
+
+        var primaryNavigation = window.FindControl<StackPanel>("PrimaryNavigation");
+        Assert.NotNull(primaryNavigation);
+        Assert.DoesNotContain(
+            primaryNavigation!.GetVisualDescendants().OfType<TextBlock>(),
+            textBlock => textBlock.Text == "Mods");
 
         var minimizeButton = window.FindControl<Button>("MinimizeWindowButton");
         var maximizeButton = window.FindControl<Button>("MaximizeWindowButton");
@@ -1059,6 +1073,110 @@ public sealed class MainWindowRenderTests
             AssertNoPressScale(button);
 
             window.MouseUp(hoverPoint.Value, MouseButton.Left);
+        }
+
+        viewModel.NavigateCommand.Execute("instances");
+        Dispatcher.UIThread.RunJobs();
+        var instancesView = Assert.Single(window.GetVisualDescendants().OfType<InstancesView>());
+        Assert.True(instancesView.IsEffectivelyVisible);
+        var instanceMenuRows = instancesView.GetVisualDescendants()
+            .OfType<Button>()
+            .Where(button => button.Classes.Contains("instanceMenuRow"))
+            .ToList();
+        Assert.Equal(
+            5,
+            instanceMenuRows.Count);
+        Assert.All(instanceMenuRows.Take(4), row => Assert.InRange(row.Bounds.Height, 68.5, 69.5));
+        Assert.InRange(instanceMenuRows[^1].Bounds.Height, 65.5, 66.5);
+        Assert.DoesNotContain(
+            instancesView.GetVisualDescendants().OfType<Button>(),
+            button => button.Classes.Contains("instanceLaunch"));
+
+        var instancesContent = instancesView.FindControl<Grid>("InstancesContent");
+        var instancesListPane = instancesView.FindControl<Border>("InstancesListPane");
+        var compactInstanceToolbar = instancesView.FindControl<Border>("CompactInstanceToolbar");
+        Assert.NotNull(instancesContent);
+        Assert.NotNull(instancesListPane);
+        Assert.NotNull(compactInstanceToolbar);
+        var instanceContentTranslation = Assert.IsType<TranslateTransform>(instancesContent!.RenderTransform);
+        var usesCompactInstancesLayout = instancesView.Bounds.Width < 940;
+        Assert.Equal(usesCompactInstancesLayout, compactInstanceToolbar!.IsVisible);
+
+        if (usesCompactInstancesLayout)
+        {
+            Assert.True(instanceContentTranslation.X > 0);
+            var instanceButton = instancesListPane!.GetVisualDescendants()
+                .OfType<Button>()
+                .Single(button => button.Classes.Contains("instancesListItem"));
+            instanceButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            await Task.Delay(360);
+            Dispatcher.UIThread.RunJobs();
+            Assert.Equal(0, instanceContentTranslation.X);
+
+            var compactPreviewPath = Environment.GetEnvironmentVariable("HYPRISM_INSTANCES_COMPACT_RENDER_OUTPUT");
+            if (!string.IsNullOrWhiteSpace(compactPreviewPath) && width == 1024)
+            {
+                window.CaptureRenderedFrame()!.Save(compactPreviewPath, PngBitmapEncoderOptions.Default);
+                Assert.True(File.Exists(compactPreviewPath));
+            }
+        }
+        else
+        {
+            Assert.Equal(0, instanceContentTranslation.X);
+            Assert.True(instancesListPane!.IsHitTestVisible);
+            Assert.True(instancesContent.IsHitTestVisible);
+        }
+
+        var instanceHub = instancesView.FindControl<Grid>("InstanceHubScreen");
+        var instanceSection = instancesView.FindControl<Grid>("InstanceSectionScreen");
+        var instanceInfoGroup = instancesView.GetVisualDescendants()
+            .OfType<Border>()
+            .Single(border => border.Classes.Contains("instanceInfoGroup"));
+        Assert.NotNull(instanceHub);
+        Assert.NotNull(instanceSection);
+        Assert.True(instanceInfoGroup.IsVisible);
+        Assert.Equal(
+            4,
+            instanceInfoGroup.GetVisualDescendants()
+                .OfType<Border>()
+                .Count(border => border.Classes.Contains("instanceInfoCell")));
+        viewModel.SelectInstanceSectionCommand.Execute("mods");
+        Assert.True(instanceHub!.IsVisible);
+        Assert.Equal(usesCompactInstancesLayout, instanceSection!.IsVisible);
+        await Task.Delay(usesCompactInstancesLayout ? 360 : 240);
+        Dispatcher.UIThread.RunJobs();
+        Assert.Equal(usesCompactInstancesLayout, instanceHub!.IsVisible);
+        Assert.True(instanceSection!.IsVisible);
+        Assert.Contains("articleToolbar", instanceSection.GetVisualDescendants()
+            .OfType<Border>()
+            .First(border => border.Classes.Contains("articleToolbar"))
+            .Classes);
+        var instanceSectionTitle = instanceSection.GetVisualDescendants()
+            .OfType<TextBlock>()
+            .Single(textBlock => textBlock.Classes.Contains("articleToolbarTitle"));
+        Assert.Equal("Installed mods", instanceSectionTitle.Text);
+
+        var sectionPreviewPath = Environment.GetEnvironmentVariable("HYPRISM_INSTANCES_SECTION_RENDER_OUTPUT");
+        if (!string.IsNullOrWhiteSpace(sectionPreviewPath) && width == 1280)
+        {
+            window.CaptureRenderedFrame()!.Save(sectionPreviewPath, PngBitmapEncoderOptions.Default);
+            Assert.True(File.Exists(sectionPreviewPath));
+        }
+
+        viewModel.CloseInstanceSectionCommand.Execute(null);
+        Assert.Equal(usesCompactInstancesLayout, instanceHub.IsVisible);
+        Assert.True(instanceSection.IsVisible);
+        Assert.Equal("Installed mods", instanceSectionTitle.Text);
+        await Task.Delay(usesCompactInstancesLayout ? 360 : 240);
+        Dispatcher.UIThread.RunJobs();
+        Assert.True(instanceHub.IsVisible);
+        Assert.False(instanceSection.IsVisible);
+
+        var instancesPreviewPath = Environment.GetEnvironmentVariable("HYPRISM_INSTANCES_RENDER_OUTPUT");
+        if (!string.IsNullOrWhiteSpace(instancesPreviewPath) && width == 1280)
+        {
+            window.CaptureRenderedFrame()!.Save(instancesPreviewPath, PngBitmapEncoderOptions.Default);
+            Assert.True(File.Exists(instancesPreviewPath));
         }
 
         var previewPath = Environment.GetEnvironmentVariable("HYPRISM_RENDER_OUTPUT");
