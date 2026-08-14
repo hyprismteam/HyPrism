@@ -12,7 +12,7 @@ using System.Text.Json;
 using HyPrism.Core.Game.Authentication;
 using HyPrism.LocalNode;
 
-namespace HyPrism.Core.Tests.Game.Authentication;
+namespace HyPrism.LocalNode.Tests;
 
 public sealed class LocalNodeHostTests
 {
@@ -145,7 +145,16 @@ public sealed class LocalNodeHostTests
             Assert.Contains("javax.net.ssl.trustStore", startInfo.Environment["JAVA_TOOL_OPTIONS"]);
             Assert.Contains("javax.net.ssl.trustStore", startInfo.Environment["HYPRISM_LOCAL_NODE_JAVA_OPTIONS"]);
             if (!OperatingSystem.IsWindows())
-                Assert.True(File.Exists(startInfo.Environment["SSL_CERT_FILE"]));
+            {
+                var bundlePath = startInfo.Environment["SSL_CERT_FILE"];
+                Assert.True(File.Exists(bundlePath));
+                var bundle = await File.ReadAllTextAsync(bundlePath);
+                var localCertificate = await File.ReadAllTextAsync(
+                    LocalNodeCertificateStore.GetPublicCertificatePath(options));
+                Assert.EndsWith(localCertificate, bundle);
+                if (OperatingSystem.IsMacOS() && File.Exists("/etc/ssl/cert.pem"))
+                    Assert.True(bundle.Length > localCertificate.Length);
+            }
         }
         finally
         {

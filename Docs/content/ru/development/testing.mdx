@@ -1,6 +1,6 @@
 ---
 title: Тестирование
-description: Запуск тестов Core и Avalonia Headless
+description: Запуск тестов Core, Local Node и Avalonia Headless
 ---
 
 # Тестирование
@@ -9,10 +9,13 @@ description: Запуск тестов Core и Avalonia Headless
 
 ```bash
 dotnet test Tests/HyPrism.Core.Tests/HyPrism.Core.Tests.csproj
+dotnet test Tests/HyPrism.LocalNode.Tests/HyPrism.LocalNode.Tests.csproj
 dotnet test Tests/HyPrism.Desktop.Tests/HyPrism.Desktop.Tests.csproj
 ```
 
-Тесты Core проверяют координацию запуска и работу профилей. Desktop-тесты используют Avalonia Headless для проверки локализации и важных состояний окна
+Тесты Core проверяют координацию запуска и работу профилей. Тесты протокола, постоянного состояния, сертификатов и процессов Local Node находятся в `HyPrism.LocalNode.Tests`. Desktop-тесты используют Avalonia Headless для проверки локализации и важных состояний окна
+
+Job `local-node-macos` из `.github/workflows/tests.yml` запускает session- и trust-тесты Local Node на `macos-15`, публикует apphost Desktop и Local Node для `osx-arm64` и выполняет реальный HTTPS-запрос после регистрации созданного сертификата в одноразовом System Keychain runner. Детерминированные тесты проверяют production-последовательность команд user Keychain, включая ограничение доверия именем хоста и ротацию сертификата. CI не может подтвердить интерактивный диалог безопасности пользователя или заменить финальный запуск с установленным клиентом Hytale на физическом Mac
 
 ## Границы тестов
 

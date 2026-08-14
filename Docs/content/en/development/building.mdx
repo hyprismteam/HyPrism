@@ -25,7 +25,17 @@ dotnet run --project Sources/HyPrism.Desktop/HyPrism.Desktop.csproj
 dotnet build HyPrism.sln
 ```
 
-The solution contains `HyPrism.Core`, `HyPrism.Desktop`, and their test projects
+The solution contains `HyPrism.Core`, `HyPrism.Desktop`, `HyPrism.LocalNode`, and their test projects
+
+## GitHub Actions
+
+`.github/workflows/ci.yml` is the push and pull request entry point. It calls the independent test workflow and the build dispatcher. `.github/workflows/build.yml` only selects platforms, while `build-linux.yml`, `build-windows.yml`, and `build-macos.yml` own their platform packaging
+
+The current CI artifacts are a self-contained Linux x64 `tar.xz`, a self-contained Windows x64 ZIP, and a macOS ARM64 DMG. Release builds reuse the same platform workflows and pass the release version into artifact names
+
+## macOS package
+
+The macOS workflow publishes the self-contained `osx-arm64` Desktop application with the Local Node apphost beside it, builds a native `.app` bundle, applies an ad hoc signature, verifies the bundle, and creates the uploaded DMG
 
 ## Documentation
 

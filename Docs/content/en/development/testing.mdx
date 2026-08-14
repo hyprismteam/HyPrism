@@ -1,6 +1,6 @@
 ---
 title: Testing
-description: Run Core and Avalonia headless tests
+description: Run Core, Local Node, and Avalonia headless tests
 ---
 
 # Testing
@@ -9,10 +9,13 @@ Run all active tests from the repository root
 
 ```bash
 dotnet test Tests/HyPrism.Core.Tests/HyPrism.Core.Tests.csproj
+dotnet test Tests/HyPrism.LocalNode.Tests/HyPrism.LocalNode.Tests.csproj
 dotnet test Tests/HyPrism.Desktop.Tests/HyPrism.Desktop.Tests.csproj
 ```
 
-Core tests cover launch coordination and profile behavior. Desktop tests use Avalonia headless rendering to verify localization and important window states
+Core tests cover launch coordination and profile behavior. Local Node protocol, persistence, certificate, and process tests live in `HyPrism.LocalNode.Tests`. Desktop tests use Avalonia headless rendering to verify localization and important window states
+
+The `local-node-macos` job in `.github/workflows/tests.yml` runs Local Node session and trust tests on `macos-15`, publishes the `osx-arm64` Desktop and Local Node apphosts, and performs a real HTTPS request after registering the generated certificate in the runner's disposable System Keychain. Deterministic tests verify the production user-Keychain command sequence, including hostname-constrained trust and certificate rotation. CI cannot approve the interactive user security dialog or replace a final launch with an installed Hytale client on a physical Mac
 
 ## Test boundaries
 

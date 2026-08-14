@@ -34,6 +34,9 @@ public sealed class LocalNodeTrustStore
             return new LocalNodeTrustStore(null, javaTrustStorePath);
         }
 
+        if (OperatingSystem.IsMacOS())
+            MacOsCertificateTrust.EnsureTrusted(options, certificate);
+
         var bundlePath = Path.Combine(options.DataDirectory, "client-ca-bundle.pem");
         var systemBundle = FindSystemBundle();
         using var output = new FileStream(bundlePath, FileMode.Create, FileAccess.Write, FileShare.Read);
@@ -107,6 +110,7 @@ public sealed class LocalNodeTrustStore
 
         string[] candidates =
         [
+            "/etc/ssl/cert.pem",
             "/etc/ssl/certs/ca-certificates.crt",
             "/etc/pki/tls/certs/ca-bundle.crt",
             "/etc/ssl/ca-bundle.pem",

@@ -1,0 +1,125 @@
+# Copyright (C) 2026 HyPrism Launcher
+# SPDX-License-Identifier: GPL-3.0-only
+
+name: Build macOS
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Artifact version. Defaults to the tag or CI run number'
+        required: false
+        default: ''
+        type: string
+  workflow_call:
+    inputs:
+      version:
+        description: 'Artifact version. Defaults to the tag or CI run number'
+        required: false
+        default: ''
+        type: string
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_VERSION: '10.0.x'
+  DOTNET_QUALITY: 'preview'
+
+jobs:
+  build:
+    name: macOS ARM64
+    runs-on: macos-15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+          dotnet-quality: ${{ env.DOTNET_QUALITY }}
+
+      - name: Determine artifact version
+        id: version
+        run: |
+          VERSION="${{ inputs.version }}"
+          if [ -z "$VERSION" ]; then
+            if [[ "$GITHUB_REF_NAME" == v* ]]; then
+              VERSION="${GITHUB_REF_NAME#v}"
+            else
+              VERSION="ci-${GITHUB_RUN_NUMBER}"
+            fi
+          fi
+          BUNDLE_VERSION="${VERSION%%-*}"
+          if [[ ! "$BUNDLE_VERSION" =~ ^[0-9]+(\.[0-9]+){0,2}$ ]]; then
+            BUNDLE_VERSION="0.0.0"
+          fi
+          echo "value=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "bundle=$BUNDLE_VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Generate application icon
+        run: |
+          mkdir -p HyPrism.iconset Build
+          for size in 16 32 64 128 256 512; do
+            sips -z "$size" "$size" Sources/HyPrism.Desktop/Assets/Images/appicon_512.png \
+              --out "HyPrism.iconset/icon_${size}x${size}.png"
+            size2=$((size * 2))
+            if [ "$size2" -le 1024 ]; then
+              sips -z "$size2" "$size2" Sources/HyPrism.Desktop/Assets/Images/appicon_512.png \
+                --out "HyPrism.iconset/icon_${size}x${size}@2x.png"
+            fi
+          done
+          iconutil -c icns HyPrism.iconset -o Build/icon.icns
+
+      - name: Publish application bundle
+        run: |
+          APP_DIR="$RUNNER_TEMP/HyPrism.app"
+          mkdir -p "$APP_DIR/Contents/MacOS" "$APP_DIR/Contents/Resources"
+          dotnet publish Sources/HyPrism.Desktop/HyPrism.Desktop.csproj \
+            --configuration Release \
+            --runtime osx-arm64 \
+            --self-contained true \
+            --output "$APP_DIR/Contents/MacOS"
+          cp Build/icon.icns "$APP_DIR/Contents/Resources/HyPrism.icns"
+
+          plutil -create xml1 "$APP_DIR/Contents/Info.plist"
+          plutil -insert CFBundleDevelopmentRegion -string en "$APP_DIR/Contents/Info.plist"
+          plutil -insert CFBundleDisplayName -string HyPrism "$APP_DIR/Contents/Info.plist"
+          plutil -insert CFBundleExecutable -string HyPrism.Desktop "$APP_DIR/Contents/Info.plist"
+          plutil -insert CFBundleIconFile -string HyPrism.icns "$APP_DIR/Contents/Info.plist"
+          plutil -insert CFBundleIdentifier -string io.github.hyprismteam.HyPrism "$APP_DIR/Contents/Info.plist"
+          plutil -insert CFBundleInfoDictionaryVersion -string 6.0 "$APP_DIR/Contents/Info.plist"
+          plutil -insert CFBundleName -string HyPrism "$APP_DIR/Contents/Info.plist"
+          plutil -insert CFBundlePackageType -string APPL "$APP_DIR/Contents/Info.plist"
+          plutil -insert CFBundleShortVersionString -string "${{ steps.version.outputs.bundle }}" "$APP_DIR/Contents/Info.plist"
+          plutil -insert CFBundleVersion -string "${{ github.run_number }}" "$APP_DIR/Contents/Info.plist"
+          plutil -insert LSMinimumSystemVersion -string 12.0 "$APP_DIR/Contents/Info.plist"
+          plutil -insert NSHighResolutionCapable -bool true "$APP_DIR/Contents/Info.plist"
+
+          test -x "$APP_DIR/Contents/MacOS/HyPrism.Desktop"
+          test -x "$APP_DIR/Contents/MacOS/HyPrism.LocalNode"
+          file "$APP_DIR/Contents/MacOS/HyPrism.LocalNode" | grep -q 'Mach-O 64-bit executable arm64'
+          codesign --force --deep --sign - "$APP_DIR"
+          codesign --verify --deep --strict "$APP_DIR"
+
+      - name: Create DMG
+        run: |
+          APP_DIR="$RUNNER_TEMP/HyPrism.app"
+          DMG_STAGE="$RUNNER_TEMP/hyprism-dmg"
+          mkdir -p "$DMG_STAGE" dist
+          cp -R "$APP_DIR" "$DMG_STAGE/HyPrism.app"
+          ln -s /Applications "$DMG_STAGE/Applications"
+          hdiutil create \
+            -volname HyPrism \
+            -srcfolder "$DMG_STAGE" \
+            -ov \
+            -format UDZO \
+            "dist/HyPrism-mac-arm64-${{ steps.version.outputs.value }}.dmg"
+
+      - name: Upload macOS artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-arm64
+          path: dist/*.dmg
+          if-no-files-found: error

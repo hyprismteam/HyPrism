@@ -1,0 +1,74 @@
+# Copyright (C) 2026 HyPrism Launcher
+# SPDX-License-Identifier: GPL-3.0-only
+
+name: Build Linux
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Artifact version. Defaults to the tag or CI run number'
+        required: false
+        default: ''
+        type: string
+  workflow_call:
+    inputs:
+      version:
+        description: 'Artifact version. Defaults to the tag or CI run number'
+        required: false
+        default: ''
+        type: string
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_VERSION: '10.0.x'
+  DOTNET_QUALITY: 'preview'
+
+jobs:
+  build:
+    name: Linux x64
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+          dotnet-quality: ${{ env.DOTNET_QUALITY }}
+
+      - name: Determine artifact version
+        id: version
+        run: |
+          VERSION="${{ inputs.version }}"
+          if [ -z "$VERSION" ]; then
+            if [[ "$GITHUB_REF_NAME" == v* ]]; then
+              VERSION="${GITHUB_REF_NAME#v}"
+            else
+              VERSION="ci-${GITHUB_RUN_NUMBER}"
+            fi
+          fi
+          echo "value=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Publish Linux x64
+        run: |
+          PUBLISH_DIR="$RUNNER_TEMP/hyprism-linux-x64"
+          mkdir -p dist
+          dotnet publish Sources/HyPrism.Desktop/HyPrism.Desktop.csproj \
+            --configuration Release \
+            --runtime linux-x64 \
+            --self-contained true \
+            --output "$PUBLISH_DIR"
+          test -x "$PUBLISH_DIR/HyPrism.Desktop"
+          test -x "$PUBLISH_DIR/HyPrism.LocalNode"
+          tar -C "$PUBLISH_DIR" -cJf "dist/HyPrism-linux-x64-${{ steps.version.outputs.value }}.tar.xz" .
+
+      - name: Upload Linux artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-x64
+          path: dist/*.tar.xz
+          if-no-files-found: error

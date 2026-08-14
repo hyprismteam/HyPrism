@@ -1,0 +1,82 @@
+# Copyright (C) 2026 HyPrism Launcher
+# SPDX-License-Identifier: GPL-3.0-only
+
+name: Build Windows
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Artifact version. Defaults to the tag or CI run number'
+        required: false
+        default: ''
+        type: string
+  workflow_call:
+    inputs:
+      version:
+        description: 'Artifact version. Defaults to the tag or CI run number'
+        required: false
+        default: ''
+        type: string
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_VERSION: '10.0.x'
+  DOTNET_QUALITY: 'preview'
+
+jobs:
+  build:
+    name: Windows x64
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+          dotnet-quality: ${{ env.DOTNET_QUALITY }}
+
+      - name: Determine artifact version
+        id: version
+        shell: pwsh
+        run: |
+          $version = "${{ inputs.version }}"
+          if ([string]::IsNullOrWhiteSpace($version)) {
+            if ($env:GITHUB_REF_NAME.StartsWith("v")) {
+              $version = $env:GITHUB_REF_NAME.Substring(1)
+            } else {
+              $version = "ci-$env:GITHUB_RUN_NUMBER"
+            }
+          }
+          "value=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
+      - name: Publish Windows x64
+        shell: pwsh
+        run: |
+          $publishDir = Join-Path $env:RUNNER_TEMP "hyprism-win-x64"
+          New-Item -ItemType Directory -Path dist -Force | Out-Null
+          dotnet publish Sources/HyPrism.Desktop/HyPrism.Desktop.csproj `
+            --configuration Release `
+            --runtime win-x64 `
+            --self-contained true `
+            --output $publishDir
+          if (!(Test-Path (Join-Path $publishDir "HyPrism.Desktop.exe"))) {
+            throw "HyPrism.Desktop.exe was not published"
+          }
+          if (!(Test-Path (Join-Path $publishDir "HyPrism.LocalNode.exe"))) {
+            throw "HyPrism.LocalNode.exe was not published"
+          }
+          Compress-Archive `
+            -Path (Join-Path $publishDir "*") `
+            -DestinationPath "dist/HyPrism-win-x64-${{ steps.version.outputs.value }}.zip"
+
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-x64
+          path: dist/*.zip
+          if-no-files-found: error

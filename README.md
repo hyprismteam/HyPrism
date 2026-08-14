@@ -8,7 +8,7 @@ SPDX-License-Identifier: GPL-3.0-only
   *A multiplatform Hytale launcher with mod manager and more!*
 
   [![Downloads](https://img.shields.io/github/downloads/hyprismteam/HyPrism/total?style=flat&logo=github&label=Downloads&color=2d3748&logoWidth=20)](https://github.com/hyprismteam/HyPrism/releases)
-  [![Build](https://img.shields.io/github/actions/workflow/status/hyprismteam/HyPrism/build.yml?branch=main&style=flat&label=Build&logo=github&logoWidth=20)](https://github.com/hyprismteam/HyPrism/actions/workflows/build.yml)
+  [![CI](https://img.shields.io/github/actions/workflow/status/hyprismteam/HyPrism/ci.yml?branch=main&style=flat&label=CI&logo=github&logoWidth=20)](https://github.com/hyprismteam/HyPrism/actions/workflows/ci.yml)
   [![Website](https://img.shields.io/badge/Website-hyprism-207e5c?style=flat&logo=google-chrome&logoColor=white&logoWidth=20)](https://hyprismteam.github.io/hyprism-site/)
   [![GitLab](https://img.shields.io/badge/GitLab-yyyumeniku-FC6D26?style=flat&logo=gitlab&logoColor=white&logoWidth=20)](https://gitlab.com/yyyumeniku/HyPrism)
   [![Discord](https://img.shields.io/badge/Discord-Join-5865F2?style=flat&logo=discord&logoColor=white&logoWidth=20)](https://discord.com/invite/ekZqTtynjp)

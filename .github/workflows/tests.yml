@@ -1,0 +1,136 @@
+# Copyright (C) 2026 HyPrism Launcher
+# SPDX-License-Identifier: GPL-3.0-only
+
+name: Tests
+
+on:
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_VERSION: '10.0.x'
+  DOTNET_QUALITY: 'preview'
+
+jobs:
+  core:
+    name: Core tests
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+          dotnet-quality: ${{ env.DOTNET_QUALITY }}
+
+      - name: Run Core tests
+        run: dotnet test Tests/HyPrism.Core.Tests/HyPrism.Core.Tests.csproj --configuration Release
+
+  local-node:
+    name: Local Node tests
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+          dotnet-quality: ${{ env.DOTNET_QUALITY }}
+
+      - name: Run Local Node tests
+        run: dotnet test Tests/HyPrism.LocalNode.Tests/HyPrism.LocalNode.Tests.csproj --configuration Release
+
+  desktop:
+    name: Desktop tests
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+          dotnet-quality: ${{ env.DOTNET_QUALITY }}
+
+      - name: Run Desktop tests
+        run: dotnet test Tests/HyPrism.Desktop.Tests/HyPrism.Desktop.Tests.csproj --configuration Release
+
+  local-node-macos:
+    name: Local Node macOS trust and HTTPS smoke test
+    runs-on: macos-15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+          dotnet-quality: ${{ env.DOTNET_QUALITY }}
+
+      - name: Run Local Node tests
+        env:
+          HYPRISM_LOCAL_NODE_SKIP_MACOS_TRUST: '1'
+        run: dotnet test Tests/HyPrism.LocalNode.Tests/HyPrism.LocalNode.Tests.csproj --configuration Release
+
+      - name: Publish macOS apphosts
+        run: |
+          dotnet publish Sources/HyPrism.Desktop/HyPrism.Desktop.csproj \
+            --configuration Release \
+            --runtime osx-arm64 \
+            --self-contained true \
+            --output "$RUNNER_TEMP/hyprism-osx-arm64"
+          test -x "$RUNNER_TEMP/hyprism-osx-arm64/HyPrism.Desktop"
+          test -x "$RUNNER_TEMP/hyprism-osx-arm64/HyPrism.LocalNode"
+          file "$RUNNER_TEMP/hyprism-osx-arm64/HyPrism.Desktop" | grep -q 'Mach-O 64-bit executable arm64'
+          file "$RUNNER_TEMP/hyprism-osx-arm64/HyPrism.LocalNode" | grep -q 'Mach-O 64-bit executable arm64'
+
+      - name: Verify trusted Local Node HTTPS
+        run: |
+          set -euo pipefail
+          PORT=18443
+          DATA_DIR="$RUNNER_TEMP/local-node-data"
+          LOG_FILE="$RUNNER_TEMP/local-node.log"
+
+          HYPRISM_LOCAL_NODE_SKIP_MACOS_TRUST=1 \
+          "$RUNNER_TEMP/hyprism-osx-arm64/HyPrism.LocalNode" \
+            --port "$PORT" \
+            --data-directory "$DATA_DIR" \
+            >"$LOG_FILE" 2>&1 &
+          NODE_PID=$!
+          trap 'kill "$NODE_PID" 2>/dev/null || true; cat "$LOG_FILE"' EXIT
+
+          for attempt in {1..60}; do
+            if [ -f "$DATA_DIR/h.localhost.crt" ]; then
+              break
+            fi
+            sleep 0.5
+          done
+
+          test -f "$DATA_DIR/h.localhost.crt"
+          sudo security add-trusted-cert \
+            -d \
+            -r trustRoot \
+            -p ssl \
+            -s h.localhost \
+            -k /Library/Keychains/System.keychain \
+            "$DATA_DIR/h.localhost.crt"
+
+          for attempt in {1..60}; do
+            if curl --fail --silent --show-error "https://h.localhost:$PORT/.well-known/openid-configuration" \
+              --output "$RUNNER_TEMP/openid-configuration.json"; then
+              break
+            fi
+            sleep 0.5
+          done
+
+          test -s "$RUNNER_TEMP/openid-configuration.json"
+          grep -q 'h.localhost' "$RUNNER_TEMP/openid-configuration.json"

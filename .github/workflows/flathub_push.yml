@@ -13,8 +13,11 @@ on:
         default: false
 
 jobs:
-  Pushing_branch_to_flathub:
+  push_flathub:
+    name: Push branch to Flathub
     runs-on: ubuntu-latest
+    outputs:
+      release-version: ${{ steps.prepare.outputs.release-version }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -60,6 +63,7 @@ jobs:
           fi
 
           echo "RELEASE_VERSION=$RELEASE_VERSION" > flathub_push_info.env
+          echo "release-version=$RELEASE_VERSION" >> "$GITHUB_OUTPUT"
           echo "Prepared Properties/linux/flathub: release_version=$RELEASE_VERSION"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -77,6 +81,7 @@ jobs:
           GIT_NAME: ${{ secrets.GITNAME || github.actor }}
           GIT_MAIL: ${{ secrets.GITMAIL || github.actor }}
           DRY_RUN: ${{ github.event.inputs.dry_run }}
+          RELEASE_VERSION: ${{ steps.prepare.outputs.release-version }}
         run: |
           set -euo pipefail
 
@@ -88,11 +93,8 @@ jobs:
           git config --global user.name "${GIT_NAME}"
           git config --global user.email "${GIT_MAIL}"
 
-          rm -rf flathub-repo || true
           git clone "https://x-access-token:${GH_TOKEN}@github.com/flathub/io.github.hyprismteam.HyPrism.git" flathub-repo
 
-          # determine branch name
-          source flathub_push_info.env || true
           BRANCH_NAME="$RELEASE_VERSION"
 
           echo "Using branch: $BRANCH_NAME"
@@ -133,28 +135,25 @@ jobs:
           git push origin HEAD:$BRANCH_NAME --force
           echo "Pushed to https://github.com/flathub/io.github.hyprismteam.HyPrism/tree/$BRANCH_NAME"
 
-  Summary:
-    needs: Pushing_branch_to_flathub
+  summary:
+    name: Flathub push summary
+    needs: push_flathub
     runs-on: ubuntu-latest
     if: always()
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
-
       - name: Write Flathub push summary
         run: |
-          set -e
-          if [ -f flathub_push_info.env ]; then
-            source flathub_push_info.env || true
-          fi
-
-          branch_name="$RELEASE_VERSION"
+          branch_name="${{ needs.push_flathub.outputs.release-version }}"
           flathub_repo="https://github.com/flathub/io.github.hyprismteam.HyPrism"
           branch_url="$flathub_repo/tree/$branch_name"
 
           echo "### Flathub push summary" >> "$GITHUB_STEP_SUMMARY"
-          echo "* Flathub branch pushed: **$branch_name**" >> "$GITHUB_STEP_SUMMARY"
-          echo "* Branch link: [$branch_url]($branch_url)" >> "$GITHUB_STEP_SUMMARY"
-          echo "* Flathub content source: \\`Properties/linux/flathub\\
+          if [ -z "$branch_name" ]; then
+            echo "* The preparation job did not produce a release version" >> "$GITHUB_STEP_SUMMARY"
+          elif [ "${{ inputs.dry_run }}" = "true" ]; then
+            echo "* Dry run prepared branch **$branch_name** without pushing" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "* Flathub branch pushed: **$branch_name**" >> "$GITHUB_STEP_SUMMARY"
+            echo "* Branch link: [$branch_url]($branch_url)" >> "$GITHUB_STEP_SUMMARY"
+          fi
+          echo '* Flathub content source: `Properties/linux/flathub`' >> "$GITHUB_STEP_SUMMARY"

@@ -50,11 +50,14 @@ Local data is stored below the HyPrism application data directory in `LocalNode`
 | `h.localhost.crt` | PEM public certificate |
 | `client-ca-bundle.pem` | Unix CA bundle inherited by the game process |
 | `client-trust.p12` | Java trust store inherited by embedded server JVMs |
+| `macos-trusted.crt` | copy of the certificate currently registered in macOS user trust settings |
 | `local-node.log` | isolated startup, lifecycle, session-route status, timing, and failure events |
 | `local-node.previous.log` | previous isolated log after size-based rotation |
 | `unimplemented-requests.ndjson` | method, path, and query-key journal for unknown client calls, without headers, values, or bodies |
 
-The TLS certificate rotates when it is invalid, has the wrong host, or has fewer than seven valid days remaining. Windows adds the public certificate to the current user's root store. Unix and Java trust are scoped through environment variables passed to the launched game process
+The TLS certificate rotates when it is invalid, has the wrong host, or has fewer than seven valid days remaining. Windows adds the public certificate to the current user's root store. Linux and macOS pass a combined CA bundle to the game process for OpenSSL consumers, and Java receives a dedicated PKCS#12 trust store on every platform
+
+On macOS, the first autonomous launch asks the user to approve the certificate in Apple user trust settings. Trust is constrained to the `ssl` policy and the `h.localhost` hostname. HyPrism verifies the result before launching the game and removes the previous trust entry when the certificate rotates. Canceling the macOS security prompt stops the autonomous launch with an actionable error instead of weakening certificate validation
 
 ASP.NET logging providers are disabled for the companion process, so server request diagnostics do not share the static HyPrism logger or its console stream. The launcher reports only process startup, readiness, attachment, and exceptional control failures while detailed node events stay in `local-node.log`. Authentication routes record only method, path, response status, and duration without headers, tokens, or request bodies
 
