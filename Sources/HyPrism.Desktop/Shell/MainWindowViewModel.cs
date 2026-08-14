@@ -68,6 +68,13 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     private CancellationTokenSource? _instanceVersionsCancellation;
     private DateTime? _gameSessionStartedAtUtc;
     private string? _gameSessionInstanceId;
+    private readonly DispatcherTimer _managedInstanceActionTimer;
+    private DateTime? _managedInstanceActionStartedAtUtc;
+    private DateTime? _managedInstanceGameStartedAtUtc;
+    private string? _managedInstanceActionInstanceId;
+    private long _managedInstanceActionGeneration;
+    private bool _managedInstanceActionStartedWithInstall;
+    private bool _isManagedInstanceCancellationArmed;
     private string? _modsLoadedForInstanceId;
     private string? _worldsLoadedForInstanceId;
     private bool _hasLoadedNews;
@@ -334,6 +341,12 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         _progress.GameStateChanged += OnGameStateChanged;
         _progress.ErrorOccurred += OnErrorOccurred;
 
+        _managedInstanceActionTimer = new DispatcherTimer
+        {
+            Interval = TimeSpan.FromSeconds(1)
+        };
+        _managedInstanceActionTimer.Tick += OnManagedInstanceActionTimerTick;
+
         CurrentPageTitle = DashboardLabel;
         RefreshInstances();
         RefreshManagedInstanceContent();
@@ -425,6 +438,16 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         _localizer.Format("instances.actions.deleteHint", ManagedInstanceName);
     public string ManagedInstanceActionLabel =>
         IsManagedInstanceInstalled ? ManagedInstancePlayLabel : ManagedInstanceInstallLabel;
+    public string ManagedInstanceActionCancelLabel => _localizer["instances.actions.cancel"];
+    public string ManagedInstanceActionStatusText => IsManagedInstanceActionRunning
+        ? _localizer["instances.actions.running"]
+        : _managedInstanceActionStartedWithInstall
+            ? ActivityTitle
+            : _localizer["instances.actions.launching"];
+    public string ManagedInstanceActionMetricText => _managedInstanceActionStartedWithInstall &&
+                                                     !IsManagedInstanceActionRunning
+        ? ActivityProgressText
+        : FormatManagedInstanceActionElapsedTime();
     public string InstanceStatusInfoLabel => _localizer["instances.info.status"];
     public string InstancePlayTimeInfoLabel => _localizer["instances.info.playtime"];
     public string InstanceModsInfoLabel => _localizer["instances.info.mods"];
@@ -457,8 +480,18 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     public bool HasInstanceContentError => !string.IsNullOrWhiteSpace(InstanceContentError);
     public bool IsSelectedInstanceInstalled => _selectedInstance?.IsInstalled == true;
     public bool IsManagedInstanceInstalled => _managedInstance?.IsInstalled == true;
+    public bool IsManagedInstanceActionActive =>
+        _managedInstance is not null &&
+        string.Equals(
+            _managedInstance.Id,
+            _managedInstanceActionInstanceId,
+            StringComparison.OrdinalIgnoreCase);
+    public bool IsManagedInstanceActionRunning => IsManagedInstanceActionActive && IsGameRunning;
+    public bool IsManagedInstanceCancellationArmed =>
+        IsManagedInstanceActionActive && _isManagedInstanceCancellationArmed;
     public bool CanRunManagedInstanceAction =>
-        _managedInstance is not null && !IsBusy && !IsGameRunning;
+        _managedInstance is not null &&
+        ((!IsBusy && !IsGameRunning) || IsManagedInstanceActionActive);
     public bool CanOpenManagedInstanceFolder => _managedInstance is not null;
     public bool CanDeleteManagedInstance =>
         _managedInstance is not null && !IsBusy && !IsGameRunning;
@@ -481,7 +514,6 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     public bool IsCreateReleaseBranch =>
         string.Equals(NewInstanceBranch, "release", StringComparison.OrdinalIgnoreCase);
     public bool IsCreatePreReleaseBranch => !IsCreateReleaseBranch;
-    public bool IsGlobalActivityVisible => IsActivityVisible && !IsDashboard;
     public bool IsPrimarySelectAction => _selectedInstance is null;
     public bool IsPrimaryStopAction => IsGameRunning || (IsBusy && CanCancelActivity);
     public bool IsPrimaryDownloadAction =>
@@ -734,43 +766,71 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         }
     }
 
-    [RelayCommand]
+    [RelayCommand(AllowConcurrentExecutions = true)]
     private async Task RunManagedInstanceAsync()
     {
         if (_managedInstance is not { } instance || !CanRunManagedInstanceAction)
             return;
 
+        if (IsManagedInstanceActionActive)
+        {
+            if (!IsManagedInstanceCancellationArmed)
+                return;
+
+            if (IsGameRunning)
+                _gameProcess.ExitGame();
+            else
+                CancelActivity();
+
+            return;
+        }
+
+        _managedInstanceActionInstanceId = instance.Id;
+        _managedInstanceActionStartedAtUtc = DateTime.UtcNow;
+        _managedInstanceGameStartedAtUtc = null;
+        _managedInstanceActionStartedWithInstall = !instance.IsInstalled;
+        var actionGeneration = ++_managedInstanceActionGeneration;
+        _isManagedInstanceCancellationArmed = false;
         IsBusy = true;
-        CanCancelActivity = !instance.IsInstalled;
+        CanCancelActivity = true;
         IsActivityVisible = true;
         ActivityProgress = 0;
         ActivityProgressText = "0%";
         ActivityTitle = _localizer["common.loading"];
         ActivityDetail = instance.Name;
         _gameSessionInstanceId = instance.Id;
+        NotifyManagedInstanceActionStateChanged();
+        _managedInstanceActionTimer.Start();
 
         try
         {
             if (instance.IsInstalled)
             {
-                await _gameLaunchCoordinator.LaunchAsync(
+                await Task.Run(() => _gameLaunchCoordinator.LaunchAsync(
                     instance.Id,
-                    authorizationUriPresenter: _uriLauncher.LaunchAsync);
+                    authorizationUriPresenter: _uriLauncher.LaunchAsync));
             }
             else
             {
-                var result = await _installationWorkflow.DownloadAndLaunchInstanceAsync(
+                var result = await Task.Run(() => _installationWorkflow.DownloadAndLaunchInstanceAsync(
                     instance.Id,
-                    _uriLauncher.LaunchAsync);
+                    _uriLauncher.LaunchAsync));
                 if (!result.Success && !result.Cancelled && !string.IsNullOrWhiteSpace(result.Error))
                     ShowError(result.Error);
             }
         }
         finally
         {
-            IsBusy = false;
-            CanCancelActivity = false;
-            RefreshInstances();
+            if (actionGeneration == _managedInstanceActionGeneration)
+            {
+                IsBusy = false;
+                CanCancelActivity = false;
+                RefreshInstances();
+                if (!IsGameRunning)
+                    EndManagedInstanceAction();
+                else
+                    NotifyManagedInstanceActionStateChanged();
+            }
         }
     }
 
@@ -840,14 +900,15 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         {
             if (_selectedInstance.IsInstalled)
             {
-                await _gameLaunchCoordinator.LaunchAsync(
+                await Task.Run(() => _gameLaunchCoordinator.LaunchAsync(
                     _selectedInstance.Id,
-                    authorizationUriPresenter: _uriLauncher.LaunchAsync);
+                    authorizationUriPresenter: _uriLauncher.LaunchAsync));
             }
             else
             {
                 _instances.SetSelectedInstance(_selectedInstance.Id);
-                var result = await _installationWorkflow.DownloadAndLaunchAsync(_uriLauncher.LaunchAsync);
+                var result = await Task.Run(() =>
+                    _installationWorkflow.DownloadAndLaunchAsync(_uriLauncher.LaunchAsync));
 
                 if (!result.Success && !result.Cancelled && !string.IsNullOrWhiteSpace(result.Error))
                     ShowError(result.Error);
@@ -1646,6 +1707,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(CanOpenManagedInstanceFolder));
         OnPropertyChanged(nameof(CanDeleteManagedInstance));
         OnPropertyChanged(nameof(ManagedInstanceActionLabel));
+        NotifyManagedInstanceActionStateChanged();
         OnPropertyChanged(nameof(ManagedInstanceDeleteHint));
         OnPropertyChanged(nameof(IsInstalledModsEmpty));
         OnPropertyChanged(nameof(IsModCatalogEmpty));
@@ -1757,22 +1819,75 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         return _localizer.Format("instances.info.playtimeValue", totalHours, duration.Minutes);
     }
 
+    private string FormatManagedInstanceActionElapsedTime()
+    {
+        var startedAt = IsManagedInstanceActionRunning
+            ? _managedInstanceGameStartedAtUtc
+            : _managedInstanceActionStartedAtUtc;
+        if (startedAt is null)
+            return "0:00";
+
+        var duration = DateTime.UtcNow - startedAt.Value;
+        var totalHours = (long)duration.TotalHours;
+        return totalHours > 0
+            ? $"{totalHours}:{duration.Minutes:00}:{duration.Seconds:00}"
+            : $"{duration.Minutes}:{duration.Seconds:00}";
+    }
+
+    private void OnManagedInstanceActionTimerTick(object? sender, EventArgs args)
+        => OnPropertyChanged(nameof(ManagedInstanceActionMetricText));
+
+    private void NotifyManagedInstanceActionStateChanged()
+    {
+        OnPropertyChanged(nameof(IsManagedInstanceActionActive));
+        OnPropertyChanged(nameof(IsManagedInstanceActionRunning));
+        OnPropertyChanged(nameof(IsManagedInstanceCancellationArmed));
+        OnPropertyChanged(nameof(CanRunManagedInstanceAction));
+        OnPropertyChanged(nameof(CanDeleteManagedInstance));
+        OnPropertyChanged(nameof(ManagedInstanceActionStatusText));
+        OnPropertyChanged(nameof(ManagedInstanceActionMetricText));
+    }
+
+    private void EndManagedInstanceAction()
+    {
+        _managedInstanceActionTimer.Stop();
+        _managedInstanceActionStartedAtUtc = null;
+        _managedInstanceGameStartedAtUtc = null;
+        _managedInstanceActionInstanceId = null;
+        _managedInstanceActionStartedWithInstall = false;
+        _isManagedInstanceCancellationArmed = false;
+        NotifyManagedInstanceActionStateChanged();
+    }
+
+    public void ArmManagedInstanceCancellation()
+    {
+        if (!IsManagedInstanceActionActive || _isManagedInstanceCancellationArmed)
+            return;
+
+        _isManagedInstanceCancellationArmed = true;
+        OnPropertyChanged(nameof(IsManagedInstanceCancellationArmed));
+    }
+
     private void OnDownloadProgressChanged(ProgressUpdateMessage update)
     {
         Dispatcher.UIThread.Post(() =>
         {
+            if (!IsBusy)
+                return;
+
             var normalizedProgress = update.Progress <= 1
                 ? update.Progress * 100
                 : update.Progress;
 
             ActivityProgress = Math.Clamp(normalizedProgress, 0, 100);
             ActivityProgressText = $"{ActivityProgress:0}%";
-            ActivityTitle = _localizer[update.MessageKey];
+            ActivityTitle = update.Args is { Length: > 0 }
+                ? _localizer.Format(update.MessageKey, update.Args)
+                : _localizer[update.MessageKey];
             ActivityDetail = update.State;
             IsActivityVisible = true;
-            IsBusy = ActivityProgress < 100;
-            CanCancelActivity = IsBusy;
             UpdateSelectedInstancePresentation();
+            NotifyManagedInstanceActionStateChanged();
         });
     }
 
@@ -1781,15 +1896,27 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         Dispatcher.UIThread.Post(() =>
         {
             if (state == "started")
+            {
                 _gameSessionStartedAtUtc ??= DateTime.UtcNow;
+                if (!string.IsNullOrWhiteSpace(_managedInstanceActionInstanceId))
+                    _managedInstanceGameStartedAtUtc ??= DateTime.UtcNow;
+            }
             else if (state == "stopped")
+            {
                 RecordGameSessionPlayTime();
+                IsBusy = false;
+                CanCancelActivity = false;
+            }
 
             IsGameRunning = state is "started" or "running";
             if (state is "started" or "running" or "stopped")
                 IsActivityVisible = false;
 
             UpdateSelectedInstancePresentation();
+            if (state == "stopped")
+                EndManagedInstanceAction();
+            else
+                NotifyManagedInstanceActionStateChanged();
         });
     }
 
@@ -1868,7 +1995,6 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(IsProfiles));
         OnPropertyChanged(nameof(IsSettings));
         OnPropertyChanged(nameof(IsPlaceholderPage));
-        OnPropertyChanged(nameof(IsGlobalActivityVisible));
         OnPropertyChanged(nameof(IsNewsLandingVisible));
         OnPropertyChanged(nameof(IsNewsArticleVisible));
         OnPropertyChanged(nameof(IsNewsArticleStatusVisible));
@@ -1878,14 +2004,25 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(CompactNewsPageIndex));
     }
 
-    partial void OnIsActivityVisibleChanged(bool value)
-        => OnPropertyChanged(nameof(IsGlobalActivityVisible));
+    partial void OnIsBusyChanged(bool value)
+        => NotifyManagedInstanceActionStateChanged();
+
+    partial void OnIsGameRunningChanged(bool value)
+        => NotifyManagedInstanceActionStateChanged();
+
+    partial void OnActivityTitleChanged(string value)
+        => OnPropertyChanged(nameof(ManagedInstanceActionStatusText));
+
+    partial void OnActivityProgressTextChanged(string value)
+        => OnPropertyChanged(nameof(ManagedInstanceActionMetricText));
 
     partial void OnInstalledModsSearchQueryChanged(string value)
         => FilterInstalledMods();
 
     public void Dispose()
     {
+        _managedInstanceActionTimer.Stop();
+        _managedInstanceActionTimer.Tick -= OnManagedInstanceActionTimerTick;
         _newsImagesCancellation.Cancel();
         _newsImagesCancellation.Dispose();
         _articleImagesCancellation.Cancel();

@@ -490,16 +490,16 @@ Potrebbe essere necessario reinstallare il gioco se si cambia drive.</value>
     <value>Scaricamento di Butler...</value>
   </data>
   <data name="launch.detail.downloading_generic" xml:space="preserve">
-    <value>Scaricamento di Hytale... {0}%</value>
+    <value>Scaricamento</value>
   </data>
   <data name="launch.detail.downloading_mirror" xml:space="preserve">
-    <value>Scaricamento dal mirror... {0}%</value>
+    <value>Scaricamento</value>
   </data>
   <data name="launch.detail.downloading_official" xml:space="preserve">
-    <value>Scaricamento da Hytale... {0}%</value>
+    <value>Scaricamento</value>
   </data>
   <data name="launch.detail.downloading_patch" xml:space="preserve">
-    <value>Scaricamento patch {0}/{1} ({2}%)</value>
+    <value>Scaricamento</value>
   </data>
   <data name="launch.detail.dualauth_setup" xml:space="preserve">
     <value>Configurazione dell'agente di autenticazione...</value>

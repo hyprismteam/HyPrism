@@ -18,6 +18,57 @@ SPDX-License-Identifier: GPL-3.0-only
       <TextBlock Text="{Binding Label}" VerticalAlignment="Center" />
     </DataTemplate>
 
+    <DataTemplate x:Key="ManagedInstanceActionTemplate" x:DataType="shell:MainWindowViewModel">
+      <Grid Classes="managedActionContent">
+        <StackPanel Classes="managedActionIdle"
+                    Orientation="Horizontal"
+                    Spacing="8"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center">
+          <Path Classes="managedActionIcon"
+                IsVisible="{Binding IsManagedInstanceInstalled}"
+                Data="{StaticResource PlayIcon}" />
+          <Path Classes="managedActionIcon"
+                IsVisible="{Binding !IsManagedInstanceInstalled}"
+                Data="{StaticResource DownloadIcon}" />
+          <TextBlock Text="{Binding ManagedInstanceActionLabel}"
+                     VerticalAlignment="Center" />
+        </StackPanel>
+
+        <Grid Classes="managedActionProgress"
+              ColumnDefinitions="48,*,48"
+              VerticalAlignment="Center">
+          <Path Classes="managedActionSpinner"
+                IsVisible="{Binding !IsManagedInstanceActionRunning}"
+                HorizontalAlignment="Center"
+                Data="M10,2 A8,8 0 1 1 2,10" />
+          <Path Classes="managedActionIcon running"
+                IsVisible="{Binding IsManagedInstanceActionRunning}"
+                HorizontalAlignment="Center"
+                Data="{StaticResource DirectionsRunIcon}" />
+          <controls:FadingTextBlock Grid.Column="1"
+                                    Classes="managedActionStatus"
+                                    Text="{Binding ManagedInstanceActionStatusText}"
+                                    Foreground="{Binding $parent[Button].Foreground}"
+                                    HorizontalAlignment="Stretch"
+                                    VerticalAlignment="Center" />
+          <TextBlock Grid.Column="2"
+                     Classes="managedActionMetric"
+                     Text="{Binding ManagedInstanceActionMetricText}"
+                     Width="48"
+                     FontFeatures="tnum"
+                     TextAlignment="Right"
+                     HorizontalAlignment="Right"
+                     VerticalAlignment="Center" />
+        </Grid>
+
+        <TextBlock Classes="managedActionCancel"
+                   Text="{Binding ManagedInstanceActionCancelLabel}"
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Center" />
+      </Grid>
+    </DataTemplate>
+
   </UserControl.Resources>
   <Grid x:Name="InstancesLayout" Classes="instancesPage" ColumnDefinitions="276,*" RowDefinitions="*">
     <Border x:Name="InstancesListPane" Classes="instancesListPane" Grid.Row="0" IsVisible="{Binding HasInstances}">
@@ -226,26 +277,22 @@ SPDX-License-Identifier: GPL-3.0-only
                         Classes="compactInstanceSplitAction"
                         HorizontalAlignment="Right"
                         VerticalAlignment="Center">
-                  <Grid ColumnDefinitions="Auto,36">
+                  <Grid ColumnDefinitions="Auto,Auto">
                     <Button x:Name="CompactInstancePrimaryAction"
                             Classes="compactInstanceActionPart main"
+                            Classes.active="{Binding IsManagedInstanceActionActive}"
+                            Classes.cancelArmed="{Binding IsManagedInstanceCancellationArmed}"
                             IsEnabled="{Binding CanRunManagedInstanceAction}"
+                            PointerExited="OnManagedInstanceActionPointerExited"
                             Command="{Binding RunManagedInstanceCommand}">
-                      <StackPanel Orientation="Horizontal" Spacing="7">
-                        <Path Classes="compactInstanceActionIcon"
-                              IsVisible="{Binding IsManagedInstanceInstalled}"
-                              Data="{StaticResource PlayIcon}" />
-                        <Path Classes="compactInstanceActionIcon"
-                              IsVisible="{Binding !IsManagedInstanceInstalled}"
-                              Data="{StaticResource DownloadIcon}" />
-                        <TextBlock Text="{Binding ManagedInstanceActionLabel}"
-                                   VerticalAlignment="Center" />
-                      </StackPanel>
+                      <ContentControl Content="{Binding}"
+                                      ContentTemplate="{StaticResource ManagedInstanceActionTemplate}" />
                     </Button>
 
                     <Button x:Name="CompactInstanceMoreButton"
                             Grid.Column="1"
                             Classes="compactInstanceActionPart menu"
+                            Classes.actionActive="{Binding IsManagedInstanceActionActive}"
                             IsEnabled="{Binding CanDeleteManagedInstance}"
                             Click="OnToggleCompactInstanceMenuClicked">
                       <PathIcon Classes="compactInstanceActionChevron"
@@ -334,22 +381,18 @@ SPDX-License-Identifier: GPL-3.0-only
                           HorizontalAlignment="Center">
                     <StackPanel x:Name="WideInstanceActions"
                                 Classes="instanceActions wideInstanceActions"
+                                Classes.actionActive="{Binding IsManagedInstanceActionActive}"
                                 Orientation="Horizontal"
                                 HorizontalAlignment="Center"
                                 Spacing="0">
                   <Button Classes="instanceAction primary first"
+                          Classes.active="{Binding IsManagedInstanceActionActive}"
+                          Classes.cancelArmed="{Binding IsManagedInstanceCancellationArmed}"
                           IsEnabled="{Binding CanRunManagedInstanceAction}"
+                          PointerExited="OnManagedInstanceActionPointerExited"
                           Command="{Binding RunManagedInstanceCommand}">
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                      <Path Classes="instanceActionIcon"
-                            IsVisible="{Binding IsManagedInstanceInstalled}"
-                            Data="{StaticResource PlayIcon}" />
-                      <Path Classes="instanceActionIcon"
-                            IsVisible="{Binding !IsManagedInstanceInstalled}"
-                            Data="{StaticResource DownloadIcon}" />
-                      <TextBlock Text="{Binding ManagedInstanceActionLabel}"
-                                 VerticalAlignment="Center" />
-                    </StackPanel>
+                    <ContentControl Content="{Binding}"
+                                    ContentTemplate="{StaticResource ManagedInstanceActionTemplate}" />
                   </Button>
 
                   <Border Classes="wideInstanceActionDivider" />
@@ -364,10 +407,10 @@ SPDX-License-Identifier: GPL-3.0-only
                     </StackPanel>
                   </Button>
 
-                  <Border Classes="wideInstanceActionDivider" />
+                  <Border Classes="wideInstanceActionDivider deleteDivider" />
 
                   <Button x:Name="DeleteInstanceButton"
-                          Classes="instanceAction secondary danger last"
+                          Classes="instanceAction secondary danger last deleteAction"
                           IsEnabled="{Binding CanDeleteManagedInstance}">
                     <Button.Flyout>
                       <Flyout Placement="BottomEdgeAlignedRight">
@@ -520,16 +563,6 @@ SPDX-License-Identifier: GPL-3.0-only
                   </StackPanel>
                 </Border>
 
-                <Border Classes="instancesProgress" IsVisible="{Binding IsActivityVisible}">
-                  <StackPanel Spacing="9">
-                    <Grid ColumnDefinitions="*,Auto">
-                      <TextBlock Text="{Binding ActivityTitle}" FontWeight="SemiBold" />
-                      <TextBlock Grid.Column="1" Text="{Binding ActivityProgressText}" FontWeight="SemiBold" />
-                    </Grid>
-                    <TextBlock Text="{Binding ActivityDetail}" Classes="muted" FontSize="12" />
-                    <ProgressBar Minimum="0" Maximum="100" Value="{Binding ActivityProgress}" />
-                  </StackPanel>
-                </Border>
               </StackPanel>
             </ScrollViewer>
           </Grid>

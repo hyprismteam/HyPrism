@@ -490,16 +490,16 @@ Vous devrez peut-être réinstaller le jeu si vous changez de lecteur.</value>
     <value>Téléchargement de Butler...</value>
   </data>
   <data name="launch.detail.downloading_generic" xml:space="preserve">
-    <value>Téléchargement de Hytale... {0}%</value>
+    <value>Téléchargement</value>
   </data>
   <data name="launch.detail.downloading_mirror" xml:space="preserve">
-    <value>Téléchargement depuis le miroir... {0}%</value>
+    <value>Téléchargement</value>
   </data>
   <data name="launch.detail.downloading_official" xml:space="preserve">
-    <value>Téléchargement depuis Hytale... {0}%</value>
+    <value>Téléchargement</value>
   </data>
   <data name="launch.detail.downloading_patch" xml:space="preserve">
-    <value>Téléchargement du patch {0}/{1} ({2}%)</value>
+    <value>Téléchargement</value>
   </data>
   <data name="launch.detail.dualauth_setup" xml:space="preserve">
     <value>Configuration de l'agent d'authentification...</value>

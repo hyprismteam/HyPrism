@@ -490,16 +490,16 @@ Sürücü değiştirirseniz oyunu yeniden yüklemeniz gerekebilir.</value>
     <value>Butler indiriliyor...</value>
   </data>
   <data name="launch.detail.downloading_generic" xml:space="preserve">
-    <value>Hytale indiriliyor... {0}%</value>
+    <value>İndiriliyor</value>
   </data>
   <data name="launch.detail.downloading_mirror" xml:space="preserve">
-    <value>Aynadan indiriliyor... {0}%</value>
+    <value>İndiriliyor</value>
   </data>
   <data name="launch.detail.downloading_official" xml:space="preserve">
-    <value>Hytale'dan indiriliyor... {0}%</value>
+    <value>İndiriliyor</value>
   </data>
   <data name="launch.detail.downloading_patch" xml:space="preserve">
-    <value>Yama {0}/{1} indiriliyor ({2}%)</value>
+    <value>İndiriliyor</value>
   </data>
   <data name="launch.detail.dualauth_setup" xml:space="preserve">
     <value>Kimlik doğrulama aracısı kuruluyor...</value>

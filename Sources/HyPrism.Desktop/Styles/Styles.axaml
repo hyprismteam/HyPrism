@@ -245,14 +245,6 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="Fill" Value="{Binding $parent[Button].Foreground}" />
   </Style>
 
-  <Style Selector="Border.dashboardActivity">
-    <Setter Property="Background" Value="#C9141517" />
-    <Setter Property="BorderBrush" Value="#14FFFFFF" />
-    <Setter Property="BorderThickness" Value="1" />
-    <Setter Property="CornerRadius" Value="14" />
-    <Setter Property="Padding" Value="16,13" />
-  </Style>
-
   <Style Selector="TextBlock.dashboardTitle">
     <Setter Property="FontSize" Value="40" />
   </Style>
@@ -1732,12 +1724,6 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="CornerRadius" Value="18" />
   </Style>
 
-  <Style Selector="instances|InstancesView Border.instancesProgress">
-    <Setter Property="Background" Value="{DynamicResource NavigationPaneBrush}" />
-    <Setter Property="CornerRadius" Value="16" />
-    <Setter Property="Padding" Value="16" />
-  </Style>
-
   <Style Selector="instances|InstancesView Border.instancesWizardScreen">
     <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
   </Style>
@@ -1848,6 +1834,12 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="RenderTransform" Value="{x:Null}" />
     <Setter Property="Transitions">
       <Transitions>
+        <DoubleTransition Property="Width" Duration="0:0:0.32">
+          <DoubleTransition.Easing><easing:CubicEaseInOut /></DoubleTransition.Easing>
+        </DoubleTransition>
+        <DoubleTransition Property="Opacity" Duration="0:0:0.22">
+          <DoubleTransition.Easing><easing:CubicEaseOut /></DoubleTransition.Easing>
+        </DoubleTransition>
         <BrushTransition Property="Background" Duration="0:0:0.16" />
         <BrushTransition Property="Foreground" Duration="0:0:0.16" />
       </Transitions>
@@ -1859,7 +1851,7 @@ SPDX-License-Identifier: GPL-3.0-only
           <ContentPresenter Content="{TemplateBinding Content}"
                             ContentTemplate="{TemplateBinding ContentTemplate}"
                             Foreground="{TemplateBinding Foreground}"
-                            HorizontalAlignment="Center"
+                            HorizontalAlignment="Stretch"
                             VerticalAlignment="Center"
                             HorizontalContentAlignment="Center"
                             VerticalContentAlignment="Center" />
@@ -1869,7 +1861,9 @@ SPDX-License-Identifier: GPL-3.0-only
   </Style>
 
   <Style Selector="instances|InstancesView Button.compactInstanceActionPart.main">
+    <Setter Property="Width" Value="126" />
     <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
   </Style>
 
   <Style Selector="instances|InstancesView Button.compactInstanceActionPart.main:pointerover">
@@ -1877,11 +1871,32 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="RenderTransform" Value="{x:Null}" />
   </Style>
 
+  <Style Selector="instances|InstancesView Button.compactInstanceActionPart.main.active">
+    <Setter Property="Width" Value="216" />
+    <Setter Property="Background" Value="{DynamicResource TextPrimaryBrush}" />
+    <Setter Property="Foreground" Value="#111111" />
+  </Style>
+
+  <Style Selector="instances|InstancesView Button.compactInstanceActionPart.main.active:pointerover">
+    <Setter Property="Background" Value="{DynamicResource TextPrimaryBrush}" />
+    <Setter Property="Foreground" Value="#111111" />
+  </Style>
+
+  <Style Selector="instances|InstancesView Button.compactInstanceActionPart.main.active.cancelArmed:pointerover">
+    <Setter Property="Background" Value="{DynamicResource DangerActionBrush}" />
+    <Setter Property="Foreground" Value="White" />
+  </Style>
+
   <Style Selector="instances|InstancesView Button.compactInstanceActionPart.menu">
     <Setter Property="Width" Value="36" />
     <Setter Property="Padding" Value="0" />
     <Setter Property="Background" Value="{DynamicResource ControlGroupBrush}" />
     <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+  </Style>
+
+  <Style Selector="instances|InstancesView Button.compactInstanceActionPart.menu.actionActive">
+    <Setter Property="Width" Value="0" />
+    <Setter Property="Opacity" Value="0" />
   </Style>
 
   <Style Selector="instances|InstancesView Button.compactInstanceActionPart.menu:pointerover">
@@ -1979,6 +1994,12 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="RenderTransform" Value="{x:Null}" />
     <Setter Property="Transitions">
       <Transitions>
+        <DoubleTransition Property="Width" Duration="0:0:0.34">
+          <DoubleTransition.Easing><easing:CubicEaseInOut /></DoubleTransition.Easing>
+        </DoubleTransition>
+        <DoubleTransition Property="Opacity" Duration="0:0:0.24">
+          <DoubleTransition.Easing><easing:CubicEaseOut /></DoubleTransition.Easing>
+        </DoubleTransition>
         <BrushTransition Property="Background" Duration="0:0:0.16" />
         <BrushTransition Property="Foreground" Duration="0:0:0.16" />
       </Transitions>
@@ -1991,7 +2012,7 @@ SPDX-License-Identifier: GPL-3.0-only
           <ContentPresenter Content="{TemplateBinding Content}"
                             ContentTemplate="{TemplateBinding ContentTemplate}"
                             Foreground="{TemplateBinding Foreground}"
-                            HorizontalAlignment="Center"
+                            HorizontalAlignment="Stretch"
                             VerticalAlignment="Center"
                             HorizontalContentAlignment="Center"
                             VerticalContentAlignment="Center" />
@@ -2007,8 +2028,18 @@ SPDX-License-Identifier: GPL-3.0-only
   </Style>
 
   <Style Selector="instances|InstancesView Button.instanceAction.primary">
+    <Setter Property="Width" Value="150" />
     <Setter Property="Background" Value="{DynamicResource TextPrimaryBrush}" />
     <Setter Property="Foreground" Value="#111111" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+  </Style>
+
+  <Style Selector="instances|InstancesView Button.instanceAction.middle">
+    <Setter Property="Width" Value="170" />
+  </Style>
+
+  <Style Selector="instances|InstancesView Button.instanceAction.last">
+    <Setter Property="Width" Value="112" />
   </Style>
 
   <Style Selector="instances|InstancesView Button.instanceAction.first">
@@ -2022,6 +2053,21 @@ SPDX-License-Identifier: GPL-3.0-only
   <Style Selector="instances|InstancesView Button.instanceAction.primary:pointerover">
     <Setter Property="Background" Value="White" />
     <Setter Property="Foreground" Value="#111111" />
+  </Style>
+
+  <Style Selector="instances|InstancesView Button.instanceAction.primary.active">
+    <Setter Property="Width" Value="265" />
+  </Style>
+
+  <Style Selector="instances|InstancesView Button.instanceAction.primary.active.cancelArmed:pointerover">
+    <Setter Property="Background" Value="{DynamicResource DangerActionBrush}" />
+    <Setter Property="Foreground" Value="White" />
+  </Style>
+
+  <Style Selector="instances|InstancesView StackPanel.wideInstanceActions.actionActive Button.instanceAction.deleteAction">
+    <Setter Property="Width" Value="0" />
+    <Setter Property="Opacity" Value="0" />
+    <Setter Property="Padding" Value="0" />
   </Style>
 
   <Style Selector="instances|InstancesView Button.instanceAction.danger">
@@ -2054,6 +2100,109 @@ SPDX-License-Identifier: GPL-3.0-only
   <Style Selector="instances|InstancesView Border.wideInstanceActionDivider">
     <Setter Property="Width" Value="3" />
     <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
+    <Setter Property="Transitions">
+      <Transitions>
+        <DoubleTransition Property="Width" Duration="0:0:0.32">
+          <DoubleTransition.Easing><easing:CubicEaseInOut /></DoubleTransition.Easing>
+        </DoubleTransition>
+        <DoubleTransition Property="Opacity" Duration="0:0:0.22">
+          <DoubleTransition.Easing><easing:CubicEaseOut /></DoubleTransition.Easing>
+        </DoubleTransition>
+      </Transitions>
+    </Setter>
+  </Style>
+
+  <Style Selector="instances|InstancesView StackPanel.wideInstanceActions.actionActive Border.wideInstanceActionDivider.deleteDivider">
+    <Setter Property="Width" Value="0" />
+    <Setter Property="Opacity" Value="0" />
+  </Style>
+
+  <Style Selector="instances|InstancesView Button.compactInstanceActionPart.main ContentControl, instances|InstancesView Button.instanceAction.primary ContentControl">
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+  </Style>
+
+  <Style Selector="instances|InstancesView Grid.managedActionContent">
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+  </Style>
+
+  <Style Selector="instances|InstancesView Button.compactInstanceActionPart.main.active Grid.managedActionContent">
+    <Setter Property="Width" Value="190" />
+    <Setter Property="MinWidth" Value="190" />
+    <Setter Property="MaxWidth" Value="190" />
+  </Style>
+
+  <Style Selector="instances|InstancesView Button.instanceAction.primary.active Grid.managedActionContent">
+    <Setter Property="Width" Value="225" />
+    <Setter Property="MinWidth" Value="225" />
+    <Setter Property="MaxWidth" Value="225" />
+  </Style>
+
+  <Style Selector="instances|InstancesView StackPanel.managedActionIdle, instances|InstancesView Grid.managedActionProgress, instances|InstancesView TextBlock.managedActionCancel">
+    <Setter Property="Transitions">
+      <Transitions>
+        <DoubleTransition Property="Opacity" Duration="0:0:0.22">
+          <DoubleTransition.Easing><easing:CubicEaseOut /></DoubleTransition.Easing>
+        </DoubleTransition>
+        <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.26">
+          <TransformOperationsTransition.Easing><easing:CubicEaseOut /></TransformOperationsTransition.Easing>
+        </TransformOperationsTransition>
+      </Transitions>
+    </Setter>
+  </Style>
+
+  <Style Selector="instances|InstancesView StackPanel.managedActionIdle">
+    <Setter Property="Opacity" Value="1" />
+    <Setter Property="RenderTransform" Value="translate(0px, 0px)" />
+  </Style>
+
+  <Style Selector="instances|InstancesView Grid.managedActionProgress, instances|InstancesView TextBlock.managedActionCancel">
+    <Setter Property="Opacity" Value="0" />
+    <Setter Property="RenderTransform" Value="translate(0px, 8px)" />
+  </Style>
+
+  <Style Selector="instances|InstancesView Button.active StackPanel.managedActionIdle">
+    <Setter Property="Opacity" Value="0" />
+    <Setter Property="RenderTransform" Value="translate(0px, -8px)" />
+  </Style>
+
+  <Style Selector="instances|InstancesView Button.active Grid.managedActionProgress">
+    <Setter Property="Opacity" Value="1" />
+    <Setter Property="RenderTransform" Value="translate(0px, 0px)" />
+  </Style>
+
+  <Style Selector="instances|InstancesView Button.active.cancelArmed:pointerover Grid.managedActionProgress">
+    <Setter Property="Opacity" Value="0" />
+    <Setter Property="RenderTransform" Value="translate(0px, -8px)" />
+  </Style>
+
+  <Style Selector="instances|InstancesView Button.active.cancelArmed:pointerover TextBlock.managedActionCancel">
+    <Setter Property="Opacity" Value="1" />
+    <Setter Property="RenderTransform" Value="translate(0px, 0px)" />
+  </Style>
+
+  <Style Selector="instances|InstancesView Path.managedActionIcon">
+    <Setter Property="Width" Value="20" />
+    <Setter Property="Height" Value="20" />
+    <Setter Property="Stretch" Value="Uniform" />
+    <Setter Property="Fill" Value="{Binding $parent[Button].Foreground}" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+
+  <Style Selector="instances|InstancesView Path.managedActionSpinner">
+    <Setter Property="Width" Value="20" />
+    <Setter Property="Height" Value="20" />
+    <Setter Property="Stretch" Value="None" />
+    <Setter Property="Fill" Value="Transparent" />
+    <Setter Property="Stroke" Value="{Binding $parent[Button].Foreground}" />
+    <Setter Property="StrokeThickness" Value="2" />
+    <Setter Property="StrokeLineCap" Value="Round" />
+    <Setter Property="RenderTransformOrigin" Value="50%,50%" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+
+  <Style Selector="instances|InstancesView TextBlock.managedActionMetric">
+    <Setter Property="FontFeatures" Value="tnum" />
   </Style>
 
   <Style Selector="instances|InstancesView Border.instanceDeleteConfirmation">

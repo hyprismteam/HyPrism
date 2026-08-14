@@ -372,6 +372,15 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="instances.actions.install" xml:space="preserve">
     <value>Установить</value>
   </data>
+  <data name="instances.actions.cancel" xml:space="preserve">
+    <value>Отменить</value>
+  </data>
+  <data name="instances.actions.launching" xml:space="preserve">
+    <value>Запускается</value>
+  </data>
+  <data name="instances.actions.running" xml:space="preserve">
+    <value>Работает</value>
+  </data>
   <data name="instances.actions.openFolder" xml:space="preserve">
     <value>Открыть папку</value>
   </data>
@@ -562,16 +571,16 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>Загрузка Butler...</value>
   </data>
   <data name="launch.detail.downloading_generic" xml:space="preserve">
-    <value>Загрузка Hytale... {0}%</value>
+    <value>Скачивание</value>
   </data>
   <data name="launch.detail.downloading_mirror" xml:space="preserve">
-    <value>Загрузка с зеркала... {0}%</value>
+    <value>Скачивание</value>
   </data>
   <data name="launch.detail.downloading_official" xml:space="preserve">
-    <value>Загрузка с Hytale... {0}%</value>
+    <value>Скачивание</value>
   </data>
   <data name="launch.detail.downloading_patch" xml:space="preserve">
-    <value>Загрузка патча {0}/{1} ({2}%)</value>
+    <value>Скачивание</value>
   </data>
   <data name="launch.detail.dualauth_setup" xml:space="preserve">
     <value>Настройка агента аутентификации...</value>

@@ -14,6 +14,7 @@ namespace HyPrism.Core.Game.Launch;
 /// </summary>
 public class GameProcessTracker : IGameProcessTracker
 {
+    private readonly object _processLock = new();
     private Process? _gameProcess;
 
     /// <inheritdoc/>
@@ -22,41 +23,67 @@ public class GameProcessTracker : IGameProcessTracker
     /// <inheritdoc/>
     public void SetGameProcess(Process? p)
     {
-        if (_gameProcess != null)
+        Process? previousProcess;
+        lock (_processLock)
         {
-            _gameProcess.Exited -= OnGameProcessExited;
-            _gameProcess.Dispose();
+            if (ReferenceEquals(_gameProcess, p))
+                return;
+
+            previousProcess = _gameProcess;
+            if (previousProcess != null)
+                previousProcess.Exited -= OnGameProcessExited;
+
+            _gameProcess = p;
+            if (p != null)
+            {
+                p.Exited += OnGameProcessExited;
+                p.EnableRaisingEvents = true;
+            }
         }
 
-        _gameProcess = p;
-
-        if (p != null)
-        {
-            p.EnableRaisingEvents = true;
-            p.Exited += OnGameProcessExited;
-        }
+        previousProcess?.Dispose();
     }
 
     private void OnGameProcessExited(object? sender, EventArgs e)
     {
-        if (_gameProcess != null)
-        {
-            _gameProcess.Exited -= OnGameProcessExited;
-            _gameProcess.Dispose();
-            _gameProcess = null;
+        if (sender is not Process exitedProcess)
+            return;
 
-            // Notify subscribers that the game process has exited.
-            ProcessExited?.Invoke(this, EventArgs.Empty);
+        lock (_processLock)
+        {
+            if (!ReferenceEquals(_gameProcess, exitedProcess))
+                return;
+
+            exitedProcess.Exited -= OnGameProcessExited;
+            _gameProcess = null;
         }
+
+        exitedProcess.Dispose();
+        ProcessExited?.Invoke(this, EventArgs.Empty);
     }
 
     /// <inheritdoc/>
-    public Process? GetGameProcess() => _gameProcess;
+    public Process? GetGameProcess()
+    {
+        lock (_processLock)
+            return _gameProcess;
+    }
 
     /// <inheritdoc/>
     public bool IsGameRunning()
     {
-        return _gameProcess != null && !_gameProcess.HasExited;
+        var gameProcess = GetGameProcess();
+        if (gameProcess is null)
+            return false;
+
+        try
+        {
+            return !gameProcess.HasExited;
+        }
+        catch (InvalidOperationException)
+        {
+            return false;
+        }
     }
 
     /// <inheritdoc/>
@@ -89,7 +116,7 @@ public class GameProcessTracker : IGameProcessTracker
                         if (!string.IsNullOrEmpty(p.MainWindowTitle) &&
                             p.MainWindowTitle.Contains("Hytale"))
                         {
-                            _gameProcess = p;
+                            SetGameProcess(p);
                             return true;
                         }
 
@@ -99,7 +126,7 @@ public class GameProcessTracker : IGameProcessTracker
                             var cmdLine = GetLinuxCommandLine(p.Id);
                             if (!string.IsNullOrEmpty(cmdLine) && cmdLine.Contains("Hytale"))
                             {
-                                _gameProcess = p;
+                                SetGameProcess(p);
                                 return true;
                             }
                         }
@@ -112,7 +139,7 @@ public class GameProcessTracker : IGameProcessTracker
                 // Dispose all processes that we didn't keep
                 foreach (var p in potentialProcesses)
                 {
-                    if (p != _gameProcess)
+                    if (p != GetGameProcess())
                     {
                         try { p.Dispose(); } catch { }
                     }
@@ -143,13 +170,25 @@ public class GameProcessTracker : IGameProcessTracker
     /// <inheritdoc/>
     public bool ExitGame()
     {
-        var gameProcess = _gameProcess;
-        if (gameProcess != null && !gameProcess.HasExited)
+        var gameProcess = GetGameProcess();
+        if (gameProcess is null)
+            return false;
+
+        try
         {
-            gameProcess.Kill();
-            SetGameProcess(null);
+            if (gameProcess.HasExited)
+                return false;
+
+            gameProcess.Kill(entireProcessTree: true);
             return true;
         }
-        return false;
+        catch (InvalidOperationException)
+        {
+            return false;
+        }
+        catch (System.ComponentModel.Win32Exception)
+        {
+            return false;
+        }
     }
 }

@@ -13,6 +13,7 @@ using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Threading;
@@ -84,6 +85,217 @@ public sealed class MainWindowRenderTests
         Assert.True(block.HasImage);
         Assert.NotNull(inline.Image);
         block.Dispose();
+    }
+
+    [AvaloniaTheory]
+    [InlineData(1024)]
+    [InlineData(1280)]
+    public async Task ManagedInstanceActionAnimatesAndRemainsClickableForCancellation(int width)
+    {
+        var progress = new Mock<IProgressReporter>();
+        var instances = new Mock<IInstanceRepository>();
+        var profile = new Mock<IProfileManager>();
+        var profileManagement = new Mock<IProfileRepository>();
+        var launchCoordinator = new Mock<IGameLaunchCoordinator>();
+        var gameSession = new Mock<IGameInstallationWorkflow>();
+        var gameProcess = new Mock<IGameProcessTracker>();
+        var settings = new Mock<IDesktopSettingsStore>();
+        var news = new Mock<IHytaleNewsClient>();
+        var uriLauncher = new Mock<IExternalUriLauncher>();
+        var launchCompletion = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var instance = new InstanceInfo
+        {
+            Id = "animated-action",
+            Name = "Animated Action",
+            Branch = "release",
+            Version = 42,
+            IsInstalled = true
+        };
+
+        instances.Setup(service => service.GetCachedInstances()).Returns([instance]);
+        instances.Setup(service => service.GetSelectedInstance()).Returns(instance);
+        instances.Setup(service => service.GetInstancePathById(instance.Id))
+            .Returns("/tmp/hyprism-animated-action");
+        instances.Setup(service => service.IsClientPresent(It.IsAny<string>())).Returns(true);
+        profile.Setup(service => service.GetNick()).Returns("Action Test");
+        settings.SetupGet(service => service.AvailableBackgrounds).Returns([]);
+        launchCoordinator.Setup(service => service.LaunchAsync(
+                instance.Id,
+                It.IsAny<AuthUriPresenter?>()))
+            .Returns(launchCompletion.Task);
+
+        using var viewModel = new MainWindowViewModel(
+            instances.Object,
+            profile.Object,
+            profileManagement.Object,
+            launchCoordinator.Object,
+            gameSession.Object,
+            gameProcess.Object,
+            progress.Object,
+            settings.Object,
+            news.Object,
+            uriLauncher.Object,
+            new HttpClient(),
+            new StringLocalizer("en-US"));
+        var window = new MainWindow
+        {
+            Width = width,
+            Height = 700,
+            DataContext = viewModel
+        };
+
+        window.Show();
+        viewModel.NavigateCommand.Execute("instances");
+        Dispatcher.UIThread.RunJobs();
+        var instancesView = Assert.Single(window.GetVisualDescendants().OfType<InstancesView>());
+        var compact = instancesView.Bounds.Width < 940;
+        if (compact)
+        {
+            var instanceRow = instancesView.GetVisualDescendants().OfType<Button>()
+                .Single(button => button.Classes.Contains("instancesListItem"));
+            instanceRow.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            await Task.Delay(360);
+            Dispatcher.UIThread.RunJobs();
+        }
+
+        var primaryAction = compact
+            ? instancesView.FindControl<Button>("CompactInstancePrimaryAction")!
+            : instancesView.GetVisualDescendants().OfType<Button>()
+                .Single(button => button.Classes.Contains("instanceAction") &&
+                                  button.Classes.Contains("primary"));
+        var collapsingAction = compact
+            ? instancesView.FindControl<Button>("CompactInstanceMoreButton")!
+            : instancesView.GetVisualDescendants().OfType<Button>()
+                .Single(button => button.Classes.Contains("deleteAction"));
+
+        var initialActionPoint = primaryAction.TranslatePoint(
+            new Point(primaryAction.Bounds.Width / 2, primaryAction.Bounds.Height / 2),
+            window);
+        Assert.NotNull(initialActionPoint);
+        window.MouseMove(initialActionPoint!.Value);
+        Dispatcher.UIThread.RunJobs();
+        Assert.True(primaryAction.IsPointerOver);
+
+        var launchOperation = viewModel.RunManagedInstanceCommand.ExecuteAsync(null);
+        await Task.Delay(400);
+        Dispatcher.UIThread.RunJobs();
+        Assert.Contains("active", primaryAction.Classes);
+        Assert.DoesNotContain("cancelArmed", primaryAction.Classes);
+        Assert.True(primaryAction.IsEffectivelyVisible);
+        Assert.InRange(primaryAction.Bounds.Width, compact ? 215.5 : 264.5, compact ? 216.5 : 265.5);
+        Assert.InRange(collapsingAction.Bounds.Width, 0, 0.5);
+        var progressContent = Assert.Single(
+            primaryAction.GetVisualDescendants().OfType<Grid>(),
+            grid => grid.Classes.Contains("managedActionProgress"));
+        var actionContent = Assert.IsType<Grid>(progressContent.Parent);
+        Assert.Equal(compact ? 190 : 225, actionContent.Bounds.Width);
+        Assert.Equal(1, progressContent.Opacity);
+        Assert.Equal(new GridLength(48), progressContent.ColumnDefinitions[0].Width);
+        Assert.Equal(new GridLength(48), progressContent.ColumnDefinitions[2].Width);
+
+        var status = Assert.Single(
+            progressContent.GetVisualDescendants().OfType<FadingTextBlock>(),
+            control => control.Classes.Contains("managedActionStatus"));
+        var metric = Assert.Single(progressContent.Children.OfType<TextBlock>());
+        var spinner = Assert.Single(
+            progressContent.Children.OfType<Avalonia.Controls.Shapes.Path>(),
+            path => path.Classes.Contains("managedActionSpinner"));
+        Assert.Equal(0, Grid.GetColumn(spinner));
+        Assert.Equal(HorizontalAlignment.Center, spinner.HorizontalAlignment);
+        Assert.Equal(20, spinner.Bounds.Width);
+        Assert.Equal(20, spinner.Bounds.Height);
+        Assert.True(spinner.Data!.Bounds.Left >= spinner.StrokeThickness / 2);
+        Assert.True(spinner.Data.Bounds.Top >= spinner.StrokeThickness / 2);
+        Assert.True(spinner.Data.Bounds.Right <= spinner.Bounds.Width - spinner.StrokeThickness / 2);
+        Assert.True(spinner.Data.Bounds.Bottom <= spinner.Bounds.Height - spinner.StrokeThickness / 2);
+        Assert.Equal(1, Grid.GetColumn(status));
+        Assert.Equal(HorizontalAlignment.Stretch, status.HorizontalAlignment);
+        Assert.Equal(2, Grid.GetColumn(metric));
+        Assert.Equal(HorizontalAlignment.Right, metric.HorizontalAlignment);
+        Assert.Equal(48, metric.Width);
+        Assert.NotNull(metric.FontFeatures);
+        Assert.Contains(metric.FontFeatures!, feature => feature.Tag == "tnum");
+        var statusCenter = status.TranslatePoint(
+            new Point(status.Bounds.Width / 2, status.Bounds.Height / 2),
+            progressContent);
+        Assert.NotNull(statusCenter);
+        Assert.InRange(
+            Math.Abs(statusCenter!.Value.X - progressContent.Bounds.Width / 2),
+            0,
+            0.5);
+
+        var cancelLabel = Assert.Single(
+            primaryAction.GetVisualDescendants().OfType<TextBlock>(),
+            text => text.Classes.Contains("managedActionCancel"));
+        Assert.Equal(0, cancelLabel.Opacity);
+
+        window.MouseDown(initialActionPoint.Value, MouseButton.Left);
+        window.MouseUp(initialActionPoint.Value, MouseButton.Left);
+        Dispatcher.UIThread.RunJobs();
+        gameSession.Verify(service => service.CancelDownload(), Times.Never);
+
+        window.MouseMove(new Point(window.Bounds.Width / 2, window.Bounds.Height - 8));
+        Dispatcher.UIThread.RunJobs();
+        Assert.Contains("cancelArmed", primaryAction.Classes);
+
+        var actionPoint = primaryAction.TranslatePoint(
+            new Point(primaryAction.Bounds.Width / 2, primaryAction.Bounds.Height / 2),
+            window);
+        Assert.NotNull(actionPoint);
+        window.MouseMove(actionPoint!.Value);
+        Dispatcher.UIThread.RunJobs();
+        await Task.Delay(300);
+        Dispatcher.UIThread.RunJobs();
+        Assert.True(primaryAction.IsPointerOver);
+        Assert.Equal(
+            Color.Parse("#D83B45"),
+            Assert.IsAssignableFrom<ISolidColorBrush>(primaryAction.Background).Color);
+        Assert.Equal(
+            Colors.White,
+            Assert.IsAssignableFrom<ISolidColorBrush>(primaryAction.Foreground).Color);
+        Assert.Equal(1, cancelLabel.Opacity);
+
+        window.MouseDown(actionPoint.Value, MouseButton.Left);
+        window.MouseUp(actionPoint.Value, MouseButton.Left);
+        Dispatcher.UIThread.RunJobs();
+        gameSession.Verify(service => service.CancelDownload(), Times.Once);
+
+        var spinnerCenter = spinner.TranslatePoint(
+            new Point(spinner.Bounds.Width / 2, spinner.Bounds.Height / 2),
+            progressContent);
+        var metricBounds = metric.Bounds;
+        Assert.NotNull(spinnerCenter);
+
+        progress.Raise(service => service.GameStateChanged += null!, "started", 123);
+        Dispatcher.UIThread.RunJobs();
+        var runningIcon = Assert.Single(
+            progressContent.Children.OfType<Avalonia.Controls.Shapes.Path>(),
+            path => path.Classes.Contains("running"));
+        var runningIconCenter = runningIcon.TranslatePoint(
+            new Point(runningIcon.Bounds.Width / 2, runningIcon.Bounds.Height / 2),
+            progressContent);
+        Assert.NotNull(runningIconCenter);
+        Assert.InRange(Math.Abs(runningIconCenter!.Value.X - spinnerCenter!.Value.X), 0, 0.5);
+        Assert.Equal(metricBounds, metric.Bounds);
+
+        launchCompletion.SetResult();
+        await launchOperation;
+        Dispatcher.UIThread.RunJobs();
+        var settledRunningIconCenter = runningIcon.TranslatePoint(
+            new Point(runningIcon.Bounds.Width / 2, runningIcon.Bounds.Height / 2),
+            progressContent);
+        Assert.NotNull(settledRunningIconCenter);
+        Assert.Equal(compact ? 190 : 225, actionContent.Bounds.Width);
+        Assert.InRange(
+            Math.Abs(settledRunningIconCenter!.Value.X - runningIconCenter.Value.X),
+            0,
+            0.5);
+        Assert.Equal(metricBounds, metric.Bounds);
+
+        progress.Raise(service => service.GameStateChanged += null!, "stopped", 0);
+        Dispatcher.UIThread.RunJobs();
+        window.Close();
     }
 
     [AvaloniaTheory]

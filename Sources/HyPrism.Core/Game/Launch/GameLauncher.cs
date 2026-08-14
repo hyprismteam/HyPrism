@@ -106,28 +106,37 @@ public class GameLauncher : IGameLauncher
 
     private void OnGameProcessExited(object? sender, EventArgs e)
     {
+        var launchedProfileUuid = _launchedProfileUuid;
+        _launchedProfileUuid = null;
+
         try
         {
             Logger.Info("Game", "Game process exited, performing cleanup...");
 
             _skins.StopSkinProtection();
-            if (!string.IsNullOrWhiteSpace(_launchedProfileUuid))
+            if (!string.IsNullOrWhiteSpace(launchedProfileUuid))
             {
-                _skins.BackupProfileSkinData(_launchedProfileUuid);
+                _skins.BackupProfileSkinData(launchedProfileUuid);
 
                 // Copy the latest game avatar to persistent backup
-                _avatars.BackupAvatar(_launchedProfileUuid);
+                _avatars.BackupAvatar(launchedProfileUuid);
             }
-
-            _launchedProfileUuid = null;
-
-            _discord.SetPresence(PresenceState.Idle);
-            _progress.ReportGameStateChanged("stopped", 0);
         }
         catch (Exception ex)
         {
             Logger.Error("Game", $"Error during game exit cleanup: {ex.Message}");
         }
+
+        try
+        {
+            _discord.SetPresence(PresenceState.Idle);
+        }
+        catch (Exception ex)
+        {
+            Logger.Error("Game", $"Could not reset Discord presence: {ex.Message}");
+        }
+
+        _progress.ReportGameStateChanged("stopped", 0);
     }
 
     /// <inheritdoc/>
@@ -1307,7 +1316,12 @@ DUALAUTH_TRUST_OFFICIAL=""true""
             _progress.ReportDownloadProgress("launching", 80, "launch.detail.starting_process", null, 0, 0);
 
             process = new Process { StartInfo = startInfo };
-            var interfaceLoadedTcs = new TaskCompletionSource<bool>();
+            var interfaceLoadedTcs = new TaskCompletionSource<bool>(
+                TaskCreationOptions.RunContinuationsAsynchronously);
+            var processExitedTcs = new TaskCompletionSource<bool>(
+                TaskCreationOptions.RunContinuationsAsynchronously);
+
+            process.Exited += (_, _) => processExitedTcs.TrySetResult(true);
 
             var sysInfoBuffer = new List<string>();
             bool capturingSysInfo = false;
@@ -1392,9 +1406,18 @@ DUALAUTH_TRUST_OFFICIAL=""true""
             _progress.ReportGameStateChanged("started", process.Id);
             _progress.ReportDownloadProgress("launching", 100, "launch.detail.waiting_for_window", null, 0, 0);
 
-            // Wait for interface loaded signal or timeout (60s)
+            // Wait for interface loaded signal, process exit, or timeout (60s)
             var timeoutTask = Task.Delay(TimeSpan.FromSeconds(60));
-            var completedTask = await Task.WhenAny(interfaceLoadedTcs.Task, timeoutTask);
+            var completedTask = await Task.WhenAny(
+                interfaceLoadedTcs.Task,
+                processExitedTcs.Task,
+                timeoutTask);
+
+            if (completedTask == processExitedTcs.Task)
+            {
+                Logger.Info("Game", "Game exited before the interface load signal");
+                return;
+            }
 
             if (completedTask == timeoutTask)
             {

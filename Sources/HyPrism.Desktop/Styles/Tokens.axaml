@@ -36,6 +36,7 @@ SPDX-License-Identifier: GPL-3.0-only
   <SolidColorBrush x:Key="SuccessSoftBrush" Color="#A9E8BE" />
   <SolidColorBrush x:Key="DangerBrush" Color="#E78383" />
   <SolidColorBrush x:Key="DangerSoftBrush" Color="#FF9696" />
+  <SolidColorBrush x:Key="DangerActionBrush" Color="#D83B45" />
   <SolidColorBrush x:Key="WarningBrush" Color="#FFC54D" />
   <SolidColorBrush x:Key="ToggleOnBrush" Color="#35A85B" />
   <SolidColorBrush x:Key="ToggleOnHoverBrush" Color="#43BC6B" />

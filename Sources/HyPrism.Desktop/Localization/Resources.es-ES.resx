@@ -490,16 +490,16 @@ Es posible que necesites reinstalar el juego si cambias de unidad.</value>
     <value>Descargando Butler...</value>
   </data>
   <data name="launch.detail.downloading_generic" xml:space="preserve">
-    <value>Descargando Hytale... {0}%</value>
+    <value>Descargando</value>
   </data>
   <data name="launch.detail.downloading_mirror" xml:space="preserve">
-    <value>Descargando desde espejo... {0}%</value>
+    <value>Descargando</value>
   </data>
   <data name="launch.detail.downloading_official" xml:space="preserve">
-    <value>Descargando desde Hytale... {0}%</value>
+    <value>Descargando</value>
   </data>
   <data name="launch.detail.downloading_patch" xml:space="preserve">
-    <value>Descargando parche {0}/{1} ({2}%)</value>
+    <value>Descargando</value>
   </data>
   <data name="launch.detail.dualauth_setup" xml:space="preserve">
     <value>Configurando agente de autenticación...</value>

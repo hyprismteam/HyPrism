@@ -375,6 +375,15 @@ You may need to reinstall the game if switching drives.</value>
   <data name="instances.actions.install" xml:space="preserve">
     <value>Install</value>
   </data>
+  <data name="instances.actions.cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="instances.actions.launching" xml:space="preserve">
+    <value>Launching</value>
+  </data>
+  <data name="instances.actions.running" xml:space="preserve">
+    <value>Running</value>
+  </data>
   <data name="instances.actions.openFolder" xml:space="preserve">
     <value>Open Folder</value>
   </data>
@@ -565,16 +574,16 @@ You may need to reinstall the game if switching drives.</value>
     <value>Downloading Butler...</value>
   </data>
   <data name="launch.detail.downloading_generic" xml:space="preserve">
-    <value>Downloading Hytale... {0}%</value>
+    <value>Downloading</value>
   </data>
   <data name="launch.detail.downloading_mirror" xml:space="preserve">
-    <value>Downloading from mirror... {0}%</value>
+    <value>Downloading</value>
   </data>
   <data name="launch.detail.downloading_official" xml:space="preserve">
-    <value>Downloading from Hytale... {0}%</value>
+    <value>Downloading</value>
   </data>
   <data name="launch.detail.downloading_patch" xml:space="preserve">
-    <value>Downloading patch {0}/{1} ({2}%)</value>
+    <value>Downloading</value>
   </data>
   <data name="launch.detail.dualauth_setup" xml:space="preserve">
     <value>Setting up authentication agent...</value>

@@ -490,16 +490,16 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>正在下载 Butler...</value>
   </data>
   <data name="launch.detail.downloading_generic" xml:space="preserve">
-    <value>正在下载 Hytale... {0}%</value>
+    <value>正在下载</value>
   </data>
   <data name="launch.detail.downloading_mirror" xml:space="preserve">
-    <value>从镜像下载中... {0}%</value>
+    <value>正在下载</value>
   </data>
   <data name="launch.detail.downloading_official" xml:space="preserve">
-    <value>从 Hytale 下载中... {0}%</value>
+    <value>正在下载</value>
   </data>
   <data name="launch.detail.downloading_patch" xml:space="preserve">
-    <value>正在下载补丁 {0}/{1} ({2}%)</value>
+    <value>正在下载</value>
   </data>
   <data name="launch.detail.dualauth_setup" xml:space="preserve">
     <value>正在设置认证代理...</value>

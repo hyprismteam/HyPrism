@@ -13,6 +13,7 @@ using Avalonia.Threading;
 using Avalonia.VisualTree;
 using HyPrism.Desktop.Features.Dashboard;
 using HyPrism.Desktop.Shell;
+using ShapePath = Avalonia.Controls.Shapes.Path;
 
 namespace HyPrism.Desktop.Features.Instances;
 
@@ -25,6 +26,8 @@ public sealed partial class InstancesView : UserControl
     private static readonly TimeSpan VersionLoadingFadeDuration = TimeSpan.FromMilliseconds(170);
     private readonly Stopwatch _versionSpinnerClock = new();
     private readonly DispatcherTimer _versionSpinnerTimer;
+    private readonly Stopwatch _actionSpinnerClock = new();
+    private readonly DispatcherTimer _actionSpinnerTimer;
     private INotifyPropertyChanged? _viewModel;
     private bool? _usesCompactLayout;
     private bool _compactContentOpen;
@@ -49,6 +52,11 @@ public sealed partial class InstancesView : UserControl
             Interval = TimeSpan.FromMilliseconds(16)
         };
         _versionSpinnerTimer.Tick += OnVersionSpinnerTick;
+        _actionSpinnerTimer = new DispatcherTimer
+        {
+            Interval = TimeSpan.FromMilliseconds(16)
+        };
+        _actionSpinnerTimer.Tick += OnActionSpinnerTick;
         SizeChanged += (_, args) => UpdateLayout(args.NewSize.Width);
         DataContextChanged += OnDataContextChanged;
     }
@@ -65,6 +73,7 @@ public sealed partial class InstancesView : UserControl
         UpdateLayout(Bounds.Width);
         UpdateBranchIndicator(animate: false);
         ApplyVersionLoadingStateImmediately();
+        UpdateActionSpinnerState();
         ApplySectionStateImmediately();
 
         if (DataContext is MainWindowViewModel { IsInstanceCreatorOpen: true })
@@ -103,6 +112,12 @@ public sealed partial class InstancesView : UserControl
                 _ = PlayCreatorOpenAnimationAsync();
             else
                 _ = PlayCreatorCloseAnimationAsync();
+        }
+
+        if (args.PropertyName is nameof(MainWindowViewModel.IsManagedInstanceActionActive) or
+            nameof(MainWindowViewModel.IsManagedInstanceActionRunning))
+        {
+            UpdateActionSpinnerState();
         }
     }
 
@@ -204,6 +219,12 @@ public sealed partial class InstancesView : UserControl
             return;
 
         OpenCompactContent();
+    }
+
+    private void OnManagedInstanceActionPointerExited(object? sender, PointerEventArgs args)
+    {
+        if (DataContext is MainWindowViewModel viewModel)
+            viewModel.ArmManagedInstanceCancellation();
     }
 
     private void OnInstanceDragHandlePressed(object? sender, PointerPressedEventArgs args)
@@ -866,5 +887,45 @@ public sealed partial class InstancesView : UserControl
         ((RotateTransform)VersionLoadingSpinner.RenderTransform!).Angle =
             _versionSpinnerClock.Elapsed.TotalMilliseconds % rotationDurationMilliseconds /
             rotationDurationMilliseconds * 360;
+    }
+
+    private void UpdateActionSpinnerState()
+    {
+        var shouldSpin = DataContext is MainWindowViewModel
+        {
+            IsManagedInstanceActionActive: true,
+            IsManagedInstanceActionRunning: false
+        };
+
+        if (shouldSpin)
+        {
+            if (!_actionSpinnerTimer.IsEnabled)
+                _actionSpinnerClock.Restart();
+            _actionSpinnerTimer.Start();
+            return;
+        }
+
+        _actionSpinnerTimer.Stop();
+        _actionSpinnerClock.Reset();
+        RotateActionSpinners(0);
+    }
+
+    private void OnActionSpinnerTick(object? sender, EventArgs args)
+    {
+        const double rotationDurationMilliseconds = 800;
+        var angle = _actionSpinnerClock.Elapsed.TotalMilliseconds % rotationDurationMilliseconds /
+                    rotationDurationMilliseconds * 360;
+        RotateActionSpinners(angle);
+    }
+
+    private void RotateActionSpinners(double angle)
+    {
+        foreach (var spinner in this.GetVisualDescendants()
+                     .OfType<ShapePath>()
+                     .Where(path => path.Classes.Contains("managedActionSpinner")))
+        {
+            spinner.RenderTransform ??= new RotateTransform();
+            ((RotateTransform)spinner.RenderTransform).Angle = angle;
+        }
     }
 }

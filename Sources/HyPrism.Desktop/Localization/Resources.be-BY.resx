@@ -490,16 +490,16 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>Загрузка Butler...</value>
   </data>
   <data name="launch.detail.downloading_generic" xml:space="preserve">
-    <value>Загрузка Hytale... {0}%</value>
+    <value>Спампоўванне</value>
   </data>
   <data name="launch.detail.downloading_mirror" xml:space="preserve">
-    <value>Загрузка з люстэрка... {0}%</value>
+    <value>Спампоўванне</value>
   </data>
   <data name="launch.detail.downloading_official" xml:space="preserve">
-    <value>Загрузка з Hytale... {0}%</value>
+    <value>Спампоўванне</value>
   </data>
   <data name="launch.detail.downloading_patch" xml:space="preserve">
-    <value>Загрузка патча {0}/{1} ({2}%)</value>
+    <value>Спампоўванне</value>
   </data>
   <data name="launch.detail.dualauth_setup" xml:space="preserve">
     <value>Наладка агента аўтэнтыфікацыі...</value>

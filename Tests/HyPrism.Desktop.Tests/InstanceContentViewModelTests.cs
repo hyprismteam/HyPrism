@@ -201,6 +201,208 @@ public sealed class InstanceContentViewModelTests
         instances.Verify(service => service.DeleteGameById(other.Id), Times.Once);
     }
 
+    [AvaloniaFact]
+    public async Task ManagedActionOwnsProgressCancellationAndRunningStateWithoutGlobalNotify()
+    {
+        var instance = new InstanceInfo
+        {
+            Id = "action-instance",
+            Name = "Action Instance",
+            Branch = "release",
+            Version = 20,
+            IsInstalled = true
+        };
+        var instances = new Mock<IInstanceRepository>();
+        var profiles = new Mock<IProfileManager>();
+        var profileRepository = new Mock<IProfileRepository>();
+        var launchCoordinator = new Mock<IGameLaunchCoordinator>();
+        var installationWorkflow = new Mock<IGameInstallationWorkflow>();
+        var gameProcess = new Mock<IGameProcessTracker>();
+        var progress = new Mock<IProgressReporter>();
+        var settings = new Mock<IDesktopSettingsStore>();
+        var news = new Mock<IHytaleNewsClient>();
+        var uriLauncher = new Mock<IExternalUriLauncher>();
+        var launchCompletion = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var replacementLaunchCompletion = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var launchThreadObserved = new TaskCompletionSource<bool>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var launchCallCount = 0;
+
+        instances.Setup(service => service.GetCachedInstances()).Returns([instance]);
+        instances.Setup(service => service.GetSelectedInstance()).Returns(instance);
+        instances.Setup(service => service.GetInstancePathById(instance.Id)).Returns("/tmp/action-instance");
+        instances.Setup(service => service.IsClientPresent("/tmp/action-instance")).Returns(true);
+        profiles.Setup(service => service.GetNick()).Returns("Action Test");
+        settings.SetupGet(service => service.AvailableBackgrounds).Returns([]);
+        launchCoordinator.Setup(service => service.LaunchAsync(
+                instance.Id,
+                It.IsAny<AuthUriPresenter?>()))
+            .Returns(() =>
+            {
+                launchThreadObserved.TrySetResult(Avalonia.Threading.Dispatcher.UIThread.CheckAccess());
+                return Interlocked.Increment(ref launchCallCount) == 1
+                    ? launchCompletion.Task
+                    : replacementLaunchCompletion.Task;
+            });
+        gameProcess.Setup(service => service.ExitGame()).Returns(true);
+
+        using var viewModel = new MainWindowViewModel(
+            instances.Object,
+            profiles.Object,
+            profileRepository.Object,
+            launchCoordinator.Object,
+            installationWorkflow.Object,
+            gameProcess.Object,
+            progress.Object,
+            settings.Object,
+            news.Object,
+            uriLauncher.Object,
+            new HttpClient(),
+            new StringLocalizer("en-US"));
+
+        var launchOperation = viewModel.RunManagedInstanceCommand.ExecuteAsync(null);
+        Assert.True(viewModel.IsManagedInstanceActionActive);
+        Assert.Equal("Launching", viewModel.ManagedInstanceActionStatusText);
+        Assert.Equal("0:00", viewModel.ManagedInstanceActionMetricText);
+        Assert.False(await launchThreadObserved.Task);
+
+        progress.Raise(service => service.GameStateChanged += null!, "started", 123);
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+        Assert.True(viewModel.IsManagedInstanceActionRunning);
+        Assert.Equal("Running", viewModel.ManagedInstanceActionStatusText);
+
+        await viewModel.RunManagedInstanceCommand.ExecuteAsync(null);
+        gameProcess.Verify(service => service.ExitGame(), Times.Never);
+
+        viewModel.ArmManagedInstanceCancellation();
+        await viewModel.RunManagedInstanceCommand.ExecuteAsync(null);
+        gameProcess.Verify(service => service.ExitGame(), Times.Once);
+
+        progress.Raise(service => service.GameStateChanged += null!, "stopped", 0);
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+        Assert.False(viewModel.IsManagedInstanceActionActive);
+        Assert.False(viewModel.IsBusy);
+        Assert.True(viewModel.CanRunManagedInstanceAction);
+
+        var replacementLaunch = viewModel.RunManagedInstanceCommand.ExecuteAsync(null);
+        Assert.True(viewModel.IsBusy);
+
+        launchCompletion.SetResult();
+        await launchOperation;
+        Assert.True(viewModel.IsBusy);
+
+        progress.Raise(service => service.GameStateChanged += null!, "stopped", 0);
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+        replacementLaunchCompletion.SetResult();
+        await replacementLaunch;
+    }
+
+    [AvaloniaFact]
+    public async Task ManagedInstallShowsProgressAndSecondActionCancelsIt()
+    {
+        var instance = new InstanceInfo
+        {
+            Id = "install-instance",
+            Name = "Install Instance",
+            Branch = "pre-release",
+            Version = 21,
+            IsInstalled = false
+        };
+        var otherInstance = new InstanceInfo
+        {
+            Id = "other-install-instance",
+            Name = "Other Install Instance",
+            Branch = "release",
+            Version = 20,
+            IsInstalled = false
+        };
+        var instances = new Mock<IInstanceRepository>();
+        var profiles = new Mock<IProfileManager>();
+        var profileRepository = new Mock<IProfileRepository>();
+        var launchCoordinator = new Mock<IGameLaunchCoordinator>();
+        var installationWorkflow = new Mock<IGameInstallationWorkflow>();
+        var gameProcess = new Mock<IGameProcessTracker>();
+        var progress = new Mock<IProgressReporter>();
+        var settings = new Mock<IDesktopSettingsStore>();
+        var news = new Mock<IHytaleNewsClient>();
+        var uriLauncher = new Mock<IExternalUriLauncher>();
+        var installCompletion = new TaskCompletionSource<DownloadProgress>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+
+        instances.Setup(service => service.GetCachedInstances()).Returns([instance, otherInstance]);
+        instances.Setup(service => service.GetSelectedInstance()).Returns(instance);
+        instances.Setup(service => service.GetInstancePathById(instance.Id)).Returns("/tmp/install-instance");
+        instances.Setup(service => service.GetInstancePathById(otherInstance.Id))
+            .Returns("/tmp/other-install-instance");
+        instances.Setup(service => service.IsClientPresent("/tmp/install-instance")).Returns(false);
+        instances.Setup(service => service.IsClientPresent("/tmp/other-install-instance")).Returns(false);
+        profiles.Setup(service => service.GetNick()).Returns("Install Test");
+        settings.SetupGet(service => service.AvailableBackgrounds).Returns([]);
+        installationWorkflow.Setup(service => service.DownloadAndLaunchInstanceAsync(
+                instance.Id,
+                It.IsAny<AuthUriPresenter?>()))
+            .Returns(installCompletion.Task);
+
+        using var viewModel = new MainWindowViewModel(
+            instances.Object,
+            profiles.Object,
+            profileRepository.Object,
+            launchCoordinator.Object,
+            installationWorkflow.Object,
+            gameProcess.Object,
+            progress.Object,
+            settings.Object,
+            news.Object,
+            uriLauncher.Object,
+            new HttpClient(),
+            new StringLocalizer("en-US"));
+
+        var installOperation = viewModel.RunManagedInstanceCommand.ExecuteAsync(null);
+        progress.Raise(service => service.DownloadProgressChanged += null!, new ProgressUpdateMessage
+        {
+            State = "downloading",
+            Progress = 0.37,
+            MessageKey = "common.loading"
+        });
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+
+        Assert.True(viewModel.IsManagedInstanceActionActive);
+        Assert.Equal("Loading...", viewModel.ManagedInstanceActionStatusText);
+        Assert.Equal("37%", viewModel.ManagedInstanceActionMetricText);
+
+        await viewModel.RunManagedInstanceCommand.ExecuteAsync(null);
+        installationWorkflow.Verify(service => service.CancelDownload(), Times.Never);
+
+        viewModel.ArmManagedInstanceCancellation();
+        await viewModel.RunManagedInstanceCommand.ExecuteAsync(null);
+        installationWorkflow.Verify(service => service.CancelDownload(), Times.Once);
+
+        installCompletion.SetResult(new DownloadProgress { Cancelled = true });
+        await installOperation;
+        Assert.False(viewModel.IsManagedInstanceActionActive);
+        Assert.False(viewModel.IsBusy);
+        Assert.True(viewModel.CanRunManagedInstanceAction);
+
+        progress.Raise(service => service.DownloadProgressChanged += null!, new ProgressUpdateMessage
+        {
+            State = "downloading",
+            Progress = 0.42,
+            MessageKey = "common.loading"
+        });
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+
+        Assert.False(viewModel.IsBusy);
+        Assert.True(viewModel.CanRunManagedInstanceAction);
+
+        viewModel.OpenInstanceDetailsCommand.Execute(otherInstance.Id);
+        Assert.Equal(
+            otherInstance.Id,
+            Assert.Single(viewModel.AllInstances, item => item.IsManaged).Id);
+        Assert.True(viewModel.CanRunManagedInstanceAction);
+    }
+
     private static async Task WaitUntilAsync(Func<bool> condition)
     {
         for (var attempt = 0; attempt < 50 && !condition(); attempt++)

@@ -490,16 +490,16 @@ Você pode precisar reinstalar o jogo se trocar de unidade.</value>
     <value>Baixando Butler...</value>
   </data>
   <data name="launch.detail.downloading_generic" xml:space="preserve">
-    <value>Baixando Hytale... {0}%</value>
+    <value>Baixando</value>
   </data>
   <data name="launch.detail.downloading_mirror" xml:space="preserve">
-    <value>Baixando do espelho... {0}%</value>
+    <value>Baixando</value>
   </data>
   <data name="launch.detail.downloading_official" xml:space="preserve">
-    <value>Baixando do Hytale... {0}%</value>
+    <value>Baixando</value>
   </data>
   <data name="launch.detail.downloading_patch" xml:space="preserve">
-    <value>Baixando patch {0}/{1} ({2}%)</value>
+    <value>Baixando</value>
   </data>
   <data name="launch.detail.dualauth_setup" xml:space="preserve">
     <value>Configurando agente de autenticação...</value>

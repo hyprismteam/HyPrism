@@ -791,30 +791,6 @@ SPDX-License-Identifier: GPL-3.0-only
             </StackPanel>
           </Grid>
 
-          <Border Classes="card"
-                  IsVisible="{Binding IsGlobalActivityVisible}"
-                  Width="390"
-                  HorizontalAlignment="Right"
-                  VerticalAlignment="Bottom"
-                  Margin="0,0,22,22"
-                  Padding="18">
-            <StackPanel Spacing="10">
-              <Grid ColumnDefinitions="*,Auto">
-                <TextBlock Text="{Binding ActivityTitle}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
-                <TextBlock Grid.Column="1"
-                           Text="{Binding ActivityProgressText}"
-                           Foreground="{DynamicResource TextPrimaryBrush}"
-                           FontWeight="SemiBold"
-                           TextWrapping="NoWrap" />
-              </Grid>
-              <TextBlock Classes="muted" Text="{Binding ActivityDetail}" FontSize="12" MaxLines="2" TextTrimming="CharacterEllipsis" />
-              <ProgressBar Minimum="0"
-                           Maximum="100"
-                           Height="5"
-                           Foreground="{DynamicResource TextPrimaryBrush}"
-                           Value="{Binding ActivityProgress}" />
-            </StackPanel>
-          </Border>
         </Grid>
       </Border>
     </Grid>

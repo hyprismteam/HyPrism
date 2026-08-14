@@ -490,16 +490,16 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>Butler 다운로드 중...</value>
   </data>
   <data name="launch.detail.downloading_generic" xml:space="preserve">
-    <value>Hytale 다운로드 중... {0}%</value>
+    <value>다운로드 중</value>
   </data>
   <data name="launch.detail.downloading_mirror" xml:space="preserve">
-    <value>미러에서 다운로드 중... {0}%</value>
+    <value>다운로드 중</value>
   </data>
   <data name="launch.detail.downloading_official" xml:space="preserve">
-    <value>Hytale에서 다운로드 중... {0}%</value>
+    <value>다운로드 중</value>
   </data>
   <data name="launch.detail.downloading_patch" xml:space="preserve">
-    <value>패치 {0}/{1} 다운로드 중 ({2}%)</value>
+    <value>다운로드 중</value>
   </data>
   <data name="launch.detail.dualauth_setup" xml:space="preserve">
     <value>인증 에이전트 설정 중...</value>
