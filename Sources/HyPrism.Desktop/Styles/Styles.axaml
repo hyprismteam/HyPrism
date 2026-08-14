@@ -1703,13 +1703,9 @@ SPDX-License-Identifier: GPL-3.0-only
   </Style>
 
   <Style Selector="instances|InstancesView Button.instancesAddRow">
-    <Setter Property="Background" Value="{DynamicResource NavigationPaneBrush}" />
+    <Setter Property="Background" Value="Transparent" />
     <Setter Property="BorderThickness" Value="0" />
     <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
-  </Style>
-
-  <Style Selector="instances|InstancesView.compact Button.instancesAddRow">
-    <Setter Property="Background" Value="Transparent" />
   </Style>
 
   <Style Selector="instances|InstancesView Button.instancesAddRow Path">
@@ -1717,13 +1713,18 @@ SPDX-License-Identifier: GPL-3.0-only
   </Style>
 
   <Style Selector="instances|InstancesView Border.instancesDragPreview">
-    <Setter Property="MinHeight" Value="66" />
-    <Setter Property="Padding" Value="18,13" />
+    <Setter Property="MinHeight" Value="72" />
+    <Setter Property="Padding" Value="12,9" />
     <Setter Property="Background" Value="{DynamicResource ControlSurfaceActiveBrush}" />
-    <Setter Property="BorderBrush" Value="{DynamicResource StrokeStrongBrush}" />
-    <Setter Property="BorderThickness" Value="1" />
-    <Setter Property="CornerRadius" Value="8" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="CornerRadius" Value="11" />
     <Setter Property="BoxShadow" Value="{DynamicResource PopupShadow}" />
+  </Style>
+
+  <Style Selector="instances|InstancesView.compact Border.instancesDragPreview">
+    <Setter Property="MinHeight" Value="78" />
+    <Setter Property="Padding" Value="16,10" />
   </Style>
 
   <Style Selector="instances|InstancesView Border.instancesDetails">

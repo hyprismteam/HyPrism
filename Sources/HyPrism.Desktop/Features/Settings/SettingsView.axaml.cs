@@ -16,6 +16,7 @@ public sealed partial class SettingsView : UserControl
 
     private bool? _usesCompactLayout;
     private bool _compactContentOpen;
+    private bool _returnToCompactContent;
     private double _backgroundPickerWidth;
 
     private TranslateTransform MainTranslation
@@ -29,9 +30,16 @@ public sealed partial class SettingsView : UserControl
         var compact = e.NewSize.Width < WideLayoutThreshold;
         if (_usesCompactLayout != compact)
         {
-            var keepContentOpen = compact && _usesCompactLayout is false;
+            if (compact)
+            {
+                _compactContentOpen = _returnToCompactContent;
+            }
+            else if (_usesCompactLayout is true)
+            {
+                _returnToCompactContent = _compactContentOpen;
+            }
+
             _usesCompactLayout = compact;
-            _compactContentOpen = keepContentOpen;
             ApplyLayoutMode(compact, e.NewSize.Width);
         }
         else if (compact && !_compactContentOpen)
@@ -75,6 +83,7 @@ public sealed partial class SettingsView : UserControl
 
     private void OnSettingsCategoryClicked(object? sender, RoutedEventArgs e)
     {
+        _returnToCompactContent = true;
         Dispatcher.UIThread.Post(SettingsContent.ScrollToHome, DispatcherPriority.Background);
         if (_usesCompactLayout is not true)
             return;
@@ -149,6 +158,7 @@ public sealed partial class SettingsView : UserControl
         if (_usesCompactLayout is not true || !_compactContentOpen)
             return false;
 
+        _returnToCompactContent = false;
         _compactContentOpen = false;
         SettingsMain.IsHitTestVisible = false;
         SettingsCategoryRail.IsHitTestVisible = true;

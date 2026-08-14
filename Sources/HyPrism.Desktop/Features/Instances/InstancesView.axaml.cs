@@ -28,6 +28,7 @@ public sealed partial class InstancesView : UserControl
     private INotifyPropertyChanged? _viewModel;
     private bool? _usesCompactLayout;
     private bool _compactContentOpen;
+    private bool _returnToCompactContent;
     private CancellationTokenSource? _creatorAnimationCancellation;
     private CancellationTokenSource? _sectionAnimationCancellation;
     private CancellationTokenSource? _versionLoadingCancellation;
@@ -118,9 +119,16 @@ public sealed partial class InstancesView : UserControl
         var layoutModeChanged = _usesCompactLayout != compact;
         if (layoutModeChanged)
         {
-            var keepContentOpen = compact && _usesCompactLayout is false;
+            if (compact)
+            {
+                _compactContentOpen = _returnToCompactContent;
+            }
+            else if (_usesCompactLayout is true)
+            {
+                _returnToCompactContent = _compactContentOpen;
+            }
+
             _usesCompactLayout = compact;
-            _compactContentOpen = keepContentOpen;
         }
 
         if (!hasInstances)
@@ -191,6 +199,7 @@ public sealed partial class InstancesView : UserControl
 
     private void OnInstanceClicked(object? sender, RoutedEventArgs args)
     {
+        _returnToCompactContent = true;
         if (_usesCompactLayout is not true)
             return;
 
@@ -325,6 +334,7 @@ public sealed partial class InstancesView : UserControl
 
     private void OpenCompactContent()
     {
+        _returnToCompactContent = true;
         _compactContentOpen = true;
         InstancesListPane.IsHitTestVisible = false;
         InstancesContent.IsHitTestVisible = true;
@@ -339,6 +349,7 @@ public sealed partial class InstancesView : UserControl
         if (_usesCompactLayout is not true || !_compactContentOpen)
             return false;
 
+        _returnToCompactContent = false;
         _compactContentOpen = false;
         InstancesContent.IsHitTestVisible = false;
         InstancesListPane.IsHitTestVisible = true;

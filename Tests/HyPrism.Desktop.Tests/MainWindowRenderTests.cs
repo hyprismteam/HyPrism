@@ -1225,37 +1225,41 @@ public sealed class MainWindowRenderTests
         Assert.Contains(
             addInstanceRow.GetVisualDescendants().OfType<TextBlock>(),
             text => text.Text == viewModel.NewInstanceTitle);
-        if (usesCompactInstancesLayout)
-        {
-            Assert.Equal(
-                Colors.Transparent,
-                Assert.IsAssignableFrom<ISolidColorBrush>(addInstanceRow.Background).Color);
-        }
+        Assert.Equal(
+            Colors.Transparent,
+            Assert.IsAssignableFrom<ISolidColorBrush>(addInstanceRow.Background).Color);
         Assert.Equal(
             14,
             Assert.Single(addInstanceRow.GetVisualDescendants().OfType<Avalonia.Controls.Shapes.Path>()).Bounds.Width);
 
-        if (width >= 1280)
-        {
-            var dragPoint = instanceDragTarget.TranslatePoint(
-                new Point(instanceDragTarget.Bounds.Width - 3, instanceDragTarget.Bounds.Height / 2),
-                window);
-            Assert.NotNull(dragPoint);
-            var resolvedDragPoint = dragPoint!.Value;
-            var dragPreview = instancesView.FindControl<Border>("InstanceDragPreview");
-            Assert.NotNull(dragPreview);
-            window.MouseMove(resolvedDragPoint);
-            window.MouseDown(resolvedDragPoint, MouseButton.Left);
-            window.MouseMove(resolvedDragPoint + new Vector(36, 24));
-            Dispatcher.UIThread.RunJobs();
-            Assert.True(dragPreview!.IsVisible);
-            var dragPreviewPath = Environment.GetEnvironmentVariable("HYPRISM_INSTANCES_DRAG_RENDER_OUTPUT");
-            if (!string.IsNullOrWhiteSpace(dragPreviewPath))
-                window.CaptureRenderedFrame()!.Save(dragPreviewPath, PngBitmapEncoderOptions.Default);
-            window.MouseUp(resolvedDragPoint + new Vector(36, 24), MouseButton.Left);
-            Dispatcher.UIThread.RunJobs();
-            Assert.False(dragPreview.IsVisible);
-        }
+        var dragPoint = instanceDragTarget.TranslatePoint(
+            new Point(instanceDragTarget.Bounds.Width - 3, instanceDragTarget.Bounds.Height / 2),
+            window);
+        Assert.NotNull(dragPoint);
+        var resolvedDragPoint = dragPoint!.Value;
+        var dragPreview = instancesView.FindControl<Border>("InstanceDragPreview");
+        Assert.NotNull(dragPreview);
+        window.MouseMove(resolvedDragPoint);
+        window.MouseDown(resolvedDragPoint, MouseButton.Left);
+        window.MouseMove(resolvedDragPoint + new Vector(36, 24));
+        Dispatcher.UIThread.RunJobs();
+        Assert.True(dragPreview!.IsVisible);
+        Assert.Equal(default, dragPreview.BorderThickness);
+        Assert.Equal(new CornerRadius(11), dragPreview.CornerRadius);
+        var dragPreviewGameIcon = Assert.Single(
+            dragPreview.GetVisualDescendants().OfType<Image>(),
+            image => image.Classes.Contains("instancesListGameIcon"));
+        Assert.Equal(usesCompactInstancesLayout, dragPreviewGameIcon.IsVisible);
+        Assert.Equal(usesCompactInstancesLayout ? 38 : 0, dragPreviewGameIcon.Width);
+        var dragPreviewPath = Environment.GetEnvironmentVariable(
+            usesCompactInstancesLayout
+                ? "HYPRISM_INSTANCES_COMPACT_DRAG_RENDER_OUTPUT"
+                : "HYPRISM_INSTANCES_DRAG_RENDER_OUTPUT");
+        if (!string.IsNullOrWhiteSpace(dragPreviewPath))
+            window.CaptureRenderedFrame()!.Save(dragPreviewPath, PngBitmapEncoderOptions.Default);
+        window.MouseUp(resolvedDragPoint + new Vector(36, 24), MouseButton.Left);
+        Dispatcher.UIThread.RunJobs();
+        Assert.False(dragPreview.IsVisible);
         var instanceActions = instancesView.GetVisualDescendants()
             .OfType<Button>()
             .Where(button => button.Classes.Contains("instanceAction"))
@@ -1507,6 +1511,35 @@ public sealed class MainWindowRenderTests
         {
             frame.Save(previewPath, PngBitmapEncoderOptions.Default);
             Assert.True(File.Exists(previewPath));
+        }
+
+        if (width == 1920)
+        {
+            window.Width = 1024;
+            Dispatcher.UIThread.RunJobs();
+            Assert.True(compactInstanceToolbar.IsVisible);
+            Assert.False(instancesContent.IsHitTestVisible);
+            Assert.True(instanceContentTranslation.X > 0);
+            Assert.Equal(
+                Colors.Transparent,
+                Assert.IsAssignableFrom<ISolidColorBrush>(addInstanceRow.Background).Color);
+
+            window.Width = width;
+            Dispatcher.UIThread.RunJobs();
+            Assert.False(compactInstanceToolbar.IsVisible);
+            Assert.True(instancesContent.IsHitTestVisible);
+
+            managedInstanceRow.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Dispatcher.UIThread.RunJobs();
+            window.Width = 1024;
+            Dispatcher.UIThread.RunJobs();
+            Assert.True(compactInstanceToolbar.IsVisible);
+            Assert.True(instancesContent.IsHitTestVisible);
+            Assert.Equal(0, instanceContentTranslation.X);
+
+            Assert.True(instancesView.TryCloseCompactContent());
+            window.Width = width;
+            Dispatcher.UIThread.RunJobs();
         }
 
         viewModel.NavigateCommand.Execute("news");
@@ -2466,22 +2499,31 @@ public sealed class MainWindowRenderTests
             window.Width = 1024;
             Dispatcher.UIThread.RunJobs();
             Assert.True(compactSettingsToolbar.IsVisible);
-            Assert.True(settingsMain.IsHitTestVisible);
-            Assert.Equal(0, Assert.IsType<TranslateTransform>(settingsMain.RenderTransform).X);
-            Assert.True(compactSettingsTitle!.IsEffectivelyVisible);
-            Assert.Equal(viewModel.Settings.ActiveCategoryTitle, compactSettingsTitle.Text);
-            var compactTitleCenter = compactSettingsTitle.TranslatePoint(
-                new Point(compactSettingsTitle.Bounds.Width / 2, compactSettingsTitle.Bounds.Height / 2),
-                compactSettingsToolbar);
-            Assert.NotNull(compactTitleCenter);
-            Assert.InRange(
-                Math.Abs(compactTitleCenter!.Value.X - (compactSettingsToolbar.Bounds.Width / 2)),
-                0,
-                1);
+            Assert.False(settingsMain.IsHitTestVisible);
+            Assert.True(Assert.IsType<TranslateTransform>(settingsMain.RenderTransform).X > 0);
+            Assert.True(settingsRail!.IsHitTestVisible);
 
             window.Width = width;
             Dispatcher.UIThread.RunJobs();
             Assert.False(compactSettingsToolbar.IsVisible);
+
+            var generalCategoryButton = settingsView.GetVisualDescendants()
+                .OfType<Button>()
+                .Single(button => button.Classes.Contains("settingsRailCategory") &&
+                                  button.DataContext is SettingCategoryViewModel { Id: "general" });
+            generalCategoryButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Dispatcher.UIThread.RunJobs();
+            window.Width = 1024;
+            Dispatcher.UIThread.RunJobs();
+            Assert.True(compactSettingsToolbar.IsVisible);
+            Assert.True(settingsMain.IsHitTestVisible);
+            Assert.Equal(0, Assert.IsType<TranslateTransform>(settingsMain.RenderTransform).X);
+            Assert.True(compactSettingsTitle!.IsEffectivelyVisible);
+            Assert.Equal(viewModel.Settings.ActiveCategoryTitle, compactSettingsTitle.Text);
+
+            Assert.True(settingsView.TryCloseCompactContent());
+            window.Width = width;
+            Dispatcher.UIThread.RunJobs();
         }
 
         if (compactSettingsLayout)

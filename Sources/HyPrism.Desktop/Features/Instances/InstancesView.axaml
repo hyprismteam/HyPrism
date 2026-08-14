@@ -940,20 +940,30 @@ SPDX-License-Identifier: GPL-3.0-only
       <Border.RenderTransform>
         <TranslateTransform />
       </Border.RenderTransform>
-      <Grid ColumnDefinitions="28,*,22" ColumnSpacing="9">
+      <Grid Classes="instancesListItemLayout" ColumnDefinitions="Auto,*,22" ColumnSpacing="12">
         <Border Classes="instancesListDragTarget">
           <Path Classes="instancesListHandle" Data="{StaticResource DragIndicatorIcon}" />
         </Border>
-        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
-          <TextBlock x:Name="InstanceDragPreviewName"
-                     Classes="uiSettingsLabel instancesListTitle"
-                     TextTrimming="CharacterEllipsis"
-                     TextWrapping="NoWrap" />
-          <TextBlock x:Name="InstanceDragPreviewBranch"
-                     Classes="uiSettingsHint"
-                     TextTrimming="CharacterEllipsis"
-                     TextWrapping="NoWrap" />
-        </StackPanel>
+        <Grid Grid.Column="1"
+              Classes="instancesListIdentity"
+              ColumnDefinitions="Auto,*">
+          <Image Classes="instancesListGameIcon"
+                 Source="avares://HyPrism.Desktop/Assets/Game/grass.png"
+                 Stretch="Uniform"
+                 IsHitTestVisible="False" />
+          <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="4">
+            <TextBlock x:Name="InstanceDragPreviewName"
+                       Classes="settingsCategoryTitle instancesListTitle"
+                       FontSize="15"
+                       FontWeight="SemiBold"
+                       TextTrimming="CharacterEllipsis"
+                       TextWrapping="NoWrap" />
+            <TextBlock x:Name="InstanceDragPreviewBranch"
+                       Classes="settingsCategoryDescription"
+                       TextTrimming="CharacterEllipsis"
+                       TextWrapping="NoWrap" />
+          </StackPanel>
+        </Grid>
         <Path Grid.Column="2"
               Classes="instancesListMore"
               Data="{StaticResource MoreVerticalIcon}" />
