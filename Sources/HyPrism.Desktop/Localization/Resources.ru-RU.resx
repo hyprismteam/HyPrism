@@ -1576,7 +1576,13 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>Официальные профили Hytale нельзя редактировать</value>
   </data>
   <data name="profiles.openFolder" xml:space="preserve">
-    <value>Открыть папку профиля</value>
+    <value>Открыть папку</value>
+  </data>
+  <data name="profiles.setActive" xml:space="preserve">
+    <value>Выбрать</value>
+  </data>
+  <data name="profiles.active" xml:space="preserve">
+    <value>Активен</value>
   </data>
   <data name="profiles.playerUuid" xml:space="preserve">
     <value>UUID игрока</value>

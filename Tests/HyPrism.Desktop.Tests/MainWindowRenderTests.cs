@@ -23,6 +23,7 @@ using HyPrism.Desktop.Features.About;
 using HyPrism.Desktop.Features.Dashboard;
 using HyPrism.Desktop.Features.Instances;
 using HyPrism.Desktop.Features.News;
+using HyPrism.Desktop.Features.Profiles;
 using HyPrism.Desktop.Features.Settings;
 using HyPrism.Desktop.Localization;
 using HyPrism.Desktop.Controls;
@@ -43,6 +44,168 @@ namespace HyPrism.Desktop.Tests;
 public sealed class MainWindowRenderTests
 {
     [AvaloniaFact]
+    public async Task ProfilesViewUsesInstanceStyleCardsMenusAndWizardScreen()
+    {
+        var profiles = new List<Profile>
+        {
+            new()
+            {
+                Id = "active-profile",
+                Name = "ActivePlayer",
+                UUID = Guid.NewGuid().ToString()
+            },
+            new()
+            {
+                Id = "second-profile",
+                Name = "SecondPlayer",
+                UUID = Guid.NewGuid().ToString()
+            }
+        };
+        var profileManager = new Mock<IProfileManager>();
+        var profileRepository = new Mock<IProfileRepository>();
+        var uriLauncher = new Mock<IExternalUriLauncher>();
+        profileRepository.Setup(repository => repository.GetProfiles()).Returns(profiles);
+        profileRepository.Setup(repository => repository.GetSelectedProfileId()).Returns("active-profile");
+
+        using var viewModel = new ProfilesViewModel(
+            profileManager.Object,
+            profileRepository.Object,
+            uriLauncher.Object,
+            new StringLocalizer("en-US"));
+        var view = new ProfilesView { DataContext = viewModel };
+        var window = new Window
+        {
+            Width = 1180,
+            Height = 760,
+            Content = view
+        };
+
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        Assert.NotNull(window.CaptureRenderedFrame());
+
+        var cards = view.GetVisualDescendants()
+            .OfType<Button>()
+            .Where(button => button.Classes.Contains("instancesListItem"))
+            .ToArray();
+        Assert.Equal(2, cards.Length);
+        Assert.All(cards, card => Assert.Equal(new Thickness(0), card.BorderThickness));
+        Assert.Equal(2, view.GetVisualDescendants()
+            .OfType<Border>()
+            .Count(border => border.IsEffectivelyVisible && border.Classes.Contains("instancesListDragTarget")));
+
+        var menuTargets = view.GetVisualDescendants()
+            .OfType<Border>()
+            .Where(border => border.Classes.Contains("profileMoreTarget"))
+            .ToArray();
+        Assert.Equal(2, menuTargets.Length);
+        Assert.DoesNotContain(
+            view.GetVisualDescendants().OfType<Border>(),
+            border => border.IsEffectivelyVisible && border.Classes.Contains("profileListAvatar"));
+        viewModel.Profiles[0].IsMenuOpen = true;
+        Dispatcher.UIThread.RunJobs();
+        Assert.True(viewModel.Profiles[0].IsMenuOpen);
+        viewModel.Profiles[0].IsMenuOpen = false;
+        Dispatcher.UIThread.RunJobs();
+        Assert.False(viewModel.Profiles[0].IsMenuOpen);
+        await Task.Delay(420);
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.All(
+            view.GetVisualDescendants()
+                .OfType<Border>()
+                .Where(border => border.Classes.Contains("profileAvatar")),
+            avatar => Assert.Equal(new Thickness(0), avatar.BorderThickness));
+        Assert.All(
+            view.GetVisualDescendants()
+                .OfType<StackPanel>()
+                .Where(panel => panel.Classes.Contains("instanceDeleteActionContent")),
+            panel => Assert.Equal(HorizontalAlignment.Center, panel.HorizontalAlignment));
+        Assert.All(
+            view.GetVisualDescendants()
+                .OfType<Button>()
+                .Where(button => button.Classes.Contains("deleteAction")),
+            button => Assert.Equal(new Thickness(0), button.Padding));
+
+        var previewPath = Environment.GetEnvironmentVariable("HYPRISM_PROFILES_RENDER_OUTPUT");
+        if (!string.IsNullOrWhiteSpace(previewPath))
+        {
+            var directory = Path.GetDirectoryName(previewPath)!;
+            var stem = Path.GetFileNameWithoutExtension(previewPath);
+            window.CaptureRenderedFrame()!.Save(
+                Path.Combine(directory, $"{stem}-wide.png"),
+                PngBitmapEncoderOptions.Default);
+
+            var activeProfile = viewModel.SelectedProfile;
+            viewModel.SelectProfileCommand.Execute(
+                viewModel.Profiles.Single(profile => !profile.IsActive));
+            await Task.Delay(380);
+            Dispatcher.UIThread.RunJobs();
+            window.CaptureRenderedFrame()!.Save(
+                Path.Combine(directory, $"{stem}-inactive-wide.png"),
+                PngBitmapEncoderOptions.Default);
+            viewModel.SelectProfileCommand.Execute(activeProfile);
+            await Task.Delay(380);
+            Dispatcher.UIThread.RunJobs();
+        }
+
+        viewModel.ShowCreateChoiceCommand.Execute(null);
+        await Task.Delay(420);
+        Dispatcher.UIThread.RunJobs();
+        var wizard = view.FindControl<Border>("ProfileCreatorScreen");
+        Assert.NotNull(wizard);
+        Assert.True(wizard!.IsEffectivelyVisible);
+        Assert.Contains("profileWizardScreen", wizard.Classes);
+
+        if (!string.IsNullOrWhiteSpace(previewPath))
+        {
+            var directory = Path.GetDirectoryName(previewPath)!;
+            var stem = Path.GetFileNameWithoutExtension(previewPath);
+            window.CaptureRenderedFrame()!.Save(
+                Path.Combine(directory, $"{stem}-wizard.png"),
+                PngBitmapEncoderOptions.Default);
+        }
+
+        viewModel.CancelCreationCommand.Execute(null);
+        await Task.Delay(220);
+        window.Width = 760;
+        Dispatcher.UIThread.RunJobs();
+        var activeCard = view.GetVisualDescendants()
+            .OfType<Button>()
+            .First(button => button.Classes.Contains("instancesListItem"));
+        activeCard.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        await Task.Delay(340);
+        Dispatcher.UIThread.RunJobs();
+        Assert.Contains("compact", view.Classes);
+        Assert.True(view.FindControl<Border>("CompactProfilesToolbar")!.IsEffectivelyVisible);
+        var compactPrimaryAction = view.GetVisualDescendants()
+            .OfType<Button>()
+            .Single(button => button.Classes.Contains("compactInstanceActionPart") &&
+                              button.Classes.Contains("main"));
+        Assert.Equal(126, compactPrimaryAction.Width);
+        Assert.Contains("active", compactPrimaryAction.Classes);
+        Assert.Equal(0, compactPrimaryAction.GetVisualDescendants()
+            .OfType<StackPanel>()
+            .Single(panel => panel.Classes.Contains("profileActivationIdle"))
+            .Opacity);
+        Assert.Equal(1, compactPrimaryAction.GetVisualDescendants()
+            .OfType<TextBlock>()
+            .Single(text => text.Classes.Contains("profileActivationActive"))
+            .Opacity);
+
+        if (!string.IsNullOrWhiteSpace(previewPath))
+        {
+            var directory = Path.GetDirectoryName(previewPath)!;
+            var stem = Path.GetFileNameWithoutExtension(previewPath);
+            window.CaptureRenderedFrame()!.Save(
+                Path.Combine(directory, $"{stem}-compact.png"),
+                PngBitmapEncoderOptions.Default);
+        }
+
+        window.Close();
+    }
+
+    [AvaloniaFact]
     public async Task ExternalUriLauncherRejectsUnsupportedSchemesBeforeResolvingWindow()
     {
         var topLevelRequested = false;
@@ -58,6 +221,29 @@ public sealed class MainWindowRenderTests
         Assert.False(launched);
         Assert.False(openedDirectory);
         Assert.False(topLevelRequested);
+    }
+
+    [Fact]
+    public void ExternalUriLauncherPreservesEscapedOAuthUriAsOneArgument()
+    {
+        var uri = new Uri(
+            "https://oauth.accounts.hytale.com/oauth2/auth" +
+            "?scope=openid%20offline%20auth%3Alauncher&state=VALUE%3D");
+
+        var startInfo = ExternalUriLauncher.CreateBrowserStartInfo(uri);
+
+        if (OperatingSystem.IsWindows())
+        {
+            Assert.Equal(uri.AbsoluteUri, startInfo.FileName);
+            Assert.True(startInfo.UseShellExecute);
+            return;
+        }
+
+        Assert.Single(startInfo.ArgumentList);
+        Assert.Equal(uri.AbsoluteUri, startInfo.ArgumentList[0]);
+        Assert.Contains("scope=openid%20offline%20auth%3Alauncher", startInfo.ArgumentList[0]);
+        Assert.DoesNotContain("scope=openid offline", startInfo.ArgumentList[0]);
+        Assert.Equal(OperatingSystem.IsMacOS() ? "open" : "xdg-open", startInfo.FileName);
     }
 
     [AvaloniaFact]

@@ -11,6 +11,7 @@ using HyPrism.Desktop.Features.About;
 using HyPrism.Desktop.Features.Dashboard;
 using HyPrism.Desktop.Features.Instances;
 using HyPrism.Desktop.Features.News;
+using HyPrism.Desktop.Features.Profiles;
 using HyPrism.Desktop.Features.Settings;
 using HyPrism.Desktop.Localization;
 using HyPrism.Desktop.Platform;
@@ -82,10 +83,11 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     private string? _worldsLoadedForInstanceId;
     private bool _hasLoadedNews;
     private bool _canLoadMoreNews = true;
-    private readonly bool _isOfficialProfile;
+    private bool _isOfficialProfile;
     private int _articleLoadVersion;
     private long _compactNewsTransitionReadyAt;
     private SettingsViewModel _settings;
+    private readonly ProfilesViewModel _profiles;
 
     [ObservableProperty]
     private string _currentPage = DashboardPage;
@@ -308,7 +310,8 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         IMirrorCatalog? mirrorCatalog = null,
         IMirrorDiscovery? mirrorDiscovery = null,
         IGameVersionCatalog? versionCatalog = null,
-        IModManager? modManager = null)
+        IModManager? modManager = null,
+        IHytaleAuthenticator? authenticator = null)
     {
         _instances = instances;
         _gameLaunchCoordinator = gameLaunchCoordinator;
@@ -329,6 +332,13 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         _localizer.LanguageChanged += ApplyLanguage;
         _settingsStore.BackgroundChanged += OnBackgroundChanged;
         _settings = CreateSettingsViewModel();
+        _profiles = new ProfilesViewModel(
+            profiles,
+            profileRepository,
+            _uriLauncher,
+            _localizer,
+            authenticator);
+        _profiles.ActiveProfileChanged += OnActiveProfileChanged;
         DashboardBackground = LoadDashboardBackground(_settingsStore.BackgroundMode);
 
         UserName = profiles.GetNick();
@@ -368,6 +378,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         get => _settings;
         private set => SetProperty(ref _settings, value);
     }
+    public ProfilesViewModel Profiles => _profiles;
 
     public string DashboardLabel => _localizer["dock.dashboard"];
     public string InstancesLabel => _localizer["dock.instances"];
@@ -475,7 +486,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     public bool IsNews => CurrentPage == NewsPage;
     public bool IsProfiles => CurrentPage == ProfilesPage;
     public bool IsSettings => CurrentPage == SettingsPage;
-    public bool IsPlaceholderPage => !IsDashboard && !IsInstances && !IsNews && !IsSettings;
+    public bool IsPlaceholderPage => !IsDashboard && !IsInstances && !IsNews && !IsProfiles && !IsSettings;
     public bool HasInstances => AllInstances.Count > 0;
     public bool HasSelectedInstance => _selectedInstance is not null;
     public bool HasManagedInstance => _managedInstance is not null;
@@ -607,6 +618,8 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
 
         if (IsNews)
             _ = LoadNewsAsync();
+        else if (IsProfiles)
+            Profiles.RefreshProfiles();
     }
 
     [RelayCommand]
@@ -1817,6 +1830,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     private void ApplyLanguage(string language)
     {
         Settings.RefreshLocalization();
+        Profiles.RefreshLocalization();
         AccountType = _isOfficialProfile
             ? _localizer["desktopSettings.accountHytale"]
             : _localizer["desktopSettings.accountOffline"];
@@ -2051,6 +2065,19 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         UpdateSelectedInstancePresentation();
     }
 
+    private void OnActiveProfileChanged(object? sender, EventArgs e)
+    {
+        var profile = Profiles.Profiles.FirstOrDefault(item => item.IsActive);
+        UserName = profile?.Name ?? string.Empty;
+        UserInitial = string.IsNullOrWhiteSpace(UserName)
+            ? "H"
+            : UserName[..1].ToUpperInvariant();
+        _isOfficialProfile = profile?.IsOfficial == true;
+        AccountType = _isOfficialProfile
+            ? _localizer["desktopSettings.accountHytale"]
+            : _localizer["desktopSettings.accountOffline"];
+    }
+
     private void NotifyPageStateChanged()
     {
         OnPropertyChanged(nameof(IsDashboard));
@@ -2108,6 +2135,8 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         _progress.ErrorOccurred -= OnErrorOccurred;
         _settingsStore.BackgroundChanged -= OnBackgroundChanged;
         _localizer.LanguageChanged -= ApplyLanguage;
+        _profiles.ActiveProfileChanged -= OnActiveProfileChanged;
+        _profiles.Dispose();
         Settings.Dispose();
         DashboardBackground?.Dispose();
         DashboardBackground = null;

@@ -91,6 +91,20 @@ public class JsonProfileRepositoryTests : IDisposable
     }
 
     [Fact]
+    public void SetProfileOrder_PersistsRequestedOrder()
+    {
+        var first = _svc.CreateProfile("First", Guid.NewGuid().ToString())!;
+        var second = _svc.CreateProfile("Second", Guid.NewGuid().ToString())!;
+        var third = _svc.CreateProfile("Third", Guid.NewGuid().ToString())!;
+
+        _svc.SetProfileOrder([third.Id, first.Id, second.Id]);
+
+        Assert.Equal(
+            [third.Id, first.Id, second.Id],
+            _svc.GetProfiles().Select(profile => profile.Id));
+    }
+
+    [Fact]
     public void CreateProfile_DuplicateName_ReturnsProfile()
     {
         // JsonProfileRepository does not enforce unique names, so both calls succeed

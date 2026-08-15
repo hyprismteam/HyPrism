@@ -17,6 +17,12 @@ public interface IProfileRepository
     List<Profile> GetProfiles();
 
     /// <summary>
+    /// Persists the display order of saved profiles
+    /// </summary>
+    /// <param name="profileIds">Profile identifiers in the requested order</param>
+    void SetProfileOrder(IReadOnlyList<string> profileIds);
+
+    /// <summary>
     /// Gets the ID of the currently active profile
     /// </summary>
     /// <returns>The profile ID string, or empty if no profile is selected</returns>

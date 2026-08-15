@@ -5,7 +5,7 @@ description: Current Core capabilities and native UI availability
 
 # Instances, profiles, and mods
 
-The Core contains the working domain logic for all three areas. The native instance manager is available, while profile and mod pages are still being completed
+The Core contains the working domain logic for all three areas. Native instance and profile managers are available, while advanced mod pages are still being completed
 
 ## Instances
 
@@ -35,10 +35,14 @@ The complete profile list is stored in `Profiles/profiles.json`. `config.json` c
 
 Launching requires an existing selected profile with a valid name and UUID. HyPrism does not silently create an identity during launch
 
+The **Profiles** destination uses the same responsive master-detail pattern, full-card interaction, transitions, and card styling as Instances. In a wide window, the saved-profile list stays beside the displayed profile. In a compact window, opening a profile or **Add** shows the content view and the back action returns to the list. Drag a card by its left handle to persist a new order. Open its three-dot menu to duplicate it or delete an inactive profile after confirmation
+
+Opening a saved profile only displays its details. Use the primary **Select** action to change the launcher identity used for launch. Its icon and label animate into a white **Active** label over a saturated green background. The selected profile cannot be deleted, and its delete action contracts out of the wide action row while the compact primary action keeps its normal width. **Open Folder** opens the displayed profile rather than the selected profile, and **Copy UUID** copies the displayed identifier
+
+Use **Add** below the final profile card to open the same animated full-content wizard transition as instance creation and choose an offline or official profile. Offline names accept 3 to 16 English letters, digits, hyphens, and underscores. Official creation starts the local `/authorization-callback` handler before opening the Hytale sign-in flow in the system browser, preserves the escaped authorization URI, and validates the returned OAuth state. HyPrism saves each returned game profile, stores its session data in the corresponding profile folder, and selects the first returned profile
+
 ## Mods
 
 Core integrates with CurseForge for search, categories, file resolution, installation, local file import, changelogs, and update checks scoped to an instance
 
 Mods do not have a global navigation destination. Open an instance and use **Installed mods** to inspect its content or **Discover mods** to search and install new content. This keeps every mod operation attached to an explicit installation target
-
-The native profile page is still being built. Historical interaction behavior can be inspected in version control when it is useful

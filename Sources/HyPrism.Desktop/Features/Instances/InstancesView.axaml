@@ -439,7 +439,10 @@ SPDX-License-Identifier: GPL-3.0-only
                         </Border>
                       </Flyout>
                     </Button.Flyout>
-                    <StackPanel Orientation="Horizontal" Spacing="8">
+                    <StackPanel Classes="instanceDeleteActionContent"
+                                Orientation="Horizontal"
+                                HorizontalAlignment="Center"
+                                Spacing="8">
                       <Path Classes="instanceActionIcon" Data="{StaticResource DeleteIcon}" />
                       <TextBlock Text="{Binding ManagedInstanceDeleteLabel}"
                                  VerticalAlignment="Center" />

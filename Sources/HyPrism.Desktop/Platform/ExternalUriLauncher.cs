@@ -1,6 +1,8 @@
 // Copyright (C) 2026 HyPrism Launcher
 // SPDX-License-Identifier: GPL-3.0-only
 
+using System.Diagnostics;
+using System.Runtime.InteropServices;
 using Avalonia.Controls;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
@@ -9,13 +11,13 @@ using HyPrism.Core.Infrastructure;
 namespace HyPrism.Desktop.Platform;
 
 /// <summary>
-/// Opens external URIs with Avalonia's native platform launcher
+/// Opens external URIs with the operating system's default browser
 /// </summary>
 /// <param name="topLevelProvider">Resolves the active top-level window when a URI is opened</param>
 public sealed class ExternalUriLauncher(Func<TopLevel?> topLevelProvider) : IExternalUriLauncher
 {
     /// <inheritdoc/>
-    public async Task<bool> LaunchAsync(Uri uri, CancellationToken cancellationToken = default)
+    public Task<bool> LaunchAsync(Uri uri, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(uri);
         cancellationToken.ThrowIfCancellationRequested();
@@ -24,19 +26,22 @@ public sealed class ExternalUriLauncher(Func<TopLevel?> topLevelProvider) : IExt
             (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
         {
             Logger.Warning("Launcher", $"Rejected unsupported external URI: {uri}");
-            return false;
+            return Task.FromResult(false);
         }
 
         try
         {
-            if (!Dispatcher.UIThread.CheckAccess())
-            {
-                var launchTask = await Dispatcher.UIThread.InvokeAsync(
-                    () => LaunchOnUiThreadAsync(uri, cancellationToken));
-                return launchTask;
-            }
+            Logger.Info("Launcher", $"Opening external URI: {uri.AbsoluteUri}");
+            var process = Process.Start(CreateBrowserStartInfo(uri));
+            if (process is null)
+                return Task.FromResult(false);
 
-            return await LaunchOnUiThreadAsync(uri, cancellationToken);
+            if (process.StartInfo.RedirectStandardOutput || process.StartInfo.RedirectStandardError)
+                _ = DrainAndDisposeAsync(process);
+            else
+                process.Dispose();
+
+            return Task.FromResult(true);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -45,7 +50,7 @@ public sealed class ExternalUriLauncher(Func<TopLevel?> topLevelProvider) : IExt
         catch (Exception ex)
         {
             Logger.Error("Launcher", $"Failed to open external URI: {ex.Message}");
-            return false;
+            return Task.FromResult(false);
         }
     }
 
@@ -85,18 +90,44 @@ public sealed class ExternalUriLauncher(Func<TopLevel?> topLevelProvider) : IExt
         }
     }
 
-    private async Task<bool> LaunchOnUiThreadAsync(Uri uri, CancellationToken cancellationToken)
+    internal static ProcessStartInfo CreateBrowserStartInfo(Uri uri)
     {
-        cancellationToken.ThrowIfCancellationRequested();
-        var topLevel = topLevelProvider();
-        if (topLevel is null)
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-            Logger.Warning("Launcher", "Cannot open an external URI before the main window is available");
-            return false;
+            return new ProcessStartInfo
+            {
+                FileName = uri.AbsoluteUri,
+                UseShellExecute = true
+            };
         }
 
-        Logger.Info("Launcher", $"Opening external URI: {uri}");
-        return await topLevel.Launcher.LaunchUriAsync(uri);
+        var startInfo = new ProcessStartInfo
+        {
+            FileName = RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? "open" : "xdg-open",
+            UseShellExecute = false,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true
+        };
+        startInfo.ArgumentList.Add(uri.AbsoluteUri);
+        return startInfo;
+    }
+
+    private static async Task DrainAndDisposeAsync(Process process)
+    {
+        try
+        {
+            await Task.WhenAll(
+                process.StandardOutput.ReadToEndAsync(),
+                process.StandardError.ReadToEndAsync());
+        }
+        catch
+        {
+            // The browser process is detached from the launcher lifecycle
+        }
+        finally
+        {
+            process.Dispose();
+        }
     }
 
     private async Task<bool> LaunchDirectoryOnUiThreadAsync(

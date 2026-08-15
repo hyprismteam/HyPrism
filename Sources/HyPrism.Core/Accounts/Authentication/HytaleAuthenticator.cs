@@ -31,6 +31,7 @@ public class HytaleAuthenticator : IHytaleAuthenticator
     private const string ClientId = "hytale-launcher";
     private const string RedirectUri = "https://accounts.hytale.com/consent/client";
     private const string Scopes = "openid offline auth:launcher";
+    private const string CallbackPath = "/authorization-callback";
 
     private readonly HttpClient _httpClient;
     private readonly string _appDir;
@@ -98,8 +99,9 @@ public class HytaleAuthenticator : IHytaleAuthenticator
             _authCodeTcs = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
 
             // Step 3: Build auth URL
-            var state = GenerateState(port);
-            _pendingState = state;
+            var callbackState = GenerateRandomString(26);
+            var state = GenerateState(callbackState, port);
+            _pendingState = callbackState;
 
             var authUrl = $"{AuthUrl}?access_type=offline" +
                           $"&client_id={Uri.EscapeDataString(ClientId)}" +
@@ -110,6 +112,9 @@ public class HytaleAuthenticator : IHytaleAuthenticator
                           $"&scope={Uri.EscapeDataString(Scopes)}" +
                           $"&state={Uri.EscapeDataString(state)}";
 
+            // The official launcher serves its callback before presenting the browser flow
+            _ = ListenForCallbackAsync(listener, cancellationToken);
+
             Logger.Info("HytaleAuth", "Requesting presentation of the Hytale authorization page");
             var authorizationUri = new Uri(authUrl, UriKind.Absolute);
             if (!await authorizationUriPresenter(authorizationUri, cancellationToken))
@@ -117,9 +122,6 @@ public class HytaleAuthenticator : IHytaleAuthenticator
                 Logger.Warning("HytaleAuth", "The host could not present the Hytale authorization page");
                 return null;
             }
-
-            // Step 4: Listen for callback (async)
-            _ = ListenForCallbackAsync(listener, cancellationToken);
 
             // Wait for auth code with generous timeout (user may need to sign in via Google/other OAuth providers)
             using var timeoutCts = new CancellationTokenSource(TimeSpan.FromMinutes(15));
@@ -310,34 +312,59 @@ public class HytaleAuthenticator : IHytaleAuthenticator
                 var request = context.Request;
                 var response = context.Response;
 
+                if (!string.Equals(request.Url?.AbsolutePath, CallbackPath, StringComparison.Ordinal))
+                {
+                    response.StatusCode = (int)System.Net.HttpStatusCode.NotFound;
+                    response.Close();
+                    continue;
+                }
+
                 var query = request.QueryString;
                 var code = query["code"];
                 var error = query["error"];
+                var returnedState = query["state"];
 
                 string responseHtml;
-                if (!string.IsNullOrEmpty(code))
+                if (string.IsNullOrEmpty(returnedState) ||
+                    !string.Equals(returnedState, _pendingState, StringComparison.Ordinal))
                 {
-                    responseHtml = @"<html><head><script>window.close();</script></head><body><h1>Authorization successful!</h1><p>You can close this window and return to HyPrism.</p></body></html>";
+                    response.StatusCode = (int)System.Net.HttpStatusCode.InternalServerError;
+                    responseHtml = BuildCallbackResponseHtml(
+                        success: false,
+                        "Invalid or missing OAuth state");
+                    _authCodeTcs?.TrySetException(
+                        new HytaleAuthException("invalid_oauth_state", "Invalid or missing OAuth state"));
+                }
+                else if (!string.IsNullOrEmpty(code))
+                {
+                    responseHtml = BuildCallbackResponseHtml(
+                        success: true,
+                        "Authorization successful. You can close this window and return to HyPrism");
                     _authCodeTcs?.TrySetResult(code);
                 }
                 else if (!string.IsNullOrEmpty(error))
                 {
-                    responseHtml = $@"<html><head><script>setTimeout(function(){{window.close();}},3000);</script></head><body><h1>Authorization failed</h1><p>{error}</p><p>This window will close automatically...</p></body></html>";
-                    _authCodeTcs?.TrySetException(new Exception($"OAuth error: {error}"));
+                    response.StatusCode = (int)System.Net.HttpStatusCode.InternalServerError;
+                    responseHtml = BuildCallbackResponseHtml(success: false, $"OAuth error: {error}");
+                    _authCodeTcs?.TrySetException(new HytaleAuthException(error, $"OAuth error: {error}"));
                 }
                 else
                 {
-                    responseHtml = "<html><body><h1>Waiting for authorization...</h1></body></html>";
+                    response.StatusCode = (int)System.Net.HttpStatusCode.InternalServerError;
+                    responseHtml = BuildCallbackResponseHtml(
+                        success: false,
+                        "Authorization callback did not contain a code or error");
+                    _authCodeTcs?.TrySetException(
+                        new HytaleAuthException("invalid_oauth_callback", "Authorization callback did not contain a code or error"));
                 }
 
                 var buffer = Encoding.UTF8.GetBytes(responseHtml);
-                response.ContentType = "text/html";
+                response.ContentType = "text/html; charset=utf-8";
                 response.ContentLength64 = buffer.Length;
                 await response.OutputStream.WriteAsync(buffer, ct);
                 response.Close();
 
-                if (!string.IsNullOrEmpty(code) || !string.IsNullOrEmpty(error))
-                    break;
+                break;
             }
         }
         catch (ObjectDisposedException) { /* listener stopped */ }
@@ -346,6 +373,17 @@ public class HytaleAuthenticator : IHytaleAuthenticator
             Logger.Warning("HytaleAuth", $"Callback listener error: {ex.Message}");
             _authCodeTcs?.TrySetException(ex);
         }
+    }
+
+    private static string BuildCallbackResponseHtml(bool success, string message)
+    {
+        var title = success ? "Authorization successful" : "Authorization failed";
+        var encodedMessage = System.Net.WebUtility.HtmlEncode(message);
+        var closeScript = success
+            ? "<script>window.close();</script>"
+            : string.Empty;
+
+        return $"<html><head>{closeScript}</head><body><h1>{title}</h1><p>{encodedMessage}</p></body></html>";
     }
 
     private void StopListener()
@@ -521,9 +559,9 @@ public class HytaleAuthenticator : IHytaleAuthenticator
         return Base64UrlEncode(hash);
     }
 
-    private static string GenerateState(int port)
+    private static string GenerateState(string callbackState, int port)
     {
-        var stateObj = new { state = GenerateRandomString(26), port = port.ToString() };
+        var stateObj = new { state = callbackState, port = port.ToString() };
         var json = JsonSerializer.Serialize(stateObj);
         return Convert.ToBase64String(Encoding.UTF8.GetBytes(json));
     }

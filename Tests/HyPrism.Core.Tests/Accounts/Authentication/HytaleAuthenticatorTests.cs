@@ -4,6 +4,7 @@
 using HyPrism.Core.Models;
 using HyPrism.Core.Infrastructure;
 using HyPrism.Core.Accounts;
+using System.Text.Json;
 
 namespace HyPrism.Core.Tests.Accounts.Authentication;
 
@@ -35,6 +36,50 @@ public sealed class HytaleAuthenticatorTests
             Assert.Equal("oauth.accounts.hytale.com", presentedUri.Host);
             Assert.Contains("code_challenge=", presentedUri.Query, StringComparison.Ordinal);
             Assert.Contains("state=", presentedUri.Query, StringComparison.Ordinal);
+            Assert.Contains(
+                "&scope=openid%20offline%20auth%3Alauncher&",
+                presentedUri.AbsoluteUri,
+                StringComparison.Ordinal);
+        }
+        finally
+        {
+            Directory.Delete(appDir, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task LoginAsync_ServesOfficialCallbackBeforePresentingAuthorizationUri()
+    {
+        var appDir = Path.Combine(Path.GetTempPath(), $"hyprism-auth-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(appDir);
+
+        try
+        {
+            var config = new Mock<IConfigStore>();
+            config.SetupGet(service => service.Configuration).Returns(new Config());
+            using var httpClient = new HttpClient();
+            var auth = new HytaleAuthenticator(httpClient, appDir, config.Object);
+
+            var session = await auth.LoginAsync(async (uri, cancellationToken) =>
+            {
+                var state = GetQueryValue(uri, "state");
+                using var stateDocument = JsonDocument.Parse(Convert.FromBase64String(state));
+                var port = stateDocument.RootElement.GetProperty("port").GetString();
+                var callbackState = stateDocument.RootElement.GetProperty("state").GetString();
+                Assert.False(string.IsNullOrWhiteSpace(port));
+                Assert.False(string.IsNullOrWhiteSpace(callbackState));
+
+                using var callbackClient = new HttpClient();
+                using var response = await callbackClient.GetAsync(
+                    $"http://127.0.0.1:{port}/authorization-callback" +
+                    $"?error=access_denied&state={Uri.EscapeDataString(callbackState)}",
+                    cancellationToken);
+
+                Assert.Equal(System.Net.HttpStatusCode.InternalServerError, response.StatusCode);
+                return true;
+            });
+
+            Assert.Null(session);
         }
         finally
         {
@@ -62,5 +107,21 @@ public sealed class HytaleAuthenticatorTests
         {
             Directory.Delete(appDir, recursive: true);
         }
+    }
+
+    private static string GetQueryValue(Uri uri, string name)
+    {
+        foreach (var pair in uri.Query.TrimStart('?').Split('&', StringSplitOptions.RemoveEmptyEntries))
+        {
+            var separator = pair.IndexOf('=');
+            var encodedName = separator >= 0 ? pair[..separator] : pair;
+            if (!string.Equals(Uri.UnescapeDataString(encodedName), name, StringComparison.Ordinal))
+                continue;
+
+            var encodedValue = separator >= 0 ? pair[(separator + 1)..] : string.Empty;
+            return Uri.UnescapeDataString(encodedValue.Replace("+", " ", StringComparison.Ordinal));
+        }
+
+        throw new InvalidOperationException($"Query parameter '{name}' was not found");
     }
 }

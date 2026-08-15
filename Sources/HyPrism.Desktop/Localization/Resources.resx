@@ -1579,7 +1579,13 @@ You may need to reinstall the game if switching drives.</value>
     <value>Official Hytale profiles cannot be edited</value>
   </data>
   <data name="profiles.openFolder" xml:space="preserve">
-    <value>Open Profile Folder</value>
+    <value>Open Folder</value>
+  </data>
+  <data name="profiles.setActive" xml:space="preserve">
+    <value>Select</value>
+  </data>
+  <data name="profiles.active" xml:space="preserve">
+    <value>Active</value>
   </data>
   <data name="profiles.playerUuid" xml:space="preserve">
     <value>Player UUID</value>

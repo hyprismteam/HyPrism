@@ -133,6 +133,26 @@ public class JsonProfileRepository : IProfileRepository
         return valid;
     }
 
+    /// <inheritdoc/>
+    public void SetProfileOrder(IReadOnlyList<string> profileIds)
+    {
+        ArgumentNullException.ThrowIfNull(profileIds);
+
+        var profiles = LoadProfilesFromCache();
+        var requestedOrder = profileIds
+            .Select((id, index) => (id, index))
+            .Where(item => !string.IsNullOrWhiteSpace(item.id))
+            .GroupBy(item => item.id, StringComparer.Ordinal)
+            .ToDictionary(group => group.Key, group => group.First().index, StringComparer.Ordinal);
+
+        var ordered = profiles
+            .OrderBy(profile => requestedOrder.TryGetValue(profile.Id, out var index) ? index : int.MaxValue)
+            .ThenBy(profile => profiles.IndexOf(profile))
+            .ToList();
+
+        SaveProfilesToCache(ordered);
+    }
+
     private void EnsureProfileStorageUpgraded()
     {
         if (_profileFolderMigrationAttempted)

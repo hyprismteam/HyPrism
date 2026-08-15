@@ -10,6 +10,7 @@ SPDX-License-Identifier: GPL-3.0-only
         xmlns:instances="using:HyPrism.Desktop.Features.Instances"
         xmlns:controls="using:HyPrism.Desktop.Controls"
         xmlns:news="using:HyPrism.Desktop.Features.News"
+        xmlns:profiles="using:HyPrism.Desktop.Features.Profiles"
         xmlns:settings="using:HyPrism.Desktop.Features.Settings"
         xmlns:animation="using:Avalonia.Animation"
         xmlns:easing="using:Avalonia.Animation.Easings"
@@ -778,6 +779,15 @@ SPDX-License-Identifier: GPL-3.0-only
             <ContentControl.ContentTemplate>
               <DataTemplate x:DataType="settings:SettingsViewModel">
                 <settings:SettingsView />
+              </DataTemplate>
+            </ContentControl.ContentTemplate>
+          </ContentControl>
+
+          <ContentControl IsVisible="{Binding IsProfiles}"
+                          Content="{Binding Profiles}">
+            <ContentControl.ContentTemplate>
+              <DataTemplate x:DataType="profiles:ProfilesViewModel">
+                <profiles:ProfilesView />
               </DataTemplate>
             </ContentControl.ContentTemplate>
           </ContentControl>

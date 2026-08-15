@@ -10,6 +10,7 @@ SPDX-License-Identifier: GPL-3.0-only
         xmlns:dashboard="using:HyPrism.Desktop.Features.Dashboard"
         xmlns:instances="using:HyPrism.Desktop.Features.Instances"
         xmlns:news="using:HyPrism.Desktop.Features.News"
+        xmlns:profiles="using:HyPrism.Desktop.Features.Profiles"
         xmlns:settings="using:HyPrism.Desktop.Features.Settings">
   <Style Selector="Window">
     <Setter Property="FontFamily" Value="{DynamicResource GoogleSansFont}" />
@@ -1615,26 +1616,26 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
   </Style>
 
-  <Style Selector="instances|InstancesView Button.instancesListItem">
+  <Style Selector="instances|InstancesView Button.instancesListItem, profiles|ProfilesView Button.instancesListItem">
     <Setter Property="Background" Value="Transparent" />
     <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
   </Style>
 
-  <Style Selector="instances|InstancesView.compact Button.instancesListItem">
+  <Style Selector="instances|InstancesView.compact Button.instancesListItem, profiles|ProfilesView.compact Button.instancesListItem">
     <Setter Property="Height" Value="78" />
     <Setter Property="Padding" Value="16,10" />
     <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
   </Style>
 
-  <Style Selector="instances|InstancesView.compact Grid.instancesListItemLayout">
+  <Style Selector="instances|InstancesView.compact Grid.instancesListItemLayout, profiles|ProfilesView.compact Grid.instancesListItemLayout">
     <Setter Property="ColumnSpacing" Value="14" />
   </Style>
 
-  <Style Selector="instances|InstancesView Grid.instancesListIdentity">
+  <Style Selector="instances|InstancesView Grid.instancesListIdentity, profiles|ProfilesView Grid.instancesListIdentity">
     <Setter Property="ColumnSpacing" Value="0" />
   </Style>
 
-  <Style Selector="instances|InstancesView.compact Grid.instancesListIdentity">
+  <Style Selector="instances|InstancesView.compact Grid.instancesListIdentity, profiles|ProfilesView.compact Grid.instancesListIdentity">
     <Setter Property="ColumnSpacing" Value="14" />
   </Style>
 
@@ -1651,29 +1652,29 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="IsVisible" Value="True" />
   </Style>
 
-  <Style Selector="instances|InstancesView Button.instancesListItem:pointerover">
+  <Style Selector="instances|InstancesView Button.instancesListItem:pointerover, profiles|ProfilesView Button.instancesListItem:pointerover">
     <Setter Property="Background" Value="{DynamicResource NavigationItemHoverBrush}" />
     <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
   </Style>
 
-  <Style Selector="instances|InstancesView.wide Button.instancesListItem.managed">
+  <Style Selector="instances|InstancesView.wide Button.instancesListItem.managed, profiles|ProfilesView.wide Button.instancesListItem.managed">
     <Setter Property="Background" Value="{DynamicResource NavigationItemSelectedBrush}" />
     <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
   </Style>
 
-  <Style Selector="instances|InstancesView.wide Button.instancesListItem.managed:pointerover">
+  <Style Selector="instances|InstancesView.wide Button.instancesListItem.managed:pointerover, profiles|ProfilesView.wide Button.instancesListItem.managed:pointerover">
     <Setter Property="Background" Value="{DynamicResource NavigationItemSelectedHoverBrush}" />
   </Style>
 
-  <Style Selector="instances|InstancesView Button.instancesListItem.dragging">
+  <Style Selector="instances|InstancesView Button.instancesListItem.dragging, profiles|ProfilesView Button.instancesListItem.dragging">
     <Setter Property="Opacity" Value="0.58" />
   </Style>
 
-  <Style Selector="instances|InstancesView TextBlock.instancesListTitle">
+  <Style Selector="instances|InstancesView TextBlock.instancesListTitle, profiles|ProfilesView TextBlock.instancesListTitle">
     <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
   </Style>
 
-  <Style Selector="instances|InstancesView Border.instancesListDragTarget">
+  <Style Selector="instances|InstancesView Border.instancesListDragTarget, profiles|ProfilesView Border.instancesListDragTarget">
     <Setter Property="Width" Value="40" />
     <Setter Property="Height" Value="40" />
     <Setter Property="Background" Value="Transparent" />
@@ -1681,12 +1682,12 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="VerticalAlignment" Value="Center" />
   </Style>
 
-  <Style Selector="instances|InstancesView.compact Border.instancesListDragTarget">
+  <Style Selector="instances|InstancesView.compact Border.instancesListDragTarget, profiles|ProfilesView.compact Border.instancesListDragTarget">
     <Setter Property="Width" Value="44" />
     <Setter Property="Height" Value="44" />
   </Style>
 
-  <Style Selector="instances|InstancesView Path.instancesListHandle, instances|InstancesView Path.instancesListMore">
+  <Style Selector="instances|InstancesView Path.instancesListHandle, instances|InstancesView Path.instancesListMore, profiles|ProfilesView Path.instancesListHandle, profiles|ProfilesView Path.instancesListMore">
     <Setter Property="Width" Value="14" />
     <Setter Property="Height" Value="14" />
     <Setter Property="Stretch" Value="Uniform" />
@@ -1694,17 +1695,17 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="VerticalAlignment" Value="Center" />
   </Style>
 
-  <Style Selector="instances|InstancesView Button.instancesAddRow">
+  <Style Selector="instances|InstancesView Button.instancesAddRow, profiles|ProfilesView Button.instancesAddRow">
     <Setter Property="Background" Value="Transparent" />
     <Setter Property="BorderThickness" Value="0" />
     <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
   </Style>
 
-  <Style Selector="instances|InstancesView Button.instancesAddRow Path">
+  <Style Selector="instances|InstancesView Button.instancesAddRow Path, profiles|ProfilesView Button.instancesAddRow Path">
     <Setter Property="Fill" Value="{Binding $parent[Button].Foreground}" />
   </Style>
 
-  <Style Selector="instances|InstancesView Border.instancesDragPreview">
+  <Style Selector="instances|InstancesView Border.instancesDragPreview, profiles|ProfilesView Border.instancesDragPreview">
     <Setter Property="MinHeight" Value="72" />
     <Setter Property="Padding" Value="12,9" />
     <Setter Property="Background" Value="{DynamicResource ControlSurfaceActiveBrush}" />
@@ -1714,7 +1715,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="BoxShadow" Value="{DynamicResource PopupShadow}" />
   </Style>
 
-  <Style Selector="instances|InstancesView.compact Border.instancesDragPreview">
+  <Style Selector="instances|InstancesView.compact Border.instancesDragPreview, profiles|ProfilesView.compact Border.instancesDragPreview">
     <Setter Property="MinHeight" Value="78" />
     <Setter Property="Padding" Value="16,10" />
   </Style>
@@ -1795,7 +1796,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="IsVisible" Value="False" />
   </Style>
 
-  <Style Selector="instances|InstancesView.compact Border.wideInstanceSplitAction">
+  <Style Selector="instances|InstancesView.compact Border.wideInstanceSplitAction, profiles|ProfilesView.compact Border.wideInstanceSplitAction">
     <Setter Property="IsVisible" Value="False" />
   </Style>
 
@@ -1814,14 +1815,14 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="Height" Value="30" />
   </Style>
 
-  <Style Selector="instances|InstancesView Border.compactInstanceSplitAction">
+  <Style Selector="instances|InstancesView Border.compactInstanceSplitAction, profiles|ProfilesView Border.compactInstanceSplitAction">
     <Setter Property="Height" Value="36" />
     <Setter Property="Background" Value="{DynamicResource ControlGroupBrush}" />
     <Setter Property="CornerRadius" Value="18" />
     <Setter Property="ClipToBounds" Value="True" />
   </Style>
 
-  <Style Selector="instances|InstancesView Button.compactInstanceActionPart">
+  <Style Selector="instances|InstancesView Button.compactInstanceActionPart, profiles|ProfilesView Button.compactInstanceActionPart">
     <Setter Property="Height" Value="36" />
     <Setter Property="MinWidth" Value="0" />
     <Setter Property="Padding" Value="13,0" />
@@ -1860,26 +1861,36 @@ SPDX-License-Identifier: GPL-3.0-only
     </Setter>
   </Style>
 
-  <Style Selector="instances|InstancesView Button.compactInstanceActionPart.main">
+  <Style Selector="instances|InstancesView Button.compactInstanceActionPart.main, profiles|ProfilesView Button.compactInstanceActionPart.main">
     <Setter Property="Width" Value="126" />
     <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
     <Setter Property="HorizontalContentAlignment" Value="Stretch" />
   </Style>
 
-  <Style Selector="instances|InstancesView Button.compactInstanceActionPart.main:pointerover">
+  <Style Selector="instances|InstancesView Button.compactInstanceActionPart.main:pointerover, profiles|ProfilesView Button.compactInstanceActionPart.main:pointerover">
     <Setter Property="Background" Value="{DynamicResource ControlKnobHoverBrush}" />
     <Setter Property="RenderTransform" Value="{x:Null}" />
   </Style>
 
-  <Style Selector="instances|InstancesView Button.compactInstanceActionPart.main.active">
+  <Style Selector="instances|InstancesView Button.compactInstanceActionPart.main.active, profiles|ProfilesView Button.compactInstanceActionPart.main.active">
     <Setter Property="Width" Value="216" />
     <Setter Property="Background" Value="{DynamicResource TextPrimaryBrush}" />
     <Setter Property="Foreground" Value="#111111" />
   </Style>
 
-  <Style Selector="instances|InstancesView Button.compactInstanceActionPart.main.active:pointerover">
+  <Style Selector="instances|InstancesView Button.compactInstanceActionPart.main.active:pointerover, profiles|ProfilesView Button.compactInstanceActionPart.main.active:pointerover">
     <Setter Property="Background" Value="{DynamicResource TextPrimaryBrush}" />
     <Setter Property="Foreground" Value="#111111" />
+  </Style>
+
+  <Style Selector="profiles|ProfilesView Button.compactInstanceActionPart.main.active, profiles|ProfilesView Button.compactInstanceActionPart.main.active:pointerover">
+    <Setter Property="Width" Value="126" />
+    <Setter Property="Background" Value="{DynamicResource ToggleOnBrush}" />
+    <Setter Property="Foreground" Value="White" />
+  </Style>
+
+  <Style Selector="profiles|ProfilesView Button.compactInstanceActionPart.main.active:pointerover">
+    <Setter Property="Background" Value="{DynamicResource ToggleOnHoverBrush}" />
   </Style>
 
   <Style Selector="instances|InstancesView Button.compactInstanceActionPart.main.active.cancelArmed:pointerover">
@@ -1887,7 +1898,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="Foreground" Value="White" />
   </Style>
 
-  <Style Selector="instances|InstancesView Button.compactInstanceActionPart.menu">
+  <Style Selector="instances|InstancesView Button.compactInstanceActionPart.menu, profiles|ProfilesView Button.compactInstanceActionPart.menu">
     <Setter Property="Width" Value="36" />
     <Setter Property="Padding" Value="0" />
     <Setter Property="Background" Value="{DynamicResource ControlGroupBrush}" />
@@ -1899,20 +1910,20 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="Opacity" Value="0" />
   </Style>
 
-  <Style Selector="instances|InstancesView Button.compactInstanceActionPart.menu:pointerover">
+  <Style Selector="instances|InstancesView Button.compactInstanceActionPart.menu:pointerover, profiles|ProfilesView Button.compactInstanceActionPart.menu:pointerover">
     <Setter Property="Background" Value="{DynamicResource ControlSurfaceHoverBrush}" />
     <Setter Property="RenderTransform" Value="{x:Null}" />
   </Style>
 
-  <Style Selector="instances|InstancesView Border.articleToolbar.compact">
+  <Style Selector="instances|InstancesView Border.articleToolbar.compact, profiles|ProfilesView Border.articleToolbar.compact">
     <Setter Property="Margin" Value="24,18,24,12" />
   </Style>
 
-  <Style Selector="instances|InstancesView Button.compactInstanceActionPart:disabled">
+  <Style Selector="instances|InstancesView Button.compactInstanceActionPart:disabled, profiles|ProfilesView Button.compactInstanceActionPart:disabled">
     <Setter Property="Opacity" Value="0.45" />
   </Style>
 
-  <Style Selector="instances|InstancesView Path.compactInstanceActionIcon">
+  <Style Selector="instances|InstancesView Path.compactInstanceActionIcon, profiles|ProfilesView Path.compactInstanceActionIcon">
     <Setter Property="Width" Value="15" />
     <Setter Property="Height" Value="15" />
     <Setter Property="Stretch" Value="Uniform" />
@@ -1920,7 +1931,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="VerticalAlignment" Value="Center" />
   </Style>
 
-  <Style Selector="instances|InstancesView PathIcon.compactInstanceActionChevron">
+  <Style Selector="instances|InstancesView PathIcon.compactInstanceActionChevron, profiles|ProfilesView PathIcon.compactInstanceActionChevron">
     <Setter Property="Width" Value="13" />
     <Setter Property="Height" Value="13" />
     <Setter Property="Foreground" Value="{Binding $parent[Button].Foreground}" />
@@ -1928,11 +1939,11 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="VerticalAlignment" Value="Center" />
   </Style>
 
-  <Style Selector="instances|InstancesView Border.compactInstanceActionFlyout">
+  <Style Selector="instances|InstancesView Border.compactInstanceActionFlyout, profiles|ProfilesView Border.compactInstanceActionFlyout">
     <Setter Property="Width" Value="220" />
   </Style>
 
-  <Style Selector="instances|InstancesView Button.compactInstanceMenuAction">
+  <Style Selector="instances|InstancesView Button.compactInstanceMenuAction, profiles|ProfilesView Button.compactInstanceMenuAction">
     <Setter Property="Height" Value="42" />
     <Setter Property="Padding" Value="12,0" />
     <Setter Property="Background" Value="Transparent" />
@@ -1964,16 +1975,16 @@ SPDX-License-Identifier: GPL-3.0-only
     </Setter>
   </Style>
 
-  <Style Selector="instances|InstancesView Button.compactInstanceMenuAction:pointerover">
+  <Style Selector="instances|InstancesView Button.compactInstanceMenuAction:pointerover, profiles|ProfilesView Button.compactInstanceMenuAction:pointerover">
     <Setter Property="Background" Value="{DynamicResource ItemHoverBrush}" />
     <Setter Property="RenderTransform" Value="{x:Null}" />
   </Style>
 
-  <Style Selector="instances|InstancesView Button.compactInstanceMenuAction.danger">
+  <Style Selector="instances|InstancesView Button.compactInstanceMenuAction.danger, profiles|ProfilesView Button.compactInstanceMenuAction.danger">
     <Setter Property="Foreground" Value="{DynamicResource DangerSoftBrush}" />
   </Style>
 
-  <Style Selector="instances|InstancesView Path.compactInstanceMenuIcon">
+  <Style Selector="instances|InstancesView Path.compactInstanceMenuIcon, profiles|ProfilesView Path.compactInstanceMenuIcon">
     <Setter Property="Width" Value="16" />
     <Setter Property="Height" Value="16" />
     <Setter Property="Stretch" Value="Uniform" />
@@ -1981,7 +1992,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="VerticalAlignment" Value="Center" />
   </Style>
 
-  <Style Selector="instances|InstancesView Button.instanceAction">
+  <Style Selector="instances|InstancesView Button.instanceAction, profiles|ProfilesView Button.instanceAction">
     <Setter Property="Height" Value="50" />
     <Setter Property="Padding" Value="20,0" />
     <Setter Property="Background" Value="{DynamicResource ControlGroupBrush}" />
@@ -2021,42 +2032,51 @@ SPDX-License-Identifier: GPL-3.0-only
     </Setter>
   </Style>
 
-  <Style Selector="instances|InstancesView Button.instanceAction:pointerover">
+  <Style Selector="instances|InstancesView Button.instanceAction:pointerover, profiles|ProfilesView Button.instanceAction:pointerover">
     <Setter Property="Background" Value="{DynamicResource ControlSurfaceHoverBrush}" />
     <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
     <Setter Property="RenderTransform" Value="{x:Null}" />
   </Style>
 
-  <Style Selector="instances|InstancesView Button.instanceAction.primary">
+  <Style Selector="instances|InstancesView Button.instanceAction.primary, profiles|ProfilesView Button.instanceAction.primary">
     <Setter Property="Width" Value="150" />
     <Setter Property="Background" Value="{DynamicResource TextPrimaryBrush}" />
     <Setter Property="Foreground" Value="#111111" />
     <Setter Property="HorizontalContentAlignment" Value="Stretch" />
   </Style>
 
-  <Style Selector="instances|InstancesView Button.instanceAction.middle">
+  <Style Selector="instances|InstancesView Button.instanceAction.middle, profiles|ProfilesView Button.instanceAction.middle">
     <Setter Property="Width" Value="170" />
   </Style>
 
-  <Style Selector="instances|InstancesView Button.instanceAction.last">
+  <Style Selector="instances|InstancesView Button.instanceAction.last, profiles|ProfilesView Button.instanceAction.last">
     <Setter Property="Width" Value="112" />
   </Style>
 
-  <Style Selector="instances|InstancesView Button.instanceAction.first">
+  <Style Selector="instances|InstancesView Button.instanceAction.first, profiles|ProfilesView Button.instanceAction.first">
     <Setter Property="CornerRadius" Value="14,0,0,14" />
   </Style>
 
-  <Style Selector="instances|InstancesView Button.instanceAction.last">
+  <Style Selector="instances|InstancesView Button.instanceAction.last, profiles|ProfilesView Button.instanceAction.last">
     <Setter Property="CornerRadius" Value="0,14,14,0" />
   </Style>
 
-  <Style Selector="instances|InstancesView Button.instanceAction.primary:pointerover">
+  <Style Selector="instances|InstancesView Button.instanceAction.primary:pointerover, profiles|ProfilesView Button.instanceAction.primary:pointerover">
     <Setter Property="Background" Value="White" />
     <Setter Property="Foreground" Value="#111111" />
   </Style>
 
-  <Style Selector="instances|InstancesView Button.instanceAction.primary.active">
+  <Style Selector="instances|InstancesView Button.instanceAction.primary.active, profiles|ProfilesView Button.instanceAction.primary.active">
     <Setter Property="Width" Value="265" />
+  </Style>
+
+  <Style Selector="profiles|ProfilesView Button.instanceAction.primary.active, profiles|ProfilesView Button.instanceAction.primary.active:pointerover">
+    <Setter Property="Background" Value="{DynamicResource ToggleOnBrush}" />
+    <Setter Property="Foreground" Value="White" />
+  </Style>
+
+  <Style Selector="profiles|ProfilesView Button.instanceAction.primary.active:pointerover">
+    <Setter Property="Background" Value="{DynamicResource ToggleOnHoverBrush}" />
   </Style>
 
   <Style Selector="instances|InstancesView Button.instanceAction.primary.active.cancelArmed:pointerover">
@@ -2064,26 +2084,31 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="Foreground" Value="White" />
   </Style>
 
-  <Style Selector="instances|InstancesView StackPanel.wideInstanceActions.actionActive Button.instanceAction.deleteAction">
+  <Style Selector="instances|InstancesView StackPanel.wideInstanceActions.actionActive Button.instanceAction.deleteAction, profiles|ProfilesView StackPanel.wideInstanceActions.actionActive Button.instanceAction.deleteAction">
     <Setter Property="Width" Value="0" />
     <Setter Property="Opacity" Value="0" />
     <Setter Property="Padding" Value="0" />
   </Style>
 
-  <Style Selector="instances|InstancesView Button.instanceAction.danger">
+  <Style Selector="instances|InstancesView Button.instanceAction.deleteAction, profiles|ProfilesView Button.instanceAction.deleteAction">
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+  </Style>
+
+  <Style Selector="instances|InstancesView Button.instanceAction.danger, profiles|ProfilesView Button.instanceAction.danger">
     <Setter Property="Foreground" Value="{DynamicResource DangerSoftBrush}" />
   </Style>
 
-  <Style Selector="instances|InstancesView Button.instanceAction.secondary.danger:pointerover">
+  <Style Selector="instances|InstancesView Button.instanceAction.secondary.danger:pointerover, profiles|ProfilesView Button.instanceAction.secondary.danger:pointerover">
     <Setter Property="Background" Value="{DynamicResource ControlSurfaceHoverBrush}" />
     <Setter Property="Foreground" Value="{DynamicResource DangerBrush}" />
   </Style>
 
-  <Style Selector="instances|InstancesView Button.instanceAction:disabled">
+  <Style Selector="instances|InstancesView Button.instanceAction:disabled, profiles|ProfilesView Button.instanceAction:disabled">
     <Setter Property="Opacity" Value="0.45" />
   </Style>
 
-  <Style Selector="instances|InstancesView Path.instanceActionIcon">
+  <Style Selector="instances|InstancesView Path.instanceActionIcon, profiles|ProfilesView Path.instanceActionIcon">
     <Setter Property="Width" Value="16" />
     <Setter Property="Height" Value="16" />
     <Setter Property="Stretch" Value="Uniform" />
@@ -2091,13 +2116,18 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="VerticalAlignment" Value="Center" />
   </Style>
 
-  <Style Selector="instances|InstancesView Border.wideInstanceSplitAction">
+  <Style Selector="instances|InstancesView StackPanel.instanceDeleteActionContent, profiles|ProfilesView StackPanel.instanceDeleteActionContent">
+    <Setter Property="HorizontalAlignment" Value="Center" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+
+  <Style Selector="instances|InstancesView Border.wideInstanceSplitAction, profiles|ProfilesView Border.wideInstanceSplitAction">
     <Setter Property="Background" Value="{DynamicResource ControlGroupBrush}" />
     <Setter Property="CornerRadius" Value="14" />
     <Setter Property="ClipToBounds" Value="True" />
   </Style>
 
-  <Style Selector="instances|InstancesView Border.wideInstanceActionDivider">
+  <Style Selector="instances|InstancesView Border.wideInstanceActionDivider, profiles|ProfilesView Border.wideInstanceActionDivider">
     <Setter Property="Width" Value="3" />
     <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
     <Setter Property="Transitions">
@@ -2112,12 +2142,12 @@ SPDX-License-Identifier: GPL-3.0-only
     </Setter>
   </Style>
 
-  <Style Selector="instances|InstancesView StackPanel.wideInstanceActions.actionActive Border.wideInstanceActionDivider.deleteDivider">
+  <Style Selector="instances|InstancesView StackPanel.wideInstanceActions.actionActive Border.wideInstanceActionDivider.deleteDivider, profiles|ProfilesView StackPanel.wideInstanceActions.actionActive Border.wideInstanceActionDivider.deleteDivider">
     <Setter Property="Width" Value="0" />
     <Setter Property="Opacity" Value="0" />
   </Style>
 
-  <Style Selector="instances|InstancesView Button.compactInstanceActionPart.main ContentControl, instances|InstancesView Button.instanceAction.primary ContentControl">
+  <Style Selector="instances|InstancesView Button.compactInstanceActionPart.main ContentControl, instances|InstancesView Button.instanceAction.primary ContentControl, profiles|ProfilesView Button.compactInstanceActionPart.main ContentControl, profiles|ProfilesView Button.instanceAction.primary ContentControl">
     <Setter Property="HorizontalContentAlignment" Value="Stretch" />
     <Setter Property="HorizontalAlignment" Value="Stretch" />
   </Style>
@@ -2205,6 +2235,51 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="FontFeatures" Value="tnum" />
   </Style>
 
+  <Style Selector="profiles|ProfilesView Grid.profileActivationContent">
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+  </Style>
+
+  <Style Selector="profiles|ProfilesView StackPanel.profileActivationIdle, profiles|ProfilesView TextBlock.profileActivationActive">
+    <Setter Property="Transitions">
+      <Transitions>
+        <DoubleTransition Property="Opacity" Duration="0:0:0.22">
+          <DoubleTransition.Easing><easing:CubicEaseOut /></DoubleTransition.Easing>
+        </DoubleTransition>
+        <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.26">
+          <TransformOperationsTransition.Easing><easing:CubicEaseOut /></TransformOperationsTransition.Easing>
+        </TransformOperationsTransition>
+      </Transitions>
+    </Setter>
+  </Style>
+
+  <Style Selector="profiles|ProfilesView StackPanel.profileActivationIdle">
+    <Setter Property="Opacity" Value="1" />
+    <Setter Property="RenderTransform" Value="translate(0px, 0px)" />
+  </Style>
+
+  <Style Selector="profiles|ProfilesView TextBlock.profileActivationActive">
+    <Setter Property="Opacity" Value="0" />
+    <Setter Property="RenderTransform" Value="translate(0px, 8px)" />
+  </Style>
+
+  <Style Selector="profiles|ProfilesView Button.active StackPanel.profileActivationIdle">
+    <Setter Property="Opacity" Value="0" />
+    <Setter Property="RenderTransform" Value="translate(0px, -8px)" />
+  </Style>
+
+  <Style Selector="profiles|ProfilesView Button.active TextBlock.profileActivationActive">
+    <Setter Property="Opacity" Value="1" />
+    <Setter Property="RenderTransform" Value="translate(0px, 0px)" />
+  </Style>
+
+  <Style Selector="profiles|ProfilesView Path.profileActivationIcon">
+    <Setter Property="Width" Value="16" />
+    <Setter Property="Height" Value="16" />
+    <Setter Property="Stretch" Value="Uniform" />
+    <Setter Property="Fill" Value="{Binding $parent[Button].Foreground}" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+
   <Style Selector="instances|InstancesView Border.instanceDeleteConfirmation">
     <Setter Property="Padding" Value="4" />
   </Style>
@@ -2225,24 +2300,24 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="Foreground" Value="#111111" />
   </Style>
 
-  <Style Selector="instances|InstancesView Border.instanceInfoGroup">
+  <Style Selector="instances|InstancesView Border.instanceInfoGroup, profiles|ProfilesView Border.instanceInfoGroup">
     <Setter Property="Background" Value="{DynamicResource ControlGroupBrush}" />
     <Setter Property="CornerRadius" Value="14" />
     <Setter Property="ClipToBounds" Value="True" />
   </Style>
 
-  <Style Selector="instances|InstancesView Border.instanceInfoCell">
+  <Style Selector="instances|InstancesView Border.instanceInfoCell, profiles|ProfilesView Border.instanceInfoCell">
     <Setter Property="MinHeight" Value="64" />
     <Setter Property="Padding" Value="18,10" />
     <Setter Property="VerticalAlignment" Value="Stretch" />
   </Style>
 
-  <Style Selector="instances|InstancesView TextBlock.instanceInfoLabel">
+  <Style Selector="instances|InstancesView TextBlock.instanceInfoLabel, profiles|ProfilesView TextBlock.instanceInfoLabel">
     <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
     <Setter Property="FontSize" Value="11" />
   </Style>
 
-  <Style Selector="instances|InstancesView TextBlock.instanceInfoValue">
+  <Style Selector="instances|InstancesView TextBlock.instanceInfoValue, profiles|ProfilesView TextBlock.instanceInfoValue">
     <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
     <Setter Property="FontSize" Value="15" />
     <Setter Property="FontWeight" Value="SemiBold" />

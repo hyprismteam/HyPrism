@@ -64,7 +64,8 @@ public sealed partial class App : Application
                 services.GetRequiredService<IMirrorCatalog>(),
                 services.GetRequiredService<IMirrorDiscovery>(),
                 services.GetRequiredService<IGameVersionCatalog>(),
-                services.GetRequiredService<IModManager>());
+                services.GetRequiredService<IModManager>(),
+                services.GetRequiredService<IHytaleAuthenticator>());
 
             mainWindow.DataContext = _mainWindowViewModel;
             desktop.MainWindow = mainWindow;

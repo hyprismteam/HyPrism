@@ -14,13 +14,14 @@ description: Avalonia views, view models, localization, and native controls
 - `Features/Dashboard` contains the home view and its instance presentation model
 - `SettingsViewModel` adapts `IDesktopSettingsStore` to the settings UI
 - `DesktopSettingsStore` owns Avalonia preferences and persists them through Core configuration storage
-- `ExternalUriLauncher` opens links through Avalonia's native `TopLevel.Launcher`
+- `ExternalUriLauncher` opens links in the system browser and preserves the absolute escaped URI when handing OAuth requests to the operating system
 - `FilePicker` uses Avalonia's native `StorageProvider` instead of shelling out to platform utilities
 - `SystemMemoryProvider` provides the memory limit shown by Java settings
 - `GpuProvider` implements the Core GPU boundary with host platform tools
 - `Features/News` retrieves official Hytale news and keeps parsed feed and article caches under `Cache/News`
 - `Features/About` provides repository metadata, contributors, commits, and avatars for the About page
 - `Features/Settings` owns the adaptive settings UI and Desktop preferences
+- `Features/Profiles` owns the instance-aligned adaptive profile cards, content view, and creation wizard while delegating ordering, storage, switching, and session persistence to Core account services
 - `Platform` contains native URI, file picker, memory, and GPU adapters
 - `Integrations/Discord` implements the Core presence port and follows the Avalonia host lifetime
 - custom controls handle rich news content, smooth scrolling, animated combo boxes, and reusable fading popups
