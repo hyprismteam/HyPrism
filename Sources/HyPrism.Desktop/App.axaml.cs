@@ -20,6 +20,7 @@ using HyPrism.Core.Game.Mods;
 using HyPrism.Core.Game.Sources;
 using HyPrism.Core.Game.Versions;
 using HyPrism.Core.Accounts;
+using HyPrism.Core.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HyPrism.Desktop;
@@ -81,5 +82,6 @@ public sealed partial class App : Application
     {
         _mainWindowViewModel?.Dispose();
         (DesktopRuntime.Services as IDisposable)?.Dispose();
+        Logger.Shutdown();
     }
 }

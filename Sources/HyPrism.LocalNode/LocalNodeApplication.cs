@@ -63,7 +63,7 @@ public static class LocalNodeApplication
         });
 
         var app = builder.Build();
-        var journal = new RequestJournal(options.DataDirectory);
+        var journal = new RequestJournal(options.DataDirectory, options.RequestJournalPath);
 
         app.Use(async (context, next) =>
         {

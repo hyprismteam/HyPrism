@@ -102,7 +102,7 @@ public class JsonConfigStore : IConfigStore
     }
     catch (Exception ex)
     {
-      Console.WriteLine($"Failed to save config: {ex.Message}");
+      Logger.Error("Config", $"Failed to save config: {ex.Message}");
     }
   }
 

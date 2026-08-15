@@ -43,6 +43,7 @@ public class GameLauncher : IGameLauncher
     private readonly IGpuProvider _gpuProvider;
     private readonly IProfileManager _profiles;
     private readonly ILocalNodeServiceFactory _localNodeFactory;
+    private readonly LogSessionPaths _logSession;
     private readonly string _appDir;
 
     private Config _config => _configStore.Configuration;
@@ -69,6 +70,7 @@ public class GameLauncher : IGameLauncher
     /// <param name="appPath">Application path configuration</param>
     /// <param name="profiles">Service for the active launcher profile</param>
     /// <param name="localNodeFactory">Factory for launch-scoped loopback authentication services</param>
+    /// <param name="logSession">Central log paths for the current launcher process</param>
     public GameLauncher(
         IConfigStore configStore,
         IRuntimeProvisioner runtime,
@@ -83,7 +85,8 @@ public class GameLauncher : IGameLauncher
         IGpuProvider gpuProvider,
         AppPathConfiguration appPath,
         IProfileManager profiles,
-        ILocalNodeServiceFactory localNodeFactory)
+        ILocalNodeServiceFactory localNodeFactory,
+        LogSessionPaths? logSession = null)
     {
         _configStore = configStore;
         _runtime = runtime;
@@ -99,6 +102,7 @@ public class GameLauncher : IGameLauncher
         _appDir = appPath.AppDir;
         _profiles = profiles;
         _localNodeFactory = localNodeFactory;
+        _logSession = logSession ?? new LogSessionPaths(appPath);
         _gameProcess.GameProcessExited += OnGameProcessExited;
     }
 
@@ -257,16 +261,18 @@ public class GameLauncher : IGameLauncher
 
         ct.ThrowIfCancellationRequested();
 
+        var trackedInstanceId = instanceId ?? versionPath;
         await StartAndMonitorProcessAsync(
             startInfo,
             sessionUuid,
             launchPlayerName,
-            instanceId ?? versionPath,
+            trackedInstanceId,
             currentProfile.Id,
             currentProfile.IsOfficial ? _hytaleGameSessionAuthenticator.CurrentSession?.AccountOwnerId : null,
             isOfficialProfile,
             onlineMode,
-            localNode);
+            localNode,
+            _logSession.GetInstanceLogPath(trackedInstanceId));
     }
 
     private static (string executable, string workingDir) ResolveExecutablePaths(string versionPath)
@@ -1041,7 +1047,9 @@ public class GameLauncher : IGameLauncher
             Logger.Info("Game", $"Using offline mode with UUID: {sessionUuid}");
         }
 
-        Logger.Info("Game", $"Windows launch args: {string.Join(" ", startInfo.ArgumentList)}");
+        Logger.Info(
+            "Game",
+            $"Windows launch arguments prepared for '{launchPlayerName}' in {startInfo.WorkingDirectory}");
         return startInfo;
     }
 
@@ -1402,12 +1410,16 @@ DUALAUTH_TRUST_OFFICIAL=""true""
         string? officialAccountId,
         bool isOfficialProfile,
         bool onlineMode,
-        ILocalNodeService? localNode)
+        ILocalNodeService? localNode,
+        string instanceLogPath)
     {
 
         Process? process = null;
+        var instanceLog = new SessionLogWriter(instanceLogPath);
         try
         {
+            instanceLog.Write("INF", "HyPrism", $"Starting instance '{instanceId}' for profile '{profileName}'");
+            Logger.Info("Game", $"Instance output log: {instanceLog.FilePath}");
             _progress.ReportDownloadProgress("launching", 80, "launch.detail.starting_process", null, 0, 0);
 
             process = new Process { StartInfo = startInfo };
@@ -1416,7 +1428,11 @@ DUALAUTH_TRUST_OFFICIAL=""true""
             var processExitedTcs = new TaskCompletionSource<bool>(
                 TaskCreationOptions.RunContinuationsAsynchronously);
 
-            process.Exited += (_, _) => processExitedTcs.TrySetResult(true);
+            process.Exited += (_, _) =>
+            {
+                instanceLog.Write("INF", "HyPrism", "Game process exited");
+                processExitedTcs.TrySetResult(true);
+            };
 
             var sysInfoBuffer = new List<string>();
             bool capturingSysInfo = false;
@@ -1426,6 +1442,7 @@ DUALAUTH_TRUST_OFFICIAL=""true""
             {
                 if (string.IsNullOrEmpty(e.Data)) return;
                 string line = e.Data;
+                instanceLog.Write("OUT", "Game", line);
                 bool isNewLogEntry = Regex.IsMatch(line, @"^\d{4}-\d{2}-\d{2}");
 
                 if (line.StartsWith("Set log path to")) { Logger.Info("Game", line); return; }
@@ -1476,6 +1493,7 @@ DUALAUTH_TRUST_OFFICIAL=""true""
             process.ErrorDataReceived += (_, e) =>
             {
                 if (string.IsNullOrWhiteSpace(e.Data)) return;
+                instanceLog.Write("ERR", "Game", e.Data);
                 Logger.Warning("Game", $"stderr: {e.Data}");
             };
 
@@ -1526,6 +1544,7 @@ DUALAUTH_TRUST_OFFICIAL=""true""
         }
         catch (Exception ex)
         {
+            instanceLog.Write("ERR", "HyPrism", $"Failed to start game process: {ex}");
             Logger.Error("Game", $"Failed to start game process: {ex.Message}");
 
             // Cleanup process if failed before transferring to GameProcessTracker

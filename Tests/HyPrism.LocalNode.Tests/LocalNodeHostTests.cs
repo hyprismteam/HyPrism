@@ -12,6 +12,7 @@ using System.Text.Json;
 using HyPrism.Core;
 using HyPrism.Core.Game.Authentication;
 using HyPrism.Core.Game.Launch;
+using HyPrism.Core.Infrastructure;
 using HyPrism.LocalNode;
 
 namespace HyPrism.LocalNode.Tests;
@@ -24,12 +25,26 @@ public sealed class LocalNodeHostTests
         var appDirectory = Path.Combine(Path.GetTempPath(), "HyPrismLocalNodeFactoryTests_" + Guid.NewGuid());
         try
         {
-            var factory = new LocalNodeServiceFactory(new AppPathConfiguration(appDirectory));
-            using var first = factory.Create();
-            using var second = factory.Create();
+            var logSession = new LogSessionPaths(
+                appDirectory,
+                new DateTimeOffset(2026, 8, 15, 20, 31, 42, 137, TimeSpan.FromHours(3)));
+            var factory = new LocalNodeServiceFactory(
+                new AppPathConfiguration(appDirectory),
+                logSession);
+            using var first = Assert.IsType<LocalNodeHost>(factory.Create());
+            using var second = Assert.IsType<LocalNodeHost>(factory.Create());
 
             Assert.NotEqual(first.EndpointDomain, second.EndpointDomain);
             Assert.NotEqual(first.Issuer, second.Issuer);
+            Assert.Equal(
+                logSession.GetLocalNodeLogPath(first.Options.Port),
+                first.Options.LogFilePath);
+            Assert.Equal(
+                logSession.GetLocalNodeRequestJournalPath(first.Options.Port),
+                first.Options.RequestJournalPath);
+            Assert.Equal(
+                logSession.GetLocalNodeLogPath(second.Options.Port),
+                second.Options.LogFilePath);
         }
         finally
         {
@@ -115,21 +130,38 @@ public sealed class LocalNodeHostTests
     public void Options_Parse_PreservesSharedAccountDirectory()
     {
         var accountDirectory = Path.Combine(Path.GetTempPath(), "HyPrismSharedAccounts");
+        var logFilePath = Path.Combine(Path.GetTempPath(), "HyPrismLogs", "local-node-8443.log");
+        var requestJournalPath = Path.Combine(
+            Path.GetTempPath(),
+            "HyPrismLogs",
+            "local-node-requests-8443.ndjson");
 
         var options = LocalNodeOptions.Parse(
         [
             "--data-directory", Path.Combine(Path.GetTempPath(), "HyPrismSession"),
-            "--account-data-directory", accountDirectory
+            "--account-data-directory", accountDirectory,
+            "--log-file", logFilePath,
+            "--request-journal", requestJournalPath
         ]);
 
         Assert.Equal(Path.GetFullPath(accountDirectory), options.AccountDataDirectory);
+        Assert.Equal(Path.GetFullPath(logFilePath), options.LogFilePath);
+        Assert.Equal(Path.GetFullPath(requestJournalPath), options.RequestJournalPath);
     }
 
     [Fact]
     public async Task Host_ExecutesAutonomousSessionAndAccountFlow()
     {
         var dataDirectory = Path.Combine(Path.GetTempPath(), "HyPrismLocalNodeTests_" + Guid.NewGuid());
-        var options = new LocalNodeOptions(dataDirectory, "h.localhost", GetAvailablePort());
+        var centralLogDirectory = Path.Combine(dataDirectory, "Logs", "test-session");
+        var nodeLogPath = Path.Combine(centralLogDirectory, "local-node-8443.log");
+        var requestJournalPath = Path.Combine(centralLogDirectory, "local-node-requests-8443.ndjson");
+        var options = new LocalNodeOptions(
+            dataDirectory,
+            "h.localhost",
+            GetAvailablePort(),
+            LogFilePath: nodeLogPath,
+            RequestJournalPath: requestJournalPath);
         const string playerUuid = "550e8400-e29b-41d4-a716-446655440000";
         using (var initialSkin = JsonDocument.Parse(
                    "{\"bodyCharacteristic\":\"Default.01\",\"haircut\":\"MagicalPigtails.Blond\"}"))
@@ -245,9 +277,18 @@ public sealed class LocalNodeHostTests
             Assert.Contains("\\\"haircut\\\"", accountJson);
             Assert.DoesNotContain("\\u0022", accountJson, StringComparison.OrdinalIgnoreCase);
 
-            var nodeLog = await File.ReadAllTextAsync(Path.Combine(dataDirectory, "local-node.log"));
+            var nodeLog = await File.ReadAllTextAsync(nodeLogPath);
             Assert.Contains("POST /game-session/refresh -> 200", nodeLog);
             Assert.Contains("POST /game-session/authorize -> 200", nodeLog);
+            Assert.False(File.Exists(Path.Combine(dataDirectory, "local-node.log")));
+
+            using var unknownResponse = await client.GetAsync("/unknown-test-route?ignored=value");
+            Assert.Equal(HttpStatusCode.NotFound, unknownResponse.StatusCode);
+            var requestJournal = await File.ReadAllTextAsync(requestJournalPath);
+            Assert.Contains("unknown-test-route", requestJournal);
+            Assert.Contains("ignored", requestJournal);
+            Assert.DoesNotContain("value", requestJournal);
+            Assert.False(File.Exists(Path.Combine(dataDirectory, "unimplemented-requests.ndjson")));
 
             var startInfo = new ProcessStartInfo();
             host.ApplyClientTrust(startInfo);

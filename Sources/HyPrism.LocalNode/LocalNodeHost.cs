@@ -55,6 +55,8 @@ public sealed class LocalNodeHost : ILocalNodeService, IAsyncDisposable
     /// <inheritdoc/>
     public string Issuer => _options.Issuer;
 
+    internal LocalNodeOptions Options => _options;
+
     /// <inheritdoc/>
     public async Task EnsureReadyAsync(
         string? gameDirectory = null,
@@ -248,6 +250,10 @@ public sealed class LocalNodeHost : ILocalNodeService, IAsyncDisposable
             startInfo,
             "--account-data-directory",
             _options.AccountDataDirectory ?? _options.DataDirectory);
+        if (!string.IsNullOrWhiteSpace(_options.LogFilePath))
+            AddArgument(startInfo, "--log-file", _options.LogFilePath);
+        if (!string.IsNullOrWhiteSpace(_options.RequestJournalPath))
+            AddArgument(startInfo, "--request-journal", _options.RequestJournalPath);
         AddArgument(startInfo, "--owner-pid", Environment.ProcessId.ToString());
         AddArgument(startInfo, "--control-secret", _controlSecret);
         if (!string.IsNullOrWhiteSpace(assetsPath))
@@ -275,7 +281,7 @@ public sealed class LocalNodeHost : ILocalNodeService, IAsyncDisposable
             {
                 var exitCode = _nodeProcess?.ExitCode;
                 throw new InvalidOperationException(
-                    $"The Local Node exited during startup with code {exitCode}. See '{Path.Combine(_options.DataDirectory, "local-node.log")}'");
+                    $"The Local Node exited during startup with code {exitCode}. See '{ResolveLogFilePath()}'");
             }
 
             if (await IsHealthyAsync(cancellationToken))
@@ -287,6 +293,9 @@ public sealed class LocalNodeHost : ILocalNodeService, IAsyncDisposable
         throw new TimeoutException(
             $"The Local Node did not become ready within {StartupTimeout.TotalSeconds:0} seconds");
     }
+
+    private string ResolveLogFilePath()
+        => _options.LogFilePath ?? Path.Combine(_options.DataDirectory, "local-node.log");
 
     private async Task<bool> IsHealthyAsync(CancellationToken cancellationToken)
     {

@@ -41,15 +41,19 @@ public static class Bootstrapper
     /// <exception cref="InvalidOperationException">Thrown when the registered service graph cannot be constructed</exception>
     public static IServiceProvider Initialize(Action<IServiceCollection>? configureHost = null)
     {
+        var appPath = new AppPathConfiguration(LauncherUtilities.GetEffectiveAppDir());
+        var logSession = new LogSessionPaths(appPath);
+        Logger.ConfigureFileLogging(logSession.LauncherLogPath);
         Logger.Info("Bootstrapper", "Initializing application services...");
+        Logger.Info("Bootstrapper", $"Log session directory: {logSession.SessionDirectory}");
         try
         {
             var services = new ServiceCollection();
 
             #region Core Infrastructure & Configuration
 
-            var appDir = LauncherUtilities.GetEffectiveAppDir();
-            services.AddSingleton(new AppPathConfiguration(appDir));
+            services.AddSingleton(appPath);
+            services.AddSingleton(logSession);
 
             services.AddSingleton(_ =>
             {
@@ -156,7 +160,8 @@ public static class Bootstrapper
                     sp.GetRequiredService<IGpuProvider>(),
                     sp.GetRequiredService<AppPathConfiguration>(),
                     sp.GetRequiredService<IProfileManager>(),
-                    sp.GetRequiredService<ILocalNodeServiceFactory>()));
+                    sp.GetRequiredService<ILocalNodeServiceFactory>(),
+                    sp.GetRequiredService<LogSessionPaths>()));
             services.AddSingleton<IGameLauncher>(sp => sp.GetRequiredService<GameLauncher>());
 
             services.AddSingleton(sp =>

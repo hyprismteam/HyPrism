@@ -52,4 +52,4 @@ The host listens only on `https://h.localhost:8443`. The 16-character endpoint l
 
 OmniAuth signing keys live only for the dedicated node process attached to the active game. The identity handoff includes the private Ed25519 JWK required by DualAuth, while JWKS, authorization grants, and access tokens expose only public key material. Account, skin, and presence preferences persist below the application data directory
 
-The companion clears ASP.NET logging providers and writes its own bounded file log. Closing Desktop releases only launcher-side process handles, while the node continues monitoring the game and shuts itself down when that process exits
+The companion clears ASP.NET logging providers and writes its own bounded file log into the launcher's current `Logs/<launch-time>/` directory. Closing Desktop releases only launcher-side process handles, while the node continues monitoring the game and writing to that session directory until the game process exits

@@ -27,7 +27,7 @@ Java heap arguments such as `-Xms` and `-Xmx` are managed by the memory controls
 
 Connected mode requests a session from the configured authentication service and keeps its account-data integration available. Autonomous mode starts a dedicated Local Node process on `https://h.localhost:8443`, creates an ephemeral OmniAuth identity, and redirects the client service endpoints to that node
 
-Local Node attaches to the game process after launch. Closing HyPrism does not interrupt an active autonomous game session, and the node exits automatically when the game closes. Its isolated diagnostics are stored in `LocalNode/local-node.log` below the HyPrism application data directory
+Local Node attaches to the game process after launch. Closing HyPrism does not interrupt an active autonomous game session, and the node exits automatically when the game closes. Its isolated diagnostics are stored beside the launcher and instance logs in the current `Logs/<launch-time>/` directory
 
 Both modes use the DualAuth Agent for the embedded server. HyPrism no longer modifies `HytaleServer.jar`. Installations left by an older release are restored from their backup before launch
 

@@ -15,8 +15,21 @@ HyPrism keeps durable state separate from data that can be recreated
 | `Instances/` | instance registry and game installations | no |
 | `Mirrors/` | user-provided mirror metadata | only if custom mirrors are no longer needed |
 | `Cache/News/` | parsed articles and downloaded article images | yes |
-| logs | diagnostic output | yes, when HyPrism is closed |
+| `Logs/` | launcher, game-instance, and Local Node diagnostics grouped by launch | yes, when HyPrism and related game sessions are closed |
 
 `config.json` stores only `SelectedProfileId` for profile selection. Legacy identity fields are consumed by a one-time load migration and are not represented in the runtime configuration model
+
+## Session logs
+
+Every HyPrism start creates `Logs/<yyyy-MM-dd_HH-mm-ss.fff>/` below the application data directory. All diagnostics produced by that launcher process and the game sessions it starts stay together in this directory
+
+| File | Contents |
+| --- | --- |
+| `launcher.log` | launcher services, authentication flow, downloads, patching, and process orchestration |
+| `instance-<instance-id>.log` | complete standard output and standard error captured from one game instance |
+| `local-node-<port>.log` | lifecycle, route status, timing, and failures from an autonomous Local Node process |
+| `local-node-requests-<port>.ndjson` | metadata for unknown Local Node requests without headers, values, or bodies |
+
+The port suffix keeps concurrent Local Node processes separate. A Local Node process may continue writing into its original launch directory after the HyPrism window closes, until the attached game exits
 
 Never place access tokens or a CurseForge key in documentation, fixtures, or source control

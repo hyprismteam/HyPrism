@@ -14,13 +14,14 @@ public sealed class RequestJournal
     private readonly Lock _writeLock = new();
 
     /// <summary>
-    /// Creates a journal under the Local Node data directory
+    /// Creates a journal at an explicit path or under the Local Node data directory
     /// </summary>
-    /// <param name="dataDirectory">Directory owned by the Local Node instance</param>
-    public RequestJournal(string dataDirectory)
+    /// <param name="dataDirectory">Fallback directory used when no explicit path is supplied</param>
+    /// <param name="filePath">Optional central journal path for the current launcher session</param>
+    public RequestJournal(string dataDirectory, string? filePath = null)
     {
-        Directory.CreateDirectory(dataDirectory);
-        _path = Path.Combine(dataDirectory, "unimplemented-requests.ndjson");
+        _path = Path.GetFullPath(filePath ?? Path.Combine(dataDirectory, "unimplemented-requests.ndjson"));
+        Directory.CreateDirectory(Path.GetDirectoryName(_path)!);
     }
 
     /// <summary>

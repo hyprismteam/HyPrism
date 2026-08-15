@@ -23,6 +23,47 @@ public static class Logger
     /// Console.SetOut is invoked.
     /// </summary>
     private static TextWriter _originalOut = Console.Out;
+
+    /// <summary>
+    /// Gets the launcher log file configured for the current process.
+    /// </summary>
+    public static string? FilePath { get; private set; }
+
+    /// <summary>
+    /// Configures the launcher file sink inside the current log session.
+    /// </summary>
+    public static void ConfigureFileLogging(string filePath)
+    {
+        var resolvedPath = Path.GetFullPath(filePath);
+        Directory.CreateDirectory(Path.GetDirectoryName(resolvedPath)!);
+
+        lock (_lock)
+        {
+            Log.CloseAndFlush();
+            Log.Logger = new LoggerConfiguration()
+                .MinimumLevel.Debug()
+                .Enrich.FromLogContext()
+                .Enrich.WithThreadId()
+                .WriteTo.File(
+                    resolvedPath,
+                    outputTemplate:
+                    "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] [{SourceContext}] [T{ThreadId}] {Message:lj}{NewLine}{Exception}")
+                .CreateLogger();
+            FilePath = resolvedPath;
+        }
+    }
+
+    /// <summary>
+    /// Flushes and closes the launcher file sink.
+    /// </summary>
+    public static void Shutdown()
+    {
+        lock (_lock)
+        {
+            Log.CloseAndFlush();
+            FilePath = null;
+        }
+    }
     
     /// <summary>
     /// Saves a reference to the current Console.Out so that Logger can continue

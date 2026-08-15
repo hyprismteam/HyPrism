@@ -4,7 +4,7 @@
 using HyPrism.LocalNode;
 
 var options = LocalNodeOptions.Parse(args);
-var log = new LocalNodeLog(options.DataDirectory);
+var log = new LocalNodeLog(options.DataDirectory, options.LogFilePath);
 
 try
 {

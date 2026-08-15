@@ -5,23 +5,37 @@ using System.Net;
 using System.Net.Sockets;
 using HyPrism.Core;
 using HyPrism.Core.Game.Launch;
+using HyPrism.Core.Infrastructure;
 
 namespace HyPrism.LocalNode;
 
 /// <summary>
 /// Creates independent Local Node processes with unique loopback ports and state directories.
 /// </summary>
-public sealed class LocalNodeServiceFactory(AppPathConfiguration appPath) : ILocalNodeServiceFactory
+public sealed class LocalNodeServiceFactory : ILocalNodeServiceFactory
 {
     private const int FirstPort = LocalNodeEndpoint.Port;
     private const int LastPort = 9999;
-    private readonly AppPathConfiguration _appPath = appPath;
+    private readonly AppPathConfiguration _appPath;
+    private readonly LogSessionPaths _logSession;
     private readonly object _portLock = new();
     private int _nextPort = FirstPort;
+
+    public LocalNodeServiceFactory(AppPathConfiguration appPath)
+        : this(appPath, new LogSessionPaths(appPath))
+    {
+    }
+
+    public LocalNodeServiceFactory(AppPathConfiguration appPath, LogSessionPaths logSession)
+    {
+        _appPath = appPath;
+        _logSession = logSession;
+    }
 
     /// <inheritdoc/>
     public ILocalNodeService Create()
     {
+        var port = FindAvailablePort();
         var sessionDirectory = Path.Combine(
             _appPath.AppDir,
             "LocalNode",
@@ -34,9 +48,11 @@ public sealed class LocalNodeServiceFactory(AppPathConfiguration appPath) : ILoc
         return new LocalNodeHost(new LocalNodeOptions(
             sessionDirectory,
             LocalNodeEndpoint.Hostname,
-            FindAvailablePort(),
+            port,
             CertificateDirectory: certificateDirectory,
-            AccountDataDirectory: accountDataDirectory));
+            AccountDataDirectory: accountDataDirectory,
+            LogFilePath: _logSession.GetLocalNodeLogPath(port),
+            RequestJournalPath: _logSession.GetLocalNodeRequestJournalPath(port)));
     }
 
     private int FindAvailablePort()

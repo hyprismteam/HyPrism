@@ -16,7 +16,9 @@ public sealed record LocalNodeOptions(
     int? OwnerProcessId = null,
     string? ControlSecret = null,
     string? CertificateDirectory = null,
-    string? AccountDataDirectory = null)
+    string? AccountDataDirectory = null,
+    string? LogFilePath = null,
+    string? RequestJournalPath = null)
 {
     /// <summary>
     /// Gets the canonical issuer URI emitted in OmniAuth tokens
@@ -72,6 +74,12 @@ public sealed record LocalNodeOptions(
         var accountDataDirectory = values.TryGetValue("account-data-directory", out var configuredAccountDataDirectory)
             ? Path.GetFullPath(configuredAccountDataDirectory)
             : null;
+        var logFilePath = values.TryGetValue("log-file", out var configuredLogFilePath)
+            ? Path.GetFullPath(configuredLogFilePath)
+            : null;
+        var requestJournalPath = values.TryGetValue("request-journal", out var configuredRequestJournalPath)
+            ? Path.GetFullPath(configuredRequestJournalPath)
+            : null;
         var unknownArgument = values.Keys.FirstOrDefault(name =>
             !string.Equals(name, "data-directory", StringComparison.OrdinalIgnoreCase) &&
             !string.Equals(name, "hostname", StringComparison.OrdinalIgnoreCase) &&
@@ -80,7 +88,9 @@ public sealed record LocalNodeOptions(
             !string.Equals(name, "owner-pid", StringComparison.OrdinalIgnoreCase) &&
             !string.Equals(name, "control-secret", StringComparison.OrdinalIgnoreCase) &&
             !string.Equals(name, "certificate-directory", StringComparison.OrdinalIgnoreCase) &&
-            !string.Equals(name, "account-data-directory", StringComparison.OrdinalIgnoreCase));
+            !string.Equals(name, "account-data-directory", StringComparison.OrdinalIgnoreCase) &&
+            !string.Equals(name, "log-file", StringComparison.OrdinalIgnoreCase) &&
+            !string.Equals(name, "request-journal", StringComparison.OrdinalIgnoreCase));
         if (unknownArgument is not null)
         {
             throw new ArgumentException($"Argument '--{unknownArgument}' is not supported", nameof(args));
@@ -116,6 +126,8 @@ public sealed record LocalNodeOptions(
             ownerProcessId,
             controlSecret,
             certificateDirectory,
-            accountDataDirectory);
+            accountDataDirectory,
+            logFilePath,
+            requestJournalPath);
     }
 }

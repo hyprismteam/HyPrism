@@ -12,12 +12,14 @@ public sealed class LocalNodeLog
     private readonly object _gate = new();
 
     /// <summary>
-    /// Creates a file logger below the Local Node data directory
+    /// Creates a file logger at an explicit path or below the Local Node data directory
     /// </summary>
-    public LocalNodeLog(string dataDirectory)
+    /// <param name="dataDirectory">Fallback directory used when no explicit path is supplied</param>
+    /// <param name="filePath">Optional central log file path for the current launcher session</param>
+    public LocalNodeLog(string dataDirectory, string? filePath = null)
     {
-        Directory.CreateDirectory(dataDirectory);
-        FilePath = Path.Combine(dataDirectory, "local-node.log");
+        FilePath = Path.GetFullPath(filePath ?? Path.Combine(dataDirectory, "local-node.log"));
+        Directory.CreateDirectory(Path.GetDirectoryName(FilePath)!);
         RotateIfNeeded();
     }
 
@@ -64,7 +66,10 @@ public sealed class LocalNodeLog
             if (!file.Exists || file.Length <= MaximumLogSize)
                 return;
 
-            File.Move(FilePath, Path.Combine(file.DirectoryName!, "local-node.previous.log"), overwrite: true);
+            var previousPath = Path.Combine(
+                file.DirectoryName!,
+                $"{Path.GetFileNameWithoutExtension(file.Name)}.previous{file.Extension}");
+            File.Move(FilePath, previousPath, overwrite: true);
         }
         catch
         {
