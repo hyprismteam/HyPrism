@@ -12,6 +12,8 @@ public sealed class MacOsCertificateTrustTests
     public void EnsureTrusted_AlreadyTrusted_DoesNotInstallAgain()
     {
         using var fixture = CertificateFixture.Create();
+        var trustedCopy = Path.Combine(fixture.Options.DataDirectory, "macos-trusted-v2.crt");
+        File.Copy(LocalNodeCertificateStore.GetRootPublicCertificatePath(fixture.Options), trustedCopy);
         var commands = new List<string[]>();
 
         MacOsCertificateTrust.EnsureTrusted(
@@ -27,15 +29,14 @@ public sealed class MacOsCertificateTrustTests
         var command = Assert.Single(commands);
         Assert.Equal("verify-cert", command[0]);
         Assert.Equal(fixture.Options.Hostname, ArgumentAfter(command, "-s"));
-        Assert.True(File.Exists(Path.Combine(fixture.Options.DataDirectory, "macos-trusted.crt")));
+        Assert.True(File.Exists(trustedCopy));
     }
 
     [Fact]
-    public void EnsureTrusted_FirstInstall_ConstrainsTrustToTlsHostname()
+    public void EnsureTrusted_FirstInstall_UsesAdminDomainTrustRoot()
     {
         using var fixture = CertificateFixture.Create();
         var commands = new List<string[]>();
-        var verificationCount = 0;
 
         MacOsCertificateTrust.EnsureTrusted(
             fixture.Options,
@@ -43,21 +44,23 @@ public sealed class MacOsCertificateTrustTests
             fixture.RootCertificate,
             arguments =>
             {
-                var command = arguments.ToArray();
-                commands.Add(command);
-                if (command[0] == "verify-cert")
-                    return new MacOsTrustCommandResult(verificationCount++ == 0 ? 1 : 0);
+                commands.Add(arguments.ToArray());
                 return new MacOsTrustCommandResult(0);
             });
 
-        Assert.Equal(["verify-cert", "add-trusted-cert", "verify-cert"], commands.Select(item => item[0]));
-        var install = commands[1];
+        Assert.Equal(
+            ["remove-trusted-cert", "remove-trusted-cert", "add-trusted-cert", "verify-cert"],
+            commands.Select(item => item[0]));
+        var install = commands[2];
+        Assert.Equal("add-trusted-cert", install[0]);
+        Assert.Contains("-d", install);
         Assert.Equal("trustRoot", ArgumentAfter(install, "-r"));
-        Assert.Equal("ssl", ArgumentAfter(install, "-p"));
-        Assert.Equal(fixture.Options.Hostname, ArgumentAfter(install, "-s"));
+        Assert.EndsWith("login.keychain-db", ArgumentAfter(install, "-k"), StringComparison.Ordinal);
         Assert.Equal(
             LocalNodeCertificateStore.GetRootPublicCertificatePath(fixture.Options),
             install[^1]);
+        Assert.True(File.Exists(Path.Combine(fixture.Options.DataDirectory, "macos-trusted-v2.crt")));
+        Assert.False(File.Exists(Path.Combine(fixture.Options.DataDirectory, "macos-trusted.crt")));
     }
 
     [Fact]
@@ -65,10 +68,9 @@ public sealed class MacOsCertificateTrustTests
     {
         using var oldFixture = CertificateFixture.Create();
         using var currentFixture = CertificateFixture.Create();
-        var trustedCopy = Path.Combine(currentFixture.Options.DataDirectory, "macos-trusted.crt");
-        File.Copy(LocalNodeCertificateStore.GetRootPublicCertificatePath(oldFixture.Options), trustedCopy);
+        var legacyTrustedCopy = Path.Combine(currentFixture.Options.DataDirectory, "macos-trusted.crt");
+        File.Copy(LocalNodeCertificateStore.GetRootPublicCertificatePath(oldFixture.Options), legacyTrustedCopy);
         var commands = new List<string[]>();
-        var currentVerificationCount = 0;
 
         MacOsCertificateTrust.EnsureTrusted(
             currentFixture.Options,
@@ -76,29 +78,26 @@ public sealed class MacOsCertificateTrustTests
             currentFixture.RootCertificate,
             arguments =>
             {
-                var command = arguments.ToArray();
-                commands.Add(command);
-                if (command[0] != "verify-cert")
-                    return new MacOsTrustCommandResult(0);
-
-                var certificatePath = ArgumentAfter(command, "-c");
-                if (certificatePath == trustedCopy)
-                    return new MacOsTrustCommandResult(0);
-                return new MacOsTrustCommandResult(currentVerificationCount++ == 0 ? 1 : 0);
+                commands.Add(arguments.ToArray());
+                return new MacOsTrustCommandResult(0);
             });
 
         Assert.Equal(
             [
-                "verify-cert",
+                "remove-trusted-cert",
                 "remove-trusted-cert",
                 "delete-certificate",
+                "remove-trusted-cert",
+                "remove-trusted-cert",
                 "add-trusted-cert",
                 "verify-cert"
             ],
             commands.Select(item => item[0]));
 
-        using var preserved = X509CertificateLoader.LoadCertificateFromFile(trustedCopy);
+        var markerPath = Path.Combine(currentFixture.Options.DataDirectory, "macos-trusted-v2.crt");
+        using var preserved = X509CertificateLoader.LoadCertificateFromFile(markerPath);
         Assert.Equal(currentFixture.RootCertificate.Thumbprint, preserved.Thumbprint);
+        Assert.False(File.Exists(legacyTrustedCopy));
     }
 
     [Fact]

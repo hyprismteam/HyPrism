@@ -17,8 +17,16 @@ public static class LocalNodeCertificateStore
     private const string PublicCertificateFileName = "h.localhost.crt";
     private const string RootSubject = "CN=HyPrism Local Node Root CA";
     private static readonly object CertificateLock = new();
-    private const X509KeyStorageFlags KeyStorageFlags =
+    private const X509KeyStorageFlags PersistentKeyStorageFlags =
         X509KeyStorageFlags.Exportable | X509KeyStorageFlags.EphemeralKeySet;
+
+    /// <summary>
+    /// macOS does not support EphemeralKeySet for PKCS#12 imports, so keys stay in a temporary keychain instead
+    /// </summary>
+    private static X509KeyStorageFlags KeyStorageFlags
+        => OperatingSystem.IsMacOS()
+            ? X509KeyStorageFlags.Exportable
+            : PersistentKeyStorageFlags;
 
     /// <summary>
     /// Loads the persistent h.localhost server certificate or creates it on first use

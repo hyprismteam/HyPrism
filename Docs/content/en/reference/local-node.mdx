@@ -55,14 +55,14 @@ The TLS certificate authority is intentionally shared at `LocalNode/Certificate`
 | `h.localhost.crt` | shared PEM server certificate signed by the local authority |
 | `client-ca-bundle.pem` | Unix CA bundle inherited by the game process |
 | `client-trust.p12` | Java trust store inherited by embedded server JVMs |
-| `macos-trusted.crt` | copy of the certificate currently registered in macOS user trust settings |
+| `macos-trusted-v2.crt` | copy of the certificate registered in macOS trust settings, used to skip re-approval on later launches |
 | `local-node.log` | isolated startup, lifecycle, session-route status, timing, and failure events |
 | `local-node.previous.log` | previous isolated log after size-based rotation |
 | `unimplemented-requests.ndjson` | method, path, and query-key journal for unknown client calls, without headers, values, or bodies |
 
 The `h.localhost` server certificate rotates when it is invalid, has the wrong host, is not signed by HyPrism's local certificate authority, or has fewer than seven valid days remaining. The certificate authority persists for ten years unless it is invalid. Windows adds that authority to the current user's root store. Linux and macOS pass a combined CA bundle to the game process for OpenSSL consumers, and Java receives a dedicated PKCS#12 trust store on every platform
 
-On macOS, the first autonomous launch asks the user to approve the HyPrism local certificate authority in Apple user trust settings. The server certificate remains restricted to the `h.localhost` hostname. HyPrism verifies the full chain before launching the game and removes the previous root trust entry only when the authority rotates. Canceling the macOS security prompt stops the autonomous launch with an actionable error instead of weakening certificate validation
+On macOS, the first autonomous launch registers the HyPrism local certificate authority in the macOS admin trust settings so the game client and system TLS consumers trust the loopback endpoint. Registration may show a one-time approval prompt. The `macos-trusted-v2.crt` marker records the registered authority so later launches skip the prompt, and the previous root trust entry is removed only when the authority rotates. The server certificate remains restricted to the `h.localhost` hostname. HyPrism verifies the full chain before launching the game. Canceling the macOS security prompt stops the autonomous launch with an actionable error instead of weakening certificate validation
 
 ASP.NET logging providers are disabled for the companion process, so server request diagnostics do not share the static HyPrism logger or its console stream. The launcher reports only process startup, readiness, attachment, and exceptional control failures while detailed node events stay in `local-node.log`. Authentication routes record only method, path, response status, and duration without headers, tokens, or request bodies
 
