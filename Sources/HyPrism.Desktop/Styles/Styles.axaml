@@ -1725,7 +1725,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="CornerRadius" Value="18" />
   </Style>
 
-  <Style Selector="instances|InstancesView Border.instancesWizardScreen">
+  <Style Selector="instances|InstancesView Border.instancesWizardScreen, profiles|ProfilesView Border.instancesWizardScreen">
     <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
   </Style>
 

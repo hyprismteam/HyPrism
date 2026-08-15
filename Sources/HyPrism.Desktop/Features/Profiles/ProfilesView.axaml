@@ -167,8 +167,14 @@ SPDX-License-Identifier: GPL-3.0-only
       <Setter Property="Foreground" Value="{DynamicResource DangerSoftBrush}" />
     </Style>
 
-    <Style Selector="Border.profileWizardScreen">
-      <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
+    <Style Selector="StackPanel.profileWizardStep">
+      <Setter Property="Transitions">
+        <Transitions>
+          <DoubleTransition Property="Opacity" Duration="0:0:0.18">
+            <DoubleTransition.Easing><easing:CubicEaseInOut /></DoubleTransition.Easing>
+          </DoubleTransition>
+        </Transitions>
+      </Setter>
     </Style>
 
     <Style Selector="Button.profileWizardAction">
@@ -305,7 +311,6 @@ SPDX-License-Identifier: GPL-3.0-only
           </ItemsControl>
 
           <Button Classes="uiSettingsNavigationRow instancesAddRow last"
-                  Command="{Binding ShowCreateChoiceCommand}"
                   Click="OnCreateProfileClicked">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="9">
               <Path Width="14" Height="14" Stretch="Uniform" Data="{StaticResource AddIcon}" />
@@ -373,7 +378,6 @@ SPDX-License-Identifier: GPL-3.0-only
           <Button Classes="primary"
                   HorizontalAlignment="Center"
                   Margin="0,14,0,0"
-                  Command="{Binding ShowCreateChoiceCommand}"
                   Click="OnCreateProfileClicked">
             <StackPanel Orientation="Horizontal" Spacing="9">
               <Path Classes="actionIcon" Width="17" Height="17" Stretch="Uniform" Data="{StaticResource AddIcon}" />
@@ -382,7 +386,9 @@ SPDX-License-Identifier: GPL-3.0-only
           </Button>
         </StackPanel>
 
-        <Grid IsVisible="{Binding IsProfileEditorVisible}" RowDefinitions="Auto,*">
+        <Grid x:Name="ProfileEditorContent"
+              IsVisible="{Binding IsProfileEditorVisible}"
+              RowDefinitions="Auto,*">
           <Border x:Name="CompactProfilesToolbar"
                   Classes="articleToolbar compact scrolled"
                   IsVisible="False">
@@ -679,7 +685,7 @@ SPDX-License-Identifier: GPL-3.0-only
       </Grid>
 
       <Border x:Name="ProfileCreatorScreen"
-              Classes="profileWizardScreen"
+              Classes="instancesWizardScreen profileWizardScreen"
               IsVisible="False"
               Opacity="0">
         <Border.Transitions>
@@ -707,14 +713,28 @@ SPDX-License-Identifier: GPL-3.0-only
                       VerticalAlignment="Center"
                       Margin="32"
                       Spacing="12">
-            <Path Width="64"
-                  Height="64"
-                  HorizontalAlignment="Center"
-                  Stretch="Uniform"
-                  Fill="{DynamicResource TextSecondaryBrush}"
-                  Data="{StaticResource ProfilesIcon}" />
+            <Image x:Name="ProfileWizardIcon"
+                   Width="64"
+                   Height="64"
+                   HorizontalAlignment="Center"
+                   Source="avares://HyPrism.Desktop/Assets/Fluent/profile.png"
+                   Stretch="Uniform" />
 
-            <StackPanel IsVisible="{Binding IsCreateChoiceVisible}" Spacing="12">
+            <StackPanel x:Name="ProfileCreationChoiceContent"
+                        Classes="profileWizardStep"
+                        IsVisible="{Binding IsCreateChoiceVisible}"
+                        Spacing="12">
+              <StackPanel.RenderTransform>
+                <TranslateTransform>
+                  <TranslateTransform.Transitions>
+                    <Transitions>
+                      <DoubleTransition Property="X" Duration="0:0:0.18">
+                        <DoubleTransition.Easing><easing:CubicEaseInOut /></DoubleTransition.Easing>
+                      </DoubleTransition>
+                    </Transitions>
+                  </TranslateTransform.Transitions>
+                </TranslateTransform>
+              </StackPanel.RenderTransform>
               <TextBlock Text="{Binding CreateProfileLabel}"
                          HorizontalAlignment="Center"
                          FontSize="26"
@@ -729,8 +749,9 @@ SPDX-License-Identifier: GPL-3.0-only
 
               <Border Classes="uiSettingsGroup" Margin="0,16,0,0">
                 <StackPanel>
-                  <Button Classes="uiSettingsNavigationRow"
-                          Command="{Binding BeginOfficialCreationCommand}">
+                  <Button x:Name="BeginOfficialProfileCreationButton"
+                          Classes="uiSettingsNavigationRow"
+                          Click="OnBeginOfficialProfileCreationClicked">
                     <Grid ColumnDefinitions="44,*,Auto" ColumnSpacing="14">
                       <Border Classes="profileAvatar" Width="44" Height="44">
                         <Path Width="21"
@@ -754,8 +775,9 @@ SPDX-License-Identifier: GPL-3.0-only
                             Data="{StaticResource NextIcon}" />
                     </Grid>
                   </Button>
-                  <Button Classes="uiSettingsNavigationRow last"
-                          Command="{Binding BeginOfflineCreationCommand}">
+                  <Button x:Name="BeginOfflineProfileCreationButton"
+                          Classes="uiSettingsNavigationRow last"
+                          Click="OnBeginOfflineProfileCreationClicked">
                     <Grid ColumnDefinitions="44,*,Auto" ColumnSpacing="14">
                       <Border Classes="profileAvatar" Width="44" Height="44">
                         <Path Width="21"
@@ -790,7 +812,21 @@ SPDX-License-Identifier: GPL-3.0-only
               </Button>
             </StackPanel>
 
-            <StackPanel IsVisible="{Binding IsOfflineCreationVisible}" Spacing="12">
+            <StackPanel x:Name="OfflineProfileCreationContent"
+                        Classes="profileWizardStep"
+                        IsVisible="{Binding IsOfflineCreationVisible}"
+                        Spacing="12">
+              <StackPanel.RenderTransform>
+                <TranslateTransform>
+                  <TranslateTransform.Transitions>
+                    <Transitions>
+                      <DoubleTransition Property="X" Duration="0:0:0.18">
+                        <DoubleTransition.Easing><easing:CubicEaseInOut /></DoubleTransition.Easing>
+                      </DoubleTransition>
+                    </Transitions>
+                  </TranslateTransform.Transitions>
+                </TranslateTransform>
+              </StackPanel.RenderTransform>
               <TextBlock Text="{Binding CreateOfflineTitle}"
                          HorizontalAlignment="Center"
                          FontSize="26"
@@ -836,7 +872,9 @@ SPDX-License-Identifier: GPL-3.0-only
                           HorizontalAlignment="Center"
                           Margin="0,10,0,0"
                           Spacing="10">
-                <Button Classes="profileWizardAction" Command="{Binding ReturnToCreationChoiceCommand}">
+                <Button x:Name="OfflineProfileCreationBackButton"
+                        Classes="profileWizardAction"
+                        Click="OnReturnToProfileCreationChoiceClicked">
                   <TextBlock Text="{Binding BackLabel}" />
                 </Button>
                 <Button Classes="profileWizardAction create"
@@ -847,7 +885,21 @@ SPDX-License-Identifier: GPL-3.0-only
               </StackPanel>
             </StackPanel>
 
-            <StackPanel IsVisible="{Binding IsOfficialCreationVisible}" Spacing="12">
+            <StackPanel x:Name="OfficialProfileCreationContent"
+                        Classes="profileWizardStep"
+                        IsVisible="{Binding IsOfficialCreationVisible}"
+                        Spacing="12">
+              <StackPanel.RenderTransform>
+                <TranslateTransform>
+                  <TranslateTransform.Transitions>
+                    <Transitions>
+                      <DoubleTransition Property="X" Duration="0:0:0.18">
+                        <DoubleTransition.Easing><easing:CubicEaseInOut /></DoubleTransition.Easing>
+                      </DoubleTransition>
+                    </Transitions>
+                  </TranslateTransform.Transitions>
+                </TranslateTransform>
+              </StackPanel.RenderTransform>
               <TextBlock Text="{Binding AuthenticationTitle}"
                          HorizontalAlignment="Center"
                          FontSize="26"
@@ -882,7 +934,7 @@ SPDX-License-Identifier: GPL-3.0-only
                           Spacing="10">
                 <Button Classes="profileWizardAction"
                         IsEnabled="{Binding !IsAuthenticating}"
-                        Command="{Binding ReturnToCreationChoiceCommand}">
+                        Click="OnReturnToProfileCreationChoiceClicked">
                   <TextBlock Text="{Binding BackLabel}" />
                 </Button>
                 <Button Classes="profileWizardAction create"

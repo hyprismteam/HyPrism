@@ -14,6 +14,35 @@ namespace HyPrism.Desktop.Tests;
 public sealed class ProfilesViewModelTests
 {
     [Fact]
+    public void CancelCreationKeepsCurrentStepUntilTheVisualTransitionCompletes()
+    {
+        var profileManager = new Mock<IProfileManager>();
+        var profileRepository = new Mock<IProfileRepository>();
+        var uriLauncher = new Mock<IExternalUriLauncher>();
+        profileRepository.Setup(repository => repository.GetProfiles()).Returns([]);
+
+        using var viewModel = new ProfilesViewModel(
+            profileManager.Object,
+            profileRepository.Object,
+            uriLauncher.Object,
+            new StringLocalizer("en-US"));
+
+        viewModel.ShowCreateChoiceCommand.Execute(null);
+        viewModel.BeginOfflineCreationCommand.Execute(null);
+        viewModel.CancelCreationCommand.Execute(null);
+
+        Assert.False(viewModel.IsCreationVisible);
+        Assert.True(viewModel.IsOfflineCreationVisible);
+
+        viewModel.ShowCreateChoiceCommand.Execute(null);
+
+        Assert.True(viewModel.IsCreationVisible);
+        Assert.True(viewModel.IsCreateChoiceVisible);
+        Assert.False(viewModel.IsOfflineCreationVisible);
+        Assert.False(viewModel.IsOfficialCreationVisible);
+    }
+
+    [Fact]
     public void CreateOfflineProfile_ActivatesAndSelectsNewProfile()
     {
         var profiles = new List<Profile>

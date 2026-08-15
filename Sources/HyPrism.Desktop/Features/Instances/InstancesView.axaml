@@ -133,8 +133,7 @@ SPDX-License-Identifier: GPL-3.0-only
               </ItemsControl>
 
               <Button Classes="uiSettingsNavigationRow instancesAddRow last"
-                      Click="OnOpenCreatorClicked"
-                      Command="{Binding OpenInstanceCreatorCommand}">
+                      Click="OnOpenCreatorClicked">
                 <StackPanel Orientation="Horizontal"
                             HorizontalAlignment="Center"
                             Spacing="9">
@@ -214,7 +213,7 @@ SPDX-License-Identifier: GPL-3.0-only
         <Button Classes="primary"
                 HorizontalAlignment="Center"
                 Margin="0,14,0,0"
-                Command="{Binding OpenInstanceCreatorCommand}">
+                Click="OnOpenCreatorClicked">
           <StackPanel Orientation="Horizontal" Spacing="10">
             <Path Classes="actionIcon" Width="18" Height="18" Stretch="Uniform" Data="{StaticResource GestureSelectIcon}" />
             <TextBlock Text="{Binding SelectVersionLabel}" />

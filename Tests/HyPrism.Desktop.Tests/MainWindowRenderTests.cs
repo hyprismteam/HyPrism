@@ -149,13 +149,23 @@ public sealed class MainWindowRenderTests
             Dispatcher.UIThread.RunJobs();
         }
 
+        var profileOverview = view.FindControl<Grid>("ProfileOverview");
+        var profileEditorContent = view.FindControl<Grid>("ProfileEditorContent");
         viewModel.ShowCreateChoiceCommand.Execute(null);
+        Assert.True(profileOverview!.IsVisible);
+        Assert.True(profileEditorContent!.IsVisible);
+        Assert.True(viewModel.IsProfileEditorVisible);
         await Task.Delay(420);
         Dispatcher.UIThread.RunJobs();
         var wizard = view.FindControl<Border>("ProfileCreatorScreen");
         Assert.NotNull(wizard);
         Assert.True(wizard!.IsEffectivelyVisible);
         Assert.Contains("profileWizardScreen", wizard.Classes);
+        var profileWizardIcon = view.FindControl<Image>("ProfileWizardIcon");
+        Assert.NotNull(profileWizardIcon);
+        Assert.NotNull(profileWizardIcon!.Source);
+        Assert.Equal(64, profileWizardIcon.Width);
+        Assert.Equal(64, profileWizardIcon.Height);
 
         if (!string.IsNullOrWhiteSpace(previewPath))
         {
@@ -165,6 +175,34 @@ public sealed class MainWindowRenderTests
                 Path.Combine(directory, $"{stem}-wizard.png"),
                 PngBitmapEncoderOptions.Default);
         }
+
+        var profileCreationChoice = view.FindControl<StackPanel>("ProfileCreationChoiceContent");
+        var offlineProfileCreation = view.FindControl<StackPanel>("OfflineProfileCreationContent");
+        view.FindControl<Button>("BeginOfflineProfileCreationButton")!
+            .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        Assert.True(profileCreationChoice!.IsVisible);
+        Assert.False(offlineProfileCreation!.IsVisible);
+        await Task.Delay(100);
+        Dispatcher.UIThread.RunJobs();
+        Assert.True(profileCreationChoice.IsVisible);
+        Assert.False(offlineProfileCreation.IsVisible);
+        await Task.Delay(140);
+        Dispatcher.UIThread.RunJobs();
+        Assert.False(profileCreationChoice.IsVisible);
+        Assert.True(offlineProfileCreation.IsVisible);
+
+        view.FindControl<Button>("OfflineProfileCreationBackButton")!
+            .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        Assert.False(profileCreationChoice.IsVisible);
+        Assert.True(offlineProfileCreation.IsVisible);
+        await Task.Delay(100);
+        Dispatcher.UIThread.RunJobs();
+        Assert.False(profileCreationChoice.IsVisible);
+        Assert.True(offlineProfileCreation.IsVisible);
+        await Task.Delay(140);
+        Dispatcher.UIThread.RunJobs();
+        Assert.True(profileCreationChoice.IsVisible);
+        Assert.False(offlineProfileCreation.IsVisible);
 
         viewModel.CancelCreationCommand.Execute(null);
         await Task.Delay(220);
@@ -192,6 +230,36 @@ public sealed class MainWindowRenderTests
             .OfType<TextBlock>()
             .Single(text => text.Classes.Contains("profileActivationActive"))
             .Opacity);
+
+        Assert.True(view.TryCloseCompactContent());
+        await Task.Delay(340);
+        Dispatcher.UIThread.RunJobs();
+        var compactProfileTranslation = Assert.IsType<TranslateTransform>(
+            view.FindControl<Grid>("ProfileMain")!.RenderTransform);
+        Assert.True(compactProfileTranslation.X > 0);
+        var addProfileRow = view.GetVisualDescendants()
+            .OfType<Button>()
+            .Single(button => button.IsEffectivelyVisible && button.Classes.Contains("instancesAddRow"));
+        addProfileRow.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        Assert.True(wizard.IsVisible);
+        Assert.False(view.FindControl<Grid>("ProfileOverview")!.IsVisible);
+        await Task.Delay(340);
+        Dispatcher.UIThread.RunJobs();
+        Assert.True(viewModel.IsCreationVisible);
+        Assert.Equal(0, compactProfileTranslation.X);
+        Assert.True(wizard.IsEffectivelyVisible);
+        Assert.False(view.FindControl<Grid>("ProfileOverview")!.IsVisible);
+
+        viewModel.CancelCreationCommand.Execute(null);
+        Dispatcher.UIThread.RunJobs();
+        Assert.True(wizard.IsVisible);
+        Assert.True(view.FindControl<StackPanel>("ProfileCreationChoiceContent")!.IsVisible);
+        await Task.Delay(340);
+        Dispatcher.UIThread.RunJobs();
+        Assert.True(compactProfileTranslation.X > 0);
+        Assert.False(wizard.IsVisible);
+        Assert.True(view.FindControl<Grid>("ProfileOverview")!.IsVisible);
+        Assert.False(viewModel.IsCreateChoiceVisible);
 
         if (!string.IsNullOrWhiteSpace(previewPath))
         {
@@ -1745,6 +1813,27 @@ public sealed class MainWindowRenderTests
                 compactListFrame!.Save(compactListPreviewPath, PngBitmapEncoderOptions.Default);
                 Assert.True(File.Exists(compactListPreviewPath));
             }
+
+            addInstanceRow.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            var instanceCreatorScreen = instancesView.FindControl<Border>("InstanceCreatorScreen");
+            var instancesOverview = instancesView.FindControl<Grid>("InstancesOverview");
+            Assert.True(instanceCreatorScreen!.IsVisible);
+            Assert.False(instancesOverview!.IsVisible);
+            await Task.Delay(340);
+            Dispatcher.UIThread.RunJobs();
+            Assert.True(viewModel.IsInstanceCreatorOpen);
+            Assert.Equal(0, instanceContentTranslation.X);
+            Assert.True(instanceCreatorScreen!.IsEffectivelyVisible);
+            Assert.False(instancesOverview!.IsVisible);
+
+            viewModel.CloseInstanceCreatorCommand.Execute(null);
+            Dispatcher.UIThread.RunJobs();
+            Assert.True(instanceCreatorScreen.IsVisible);
+            await Task.Delay(340);
+            Dispatcher.UIThread.RunJobs();
+            Assert.True(instanceContentTranslation.X > 0);
+            Assert.False(instanceCreatorScreen.IsVisible);
+            Assert.True(instancesOverview.IsVisible);
 
             var instanceButton = instancesListPane!.GetVisualDescendants()
                 .OfType<Button>()

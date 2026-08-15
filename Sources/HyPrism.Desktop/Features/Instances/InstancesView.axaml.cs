@@ -11,6 +11,7 @@ using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
+using HyPrism.Desktop.Controls;
 using HyPrism.Desktop.Features.Dashboard;
 using HyPrism.Desktop.Shell;
 using ShapePath = Avalonia.Controls.Shapes.Path;
@@ -20,7 +21,7 @@ namespace HyPrism.Desktop.Features.Instances;
 public sealed partial class InstancesView : UserControl
 {
     private const double WideLayoutThreshold = 940;
-    private static readonly TimeSpan CreatorAnimationPhaseDuration = TimeSpan.FromMilliseconds(190);
+    private static readonly TimeSpan CompactContentTransitionDuration = TimeSpan.FromMilliseconds(320);
     private static readonly TimeSpan CompactSectionSlideDuration = TimeSpan.FromMilliseconds(300);
     private static readonly TimeSpan WideSectionSlideDuration = TimeSpan.FromMilliseconds(180);
     private static readonly TimeSpan VersionLoadingFadeDuration = TimeSpan.FromMilliseconds(170);
@@ -28,11 +29,13 @@ public sealed partial class InstancesView : UserControl
     private readonly DispatcherTimer _versionSpinnerTimer;
     private readonly Stopwatch _actionSpinnerClock = new();
     private readonly DispatcherTimer _actionSpinnerTimer;
+    private readonly WizardScreenTransition _creatorTransition;
     private INotifyPropertyChanged? _viewModel;
     private bool? _usesCompactLayout;
     private bool _compactContentOpen;
     private bool _returnToCompactContent;
-    private CancellationTokenSource? _creatorAnimationCancellation;
+    private bool _creatorOpenedFromCompactList;
+    private int _creatorNavigationRevision;
     private CancellationTokenSource? _sectionAnimationCancellation;
     private CancellationTokenSource? _versionLoadingCancellation;
     private Control? _instanceDragHandle;
@@ -47,6 +50,7 @@ public sealed partial class InstancesView : UserControl
     public InstancesView()
     {
         InitializeComponent();
+        _creatorTransition = new WizardScreenTransition(InstancesOverview, InstanceCreatorScreen);
         _versionSpinnerTimer = new DispatcherTimer
         {
             Interval = TimeSpan.FromMilliseconds(16)
@@ -336,8 +340,14 @@ public sealed partial class InstancesView : UserControl
 
     private void OnOpenCreatorClicked(object? sender, RoutedEventArgs args)
     {
-        if (_usesCompactLayout is true)
+        _creatorOpenedFromCompactList = _usesCompactLayout is true &&
+                                        !_compactContentOpen &&
+                                        DataContext is MainWindowViewModel { HasInstances: true };
+        if (_usesCompactLayout is true && !_creatorOpenedFromCompactList)
             OpenCompactContent();
+
+        if (DataContext is MainWindowViewModel viewModel)
+            viewModel.OpenInstanceCreatorCommand.Execute(null);
     }
 
     private void OnCloseDeleteInstanceFlyoutClicked(object? sender, RoutedEventArgs args)
@@ -370,6 +380,12 @@ public sealed partial class InstancesView : UserControl
         if (_usesCompactLayout is not true || !_compactContentOpen)
             return false;
 
+        if (DataContext is MainWindowViewModel { IsInstanceCreatorOpen: true } viewModel)
+        {
+            viewModel.CloseInstanceCreatorCommand.Execute(null);
+            return true;
+        }
+
         _returnToCompactContent = false;
         _compactContentOpen = false;
         InstancesContent.IsHitTestVisible = false;
@@ -400,132 +416,59 @@ public sealed partial class InstancesView : UserControl
 
     private async Task PlayCreatorOpenAnimationAsync()
     {
-        CancelCreatorAnimation();
-
-        var overviewTranslation = (TranslateTransform)InstancesOverview.RenderTransform!;
-        var wizardTranslation = (TranslateTransform)InstanceCreatorScreen.RenderTransform!;
-        InstancesOverview.IsHitTestVisible = false;
-        InstanceCreatorScreen.IsHitTestVisible = false;
-
-        _creatorAnimationCancellation = new CancellationTokenSource();
-        var cancellationToken = _creatorAnimationCancellation.Token;
-
-        try
+        var revision = ++_creatorNavigationRevision;
+        if (_creatorOpenedFromCompactList && _usesCompactLayout is true)
         {
-            InstancesOverview.Opacity = 0;
-            overviewTranslation.X = -28;
-            await Task.Delay(CreatorAnimationPhaseDuration, cancellationToken);
-            if (cancellationToken.IsCancellationRequested ||
+            _creatorTransition.ShowWizardImmediately();
+            await Dispatcher.UIThread.InvokeAsync(static () => { }, DispatcherPriority.Loaded);
+            if (revision != _creatorNavigationRevision ||
                 DataContext is not MainWindowViewModel { IsInstanceCreatorOpen: true })
             {
                 return;
             }
 
-            InstancesOverview.IsVisible = false;
-            PrepareWizardForEntry(wizardTranslation);
-            await Dispatcher.UIThread.InvokeAsync(static () => { }, DispatcherPriority.Loaded);
-            if (cancellationToken.IsCancellationRequested)
-                return;
-
-            InstanceCreatorScreen.IsHitTestVisible = true;
-            InstanceCreatorScreen.Opacity = 1;
-            wizardTranslation.X = 0;
+            OpenCompactContent();
             UpdateBranchIndicator(animate: false);
+            return;
         }
-        catch (OperationCanceledException)
-        {
-            // A reverse navigation replaces the pending wizard transition
-        }
+
+        await _creatorTransition.OpenAsync(
+            () => DataContext is MainWindowViewModel { IsInstanceCreatorOpen: true },
+            () => UpdateBranchIndicator(animate: false));
     }
 
     private async Task PlayCreatorCloseAnimationAsync()
     {
-        CancelCreatorAnimation();
-        if (!InstanceCreatorScreen.IsVisible)
-            return;
-
-        _creatorAnimationCancellation = new CancellationTokenSource();
-        var cancellationToken = _creatorAnimationCancellation.Token;
-        var wizardTranslation = (TranslateTransform)InstanceCreatorScreen.RenderTransform!;
-        InstanceCreatorScreen.IsHitTestVisible = false;
-        InstanceCreatorScreen.Opacity = 0;
-        wizardTranslation.X = 28;
-
-        try
+        var revision = ++_creatorNavigationRevision;
+        if (_creatorOpenedFromCompactList && _usesCompactLayout is true)
         {
-            await Task.Delay(CreatorAnimationPhaseDuration, cancellationToken);
-            if (!cancellationToken.IsCancellationRequested &&
+            _creatorTransition.Cancel();
+            _returnToCompactContent = false;
+            _compactContentOpen = false;
+            InstancesContent.IsHitTestVisible = false;
+            InstancesListPane.IsHitTestVisible = true;
+            ((TranslateTransform)InstancesContent.RenderTransform!).X = Bounds.Width;
+            await Task.Delay(CompactContentTransitionDuration);
+            if (revision == _creatorNavigationRevision &&
                 DataContext is MainWindowViewModel { IsInstanceCreatorOpen: false })
             {
-                InstanceCreatorScreen.IsVisible = false;
-                var overviewTranslation = (TranslateTransform)InstancesOverview.RenderTransform!;
-                PrepareOverviewForEntry(overviewTranslation);
-                await Dispatcher.UIThread.InvokeAsync(static () => { }, DispatcherPriority.Loaded);
-                if (cancellationToken.IsCancellationRequested)
-                    return;
-
-                InstancesOverview.IsHitTestVisible = true;
-                InstancesOverview.Opacity = 1;
-                overviewTranslation.X = 0;
+                _creatorTransition.ShowOverviewImmediately();
+                _creatorOpenedFromCompactList = false;
             }
+
+            return;
         }
-        catch (OperationCanceledException)
-        {
-            // Reopening the creator replaces the pending close animation
-        }
+
+        await _creatorTransition.CloseAsync(
+            () => DataContext is MainWindowViewModel { IsInstanceCreatorOpen: false },
+            () => _creatorOpenedFromCompactList = false);
     }
 
     private void HideCreatorImmediately()
     {
-        CancelCreatorAnimation();
-        var overviewTranslation = (TranslateTransform)InstancesOverview.RenderTransform!;
-        var wizardTranslation = (TranslateTransform)InstanceCreatorScreen.RenderTransform!;
-        var overviewTransitions = InstancesOverview.Transitions;
-        var wizardTransitions = InstanceCreatorScreen.Transitions;
-        var overviewTranslationTransitions = overviewTranslation.Transitions;
-        var wizardTranslationTransitions = wizardTranslation.Transitions;
-        InstancesOverview.Transitions = null;
-        InstanceCreatorScreen.Transitions = null;
-        overviewTranslation.Transitions = null;
-        wizardTranslation.Transitions = null;
-        InstancesOverview.Opacity = 1;
-        overviewTranslation.X = 0;
-        InstancesOverview.IsVisible = true;
-        InstancesOverview.IsHitTestVisible = true;
-        InstanceCreatorScreen.Opacity = 0;
-        wizardTranslation.X = 36;
-        InstanceCreatorScreen.IsVisible = false;
-        InstanceCreatorScreen.IsHitTestVisible = false;
-        InstancesOverview.Transitions = overviewTransitions;
-        InstanceCreatorScreen.Transitions = wizardTransitions;
-        overviewTranslation.Transitions = overviewTranslationTransitions;
-        wizardTranslation.Transitions = wizardTranslationTransitions;
-    }
-
-    private void PrepareWizardForEntry(TranslateTransform wizardTranslation)
-    {
-        var transitions = InstanceCreatorScreen.Transitions;
-        var translationTransitions = wizardTranslation.Transitions;
-        InstanceCreatorScreen.Transitions = null;
-        wizardTranslation.Transitions = null;
-        InstanceCreatorScreen.Opacity = 0;
-        wizardTranslation.X = 28;
-        InstanceCreatorScreen.IsVisible = true;
-        InstanceCreatorScreen.Transitions = transitions;
-        wizardTranslation.Transitions = translationTransitions;
-    }
-
-    private void PrepareOverviewForEntry(TranslateTransform overviewTranslation)
-    {
-        var transitions = InstancesOverview.Transitions;
-        var translationTransitions = overviewTranslation.Transitions;
-        InstancesOverview.Transitions = null;
-        overviewTranslation.Transitions = null;
-        InstancesOverview.Opacity = 0;
-        overviewTranslation.X = -28;
-        InstancesOverview.IsVisible = true;
-        InstancesOverview.Transitions = transitions;
-        overviewTranslation.Transitions = translationTransitions;
+        ++_creatorNavigationRevision;
+        _creatorOpenedFromCompactList = false;
+        _creatorTransition.ShowOverviewImmediately();
     }
 
     private async Task PlaySectionOpenAnimationAsync()
@@ -555,7 +498,7 @@ public sealed partial class InstancesView : UserControl
 
         try
         {
-            await Task.Delay(CreatorAnimationPhaseDuration, cancellationToken);
+            await Task.Delay(WizardScreenTransition.PhaseDuration, cancellationToken);
             if (cancellationToken.IsCancellationRequested ||
                 DataContext is not MainWindowViewModel { IsInstanceOverviewSection: false })
             {
@@ -603,7 +546,7 @@ public sealed partial class InstancesView : UserControl
 
         try
         {
-            await Task.Delay(CreatorAnimationPhaseDuration, cancellationToken);
+            await Task.Delay(WizardScreenTransition.PhaseDuration, cancellationToken);
             if (cancellationToken.IsCancellationRequested ||
                 DataContext is not MainWindowViewModel { IsInstanceOverviewSection: true })
             {
@@ -797,13 +740,6 @@ public sealed partial class InstancesView : UserControl
 
         if (!animate)
             translation.Transitions = transitions;
-    }
-
-    private void CancelCreatorAnimation()
-    {
-        _creatorAnimationCancellation?.Cancel();
-        _creatorAnimationCancellation?.Dispose();
-        _creatorAnimationCancellation = null;
     }
 
     private void ApplyVersionLoadingStateImmediately()

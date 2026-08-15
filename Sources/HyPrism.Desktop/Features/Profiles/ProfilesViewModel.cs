@@ -37,22 +37,16 @@ public sealed partial class ProfilesViewModel : ObservableObject, IDisposable
     private ProfileItemViewModel? _selectedProfile;
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsProfileEditorVisible))]
-    [NotifyPropertyChangedFor(nameof(IsEmptyStateVisible))]
-    [NotifyPropertyChangedFor(nameof(IsCreationVisible))]
     private bool _isCreateChoiceVisible;
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsProfileEditorVisible))]
-    [NotifyPropertyChangedFor(nameof(IsEmptyStateVisible))]
-    [NotifyPropertyChangedFor(nameof(IsCreationVisible))]
     private bool _isOfflineCreationVisible;
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsProfileEditorVisible))]
-    [NotifyPropertyChangedFor(nameof(IsEmptyStateVisible))]
-    [NotifyPropertyChangedFor(nameof(IsCreationVisible))]
     private bool _isOfficialCreationVisible;
+
+    [ObservableProperty]
+    private bool _isCreationVisible;
 
     [ObservableProperty]
     private bool _isAuthenticating;
@@ -106,9 +100,6 @@ public sealed partial class ProfilesViewModel : ObservableObject, IDisposable
     public bool HasNoProfiles => !HasProfiles;
     public bool IsEmptyStateVisible => HasNoProfiles;
     public bool IsProfileEditorVisible => SelectedProfile is not null;
-    public bool IsCreationVisible => IsCreateChoiceVisible ||
-                                     IsOfflineCreationVisible ||
-                                     IsOfficialCreationVisible;
     public bool CanCreateOfflineProfile => OfflineNamePattern.IsMatch(OfflineProfileName.Trim());
     public bool HasStatusMessage => !string.IsNullOrWhiteSpace(StatusMessage);
     public bool HasPendingProfileDeletion => PendingProfileDeletion is not null;
@@ -197,7 +188,7 @@ public sealed partial class ProfilesViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(HasNoProfiles));
         OnPropertyChanged(nameof(IsEmptyStateVisible));
 
-        if (IsCreateChoiceVisible || IsOfflineCreationVisible || IsOfficialCreationVisible)
+        if (IsCreationVisible)
             return;
 
         SelectedProfile = Profiles.FirstOrDefault(profile => profile.Id == selectedId) ??
@@ -241,6 +232,7 @@ public sealed partial class ProfilesViewModel : ObservableObject, IDisposable
 
         CloseProfileMenus();
         ClearStatus();
+        IsCreationVisible = false;
         IsCreateChoiceVisible = false;
         IsOfflineCreationVisible = false;
         IsOfficialCreationVisible = false;
@@ -277,6 +269,7 @@ public sealed partial class ProfilesViewModel : ObservableObject, IDisposable
         IsOfflineCreationVisible = false;
         IsOfficialCreationVisible = false;
         IsCreateChoiceVisible = true;
+        IsCreationVisible = true;
     }
 
     [RelayCommand]
@@ -302,10 +295,18 @@ public sealed partial class ProfilesViewModel : ObservableObject, IDisposable
     private void CancelCreation()
     {
         ClearStatus();
+        IsCreationVisible = false;
+        RefreshProfiles();
+    }
+
+    internal void CompleteCreationTransition()
+    {
+        if (IsCreationVisible)
+            return;
+
         IsCreateChoiceVisible = false;
         IsOfflineCreationVisible = false;
         IsOfficialCreationVisible = false;
-        RefreshProfiles();
     }
 
     [RelayCommand]
@@ -338,7 +339,7 @@ public sealed partial class ProfilesViewModel : ObservableObject, IDisposable
             return;
         }
 
-        IsOfflineCreationVisible = false;
+        IsCreationVisible = false;
         RefreshProfiles(profile.Id);
         ActiveProfileChanged?.Invoke(this, EventArgs.Empty);
         SetStatus(_localizer["profiles.saved"], isError: false);
@@ -393,7 +394,7 @@ public sealed partial class ProfilesViewModel : ObservableObject, IDisposable
             }
 
             _authenticator.ReloadSessionForCurrentProfile();
-            IsOfficialCreationVisible = false;
+            IsCreationVisible = false;
             RefreshProfiles(firstProfile.Id);
             ActiveProfileChanged?.Invoke(this, EventArgs.Empty);
             SetStatus(_localizer["profiles.saved"], isError: false);
