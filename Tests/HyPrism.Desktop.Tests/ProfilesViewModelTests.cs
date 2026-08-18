@@ -1,6 +1,7 @@
 // Copyright (C) 2026 HyPrism Launcher
 // SPDX-License-Identifier: GPL-3.0-only
 
+using Avalonia.Headless.XUnit;
 using HyPrism.Core.Accounts;
 using HyPrism.Core.Models;
 using HyPrism.Desktop.Features.Profiles;
@@ -13,7 +14,7 @@ namespace HyPrism.Desktop.Tests;
 
 public sealed class ProfilesViewModelTests
 {
-    [Fact]
+    [AvaloniaFact]
     public void CancelCreationKeepsCurrentStepUntilTheVisualTransitionCompletes()
     {
         var profileManager = new Mock<IProfileManager>();
@@ -42,7 +43,7 @@ public sealed class ProfilesViewModelTests
         Assert.False(viewModel.IsOfficialCreationVisible);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void CreateOfflineProfile_ActivatesAndSelectsNewProfile()
     {
         var profiles = new List<Profile>
@@ -75,10 +76,15 @@ public sealed class ProfilesViewModelTests
                     UUID = uuid
                 };
                 profiles.Add(profile);
+                profileRepository.Raise(repository => repository.ProfilesChanged += null!);
                 return profile;
             });
         profileRepository.Setup(repository => repository.SwitchProfile(It.IsAny<string>()))
-            .Callback<string>(id => activeProfileId = id)
+            .Callback<string>(id =>
+            {
+                activeProfileId = id;
+                profileRepository.Raise(repository => repository.ProfilesChanged += null!);
+            })
             .Returns(true);
 
         using var viewModel = new ProfilesViewModel(
@@ -134,7 +140,7 @@ public sealed class ProfilesViewModelTests
             Times.Once);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void SelectProfile_OnlyOpensDetails_UntilActivationIsRequested()
     {
         var profiles = new List<Profile>
@@ -150,7 +156,11 @@ public sealed class ProfilesViewModelTests
         profileRepository.Setup(repository => repository.GetProfiles()).Returns(() => profiles.ToList());
         profileRepository.Setup(repository => repository.GetSelectedProfileId()).Returns(() => activeProfileId);
         profileRepository.Setup(repository => repository.SwitchProfile("preview"))
-            .Callback(() => activeProfileId = "preview")
+            .Callback(() =>
+            {
+                activeProfileId = "preview";
+                profileRepository.Raise(repository => repository.ProfilesChanged += null!);
+            })
             .Returns(true);
 
         using var viewModel = new ProfilesViewModel(

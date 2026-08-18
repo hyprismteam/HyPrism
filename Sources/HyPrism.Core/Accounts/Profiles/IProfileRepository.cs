@@ -11,6 +11,13 @@ namespace HyPrism.Core.Accounts;
 public interface IProfileRepository
 {
     /// <summary>
+    /// Raised after the profile collection or the active profile changes.
+    /// Subscribers should re-read <see cref="GetProfiles"/> and
+    /// <see cref="GetSelectedProfileId"/> for the new state
+    /// </summary>
+    event Action? ProfilesChanged;
+
+    /// <summary>
     /// Gets all available user profiles
     /// </summary>
     /// <returns>A list of all user profiles with valid names and UUIDs</returns>

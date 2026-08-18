@@ -39,6 +39,11 @@ public class ProfileManager : IProfileManager
     }
 
     /// <inheritdoc/>
+    public event Action? ProfilesChanged;
+
+    private void RaiseProfilesChanged() => ProfilesChanged?.Invoke();
+
+    /// <inheritdoc/>
     public string GetNick()
         => GetActiveProfileField(profile => profile.Name) ?? string.Empty;
 
@@ -235,6 +240,7 @@ public class ProfileManager : IProfileManager
         if (profile == null) return false;
         mutate(profile);
         WriteProfilesToCache(profiles);
+        RaiseProfilesChanged();
         return true;
     }
 
@@ -266,6 +272,7 @@ public class ProfileManager : IProfileManager
             _configStore.Configuration.SelectedProfileId = profile.Id;
             _configStore.SaveConfig();
         }
+        RaiseProfilesChanged();
         return true;
     }
 
@@ -282,6 +289,7 @@ public class ProfileManager : IProfileManager
             _configStore.Configuration.SelectedProfileId = profiles.FirstOrDefault()?.Id ?? string.Empty;
             _configStore.SaveConfig();
         }
+        RaiseProfilesChanged();
         return true;
     }
 
@@ -292,6 +300,7 @@ public class ProfileManager : IProfileManager
         if (profile == null) return false;
         _configStore.Configuration.SelectedProfileId = profile.Id;
         _configStore.SaveConfig();
+        RaiseProfilesChanged();
         return true;
     }
 

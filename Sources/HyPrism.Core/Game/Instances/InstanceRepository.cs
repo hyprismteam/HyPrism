@@ -44,6 +44,11 @@ public class InstanceRepository : IInstanceRepository
         _configStore = configStore;
     }
 
+    /// <inheritdoc/>
+    public event Action? InstancesChanged;
+
+    private void RaiseInstancesChanged() => InstancesChanged?.Invoke();
+
     /// <summary>
     /// Gets the current configuration from the config service
     /// </summary>
@@ -134,6 +139,7 @@ public class InstanceRepository : IInstanceRepository
 
         ordered.AddRange(cached.Where(instance => addedIds.Add(instance.Id)));
         SaveInstanceCache(ordered);
+        RaiseInstancesChanged();
     }
 
     /// <inheritdoc/>
@@ -676,6 +682,7 @@ public class InstanceRepository : IInstanceRepository
                 }
             }
 
+            SyncInstancesWithConfig();
             return true;
         }
         catch (Exception ex)
@@ -715,6 +722,7 @@ public class InstanceRepository : IInstanceRepository
                 }
             }
 
+            SyncInstancesWithConfig();
             return true;
         }
         catch (Exception ex)
@@ -1297,6 +1305,7 @@ public class InstanceRepository : IInstanceRepository
                 Version = meta.Version
             });
             SaveInstanceCache(cachedInstances);
+            RaiseInstancesChanged();
         }
 
         Logger.Info("InstanceRepository", $"Created instance meta: {meta.Id} ({meta.Name})");
@@ -1358,6 +1367,7 @@ public class InstanceRepository : IInstanceRepository
 
         SaveConfig(config);
         Logger.Info("InstanceRepository", $"Selected instance: {instanceId} ({selected.Branch} v{selected.Version})");
+        RaiseInstancesChanged();
     }
 
     /// <inheritdoc/>
@@ -1446,6 +1456,7 @@ public class InstanceRepository : IInstanceRepository
 
         SaveInstanceCache(synced);
         Logger.Debug("InstanceRepository", $"Synced {synced.Count} instances with config");
+        RaiseInstancesChanged();
     }
 
     /// <summary>
@@ -1693,6 +1704,7 @@ public class InstanceRepository : IInstanceRepository
 
             var mode = canUsePatch ? "patch" : "full-download";
             Logger.Success("InstanceRepository", $"Changed instance {instanceId} to {normalizedBranch} v{version} (non-latest, mode={mode})");
+            RaiseInstancesChanged();
             return true;
         }
         catch (Exception ex)
@@ -1769,6 +1781,7 @@ public class InstanceRepository : IInstanceRepository
         try { Directory.Delete(tempDir, true); } catch { /* ignore */ }
 
         Logger.Success("InstanceRepository", $"Imported ZIP instance to: {targetPath}");
+        SyncInstancesWithConfig();
     }
 
     /// <summary>

@@ -247,6 +247,8 @@ public sealed class InstanceContentViewModelTests
                     : replacementLaunchCompletion.Task;
             });
         gameProcess.Setup(service => service.ExitGame(instance.Id)).Returns(true);
+        var gameRunning = false;
+        gameProcess.Setup(service => service.IsInstanceRunning(instance.Id)).Returns(() => gameRunning);
 
         using var viewModel = new MainWindowViewModel(
             instances.Object,
@@ -268,7 +270,11 @@ public sealed class InstanceContentViewModelTests
         Assert.Equal("0:00", viewModel.ManagedInstanceActionMetricText);
         Assert.False(await launchThreadObserved.Task);
 
-        progress.Raise(service => service.GameStateChanged += null!, "started", 123);
+        gameRunning = true;
+        gameProcess.Raise(
+            service => service.GameProcessStarted += null!,
+            this,
+            new GameProcessStartedEventArgs(CreateProcessInfo(instance.Id)));
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
         Assert.True(viewModel.IsManagedInstanceActionRunning);
         Assert.Equal("Running", viewModel.ManagedInstanceActionStatusText);
@@ -280,7 +286,11 @@ public sealed class InstanceContentViewModelTests
         await viewModel.RunManagedInstanceCommand.ExecuteAsync(null);
         gameProcess.Verify(service => service.ExitGame(instance.Id), Times.Once);
 
-        progress.Raise(service => service.GameStateChanged += null!, "stopped", 0);
+        gameRunning = false;
+        gameProcess.Raise(
+            service => service.GameProcessExited += null!,
+            this,
+            new GameProcessExitedEventArgs(CreateProcessInfo(instance.Id), 0));
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
         Assert.False(viewModel.IsManagedInstanceActionActive);
         Assert.False(viewModel.IsBusy);
@@ -293,7 +303,10 @@ public sealed class InstanceContentViewModelTests
         await launchOperation;
         Assert.True(viewModel.IsBusy);
 
-        progress.Raise(service => service.GameStateChanged += null!, "stopped", 0);
+        gameProcess.Raise(
+            service => service.GameProcessExited += null!,
+            this,
+            new GameProcessExitedEventArgs(CreateProcessInfo(instance.Id), 0));
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
         replacementLaunchCompletion.SetResult();
         await replacementLaunch;
@@ -363,7 +376,7 @@ public sealed class InstanceContentViewModelTests
         progress.Raise(service => service.DownloadProgressChanged += null!, new ProgressUpdateMessage
         {
             State = "downloading",
-            Progress = 0.37,
+            Progress = 37,
             MessageKey = "common.loading"
         });
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
@@ -388,7 +401,7 @@ public sealed class InstanceContentViewModelTests
         progress.Raise(service => service.DownloadProgressChanged += null!, new ProgressUpdateMessage
         {
             State = "downloading",
-            Progress = 0.42,
+            Progress = 42,
             MessageKey = "common.loading"
         });
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
@@ -410,4 +423,13 @@ public sealed class InstanceContentViewModelTests
 
         Assert.True(condition());
     }
+
+    private static GameProcessInfo CreateProcessInfo(string instanceId)
+        => new(
+            123,
+            DateTime.UtcNow,
+            instanceId,
+            "profile-id",
+            null,
+            DateTime.UtcNow);
 }

@@ -378,6 +378,8 @@ public sealed class MainWindowRenderTests
                 instance.Id,
                 It.IsAny<AuthUriPresenter?>()))
             .Returns(launchCompletion.Task);
+        var gameRunning = false;
+        gameProcess.Setup(service => service.IsInstanceRunning(instance.Id)).Returns(() => gameRunning);
 
         using var viewModel = new MainWindowViewModel(
             instances.Object,
@@ -521,7 +523,17 @@ public sealed class MainWindowRenderTests
         var metricBounds = metric.Bounds;
         Assert.NotNull(spinnerCenter);
 
-        progress.Raise(service => service.GameStateChanged += null!, "started", 123);
+        gameRunning = true;
+        gameProcess.Raise(
+            service => service.GameProcessStarted += null!,
+            this,
+            new GameProcessStartedEventArgs(new GameProcessInfo(
+                123,
+                DateTime.UtcNow,
+                instance.Id,
+                "profile-id",
+                null,
+                DateTime.UtcNow)));
         Dispatcher.UIThread.RunJobs();
         var runningIcon = Assert.Single(
             progressContent.Children.OfType<Avalonia.Controls.Shapes.Path>(),
@@ -547,7 +559,17 @@ public sealed class MainWindowRenderTests
             0.5);
         Assert.Equal(metricBounds, metric.Bounds);
 
-        progress.Raise(service => service.GameStateChanged += null!, "stopped", 0);
+        gameRunning = false;
+        gameProcess.Raise(
+            service => service.GameProcessExited += null!,
+            this,
+            new GameProcessExitedEventArgs(new GameProcessInfo(
+                123,
+                DateTime.UtcNow,
+                instance.Id,
+                "profile-id",
+                null,
+                DateTime.UtcNow), 0));
         Dispatcher.UIThread.RunJobs();
         window.Close();
     }

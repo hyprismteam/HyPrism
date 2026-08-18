@@ -45,6 +45,11 @@ public class JsonProfileRepository : IProfileRepository
         EnsureProfileStorageUpgraded();
     }
 
+    /// <inheritdoc/>
+    public event Action? ProfilesChanged;
+
+    private void RaiseProfilesChanged() => ProfilesChanged?.Invoke();
+
     #endregion
 
     #region Profile cache (profiles.json)
@@ -151,6 +156,7 @@ public class JsonProfileRepository : IProfileRepository
             .ToList();
 
         SaveProfilesToCache(ordered);
+        RaiseProfilesChanged();
     }
 
     private void EnsureProfileStorageUpgraded()
@@ -246,6 +252,7 @@ public class JsonProfileRepository : IProfileRepository
             SaveProfileToDisk(profile);
 
             Logger.Success("Profile", $"Created profile '{trimmedName}' with UUID {parsedUuid}");
+            RaiseProfilesChanged();
             return profile;
         }
         catch (Exception ex)
@@ -284,6 +291,7 @@ public class JsonProfileRepository : IProfileRepository
             DeleteProfileFromDisk(profileId, profile.Name);
 
             Logger.Success("Profile", $"Deleted profile '{profile.Name}'");
+            RaiseProfilesChanged();
             return true;
         }
         catch (Exception ex)
@@ -331,6 +339,7 @@ public class JsonProfileRepository : IProfileRepository
             _configStore.SaveConfig();
 
             Logger.Success("Profile", $"Switched to profile '{profile.Name}'");
+            RaiseProfilesChanged();
             return true;
         }
         catch (Exception ex)
@@ -362,6 +371,7 @@ public class JsonProfileRepository : IProfileRepository
             UpdateProfileOnDisk(profile);
 
             Logger.Success("Profile", $"Updated profile '{profile.Name}'");
+            RaiseProfilesChanged();
             return true;
         }
         catch (Exception ex)
@@ -477,6 +487,7 @@ public class JsonProfileRepository : IProfileRepository
             }
 
             Logger.Success("Profile", $"Duplicated profile '{sourceProfile.Name}' → '{newProfile.Name}'");
+            RaiseProfilesChanged();
             return newProfile;
         }
         catch (Exception ex)
@@ -561,6 +572,7 @@ public class JsonProfileRepository : IProfileRepository
             }
 
             Logger.Success("Profile", $"Duplicated profile (without UserData) '{sourceProfile.Name}' → '{newProfile.Name}'");
+            RaiseProfilesChanged();
             return newProfile;
         }
         catch (Exception ex)

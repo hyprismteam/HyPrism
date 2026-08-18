@@ -186,6 +186,64 @@ public class ProfileManagerTests : IDisposable
         Assert.True(Path.IsPathRooted(path));
     }
 
+    [Fact]
+    public void CreateProfile_RaisesProfilesChanged()
+    {
+        var raised = 0;
+        _svc.ProfilesChanged += () => raised++;
+
+        Assert.True(_svc.CreateProfile("EventUser"));
+        Assert.Equal(1, raised);
+    }
+
+    [Fact]
+    public void SetNick_RaisesProfilesChanged()
+    {
+        CreateSelectedProfile();
+        var raised = 0;
+        _svc.ProfilesChanged += () => raised++;
+
+        Assert.True(_svc.SetNick("Renamed"));
+        Assert.Equal(1, raised);
+    }
+
+    [Fact]
+    public void DeleteProfile_RaisesProfilesChanged()
+    {
+        CreateSelectedProfile();
+        var profile = _svc.GetProfiles().Single();
+        var raised = 0;
+        _svc.ProfilesChanged += () => raised++;
+
+        Assert.True(_svc.DeleteProfile(profile.Id));
+        Assert.Equal(1, raised);
+    }
+
+    [Fact]
+    public void SwitchProfile_RaisesProfilesChanged()
+    {
+        CreateSelectedProfile();
+        Assert.True(_svc.CreateProfile("Second"));
+        var target = _svc.GetProfiles().Single(p => p.Name == "Second");
+        var raised = 0;
+        _svc.ProfilesChanged += () => raised++;
+
+        Assert.True(_svc.SwitchProfile(target.Id));
+        Assert.Equal(1, raised);
+    }
+
+    [Fact]
+    public void FailedMutations_DoNotRaiseProfilesChanged()
+    {
+        var raised = 0;
+        _svc.ProfilesChanged += () => raised++;
+
+        Assert.False(_svc.SetNick("NoActiveProfile"));
+        Assert.False(_svc.DeleteProfile("missing"));
+        Assert.False(_svc.SwitchProfile("missing"));
+        Assert.Equal(0, raised);
+    }
+
     private void CreateSelectedProfile()
     {
         Assert.True(_svc.CreateProfile("InitialProfile"));

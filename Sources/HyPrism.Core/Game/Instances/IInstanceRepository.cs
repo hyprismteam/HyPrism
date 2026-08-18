@@ -11,6 +11,14 @@ namespace HyPrism.Core.Game.Instances;
 public interface IInstanceRepository
 {
     /// <summary>
+    /// Raised after the instance collection changes: creation, deletion, import,
+    /// rename, version change, reordering, selection change, or a disk resync.
+    /// Subscribers should re-read <see cref="GetCachedInstances"/> for the new state.
+    /// Not raised by in-place metadata writes such as <see cref="SaveInstanceMeta"/>
+    /// </summary>
+    event Action? InstancesChanged;
+
+    /// <summary>
     /// Gets the root directory where all game instances are stored
     /// </summary>
     /// <returns>The absolute path to the instances root directory</returns>

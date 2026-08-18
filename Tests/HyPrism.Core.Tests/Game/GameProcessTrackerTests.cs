@@ -94,6 +94,91 @@ public sealed class GameProcessTrackerTests
         }
     }
 
+    [Fact]
+    public void TrackGameProcessRaisesGameProcessStartedWithProcessInfo()
+    {
+        var process = StartLongRunningProcess();
+        var tracker = new GameProcessTracker();
+        GameProcessStartedEventArgs? started = null;
+        tracker.GameProcessStarted += (_, args) => started = args;
+
+        try
+        {
+            tracker.TrackGameProcess(
+                process,
+                "release-instance",
+                "profile-id",
+                "official-account-owner");
+
+            Assert.NotNull(started);
+            Assert.Equal(process.Id, started!.Process.ProcessId);
+            Assert.Equal("release-instance", started.Process.InstanceId);
+            Assert.Equal("profile-id", started.Process.ProfileId);
+            Assert.Equal("official-account-owner", started.Process.OfficialAccountId);
+        }
+        finally
+        {
+            try
+            {
+                if (!process.HasExited)
+                    process.Kill(entireProcessTree: true);
+            }
+            catch
+            {
+            }
+
+            process.Dispose();
+        }
+    }
+
+    [Fact]
+    public async Task GameProcessExitedCarriesProcessExitCode()
+    {
+        var process = StartProcessExitingWithCode(7);
+        var tracker = new GameProcessTracker();
+        var exited = new TaskCompletionSource<GameProcessExitedEventArgs>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        tracker.GameProcessExited += (_, args) => exited.TrySetResult(args);
+
+        try
+        {
+            tracker.TrackGameProcess(process, "release-instance", "profile-id");
+
+            var args = await exited.Task.WaitAsync(TimeSpan.FromSeconds(10));
+            Assert.Equal(7, args.ExitCode);
+            Assert.Equal("release-instance", args.Process.InstanceId);
+        }
+        finally
+        {
+            process.Dispose();
+        }
+    }
+
+    private static Process StartProcessExitingWithCode(int exitCode)
+    {
+        var startInfo = new ProcessStartInfo
+        {
+            UseShellExecute = false,
+            CreateNoWindow = true
+        };
+
+        if (OperatingSystem.IsWindows())
+        {
+            startInfo.FileName = "cmd.exe";
+            startInfo.ArgumentList.Add("/c");
+            startInfo.ArgumentList.Add($"ping -n 2 127.0.0.1 > nul & exit {exitCode}");
+        }
+        else
+        {
+            startInfo.FileName = "/bin/sh";
+            startInfo.ArgumentList.Add("-c");
+            startInfo.ArgumentList.Add($"sleep 1; exit {exitCode}");
+        }
+
+        return Process.Start(startInfo)
+               ?? throw new InvalidOperationException("Could not start the test process");
+    }
+
     private static Process StartLongRunningProcess()
     {
         var startInfo = new ProcessStartInfo

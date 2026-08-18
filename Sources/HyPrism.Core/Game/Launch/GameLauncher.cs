@@ -143,10 +143,6 @@ public class GameLauncher : IGameLauncher
         {
             Logger.Error("Game", $"Could not reset Discord presence: {ex.Message}");
         }
-
-        _progress.ReportGameStateChanged(
-            _gameProcess.IsGameRunning() ? "running" : "stopped",
-            eventArgs.Process.ProcessId);
     }
 
     /// <inheritdoc/>
@@ -1519,7 +1515,6 @@ DUALAUTH_TRUST_OFFICIAL=""true""
             Logger.Success("Game", $"Game started with PID: {process.Id}");
 
             _discord.SetPresence(PresenceState.Playing, $"Playing as {profileName}");
-            _progress.ReportGameStateChanged("started", process.Id);
             _progress.ReportDownloadProgress("launching", 100, "launch.detail.waiting_for_window", null, 0, 0);
 
             // Wait for interface loaded signal, process exit, or timeout (60s)

@@ -11,6 +11,13 @@ namespace HyPrism.Core.Accounts;
 public interface IProfileManager
 {
     /// <summary>
+    /// Raised after profile records change through this manager (nickname, UUID,
+    /// creation, deletion, or active profile switch). Subscribers should re-read
+    /// <see cref="GetProfiles"/> for the new state
+    /// </summary>
+    event Action? ProfilesChanged;
+
+    /// <summary>
     /// Gets the current user's nickname
     /// </summary>
     /// <returns>The current nickname</returns>

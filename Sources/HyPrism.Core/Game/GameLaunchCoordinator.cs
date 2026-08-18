@@ -28,6 +28,9 @@ public sealed class GameLaunchCoordinator(
     private const int ErrorMirrorUnreachable = 14;
 
     /// <inheritdoc/>
+    public event EventHandler<LaunchFailedEventArgs>? LaunchFailed;
+
+    /// <inheritdoc/>
     public async Task LaunchAsync(
         string? instanceId = null,
         AuthUriPresenter? authorizationUriPresenter = null)
@@ -76,7 +79,7 @@ public sealed class GameLaunchCoordinator(
 
             if (result.Cancelled || string.Equals(result.Error, "Cancelled", StringComparison.OrdinalIgnoreCase))
             {
-                progress.ReportGameStateChanged("stopped", ExitSuccess);
+                RaiseLaunchFailed(selectedInstance?.Id, ExitSuccess);
                 return;
             }
 
@@ -87,14 +90,14 @@ public sealed class GameLaunchCoordinator(
                     "download",
                     "Failed to install game",
                     result.Error ?? "Unknown error");
-                progress.ReportGameStateChanged("stopped", exitCode);
+                RaiseLaunchFailed(selectedInstance?.Id, exitCode);
             }
         }
         catch (Exception ex)
         {
             Logger.Error("Game", $"Game launch failed: {ex.Message}");
             progress.ReportError("download", "Failed to install game", ex.ToString());
-            progress.ReportGameStateChanged("stopped", ErrorLaunchFailed);
+            RaiseLaunchFailed(selectedInstance?.Id, ErrorLaunchFailed);
         }
         finally
         {
@@ -105,6 +108,9 @@ public sealed class GameLaunchCoordinator(
             }
         }
     }
+
+    private void RaiseLaunchFailed(string? instanceId, int exitCode)
+        => LaunchFailed?.Invoke(this, new LaunchFailedEventArgs(instanceId, exitCode));
 
     private static int DetermineExitCodeForError(string? error)
     {

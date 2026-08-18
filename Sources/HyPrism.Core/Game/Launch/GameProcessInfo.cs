@@ -15,12 +15,28 @@ public sealed record GameProcessInfo(
     DateTime RegisteredAtUtc);
 
 /// <summary>
+/// Provides details when a tracked game process starts.
+/// </summary>
+public sealed class GameProcessStartedEventArgs(GameProcessInfo process) : EventArgs
+{
+    /// <summary>
+    /// Gets the process that started.
+    /// </summary>
+    public GameProcessInfo Process { get; } = process;
+}
+
+/// <summary>
 /// Provides details when a tracked game process exits.
 /// </summary>
-public sealed class GameProcessExitedEventArgs(GameProcessInfo process) : EventArgs
+public sealed class GameProcessExitedEventArgs(GameProcessInfo process, int exitCode) : EventArgs
 {
     /// <summary>
     /// Gets the process that exited.
     /// </summary>
     public GameProcessInfo Process { get; } = process;
+
+    /// <summary>
+    /// Gets the exit code reported by the process, or 0 when it could not be read.
+    /// </summary>
+    public int ExitCode { get; } = exitCode;
 }

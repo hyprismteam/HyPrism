@@ -59,39 +59,6 @@ public class ProgressReporterTests
 
 
     [Fact]
-    public void ReportGameStateChanged_Running_FiresEvent()
-    {
-        string? state = null;
-        _svc.GameStateChanged += (s, _) => state = s;
-
-        _svc.ReportGameStateChanged("running");
-
-        Assert.Equal("running", state);
-    }
-
-    [Fact]
-    public void ReportGameStateChanged_Stopped_PassesExitCode()
-    {
-        int capturedCode = -1;
-        _svc.GameStateChanged += (_, c) => capturedCode = c;
-
-        _svc.ReportGameStateChanged("stopped", 42);
-
-        Assert.Equal(42, capturedCode);
-    }
-
-    [Fact]
-    public void ReportGameStateChanged_Started_SetsPlayingPresence()
-    {
-        _svc.ReportGameStateChanged("started");
-
-        _discordMock.Verify(
-            d => d.SetPresence(PresenceState.Playing, null, null),
-            Times.Once);
-    }
-
-
-    [Fact]
     public void ReportError_FiresEvent()
     {
         string? errorType = null;
@@ -113,5 +80,59 @@ public class ProgressReporterTests
         _svc.ReportError("download", "Download failed", "Connection timeout");
 
         Assert.Equal("Connection timeout", technical);
+    }
+
+    [Fact]
+    public void ReportDownloadProgress_SameStageWithinInterval_IsThrottled()
+    {
+        var received = new List<ProgressUpdateMessage>();
+        _svc.DownloadProgressChanged += received.Add;
+
+        _svc.ReportDownloadProgress("download", 10, "downloading");
+        _svc.ReportDownloadProgress("download", 11, "downloading");
+        _svc.ReportDownloadProgress("download", 12, "downloading");
+
+        var update = Assert.Single(received);
+        Assert.Equal(10, update.Progress);
+    }
+
+    [Fact]
+    public void ReportDownloadProgress_StageChange_BypassesThrottle()
+    {
+        var received = new List<ProgressUpdateMessage>();
+        _svc.DownloadProgressChanged += received.Add;
+
+        _svc.ReportDownloadProgress("download", 65, "downloading");
+        _svc.ReportDownloadProgress("install", 5, "installing");
+
+        Assert.Equal(2, received.Count);
+        Assert.Equal("install", received[1].State);
+    }
+
+    [Fact]
+    public void ReportDownloadProgress_Completion_BypassesThrottle()
+    {
+        var received = new List<ProgressUpdateMessage>();
+        _svc.DownloadProgressChanged += received.Add;
+
+        _svc.ReportDownloadProgress("download", 99, "downloading");
+        _svc.ReportDownloadProgress("download", 100, "downloading");
+
+        Assert.Equal(2, received.Count);
+        Assert.Equal(100, received[1].Progress);
+    }
+
+    [Fact]
+    public async Task ReportDownloadProgress_AfterInterval_BroadcastsAgain()
+    {
+        var received = new List<ProgressUpdateMessage>();
+        _svc.DownloadProgressChanged += received.Add;
+
+        _svc.ReportDownloadProgress("download", 10, "downloading");
+        await Task.Delay(150);
+        _svc.ReportDownloadProgress("download", 20, "downloading");
+
+        Assert.Equal(2, received.Count);
+        Assert.Equal(20, received[1].Progress);
     }
 }

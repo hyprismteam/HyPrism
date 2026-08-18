@@ -41,6 +41,9 @@ public sealed class GameProcessTracker : IGameProcessTracker, IDisposable
     public event EventHandler? ProcessExited;
 
     /// <inheritdoc/>
+    public event EventHandler<GameProcessStartedEventArgs>? GameProcessStarted;
+
+    /// <inheritdoc/>
     public event EventHandler<GameProcessExitedEventArgs>? GameProcessExited;
 
     /// <inheritdoc/>
@@ -80,6 +83,8 @@ public sealed class GameProcessTracker : IGameProcessTracker, IDisposable
             _processes.Add(process.Id, new TrackedProcess(process, info));
             SaveRegistryLocked();
         }
+
+        GameProcessStarted?.Invoke(this, new GameProcessStartedEventArgs(info));
     }
 
     /// <inheritdoc/>
@@ -256,6 +261,7 @@ public sealed class GameProcessTracker : IGameProcessTracker, IDisposable
             return;
 
         GameProcessInfo? info;
+        int exitCode;
         lock (_processLock)
         {
             if (!_processes.TryGetValue(exitedProcess.Id, out var tracked)
@@ -265,12 +271,26 @@ public sealed class GameProcessTracker : IGameProcessTracker, IDisposable
             }
 
             info = tracked.Info;
+            exitCode = ReadExitCode(exitedProcess);
             RemoveProcessLocked(exitedProcess.Id, disposeProcess: true);
             SaveRegistryLocked();
         }
 
-        GameProcessExited?.Invoke(this, new GameProcessExitedEventArgs(info));
+        GameProcessExited?.Invoke(this, new GameProcessExitedEventArgs(info, exitCode));
         ProcessExited?.Invoke(this, EventArgs.Empty);
+    }
+
+    private static int ReadExitCode(Process process)
+    {
+        try
+        {
+            return process.ExitCode;
+        }
+        catch
+        {
+            // The exit code is unavailable for a process that is still tearing down.
+            return 0;
+        }
     }
 
     private void RemoveExitedProcessesLocked()

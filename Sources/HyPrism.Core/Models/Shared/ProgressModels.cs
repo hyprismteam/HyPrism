@@ -34,7 +34,7 @@ public class ProgressUpdateMessage
 {
     /// <summary>Operation state key (e.g. "downloading", "patching", "verifying").</summary>
     public string State { get; set; } = "unknown";
-    /// <summary>Progress value in the range [0.0, 1.0].</summary>
+    /// <summary>Progress percentage from 0 to 100.</summary>
     public double Progress { get; set; }
     /// <summary>i18n message key for the human-readable status string.</summary>
     public string MessageKey { get; set; } = "common.loading";

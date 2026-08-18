@@ -205,4 +205,76 @@ public class JsonProfileRepositoryTests : IDisposable
         Assert.NotNull(id);
     }
 
+    [Fact]
+    public void CreateProfile_RaisesProfilesChanged()
+    {
+        var raised = 0;
+        _svc.ProfilesChanged += () => raised++;
+
+        var profile = _svc.CreateProfile("EventUser", Guid.NewGuid().ToString());
+
+        Assert.NotNull(profile);
+        Assert.Equal(1, raised);
+    }
+
+    [Fact]
+    public void DeleteProfile_RaisesProfilesChanged()
+    {
+        var profile = _svc.CreateProfile("ToDelete", Guid.NewGuid().ToString())!;
+        var raised = 0;
+        _svc.ProfilesChanged += () => raised++;
+
+        Assert.True(_svc.DeleteProfile(profile.Id));
+        Assert.Equal(1, raised);
+    }
+
+    [Fact]
+    public void SwitchProfile_RaisesProfilesChanged()
+    {
+        var first = _svc.CreateProfile("First", Guid.NewGuid().ToString())!;
+        var second = _svc.CreateProfile("Second", Guid.NewGuid().ToString())!;
+        var raised = 0;
+        _svc.ProfilesChanged += () => raised++;
+
+        Assert.True(_svc.SwitchProfile(second.Id));
+        Assert.Equal(second.Id, _svc.GetSelectedProfileId());
+        Assert.True(_svc.SwitchProfile(first.Id));
+        Assert.Equal(2, raised);
+    }
+
+    [Fact]
+    public void UpdateProfile_RaisesProfilesChanged()
+    {
+        var profile = _svc.CreateProfile("Editable", Guid.NewGuid().ToString())!;
+        var raised = 0;
+        _svc.ProfilesChanged += () => raised++;
+
+        Assert.True(_svc.UpdateProfile(profile.Id, "Renamed", null));
+        Assert.Equal(1, raised);
+    }
+
+    [Fact]
+    public void SetProfileOrder_RaisesProfilesChanged()
+    {
+        var first = _svc.CreateProfile("One", Guid.NewGuid().ToString())!;
+        var second = _svc.CreateProfile("Two", Guid.NewGuid().ToString())!;
+        var raised = 0;
+        _svc.ProfilesChanged += () => raised++;
+
+        _svc.SetProfileOrder([second.Id, first.Id]);
+        Assert.Equal(1, raised);
+    }
+
+    [Fact]
+    public void FailedMutations_DoNotRaiseProfilesChanged()
+    {
+        var raised = 0;
+        _svc.ProfilesChanged += () => raised++;
+
+        Assert.Null(_svc.CreateProfile("", Guid.NewGuid().ToString()));
+        Assert.False(_svc.DeleteProfile("missing"));
+        Assert.False(_svc.SwitchProfile("missing"));
+        Assert.False(_svc.UpdateProfile("missing", "Name", null));
+        Assert.Equal(0, raised);
+    }
 }

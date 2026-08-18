@@ -4,6 +4,7 @@
 using System.Collections.ObjectModel;
 using System.Text.RegularExpressions;
 using Avalonia.Media.Imaging;
+using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using HyPrism.Core.Accounts;
@@ -87,13 +88,15 @@ public sealed partial class ProfilesViewModel : ObservableObject, IDisposable
         _uriLauncher = uriLauncher;
         _localizer = localizer;
         _authenticator = authenticator;
+        _profileRepository.ProfilesChanged += OnProfilesChanged;
+        _profileManager.ProfilesChanged += OnProfilesChanged;
 
         RefreshProfiles();
     }
 
     public ObservableCollection<ProfileItemViewModel> Profiles { get; } = [];
 
-    public event EventHandler? ActiveProfileChanged;
+    public event EventHandler<ActiveProfileChangedEventArgs>? ActiveProfileChanged;
 
     public bool HasSelectedProfile => SelectedProfile is not null;
     public bool HasProfiles => Profiles.Count > 0;
@@ -145,6 +148,27 @@ public sealed partial class ProfilesViewModel : ObservableObject, IDisposable
     public string DeleteTitle => _localizer["deleteProfile.title"];
     public string DeleteHint => _localizer["deleteProfile.cannotUndo"];
     public string OfflineNameRuleLabel => _localizer["profiles.wizard.nickRules"];
+
+    private void OnProfilesChanged()
+    {
+        if (_disposed)
+            return;
+
+        // Mutations from view model commands arrive on the UI thread and observers
+        // of ActiveProfileChanged expect the collection to be fresh right after the
+        // command returns, so refresh synchronously there
+        if (Dispatcher.UIThread.CheckAccess())
+        {
+            RefreshProfiles();
+            return;
+        }
+
+        Dispatcher.UIThread.Post(() =>
+        {
+            if (!_disposed)
+                RefreshProfiles();
+        });
+    }
 
     /// <summary>
     /// Reloads the saved profile list and retains the currently displayed item when possible.
@@ -256,8 +280,9 @@ public sealed partial class ProfilesViewModel : ObservableObject, IDisposable
         }
 
         _authenticator?.ReloadSessionForCurrentProfile();
-        RefreshProfiles(profile.Id);
-        ActiveProfileChanged?.Invoke(this, EventArgs.Empty);
+        ActiveProfileChanged?.Invoke(
+            this,
+            new ActiveProfileChangedEventArgs(profile.Name, profile.IsOfficial));
     }
 
     [RelayCommand]
@@ -296,7 +321,6 @@ public sealed partial class ProfilesViewModel : ObservableObject, IDisposable
     {
         ClearStatus();
         IsCreationVisible = false;
-        RefreshProfiles();
     }
 
     internal void CompleteCreationTransition()
@@ -340,8 +364,12 @@ public sealed partial class ProfilesViewModel : ObservableObject, IDisposable
         }
 
         IsCreationVisible = false;
+        // Event-driven refreshes skip reselection while the wizard is open, so
+        // reselect the created profile explicitly once it closes
         RefreshProfiles(profile.Id);
-        ActiveProfileChanged?.Invoke(this, EventArgs.Empty);
+        ActiveProfileChanged?.Invoke(
+            this,
+            new ActiveProfileChangedEventArgs(profile.Name, profile.IsOfficial));
         SetStatus(_localizer["profiles.saved"], isError: false);
     }
 
@@ -395,8 +423,12 @@ public sealed partial class ProfilesViewModel : ObservableObject, IDisposable
 
             _authenticator.ReloadSessionForCurrentProfile();
             IsCreationVisible = false;
+            // The authenticator may flip IsOfficial directly inside profiles.json,
+            // so reload explicitly instead of relying on repository events alone
             RefreshProfiles(firstProfile.Id);
-            ActiveProfileChanged?.Invoke(this, EventArgs.Empty);
+            ActiveProfileChanged?.Invoke(
+                this,
+                new ActiveProfileChangedEventArgs(firstProfile.Name, firstProfile.IsOfficial));
             SetStatus(_localizer["profiles.saved"], isError: false);
         }
         catch
@@ -461,9 +493,11 @@ public sealed partial class ProfilesViewModel : ObservableObject, IDisposable
             return;
         }
 
+        var editedProfile = SelectedProfile;
         IsEditing = false;
-        RefreshProfiles(SelectedProfile.Id);
-        ActiveProfileChanged?.Invoke(this, EventArgs.Empty);
+        ActiveProfileChanged?.Invoke(
+            this,
+            new ActiveProfileChangedEventArgs(name, editedProfile.IsOfficial));
         SetStatus(_localizer["profiles.saved"], isError: false);
     }
 
@@ -506,7 +540,6 @@ public sealed partial class ProfilesViewModel : ObservableObject, IDisposable
             return;
         }
 
-        RefreshProfiles(profile.Id);
         SetStatus(_localizer["profiles.saved"], isError: false);
     }
 
@@ -537,7 +570,6 @@ public sealed partial class ProfilesViewModel : ObservableObject, IDisposable
             return;
         }
 
-        RefreshProfiles();
         SetStatus(_localizer["profiles.saved"], isError: false);
     }
 
@@ -597,8 +629,26 @@ public sealed partial class ProfilesViewModel : ObservableObject, IDisposable
             return;
 
         _disposed = true;
+        _profileRepository.ProfilesChanged -= OnProfilesChanged;
+        _profileManager.ProfilesChanged -= OnProfilesChanged;
         foreach (var profile in Profiles)
             profile.Dispose();
         Profiles.Clear();
     }
+}
+
+/// <summary>
+/// Provides the identity of the profile that became active
+/// </summary>
+public sealed class ActiveProfileChangedEventArgs(string name, bool isOfficial) : EventArgs
+{
+    /// <summary>
+    /// Gets the display name of the activated profile
+    /// </summary>
+    public string Name { get; } = name;
+
+    /// <summary>
+    /// Gets whether the activated profile is linked to an official Hytale account
+    /// </summary>
+    public bool IsOfficial { get; } = isOfficial;
 }

@@ -7,18 +7,20 @@ using HyPrism.Core.Application.Ports;
 namespace HyPrism.Core.Application.Progress;
 
 /// <summary>
-/// Manages progress notifications for download, installation, and game state changes.
+/// Manages progress notifications for downloads and installations.
 /// Coordinates with Discord Rich Presence to reflect current activity
 /// </summary>
 public sealed class ProgressReporter : IProgressReporter
 {
+    private const int BroadcastIntervalMilliseconds = 100;
+
     private readonly IDiscordPresence _discord;
+    private readonly object _broadcastGate = new();
+    private long _lastBroadcastAtMs = long.MinValue;
+    private string? _lastBroadcastStage;
 
     /// <inheritdoc/>
     public event Action<ProgressUpdateMessage>? DownloadProgressChanged;
-
-    /// <inheritdoc/>
-    public event Action<string, int>? GameStateChanged;
 
     /// <inheritdoc/>
     public event Action<string, string, string?>? ErrorOccurred;
@@ -57,37 +59,33 @@ public sealed class ProgressReporter : IProgressReporter
 
     /// <inheritdoc/>
     public void ReportDownloadProgress(string stage, int progress, string messageKey, object[]? args = null, long downloaded = 0, long total = 0)
-        => SendProgress(stage, progress, messageKey, args, downloaded, total);
-
-    /// <summary>
-    /// Sends game state change notification
-    /// </summary>
-    /// <param name="state">The new game state</param>
-    /// <param name="exitCode">The optional process exit code</param>
-    public void SendGameStateEvent(string state, int? exitCode = null)
     {
-        switch (state)
-        {
-            case "starting":
-                GameStateChanged?.Invoke(state, 0);
-                break;
-            case "started":
-                GameStateChanged?.Invoke(state, 0);
-                _discord.SetPresence(PresenceState.Playing);
-                break;
-            case "running":
-                GameStateChanged?.Invoke(state, 0);
-                _discord.SetPresence(PresenceState.Playing);
-                break;
-            case "stopped":
-                GameStateChanged?.Invoke(state, exitCode ?? 0);
-                _discord.SetPresence(PresenceState.Idle);
-                break;
-        }
+        // Download loops report on every buffer read; broadcast at most ~10 updates
+        // per second per stage, always letting stage changes and completion through
+        if (!ShouldBroadcast(stage, progress))
+            return;
+
+        SendProgress(stage, progress, messageKey, args, downloaded, total);
     }
 
-    /// <inheritdoc/>
-    public void ReportGameStateChanged(string state, int? exitCode = null) => SendGameStateEvent(state, exitCode);
+    private bool ShouldBroadcast(string stage, int progress)
+    {
+        lock (_broadcastGate)
+        {
+            var nowMs = Environment.TickCount64;
+            var stageChanged = !string.Equals(stage, _lastBroadcastStage, StringComparison.Ordinal);
+            var isTerminal = progress >= 100;
+            var intervalElapsed = _lastBroadcastAtMs == long.MinValue ||
+                                  nowMs - _lastBroadcastAtMs >= BroadcastIntervalMilliseconds;
+
+            if (!stageChanged && !isTerminal && !intervalElapsed)
+                return false;
+
+            _lastBroadcastStage = stage;
+            _lastBroadcastAtMs = nowMs;
+            return true;
+        }
+    }
 
     /// <summary>
     /// Sends an error notification to subscribed listeners

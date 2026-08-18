@@ -10,7 +10,7 @@ description: Domain features, contracts, and orchestration owned by the launcher
 ## Application and infrastructure
 
 - `Application/Composition` builds the default dependency graph
-- `Application/Progress` publishes download, game state, and error events
+- `Application/Progress` publishes throttled download progress and error events, letting stage changes and completion always through
 - `Application/Ports` contains only host-provided capabilities such as Discord presence and GPU discovery
 - `Infrastructure` contains JSON configuration persistence, logging, and shared launcher utilities
 - `Integrations/Hytale` contains protocol details required to communicate with official Hytale endpoints
@@ -19,8 +19,8 @@ description: Domain features, contracts, and orchestration owned by the launcher
 
 - `Game/Versions` resolves official and mirror version metadata and caches source results
 - `Game/Download` streams files, applies patch sequences, and reports progress
-- `Game/Instances` owns instance metadata, paths, selection, import, deletion, and migrations
-- `Game/Launch` prepares Java, client endpoint redirection, the DualAuth Agent, environment variables, and the game process
+- `Game/Instances` owns instance metadata, paths, selection, import, deletion, and migrations, and raises `InstancesChanged` whenever the instance collection changes so hosts can subscribe instead of polling
+- `Game/Launch` prepares Java, client endpoint redirection, the DualAuth Agent, environment variables, and the game process. The process tracker raises typed started and exited lifecycle events carrying the instance identifier and exit code, and the launch coordinator raises `LaunchFailed` when an attempt ends without a running process
 - `Game/Authentication` obtains connected game sessions or issues self-contained OmniAuth tokens through the Local Node
 - `HyPrism.LocalNode` hosts the autonomous session, account, installed cosmetics catalog, configuration, and empty-state social compatibility surface
 - `Game/Assets` manages avatar data required by profiles and game launch
@@ -31,6 +31,8 @@ description: Domain features, contracts, and orchestration owned by the launcher
 ## Accounts
 
 `Accounts` is divided into authentication, profiles, identity, and skins. Contracts stay beside their implementation instead of being collected in a separate abstractions directory
+
+Both the profile repository and the profile manager raise `ProfilesChanged` after creating, deleting, switching, reordering, or editing profiles, so hosts react to profile state through events instead of refreshing manually
 
 ## Dependency rule
 

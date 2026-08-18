@@ -10,15 +10,15 @@ description: Ответственность и размещение публич
 | Область | Основные контракты | Ответственность |
 | --- | --- | --- |
 | Конфигурация | `IConfigStore` | сохранение общей конфигурации лаунчера и игры |
-| Прогресс | `IProgressReporter` | события загрузки, состояния игры и ошибок |
+| Прогресс | `IProgressReporter` | троттлируемые события прогресса загрузки и ошибок |
 | Версии | `IGameVersionCatalog`, `IVersionSource`, `IMirrorCatalog`, `IMirrorDiscovery` | списки версий, выбор источников, хранение и обнаружение зеркал, кеш и патчи |
-| Экземпляры | `IInstanceRepository`, `IInstanceMigrator` | пути, метаданные, сохраняемый порядок, выбор, импорт и миграция |
+| Экземпляры | `IInstanceRepository`, `IInstanceMigrator` | пути, метаданные, сохраняемый порядок, выбор, импорт, миграция и уведомления `InstancesChanged` |
 | Загрузка | `IFileDownloader`, `IPatchManager`, `IButlerClient` | передача, проверка файлов, патчинг и Butler |
-| Запуск | `IGameInstallationWorkflow`, `IGameLaunchCoordinator`, `IGameLauncher` | путь от выбранного или явно указанного экземпляра до процесса игры |
-| Процесс | `IGameProcessTracker` | отслеживание и корректное завершение процесса |
+| Запуск | `IGameInstallationWorkflow`, `IGameLaunchCoordinator`, `IGameLauncher` | путь от выбранного или явно указанного экземпляра до процесса игры; координатор поднимает `LaunchFailed`, когда попытка завершилась без запущенного процесса |
+| Процесс | `IGameProcessTracker` | отслеживание процесса, типизированные события старта и выхода с идентификатором экземпляра и кодом выхода, корректное завершение |
 | Моды | `IModManager` | поиск, установка, импорт, обновления и changelog |
 | Авторизация | `IHytaleAuthenticator`, `GameSessionAuthenticator` | официальные сессии, OAuth-запросы и игровые токены |
-| Профили | `IProfileManager`, `IProfileRepository`, `IUserIdentityProvider` | личность, сохраняемый порядок и жизненный цикл профиля |
+| Профили | `IProfileManager`, `IProfileRepository`, `IUserIdentityProvider` | личность, сохраняемый порядок, жизненный цикл профиля и уведомления `ProfilesChanged` |
 | Ресурсы | `IAvatarCache`, `ISkinRepository` | данные аватаров и скинов для профилей и запуска игры |
 | Платформа | `IGpuProvider` | определение GPU, необходимое кроссплатформенному запуску игры |
 | Presence | `IDiscordPresence` | обновление состояния лаунчера и игры через реализацию хоста |

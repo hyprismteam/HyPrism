@@ -16,6 +16,13 @@ public interface IGameProcessTracker
     event EventHandler? ProcessExited;
 
     /// <summary>
+    /// Raised with the affected process when a game process starts being tracked.
+    /// Not raised for processes restored from the registry at startup, since no
+    /// subscriber exists yet; query <see cref="IsGameRunning"/> for initial state
+    /// </summary>
+    event EventHandler<GameProcessStartedEventArgs>? GameProcessStarted;
+
+    /// <summary>
     /// Raised with the affected process when any tracked game process exits
     /// </summary>
     event EventHandler<GameProcessExitedEventArgs>? GameProcessExited;

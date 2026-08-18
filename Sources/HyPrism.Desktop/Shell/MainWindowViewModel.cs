@@ -59,6 +59,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     private readonly StringLocalizer _localizer;
     private InstanceInfo? _selectedInstance;
     private InstanceInfo? _managedInstance;
+    private bool _suppressInstancesChanged;
     private readonly List<NewsItemViewModel> _allNews = [];
     private readonly Dictionary<string, NewsArticleViewModel> _articleViewModelCache =
         new(StringComparer.OrdinalIgnoreCase);
@@ -69,8 +70,6 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     private CancellationTokenSource _articlePresentationCancellation = new();
     private CancellationTokenSource _compactNewsTransitionCancellation = new();
     private CancellationTokenSource? _instanceVersionsCancellation;
-    private DateTime? _gameSessionStartedAtUtc;
-    private string? _gameSessionInstanceId;
     private readonly DispatcherTimer _managedInstanceActionTimer;
     private DateTime? _managedInstanceActionStartedAtUtc;
     private DateTime? _managedInstanceGameStartedAtUtc;
@@ -351,8 +350,11 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
             : _localizer["desktopSettings.accountOffline"];
 
         _progress.DownloadProgressChanged += OnDownloadProgressChanged;
-        _progress.GameStateChanged += OnGameStateChanged;
         _progress.ErrorOccurred += OnErrorOccurred;
+        _gameProcess.GameProcessStarted += OnGameProcessStarted;
+        _gameProcess.GameProcessExited += OnGameProcessExited;
+        _gameLaunchCoordinator.LaunchFailed += OnLaunchFailed;
+        _instances.InstancesChanged += OnInstancesChanged;
         IsGameRunning = _gameProcess.IsGameRunning();
 
         _managedInstanceActionTimer = new DispatcherTimer
@@ -503,17 +505,9 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
             StringComparison.OrdinalIgnoreCase);
     public bool IsManagedInstanceActionRunning => IsManagedInstanceActionActive && IsManagedInstanceRunning;
     private bool IsManagedInstanceRunning => _managedInstance is not null
-        && (_gameProcess.IsInstanceRunning(_managedInstance.Id)
-            || (IsGameRunning && string.Equals(
-                _managedInstance.Id,
-                _gameSessionInstanceId,
-                StringComparison.OrdinalIgnoreCase)));
+        && _gameProcess.IsInstanceRunning(_managedInstance.Id);
     private bool IsSelectedInstanceRunning => _selectedInstance is not null
-        && (_gameProcess.IsInstanceRunning(_selectedInstance.Id)
-            || (IsGameRunning && string.Equals(
-                _selectedInstance.Id,
-                _gameSessionInstanceId,
-                StringComparison.OrdinalIgnoreCase)));
+        && _gameProcess.IsInstanceRunning(_selectedInstance.Id);
     public bool IsManagedInstanceCancellationArmed =>
         IsManagedInstanceActionActive && _isManagedInstanceCancellationArmed;
     public bool CanRunManagedInstanceAction =>
@@ -618,8 +612,6 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
 
         if (IsNews)
             _ = LoadNewsAsync();
-        else if (IsProfiles)
-            Profiles.RefreshProfiles();
     }
 
     [RelayCommand]
@@ -677,7 +669,6 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
             _managedInstance = _instances.FindInstanceById(instance.Id);
             IsInstanceCreatorOpen = false;
             InstanceSection = string.Empty;
-            RefreshInstances();
             RefreshManagedInstanceContent();
         }
         catch (Exception ex)
@@ -831,7 +822,6 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         ActivityProgressText = "0%";
         ActivityTitle = _localizer["common.loading"];
         ActivityDetail = instance.Name;
-        _gameSessionInstanceId = instance.Id;
         NotifyManagedInstanceActionStateChanged();
         _managedInstanceActionTimer.Start();
 
@@ -894,7 +884,6 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
 
         _managedInstance = null;
         InstanceSection = string.Empty;
-        RefreshInstances();
         RefreshManagedInstanceContent();
     }
 
@@ -907,11 +896,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
             return;
         }
 
-        if (_gameProcess.IsInstanceRunning(instance.Id)
-            || (IsGameRunning && string.Equals(
-                instance.Id,
-                _gameSessionInstanceId,
-                StringComparison.OrdinalIgnoreCase)))
+        if (_gameProcess.IsInstanceRunning(instance.Id))
         {
             _gameProcess.ExitGame(instance.Id);
             return;
@@ -932,7 +917,6 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         ActivityProgressText = "0%";
         ActivityTitle = _localizer["common.loading"];
         ActivityDetail = instance.Name;
-        _gameSessionInstanceId = instance.Id;
         UpdateSelectedInstancePresentation();
 
         try
@@ -999,61 +983,95 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         NotifyManagedInstanceActionStateChanged();
     }
 
+    private void OnInstancesChanged()
+    {
+        // Raised synchronously from repository mutations; skip when the change was
+        // triggered by our own resync, which rebuilds right after it returns
+        if (_suppressInstancesChanged)
+            return;
+
+        Dispatcher.UIThread.Post(() =>
+        {
+            try
+            {
+                RebuildInstancesFromCache();
+            }
+            catch (Exception ex)
+            {
+                ShowError(ex.Message);
+            }
+        });
+    }
+
     private void RefreshInstances()
     {
         try
         {
-            _instances.SyncInstancesWithConfig();
-            var items = _instances.GetCachedInstances();
-            var selectedInstanceId = _instances.GetSelectedInstance()?.Id;
-            var requestedManagedInstanceId = _managedInstance?.Id;
-            var managedInstance = items.FirstOrDefault(instance =>
-                    string.Equals(instance.Id, requestedManagedInstanceId, StringComparison.Ordinal))
-                ?? items.FirstOrDefault();
-            var managedInstanceId = managedInstance?.Id;
-
-            AllInstances.Clear();
-            var presentedInstances = items
-                .Select(instance =>
-                {
-                    RefreshInstanceInstalledState(instance);
-
-                    return new InstanceItemViewModel(
-                        instance.Id,
-                        instance.Name,
-                        FormatVersion(instance.Version),
-                        FormatBranch(instance.Branch),
-                        instance.IsInstalled,
-                        string.Equals(instance.Id, managedInstanceId, StringComparison.Ordinal));
-                })
-                .ToList();
-
-            foreach (var item in presentedInstances)
+            _suppressInstancesChanged = true;
+            try
             {
-                AllInstances.Add(item);
+                _instances.SyncInstancesWithConfig();
+            }
+            finally
+            {
+                _suppressInstancesChanged = false;
             }
 
-            _selectedInstance = items.FirstOrDefault(instance =>
-                string.Equals(instance.Id, selectedInstanceId, StringComparison.Ordinal));
-            _managedInstance = managedInstance;
-
-            OnPropertyChanged(nameof(HasInstances));
-            OnPropertyChanged(nameof(HasSelectedInstance));
-            OnPropertyChanged(nameof(HasManagedInstance));
-
-            if (_selectedInstance is not null)
-                RefreshInstanceInstalledState(_selectedInstance);
-
-            if (_managedInstance is not null)
-                RefreshInstanceInstalledState(_managedInstance);
-
-            UpdateSelectedInstancePresentation();
-            UpdateManagedInstancePresentation();
+            RebuildInstancesFromCache();
         }
         catch (Exception ex)
         {
             ShowError(ex.Message);
         }
+    }
+
+    private void RebuildInstancesFromCache()
+    {
+        var items = _instances.GetCachedInstances();
+        var selectedInstanceId = _instances.GetSelectedInstance()?.Id;
+        var requestedManagedInstanceId = _managedInstance?.Id;
+        var managedInstance = items.FirstOrDefault(instance =>
+                string.Equals(instance.Id, requestedManagedInstanceId, StringComparison.Ordinal))
+            ?? items.FirstOrDefault();
+        var managedInstanceId = managedInstance?.Id;
+
+        AllInstances.Clear();
+        var presentedInstances = items
+            .Select(instance =>
+            {
+                RefreshInstanceInstalledState(instance);
+
+                return new InstanceItemViewModel(
+                    instance.Id,
+                    instance.Name,
+                    FormatVersion(instance.Version),
+                    FormatBranch(instance.Branch),
+                    instance.IsInstalled,
+                    string.Equals(instance.Id, managedInstanceId, StringComparison.Ordinal));
+            })
+            .ToList();
+
+        foreach (var item in presentedInstances)
+        {
+            AllInstances.Add(item);
+        }
+
+        _selectedInstance = items.FirstOrDefault(instance =>
+            string.Equals(instance.Id, selectedInstanceId, StringComparison.Ordinal));
+        _managedInstance = managedInstance;
+
+        OnPropertyChanged(nameof(HasInstances));
+        OnPropertyChanged(nameof(HasSelectedInstance));
+        OnPropertyChanged(nameof(HasManagedInstance));
+
+        if (_selectedInstance is not null)
+            RefreshInstanceInstalledState(_selectedInstance);
+
+        if (_managedInstance is not null)
+            RefreshInstanceInstalledState(_managedInstance);
+
+        UpdateSelectedInstancePresentation();
+        UpdateManagedInstancePresentation();
     }
 
     private void RefreshInstanceInstalledState(InstanceInfo instance)
@@ -1950,11 +1968,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
             if (!IsBusy)
                 return;
 
-            var normalizedProgress = update.Progress <= 1
-                ? update.Progress * 100
-                : update.Progress;
-
-            ActivityProgress = Math.Clamp(normalizedProgress, 0, 100);
+            ActivityProgress = Math.Clamp(update.Progress, 0, 100);
             ActivityProgressText = $"{ActivityProgress:0}%";
             ActivityTitle = update.Args is { Length: > 0 }
                 ? _localizer.Format(update.MessageKey, update.Args)
@@ -1966,49 +1980,85 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         });
     }
 
-    private void OnGameStateChanged(string state, int exitCode)
+    private void OnGameProcessStarted(object? sender, GameProcessStartedEventArgs e)
     {
+        var process = e.Process;
         Dispatcher.UIThread.Post(() =>
         {
-            if (state == "started")
+            if (string.Equals(
+                _managedInstanceActionInstanceId,
+                process.InstanceId,
+                StringComparison.OrdinalIgnoreCase))
             {
-                _gameSessionStartedAtUtc ??= DateTime.UtcNow;
-                if (!string.IsNullOrWhiteSpace(_managedInstanceActionInstanceId))
-                    _managedInstanceGameStartedAtUtc ??= DateTime.UtcNow;
-            }
-            else if (state == "stopped")
-            {
-                var stoppedInstanceId = _gameSessionInstanceId;
-                if (IsManagedInstanceActionActive)
-                    _completedManagedActivityGenerations.Add(_managedInstanceActionGeneration);
-                RecordGameSessionPlayTime();
-                CanCancelActivity = false;
-                if (!string.IsNullOrWhiteSpace(stoppedInstanceId))
-                    EndInstanceActivity(stoppedInstanceId);
+                _managedInstanceGameStartedAtUtc ??= DateTime.UtcNow;
             }
 
-            IsGameRunning = state is "started" or "running" || _gameProcess.IsGameRunning();
-            if (state is "started" or "running" or "stopped")
-                IsActivityVisible = false;
+            IsGameRunning = _gameProcess.IsGameRunning();
+            IsActivityVisible = false;
 
             UpdateSelectedInstancePresentation();
-            if (state == "stopped")
+            NotifyManagedInstanceActionStateChanged();
+        });
+    }
+
+    private void OnGameProcessExited(object? sender, GameProcessExitedEventArgs e)
+    {
+        var process = e.Process;
+        Dispatcher.UIThread.Post(() =>
+        {
+            var endsManagedAction = IsManagedInstanceActionActive &&
+                string.Equals(
+                    _managedInstanceActionInstanceId,
+                    process.InstanceId,
+                    StringComparison.OrdinalIgnoreCase);
+            if (endsManagedAction)
+                _completedManagedActivityGenerations.Add(_managedInstanceActionGeneration);
+            RecordInstancePlayTime(process);
+            CanCancelActivity = false;
+            EndInstanceActivity(process.InstanceId);
+
+            IsGameRunning = _gameProcess.IsGameRunning();
+            IsActivityVisible = false;
+
+            UpdateSelectedInstancePresentation();
+            if (endsManagedAction)
                 EndManagedInstanceAction();
             else
                 NotifyManagedInstanceActionStateChanged();
         });
     }
 
-    private void RecordGameSessionPlayTime()
+    private void OnLaunchFailed(object? sender, LaunchFailedEventArgs e)
     {
-        if (_gameSessionStartedAtUtc is not { } startedAt ||
-            string.IsNullOrWhiteSpace(_gameSessionInstanceId))
-            return;
+        Dispatcher.UIThread.Post(() =>
+        {
+            var instanceId = e.InstanceId
+                ?? _managedInstanceActionInstanceId
+                ?? _selectedInstance?.Id;
+            var endsManagedAction = IsManagedInstanceActionActive &&
+                string.Equals(
+                    _managedInstanceActionInstanceId,
+                    instanceId,
+                    StringComparison.OrdinalIgnoreCase);
+            if (endsManagedAction)
+                _completedManagedActivityGenerations.Add(_managedInstanceActionGeneration);
+            CanCancelActivity = false;
+            if (!string.IsNullOrWhiteSpace(instanceId))
+                EndInstanceActivity(instanceId);
 
-        _gameSessionStartedAtUtc = null;
-        var instanceId = _gameSessionInstanceId;
-        _gameSessionInstanceId = null;
-        var instancePath = _instances.GetInstancePathById(instanceId);
+            IsActivityVisible = false;
+
+            UpdateSelectedInstancePresentation();
+            if (endsManagedAction)
+                EndManagedInstanceAction();
+            else
+                NotifyManagedInstanceActionStateChanged();
+        });
+    }
+
+    private void RecordInstancePlayTime(GameProcessInfo process)
+    {
+        var instancePath = _instances.GetInstancePathById(process.InstanceId);
         if (string.IsNullOrWhiteSpace(instancePath))
             return;
 
@@ -2016,7 +2066,9 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         if (meta is null)
             return;
 
-        var elapsedSeconds = Math.Max(0, (long)(DateTime.UtcNow - startedAt).TotalSeconds);
+        var elapsedSeconds = Math.Max(
+            0,
+            (long)(DateTime.UtcNow - process.ProcessStartedAtUtc).TotalSeconds);
         meta.PlayTimeSeconds += elapsedSeconds;
         meta.LastPlayedAt = DateTime.UtcNow;
         _instances.SaveInstanceMeta(instancePath, meta);
@@ -2065,14 +2117,13 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         UpdateSelectedInstancePresentation();
     }
 
-    private void OnActiveProfileChanged(object? sender, EventArgs e)
+    private void OnActiveProfileChanged(object? sender, ActiveProfileChangedEventArgs e)
     {
-        var profile = Profiles.Profiles.FirstOrDefault(item => item.IsActive);
-        UserName = profile?.Name ?? string.Empty;
+        UserName = e.Name;
         UserInitial = string.IsNullOrWhiteSpace(UserName)
             ? "H"
             : UserName[..1].ToUpperInvariant();
-        _isOfficialProfile = profile?.IsOfficial == true;
+        _isOfficialProfile = e.IsOfficial;
         AccountType = _isOfficialProfile
             ? _localizer["desktopSettings.accountHytale"]
             : _localizer["desktopSettings.accountOffline"];
@@ -2131,8 +2182,11 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         foreach (var item in _allNews)
             item.Dispose();
         _progress.DownloadProgressChanged -= OnDownloadProgressChanged;
-        _progress.GameStateChanged -= OnGameStateChanged;
         _progress.ErrorOccurred -= OnErrorOccurred;
+        _gameProcess.GameProcessStarted -= OnGameProcessStarted;
+        _gameProcess.GameProcessExited -= OnGameProcessExited;
+        _gameLaunchCoordinator.LaunchFailed -= OnLaunchFailed;
+        _instances.InstancesChanged -= OnInstancesChanged;
         _settingsStore.BackgroundChanged -= OnBackgroundChanged;
         _localizer.LanguageChanged -= ApplyLanguage;
         _profiles.ActiveProfileChanged -= OnActiveProfileChanged;

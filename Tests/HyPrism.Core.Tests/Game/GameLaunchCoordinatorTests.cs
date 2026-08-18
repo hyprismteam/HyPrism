@@ -118,11 +118,15 @@ public sealed class GameLaunchCoordinatorTests
                 Error = "Mirror unreachable"
             });
 
-        await CreateSubject().LaunchAsync();
+        LaunchFailedEventArgs? failure = null;
+        var subject = CreateSubject();
+        subject.LaunchFailed += (_, args) => failure = args;
 
-        _progress.Verify(
-            service => service.ReportGameStateChanged("stopped", 14),
-            Times.Once);
+        await subject.LaunchAsync();
+
+        Assert.NotNull(failure);
+        Assert.Equal(instance.Id, failure!.InstanceId);
+        Assert.Equal(14, failure.ExitCode);
     }
 
     private GameLaunchCoordinator CreateSubject()
