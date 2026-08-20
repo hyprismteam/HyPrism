@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=HyPrism
+Comment=Native Hytale launcher
+Exec=hyprism
+Icon=io.github.hyprismteam.HyPrism
+Categories=Game;Utility;
+Terminal=false
+StartupNotify=true

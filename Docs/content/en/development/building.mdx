@@ -29,23 +29,19 @@ The solution contains `HyPrism.Core`, `HyPrism.Desktop`, `HyPrism.LocalNode`, an
 
 ## Local publishing
 
-Publish the native desktop host directly with the .NET SDK:
+The platform dispatcher is `Scripts/publish.sh`. On Linux it creates `deb`, `rpm`, AppImage, Flatpak bundle, and `tar.xz` from one self-contained Desktop publish output. Install `rpm`, Flatpak, Flatpak Builder, and appimagetool first, then run:
 
 ```bash
-dotnet publish Sources/HyPrism.Desktop/HyPrism.Desktop.csproj \
-  --configuration Release \
-  --runtime linux-x64 \
-  --self-contained true \
-  --output dist/hyprism-linux-x64
+./Scripts/publish.sh all --version 1.2.3 --output dist
 ```
 
-Replace `linux-x64` with the target runtime identifier. The obsolete Electron packaging script is not part of the Avalonia release path
+Use a specific Linux target such as `deb`, `rpm`, `appimage`, `flatpak`, or `tar` to build only that package. On macOS, `./Scripts/publish.sh dmg` creates the DMG. On Windows, run `bash Scripts/publish.sh all` in Git Bash to create ZIP, MSI, and EXE installer. All platform workflows call this dispatcher
 
 ## GitHub Actions
 
 `.github/workflows/ci.yml` is the push and pull request entry point. It calls the independent test workflow and the build dispatcher. `.github/workflows/build.yml` only selects platforms, while `build-linux.yml`, `build-windows.yml`, and `build-macos.yml` own their platform packaging
 
-The current CI artifacts are a self-contained Linux x64 `tar.xz`, a self-contained Windows x64 ZIP, and a macOS ARM64 DMG. Release builds reuse the same platform workflows and pass the release version into artifact names
+The current CI artifacts are Linux x64 `deb`, `rpm`, AppImage, Flatpak bundle, and `tar.xz`, Windows x64 portable ZIP, MSI, and EXE installer, and a macOS ARM64 DMG. Release builds reuse the same platform workflows and pass the release version into artifact names
 
 ## macOS package
 

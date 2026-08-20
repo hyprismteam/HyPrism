@@ -53,22 +53,36 @@ jobs:
           fi
           echo "value=$VERSION" >> "$GITHUB_OUTPUT"
 
-      - name: Publish Linux x64
+      - name: Install Linux packaging tools
         run: |
-          PUBLISH_DIR="$RUNNER_TEMP/hyprism-linux-x64"
-          mkdir -p dist
-          dotnet publish Sources/HyPrism.Desktop/HyPrism.Desktop.csproj \
-            --configuration Release \
-            --runtime linux-x64 \
-            --self-contained true \
-            --output "$PUBLISH_DIR"
-          test -x "$PUBLISH_DIR/HyPrism.Desktop"
-          test -x "$PUBLISH_DIR/HyPrism.LocalNode"
-          tar -C "$PUBLISH_DIR" -cJf "dist/HyPrism-linux-x64-${{ steps.version.outputs.value }}.tar.xz" .
+          sudo apt-get update
+          sudo apt-get install -y flatpak flatpak-builder rpm
+          flatpak remote-add --if-not-exists --user flathub https://flathub.org/repo/flathub.flatpakrepo
+          flatpak install -y --user flathub \
+            org.freedesktop.Platform//24.08 \
+            org.freedesktop.Sdk//24.08
+          mkdir -p "$RUNNER_TEMP/hyprism-tools"
+          curl --fail --location --retry 3 \
+            --output "$RUNNER_TEMP/hyprism-tools/appimagetool" \
+            https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage
+          chmod +x "$RUNNER_TEMP/hyprism-tools/appimagetool"
+
+      - name: Publish Linux x64 packages
+        env:
+          APPIMAGETOOL: ${{ runner.temp }}/hyprism-tools/appimagetool
+        run: |
+          ./Scripts/publish.sh all \
+            --version "${{ steps.version.outputs.value }}" \
+            --output dist
 
       - name: Upload Linux artifact
         uses: actions/upload-artifact@v4
         with:
           name: linux-x64
-          path: dist/*.tar.xz
+          path: |
+            dist/*.deb
+            dist/*.rpm
+            dist/*.AppImage
+            dist/*.flatpak
+            dist/*.tar.xz
           if-no-files-found: error

@@ -1,0 +1,29 @@
+app-id: io.github.hyprismteam.HyPrism
+runtime: org.freedesktop.Platform
+runtime-version: '24.08'
+sdk: org.freedesktop.Sdk
+command: hyprism
+finish-args:
+  - --share=network
+  - --share=ipc
+  - --socket=fallback-x11
+  - --socket=wayland
+  - --socket=pulseaudio
+  - --device=dri
+  - --filesystem=xdg-documents
+modules:
+  - name: hyprism
+    buildsystem: simple
+    build-commands:
+      - install -d /app/lib/hyprism /app/bin
+      - cp -a . /app/lib/hyprism/
+      - ln -s ../lib/hyprism/HyPrism.Desktop /app/bin/hyprism
+      - install -Dm644 io.github.hyprismteam.HyPrism.desktop /app/share/applications/io.github.hyprismteam.HyPrism.desktop
+      - install -Dm644 io.github.hyprismteam.HyPrism.png /app/share/icons/hicolor/512x512/apps/io.github.hyprismteam.HyPrism.png
+    sources:
+      - type: dir
+        path: publish
+      - type: file
+        path: io.github.hyprismteam.HyPrism.desktop
+      - type: file
+        path: io.github.hyprismteam.HyPrism.png

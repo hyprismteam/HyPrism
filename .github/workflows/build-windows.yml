@@ -54,29 +54,19 @@ jobs:
           }
           "value=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
 
-      - name: Publish Windows x64
-        shell: pwsh
+      - name: Publish Windows x64 packages
+        shell: bash
         run: |
-          $publishDir = Join-Path $env:RUNNER_TEMP "hyprism-win-x64"
-          New-Item -ItemType Directory -Path dist -Force | Out-Null
-          dotnet publish Sources/HyPrism.Desktop/HyPrism.Desktop.csproj `
-            --configuration Release `
-            --runtime win-x64 `
-            --self-contained true `
-            --output $publishDir
-          if (!(Test-Path (Join-Path $publishDir "HyPrism.Desktop.exe"))) {
-            throw "HyPrism.Desktop.exe was not published"
-          }
-          if (!(Test-Path (Join-Path $publishDir "HyPrism.LocalNode.exe"))) {
-            throw "HyPrism.LocalNode.exe was not published"
-          }
-          Compress-Archive `
-            -Path (Join-Path $publishDir "*") `
-            -DestinationPath "dist/HyPrism-win-x64-${{ steps.version.outputs.value }}.zip"
+          ./Scripts/publish.sh all \
+            --version "${{ steps.version.outputs.value }}" \
+            --output dist
 
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v4
         with:
           name: windows-x64
-          path: dist/*.zip
+          path: |
+            dist/*.zip
+            dist/*.msi
+            dist/*-setup.exe
           if-no-files-found: error
