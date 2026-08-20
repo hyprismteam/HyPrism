@@ -18,9 +18,17 @@ public interface IProgressReporter
     event Action<ProgressUpdateMessage>? DownloadProgressChanged;
 
     /// <summary>
-    /// Raised when an error occurs during game operations
+    /// Raised when an operation error occurs, including the instance that owns it when known
     /// </summary>
-    event Action<string, string, string?>? ErrorOccurred;
+    event Action<OperationErrorMessage>? OperationErrorOccurred;
+
+    /// <summary>
+    /// Enters an async-flow-local operation scope so nested launch services publish updates for
+    /// the correct instance without depending on UI transport state
+    /// </summary>
+    /// <param name="instanceId">Stable identifier of the instance that owns the operation</param>
+    /// <returns>A scope that restores the previous operation when disposed</returns>
+    IDisposable BeginOperation(string instanceId);
 
     /// <summary>
     /// Reports download or update progress to subscribed listeners. Updates within
@@ -32,7 +40,8 @@ public interface IProgressReporter
     /// <param name="args">Optional format arguments for the message</param>
     /// <param name="downloaded">The number of bytes downloaded so far</param>
     /// <param name="total">The total number of bytes expected for the download</param>
-    void ReportDownloadProgress(string stage, int progress, string messageKey, object[]? args = null, long downloaded = 0, long total = 0);
+    /// <param name="instanceId">Explicit instance identifier that overrides the current operation scope</param>
+    void ReportDownloadProgress(string stage, int progress, string messageKey, object[]? args = null, long downloaded = 0, long total = 0, string? instanceId = null);
 
     /// <summary>
     /// Reports an error that occurred during game operations
@@ -40,5 +49,6 @@ public interface IProgressReporter
     /// <param name="type">The error type category (e.g., "download", "launch", "patch")</param>
     /// <param name="message">The user-friendly error message</param>
     /// <param name="technical">Optional technical details for debugging purposes</param>
-    void ReportError(string type, string message, string? technical = null);
+    /// <param name="instanceId">Explicit instance identifier that overrides the current operation scope</param>
+    void ReportError(string type, string message, string? technical = null, string? instanceId = null);
 }

@@ -29,9 +29,11 @@ public class DownloadProgress
     public bool Cancelled { get; set; }
 }
 
-/// <summary>Real-time progress broadcast sent over IPC during long-running operations.</summary>
+/// <summary>Real-time progress update raised during a launcher operation.</summary>
 public class ProgressUpdateMessage
 {
+    /// <summary>Stable identifier of the instance this update belongs to, when applicable.</summary>
+    public string? InstanceId { get; set; }
     /// <summary>Operation state key (e.g. "downloading", "patching", "verifying").</summary>
     public string State { get; set; } = "unknown";
     /// <summary>Progress percentage from 0 to 100.</summary>
@@ -44,4 +46,13 @@ public class ProgressUpdateMessage
     public long DownloadedBytes { get; set; }
     /// <summary>Total expected bytes for the current transfer (0 if unknown).</summary>
     public long TotalBytes { get; set; }
+}
+
+/// <summary>Describes an operation error together with its optional instance target.</summary>
+public sealed class OperationErrorMessage
+{
+    public string? InstanceId { get; init; }
+    public required string Type { get; init; }
+    public required string Message { get; init; }
+    public string? Technical { get; init; }
 }

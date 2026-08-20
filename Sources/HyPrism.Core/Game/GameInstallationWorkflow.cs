@@ -39,8 +39,8 @@ public class GameInstallationWorkflow : IGameInstallationWorkflow
     private readonly HttpClient _httpClient;
     private readonly string _appDir;
 
-    private volatile bool _cancelRequested;
-    private CancellationTokenSource? _downloadCts;
+    private readonly Dictionary<string, CancellationTokenSource> _downloadOperations =
+        new(StringComparer.OrdinalIgnoreCase);
     private readonly object _ctsLock = new();
 
     /// <summary>
@@ -103,30 +103,37 @@ public class GameInstallationWorkflow : IGameInstallationWorkflow
         string? instanceId,
         AuthUriPresenter? authorizationUriPresenter)
     {
+        var selectedInstance = string.IsNullOrWhiteSpace(instanceId)
+            ? _instances.GetSelectedInstance()
+            : _instances.FindInstanceById(instanceId);
+        if (selectedInstance == null)
+        {
+            Logger.Error("Download", "No target instance is available for launch");
+            _progress.ReportError("fatal", "No target instance is available for launch");
+            return new DownloadProgress { Error = "No target instance" };
+        }
+
         CancellationTokenSource cts;
         lock (_ctsLock)
         {
-            if (_cancelRequested)
+            if (_downloadOperations.ContainsKey(selectedInstance.Id))
             {
-                _cancelRequested = false;
-                return new DownloadProgress { Cancelled = true };
+                Logger.Warning("Download", $"Operation already active for instance {selectedInstance.Id}");
+                _progress.ReportError(
+                    "download",
+                    "An operation is already active for this instance",
+                    instanceId: selectedInstance.Id);
+                return new DownloadProgress { Error = "An operation is already active for this instance" };
             }
+
             cts = new CancellationTokenSource();
-            _downloadCts = cts;
+            _downloadOperations.Add(selectedInstance.Id, cts);
         }
 
+        using var operation = _progress.BeginOperation(selectedInstance.Id);
         try
         {
             _progress.ReportDownloadProgress("preparing", 0, "launch.detail.preparing_session", null, 0, 0);
-
-            var selectedInstance = string.IsNullOrWhiteSpace(instanceId)
-                ? _instances.GetSelectedInstance()
-                : _instances.FindInstanceById(instanceId);
-            if (selectedInstance == null)
-            {
-                Logger.Error("Download", "No target instance is available for launch");
-                return new DownloadProgress { Error = "No target instance" };
-            }
 
             var branch = LauncherUtilities.NormalizeVersionType(selectedInstance.Branch);
             var isLatestInstance = selectedInstance.Version == 0;
@@ -253,20 +260,24 @@ public class GameInstallationWorkflow : IGameInstallationWorkflow
         {
             lock (_ctsLock)
             {
-                _downloadCts = null;
-                _cancelRequested = false;
+                if (_downloadOperations.TryGetValue(selectedInstance.Id, out var active) &&
+                    ReferenceEquals(active, cts))
+                {
+                    _downloadOperations.Remove(selectedInstance.Id);
+                }
             }
             cts.Dispose();
         }
     }
 
     /// <inheritdoc/>
-    public void CancelDownload()
+    public void CancelDownload(string instanceId)
     {
-        _cancelRequested = true;
+        ArgumentException.ThrowIfNullOrWhiteSpace(instanceId);
         lock (_ctsLock)
         {
-            _downloadCts?.Cancel();
+            if (_downloadOperations.TryGetValue(instanceId, out var cts))
+                cts.Cancel();
         }
     }
 
@@ -275,9 +286,12 @@ public class GameInstallationWorkflow : IGameInstallationWorkflow
     {
         lock (_ctsLock)
         {
-            _downloadCts?.Cancel();
-            _downloadCts?.Dispose();
-            _downloadCts = null;
+            foreach (var cts in _downloadOperations.Values)
+            {
+                cts.Cancel();
+                cts.Dispose();
+            }
+            _downloadOperations.Clear();
         }
     }
 

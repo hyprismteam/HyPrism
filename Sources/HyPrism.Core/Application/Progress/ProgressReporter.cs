@@ -16,14 +16,15 @@ public sealed class ProgressReporter : IProgressReporter
 
     private readonly IDiscordPresence _discord;
     private readonly object _broadcastGate = new();
-    private long _lastBroadcastAtMs = long.MinValue;
-    private string? _lastBroadcastStage;
+    private readonly AsyncLocal<string?> _operationInstanceId = new();
+    private readonly Dictionary<string, BroadcastState> _broadcastStates =
+        new(StringComparer.Ordinal);
 
     /// <inheritdoc/>
     public event Action<ProgressUpdateMessage>? DownloadProgressChanged;
 
     /// <inheritdoc/>
-    public event Action<string, string, string?>? ErrorOccurred;
+    public event Action<OperationErrorMessage>? OperationErrorOccurred;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ProgressReporter"/> class
@@ -35,10 +36,19 @@ public sealed class ProgressReporter : IProgressReporter
     }
 
     /// <inheritdoc/>
-    public void SendProgress(string stage, int progress, string messageKey, object[]? args, long downloaded, long total)
+    public IDisposable BeginOperation(string instanceId)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(instanceId);
+        var previousInstanceId = _operationInstanceId.Value;
+        _operationInstanceId.Value = instanceId;
+        return new OperationScope(_operationInstanceId, previousInstanceId);
+    }
+
+    private void SendProgress(string stage, int progress, string messageKey, object[]? args, long downloaded, long total, string? instanceId)
     {
         var msg = new ProgressUpdateMessage
         {
+            InstanceId = instanceId ?? _operationInstanceId.Value,
             State = stage,
             Progress = progress,
             MessageKey = messageKey,
@@ -58,31 +68,32 @@ public sealed class ProgressReporter : IProgressReporter
     }
 
     /// <inheritdoc/>
-    public void ReportDownloadProgress(string stage, int progress, string messageKey, object[]? args = null, long downloaded = 0, long total = 0)
+    public void ReportDownloadProgress(string stage, int progress, string messageKey, object[]? args = null, long downloaded = 0, long total = 0, string? instanceId = null)
     {
         // Download loops report on every buffer read; broadcast at most ~10 updates
         // per second per stage, always letting stage changes and completion through
-        if (!ShouldBroadcast(stage, progress))
+        if (!ShouldBroadcast(stage, progress, instanceId))
             return;
 
-        SendProgress(stage, progress, messageKey, args, downloaded, total);
+        SendProgress(stage, progress, messageKey, args, downloaded, total, instanceId);
     }
 
-    private bool ShouldBroadcast(string stage, int progress)
+    private bool ShouldBroadcast(string stage, int progress, string? instanceId)
     {
         lock (_broadcastGate)
         {
             var nowMs = Environment.TickCount64;
-            var stageChanged = !string.Equals(stage, _lastBroadcastStage, StringComparison.Ordinal);
+            var operationId = instanceId ?? _operationInstanceId.Value ?? "unscoped";
+            _broadcastStates.TryGetValue(operationId, out var previous);
+            var stageChanged = !string.Equals(stage, previous?.Stage, StringComparison.Ordinal);
             var isTerminal = progress >= 100;
-            var intervalElapsed = _lastBroadcastAtMs == long.MinValue ||
-                                  nowMs - _lastBroadcastAtMs >= BroadcastIntervalMilliseconds;
+            var intervalElapsed = previous is null ||
+                                  nowMs - previous.LastBroadcastAtMs >= BroadcastIntervalMilliseconds;
 
             if (!stageChanged && !isTerminal && !intervalElapsed)
                 return false;
 
-            _lastBroadcastStage = stage;
-            _lastBroadcastAtMs = nowMs;
+            _broadcastStates[operationId] = new BroadcastState(stage, nowMs);
             return true;
         }
     }
@@ -93,12 +104,36 @@ public sealed class ProgressReporter : IProgressReporter
     /// <param name="type">The error category</param>
     /// <param name="message">The user-facing error message</param>
     /// <param name="technical">Optional diagnostic details</param>
-    public void SendErrorEvent(string type, string message, string? technical = null)
+    private void SendErrorEvent(string type, string message, string? technical, string? instanceId)
     {
-        ErrorOccurred?.Invoke(type, message, technical);
+        OperationErrorOccurred?.Invoke(new OperationErrorMessage
+        {
+            InstanceId = instanceId ?? _operationInstanceId.Value,
+            Type = type,
+            Message = message,
+            Technical = technical
+        });
     }
 
     /// <inheritdoc/>
-    public void ReportError(string type, string message, string? technical = null)
-        => SendErrorEvent(type, message, technical);
+    public void ReportError(string type, string message, string? technical = null, string? instanceId = null)
+        => SendErrorEvent(type, message, technical, instanceId);
+
+    private sealed class OperationScope(AsyncLocal<string?> instanceId, string? previousInstanceId) : IDisposable
+    {
+        private readonly AsyncLocal<string?> _instanceId = instanceId;
+        private readonly string? _previousInstanceId = previousInstanceId;
+        private bool _disposed;
+
+        public void Dispose()
+        {
+            if (_disposed)
+                return;
+
+            _instanceId.Value = _previousInstanceId;
+            _disposed = true;
+        }
+    }
+
+    private sealed record BroadcastState(string Stage, long LastBroadcastAtMs);
 }

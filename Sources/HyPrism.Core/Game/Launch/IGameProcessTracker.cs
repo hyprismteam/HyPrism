@@ -11,11 +11,6 @@ namespace HyPrism.Core.Game.Launch;
 public interface IGameProcessTracker
 {
     /// <summary>
-    /// Raised when the tracked game process has exited
-    /// </summary>
-    event EventHandler? ProcessExited;
-
-    /// <summary>
     /// Raised with the affected process when a game process starts being tracked.
     /// Not raised for processes restored from the registry at startup, since no
     /// subscriber exists yet; query <see cref="IsGameRunning"/> for initial state
@@ -26,12 +21,6 @@ public interface IGameProcessTracker
     /// Raised with the affected process when any tracked game process exits
     /// </summary>
     event EventHandler<GameProcessExitedEventArgs>? GameProcessExited;
-
-    /// <summary>
-    /// Sets the current game process reference
-    /// </summary>
-    /// <param name="p">The game process, or <c>null</c> to clear the reference</param>
-    void SetGameProcess(Process? p);
 
     /// <summary>
     /// Tracks a launched game process without replacing other active instances
@@ -47,16 +36,17 @@ public interface IGameProcessTracker
         string? officialAccountId = null);
 
     /// <summary>
-    /// Gets the current game process reference
+    /// Gets all game processes restored from disk or started by this launcher instance
     /// </summary>
-    /// <returns>The current game process, or <c>null</c> if no game is tracked</returns>
-    Process? GetGameProcess();
+    /// <returns>All known running game processes</returns>
+    IReadOnlyCollection<GameProcessInfo> GetRunningProcesses();
 
     /// <summary>
-    /// Gets all game processes restored from disk or started by this launcher instance
-    /// <returns>All known running game processes</returns>
+    /// Returns tracked processes that ended while the launcher was not running
+    /// Each record is returned at most once so startup cleanup can reconcile persistent state
     /// </summary>
-    IReadOnlyCollection<GameProcessInfo> GetRunningProcesses();
+    /// <returns>Processes requiring one-time startup reconciliation</returns>
+    IReadOnlyCollection<GameProcessInfo> TakeProcessesExitedWhileUnavailable();
 
     /// <summary>
     /// Checks whether a specific game instance is currently running
@@ -70,18 +60,6 @@ public interface IGameProcessTracker
     /// </summary>
     /// <returns><c>true</c> if the game process is running; otherwise, <c>false</c></returns>
     bool IsGameRunning();
-
-    /// <summary>
-    /// Scans the system for any running Hytale game processes
-    /// </summary>
-    /// <returns><c>true</c> if a Hytale process is found running; otherwise, <c>false</c></returns>
-    bool CheckForRunningGame();
-
-    /// <summary>
-    /// Terminates the current game process if it is running
-    /// </summary>
-    /// <returns><c>true</c> if the game was successfully terminated; otherwise, <c>false</c></returns>
-    bool ExitGame();
 
     /// <summary>
     /// Terminates the game process belonging to a specific instance

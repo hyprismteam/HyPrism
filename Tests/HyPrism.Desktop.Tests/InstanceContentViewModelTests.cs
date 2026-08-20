@@ -313,6 +313,65 @@ public sealed class InstanceContentViewModelTests
     }
 
     [AvaloniaFact]
+    public async Task ManagedActionRestoresRunningInstanceAfterLauncherRestart()
+    {
+        var instance = new InstanceInfo
+        {
+            Id = "restored-instance",
+            Name = "Restored Instance",
+            Branch = "release",
+            Version = 20,
+            IsInstalled = true
+        };
+        var instances = new Mock<IInstanceRepository>();
+        var profiles = new Mock<IProfileManager>();
+        var profileRepository = new Mock<IProfileRepository>();
+        var launchCoordinator = new Mock<IGameLaunchCoordinator>();
+        var installationWorkflow = new Mock<IGameInstallationWorkflow>();
+        var gameProcess = new Mock<IGameProcessTracker>();
+        var progress = new Mock<IProgressReporter>();
+        var settings = new Mock<IDesktopSettingsStore>();
+        var news = new Mock<IHytaleNewsClient>();
+        var uriLauncher = new Mock<IExternalUriLauncher>();
+
+        instances.Setup(service => service.GetCachedInstances()).Returns([instance]);
+        instances.Setup(service => service.GetSelectedInstance()).Returns(instance);
+        instances.Setup(service => service.GetInstancePathById(instance.Id)).Returns("/tmp/restored-instance");
+        instances.Setup(service => service.IsClientPresent("/tmp/restored-instance")).Returns(true);
+        profiles.Setup(service => service.GetNick()).Returns("Restore Test");
+        settings.SetupGet(service => service.AvailableBackgrounds).Returns([]);
+        gameProcess.Setup(service => service.IsInstanceRunning(instance.Id)).Returns(true);
+        gameProcess.Setup(service => service.ExitGame(instance.Id)).Returns(true);
+
+        using var viewModel = new MainWindowViewModel(
+            instances.Object,
+            profiles.Object,
+            profileRepository.Object,
+            launchCoordinator.Object,
+            installationWorkflow.Object,
+            gameProcess.Object,
+            progress.Object,
+            settings.Object,
+            news.Object,
+            uriLauncher.Object,
+            new HttpClient(),
+            new StringLocalizer("en-US"));
+
+        Assert.True(viewModel.IsManagedInstanceActionActive);
+        Assert.True(viewModel.IsManagedInstanceActionRunning);
+        Assert.Equal("Running", viewModel.ManagedInstanceActionStatusText);
+        Assert.False(viewModel.CanDeleteManagedInstance);
+
+        viewModel.ArmManagedInstanceCancellation();
+        await viewModel.RunManagedInstanceCommand.ExecuteAsync(null);
+
+        gameProcess.Verify(service => service.ExitGame(instance.Id), Times.Once);
+        launchCoordinator.Verify(
+            service => service.LaunchAsync(instance.Id, It.IsAny<AuthUriPresenter?>()),
+            Times.Never);
+    }
+
+    [AvaloniaFact]
     public async Task ManagedInstallShowsProgressAndSecondActionCancelsIt()
     {
         var instance = new InstanceInfo
@@ -386,11 +445,11 @@ public sealed class InstanceContentViewModelTests
         Assert.Equal("37%", viewModel.ManagedInstanceActionMetricText);
 
         await viewModel.RunManagedInstanceCommand.ExecuteAsync(null);
-        installationWorkflow.Verify(service => service.CancelDownload(), Times.Never);
+        installationWorkflow.Verify(service => service.CancelDownload(instance.Id), Times.Never);
 
         viewModel.ArmManagedInstanceCancellation();
         await viewModel.RunManagedInstanceCommand.ExecuteAsync(null);
-        installationWorkflow.Verify(service => service.CancelDownload(), Times.Once);
+        installationWorkflow.Verify(service => service.CancelDownload(instance.Id), Times.Once);
 
         installCompletion.SetResult(new DownloadProgress { Cancelled = true });
         await installOperation;

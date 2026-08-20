@@ -61,25 +61,57 @@ public class ProgressReporterTests
     [Fact]
     public void ReportError_FiresEvent()
     {
-        string? errorType = null;
-        string? errorMsg = null;
-        _svc.ErrorOccurred += (t, m, _) => { errorType = t; errorMsg = m; };
+        OperationErrorMessage? error = null;
+        _svc.OperationErrorOccurred += update => error = update;
 
         _svc.ReportError("launch", "Game failed to start");
 
-        Assert.Equal("launch", errorType);
-        Assert.Equal("Game failed to start", errorMsg);
+        Assert.Equal("launch", error?.Type);
+        Assert.Equal("Game failed to start", error?.Message);
     }
 
     [Fact]
     public void ReportError_WithTechnicalDetails_PassesThroughToEvent()
     {
-        string? technical = null;
-        _svc.ErrorOccurred += (_, _, t) => technical = t;
+        OperationErrorMessage? error = null;
+        _svc.OperationErrorOccurred += update => error = update;
 
         _svc.ReportError("download", "Download failed", "Connection timeout");
 
-        Assert.Equal("Connection timeout", technical);
+        Assert.Equal("Connection timeout", error?.Technical);
+    }
+
+    [Fact]
+    public void OperationScope_AssignsInstanceToProgressAndErrors()
+    {
+        ProgressUpdateMessage? progress = null;
+        OperationErrorMessage? error = null;
+        _svc.DownloadProgressChanged += update => progress = update;
+        _svc.OperationErrorOccurred += update => error = update;
+
+        using (_svc.BeginOperation("release-instance"))
+        {
+            _svc.ReportDownloadProgress("download", 10, "downloading");
+            _svc.ReportError("download", "Download failed");
+        }
+
+        Assert.Equal("release-instance", progress?.InstanceId);
+        Assert.Equal("release-instance", error?.InstanceId);
+    }
+
+    [Fact]
+    public void ProgressScopes_DoNotThrottleSeparateInstancesTogether()
+    {
+        var updates = new List<ProgressUpdateMessage>();
+        _svc.DownloadProgressChanged += updates.Add;
+
+        using (_svc.BeginOperation("release-instance"))
+            _svc.ReportDownloadProgress("download", 10, "downloading");
+        using (_svc.BeginOperation("pre-release-instance"))
+            _svc.ReportDownloadProgress("download", 10, "downloading");
+
+        Assert.Equal(["release-instance", "pre-release-instance"],
+            updates.Select(update => update.InstanceId));
     }
 
     [Fact]

@@ -13,6 +13,7 @@ using HyPrism.Desktop.Features.News;
 using HyPrism.Desktop.Localization;
 using HyPrism.Desktop.Platform;
 using HyPrism.Desktop.Shell;
+using Avalonia.Headless.XUnit;
 using Moq;
 using Xunit;
 
@@ -20,7 +21,7 @@ namespace HyPrism.Desktop.Tests;
 
 public sealed class InstanceWizardViewModelTests
 {
-    [Fact]
+    [AvaloniaFact]
     public void SwitchingToCachedBranchDoesNotStartVersionLoading()
     {
         var instances = new Mock<IInstanceRepository>();

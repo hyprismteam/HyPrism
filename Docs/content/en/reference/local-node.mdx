@@ -74,6 +74,6 @@ The endpoint shapes are based on the open `sanasol/hytale-auth-server` compatibi
 
 HyPrism treats each game instance as a separate launch target. A single instance cannot be started twice, because its client files and user data are shared, but different instance directories can run with different authentication modes at the same time. For example, one instance can use Local Node, another a custom authentication service, and a third official authentication
 
-The launcher keeps a runtime process registry with the PID, process start time, instance, and profile. When HyPrism starts again after it was closed, it restores only entries whose process is still alive and whose start time still matches. Stale entries and reused PIDs are removed automatically
+The launcher keeps a runtime process registry with the PID, process start time, instance, and profile. When HyPrism starts again after it was closed, it restores only entries whose process is still alive and whose start time still matches. Entries that ended while the launcher was unavailable are reconciled once so play time and launch cleanup are retained, while stale entries and reused PIDs are removed automatically
 
 Official authentication is deliberately restricted to one running client per Hytale account owner. HyPrism serializes official authentication between launcher processes and refuses a second launch when the restored process registry already contains that account

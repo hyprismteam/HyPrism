@@ -17,6 +17,7 @@ public sealed class GameProcessTracker : IGameProcessTracker, IDisposable
     private const string RegistryFileName = "game-processes.json";
     private readonly object _processLock = new();
     private readonly Dictionary<int, TrackedProcess> _processes = [];
+    private readonly List<GameProcessInfo> _processesExitedWhileUnavailable = [];
     private readonly string? _registryPath;
     private bool _disposed;
 
@@ -38,22 +39,10 @@ public sealed class GameProcessTracker : IGameProcessTracker, IDisposable
     }
 
     /// <inheritdoc/>
-    public event EventHandler? ProcessExited;
-
-    /// <inheritdoc/>
     public event EventHandler<GameProcessStartedEventArgs>? GameProcessStarted;
 
     /// <inheritdoc/>
     public event EventHandler<GameProcessExitedEventArgs>? GameProcessExited;
-
-    /// <inheritdoc/>
-    public void SetGameProcess(Process? process)
-    {
-        if (process is null)
-            return;
-
-        TrackGameProcess(process, "legacy", "legacy");
-    }
 
     /// <inheritdoc/>
     public void TrackGameProcess(
@@ -88,22 +77,11 @@ public sealed class GameProcessTracker : IGameProcessTracker, IDisposable
     }
 
     /// <inheritdoc/>
-    public Process? GetGameProcess()
-    {
-        lock (_processLock)
-        {
-            return _processes.Values
-                .OrderByDescending(tracked => tracked.Info.RegisteredAtUtc)
-                .Select(tracked => tracked.Process)
-                .FirstOrDefault(IsAlive);
-        }
-    }
-
-    /// <inheritdoc/>
     public IReadOnlyCollection<GameProcessInfo> GetRunningProcesses()
     {
         lock (_processLock)
         {
+            RestoreProcessesTrackedByOtherLaunchersLocked();
             RemoveExitedProcessesLocked();
             return _processes.Values
                 .Select(tracked => tracked.Info)
@@ -113,11 +91,23 @@ public sealed class GameProcessTracker : IGameProcessTracker, IDisposable
     }
 
     /// <inheritdoc/>
+    public IReadOnlyCollection<GameProcessInfo> TakeProcessesExitedWhileUnavailable()
+    {
+        lock (_processLock)
+        {
+            var exited = _processesExitedWhileUnavailable.ToArray();
+            _processesExitedWhileUnavailable.Clear();
+            return exited;
+        }
+    }
+
+    /// <inheritdoc/>
     public bool IsInstanceRunning(string instanceId)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(instanceId);
         lock (_processLock)
         {
+            RestoreProcessesTrackedByOtherLaunchersLocked();
             RemoveExitedProcessesLocked();
             return _processes.Values.Any(tracked =>
                 string.Equals(tracked.Info.InstanceId, instanceId, StringComparison.OrdinalIgnoreCase));
@@ -129,33 +119,10 @@ public sealed class GameProcessTracker : IGameProcessTracker, IDisposable
     {
         lock (_processLock)
         {
+            RestoreProcessesTrackedByOtherLaunchersLocked();
             RemoveExitedProcessesLocked();
             return _processes.Count > 0;
         }
-    }
-
-    /// <inheritdoc/>
-    public bool CheckForRunningGame()
-    {
-        if (IsGameRunning())
-            return true;
-
-        return ScanForOrphanedGameProcess();
-    }
-
-    /// <inheritdoc/>
-    public bool ExitGame()
-    {
-        Process? process;
-        lock (_processLock)
-        {
-            process = _processes.Values
-                .OrderByDescending(tracked => tracked.Info.RegisteredAtUtc)
-                .Select(tracked => tracked.Process)
-                .FirstOrDefault(IsAlive);
-        }
-
-        return StopProcess(process);
     }
 
     /// <inheritdoc/>
@@ -165,6 +132,8 @@ public sealed class GameProcessTracker : IGameProcessTracker, IDisposable
         Process? process;
         lock (_processLock)
         {
+            RestoreProcessesTrackedByOtherLaunchersLocked();
+            RemoveExitedProcessesLocked();
             process = _processes.Values
                 .Where(tracked => string.Equals(
                     tracked.Info.InstanceId,
@@ -209,7 +178,10 @@ public sealed class GameProcessTracker : IGameProcessTracker, IDisposable
             {
                 var process = TryRestoreProcess(record);
                 if (process is null)
+                {
+                    _processesExitedWhileUnavailable.Add(record);
                     continue;
+                }
 
                 process.EnableRaisingEvents = true;
                 process.Exited += OnGameProcessExited;
@@ -277,7 +249,6 @@ public sealed class GameProcessTracker : IGameProcessTracker, IDisposable
         }
 
         GameProcessExited?.Invoke(this, new GameProcessExitedEventArgs(info, exitCode));
-        ProcessExited?.Invoke(this, EventArgs.Empty);
     }
 
     private static int ReadExitCode(Process process)
@@ -326,9 +297,24 @@ public sealed class GameProcessTracker : IGameProcessTracker, IDisposable
         {
             var directory = Path.GetDirectoryName(_registryPath)!;
             Directory.CreateDirectory(directory);
-            var temporaryPath = _registryPath + ".tmp";
+            using var registryLock = AcquireRegistryWriteLock();
+            if (registryLock is null)
+            {
+                Logger.Warning("Game", "Could not acquire the game process registry lock");
+                return;
+            }
+
+            var persistedLiveRecords = ReadRegistryRecords()
+                .Where(IsRecordAlive)
+                .ToList();
+            var records = persistedLiveRecords
+                .Concat(_processes.Values.Select(tracked => tracked.Info))
+                .GroupBy(record => record.ProcessId)
+                .Select(group => group.Last())
+                .ToArray();
+            var temporaryPath = $"{_registryPath}.{Environment.ProcessId}.{Guid.NewGuid():N}.tmp";
             var content = JsonSerializer.Serialize(
-                _processes.Values.Select(tracked => tracked.Info).ToArray(),
+                records,
                 new JsonSerializerOptions { WriteIndented = true });
             File.WriteAllText(temporaryPath, content);
             File.Move(temporaryPath, _registryPath, overwrite: true);
@@ -339,70 +325,99 @@ public sealed class GameProcessTracker : IGameProcessTracker, IDisposable
         }
     }
 
-    private bool ScanForOrphanedGameProcess()
+    private void RestoreProcessesTrackedByOtherLaunchersLocked()
     {
-        try
-        {
-            var potentialProcesses = Process.GetProcessesByName("java")
-                .Concat(Process.GetProcessesByName("javaw"))
-                .Concat(Process.GetProcessesByName("java.real"))
-                .Concat(Process.GetProcessesByName("HytaleClient"))
-                .ToArray();
+        if (string.IsNullOrWhiteSpace(_registryPath))
+            return;
 
-            try
-            {
-                foreach (var process in potentialProcesses)
-                {
-                    try
-                    {
-                        if ((!string.IsNullOrEmpty(process.MainWindowTitle)
-                                && process.MainWindowTitle.Contains("Hytale", StringComparison.OrdinalIgnoreCase))
-                            || ProcessCommandLineContainsHytale(process.Id))
-                        {
-                            TrackGameProcess(process, "external", "external");
-                            return true;
-                        }
-                    }
-                    catch
-                    {
-                        // Process inspection can fail for a process that is exiting or belongs to another user.
-                    }
-                }
-            }
-            finally
-            {
-                foreach (var process in potentialProcesses)
-                {
-                    lock (_processLock)
-                    {
-                        if (!_processes.Values.Any(tracked => ReferenceEquals(tracked.Process, process)))
-                            process.Dispose();
-                    }
-                }
-            }
-        }
-        catch
+        foreach (var record in ReadRegistryRecords())
         {
-            // Process enumeration is best effort only.
-        }
+            if (_processes.ContainsKey(record.ProcessId))
+                continue;
 
-        return false;
+            var process = TryRestoreProcess(record);
+            if (process is null)
+                continue;
+
+            process.EnableRaisingEvents = true;
+            process.Exited += OnGameProcessExited;
+            _processes.Add(process.Id, new TrackedProcess(process, record));
+        }
     }
 
-    private static bool ProcessCommandLineContainsHytale(int processId)
+    private IReadOnlyCollection<GameProcessInfo> ReadRegistryRecords()
     {
-        if (!OperatingSystem.IsLinux())
-            return false;
+        if (string.IsNullOrWhiteSpace(_registryPath) || !File.Exists(_registryPath))
+            return [];
 
         try
         {
-            var commandLinePath = $"/proc/{processId}/cmdline";
-            return File.Exists(commandLinePath)
-                && File.ReadAllText(commandLinePath).Contains("Hytale", StringComparison.OrdinalIgnoreCase);
+            return JsonSerializer.Deserialize<List<GameProcessInfo>>(File.ReadAllText(_registryPath)) ?? [];
         }
-        catch
+        catch (Exception exception)
         {
+            Logger.Warning("Game", $"Could not read the game process registry: {exception.Message}");
+            return [];
+        }
+    }
+
+    private FileStream? AcquireRegistryWriteLock()
+    {
+        if (string.IsNullOrWhiteSpace(_registryPath))
+            return null;
+
+        var lockPath = _registryPath + ".lock";
+        for (var attempt = 0; attempt < 40; attempt++)
+        {
+            try
+            {
+                return new FileStream(lockPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
+            }
+            catch (IOException) when (attempt < 39)
+            {
+                Thread.Sleep(25);
+            }
+        }
+
+        return null;
+    }
+
+    private static bool IsRecordAlive(GameProcessInfo record)
+    {
+        var process = TryGetProcess(record.ProcessId);
+        if (process is null)
             return false;
+
+        using (process)
+        {
+            try
+            {
+                return IsAlive(process) && GetProcessStartTimeUtc(process) == record.ProcessStartedAtUtc;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+    }
+
+    private static Process? TryGetProcess(int processId)
+    {
+        try
+        {
+            return Process.GetProcessById(processId);
+        }
+        catch (ArgumentException)
+        {
+            return null;
+        }
+        catch (InvalidOperationException)
+        {
+            return null;
+        }
+        catch (System.ComponentModel.Win32Exception)
+        {
+            return null;
         }
     }
 

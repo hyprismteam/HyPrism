@@ -27,6 +27,20 @@ dotnet build HyPrism.sln
 
 The solution contains `HyPrism.Core`, `HyPrism.Desktop`, `HyPrism.LocalNode`, and their test projects
 
+## Local publishing
+
+Publish the native desktop host directly with the .NET SDK:
+
+```bash
+dotnet publish Sources/HyPrism.Desktop/HyPrism.Desktop.csproj \
+  --configuration Release \
+  --runtime linux-x64 \
+  --self-contained true \
+  --output dist/hyprism-linux-x64
+```
+
+Replace `linux-x64` with the target runtime identifier. The obsolete Electron packaging script is not part of the Avalonia release path
+
 ## GitHub Actions
 
 `.github/workflows/ci.yml` is the push and pull request entry point. It calls the independent test workflow and the build dispatcher. `.github/workflows/build.yml` only selects platforms, while `build-linux.yml`, `build-windows.yml`, and `build-macos.yml` own their platform packaging

@@ -59,7 +59,8 @@ public sealed class GameLaunchCoordinatorTests
             service => service.ReportError(
                 "launch",
                 "Game not installed",
-                It.Is<string>(value => value.Contains(instance.Name))),
+                It.Is<string>(value => value.Contains(instance.Name)),
+                instance.Id),
             Times.Once);
         _gameSession.Verify(
             service => service.DownloadAndLaunchAsync(It.IsAny<AuthUriPresenter?>()),

@@ -270,16 +270,20 @@ public static class Bootstrapper
     /// </summary>
     /// <param name="services">Service provider returned by <see cref="Initialize"/></param>
     /// <returns>A task that completes after optional remote bootstrap data has been prepared</returns>
-    public static async Task InitializeAsync(IServiceProvider services)
+    public static async Task InitializeAsync(
+        IServiceProvider services,
+        CancellationToken cancellationToken = default)
     {
-        await EnsureCurseForgeKeyAsync(services);
+        await EnsureCurseForgeKeyAsync(services, cancellationToken);
     }
 
     /// <summary>
     /// Ensures the CurseForge API key is present in configuration.
     /// If missing, fetches it from the upstream source
     /// </summary>
-    private static async Task EnsureCurseForgeKeyAsync(IServiceProvider services)
+    private static async Task EnsureCurseForgeKeyAsync(
+        IServiceProvider services,
+        CancellationToken cancellationToken)
     {
         var configStore = services.GetRequiredService<IConfigStore>();
         var httpClient = services.GetRequiredService<HttpClient>();
@@ -294,7 +298,7 @@ public static class Bootstrapper
 
         try
         {
-            var cmakeContent = await httpClient.GetStringAsync(CurseForgeKeySourceUrl);
+            var cmakeContent = await httpClient.GetStringAsync(CurseForgeKeySourceUrl, cancellationToken);
 
             var match = Regex.Match(cmakeContent, @"set\(Launcher_CURSEFORGE_API_KEY\s+""([^""]+)""");
 
@@ -309,6 +313,10 @@ public static class Bootstrapper
             {
                 Logger.Warning("Bootstrapper", "Could not parse CurseForge API key");
             }
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            Logger.Info("Bootstrapper", "Asynchronous initialization cancelled during shutdown");
         }
         catch (Exception ex)
         {

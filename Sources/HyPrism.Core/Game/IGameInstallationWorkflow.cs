@@ -31,7 +31,8 @@ public interface IGameInstallationWorkflow : IDisposable
         AuthUriPresenter? authorizationUriPresenter = null);
 
     /// <summary>
-    /// Cancels any ongoing download operation
+    /// Cancels the ongoing operation for one instance
     /// </summary>
-    void CancelDownload();
+    /// <param name="instanceId">Stable identifier of the instance whose operation should be cancelled</param>
+    void CancelDownload(string instanceId);
 }

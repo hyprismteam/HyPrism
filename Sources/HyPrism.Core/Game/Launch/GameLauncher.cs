@@ -104,23 +104,36 @@ public class GameLauncher : IGameLauncher
         _localNodeFactory = localNodeFactory;
         _logSession = logSession ?? new LogSessionPaths(appPath);
         _gameProcess.GameProcessExited += OnGameProcessExited;
+
+        foreach (var process in _gameProcess.TakeProcessesExitedWhileUnavailable())
+            ReconcileGameProcessExit(process, exitedWhileLauncherUnavailable: true);
     }
 
 
     private void OnGameProcessExited(object? sender, GameProcessExitedEventArgs eventArgs)
+        => ReconcileGameProcessExit(eventArgs.Process, exitedWhileLauncherUnavailable: false);
+
+    private void ReconcileGameProcessExit(
+        GameProcessInfo process,
+        bool exitedWhileLauncherUnavailable)
     {
         var launchedProfileUuid = _profiles.GetProfiles()
             .FirstOrDefault(profile => string.Equals(
                 profile.Id,
-                eventArgs.Process.ProfileId,
+                process.ProfileId,
                 StringComparison.Ordinal))
             ?.UUID;
 
         try
         {
-            Logger.Info("Game", "Game process exited, performing cleanup...");
+            Logger.Info("Game", exitedWhileLauncherUnavailable
+                ? $"Reconciling game process {process.ProcessId} that exited while HyPrism was unavailable"
+                : "Game process exited, performing cleanup...");
 
-            _skins.StopSkinProtection();
+            RecordInstancePlayTime(process);
+
+            if (!_gameProcess.IsGameRunning())
+                _skins.StopSkinProtection();
             if (!string.IsNullOrWhiteSpace(launchedProfileUuid))
             {
                 _skins.BackupProfileSkinData(launchedProfileUuid);
@@ -143,6 +156,24 @@ public class GameLauncher : IGameLauncher
         {
             Logger.Error("Game", $"Could not reset Discord presence: {ex.Message}");
         }
+    }
+
+    private void RecordInstancePlayTime(GameProcessInfo process)
+    {
+        var instancePath = _instances.GetInstancePathById(process.InstanceId);
+        if (string.IsNullOrWhiteSpace(instancePath))
+            return;
+
+        var meta = _instances.GetInstanceMeta(instancePath);
+        if (meta is null)
+            return;
+
+        var elapsedSeconds = Math.Max(
+            0,
+            (long)(DateTime.UtcNow - process.ProcessStartedAtUtc).TotalSeconds);
+        meta.PlayTimeSeconds += elapsedSeconds;
+        meta.LastPlayedAt = DateTime.UtcNow;
+        _instances.SaveInstanceMeta(instancePath, meta);
     }
 
     /// <inheritdoc/>

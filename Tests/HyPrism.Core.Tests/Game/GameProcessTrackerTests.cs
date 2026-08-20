@@ -60,24 +60,25 @@ public sealed class GameProcessTrackerTests
     }
 
     [Fact]
-    public async Task ExitGameRaisesProcessExitedAndClearsTrackedProcess()
+    public async Task ExitGameRaisesInstanceExitAndClearsTrackedInstance()
     {
         var process = StartLongRunningProcess();
         var tracker = new GameProcessTracker();
-        var processExited = new TaskCompletionSource(
+        var processExited = new TaskCompletionSource<GameProcessExitedEventArgs>(
             TaskCreationOptions.RunContinuationsAsynchronously);
-        tracker.ProcessExited += (_, _) => processExited.TrySetResult();
+        tracker.GameProcessExited += (_, args) => processExited.TrySetResult(args);
 
         try
         {
-            tracker.SetGameProcess(process);
+            tracker.TrackGameProcess(process, "release-instance", "profile-id");
 
             Assert.True(tracker.IsGameRunning());
-            Assert.True(tracker.ExitGame());
-            await processExited.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            Assert.True(tracker.ExitGame("release-instance"));
+            var exit = await processExited.Task.WaitAsync(TimeSpan.FromSeconds(5));
 
+            Assert.Equal("release-instance", exit.Process.InstanceId);
             Assert.False(tracker.IsGameRunning());
-            Assert.Null(tracker.GetGameProcess());
+            Assert.Empty(tracker.GetRunningProcesses());
         }
         finally
         {
@@ -151,6 +152,76 @@ public sealed class GameProcessTrackerTests
         finally
         {
             process.Dispose();
+        }
+    }
+
+    [Fact]
+    public async Task PersistentRegistry_ReportsProcessThatExitedDuringLauncherDowntime()
+    {
+        var appDirectory = Path.Combine(Path.GetTempPath(), "HyPrismProcessTrackerTests_" + Guid.NewGuid());
+        var process = StartLongRunningProcess();
+        var processId = process.Id;
+        try
+        {
+            using (var tracker = new GameProcessTracker(new AppPathConfiguration(appDirectory)))
+            {
+                tracker.TrackGameProcess(process, "release-instance", "profile-id");
+            }
+
+            using (var liveProcess = Process.GetProcessById(processId))
+                liveProcess.Kill(entireProcessTree: true);
+            await WaitForProcessExitAsync(processId);
+
+            using var restoredTracker = new GameProcessTracker(new AppPathConfiguration(appDirectory));
+            var exited = Assert.Single(restoredTracker.TakeProcessesExitedWhileUnavailable());
+            Assert.Equal("release-instance", exited.InstanceId);
+            Assert.Empty(restoredTracker.TakeProcessesExitedWhileUnavailable());
+        }
+        finally
+        {
+            try
+            {
+                if (!process.HasExited)
+                    process.Kill(entireProcessTree: true);
+            }
+            catch
+            {
+            }
+
+            process.Dispose();
+            if (Directory.Exists(appDirectory))
+                Directory.Delete(appDirectory, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void Registry_RefreshesProcessTrackedByAnotherLauncher()
+    {
+        var appDirectory = Path.Combine(Path.GetTempPath(), "HyPrismProcessTrackerTests_" + Guid.NewGuid());
+        var process = StartLongRunningProcess();
+        try
+        {
+            using var firstTracker = new GameProcessTracker(new AppPathConfiguration(appDirectory));
+            using var secondTracker = new GameProcessTracker(new AppPathConfiguration(appDirectory));
+
+            firstTracker.TrackGameProcess(process, "release-instance", "profile-id");
+
+            Assert.True(secondTracker.IsInstanceRunning("release-instance"));
+        }
+        finally
+        {
+            try
+            {
+                if (!process.HasExited)
+                    process.Kill(entireProcessTree: true);
+            }
+            catch
+            {
+            }
+
+            process.Dispose();
+            if (Directory.Exists(appDirectory))
+                Directory.Delete(appDirectory, recursive: true);
         }
     }
 

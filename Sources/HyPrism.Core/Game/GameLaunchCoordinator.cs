@@ -40,6 +40,9 @@ public sealed class GameLaunchCoordinator(
         var selectedInstance = string.IsNullOrWhiteSpace(instanceId)
             ? instances.GetSelectedInstance()
             : instances.FindInstanceById(instanceId);
+        using var operation = selectedInstance is null
+            ? null
+            : progress.BeginOperation(selectedInstance.Id);
         if (selectedInstance != null)
         {
             if (processService.IsInstanceRunning(selectedInstance.Id))
@@ -55,7 +58,8 @@ public sealed class GameLaunchCoordinator(
                 progress.ReportError(
                     "launch",
                     "Game not installed",
-                    $"Instance '{selectedInstance.Name}' has no game installed. Click UPDATE to install.");
+                    $"Instance '{selectedInstance.Name}' has no game installed. Click UPDATE to install.",
+                    selectedInstance.Id);
                 return;
             }
 
@@ -89,14 +93,15 @@ public sealed class GameLaunchCoordinator(
                 progress.ReportError(
                     "download",
                     "Failed to install game",
-                    result.Error ?? "Unknown error");
+                    result.Error ?? "Unknown error",
+                    selectedInstance?.Id);
                 RaiseLaunchFailed(selectedInstance?.Id, exitCode);
             }
         }
         catch (Exception ex)
         {
             Logger.Error("Game", $"Game launch failed: {ex.Message}");
-            progress.ReportError("download", "Failed to install game", ex.ToString());
+            progress.ReportError("download", "Failed to install game", ex.ToString(), selectedInstance?.Id);
             RaiseLaunchFailed(selectedInstance?.Id, ErrorLaunchFailed);
         }
         finally

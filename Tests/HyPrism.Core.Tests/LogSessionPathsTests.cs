@@ -70,11 +70,13 @@ public sealed class LogSessionPathsTests
         {
             Logger.ConfigureFileLogging(path);
             Logger.Info("LogSessionTest", "central launcher record", logToConsole: false);
+            Logger.Debug("LogSessionTest", "debug launcher record");
             Logger.Shutdown();
 
             var content = await File.ReadAllTextAsync(path);
             Assert.Contains("[LogSessionTest]", content);
             Assert.Contains("central launcher record", content);
+            Assert.Contains("debug launcher record", content);
         }
         finally
         {

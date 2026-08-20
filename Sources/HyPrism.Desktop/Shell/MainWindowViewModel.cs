@@ -350,7 +350,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
             : _localizer["desktopSettings.accountOffline"];
 
         _progress.DownloadProgressChanged += OnDownloadProgressChanged;
-        _progress.ErrorOccurred += OnErrorOccurred;
+        _progress.OperationErrorOccurred += OnOperationErrorOccurred;
         _gameProcess.GameProcessStarted += OnGameProcessStarted;
         _gameProcess.GameProcessExited += OnGameProcessExited;
         _gameLaunchCoordinator.LaunchFailed += OnLaunchFailed;
@@ -366,6 +366,8 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         CurrentPageTitle = DashboardLabel;
         RefreshInstances();
         RefreshManagedInstanceContent();
+        if (IsGameRunning)
+            _managedInstanceActionTimer.Start();
     }
 
     public ObservableCollection<InstanceItemViewModel> AllInstances { get; } = [];
@@ -497,13 +499,13 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     public bool HasInstanceContentError => !string.IsNullOrWhiteSpace(InstanceContentError);
     public bool IsSelectedInstanceInstalled => _selectedInstance?.IsInstalled == true;
     public bool IsManagedInstanceInstalled => _managedInstance?.IsInstalled == true;
-    public bool IsManagedInstanceActionActive =>
-        _managedInstance is not null &&
-        string.Equals(
-            _managedInstance.Id,
-            _managedInstanceActionInstanceId,
-            StringComparison.OrdinalIgnoreCase);
-    public bool IsManagedInstanceActionRunning => IsManagedInstanceActionActive && IsManagedInstanceRunning;
+    public bool IsManagedInstanceActionActive => IsManagedInstanceRunning ||
+        (_managedInstance is not null &&
+         string.Equals(
+             _managedInstance.Id,
+             _managedInstanceActionInstanceId,
+             StringComparison.OrdinalIgnoreCase));
+    public bool IsManagedInstanceActionRunning => IsManagedInstanceRunning;
     private bool IsManagedInstanceRunning => _managedInstance is not null
         && _gameProcess.IsInstanceRunning(_managedInstance.Id);
     private bool IsSelectedInstanceRunning => _selectedInstance is not null
@@ -947,7 +949,11 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
 
     [RelayCommand]
     private void CancelActivity()
-        => _installationWorkflow.CancelDownload();
+    {
+        var instanceId = _managedInstanceActionInstanceId ?? _selectedInstance?.Id;
+        if (!string.IsNullOrWhiteSpace(instanceId))
+            _installationWorkflow.CancelDownload(instanceId);
+    }
 
     private bool IsInstanceBusy(string instanceId)
         => !string.IsNullOrWhiteSpace(instanceId)
@@ -1915,7 +1921,12 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     private string FormatManagedInstanceActionElapsedTime()
     {
         var startedAt = IsManagedInstanceActionRunning
-            ? _managedInstanceGameStartedAtUtc
+            ? _managedInstanceGameStartedAtUtc ?? _gameProcess.GetRunningProcesses()
+                .FirstOrDefault(process => string.Equals(
+                    process.InstanceId,
+                    _managedInstance?.Id,
+                    StringComparison.OrdinalIgnoreCase))
+                ?.ProcessStartedAtUtc
             : _managedInstanceActionStartedAtUtc;
         if (startedAt is null)
             return "0:00";
@@ -1965,7 +1976,9 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     {
         Dispatcher.UIThread.Post(() =>
         {
-            if (!IsBusy)
+            var activeInstanceId = _managedInstanceActionInstanceId ?? _selectedInstance?.Id;
+            if (!IsBusy || (update.InstanceId is not null &&
+                            !string.Equals(update.InstanceId, activeInstanceId, StringComparison.OrdinalIgnoreCase)))
                 return;
 
             ActivityProgress = Math.Clamp(update.Progress, 0, 100);
@@ -2013,7 +2026,6 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
                     StringComparison.OrdinalIgnoreCase);
             if (endsManagedAction)
                 _completedManagedActivityGenerations.Add(_managedInstanceActionGeneration);
-            RecordInstancePlayTime(process);
             CanCancelActivity = false;
             EndInstanceActivity(process.InstanceId);
 
@@ -2056,26 +2068,15 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         });
     }
 
-    private void RecordInstancePlayTime(GameProcessInfo process)
+    private void OnOperationErrorOccurred(OperationErrorMessage error)
     {
-        var instancePath = _instances.GetInstancePathById(process.InstanceId);
-        if (string.IsNullOrWhiteSpace(instancePath))
+        var activeInstanceId = _managedInstanceActionInstanceId ?? _selectedInstance?.Id;
+        if (error.InstanceId is not null &&
+            !string.Equals(error.InstanceId, activeInstanceId, StringComparison.OrdinalIgnoreCase))
             return;
 
-        var meta = _instances.GetInstanceMeta(instancePath);
-        if (meta is null)
-            return;
-
-        var elapsedSeconds = Math.Max(
-            0,
-            (long)(DateTime.UtcNow - process.ProcessStartedAtUtc).TotalSeconds);
-        meta.PlayTimeSeconds += elapsedSeconds;
-        meta.LastPlayedAt = DateTime.UtcNow;
-        _instances.SaveInstanceMeta(instancePath, meta);
+        Dispatcher.UIThread.Post(() => ShowError(error.Technical ?? error.Message));
     }
-
-    private void OnErrorOccurred(string type, string message, string? technical)
-        => Dispatcher.UIThread.Post(() => ShowError(technical ?? message));
 
     private void OnBackgroundChanged(string? mode)
         => Dispatcher.UIThread.Post(() => ReplaceDashboardBackground(mode));
@@ -2182,7 +2183,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         foreach (var item in _allNews)
             item.Dispose();
         _progress.DownloadProgressChanged -= OnDownloadProgressChanged;
-        _progress.ErrorOccurred -= OnErrorOccurred;
+        _progress.OperationErrorOccurred -= OnOperationErrorOccurred;
         _gameProcess.GameProcessStarted -= OnGameProcessStarted;
         _gameProcess.GameProcessExited -= OnGameProcessExited;
         _gameLaunchCoordinator.LaunchFailed -= OnLaunchFailed;

@@ -83,10 +83,10 @@ public static class Logger
     public static void Info(string category, string message, bool logToConsole = true)
     {
         Log.ForContext("SourceContext", category).Information(message);
+        AddToBuffer("INF", category, message);
         if (logToConsole)
         {
             WriteToConsole("INF", category, message, ConsoleColor.Gray);
-            AddToBuffer("INF", category, message);
         }
     }
     
@@ -99,10 +99,10 @@ public static class Logger
     public static void Success(string category, string message, bool logToConsole = true)
     {
         Log.ForContext("SourceContext", category).Information($"SUCCESS: {message}");
+        AddToBuffer("SUC", category, message);
         if (logToConsole)
         {
             WriteToConsole("SUC", category, message, ConsoleColor.Green);
-            AddToBuffer("SUC", category, message);
         }
     }
     
@@ -115,10 +115,10 @@ public static class Logger
     public static void Warning(string category, string message, bool logToConsole = true)
     {
         Log.ForContext("SourceContext", category).Warning(message);
+        AddToBuffer("WRN", category, message);
         if (logToConsole)
         {
             WriteToConsole("WRN", category, message, ConsoleColor.Yellow);
-            AddToBuffer("WRN", category, message);
         }
     }
     
@@ -131,25 +131,23 @@ public static class Logger
     public static void Error(string category, string message, bool logToConsole = true)
     {
         Log.ForContext("SourceContext", category).Error(message);
+        AddToBuffer("ERR", category, message);
         if (logToConsole)
         {
             WriteToConsole("ERR", category, message, ConsoleColor.Red);
-            AddToBuffer("ERR", category, message);
         }
     }
     
     /// <summary>
-    /// Logs a debug message. Only outputs in DEBUG builds.
+    /// Logs a debug message. The file sink keeps debug records in every build.
     /// </summary>
     /// <param name="category">The log category or source context.</param>
     /// <param name="message">The debug message to log.</param>
     public static void Debug(string category, string message)
     {
-#if DEBUG
         Log.ForContext("SourceContext", category).Debug(message);
         WriteToConsole("DBG", category, message, ConsoleColor.DarkGray);
         AddToBuffer("DBG", category, message);
-#endif
     }
     
     /// <summary>

@@ -489,7 +489,7 @@ public sealed class MainWindowRenderTests
         window.MouseDown(initialActionPoint.Value, MouseButton.Left);
         window.MouseUp(initialActionPoint.Value, MouseButton.Left);
         Dispatcher.UIThread.RunJobs();
-        gameSession.Verify(service => service.CancelDownload(), Times.Never);
+        gameSession.Verify(service => service.CancelDownload(instance.Id), Times.Never);
 
         window.MouseMove(new Point(window.Bounds.Width / 2, window.Bounds.Height - 8));
         Dispatcher.UIThread.RunJobs();
@@ -515,7 +515,7 @@ public sealed class MainWindowRenderTests
         window.MouseDown(actionPoint.Value, MouseButton.Left);
         window.MouseUp(actionPoint.Value, MouseButton.Left);
         Dispatcher.UIThread.RunJobs();
-        gameSession.Verify(service => service.CancelDownload(), Times.Once);
+        gameSession.Verify(service => service.CancelDownload(instance.Id), Times.Once);
 
         var spinnerCenter = spinner.TranslatePoint(
             new Point(spinner.Bounds.Width / 2, spinner.Bounds.Height / 2),

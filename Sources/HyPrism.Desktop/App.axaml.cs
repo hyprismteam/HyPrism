@@ -28,6 +28,8 @@ namespace HyPrism.Desktop;
 public sealed partial class App : Application
 {
     private MainWindowViewModel? _mainWindowViewModel;
+    private readonly CancellationTokenSource _bootstrapCancellation = new();
+    private Task? _bootstrapTask;
 
     public override void Initialize()
         => AvaloniaXamlLoader.Load(this);
@@ -72,7 +74,7 @@ public sealed partial class App : Application
             desktop.MainWindow = mainWindow;
 
             desktop.Exit += OnDesktopExit;
-            _ = Task.Run(() => Bootstrapper.InitializeAsync(services));
+            _bootstrapTask = InitializeAsync(services, _bootstrapCancellation.Token);
         }
 
         base.OnFrameworkInitializationCompleted();
@@ -80,8 +82,24 @@ public sealed partial class App : Application
 
     private void OnDesktopExit(object? sender, ControlledApplicationLifetimeExitEventArgs e)
     {
+        _bootstrapCancellation.Cancel();
         _mainWindowViewModel?.Dispose();
         (DesktopRuntime.Services as IDisposable)?.Dispose();
         Logger.Shutdown();
+    }
+
+    private static async Task InitializeAsync(IServiceProvider services, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await Bootstrapper.InitializeAsync(services, cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+        }
+        catch (Exception exception)
+        {
+            Logger.Error("Bootstrapper", $"Asynchronous initialization failed: {exception}");
+        }
     }
 }
