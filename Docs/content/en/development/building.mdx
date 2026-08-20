@@ -29,13 +29,15 @@ The solution contains `HyPrism.Core`, `HyPrism.Desktop`, `HyPrism.LocalNode`, an
 
 ## Local publishing
 
-The platform dispatcher is `Scripts/publish.sh`. On Linux it creates `deb`, `rpm`, AppImage, Flatpak bundle, and `tar.xz` from one self-contained Desktop publish output. Install `rpm`, Flatpak, Flatpak Builder, and appimagetool first, then run:
+Release entry points and their platform assets are centralized under `Packaging/`. On Linux, the publisher creates `deb`, `rpm`, AppImage, Flatpak bundle, and `tar.xz` from one self-contained Desktop publish output. Install `rpm`, Flatpak, Flatpak Builder, and appimagetool first, then run:
 
 ```bash
-./Scripts/publish.sh all --version 1.2.3 --output dist
+./Packaging/publish-linux.sh all --output dist
 ```
 
-Use a specific Linux target such as `deb`, `rpm`, `appimage`, `flatpak`, or `tar` to build only that package. On macOS, `./Scripts/publish.sh dmg` creates the DMG. On Windows, run `bash Scripts/publish.sh all` in Git Bash to create ZIP, MSI, and EXE installer. All platform workflows call this dispatcher
+Use a specific Linux target such as `deb`, `rpm`, `appimage`, `flatpak`, or `tar` to build only that package. On macOS, `./Packaging/publish-macos.sh dmg` creates the DMG. On Windows, `pwsh Packaging/publish-windows.ps1 all` creates ZIP, MSI, and EXE installer. Each platform workflow directly calls its corresponding entry point
+
+The `Version` property in `Sources/HyPrism.Desktop/HyPrism.Desktop.csproj` is the only release version source. Packaging scripts evaluate it through MSBuild for assembly metadata, package metadata, and artifact names. A release tag must match `v<Version>` or the release workflow fails
 
 ## GitHub Actions
 

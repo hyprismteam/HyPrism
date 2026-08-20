@@ -5,19 +5,7 @@ name: Build Windows
 
 on:
   workflow_dispatch:
-    inputs:
-      version:
-        description: 'Artifact version. Defaults to the tag or CI run number'
-        required: false
-        default: ''
-        type: string
   workflow_call:
-    inputs:
-      version:
-        description: 'Artifact version. Defaults to the tag or CI run number'
-        required: false
-        default: ''
-        type: string
 
 permissions:
   contents: read
@@ -40,25 +28,10 @@ jobs:
           dotnet-version: ${{ env.DOTNET_VERSION }}
           dotnet-quality: ${{ env.DOTNET_QUALITY }}
 
-      - name: Determine artifact version
-        id: version
+      - name: Publish Windows x64 packages
         shell: pwsh
         run: |
-          $version = "${{ inputs.version }}"
-          if ([string]::IsNullOrWhiteSpace($version)) {
-            if ($env:GITHUB_REF_NAME.StartsWith("v")) {
-              $version = $env:GITHUB_REF_NAME.Substring(1)
-            } else {
-              $version = "ci-$env:GITHUB_RUN_NUMBER"
-            }
-          }
-          "value=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
-
-      - name: Publish Windows x64 packages
-        shell: bash
-        run: |
-          ./Scripts/publish.sh all \
-            --version "${{ steps.version.outputs.value }}" \
+          ./Packaging/publish-windows.ps1 all `
             --output dist
 
       - name: Upload Windows artifact

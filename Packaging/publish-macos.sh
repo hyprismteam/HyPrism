@@ -5,34 +5,29 @@
 
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+PACKAGING_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$PACKAGING_DIR/.." && pwd)"
 PROJECT_FILE="$PROJECT_ROOT/Sources/HyPrism.Desktop/HyPrism.Desktop.csproj"
 APP_ICON="$PROJECT_ROOT/Sources/HyPrism.Desktop/Assets/Images/appicon_512.png"
-VERSION=""
+INFO_PLIST="$PACKAGING_DIR/macos/Info.plist"
 OUTPUT_DIR="$PROJECT_ROOT/dist"
 TARGETS=()
 
 usage() {
     cat <<'EOF'
-Usage: ./Scripts/publish.sh <target> [options]
+Usage: ./Packaging/publish-macos.sh <target> [options]
 
 Targets:
   all   Build the macOS DMG
   dmg   Build the macOS DMG
 
 Options:
-  --version <version>   Version embedded in the DMG name
   --output <directory>  Artifact directory, defaults to dist
 EOF
 }
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        --version)
-            VERSION="${2:?--version requires a value}"
-            shift 2
-            ;;
         --output)
             OUTPUT_DIR="${2:?--output requires a directory}"
             shift 2
@@ -56,28 +51,19 @@ if [[ ${#TARGETS[@]} -eq 0 ]]; then
     TARGETS=(all)
 fi
 
-if [[ -z "$VERSION" ]]; then
-    if [[ "${GITHUB_REF_NAME:-}" == v* ]]; then
-        VERSION="${GITHUB_REF_NAME#v}"
-    elif [[ -n "${GITHUB_RUN_NUMBER:-}" ]]; then
-        VERSION="ci-${GITHUB_RUN_NUMBER}"
-    else
-        VERSION="local"
-    fi
-fi
-
-if [[ "$VERSION" =~ ^[0-9]+(\.[0-9]+){0,2}$ ]]; then
-    BUNDLE_VERSION="$VERSION"
-else
-    BUNDLE_VERSION="0.0.0"
-fi
-
 for command in dotnet sips iconutil plutil hdiutil codesign file; do
     command -v "$command" >/dev/null 2>&1 || {
         echo "Required command is unavailable: $command" >&2
         exit 1
     }
 done
+
+VERSION="$(dotnet msbuild "$PROJECT_FILE" -nologo -getProperty:Version | tail -n 1 | tr -d '\r')"
+if [[ ! "$VERSION" =~ ^[0-9]+(\.[0-9]+){0,2}([-.+][0-9A-Za-z.-]+)?$ ]]; then
+    echo "HyPrism.Desktop.csproj contains an invalid Version: $VERSION" >&2
+    exit 1
+fi
+BUNDLE_VERSION="${VERSION%%[-+]*}"
 
 BUILD_ROOT="$(mktemp -d "${TMPDIR:-/tmp}/hyprism-macos-publish.XXXXXX")"
 APP_DIR="$BUILD_ROOT/HyPrism.app"
@@ -105,19 +91,9 @@ for host in HyPrism.Desktop HyPrism.LocalNode; do
 done
 file "$APP_DIR/Contents/MacOS/HyPrism.LocalNode" | grep -q 'Mach-O 64-bit executable arm64'
 
-plutil -create xml1 "$APP_DIR/Contents/Info.plist"
-plutil -insert CFBundleDevelopmentRegion -string en "$APP_DIR/Contents/Info.plist"
-plutil -insert CFBundleDisplayName -string HyPrism "$APP_DIR/Contents/Info.plist"
-plutil -insert CFBundleExecutable -string HyPrism.Desktop "$APP_DIR/Contents/Info.plist"
-plutil -insert CFBundleIconFile -string HyPrism.icns "$APP_DIR/Contents/Info.plist"
-plutil -insert CFBundleIdentifier -string io.github.hyprismteam.HyPrism "$APP_DIR/Contents/Info.plist"
-plutil -insert CFBundleInfoDictionaryVersion -string 6.0 "$APP_DIR/Contents/Info.plist"
-plutil -insert CFBundleName -string HyPrism "$APP_DIR/Contents/Info.plist"
-plutil -insert CFBundlePackageType -string APPL "$APP_DIR/Contents/Info.plist"
-plutil -insert CFBundleShortVersionString -string "$BUNDLE_VERSION" "$APP_DIR/Contents/Info.plist"
-plutil -insert CFBundleVersion -string "${GITHUB_RUN_NUMBER:-1}" "$APP_DIR/Contents/Info.plist"
-plutil -insert LSMinimumSystemVersion -string 12.0 "$APP_DIR/Contents/Info.plist"
-plutil -insert NSHighResolutionCapable -bool true "$APP_DIR/Contents/Info.plist"
+cp "$INFO_PLIST" "$APP_DIR/Contents/Info.plist"
+plutil -replace CFBundleShortVersionString -string "$BUNDLE_VERSION" "$APP_DIR/Contents/Info.plist"
+plutil -replace CFBundleVersion -string "$BUNDLE_VERSION" "$APP_DIR/Contents/Info.plist"
 
 codesign --force --deep --sign - "$APP_DIR"
 codesign --verify --deep --strict "$APP_DIR"

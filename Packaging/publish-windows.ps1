@@ -8,17 +8,16 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$scriptRoot = Split-Path -Parent $PSCommandPath
-$projectRoot = Split-Path -Parent $scriptRoot
+$packagingDirectory = Split-Path -Parent $PSCommandPath
+$projectRoot = Split-Path -Parent $packagingDirectory
 $projectFile = Join-Path $projectRoot 'Sources/HyPrism.Desktop/HyPrism.Desktop.csproj'
-$wixSource = Join-Path $projectRoot 'Packaging/windows'
+$wixSource = Join-Path $packagingDirectory 'windows'
 $targets = [System.Collections.Generic.List[string]]::new()
-$version = ''
 $outputDirectory = Join-Path $projectRoot 'dist'
 
 function Show-Usage {
     @'
-Usage: bash Scripts/publish.sh <target> [<target>...] [options]
+Usage: pwsh Packaging/publish-windows.ps1 <target> [<target>...] [options]
 
 Targets:
   all   Build portable ZIP, MSI, and EXE installer
@@ -27,17 +26,12 @@ Targets:
   exe   Build an EXE bootstrapper installer
 
 Options:
-  --version <version>   Version embedded in artifact names
   --output <directory>  Artifact directory, defaults to dist
 '@ | Write-Output
 }
 
 for ($index = 0; $index -lt $Arguments.Count; $index++) {
     switch ($Arguments[$index]) {
-        '--version' {
-            if (++$index -ge $Arguments.Count) { throw '--version requires a value' }
-            $version = $Arguments[$index]
-        }
         '--output' {
             if (++$index -ge $Arguments.Count) { throw '--output requires a directory' }
             $outputDirectory = $Arguments[$index]
@@ -56,14 +50,9 @@ if ($targets.Count -eq 0 -or $targets.Contains('all')) {
     $targets = [System.Collections.Generic.List[string]]@('zip', 'msi', 'exe')
 }
 
+$version = (& dotnet msbuild $projectFile -nologo -getProperty:Version | Select-Object -Last 1).Trim()
 if ([string]::IsNullOrWhiteSpace($version)) {
-    if ($env:GITHUB_REF_NAME -like 'v*') {
-        $version = $env:GITHUB_REF_NAME.Substring(1)
-    } elseif (-not [string]::IsNullOrWhiteSpace($env:GITHUB_RUN_NUMBER)) {
-        $version = "ci-$env:GITHUB_RUN_NUMBER"
-    } else {
-        $version = 'local'
-    }
+    throw 'HyPrism.Desktop.csproj does not define a Version property'
 }
 
 $artifactVersion = $version -replace '[^0-9A-Za-z._+-]', '-'

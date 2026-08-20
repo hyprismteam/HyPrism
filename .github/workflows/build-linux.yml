@@ -5,19 +5,7 @@ name: Build Linux
 
 on:
   workflow_dispatch:
-    inputs:
-      version:
-        description: 'Artifact version. Defaults to the tag or CI run number'
-        required: false
-        default: ''
-        type: string
   workflow_call:
-    inputs:
-      version:
-        description: 'Artifact version. Defaults to the tag or CI run number'
-        required: false
-        default: ''
-        type: string
 
 permissions:
   contents: read
@@ -40,19 +28,6 @@ jobs:
           dotnet-version: ${{ env.DOTNET_VERSION }}
           dotnet-quality: ${{ env.DOTNET_QUALITY }}
 
-      - name: Determine artifact version
-        id: version
-        run: |
-          VERSION="${{ inputs.version }}"
-          if [ -z "$VERSION" ]; then
-            if [[ "$GITHUB_REF_NAME" == v* ]]; then
-              VERSION="${GITHUB_REF_NAME#v}"
-            else
-              VERSION="ci-${GITHUB_RUN_NUMBER}"
-            fi
-          fi
-          echo "value=$VERSION" >> "$GITHUB_OUTPUT"
-
       - name: Install Linux packaging tools
         run: |
           sudo apt-get update
@@ -71,8 +46,7 @@ jobs:
         env:
           APPIMAGETOOL: ${{ runner.temp }}/hyprism-tools/appimagetool
         run: |
-          ./Scripts/publish.sh all \
-            --version "${{ steps.version.outputs.value }}" \
+          ./Packaging/publish-linux.sh all \
             --output dist
 
       - name: Upload Linux artifact

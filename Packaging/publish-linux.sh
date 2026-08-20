@@ -8,31 +8,20 @@
 # always ship together.
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+PACKAGING_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$PACKAGING_DIR/.." && pwd)"
 PROJECT_FILE="$PROJECT_ROOT/Sources/HyPrism.Desktop/HyPrism.Desktop.csproj"
-ASSETS_DIR="$PROJECT_ROOT/Packaging/linux"
+ASSETS_DIR="$PACKAGING_DIR/linux"
 APP_ID="io.github.hyprismteam.HyPrism"
 APP_NAME="HyPrism"
 RUNTIME="linux-x64"
 TARGETS=()
-VERSION=""
 OUTPUT_DIR="$PROJECT_ROOT/dist"
 APPIMAGETOOL_BIN="${APPIMAGETOOL:-}"
 
-case "$(uname -s)" in
-    Darwin)
-        exec "$SCRIPT_DIR/publish-macos.sh" "$@"
-        ;;
-    MINGW*|MSYS*|CYGWIN*)
-        exec pwsh -NoProfile -ExecutionPolicy Bypass \
-            -File "$SCRIPT_DIR/publish-windows.ps1" "$@"
-        ;;
-esac
-
 usage() {
     cat <<'EOF'
-Usage: ./Scripts/publish.sh <target> [<target>...] [options]
+Usage: ./Packaging/publish-linux.sh <target> [<target>...] [options]
 
 Targets:
   all       Build every Linux package supported by this host
@@ -43,23 +32,18 @@ Targets:
   tar       Build a tar.xz archive
 
 Options:
-  --version <version>       Version embedded in package names
   --output <directory>      Artifact directory, defaults to dist
   --appimagetool <path>     appimagetool executable or AppImage
   --help                    Show this help
 
 Examples:
-  ./Scripts/publish.sh all --version 1.2.3
-  ./Scripts/publish.sh deb rpm tar --version 1.2.3 --output ./dist
+  ./Packaging/publish-linux.sh all
+  ./Packaging/publish-linux.sh deb rpm tar --output ./dist
 EOF
 }
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        --version)
-            VERSION="${2:?--version requires a value}"
-            shift 2
-            ;;
         --output)
             OUTPUT_DIR="${2:?--output requires a directory}"
             shift 2
@@ -86,16 +70,6 @@ done
 
 if [[ ${#TARGETS[@]} -eq 0 ]]; then
     TARGETS=(all)
-fi
-
-if [[ -z "$VERSION" ]]; then
-    if [[ "${GITHUB_REF_NAME:-}" == v* ]]; then
-        VERSION="${GITHUB_REF_NAME#v}"
-    elif [[ -n "${GITHUB_RUN_NUMBER:-}" ]]; then
-        VERSION="ci-${GITHUB_RUN_NUMBER}"
-    else
-        VERSION="local"
-    fi
 fi
 
 if [[ "$(uname -s)" != "Linux" ]]; then
@@ -145,6 +119,11 @@ package_versions() {
 
 require_command dotnet
 require_command tar
+VERSION="$(dotnet msbuild "$PROJECT_FILE" -nologo -getProperty:Version | tail -n 1 | tr -d '\r')"
+if [[ -z "$VERSION" ]]; then
+    echo "HyPrism.Desktop.csproj does not define a Version property" >&2
+    exit 1
+fi
 package_versions
 
 if contains_target deb; then

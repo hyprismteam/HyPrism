@@ -5,19 +5,7 @@ name: Build macOS
 
 on:
   workflow_dispatch:
-    inputs:
-      version:
-        description: 'Artifact version. Defaults to the tag or CI run number'
-        required: false
-        default: ''
-        type: string
   workflow_call:
-    inputs:
-      version:
-        description: 'Artifact version. Defaults to the tag or CI run number'
-        required: false
-        default: ''
-        type: string
 
 permissions:
   contents: read
@@ -40,23 +28,9 @@ jobs:
           dotnet-version: ${{ env.DOTNET_VERSION }}
           dotnet-quality: ${{ env.DOTNET_QUALITY }}
 
-      - name: Determine artifact version
-        id: version
-        run: |
-          VERSION="${{ inputs.version }}"
-          if [ -z "$VERSION" ]; then
-            if [[ "$GITHUB_REF_NAME" == v* ]]; then
-              VERSION="${GITHUB_REF_NAME#v}"
-            else
-              VERSION="ci-${GITHUB_RUN_NUMBER}"
-            fi
-          fi
-          echo "value=$VERSION" >> "$GITHUB_OUTPUT"
-
       - name: Publish macOS ARM64 DMG
         run: |
-          ./Scripts/publish.sh dmg \
-            --version "${{ steps.version.outputs.value }}" \
+          ./Packaging/publish-macos.sh dmg \
             --output dist
 
       - name: Upload macOS artifact

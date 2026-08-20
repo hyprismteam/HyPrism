@@ -29,13 +29,15 @@ Solution содержит `HyPrism.Core`, `HyPrism.Desktop`, `HyPrism.LocalNode`
 
 ## Локальная публикация
 
-Платформенным entry point публикации служит `Scripts/publish.sh`. В Linux он создаёт `deb`, `rpm`, AppImage, Flatpak bundle и `tar.xz` из одного self-contained результата Desktop. Сначала установите `rpm`, Flatpak, Flatpak Builder и appimagetool, затем выполните:
+Entry point публикации и платформенные assets централизованы в `Packaging/`. В Linux publisher создаёт `deb`, `rpm`, AppImage, Flatpak bundle и `tar.xz` из одного self-contained результата Desktop. Сначала установите `rpm`, Flatpak, Flatpak Builder и appimagetool, затем выполните:
 
 ```bash
-./Scripts/publish.sh all --version 1.2.3 --output dist
+./Packaging/publish-linux.sh all --output dist
 ```
 
-Для Linux одного формата используйте `deb`, `rpm`, `appimage`, `flatpak` или `tar`. В macOS команда `./Scripts/publish.sh dmg` создаёт DMG. В Windows выполните `bash Scripts/publish.sh all` через Git Bash, чтобы создать ZIP, MSI и EXE-инсталлятор. Все platform-workflow вызывают этот dispatcher
+Для Linux одного формата используйте `deb`, `rpm`, `appimage`, `flatpak` или `tar`. В macOS команда `./Packaging/publish-macos.sh dmg` создаёт DMG. В Windows команда `pwsh Packaging/publish-windows.ps1 all` создаёт ZIP, MSI и EXE-инсталлятор. Каждый platform-workflow напрямую вызывает соответствующий entry point
+
+Единственным источником версии релиза служит свойство `Version` в `Sources/HyPrism.Desktop/HyPrism.Desktop.csproj`. Packaging-скрипты получают вычисленное значение через MSBuild и используют его для assembly metadata, package metadata и имён артефактов. Release-тег должен совпадать с `v<Version>`, иначе release-workflow завершится ошибкой
 
 ## GitHub Actions
 
