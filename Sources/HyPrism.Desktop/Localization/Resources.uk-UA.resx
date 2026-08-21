@@ -2322,4 +2322,19 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="wrapper.updateAvailable" xml:space="preserve">
     <value>Доступне оновлення</value>
   </data>
+  <data name="oauth.callback.successTitle" xml:space="preserve">
+    <value>Авторизацію завершено</value>
+  </data>
+  <data name="oauth.callback.successMessage" xml:space="preserve">
+    <value>Ваш офіційний обліковий запис Hytale підключено до HyPrism</value>
+  </data>
+  <data name="oauth.callback.closeHint" xml:space="preserve">
+    <value>Ви можете закрити це вікно й повернутися до лаунчера</value>
+  </data>
+  <data name="oauth.callback.failureTitle" xml:space="preserve">
+    <value>Не вдалося авторизуватися</value>
+  </data>
+  <data name="oauth.callback.failureHint" xml:space="preserve">
+    <value>Поверніться до лаунчера та спробуйте ще раз</value>
+  </data>
 </root>

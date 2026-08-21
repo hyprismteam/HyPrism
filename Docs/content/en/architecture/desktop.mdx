@@ -39,6 +39,6 @@ Feature views opt into reusable controls with `uiComboBox`, `uiPopupSurface`, `u
 
 The desktop project uses compiled bindings by default. View models expose state and commands while code-behind is limited to control behavior that depends on Avalonia input, layout, or animation primitives
 
-External links and file dialogs stay in Desktop. URI presentation is passed to Core as an asynchronous callback only for interactive OAuth, while file selection is consumed directly by Desktop view models
+External links and file dialogs stay in Desktop. URI presentation is passed to Core as an asynchronous callback only for interactive OAuth, while file selection is consumed directly by Desktop view models. Desktop also implements `IOAuthCallbackPageRenderer` with the HyPrism logo, launcher colors, responsive layout, result state, and close-window guidance localized from the current `IDesktopSettingsStore.Language` value
 
 News and GitHub response models stay beside their Desktop features because they are presentation-facing data and are not part of game or account logic

@@ -2322,4 +2322,19 @@ Sürücü değiştirirseniz oyunu yeniden yüklemeniz gerekebilir.</value>
   <data name="wrapper.updateAvailable" xml:space="preserve">
     <value>Güncelleme mevcut</value>
   </data>
+  <data name="oauth.callback.successTitle" xml:space="preserve">
+    <value>Yetkilendirme başarılı</value>
+  </data>
+  <data name="oauth.callback.successMessage" xml:space="preserve">
+    <value>Resmî Hytale hesabınız HyPrism'e bağlandı</value>
+  </data>
+  <data name="oauth.callback.closeHint" xml:space="preserve">
+    <value>Bu pencereyi kapatıp başlatıcıya dönebilirsiniz</value>
+  </data>
+  <data name="oauth.callback.failureTitle" xml:space="preserve">
+    <value>Yetkilendirme başarısız</value>
+  </data>
+  <data name="oauth.callback.failureHint" xml:space="preserve">
+    <value>Başlatıcıya dönüp tekrar deneyin</value>
+  </data>
 </root>

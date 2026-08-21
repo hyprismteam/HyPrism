@@ -88,6 +88,57 @@ public sealed class HytaleAuthenticatorTests
     }
 
     [Fact]
+    public async Task LoginAsync_UsesHostRendererForSuccessfulCallbackPage()
+    {
+        var appDir = Path.Combine(Path.GetTempPath(), $"hyprism-auth-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(appDir);
+
+        try
+        {
+            var config = new Mock<IConfigStore>();
+            config.SetupGet(service => service.Configuration).Returns(new Config());
+            var renderer = new Mock<IOAuthCallbackPageRenderer>();
+            renderer
+                .Setup(value => value.Render(true, It.IsAny<string>()))
+                .Returns("<!doctype html><html><body>branded-success-page</body></html>");
+            using var httpClient = new HttpClient();
+            var auth = new HytaleAuthenticator(httpClient, appDir, config.Object, renderer.Object);
+
+            var session = await auth.LoginAsync(async (uri, cancellationToken) =>
+            {
+                var state = GetQueryValue(uri, "state");
+                using var stateDocument = JsonDocument.Parse(Convert.FromBase64String(state));
+                var port = stateDocument.RootElement.GetProperty("port").GetString();
+                var callbackState = stateDocument.RootElement.GetProperty("state").GetString();
+                Assert.False(string.IsNullOrWhiteSpace(port));
+                Assert.False(string.IsNullOrWhiteSpace(callbackState));
+
+                using var callbackClient = new HttpClient();
+                using var response = await callbackClient.GetAsync(
+                    $"http://127.0.0.1:{port}/authorization-callback" +
+                    $"?code=test-code&state={Uri.EscapeDataString(callbackState!)}",
+                    cancellationToken);
+                var responseHtml = await response.Content.ReadAsStringAsync(cancellationToken);
+
+                Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
+                Assert.Contains("branded-success-page", responseHtml, StringComparison.Ordinal);
+                return false;
+            });
+
+            Assert.Null(session);
+            renderer.Verify(
+                value => value.Render(
+                    true,
+                    "Authorization completed successfully"),
+                Times.Once);
+        }
+        finally
+        {
+            Directory.Delete(appDir, recursive: true);
+        }
+    }
+
+    [Fact]
     public async Task LoginAsync_RejectsMissingHostCallback()
     {
         var appDir = Path.Combine(Path.GetTempPath(), $"hyprism-auth-{Guid.NewGuid():N}");

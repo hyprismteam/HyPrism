@@ -2322,4 +2322,19 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="wrapper.updateAvailable" xml:space="preserve">
     <value>업데이트 사용 가능</value>
   </data>
+  <data name="oauth.callback.successTitle" xml:space="preserve">
+    <value>인증 성공</value>
+  </data>
+  <data name="oauth.callback.successMessage" xml:space="preserve">
+    <value>공식 Hytale 계정이 HyPrism에 연결되었습니다</value>
+  </data>
+  <data name="oauth.callback.closeHint" xml:space="preserve">
+    <value>이 창을 닫고 런처로 돌아가도 됩니다</value>
+  </data>
+  <data name="oauth.callback.failureTitle" xml:space="preserve">
+    <value>인증 실패</value>
+  </data>
+  <data name="oauth.callback.failureHint" xml:space="preserve">
+    <value>런처로 돌아가 다시 시도해 주세요</value>
+  </data>
 </root>

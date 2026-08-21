@@ -8,6 +8,7 @@ using HyPrism.Desktop.Features.Settings;
 using HyPrism.Desktop.Integrations.Discord;
 using HyPrism.Desktop.Platform;
 using HyPrism.Core;
+using HyPrism.Core.Accounts;
 using HyPrism.Core.Infrastructure;
 using HyPrism.Core.Application.Ports;
 using HyPrism.Core.Game.Launch;
@@ -42,6 +43,9 @@ internal static class Program
             services.AddSingleton<LocalNodeServiceFactory>();
             services.AddSingleton<ILocalNodeServiceFactory>(provider =>
                 provider.GetRequiredService<LocalNodeServiceFactory>());
+            services.AddSingleton<IOAuthCallbackPageRenderer>(
+                provider => new OAuthCallbackPageRenderer(
+                    provider.GetRequiredService<IDesktopSettingsStore>()));
         });
 
         BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);

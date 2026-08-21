@@ -2772,4 +2772,19 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="instances.logs.emptyHint" xml:space="preserve">
     <value>Здесь появится история логов выбранного экземпляра</value>
   </data>
+  <data name="oauth.callback.successTitle" xml:space="preserve">
+    <value>Авторизация завершена</value>
+  </data>
+  <data name="oauth.callback.successMessage" xml:space="preserve">
+    <value>Ваш официальный аккаунт Hytale подключён к HyPrism</value>
+  </data>
+  <data name="oauth.callback.closeHint" xml:space="preserve">
+    <value>Вы можете закрыть это окно и вернуться в лаунчер</value>
+  </data>
+  <data name="oauth.callback.failureTitle" xml:space="preserve">
+    <value>Не удалось авторизоваться</value>
+  </data>
+  <data name="oauth.callback.failureHint" xml:space="preserve">
+    <value>Вернитесь в лаунчер и попробуйте снова</value>
+  </data>
 </root>

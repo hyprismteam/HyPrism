@@ -2322,4 +2322,19 @@ Es posible que necesites reinstalar el juego si cambias de unidad.</value>
   <data name="wrapper.updateAvailable" xml:space="preserve">
     <value>Actualización disponible</value>
   </data>
+  <data name="oauth.callback.successTitle" xml:space="preserve">
+    <value>Autorización completada</value>
+  </data>
+  <data name="oauth.callback.successMessage" xml:space="preserve">
+    <value>Tu cuenta oficial de Hytale está conectada a HyPrism</value>
+  </data>
+  <data name="oauth.callback.closeHint" xml:space="preserve">
+    <value>Puedes cerrar esta ventana y volver al launcher</value>
+  </data>
+  <data name="oauth.callback.failureTitle" xml:space="preserve">
+    <value>Error de autorización</value>
+  </data>
+  <data name="oauth.callback.failureHint" xml:space="preserve">
+    <value>Vuelve al launcher e inténtalo de nuevo</value>
+  </data>
 </root>

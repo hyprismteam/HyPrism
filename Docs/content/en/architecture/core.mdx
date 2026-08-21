@@ -38,7 +38,7 @@ Both the profile repository and the profile manager raise `ProfilesChanged` afte
 
 Core may expose host capabilities through interfaces, but it must not reference Avalonia or any presentation model
 
-OAuth remains UI-neutral: Core creates the authorization URI and accepts a host callback for presenting it. Opening a browser is owned by the active application host
+OAuth remains UI-neutral: Core creates the authorization URI and accepts a host callback for presenting it. Opening a browser is owned by the active application host. `IOAuthCallbackPageRenderer` lets that host brand the local callback response without adding presentation assets or Avalonia dependencies to Core
 
 Core resolves profile directories but never opens a system file manager. Native file dialogs and system memory detection belong to `HyPrism.Desktop`
 

@@ -2322,4 +2322,19 @@ Bei Laufwerkswechsel muss das Spiel möglicherweise neu installiert werden.</val
   <data name="wrapper.updateAvailable" xml:space="preserve">
     <value>Update verfügbar</value>
   </data>
+  <data name="oauth.callback.successTitle" xml:space="preserve">
+    <value>Autorisierung erfolgreich</value>
+  </data>
+  <data name="oauth.callback.successMessage" xml:space="preserve">
+    <value>Dein offizielles Hytale-Konto ist mit HyPrism verbunden</value>
+  </data>
+  <data name="oauth.callback.closeHint" xml:space="preserve">
+    <value>Du kannst dieses Fenster schließen und zum Launcher zurückkehren</value>
+  </data>
+  <data name="oauth.callback.failureTitle" xml:space="preserve">
+    <value>Autorisierung fehlgeschlagen</value>
+  </data>
+  <data name="oauth.callback.failureHint" xml:space="preserve">
+    <value>Kehre zum Launcher zurück und versuche es erneut</value>
+  </data>
 </root>

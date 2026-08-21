@@ -2322,4 +2322,19 @@ Vous devrez peut-être réinstaller le jeu si vous changez de lecteur.</value>
   <data name="wrapper.updateAvailable" xml:space="preserve">
     <value>Mise à jour disponible</value>
   </data>
+  <data name="oauth.callback.successTitle" xml:space="preserve">
+    <value>Autorisation réussie</value>
+  </data>
+  <data name="oauth.callback.successMessage" xml:space="preserve">
+    <value>Votre compte Hytale officiel est connecté à HyPrism</value>
+  </data>
+  <data name="oauth.callback.closeHint" xml:space="preserve">
+    <value>Vous pouvez fermer cette fenêtre et revenir au launcher</value>
+  </data>
+  <data name="oauth.callback.failureTitle" xml:space="preserve">
+    <value>Échec de l’autorisation</value>
+  </data>
+  <data name="oauth.callback.failureHint" xml:space="preserve">
+    <value>Revenez au launcher et réessayez</value>
+  </data>
 </root>

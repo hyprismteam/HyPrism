@@ -2322,4 +2322,19 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="wrapper.updateAvailable" xml:space="preserve">
     <value>Даступна абнаўленне</value>
   </data>
+  <data name="oauth.callback.successTitle" xml:space="preserve">
+    <value>Аўтарызацыя завершана</value>
+  </data>
+  <data name="oauth.callback.successMessage" xml:space="preserve">
+    <value>Ваш афіцыйны ўліковы запіс Hytale падключаны да HyPrism</value>
+  </data>
+  <data name="oauth.callback.closeHint" xml:space="preserve">
+    <value>Вы можаце закрыць гэтае акно і вярнуцца ў лаўнчар</value>
+  </data>
+  <data name="oauth.callback.failureTitle" xml:space="preserve">
+    <value>Не ўдалося аўтарызавацца</value>
+  </data>
+  <data name="oauth.callback.failureHint" xml:space="preserve">
+    <value>Вярніцеся ў лаўнчар і паспрабуйце яшчэ раз</value>
+  </data>
 </root>

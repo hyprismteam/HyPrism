@@ -2775,4 +2775,19 @@ You may need to reinstall the game if switching drives.</value>
   <data name="instances.logs.emptyHint" xml:space="preserve">
     <value>Per-instance log history will appear here</value>
   </data>
+  <data name="oauth.callback.successTitle" xml:space="preserve">
+    <value>Authorization successful</value>
+  </data>
+  <data name="oauth.callback.successMessage" xml:space="preserve">
+    <value>Your official Hytale account is connected to HyPrism</value>
+  </data>
+  <data name="oauth.callback.closeHint" xml:space="preserve">
+    <value>You can close this window and return to the launcher</value>
+  </data>
+  <data name="oauth.callback.failureTitle" xml:space="preserve">
+    <value>Authorization failed</value>
+  </data>
+  <data name="oauth.callback.failureHint" xml:space="preserve">
+    <value>Return to the launcher and try again</value>
+  </data>
 </root>

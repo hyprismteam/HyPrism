@@ -221,7 +221,8 @@ public static class Bootstrapper
                 new HytaleAuthenticator(
                     sp.GetRequiredService<HttpClient>(),
                     sp.GetRequiredService<AppPathConfiguration>().AppDir,
-                    sp.GetRequiredService<IConfigStore>()));
+                    sp.GetRequiredService<IConfigStore>(),
+                    sp.GetService<IOAuthCallbackPageRenderer>()));
             services.AddSingleton<IHytaleAuthenticator>(sp => sp.GetRequiredService<HytaleAuthenticator>());
 
             // Official version source that requires authentication

@@ -2325,4 +2325,19 @@ Potrebbe essere necessario reinstallare il gioco se si cambia drive.</value>
   <data name="wrapper.updateAvailable" xml:space="preserve">
     <value>Aggiornamento disponibile</value>
   </data>
+  <data name="oauth.callback.successTitle" xml:space="preserve">
+    <value>Autorizzazione completata</value>
+  </data>
+  <data name="oauth.callback.successMessage" xml:space="preserve">
+    <value>Il tuo account Hytale ufficiale è collegato a HyPrism</value>
+  </data>
+  <data name="oauth.callback.closeHint" xml:space="preserve">
+    <value>Puoi chiudere questa finestra e tornare al launcher</value>
+  </data>
+  <data name="oauth.callback.failureTitle" xml:space="preserve">
+    <value>Autorizzazione non riuscita</value>
+  </data>
+  <data name="oauth.callback.failureHint" xml:space="preserve">
+    <value>Torna al launcher e riprova</value>
+  </data>
 </root>

@@ -36,6 +36,7 @@ public class HytaleAuthenticator : IHytaleAuthenticator
     private readonly HttpClient _httpClient;
     private readonly string _appDir;
     private readonly IConfigStore _configStore;
+    private readonly IOAuthCallbackPageRenderer _callbackPageRenderer;
 
     private string? _pendingCodeVerifier;
     private string? _pendingState;
@@ -53,11 +54,17 @@ public class HytaleAuthenticator : IHytaleAuthenticator
     /// <param name="httpClient">The HTTP client used for OAuth requests</param>
     /// <param name="appDir">The application data directory</param>
     /// <param name="configStore">The launcher configuration service</param>
-    public HytaleAuthenticator(HttpClient httpClient, string appDir, IConfigStore configStore)
+    /// <param name="callbackPageRenderer">Optional host renderer for the browser callback page</param>
+    public HytaleAuthenticator(
+        HttpClient httpClient,
+        string appDir,
+        IConfigStore configStore,
+        IOAuthCallbackPageRenderer? callbackPageRenderer = null)
     {
         _httpClient = httpClient;
         _appDir = appDir;
         _configStore = configStore;
+        _callbackPageRenderer = callbackPageRenderer ?? DefaultOAuthCallbackPageRenderer.Instance;
 
         // Try to restore session from disk for current profile
         LoadSession();
@@ -329,7 +336,7 @@ public class HytaleAuthenticator : IHytaleAuthenticator
                     !string.Equals(returnedState, _pendingState, StringComparison.Ordinal))
                 {
                     response.StatusCode = (int)System.Net.HttpStatusCode.InternalServerError;
-                    responseHtml = BuildCallbackResponseHtml(
+                    responseHtml = _callbackPageRenderer.Render(
                         success: false,
                         "Invalid or missing OAuth state");
                     _authCodeTcs?.TrySetException(
@@ -337,21 +344,21 @@ public class HytaleAuthenticator : IHytaleAuthenticator
                 }
                 else if (!string.IsNullOrEmpty(code))
                 {
-                    responseHtml = BuildCallbackResponseHtml(
+                    responseHtml = _callbackPageRenderer.Render(
                         success: true,
-                        "Authorization successful. You can close this window and return to HyPrism");
+                        "Authorization completed successfully");
                     _authCodeTcs?.TrySetResult(code);
                 }
                 else if (!string.IsNullOrEmpty(error))
                 {
                     response.StatusCode = (int)System.Net.HttpStatusCode.InternalServerError;
-                    responseHtml = BuildCallbackResponseHtml(success: false, $"OAuth error: {error}");
+                    responseHtml = _callbackPageRenderer.Render(success: false, $"OAuth error: {error}");
                     _authCodeTcs?.TrySetException(new HytaleAuthException(error, $"OAuth error: {error}"));
                 }
                 else
                 {
                     response.StatusCode = (int)System.Net.HttpStatusCode.InternalServerError;
-                    responseHtml = BuildCallbackResponseHtml(
+                    responseHtml = _callbackPageRenderer.Render(
                         success: false,
                         "Authorization callback did not contain a code or error");
                     _authCodeTcs?.TrySetException(
@@ -373,17 +380,6 @@ public class HytaleAuthenticator : IHytaleAuthenticator
             Logger.Warning("HytaleAuth", $"Callback listener error: {ex.Message}");
             _authCodeTcs?.TrySetException(ex);
         }
-    }
-
-    private static string BuildCallbackResponseHtml(bool success, string message)
-    {
-        var title = success ? "Authorization successful" : "Authorization failed";
-        var encodedMessage = System.Net.WebUtility.HtmlEncode(message);
-        var closeScript = success
-            ? "<script>window.close();</script>"
-            : string.Empty;
-
-        return $"<html><head>{closeScript}</head><body><h1>{title}</h1><p>{encodedMessage}</p></body></html>";
     }
 
     private void StopListener()

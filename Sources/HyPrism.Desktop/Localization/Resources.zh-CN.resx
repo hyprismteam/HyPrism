@@ -2322,4 +2322,19 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="wrapper.updateAvailable" xml:space="preserve">
     <value>有可用更新</value>
   </data>
+  <data name="oauth.callback.successTitle" xml:space="preserve">
+    <value>授权成功</value>
+  </data>
+  <data name="oauth.callback.successMessage" xml:space="preserve">
+    <value>您的 Hytale 官方账号已连接到 HyPrism</value>
+  </data>
+  <data name="oauth.callback.closeHint" xml:space="preserve">
+    <value>您可以关闭此窗口并返回启动器</value>
+  </data>
+  <data name="oauth.callback.failureTitle" xml:space="preserve">
+    <value>授权失败</value>
+  </data>
+  <data name="oauth.callback.failureHint" xml:space="preserve">
+    <value>请返回启动器并重试</value>
+  </data>
 </root>

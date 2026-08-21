@@ -2322,4 +2322,19 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="wrapper.updateAvailable" xml:space="preserve">
     <value>更新があります</value>
   </data>
+  <data name="oauth.callback.successTitle" xml:space="preserve">
+    <value>認証に成功しました</value>
+  </data>
+  <data name="oauth.callback.successMessage" xml:space="preserve">
+    <value>Hytale公式アカウントがHyPrismに接続されました</value>
+  </data>
+  <data name="oauth.callback.closeHint" xml:space="preserve">
+    <value>このウィンドウを閉じてランチャーに戻ることができます</value>
+  </data>
+  <data name="oauth.callback.failureTitle" xml:space="preserve">
+    <value>認証に失敗しました</value>
+  </data>
+  <data name="oauth.callback.failureHint" xml:space="preserve">
+    <value>ランチャーに戻ってもう一度お試しください</value>
+  </data>
 </root>
