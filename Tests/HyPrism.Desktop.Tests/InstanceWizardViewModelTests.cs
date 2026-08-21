@@ -80,4 +80,72 @@ public sealed class InstanceWizardViewModelTests
                 It.IsAny<CancellationToken>()),
             Times.Never);
     }
+
+    [AvaloniaFact]
+    public void ClosingCreatorClearsSelectionAndRestoresReleaseBranch()
+    {
+        var instances = new Mock<IInstanceRepository>();
+        var profiles = new Mock<IProfileManager>();
+        var profileRepository = new Mock<IProfileRepository>();
+        var launchCoordinator = new Mock<IGameLaunchCoordinator>();
+        var installationWorkflow = new Mock<IGameInstallationWorkflow>();
+        var gameProcess = new Mock<IGameProcessTracker>();
+        var progress = new Mock<IProgressReporter>();
+        var settings = new Mock<IDesktopSettingsStore>();
+        var news = new Mock<IHytaleNewsClient>();
+        var uriLauncher = new Mock<IExternalUriLauncher>();
+        var versionCatalog = new Mock<IGameVersionCatalog>();
+        var releaseVersions = new List<int> { 20, 19 };
+        var preReleaseVersions = new List<int> { 61, 60 };
+
+        instances.Setup(service => service.GetCachedInstances()).Returns([]);
+        profiles.Setup(service => service.GetNick()).Returns("Wizard Test");
+        settings.SetupGet(service => service.AvailableBackgrounds).Returns([]);
+        versionCatalog
+            .Setup(service => service.TryGetCachedVersions(
+                "release",
+                It.IsAny<TimeSpan>(),
+                out releaseVersions))
+            .Returns(true);
+        versionCatalog
+            .Setup(service => service.TryGetCachedVersions(
+                "pre-release",
+                It.IsAny<TimeSpan>(),
+                out preReleaseVersions))
+            .Returns(true);
+
+        using var viewModel = new MainWindowViewModel(
+            instances.Object,
+            profiles.Object,
+            profileRepository.Object,
+            launchCoordinator.Object,
+            installationWorkflow.Object,
+            gameProcess.Object,
+            progress.Object,
+            settings.Object,
+            news.Object,
+            uriLauncher.Object,
+            new HttpClient(),
+            new StringLocalizer("en-US"),
+            versionCatalog: versionCatalog.Object);
+
+        viewModel.OpenInstanceCreatorCommand.Execute(null);
+        viewModel.SetNewInstanceBranchCommand.Execute("pre-release");
+        Assert.NotNull(viewModel.SelectedNewInstanceVersion);
+
+        viewModel.CloseInstanceCreatorCommand.Execute(null);
+
+        Assert.False(viewModel.IsInstanceCreatorOpen);
+        Assert.Equal("release", viewModel.NewInstanceBranch);
+        Assert.Null(viewModel.SelectedNewInstanceVersion);
+        Assert.Empty(viewModel.AvailableInstanceVersions);
+        Assert.False(viewModel.IsInstanceVersionsLoading);
+        Assert.Empty(viewModel.InstanceCreationError);
+
+        viewModel.OpenInstanceCreatorCommand.Execute(null);
+
+        Assert.True(viewModel.IsInstanceCreatorOpen);
+        Assert.Equal("release", viewModel.NewInstanceBranch);
+        Assert.Equal([20, 19], viewModel.AvailableInstanceVersions.Select(item => item.Version));
+    }
 }

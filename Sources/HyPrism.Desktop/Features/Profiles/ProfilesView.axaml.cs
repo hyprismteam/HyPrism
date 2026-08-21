@@ -402,6 +402,7 @@ public sealed partial class ProfilesView : UserControl
 
     private async Task PlayCreatorOpenAnimationAsync()
     {
+        RestoreCurrentCreatorStep();
         var revision = ++_creatorNavigationRevision;
         if (_creatorOpenedFromCompactList && _usesCompactLayout is true)
         {
@@ -457,11 +458,39 @@ public sealed partial class ProfilesView : UserControl
         ++_creatorNavigationRevision;
         _creatorOpenedFromCompactList = false;
         _creatorTransition.ShowOverviewImmediately();
+        RestoreCurrentCreatorStep();
     }
 
     private void CompleteCreatorClose(ProfilesViewModel viewModel)
     {
         _creatorOpenedFromCompactList = false;
         viewModel.CompleteCreationTransition();
+        RestoreCurrentCreatorStep();
+    }
+
+    private void RestoreCurrentCreatorStep()
+    {
+        if (DataContext is ProfilesViewModel { IsOfficialCreationVisible: true })
+        {
+            _creatorTransition.ShowStepImmediately(
+                OfficialProfileCreationContent,
+                ProfileCreationChoiceContent,
+                OfflineProfileCreationContent);
+            return;
+        }
+
+        if (DataContext is ProfilesViewModel { IsOfflineCreationVisible: true })
+        {
+            _creatorTransition.ShowStepImmediately(
+                OfflineProfileCreationContent,
+                ProfileCreationChoiceContent,
+                OfficialProfileCreationContent);
+            return;
+        }
+
+        _creatorTransition.ShowStepImmediately(
+            ProfileCreationChoiceContent,
+            OfflineProfileCreationContent,
+            OfficialProfileCreationContent);
     }
 }

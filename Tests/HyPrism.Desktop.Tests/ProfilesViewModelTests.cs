@@ -35,7 +35,37 @@ public sealed class ProfilesViewModelTests
         Assert.False(viewModel.IsCreationVisible);
         Assert.True(viewModel.IsOfflineCreationVisible);
 
+        viewModel.CompleteCreationTransition();
+
+        Assert.False(viewModel.IsCreateChoiceVisible);
+        Assert.False(viewModel.IsOfflineCreationVisible);
+        Assert.False(viewModel.IsOfficialCreationVisible);
+
         viewModel.ShowCreateChoiceCommand.Execute(null);
+
+        Assert.True(viewModel.IsCreationVisible);
+        Assert.True(viewModel.IsCreateChoiceVisible);
+        Assert.False(viewModel.IsOfflineCreationVisible);
+        Assert.False(viewModel.IsOfficialCreationVisible);
+    }
+
+    [AvaloniaFact]
+    public void ReturningFromAccountTypeAlwaysRestoresOnlyTheChoiceStep()
+    {
+        var profileManager = new Mock<IProfileManager>();
+        var profileRepository = new Mock<IProfileRepository>();
+        var uriLauncher = new Mock<IExternalUriLauncher>();
+        profileRepository.Setup(repository => repository.GetProfiles()).Returns([]);
+
+        using var viewModel = new ProfilesViewModel(
+            profileManager.Object,
+            profileRepository.Object,
+            uriLauncher.Object,
+            new StringLocalizer("en-US"));
+
+        viewModel.ShowCreateChoiceCommand.Execute(null);
+        viewModel.BeginOfficialCreationCommand.Execute(null);
+        viewModel.ReturnToCreationChoiceCommand.Execute(null);
 
         Assert.True(viewModel.IsCreationVisible);
         Assert.True(viewModel.IsCreateChoiceVisible);
@@ -107,6 +137,14 @@ public sealed class ProfilesViewModelTests
         Assert.Equal("offline-player", viewModel.SelectedProfile?.Id);
         Assert.True(viewModel.SelectedProfile?.IsActive);
         Assert.Equal(1, profileChanged);
+        Assert.False(viewModel.IsCreationVisible);
+        Assert.True(viewModel.IsOfflineCreationVisible);
+
+        viewModel.CompleteCreationTransition();
+
+        Assert.False(viewModel.IsCreateChoiceVisible);
+        Assert.False(viewModel.IsOfflineCreationVisible);
+        Assert.False(viewModel.IsOfficialCreationVisible);
     }
 
     [Fact]

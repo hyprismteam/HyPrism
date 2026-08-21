@@ -1,10 +1,10 @@
 // Copyright (C) 2026 HyPrism Launcher
 // SPDX-License-Identifier: GPL-3.0-only
 
-using Avalonia.Animation;
 using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Threading;
+using System.Diagnostics;
 
 namespace HyPrism.Desktop.Controls;
 
@@ -102,32 +102,56 @@ public sealed class WizardScreenTransition
         Func<bool> shouldRemainOpen)
     {
         var cancellationToken = BeginAnimation();
-        var outgoingTranslation = GetTranslation(outgoingStep);
-        var incomingTranslation = GetTranslation(incomingStep);
+        var stepSwitched = false;
         PrepareHiddenState(incomingStep, forward ? 28 : -28);
         outgoingStep.IsHitTestVisible = false;
         incomingStep.IsHitTestVisible = false;
 
         try
         {
-            outgoingStep.Opacity = 0;
-            outgoingTranslation.X = forward ? -28 : 28;
-            await Task.Delay(PhaseDuration, cancellationToken);
+            var outgoingOffset = forward ? -28 : 28;
+            await RunStepAnimationAsync(
+                outgoingStep,
+                fromOpacity: 1,
+                toOpacity: 0,
+                fromOffset: 0,
+                toOffset: outgoingOffset,
+                cancellationToken);
             if (cancellationToken.IsCancellationRequested || !shouldRemainOpen())
+            {
+                if (shouldRemainOpen())
+                    RestoreVisibleState(outgoingStep);
                 return;
+            }
 
             switchStep();
+            stepSwitched = true;
             await Dispatcher.UIThread.InvokeAsync(static () => { }, DispatcherPriority.Loaded);
+            if (cancellationToken.IsCancellationRequested || !shouldRemainOpen())
+            {
+                if (shouldRemainOpen())
+                    RestoreVisibleState(incomingStep);
+                return;
+            }
+
+            await RunStepAnimationAsync(
+                incomingStep,
+                fromOpacity: 0,
+                toOpacity: 1,
+                fromOffset: forward ? 28 : -28,
+                toOffset: 0,
+                cancellationToken);
             if (cancellationToken.IsCancellationRequested || !shouldRemainOpen())
                 return;
 
             incomingStep.IsHitTestVisible = true;
-            incomingStep.Opacity = 1;
-            incomingTranslation.X = 0;
         }
         catch (OperationCanceledException)
         {
-            // Another wizard navigation replaces the pending step transition
+            // Keep the model's active step visible when an interrupted animation
+            // does not also close the wizard
+            if (shouldRemainOpen())
+                RestoreVisibleState(stepSwitched ? incomingStep : outgoingStep);
         }
     }
 
@@ -136,6 +160,16 @@ public sealed class WizardScreenTransition
 
     public void ShowWizardImmediately()
         => ApplyImmediateState(showWizard: true);
+
+    public void ShowStepImmediately(Control activeStep, params Control[] inactiveSteps)
+    {
+        RestoreVisibleState(activeStep);
+        foreach (var inactiveStep in inactiveSteps)
+        {
+            PrepareHiddenState(inactiveStep, 28);
+            inactiveStep.IsHitTestVisible = false;
+        }
+    }
 
     public void Cancel()
     {
@@ -189,15 +223,52 @@ public sealed class WizardScreenTransition
     private static void PrepareHiddenState(Control control, double offset)
     {
         var translation = GetTranslation(control);
-        var transitions = control.Transitions;
-        var translationTransitions = translation.Transitions;
-        control.Transitions = null;
-        translation.Transitions = null;
         control.Opacity = 0;
         translation.X = offset;
-        control.Transitions = transitions;
-        translation.Transitions = translationTransitions;
     }
+
+    private static void RestoreVisibleState(Control control)
+    {
+        var translation = GetTranslation(control);
+        control.Opacity = 1;
+        control.IsHitTestVisible = true;
+        translation.X = 0;
+    }
+
+    private static async Task RunStepAnimationAsync(
+        Control target,
+        double fromOpacity,
+        double toOpacity,
+        double fromOffset,
+        double toOffset,
+        CancellationToken cancellationToken)
+    {
+        var stopwatch = Stopwatch.StartNew();
+        while (true)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var progress = Math.Clamp(
+                stopwatch.Elapsed.TotalMilliseconds / PhaseDuration.TotalMilliseconds,
+                0,
+                1);
+            var easedProgress = EaseInOutCubic(progress);
+            target.Opacity = Lerp(fromOpacity, toOpacity, easedProgress);
+            GetTranslation(target).X = Lerp(fromOffset, toOffset, easedProgress);
+
+            if (progress >= 1)
+                return;
+
+            await Task.Delay(TimeSpan.FromMilliseconds(16), cancellationToken);
+        }
+    }
+
+    private static double EaseInOutCubic(double progress)
+        => progress < 0.5
+            ? 4 * progress * progress * progress
+            : 1 - Math.Pow(-2 * progress + 2, 3) / 2;
+
+    private static double Lerp(double from, double to, double progress)
+        => from + ((to - from) * progress);
 
     private static TranslateTransform GetTranslation(Control control)
         => (TranslateTransform)control.RenderTransform!;

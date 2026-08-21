@@ -37,14 +37,7 @@ public sealed partial class ProfilesViewModel : ObservableObject, IDisposable
     [NotifyPropertyChangedFor(nameof(ActivationLabel))]
     private ProfileItemViewModel? _selectedProfile;
 
-    [ObservableProperty]
-    private bool _isCreateChoiceVisible;
-
-    [ObservableProperty]
-    private bool _isOfflineCreationVisible;
-
-    [ObservableProperty]
-    private bool _isOfficialCreationVisible;
+    private ProfileCreationStep _creationStep;
 
     [ObservableProperty]
     private bool _isCreationVisible;
@@ -107,6 +100,9 @@ public sealed partial class ProfilesViewModel : ObservableObject, IDisposable
     public bool HasStatusMessage => !string.IsNullOrWhiteSpace(StatusMessage);
     public bool HasPendingProfileDeletion => PendingProfileDeletion is not null;
     public bool CanActivateSelectedProfile => SelectedProfile is { IsActive: false };
+    public bool IsCreateChoiceVisible => _creationStep is ProfileCreationStep.ChooseType;
+    public bool IsOfflineCreationVisible => _creationStep is ProfileCreationStep.Offline;
+    public bool IsOfficialCreationVisible => _creationStep is ProfileCreationStep.Official;
 
     public string SavedProfilesLabel => _localizer["profiles.savedProfiles"];
     public string EditorLabel => _localizer["profiles.editor"];
@@ -257,9 +253,7 @@ public sealed partial class ProfilesViewModel : ObservableObject, IDisposable
         CloseProfileMenus();
         ClearStatus();
         IsCreationVisible = false;
-        IsCreateChoiceVisible = false;
-        IsOfflineCreationVisible = false;
-        IsOfficialCreationVisible = false;
+        SetCreationStep(ProfileCreationStep.None);
         IsEditing = false;
 
         SelectedProfile = profile;
@@ -291,9 +285,7 @@ public sealed partial class ProfilesViewModel : ObservableObject, IDisposable
         CloseProfileMenus();
         ClearStatus();
         IsEditing = false;
-        IsOfflineCreationVisible = false;
-        IsOfficialCreationVisible = false;
-        IsCreateChoiceVisible = true;
+        SetCreationStep(ProfileCreationStep.ChooseType);
         IsCreationVisible = true;
     }
 
@@ -302,18 +294,14 @@ public sealed partial class ProfilesViewModel : ObservableObject, IDisposable
     {
         ClearStatus();
         OfflineProfileName = GenerateDefaultOfflineName();
-        IsCreateChoiceVisible = false;
-        IsOfficialCreationVisible = false;
-        IsOfflineCreationVisible = true;
+        SetCreationStep(ProfileCreationStep.Offline);
     }
 
     [RelayCommand]
     private void BeginOfficialCreation()
     {
         ClearStatus();
-        IsCreateChoiceVisible = false;
-        IsOfflineCreationVisible = false;
-        IsOfficialCreationVisible = true;
+        SetCreationStep(ProfileCreationStep.Official);
     }
 
     [RelayCommand]
@@ -328,18 +316,14 @@ public sealed partial class ProfilesViewModel : ObservableObject, IDisposable
         if (IsCreationVisible)
             return;
 
-        IsCreateChoiceVisible = false;
-        IsOfflineCreationVisible = false;
-        IsOfficialCreationVisible = false;
+        SetCreationStep(ProfileCreationStep.None);
     }
 
     [RelayCommand]
     private void ReturnToCreationChoice()
     {
         ClearStatus();
-        IsOfflineCreationVisible = false;
-        IsOfficialCreationVisible = false;
-        IsCreateChoiceVisible = true;
+        SetCreationStep(ProfileCreationStep.ChooseType);
     }
 
     [RelayCommand]
@@ -573,6 +557,17 @@ public sealed partial class ProfilesViewModel : ObservableObject, IDisposable
         SetStatus(_localizer["profiles.saved"], isError: false);
     }
 
+    private void SetCreationStep(ProfileCreationStep step)
+    {
+        if (_creationStep == step)
+            return;
+
+        _creationStep = step;
+        OnPropertyChanged(nameof(IsCreateChoiceVisible));
+        OnPropertyChanged(nameof(IsOfflineCreationVisible));
+        OnPropertyChanged(nameof(IsOfficialCreationVisible));
+    }
+
     private void ClearStatus()
     {
         StatusMessage = string.Empty;
@@ -634,6 +629,14 @@ public sealed partial class ProfilesViewModel : ObservableObject, IDisposable
         foreach (var profile in Profiles)
             profile.Dispose();
         Profiles.Clear();
+    }
+
+    private enum ProfileCreationStep
+    {
+        None,
+        ChooseType,
+        Offline,
+        Official
     }
 }
 

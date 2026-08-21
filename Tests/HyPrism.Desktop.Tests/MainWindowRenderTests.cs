@@ -180,6 +180,7 @@ public sealed class MainWindowRenderTests
         var offlineProfileCreation = view.FindControl<StackPanel>("OfflineProfileCreationContent");
         view.FindControl<Button>("BeginOfflineProfileCreationButton")!
             .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        Dispatcher.UIThread.RunJobs();
         Assert.True(profileCreationChoice!.IsVisible);
         Assert.False(offlineProfileCreation!.IsVisible);
         await Task.Delay(100);
@@ -193,6 +194,7 @@ public sealed class MainWindowRenderTests
 
         view.FindControl<Button>("OfflineProfileCreationBackButton")!
             .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        Dispatcher.UIThread.RunJobs();
         Assert.False(profileCreationChoice.IsVisible);
         Assert.True(offlineProfileCreation.IsVisible);
         await Task.Delay(100);
@@ -203,6 +205,26 @@ public sealed class MainWindowRenderTests
         Dispatcher.UIThread.RunJobs();
         Assert.True(profileCreationChoice.IsVisible);
         Assert.False(offlineProfileCreation.IsVisible);
+
+        view.FindControl<Button>("BeginOfflineProfileCreationButton")!
+            .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        await Task.Delay(240);
+        Dispatcher.UIThread.RunJobs();
+        Assert.False(profileCreationChoice.IsVisible);
+        Assert.True(offlineProfileCreation.IsVisible);
+
+        viewModel.CancelCreationCommand.Execute(null);
+        await Task.Delay(240);
+        Dispatcher.UIThread.RunJobs();
+        viewModel.ShowCreateChoiceCommand.Execute(null);
+        await Task.Delay(420);
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.True(profileCreationChoice.IsEffectivelyVisible);
+        Assert.Equal(1, profileCreationChoice.Opacity);
+        Assert.Equal(
+            0,
+            Assert.IsType<TranslateTransform>(profileCreationChoice.RenderTransform).X);
 
         viewModel.CancelCreationCommand.Execute(null);
         await Task.Delay(220);

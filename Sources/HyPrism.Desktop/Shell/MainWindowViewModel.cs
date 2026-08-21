@@ -628,7 +628,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     private void CloseInstanceCreator()
     {
         IsInstanceCreatorOpen = false;
-        InstanceCreationError = string.Empty;
+        ResetInstanceCreatorState();
     }
 
     [RelayCommand]
@@ -664,12 +664,14 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         try
         {
             var version = SelectedNewInstanceVersion.Version;
+            var branch = NewInstanceBranch;
             var instance = _instances.CreateInstanceMeta(
-                NewInstanceBranch,
+                branch,
                 version,
-                $"{FormatBranch(NewInstanceBranch)} {FormatVersion(version)}");
+                $"{FormatBranch(branch)} {FormatVersion(version)}");
             _managedInstance = _instances.FindInstanceById(instance.Id);
             IsInstanceCreatorOpen = false;
+            ResetInstanceCreatorState();
             InstanceSection = string.Empty;
             RefreshManagedInstanceContent();
         }
@@ -1313,9 +1315,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
 
     private async Task LoadInstanceVersionsAsync(string branch)
     {
-        _instanceVersionsCancellation?.Cancel();
-        _instanceVersionsCancellation?.Dispose();
-        _instanceVersionsCancellation = null;
+        CancelInstanceVersionLoading();
 
         if (_versionCatalog is not null &&
             _versionCatalog.TryGetCachedVersions(branch, InstanceVersionCacheMaxAge, out var cachedVersions))
@@ -1361,6 +1361,24 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
                 OnPropertyChanged(nameof(HasAvailableInstanceVersions));
             }
         }
+    }
+
+    private void ResetInstanceCreatorState()
+    {
+        CancelInstanceVersionLoading();
+        NewInstanceBranch = "release";
+        SelectedNewInstanceVersion = null;
+        AvailableInstanceVersions.Clear();
+        IsInstanceVersionsLoading = false;
+        InstanceCreationError = string.Empty;
+        OnPropertyChanged(nameof(HasAvailableInstanceVersions));
+    }
+
+    private void CancelInstanceVersionLoading()
+    {
+        _instanceVersionsCancellation?.Cancel();
+        _instanceVersionsCancellation?.Dispose();
+        _instanceVersionsCancellation = null;
     }
 
     private void ApplyAvailableInstanceVersions(IReadOnlyList<int> versions)
@@ -2174,8 +2192,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         _articlePresentationCancellation.Dispose();
         _compactNewsTransitionCancellation.Cancel();
         _compactNewsTransitionCancellation.Dispose();
-        _instanceVersionsCancellation?.Cancel();
-        _instanceVersionsCancellation?.Dispose();
+        CancelInstanceVersionLoading();
         SelectedNewsArticle = null;
         foreach (var article in _articleViewModelCache.Values)
             article.Dispose();

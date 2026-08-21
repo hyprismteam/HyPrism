@@ -167,16 +167,6 @@ SPDX-License-Identifier: GPL-3.0-only
       <Setter Property="Foreground" Value="{DynamicResource DangerSoftBrush}" />
     </Style>
 
-    <Style Selector="StackPanel.profileWizardStep">
-      <Setter Property="Transitions">
-        <Transitions>
-          <DoubleTransition Property="Opacity" Duration="0:0:0.18">
-            <DoubleTransition.Easing><easing:CubicEaseInOut /></DoubleTransition.Easing>
-          </DoubleTransition>
-        </Transitions>
-      </Setter>
-    </Style>
-
     <Style Selector="Button.profileWizardAction">
       <Setter Property="Height" Value="36" />
       <Setter Property="MinWidth" Value="88" />
@@ -725,15 +715,7 @@ SPDX-License-Identifier: GPL-3.0-only
                         IsVisible="{Binding IsCreateChoiceVisible}"
                         Spacing="12">
               <StackPanel.RenderTransform>
-                <TranslateTransform>
-                  <TranslateTransform.Transitions>
-                    <Transitions>
-                      <DoubleTransition Property="X" Duration="0:0:0.18">
-                        <DoubleTransition.Easing><easing:CubicEaseInOut /></DoubleTransition.Easing>
-                      </DoubleTransition>
-                    </Transitions>
-                  </TranslateTransform.Transitions>
-                </TranslateTransform>
+                <TranslateTransform />
               </StackPanel.RenderTransform>
               <TextBlock Text="{Binding CreateProfileLabel}"
                          HorizontalAlignment="Center"
@@ -817,15 +799,7 @@ SPDX-License-Identifier: GPL-3.0-only
                         IsVisible="{Binding IsOfflineCreationVisible}"
                         Spacing="12">
               <StackPanel.RenderTransform>
-                <TranslateTransform>
-                  <TranslateTransform.Transitions>
-                    <Transitions>
-                      <DoubleTransition Property="X" Duration="0:0:0.18">
-                        <DoubleTransition.Easing><easing:CubicEaseInOut /></DoubleTransition.Easing>
-                      </DoubleTransition>
-                    </Transitions>
-                  </TranslateTransform.Transitions>
-                </TranslateTransform>
+                <TranslateTransform />
               </StackPanel.RenderTransform>
               <TextBlock Text="{Binding CreateOfflineTitle}"
                          HorizontalAlignment="Center"
@@ -890,15 +864,7 @@ SPDX-License-Identifier: GPL-3.0-only
                         IsVisible="{Binding IsOfficialCreationVisible}"
                         Spacing="12">
               <StackPanel.RenderTransform>
-                <TranslateTransform>
-                  <TranslateTransform.Transitions>
-                    <Transitions>
-                      <DoubleTransition Property="X" Duration="0:0:0.18">
-                        <DoubleTransition.Easing><easing:CubicEaseInOut /></DoubleTransition.Easing>
-                      </DoubleTransition>
-                    </Transitions>
-                  </TranslateTransform.Transitions>
-                </TranslateTransform>
+                <TranslateTransform />
               </StackPanel.RenderTransform>
               <TextBlock Text="{Binding AuthenticationTitle}"
                          HorizontalAlignment="Center"
