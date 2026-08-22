@@ -1786,13 +1786,13 @@ You may need to reinstall the game if switching drives.</value>
     <value>HyPrism source code is distributed under GPL-3.0-only</value>
   </data>
   <data name="settings.aboutSettings.credits" xml:space="preserve">
-    <value>Visual credits</value>
+    <value>Visual materials</value>
   </data>
   <data name="settings.aboutSettings.creditsHint" xml:space="preserve">
     <value>Illustrations provided by Icons8</value>
   </data>
   <data name="settings.aboutSettings.lordicon" xml:space="preserve">
-    <value>Animated media</value>
+    <value>Animated materials</value>
   </data>
   <data name="settings.aboutSettings.lordiconHint" xml:space="preserve">
     <value>Animated icons provided by Lordicon</value>

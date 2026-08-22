@@ -20,3 +20,9 @@ The default resource is `Sources/HyPrism.Desktop/Localization/Resources.resx`. E
 `_supportedCultures` in the default resource controls the language picker. `_langName` in each culture resource provides the native display name
 
 `IDesktopSettingsStore` stores the selected culture code in the shared configuration. Core must not own translated strings or Avalonia resource lookup
+
+## Validation
+
+`StringLocalizerTests` verifies that every bundled locale contains the complete default key set and preserves all interpolation placeholders
+
+Run `dotnet test Tests/HyPrism.Desktop.Tests/HyPrism.Desktop.Tests.csproj` after changing resource files

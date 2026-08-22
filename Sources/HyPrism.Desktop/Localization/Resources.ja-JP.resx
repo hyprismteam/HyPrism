@@ -430,10 +430,10 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>アイコンをアップロード</value>
   </data>
   <data name="instances.versionChangeWarning" xml:space="preserve">
-    <value>Changing version will remove game files</value>
+    <value>バージョンを変更するとゲームファイルが削除されます</value>
   </data>
   <data name="instances.versionChangeWarningHint" xml:space="preserve">
-    <value>The game client will be deleted and you will need to re-download this version. User data (saves, mods) will be kept.</value>
+    <value>ゲームクライアントが削除され、このバージョンを再ダウンロードする必要があります。セーブデータやModなどのユーザーデータは保持されます。</value>
   </data>
   <data name="languageSelector.changeLanguage" xml:space="preserve">
     <value>言語を変更</value>
@@ -856,7 +856,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>説明</value>
   </data>
   <data name="modManager.disableSelected" xml:space="preserve">
-    <value>Disable Selected</value>
+    <value>選択したModを無効化</value>
   </data>
   <data name="modManager.download" xml:space="preserve">
     <value>入手</value>
@@ -889,7 +889,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>ここにModをドロップ</value>
   </data>
   <data name="modManager.enableSelected" xml:space="preserve">
-    <value>Enable Selected</value>
+    <value>選択したModを有効化</value>
   </data>
   <data name="modManager.enabled" xml:space="preserve">
     <value>有効</value>
@@ -967,10 +967,10 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>Modを削除しました</value>
   </data>
   <data name="modManager.modsDisabled" xml:space="preserve">
-    <value>Mods disabled</value>
+    <value>Modを無効化しました</value>
   </data>
   <data name="modManager.modsEnabled" xml:space="preserve">
-    <value>Mods enabled</value>
+    <value>Modを有効化しました</value>
   </data>
   <data name="modManager.modsInstalled" xml:space="preserve">
     <value>個のModがインストール済み</value>
@@ -1117,7 +1117,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>Modマネージャー</value>
   </data>
   <data name="modManager.toggleFailed" xml:space="preserve">
-    <value>Failed to update mod state</value>
+    <value>Modの状態を更新できませんでした</value>
   </data>
   <data name="modManager.unknownAuthor" xml:space="preserve">
     <value>不明な作者</value>
@@ -1141,7 +1141,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>更新</value>
   </data>
   <data name="modManager.updatesAvailable" xml:space="preserve">
-    <value>{0} 個の更新があります:</value>
+    <value>{{count}}個のModに更新があります：</value>
   </data>
   <data name="modManager.updatesAvailableCount" xml:space="preserve">
     <value>{{count}}個の更新があります</value>
@@ -1366,7 +1366,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>1〜16文字</value>
   </data>
   <data name="onboarding.visual" xml:space="preserve">
-    <value>ビジュアル</value>
+    <value>外観</value>
   </data>
   <data name="onboarding.welcome" xml:space="preserve">
     <value>HyPrismへようこそ</value>
@@ -2348,5 +2348,461 @@ SPDX-License-Identifier: GPL-3.0-only
   </data>
   <data name="oauth.callback.failureHint" xml:space="preserve">
     <value>ランチャーに戻ってもう一度お試しください</value>
+  </data>
+  <data name="common.remove" xml:space="preserve">
+    <value>削除</value>
+  </data>
+  <data name="common.selectVersion" xml:space="preserve">
+    <value>バージョンを選択</value>
+  </data>
+  <data name="desktopSettings.accountHytale" xml:space="preserve">
+    <value>Hytaleアカウント</value>
+  </data>
+  <data name="desktopSettings.accountOffline" xml:space="preserve">
+    <value>オフラインアカウント</value>
+  </data>
+  <data name="desktopSettings.defaultLocation" xml:space="preserve">
+    <value>デフォルトのシステム場所</value>
+  </data>
+  <data name="desktopSettings.description" xml:space="preserve">
+    <value>ランチャー、ゲームおよびシステムの設定</value>
+  </data>
+  <data name="desktopSettings.discordAnnouncementsHint" xml:space="preserve">
+    <value>Discordから受信したランチャーのお知らせを表示</value>
+  </data>
+  <data name="desktopSettings.music" xml:space="preserve">
+    <value>バックグラウンド音楽</value>
+  </data>
+  <data name="desktopSettings.musicHint" xml:space="preserve">
+    <value>ブラウジング中にランチャー音楽を再生</value>
+  </data>
+  <data name="home.createInstance" xml:space="preserve">
+    <value>インスタンスを作成</value>
+  </data>
+  <data name="home.currentInstance" xml:space="preserve">
+    <value>現在のインスタンス</value>
+  </data>
+  <data name="home.welcomeHint" xml:space="preserve">
+    <value>Hytaleのバージョンを選択し、そのファイルをダウンロードして、次の冒険を始めるためのインスタンスを作成します</value>
+  </data>
+  <data name="home.welcomeTitle" xml:space="preserve">
+    <value>HyPrismへようこそ</value>
+  </data>
+  <data name="instances.newInstance" xml:space="preserve">
+    <value>新しいインスタンス</value>
+  </data>
+  <data name="instances.newInstanceHint" xml:space="preserve">
+    <value>新しいインスタンスのブランチとゲームバージョンを選択してください</value>
+  </data>
+  <data name="instances.branchHint" xml:space="preserve">
+    <value>安定版またはプレリリースビルド</value>
+  </data>
+  <data name="instances.actions.delete" xml:space="preserve">
+    <value>削除</value>
+  </data>
+  <data name="instances.actions.deleteHint" xml:space="preserve">
+    <value>"{0}" とそのすべてのデータを削除しますか？この操作は元に戻せません。</value>
+  </data>
+  <data name="instances.actions.deleteTitle" xml:space="preserve">
+    <value>インスタンスを削除しますか？</value>
+  </data>
+  <data name="instances.actions.install" xml:space="preserve">
+    <value>インストール</value>
+  </data>
+  <data name="instances.actions.cancel" xml:space="preserve">
+    <value>キャンセル</value>
+  </data>
+  <data name="instances.actions.launching" xml:space="preserve">
+    <value>起動中</value>
+  </data>
+  <data name="instances.actions.running" xml:space="preserve">
+    <value>実行中</value>
+  </data>
+  <data name="instances.actions.openFolder" xml:space="preserve">
+    <value>フォルダーを開く</value>
+  </data>
+  <data name="instances.actions.play" xml:space="preserve">
+    <value>起動</value>
+  </data>
+  <data name="instances.versionHint" xml:space="preserve">
+    <value>インストールするゲームバージョン</value>
+  </data>
+  <data name="instances.selectVersion" xml:space="preserve">
+    <value>バージョンを選択</value>
+  </data>
+  <data name="main.clickToOpenRelease" xml:space="preserve">
+    <value>GitHubでリリースを見るにはクリック</value>
+  </data>
+  <data name="news.articleLoadFailed" xml:space="preserve">
+    <value>記事を読み込めませんでした。それでも hytale.com で開くことができます。</value>
+  </data>
+  <data name="news.articleLoading" xml:space="preserve">
+    <value>記事を読み込み中...</value>
+  </data>
+  <data name="news.loadMore" xml:space="preserve">
+    <value>もっと読み込む</value>
+  </data>
+  <data name="news.selectArticle" xml:space="preserve">
+    <value>ニュース項目を選択してここで読む</value>
+  </data>
+  <data name="onboarding.warning.back" xml:space="preserve">
+    <value>ログインに戻る</value>
+  </data>
+  <data name="onboarding.warning.continue" xml:space="preserve">
+    <value>続行</value>
+  </data>
+  <data name="onboarding.warning.description" xml:space="preserve">
+    <value>Hytaleアカウントがない場合、公式サーバーからゲームファイルをダウンロードできません。</value>
+  </data>
+  <data name="onboarding.warning.noSources" xml:space="preserve">
+    <value>ダウンロード可能なウェブリソースはありません</value>
+  </data>
+  <data name="onboarding.warning.noSourcesHint" xml:space="preserve">
+    <value>ゲームをダウンロードするには、設定 → ダウンロードでミラーを追加するか、後でHytaleアカウントでログインする必要があります。</value>
+  </data>
+  <data name="onboarding.warning.title" xml:space="preserve">
+    <value>ダウンロードソースがありません</value>
+  </data>
+  <data name="profiles.setActive" xml:space="preserve">
+    <value>選択</value>
+  </data>
+  <data name="profiles.active" xml:space="preserve">
+    <value>アクティブ</value>
+  </data>
+  <data name="settings.aboutSettings.siteRole" xml:space="preserve">
+    <value>ドキュメンテーションウェブサイト開発者</value>
+  </data>
+  <data name="settings.aboutSettings.project" xml:space="preserve">
+    <value>プロジェクト</value>
+  </data>
+  <data name="settings.aboutSettings.githubHint" xml:space="preserve">
+    <value>ソースコード、リリースと開発</value>
+  </data>
+  <data name="settings.aboutSettings.documentation" xml:space="preserve">
+    <value>ドキュメンテーション</value>
+  </data>
+  <data name="settings.aboutSettings.documentationHint" xml:space="preserve">
+    <value>ガイド、アーキテクチャとコントリビューターリファレンス</value>
+  </data>
+  <data name="settings.aboutSettings.community" xml:space="preserve">
+    <value>コミュニティ</value>
+  </data>
+  <data name="settings.aboutSettings.discordHint" xml:space="preserve">
+    <value>コミュニティからのニュース、ディスカッションとヘルプ</value>
+  </data>
+  <data name="settings.aboutSettings.bugReportHint" xml:space="preserve">
+    <value>問題を報告するまたは改善を提案する</value>
+  </data>
+  <data name="settings.aboutSettings.legal" xml:space="preserve">
+    <value>オープンソースと法務</value>
+  </data>
+  <data name="settings.aboutSettings.license" xml:space="preserve">
+    <value>ライセンス</value>
+  </data>
+  <data name="settings.aboutSettings.licenseHint" xml:space="preserve">
+    <value>HyPrismのソースコードはGPL-3.0-onlyの下で配布されています</value>
+  </data>
+  <data name="settings.aboutSettings.credits" xml:space="preserve">
+    <value>ビジュアル素材</value>
+  </data>
+  <data name="settings.aboutSettings.creditsHint" xml:space="preserve">
+    <value>イラスト提供: Icons8</value>
+  </data>
+  <data name="settings.aboutSettings.lordicon" xml:space="preserve">
+    <value>アニメーション素材</value>
+  </data>
+  <data name="settings.aboutSettings.lordiconHint" xml:space="preserve">
+    <value>アニメーションアイコン提供: Lordicon</value>
+  </data>
+  <data name="settings.aboutSettings.currentVersion" xml:space="preserve">
+    <value>現在のバージョン</value>
+  </data>
+  <data name="settings.aboutSettings.currentVersionHint" xml:space="preserve">
+    <value>このデバイスにインストールされているランチャーバージョン</value>
+  </data>
+  <data name="settings.aboutSettings.latestMainCommit" xml:space="preserve">
+    <value>メインの最新コミット</value>
+  </data>
+  <data name="settings.aboutSettings.latestMainCommitLoading" xml:space="preserve">
+    <value>リポジトリ情報を読み込み中</value>
+  </data>
+  <data name="settings.aboutSettings.latestMainCommitUnavailable" xml:space="preserve">
+    <value>リポジトリ情報は一時的に利用できません</value>
+  </data>
+  <data name="settings.aboutSettings.hytaleEula" xml:space="preserve">
+    <value>Hytale EULA</value>
+  </data>
+  <data name="settings.aboutSettings.hytaleEulaHint" xml:space="preserve">
+    <value>Hytale エンドユーザーライセンス契約</value>
+  </data>
+  <data name="settings.downloads.sources" xml:space="preserve">
+    <value>ダウンロード元</value>
+  </data>
+  <data name="settings.downloads.columnLink" xml:space="preserve">
+    <value>リンク</value>
+  </data>
+  <data name="settings.downloads.columnType" xml:space="preserve">
+    <value>種類</value>
+  </data>
+  <data name="settings.downloads.columnAvailability" xml:space="preserve">
+    <value>利用可能性</value>
+  </data>
+  <data name="settings.downloads.columnPing" xml:space="preserve">
+    <value>ピング</value>
+  </data>
+  <data name="settings.downloads.sourceTypeOfficial" xml:space="preserve">
+    <value>公式</value>
+  </data>
+  <data name="settings.downloads.checkingAvailability" xml:space="preserve">
+    <value>確認中</value>
+  </data>
+  <data name="settings.downloads.sourceAvailable" xml:space="preserve">
+    <value>利用可能</value>
+  </data>
+  <data name="settings.downloads.sourceUnavailable" xml:space="preserve">
+    <value>利用不可</value>
+  </data>
+  <data name="settings.downloads.sourceDisabledState" xml:space="preserve">
+    <value>無効</value>
+  </data>
+  <data name="settings.downloads.officialSourceConnected" xml:space="preserve">
+    <value>アカウント接続済み</value>
+  </data>
+  <data name="settings.downloads.officialSourceRequiresAccount" xml:space="preserve">
+    <value>Hytaleアカウントが必要</value>
+  </data>
+  <data name="settings.downloads.addSource" xml:space="preserve">
+    <value>ソースを追加</value>
+  </data>
+  <data name="settings.downloads.add" xml:space="preserve">
+    <value>追加</value>
+  </data>
+  <data name="settings.downloads.addSourceTitle" xml:space="preserve">
+    <value>ダウンロードソースを接続</value>
+  </data>
+  <data name="settings.downloads.addSourceHint" xml:space="preserve">
+    <value>公開アドレスを入力すると、HyPrismが対応するミラーフォーマットを検出します</value>
+  </data>
+  <data name="settings.downloads.sourceUrlPlaceholder" xml:space="preserve">
+    <value>https://mirror.example.com</value>
+  </data>
+  <data name="settings.downloads.deleteSourceTitle" xml:space="preserve">
+    <value>このソースを削除しますか？</value>
+  </data>
+  <data name="settings.downloads.deleteSourceHint" xml:space="preserve">
+    <value>そのローカル定義は削除され、ダウンロードにはもう使用されません</value>
+  </data>
+  <data name="settings.downloads.sourceManagementUnavailable" xml:space="preserve">
+    <value>このセッションではダウンロードソース管理は利用できません</value>
+  </data>
+  <data name="settings.downloads.invalidSourceUrl" xml:space="preserve">
+    <value>HTTPS アドレスまたはローカル HTTP アドレスを入力してください</value>
+  </data>
+  <data name="settings.downloads.sourceAlreadyExists" xml:space="preserve">
+    <value>このダウンロードソースはすでに構成されています</value>
+  </data>
+  <data name="settings.downloads.detectingSource" xml:space="preserve">
+    <value>ソースの互換性を確認中</value>
+  </data>
+  <data name="settings.downloads.sourceDetectionFailed" xml:space="preserve">
+    <value>HyPrism はこのアドレスで互換性のあるミラーを検出できませんでした</value>
+  </data>
+  <data name="settings.downloads.sourceSaveFailed" xml:space="preserve">
+    <value>ダウンロードソースを保存できませんでした</value>
+  </data>
+  <data name="settings.downloads.sourceReadFailed" xml:space="preserve">
+    <value>保存されたダウンロードソースを読み取れませんでした</value>
+  </data>
+  <data name="settings.downloads.sourceRemoveFailed" xml:space="preserve">
+    <value>ダウンロードソースを削除できませんでした</value>
+  </data>
+  <data name="settings.downloads.sourceAdded" xml:space="preserve">
+    <value>ダウンロードソースが追加されました</value>
+  </data>
+  <data name="settings.downloads.sourceRemoved" xml:space="preserve">
+    <value>ダウンロードソースが削除されました</value>
+  </data>
+  <data name="settings.downloads.sourceEnabled" xml:space="preserve">
+    <value>ダウンロードソースが有効になりました</value>
+  </data>
+  <data name="settings.downloads.sourceDisabled" xml:space="preserve">
+    <value>ダウンロードソースが無効になりました</value>
+  </data>
+  <data name="settings.downloads.sourceTypeJsonIndex" xml:space="preserve">
+    <value>JSONインデックス</value>
+  </data>
+  <data name="settings.downloads.sourceTypePattern" xml:space="preserve">
+    <value>URLテンプレート</value>
+  </data>
+  <data name="settings.generalSettings.mirrorDescription" xml:space="preserve">
+    <value>公式サーバーが利用できない場合、ゲームファイルの代替ソースとしてコミュニティミラーが使用されます。</value>
+  </data>
+  <data name="settings.generalSettings.mirrorSettings" xml:space="preserve">
+    <value>ミラー設定</value>
+  </data>
+  <data name="settings.generalSettings.mirrorTestSpeed" xml:space="preserve">
+    <value>速度テスト</value>
+  </data>
+  <data name="settings.generalSettings.mirrorTesting" xml:space="preserve">
+    <value>テスト中...</value>
+  </data>
+  <data name="settings.generalSettings.mirrorUnavailable" xml:space="preserve">
+    <value>利用不可</value>
+  </data>
+  <data name="settings.java" xml:space="preserve">
+    <value>Java</value>
+  </data>
+  <data name="settings.javaSettings.jvmMemoryArgumentsManaged" xml:space="preserve">
+    <value>-Xms と -Xmx はメモリ割り当てスライダーによって制御されます</value>
+  </data>
+  <data name="settings.networkSettings.authServerCheckNow" xml:space="preserve">
+    <value>今すぐ確認</value>
+  </data>
+  <data name="settings.networkSettings.authServerChecking" xml:space="preserve">
+    <value>確認中...</value>
+  </data>
+  <data name="settings.networkSettings.authServerOfficialNote" xml:space="preserve">
+    <value>公式サーバーは常に利用可能と見なされます。</value>
+  </data>
+  <data name="settings.networkSettings.authServerOffline" xml:space="preserve">
+    <value>オフライン</value>
+  </data>
+  <data name="settings.networkSettings.authServerOfflineWarning" xml:space="preserve">
+    <value>認証サーバーに接続できません。オンラインモードは一時的に無効です。</value>
+  </data>
+  <data name="settings.networkSettings.authServerOnline" xml:space="preserve">
+    <value>オンライン</value>
+  </data>
+  <data name="settings.networkSettings.authServerPing" xml:space="preserve">
+    <value>{{ping}}ms</value>
+  </data>
+  <data name="settings.networkSettings.authServerStatus" xml:space="preserve">
+    <value>認証サーバーの状態</value>
+  </data>
+  <data name="settings.networkSettings.authServerStatusHint" xml:space="preserve">
+    <value>認証サーバーに接続可能か確認してください。</value>
+  </data>
+  <data name="settings.networkSettings.officialProfileNote" xml:space="preserve">
+    <value>公式アカウントは公式のHytale認証のみ使用できます。</value>
+  </data>
+  <data name="settings.networkSettings.unofficialProfileNote" xml:space="preserve">
+    <value>非公式アカウントは公式のHytale認証を使用できません。</value>
+  </data>
+  <data name="desktopSettings.categories.language" xml:space="preserve">
+    <value>言語</value>
+  </data>
+  <data name="desktopSettings.categories.miscellaneous" xml:space="preserve">
+    <value>その他</value>
+  </data>
+  <data name="desktopSettings.categories.appearance" xml:space="preserve">
+    <value>外観</value>
+  </data>
+  <data name="instances.tab.mods" xml:space="preserve">
+    <value>モッズ</value>
+  </data>
+  <data name="instances.mods.title" xml:space="preserve">
+    <value>インストール済みモッズ</value>
+  </data>
+  <data name="instances.mods.hint" xml:space="preserve">
+    <value>このインスタンスのみにインストールされたコンテンツ</value>
+  </data>
+  <data name="instances.mods.search" xml:space="preserve">
+    <value>インストール済みモッズを検索</value>
+  </data>
+  <data name="instances.mods.emptyTitle" xml:space="preserve">
+    <value>モッズはインストールされていません</value>
+  </data>
+  <data name="instances.mods.emptyHint" xml:space="preserve">
+    <value>このインスタンスのコンテンツを探すためにDiscoverを開く</value>
+  </data>
+  <data name="instances.mods.install" xml:space="preserve">
+    <value>インストール</value>
+  </data>
+  <data name="instances.mods.installed" xml:space="preserve">
+    <value>インストール済み</value>
+  </data>
+  <data name="instances.mods.enabled" xml:space="preserve">
+    <value>有効</value>
+  </data>
+  <data name="instances.mods.disabled" xml:space="preserve">
+    <value>無効</value>
+  </data>
+  <data name="instances.mods.installFailed" xml:space="preserve">
+    <value>選択したモッドをインストールできませんでした</value>
+  </data>
+  <data name="instances.browse.title" xml:space="preserve">
+    <value>モッズを探す</value>
+  </data>
+  <data name="instances.browse.hint" xml:space="preserve">
+    <value>CurseForgeのコンテンツをこのインスタンスに見つけてインストールする</value>
+  </data>
+  <data name="instances.browse.search" xml:space="preserve">
+    <value>モッドカタログを検索</value>
+  </data>
+  <data name="instances.browse.emptyTitle" xml:space="preserve">
+    <value>モッドが見つかりません</value>
+  </data>
+  <data name="instances.browse.emptyHint" xml:space="preserve">
+    <value>別のクエリを試すか、CurseForge API の設定を確認してください</value>
+  </data>
+  <data name="instances.worlds.title" xml:space="preserve">
+    <value>ワールド</value>
+  </data>
+  <data name="instances.worlds.hint" xml:space="preserve">
+    <value>このインスタンスに属する保存されたワールド</value>
+  </data>
+  <data name="instances.worlds.emptyTitle" xml:space="preserve">
+    <value>まだワールドはありません</value>
+  </data>
+  <data name="instances.worlds.emptyHint" xml:space="preserve">
+    <value>ゲームによって作成されたワールドはここに表示されます</value>
+  </data>
+  <data name="instances.content.notInstalledTitle" xml:space="preserve">
+    <value>まずこのインスタンスをインストールしてください</value>
+  </data>
+  <data name="instances.content.notInstalledHint" xml:space="preserve">
+    <value>ゲームファイルをインストールすると、モッドとワールドが利用可能になります</value>
+  </data>
+  <data name="instances.content.back" xml:space="preserve">
+    <value>インスタンス</value>
+  </data>
+  <data name="instances.info.status" xml:space="preserve">
+    <value>ステータス</value>
+  </data>
+  <data name="instances.info.playtime" xml:space="preserve">
+    <value>プレイ時間</value>
+  </data>
+  <data name="instances.info.mods" xml:space="preserve">
+    <value>モッズ</value>
+  </data>
+  <data name="instances.info.worlds" xml:space="preserve">
+    <value>ワールド</value>
+  </data>
+  <data name="instances.info.playtimeValue" xml:space="preserve">
+    <value>{0} 時間 {1} 分</value>
+  </data>
+  <data name="instances.console.title" xml:space="preserve">
+    <value>コンソール</value>
+  </data>
+  <data name="instances.console.hint" xml:space="preserve">
+    <value>このインスタンスのコマンドとリアルタイム出力</value>
+  </data>
+  <data name="instances.console.emptyTitle" xml:space="preserve">
+    <value>コンソールはまだ利用できません</value>
+  </data>
+  <data name="instances.console.emptyHint" xml:space="preserve">
+    <value>インスタンスごとのコンソール追跡はここに追加されます</value>
+  </data>
+  <data name="instances.logs.title" xml:space="preserve">
+    <value>ログ</value>
+  </data>
+  <data name="instances.logs.hint" xml:space="preserve">
+    <value>このインスタンスの起動およびゲームログ</value>
+  </data>
+  <data name="instances.logs.emptyTitle" xml:space="preserve">
+    <value>インスタンスログはまだありません</value>
+  </data>
+  <data name="instances.logs.emptyHint" xml:space="preserve">
+    <value>インスタンスごとのログ履歴がここに表示されます</value>
   </data>
 </root>

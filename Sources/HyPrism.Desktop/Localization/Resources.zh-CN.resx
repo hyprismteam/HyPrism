@@ -268,7 +268,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>新闻</value>
   </data>
   <data name="dock.profiles" xml:space="preserve">
-    <value>配置</value>
+    <value>档案</value>
   </data>
   <data name="dock.settings" xml:space="preserve">
     <value>设置</value>
@@ -430,10 +430,10 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>上传图标</value>
   </data>
   <data name="instances.versionChangeWarning" xml:space="preserve">
-    <value>Changing version will remove game files</value>
+    <value>更改版本将删除游戏文件</value>
   </data>
   <data name="instances.versionChangeWarningHint" xml:space="preserve">
-    <value>The game client will be deleted and you will need to re-download this version. User data (saves, mods) will be kept.</value>
+    <value>游戏客户端将被删除，你需要重新下载此版本。存档和模组等用户数据会保留。</value>
   </data>
   <data name="languageSelector.changeLanguage" xml:space="preserve">
     <value>更改语言</value>
@@ -856,7 +856,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>描述</value>
   </data>
   <data name="modManager.disableSelected" xml:space="preserve">
-    <value>Disable Selected</value>
+    <value>禁用所选模组</value>
   </data>
   <data name="modManager.download" xml:space="preserve">
     <value>下载</value>
@@ -889,7 +889,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>将模组拖放到此处</value>
   </data>
   <data name="modManager.enableSelected" xml:space="preserve">
-    <value>Enable Selected</value>
+    <value>启用所选模组</value>
   </data>
   <data name="modManager.enabled" xml:space="preserve">
     <value>已启用</value>
@@ -967,10 +967,10 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>模组删除成功</value>
   </data>
   <data name="modManager.modsDisabled" xml:space="preserve">
-    <value>Mods disabled</value>
+    <value>模组已禁用</value>
   </data>
   <data name="modManager.modsEnabled" xml:space="preserve">
-    <value>Mods enabled</value>
+    <value>模组已启用</value>
   </data>
   <data name="modManager.modsInstalled" xml:space="preserve">
     <value>个模组已安装</value>
@@ -1117,7 +1117,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>模组管理</value>
   </data>
   <data name="modManager.toggleFailed" xml:space="preserve">
-    <value>Failed to update mod state</value>
+    <value>无法更新模组状态</value>
   </data>
   <data name="modManager.unknownAuthor" xml:space="preserve">
     <value>未知作者</value>
@@ -1492,7 +1492,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>已保存的配置文件</value>
   </data>
   <data name="profiles.title" xml:space="preserve">
-    <value>配置文件</value>
+    <value>档案</value>
   </data>
   <data name="profiles.wizard.authDesc" xml:space="preserve">
     <value>您将被重定向到浏览器中的 Hytale 登录页面。登录后，您的配置文件将自动创建。</value>
@@ -2194,7 +2194,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>环境变量</value>
   </data>
   <data name="settings.visual" xml:space="preserve">
-    <value>视觉</value>
+    <value>外观</value>
   </data>
   <data name="settings.visualSettings.autoShuffle" xml:space="preserve">
     <value>自动 / 随机</value>
@@ -2348,5 +2348,461 @@ SPDX-License-Identifier: GPL-3.0-only
   </data>
   <data name="oauth.callback.failureHint" xml:space="preserve">
     <value>请返回启动器并重试</value>
+  </data>
+  <data name="common.remove" xml:space="preserve">
+    <value>移除</value>
+  </data>
+  <data name="common.selectVersion" xml:space="preserve">
+    <value>选择版本</value>
+  </data>
+  <data name="desktopSettings.accountHytale" xml:space="preserve">
+    <value>Hytale 账户</value>
+  </data>
+  <data name="desktopSettings.accountOffline" xml:space="preserve">
+    <value>离线账户</value>
+  </data>
+  <data name="desktopSettings.defaultLocation" xml:space="preserve">
+    <value>默认系统位置</value>
+  </data>
+  <data name="desktopSettings.description" xml:space="preserve">
+    <value>启动器、游戏和系统偏好设置</value>
+  </data>
+  <data name="desktopSettings.discordAnnouncementsHint" xml:space="preserve">
+    <value>显示从 Discord 接收到的启动器公告</value>
+  </data>
+  <data name="desktopSettings.music" xml:space="preserve">
+    <value>背景音乐</value>
+  </data>
+  <data name="desktopSettings.musicHint" xml:space="preserve">
+    <value>浏览时播放启动器音乐</value>
+  </data>
+  <data name="home.createInstance" xml:space="preserve">
+    <value>创建一个实例</value>
+  </data>
+  <data name="home.currentInstance" xml:space="preserve">
+    <value>当前实例</value>
+  </data>
+  <data name="home.welcomeHint" xml:space="preserve">
+    <value>创建一个实例以选择 Hytale 版本，下载其文件，并开始你的下一个冒险</value>
+  </data>
+  <data name="home.welcomeTitle" xml:space="preserve">
+    <value>欢迎来到 HyPrism</value>
+  </data>
+  <data name="instances.newInstance" xml:space="preserve">
+    <value>新建实例</value>
+  </data>
+  <data name="instances.newInstanceHint" xml:space="preserve">
+    <value>为你的新实例选择分支和游戏版本</value>
+  </data>
+  <data name="instances.branchHint" xml:space="preserve">
+    <value>稳定版或预发布版</value>
+  </data>
+  <data name="instances.actions.delete" xml:space="preserve">
+    <value>删除</value>
+  </data>
+  <data name="instances.actions.deleteHint" xml:space="preserve">
+    <value>删除 "{0}" 及其所有数据？此操作无法撤销。</value>
+  </data>
+  <data name="instances.actions.deleteTitle" xml:space="preserve">
+    <value>删除实例？</value>
+  </data>
+  <data name="instances.actions.install" xml:space="preserve">
+    <value>安装</value>
+  </data>
+  <data name="instances.actions.cancel" xml:space="preserve">
+    <value>取消</value>
+  </data>
+  <data name="instances.actions.launching" xml:space="preserve">
+    <value>启动中</value>
+  </data>
+  <data name="instances.actions.running" xml:space="preserve">
+    <value>运行中</value>
+  </data>
+  <data name="instances.actions.openFolder" xml:space="preserve">
+    <value>打开文件夹</value>
+  </data>
+  <data name="instances.actions.play" xml:space="preserve">
+    <value>启动</value>
+  </data>
+  <data name="instances.versionHint" xml:space="preserve">
+    <value>要安装的游戏版本</value>
+  </data>
+  <data name="instances.selectVersion" xml:space="preserve">
+    <value>选择版本</value>
+  </data>
+  <data name="main.clickToOpenRelease" xml:space="preserve">
+    <value>点击在 GitHub 上查看发布</value>
+  </data>
+  <data name="news.articleLoadFailed" xml:space="preserve">
+    <value>文章无法加载。你仍然可以在 hytale.com 上打开它。</value>
+  </data>
+  <data name="news.articleLoading" xml:space="preserve">
+    <value>正在加载文章...</value>
+  </data>
+  <data name="news.loadMore" xml:space="preserve">
+    <value>加载更多</value>
+  </data>
+  <data name="news.selectArticle" xml:space="preserve">
+    <value>选择一条新闻在此阅读。</value>
+  </data>
+  <data name="onboarding.warning.back" xml:space="preserve">
+    <value>返回登录</value>
+  </data>
+  <data name="onboarding.warning.continue" xml:space="preserve">
+    <value>继续</value>
+  </data>
+  <data name="onboarding.warning.description" xml:space="preserve">
+    <value>没有 Hytale 帐户，您无法从官方服务器下载游戏文件。</value>
+  </data>
+  <data name="onboarding.warning.noSources" xml:space="preserve">
+    <value>没有可用的网页资源下载</value>
+  </data>
+  <data name="onboarding.warning.noSourcesHint" xml:space="preserve">
+    <value>要下载游戏，您需要在设置 → 下载中添加一个镜像，或稍后使用您的 Hytale 帐户登录。</value>
+  </data>
+  <data name="onboarding.warning.title" xml:space="preserve">
+    <value>没有下载来源</value>
+  </data>
+  <data name="profiles.setActive" xml:space="preserve">
+    <value>选择</value>
+  </data>
+  <data name="profiles.active" xml:space="preserve">
+    <value>激活</value>
+  </data>
+  <data name="settings.aboutSettings.siteRole" xml:space="preserve">
+    <value>文档网站开发者</value>
+  </data>
+  <data name="settings.aboutSettings.project" xml:space="preserve">
+    <value>项目</value>
+  </data>
+  <data name="settings.aboutSettings.githubHint" xml:space="preserve">
+    <value>源代码、发布和开发</value>
+  </data>
+  <data name="settings.aboutSettings.documentation" xml:space="preserve">
+    <value>文档</value>
+  </data>
+  <data name="settings.aboutSettings.documentationHint" xml:space="preserve">
+    <value>指南、架构和贡献者参考</value>
+  </data>
+  <data name="settings.aboutSettings.community" xml:space="preserve">
+    <value>社区</value>
+  </data>
+  <data name="settings.aboutSettings.discordHint" xml:space="preserve">
+    <value>社区新闻、讨论和帮助</value>
+  </data>
+  <data name="settings.aboutSettings.bugReportHint" xml:space="preserve">
+    <value>报告问题或提出改进建议</value>
+  </data>
+  <data name="settings.aboutSettings.legal" xml:space="preserve">
+    <value>开源与法律信息</value>
+  </data>
+  <data name="settings.aboutSettings.license" xml:space="preserve">
+    <value>许可</value>
+  </data>
+  <data name="settings.aboutSettings.licenseHint" xml:space="preserve">
+    <value>HyPrism 源代码在 GPL-3.0-only 协议下分发</value>
+  </data>
+  <data name="settings.aboutSettings.credits" xml:space="preserve">
+    <value>视觉素材</value>
+  </data>
+  <data name="settings.aboutSettings.creditsHint" xml:space="preserve">
+    <value>插图由 Icons8 提供</value>
+  </data>
+  <data name="settings.aboutSettings.lordicon" xml:space="preserve">
+    <value>动画素材</value>
+  </data>
+  <data name="settings.aboutSettings.lordiconHint" xml:space="preserve">
+    <value>动画图标由 Lordicon 提供</value>
+  </data>
+  <data name="settings.aboutSettings.currentVersion" xml:space="preserve">
+    <value>当前版本</value>
+  </data>
+  <data name="settings.aboutSettings.currentVersionHint" xml:space="preserve">
+    <value>此设备上安装的启动器版本</value>
+  </data>
+  <data name="settings.aboutSettings.latestMainCommit" xml:space="preserve">
+    <value>主分支的最新提交</value>
+  </data>
+  <data name="settings.aboutSettings.latestMainCommitLoading" xml:space="preserve">
+    <value>正在加载仓库信息</value>
+  </data>
+  <data name="settings.aboutSettings.latestMainCommitUnavailable" xml:space="preserve">
+    <value>仓库信息暂时不可用</value>
+  </data>
+  <data name="settings.aboutSettings.hytaleEula" xml:space="preserve">
+    <value>Hytale 终端用户许可协议</value>
+  </data>
+  <data name="settings.aboutSettings.hytaleEulaHint" xml:space="preserve">
+    <value>Hytale 终端用户许可协议</value>
+  </data>
+  <data name="settings.downloads.sources" xml:space="preserve">
+    <value>下载来源</value>
+  </data>
+  <data name="settings.downloads.columnLink" xml:space="preserve">
+    <value>链接</value>
+  </data>
+  <data name="settings.downloads.columnType" xml:space="preserve">
+    <value>类型</value>
+  </data>
+  <data name="settings.downloads.columnAvailability" xml:space="preserve">
+    <value>可用性</value>
+  </data>
+  <data name="settings.downloads.columnPing" xml:space="preserve">
+    <value>延迟</value>
+  </data>
+  <data name="settings.downloads.sourceTypeOfficial" xml:space="preserve">
+    <value>官方</value>
+  </data>
+  <data name="settings.downloads.checkingAvailability" xml:space="preserve">
+    <value>检查中</value>
+  </data>
+  <data name="settings.downloads.sourceAvailable" xml:space="preserve">
+    <value>可用</value>
+  </data>
+  <data name="settings.downloads.sourceUnavailable" xml:space="preserve">
+    <value>不可用</value>
+  </data>
+  <data name="settings.downloads.sourceDisabledState" xml:space="preserve">
+    <value>已禁用</value>
+  </data>
+  <data name="settings.downloads.officialSourceConnected" xml:space="preserve">
+    <value>帐号已连接</value>
+  </data>
+  <data name="settings.downloads.officialSourceRequiresAccount" xml:space="preserve">
+    <value>需要 Hytale 帐号</value>
+  </data>
+  <data name="settings.downloads.addSource" xml:space="preserve">
+    <value>添加来源</value>
+  </data>
+  <data name="settings.downloads.add" xml:space="preserve">
+    <value>添加</value>
+  </data>
+  <data name="settings.downloads.addSourceTitle" xml:space="preserve">
+    <value>连接下载来源</value>
+  </data>
+  <data name="settings.downloads.addSourceHint" xml:space="preserve">
+    <value>输入其公共地址，HyPrism 将检测支持的镜像格式</value>
+  </data>
+  <data name="settings.downloads.sourceUrlPlaceholder" xml:space="preserve">
+    <value>https://mirror.example.com</value>
+  </data>
+  <data name="settings.downloads.deleteSourceTitle" xml:space="preserve">
+    <value>移除此来源？</value>
+  </data>
+  <data name="settings.downloads.deleteSourceHint" xml:space="preserve">
+    <value>它的本地定义将被删除，并且不再用于下载</value>
+  </data>
+  <data name="settings.downloads.sourceManagementUnavailable" xml:space="preserve">
+    <value>本次会话中无法管理下载源</value>
+  </data>
+  <data name="settings.downloads.invalidSourceUrl" xml:space="preserve">
+    <value>请输入 HTTPS 地址或本地 HTTP 地址</value>
+  </data>
+  <data name="settings.downloads.sourceAlreadyExists" xml:space="preserve">
+    <value>此下载源已配置</value>
+  </data>
+  <data name="settings.downloads.detectingSource" xml:space="preserve">
+    <value>正在检查源兼容性</value>
+  </data>
+  <data name="settings.downloads.sourceDetectionFailed" xml:space="preserve">
+    <value>HyPrism 无法在此地址检测到兼容的镜像</value>
+  </data>
+  <data name="settings.downloads.sourceSaveFailed" xml:space="preserve">
+    <value>无法保存下载源</value>
+  </data>
+  <data name="settings.downloads.sourceReadFailed" xml:space="preserve">
+    <value>无法读取已保存的下载源</value>
+  </data>
+  <data name="settings.downloads.sourceRemoveFailed" xml:space="preserve">
+    <value>无法移除下载源</value>
+  </data>
+  <data name="settings.downloads.sourceAdded" xml:space="preserve">
+    <value>已添加下载源</value>
+  </data>
+  <data name="settings.downloads.sourceRemoved" xml:space="preserve">
+    <value>下载源已移除</value>
+  </data>
+  <data name="settings.downloads.sourceEnabled" xml:space="preserve">
+    <value>下载源已启用</value>
+  </data>
+  <data name="settings.downloads.sourceDisabled" xml:space="preserve">
+    <value>下载源已禁用</value>
+  </data>
+  <data name="settings.downloads.sourceTypeJsonIndex" xml:space="preserve">
+    <value>JSON 索引</value>
+  </data>
+  <data name="settings.downloads.sourceTypePattern" xml:space="preserve">
+    <value>URL 模板</value>
+  </data>
+  <data name="settings.generalSettings.mirrorDescription" xml:space="preserve">
+    <value>当官方服务器不可用时，社区镜像可作为游戏文件的备用来源。</value>
+  </data>
+  <data name="settings.generalSettings.mirrorSettings" xml:space="preserve">
+    <value>镜像设置</value>
+  </data>
+  <data name="settings.generalSettings.mirrorTestSpeed" xml:space="preserve">
+    <value>测试速度</value>
+  </data>
+  <data name="settings.generalSettings.mirrorTesting" xml:space="preserve">
+    <value>测试中...</value>
+  </data>
+  <data name="settings.generalSettings.mirrorUnavailable" xml:space="preserve">
+    <value>不可用</value>
+  </data>
+  <data name="settings.java" xml:space="preserve">
+    <value>Java</value>
+  </data>
+  <data name="settings.javaSettings.jvmMemoryArgumentsManaged" xml:space="preserve">
+    <value>-Xms 和 -Xmx 由内存分配滑块控制</value>
+  </data>
+  <data name="settings.networkSettings.authServerCheckNow" xml:space="preserve">
+    <value>立即检查</value>
+  </data>
+  <data name="settings.networkSettings.authServerChecking" xml:space="preserve">
+    <value>正在检查...</value>
+  </data>
+  <data name="settings.networkSettings.authServerOfficialNote" xml:space="preserve">
+    <value>官方服务器始终被视为可用。</value>
+  </data>
+  <data name="settings.networkSettings.authServerOffline" xml:space="preserve">
+    <value>离线</value>
+  </data>
+  <data name="settings.networkSettings.authServerOfflineWarning" xml:space="preserve">
+    <value>认证服务器无法访问。在线模式暂时禁用。</value>
+  </data>
+  <data name="settings.networkSettings.authServerOnline" xml:space="preserve">
+    <value>在线</value>
+  </data>
+  <data name="settings.networkSettings.authServerPing" xml:space="preserve">
+    <value>{{ping}}毫秒</value>
+  </data>
+  <data name="settings.networkSettings.authServerStatus" xml:space="preserve">
+    <value>认证服务器状态</value>
+  </data>
+  <data name="settings.networkSettings.authServerStatusHint" xml:space="preserve">
+    <value>检查认证服务器是否可访问。</value>
+  </data>
+  <data name="settings.networkSettings.officialProfileNote" xml:space="preserve">
+    <value>官方帐户只能使用官方 Hytale 认证。</value>
+  </data>
+  <data name="settings.networkSettings.unofficialProfileNote" xml:space="preserve">
+    <value>非官方帐户不能使用官方 Hytale 认证。</value>
+  </data>
+  <data name="desktopSettings.categories.language" xml:space="preserve">
+    <value>语言</value>
+  </data>
+  <data name="desktopSettings.categories.miscellaneous" xml:space="preserve">
+    <value>杂项</value>
+  </data>
+  <data name="desktopSettings.categories.appearance" xml:space="preserve">
+    <value>外观</value>
+  </data>
+  <data name="instances.tab.mods" xml:space="preserve">
+    <value>模组</value>
+  </data>
+  <data name="instances.mods.title" xml:space="preserve">
+    <value>已安装的模组</value>
+  </data>
+  <data name="instances.mods.hint" xml:space="preserve">
+    <value>仅为此实例安装的内容</value>
+  </data>
+  <data name="instances.mods.search" xml:space="preserve">
+    <value>搜索已安装的模组</value>
+  </data>
+  <data name="instances.mods.emptyTitle" xml:space="preserve">
+    <value>未安装任何模组</value>
+  </data>
+  <data name="instances.mods.emptyHint" xml:space="preserve">
+    <value>打开发现以查找此实例的内容</value>
+  </data>
+  <data name="instances.mods.install" xml:space="preserve">
+    <value>安装</value>
+  </data>
+  <data name="instances.mods.installed" xml:space="preserve">
+    <value>已安装</value>
+  </data>
+  <data name="instances.mods.enabled" xml:space="preserve">
+    <value>已启用</value>
+  </data>
+  <data name="instances.mods.disabled" xml:space="preserve">
+    <value>已禁用</value>
+  </data>
+  <data name="instances.mods.installFailed" xml:space="preserve">
+    <value>无法安装所选模组</value>
+  </data>
+  <data name="instances.browse.title" xml:space="preserve">
+    <value>发现模组</value>
+  </data>
+  <data name="instances.browse.hint" xml:space="preserve">
+    <value>查找并安装 CurseForge 内容到此实例中</value>
+  </data>
+  <data name="instances.browse.search" xml:space="preserve">
+    <value>搜索模组目录</value>
+  </data>
+  <data name="instances.browse.emptyTitle" xml:space="preserve">
+    <value>未找到模组</value>
+  </data>
+  <data name="instances.browse.emptyHint" xml:space="preserve">
+    <value>尝试不同的查询或检查 CurseForge API 配置</value>
+  </data>
+  <data name="instances.worlds.title" xml:space="preserve">
+    <value>世界</value>
+  </data>
+  <data name="instances.worlds.hint" xml:space="preserve">
+    <value>属于此实例的已保存世界</value>
+  </data>
+  <data name="instances.worlds.emptyTitle" xml:space="preserve">
+    <value>还没有世界</value>
+  </data>
+  <data name="instances.worlds.emptyHint" xml:space="preserve">
+    <value>游戏创建的世界将显示在此处</value>
+  </data>
+  <data name="instances.content.notInstalledTitle" xml:space="preserve">
+    <value>请先安装此实例</value>
+  </data>
+  <data name="instances.content.notInstalledHint" xml:space="preserve">
+    <value>游戏文件安装后，模组和世界才会可用</value>
+  </data>
+  <data name="instances.content.back" xml:space="preserve">
+    <value>实例</value>
+  </data>
+  <data name="instances.info.status" xml:space="preserve">
+    <value>状态</value>
+  </data>
+  <data name="instances.info.playtime" xml:space="preserve">
+    <value>游戏时间</value>
+  </data>
+  <data name="instances.info.mods" xml:space="preserve">
+    <value>模组</value>
+  </data>
+  <data name="instances.info.worlds" xml:space="preserve">
+    <value>世界</value>
+  </data>
+  <data name="instances.info.playtimeValue" xml:space="preserve">
+    <value>{0} 小时 {1} 分钟</value>
+  </data>
+  <data name="instances.console.title" xml:space="preserve">
+    <value>控制台</value>
+  </data>
+  <data name="instances.console.hint" xml:space="preserve">
+    <value>此实例的命令和实时输出</value>
+  </data>
+  <data name="instances.console.emptyTitle" xml:space="preserve">
+    <value>控制台尚不可用</value>
+  </data>
+  <data name="instances.console.emptyHint" xml:space="preserve">
+    <value>每实例的控制台跟踪将在此添加</value>
+  </data>
+  <data name="instances.logs.title" xml:space="preserve">
+    <value>日志</value>
+  </data>
+  <data name="instances.logs.hint" xml:space="preserve">
+    <value>此实例的启动和游戏日志</value>
+  </data>
+  <data name="instances.logs.emptyTitle" xml:space="preserve">
+    <value>暂无实例日志</value>
+  </data>
+  <data name="instances.logs.emptyHint" xml:space="preserve">
+    <value>每个实例的日志历史将显示在此处</value>
   </data>
 </root>

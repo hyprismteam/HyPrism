@@ -53,15 +53,15 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>Экземпляры игры теперь будут храниться в:
 {{dir}}
 
-Примечание: В AppData останутся:
+Примечание: в AppData останутся:
 • Java Runtime (JRE)
 • Butler
-• Кэш
+• Кеш
 • Логи
 • Настройки лаунчера
 • WebView2 (папка EBWebView)
 
-Возможно, потребуется переустановка игры при смене диска.</value>
+При смене диска может потребоваться переустановка игры.</value>
   </data>
   <data name="app.invalidNickname" xml:space="preserve">
     <value>Некорректный никнейм</value>
@@ -190,7 +190,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>Версия</value>
   </data>
   <data name="deleteGame.cacheFiles" xml:space="preserve">
-    <value>Файлы кэша</value>
+    <value>Файлы кеша</value>
   </data>
   <data name="deleteGame.downloadedPatches" xml:space="preserve">
     <value>Загруженные патчи</value>
@@ -1351,7 +1351,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>Сообщить об ошибке</value>
   </data>
   <data name="onboarding.changeInSettings" xml:space="preserve">
-    <value>Вы можете изменить это позже в Настройки &gt; Данные</value>
+    <value>Вы сможете изменить это позже в разделе «Настройки» → «Данные»</value>
   </data>
   <data name="onboarding.chooseLanguage" xml:space="preserve">
     <value>Выберите язык</value>
@@ -1477,7 +1477,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>Веб-ресурсы для загрузки недоступны</value>
   </data>
   <data name="onboarding.warning.noSourcesHint" xml:space="preserve">
-    <value>Чтобы загрузить игру, вам нужно будет добавить зеркало в Настройках → Загрузки, или позже войти в аккаунт Hytale.</value>
+    <value>Чтобы загрузить игру, добавьте зеркало в разделе «Настройки» → «Загрузки» или позже войдите в аккаунт Hytale.</value>
   </data>
   <data name="onboarding.warning.title" xml:space="preserve">
     <value>Нет источников загрузки</value>
@@ -1699,7 +1699,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>CI/CD Деплойер</value>
   </data>
   <data name="settings.aboutSettings.codevRole" xml:space="preserve">
-    <value>Соведущий по лаунчеру</value>
+    <value>Соруководитель разработки лаунчера</value>
   </data>
   <data name="settings.aboutSettings.contributorRole" xml:space="preserve">
     <value>Участник</value>
@@ -1723,7 +1723,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>Современный лаунчер для Hytale</value>
   </data>
   <data name="settings.aboutSettings.disclaimer" xml:space="preserve">
-    <value>HyPrism — не официальный лаунчер Hytale и не имеет отношения к Hypixel Studios</value>
+    <value>HyPrism — неофициальный лаунчер Hytale и не имеет отношения к Hypixel Studios</value>
   </data>
   <data name="settings.aboutSettings.installerRole" xml:space="preserve">
     <value>Создатель установщика</value>
@@ -1894,7 +1894,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>Управление данными</value>
   </data>
   <data name="settings.deleteAllData.message" xml:space="preserve">
-    <value>Это удалит все данные лаунчера, включая настройки, кэш и загруженные файлы. Это действие нельзя отменить.</value>
+    <value>Это удалит все данные лаунчера, включая настройки, кеш и загруженные файлы. Действие нельзя отменить.</value>
   </data>
   <data name="settings.deleteAllData.title" xml:space="preserve">
     <value>Удалить все данные?</value>
@@ -2377,7 +2377,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>Выберите предпочтительный язык интерфейса лаунчера</value>
   </data>
   <data name="settings.languageSettings.note" xml:space="preserve">
-    <value>Примечание: Некоторый текст может оставаться на английском языке до завершения полной локализации. Разработчики активно локализируют лаунчер для того, чтобы каждый мог получать удовольствие от его использования.</value>
+    <value>Примечание: некоторые строки могут оставаться на английском до завершения локализации. Мы продолжаем переводить лаунчер, чтобы им было удобно пользоваться на каждом поддерживаемом языке.</value>
   </data>
   <data name="settings.languageSettings.selectLanguage" xml:space="preserve">
     <value>Выбор языка</value>
@@ -2404,7 +2404,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>Официальный</value>
   </data>
   <data name="settings.networkSettings.authOfficialHint" xml:space="preserve">
-    <value>Серверы Hytale </value>
+    <value>Серверы Hytale</value>
   </data>
   <data name="settings.networkSettings.authServer" xml:space="preserve">
     <value>Сервер авторизации</value>

@@ -430,10 +430,10 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>Завантажити іконку</value>
   </data>
   <data name="instances.versionChangeWarning" xml:space="preserve">
-    <value>Changing version will remove game files</value>
+    <value>Зміна версії видалить файли гри</value>
   </data>
   <data name="instances.versionChangeWarningHint" xml:space="preserve">
-    <value>The game client will be deleted and you will need to re-download this version. User data (saves, mods) will be kept.</value>
+    <value>Клієнт гри буде видалено, і цю версію доведеться завантажити знову. Дані користувача, як-от збереження та моди, залишаться.</value>
   </data>
   <data name="languageSelector.changeLanguage" xml:space="preserve">
     <value>Змінити мову</value>
@@ -460,7 +460,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>Авторизація через {0}...</value>
   </data>
   <data name="launch.detail.authenticating_generic" xml:space="preserve">
-    <value>Авторизація...</value>
+    <value>Автентифікація...</value>
   </data>
   <data name="launch.detail.butler_install" xml:space="preserve">
     <value>Встановлення Butler...</value>
@@ -856,7 +856,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>Опис</value>
   </data>
   <data name="modManager.disableSelected" xml:space="preserve">
-    <value>Disable Selected</value>
+    <value>Вимкнути вибрані</value>
   </data>
   <data name="modManager.download" xml:space="preserve">
     <value>Завантажити</value>
@@ -889,7 +889,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>Перетягніть моди сюди</value>
   </data>
   <data name="modManager.enableSelected" xml:space="preserve">
-    <value>Enable Selected</value>
+    <value>Увімкнути вибрані</value>
   </data>
   <data name="modManager.enabled" xml:space="preserve">
     <value>Увімкнено</value>
@@ -967,10 +967,10 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>Моди успішно видалено</value>
   </data>
   <data name="modManager.modsDisabled" xml:space="preserve">
-    <value>Mods disabled</value>
+    <value>Моди вимкнено</value>
   </data>
   <data name="modManager.modsEnabled" xml:space="preserve">
-    <value>Mods enabled</value>
+    <value>Моди увімкнено</value>
   </data>
   <data name="modManager.modsInstalled" xml:space="preserve">
     <value>модів встановлено</value>
@@ -1117,7 +1117,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>Менеджер модів</value>
   </data>
   <data name="modManager.toggleFailed" xml:space="preserve">
-    <value>Failed to update mod state</value>
+    <value>Не вдалося змінити стан модів</value>
   </data>
   <data name="modManager.unknownAuthor" xml:space="preserve">
     <value>Невідомий автор</value>
@@ -1210,7 +1210,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>Спробувати ще</value>
   </data>
   <data name="onboarding.about" xml:space="preserve">
-    <value>Про</value>
+    <value>Про програму</value>
   </data>
   <data name="onboarding.aboutHyPrism" xml:space="preserve">
     <value>Про HyPrism</value>
@@ -1246,7 +1246,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>Автентифікація</value>
   </data>
   <data name="onboarding.authServerCreator" xml:space="preserve">
-    <value>Творець Auth сервера</value>
+    <value>Творець сервера автентифікації</value>
   </data>
   <data name="onboarding.background" xml:space="preserve">
     <value>Фон</value>
@@ -1567,10 +1567,10 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>Аватар вашого гравця</value>
   </data>
   <data name="settings.about" xml:space="preserve">
-    <value>Про нас</value>
+    <value>Про програму</value>
   </data>
   <data name="settings.aboutSettings.authRole" xml:space="preserve">
-    <value>Творець Auth сервера</value>
+    <value>Творець сервера автентифікації</value>
   </data>
   <data name="settings.aboutSettings.bugReport" xml:space="preserve">
     <value>Повідомити про помилку</value>
@@ -1801,7 +1801,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>Виберіть папку експорту...</value>
   </data>
   <data name="settings.exportInstance.title" xml:space="preserve">
-    <value>Екземпляр експорту</value>
+    <value>Експорт екземпляра</value>
   </data>
   <data name="settings.exportInstance.zipArchive" xml:space="preserve">
     <value>ZIP-архів</value>
@@ -1969,7 +1969,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>Версія</value>
   </data>
   <data name="settings.instances" xml:space="preserve">
-    <value>Ігри</value>
+    <value>Екземпляри</value>
   </data>
   <data name="settings.javaSettings.customJavaPathNotFound" xml:space="preserve">
     <value>Вибраний виконуваний файл Java не знайдено</value>
@@ -2348,5 +2348,461 @@ SPDX-License-Identifier: GPL-3.0-only
   </data>
   <data name="oauth.callback.failureHint" xml:space="preserve">
     <value>Поверніться до лаунчера та спробуйте ще раз</value>
+  </data>
+  <data name="common.remove" xml:space="preserve">
+    <value>Видалити</value>
+  </data>
+  <data name="common.selectVersion" xml:space="preserve">
+    <value>Вибрати версію</value>
+  </data>
+  <data name="desktopSettings.accountHytale" xml:space="preserve">
+    <value>Акаунт Hytale</value>
+  </data>
+  <data name="desktopSettings.accountOffline" xml:space="preserve">
+    <value>Офлайн акаунт</value>
+  </data>
+  <data name="desktopSettings.defaultLocation" xml:space="preserve">
+    <value>Стандартне розташування системи</value>
+  </data>
+  <data name="desktopSettings.description" xml:space="preserve">
+    <value>Налаштування запуску, гри та системи</value>
+  </data>
+  <data name="desktopSettings.discordAnnouncementsHint" xml:space="preserve">
+    <value>Показувати оголошення запуску, отримані з Discord</value>
+  </data>
+  <data name="desktopSettings.music" xml:space="preserve">
+    <value>Фоновa музикa</value>
+  </data>
+  <data name="desktopSettings.musicHint" xml:space="preserve">
+    <value>Відтворювати музику запуску під час перегляду</value>
+  </data>
+  <data name="home.createInstance" xml:space="preserve">
+    <value>Створити екземпляр</value>
+  </data>
+  <data name="home.currentInstance" xml:space="preserve">
+    <value>Поточний екземпляр</value>
+  </data>
+  <data name="home.welcomeHint" xml:space="preserve">
+    <value>Створіть екземпляр, щоб вибрати версію Hytale, завантажити її файли та розпочати вашу наступну пригоду</value>
+  </data>
+  <data name="home.welcomeTitle" xml:space="preserve">
+    <value>Ласкаво просимо до HyPrism</value>
+  </data>
+  <data name="instances.newInstance" xml:space="preserve">
+    <value>Новий екземпляр</value>
+  </data>
+  <data name="instances.newInstanceHint" xml:space="preserve">
+    <value>Виберіть гілку та версію гри для вашого нового екземпляра</value>
+  </data>
+  <data name="instances.branchHint" xml:space="preserve">
+    <value>Стабільні або передрелізні збірки</value>
+  </data>
+  <data name="instances.actions.delete" xml:space="preserve">
+    <value>Видалити</value>
+  </data>
+  <data name="instances.actions.deleteHint" xml:space="preserve">
+    <value>Видалити "{0}" та всі його дані? Цю дію не можна скасувати.</value>
+  </data>
+  <data name="instances.actions.deleteTitle" xml:space="preserve">
+    <value>Видалити екземпляр?</value>
+  </data>
+  <data name="instances.actions.install" xml:space="preserve">
+    <value>Встановити</value>
+  </data>
+  <data name="instances.actions.cancel" xml:space="preserve">
+    <value>Скасувати</value>
+  </data>
+  <data name="instances.actions.launching" xml:space="preserve">
+    <value>Запускається</value>
+  </data>
+  <data name="instances.actions.running" xml:space="preserve">
+    <value>Запущено</value>
+  </data>
+  <data name="instances.actions.openFolder" xml:space="preserve">
+    <value>Відкрити папку</value>
+  </data>
+  <data name="instances.actions.play" xml:space="preserve">
+    <value>Запустити</value>
+  </data>
+  <data name="instances.versionHint" xml:space="preserve">
+    <value>Версія гри для встановлення</value>
+  </data>
+  <data name="instances.selectVersion" xml:space="preserve">
+    <value>Вибрати версію</value>
+  </data>
+  <data name="main.clickToOpenRelease" xml:space="preserve">
+    <value>Натисніть, щоб переглянути реліз на GitHub</value>
+  </data>
+  <data name="news.articleLoadFailed" xml:space="preserve">
+    <value>Не вдалося завантажити статтю. Ви все ще можете відкрити її на hytale.com.</value>
+  </data>
+  <data name="news.articleLoading" xml:space="preserve">
+    <value>Завантаження статті...</value>
+  </data>
+  <data name="news.loadMore" xml:space="preserve">
+    <value>Завантажити ще</value>
+  </data>
+  <data name="news.selectArticle" xml:space="preserve">
+    <value>Виберіть новину, щоб прочитати її тут.</value>
+  </data>
+  <data name="onboarding.warning.back" xml:space="preserve">
+    <value>Повернутися до входу</value>
+  </data>
+  <data name="onboarding.warning.continue" xml:space="preserve">
+    <value>Продовжити</value>
+  </data>
+  <data name="onboarding.warning.description" xml:space="preserve">
+    <value>Без облікового запису Hytale ви не можете завантажувати файли гри з офіційних серверів.</value>
+  </data>
+  <data name="onboarding.warning.noSources" xml:space="preserve">
+    <value>Веб-ресурси для завантаження відсутні</value>
+  </data>
+  <data name="onboarding.warning.noSourcesHint" xml:space="preserve">
+    <value>Щоб завантажити гру, вам потрібно додати дзеркало в Налаштування → Завантаження, або ввійти з обліковим записом Hytale пізніше.</value>
+  </data>
+  <data name="onboarding.warning.title" xml:space="preserve">
+    <value>Джерела завантаження відсутні</value>
+  </data>
+  <data name="profiles.setActive" xml:space="preserve">
+    <value>Вибрати</value>
+  </data>
+  <data name="profiles.active" xml:space="preserve">
+    <value>Активний</value>
+  </data>
+  <data name="settings.aboutSettings.siteRole" xml:space="preserve">
+    <value>Вебсайт документації для розробників</value>
+  </data>
+  <data name="settings.aboutSettings.project" xml:space="preserve">
+    <value>Проєкт</value>
+  </data>
+  <data name="settings.aboutSettings.githubHint" xml:space="preserve">
+    <value>Вихідний код, випуски та розробка</value>
+  </data>
+  <data name="settings.aboutSettings.documentation" xml:space="preserve">
+    <value>Документація</value>
+  </data>
+  <data name="settings.aboutSettings.documentationHint" xml:space="preserve">
+    <value>Керівництва, архітектура та довідник для контрибуторів</value>
+  </data>
+  <data name="settings.aboutSettings.community" xml:space="preserve">
+    <value>Спільнота</value>
+  </data>
+  <data name="settings.aboutSettings.discordHint" xml:space="preserve">
+    <value>Новини, обговорення та допомога від спільноти</value>
+  </data>
+  <data name="settings.aboutSettings.bugReportHint" xml:space="preserve">
+    <value>Повідомити про проблему або запропонувати покращення</value>
+  </data>
+  <data name="settings.aboutSettings.legal" xml:space="preserve">
+    <value>Відкритий код і правова інформація</value>
+  </data>
+  <data name="settings.aboutSettings.license" xml:space="preserve">
+    <value>Ліцензія</value>
+  </data>
+  <data name="settings.aboutSettings.licenseHint" xml:space="preserve">
+    <value>Вихідний код HyPrism розповсюджується під ліцензією GPL-3.0-only</value>
+  </data>
+  <data name="settings.aboutSettings.credits" xml:space="preserve">
+    <value>Візуальні матеріали</value>
+  </data>
+  <data name="settings.aboutSettings.creditsHint" xml:space="preserve">
+    <value>Ілюстрації надано Icons8</value>
+  </data>
+  <data name="settings.aboutSettings.lordicon" xml:space="preserve">
+    <value>Анімовані матеріали</value>
+  </data>
+  <data name="settings.aboutSettings.lordiconHint" xml:space="preserve">
+    <value>Анімовані іконки надано Lordicon</value>
+  </data>
+  <data name="settings.aboutSettings.currentVersion" xml:space="preserve">
+    <value>Поточна версія</value>
+  </data>
+  <data name="settings.aboutSettings.currentVersionHint" xml:space="preserve">
+    <value>Версія лаунчера, встановлена на цьому пристрої</value>
+  </data>
+  <data name="settings.aboutSettings.latestMainCommit" xml:space="preserve">
+    <value>Останній коміт у гілці main</value>
+  </data>
+  <data name="settings.aboutSettings.latestMainCommitLoading" xml:space="preserve">
+    <value>Завантаження інформації про репозиторій</value>
+  </data>
+  <data name="settings.aboutSettings.latestMainCommitUnavailable" xml:space="preserve">
+    <value>Інформація про репозиторій тимчасово недоступна</value>
+  </data>
+  <data name="settings.aboutSettings.hytaleEula" xml:space="preserve">
+    <value>Hytale EULA</value>
+  </data>
+  <data name="settings.aboutSettings.hytaleEulaHint" xml:space="preserve">
+    <value>Ліцензійна угода кінцевого користувача для Hytale</value>
+  </data>
+  <data name="settings.downloads.sources" xml:space="preserve">
+    <value>Джерела для завантаження</value>
+  </data>
+  <data name="settings.downloads.columnLink" xml:space="preserve">
+    <value>Посилання</value>
+  </data>
+  <data name="settings.downloads.columnType" xml:space="preserve">
+    <value>Тип</value>
+  </data>
+  <data name="settings.downloads.columnAvailability" xml:space="preserve">
+    <value>Наявність</value>
+  </data>
+  <data name="settings.downloads.columnPing" xml:space="preserve">
+    <value>Пінг</value>
+  </data>
+  <data name="settings.downloads.sourceTypeOfficial" xml:space="preserve">
+    <value>Офіційний</value>
+  </data>
+  <data name="settings.downloads.checkingAvailability" xml:space="preserve">
+    <value>Перевірка</value>
+  </data>
+  <data name="settings.downloads.sourceAvailable" xml:space="preserve">
+    <value>Доступний</value>
+  </data>
+  <data name="settings.downloads.sourceUnavailable" xml:space="preserve">
+    <value>Недоступно</value>
+  </data>
+  <data name="settings.downloads.sourceDisabledState" xml:space="preserve">
+    <value>Вимкнено</value>
+  </data>
+  <data name="settings.downloads.officialSourceConnected" xml:space="preserve">
+    <value>Обліковий запис підключено</value>
+  </data>
+  <data name="settings.downloads.officialSourceRequiresAccount" xml:space="preserve">
+    <value>Потрібен обліковий запис Hytale</value>
+  </data>
+  <data name="settings.downloads.addSource" xml:space="preserve">
+    <value>Додати джерело</value>
+  </data>
+  <data name="settings.downloads.add" xml:space="preserve">
+    <value>Додати</value>
+  </data>
+  <data name="settings.downloads.addSourceTitle" xml:space="preserve">
+    <value>Підключіть джерело для завантаження</value>
+  </data>
+  <data name="settings.downloads.addSourceHint" xml:space="preserve">
+    <value>Введіть його публічну адресу, і HyPrism виявить підтримуваний формат дзеркала</value>
+  </data>
+  <data name="settings.downloads.sourceUrlPlaceholder" xml:space="preserve">
+    <value>https://mirror.example.com</value>
+  </data>
+  <data name="settings.downloads.deleteSourceTitle" xml:space="preserve">
+    <value>Видалити це джерело?</value>
+  </data>
+  <data name="settings.downloads.deleteSourceHint" xml:space="preserve">
+    <value>Його локальне визначення буде видалено, і воно більше не буде використовуватися для завантажень</value>
+  </data>
+  <data name="settings.downloads.sourceManagementUnavailable" xml:space="preserve">
+    <value>Керування джерелами завантажень недоступне в цій сесії</value>
+  </data>
+  <data name="settings.downloads.invalidSourceUrl" xml:space="preserve">
+    <value>Введіть HTTPS-адресу або локальну HTTP-адресу</value>
+  </data>
+  <data name="settings.downloads.sourceAlreadyExists" xml:space="preserve">
+    <value>Це джерело завантажень вже налаштоване</value>
+  </data>
+  <data name="settings.downloads.detectingSource" xml:space="preserve">
+    <value>Перевірка сумісності джерела</value>
+  </data>
+  <data name="settings.downloads.sourceDetectionFailed" xml:space="preserve">
+    <value>HyPrism не зміг виявити сумісне дзеркало за цією адресою</value>
+  </data>
+  <data name="settings.downloads.sourceSaveFailed" xml:space="preserve">
+    <value>Джерело завантажень не вдалося зберегти</value>
+  </data>
+  <data name="settings.downloads.sourceReadFailed" xml:space="preserve">
+    <value>Збережені джерела завантажень не вдалося прочитати</value>
+  </data>
+  <data name="settings.downloads.sourceRemoveFailed" xml:space="preserve">
+    <value>Джерело завантажень не вдалося видалити</value>
+  </data>
+  <data name="settings.downloads.sourceAdded" xml:space="preserve">
+    <value>Джерело завантажень додано</value>
+  </data>
+  <data name="settings.downloads.sourceRemoved" xml:space="preserve">
+    <value>Джерело завантажень видалено</value>
+  </data>
+  <data name="settings.downloads.sourceEnabled" xml:space="preserve">
+    <value>Джерело завантажень увімкнено</value>
+  </data>
+  <data name="settings.downloads.sourceDisabled" xml:space="preserve">
+    <value>Джерело завантажень вимкнено</value>
+  </data>
+  <data name="settings.downloads.sourceTypeJsonIndex" xml:space="preserve">
+    <value>JSON індекс</value>
+  </data>
+  <data name="settings.downloads.sourceTypePattern" xml:space="preserve">
+    <value>Шаблон URL</value>
+  </data>
+  <data name="settings.generalSettings.mirrorDescription" xml:space="preserve">
+    <value>Дзеркало спільноти використовується як альтернативне джерело файлів гри, коли офіційні сервери недоступні.</value>
+  </data>
+  <data name="settings.generalSettings.mirrorSettings" xml:space="preserve">
+    <value>Налаштування дзеркала</value>
+  </data>
+  <data name="settings.generalSettings.mirrorTestSpeed" xml:space="preserve">
+    <value>Перевірка швидкості</value>
+  </data>
+  <data name="settings.generalSettings.mirrorTesting" xml:space="preserve">
+    <value>Тестування...</value>
+  </data>
+  <data name="settings.generalSettings.mirrorUnavailable" xml:space="preserve">
+    <value>Недоступно</value>
+  </data>
+  <data name="settings.java" xml:space="preserve">
+    <value>Java</value>
+  </data>
+  <data name="settings.javaSettings.jvmMemoryArgumentsManaged" xml:space="preserve">
+    <value>-Xms і -Xmx контролюються повзунками виділення пам'яті</value>
+  </data>
+  <data name="settings.networkSettings.authServerCheckNow" xml:space="preserve">
+    <value>Перевірити зараз</value>
+  </data>
+  <data name="settings.networkSettings.authServerChecking" xml:space="preserve">
+    <value>Перевірка...</value>
+  </data>
+  <data name="settings.networkSettings.authServerOfficialNote" xml:space="preserve">
+    <value>Офіційні сервери завжди вважаються доступними.</value>
+  </data>
+  <data name="settings.networkSettings.authServerOffline" xml:space="preserve">
+    <value>В офлайні</value>
+  </data>
+  <data name="settings.networkSettings.authServerOfflineWarning" xml:space="preserve">
+    <value>Сервер автентифікації недоступний. Режим онлайн тимчасово відключено.</value>
+  </data>
+  <data name="settings.networkSettings.authServerOnline" xml:space="preserve">
+    <value>Онлайн</value>
+  </data>
+  <data name="settings.networkSettings.authServerPing" xml:space="preserve">
+    <value>{{ping}}мс</value>
+  </data>
+  <data name="settings.networkSettings.authServerStatus" xml:space="preserve">
+    <value>Статус сервера автентифікації</value>
+  </data>
+  <data name="settings.networkSettings.authServerStatusHint" xml:space="preserve">
+    <value>Перевірте, чи доступний сервер автентифікації.</value>
+  </data>
+  <data name="settings.networkSettings.officialProfileNote" xml:space="preserve">
+    <value>Офіційні облікові записи можуть використовувати лише офіційну автентифікацію Hytale.</value>
+  </data>
+  <data name="settings.networkSettings.unofficialProfileNote" xml:space="preserve">
+    <value>Неофіційні облікові записи не можуть використовувати офіційну автентифікацію Hytale.</value>
+  </data>
+  <data name="desktopSettings.categories.language" xml:space="preserve">
+    <value>Мова</value>
+  </data>
+  <data name="desktopSettings.categories.miscellaneous" xml:space="preserve">
+    <value>Різне</value>
+  </data>
+  <data name="desktopSettings.categories.appearance" xml:space="preserve">
+    <value>Зовнішній вигляд</value>
+  </data>
+  <data name="instances.tab.mods" xml:space="preserve">
+    <value>Моди</value>
+  </data>
+  <data name="instances.mods.title" xml:space="preserve">
+    <value>Встановлені моди</value>
+  </data>
+  <data name="instances.mods.hint" xml:space="preserve">
+    <value>Контент встановлений лише для цього екземпляра</value>
+  </data>
+  <data name="instances.mods.search" xml:space="preserve">
+    <value>Пошук встановлених модів</value>
+  </data>
+  <data name="instances.mods.emptyTitle" xml:space="preserve">
+    <value>Моди не встановлено</value>
+  </data>
+  <data name="instances.mods.emptyHint" xml:space="preserve">
+    <value>Відкрийте Discover, щоб знайти контент для цього екземпляра</value>
+  </data>
+  <data name="instances.mods.install" xml:space="preserve">
+    <value>Встановити</value>
+  </data>
+  <data name="instances.mods.installed" xml:space="preserve">
+    <value>Встановлено</value>
+  </data>
+  <data name="instances.mods.enabled" xml:space="preserve">
+    <value>Увімкнено</value>
+  </data>
+  <data name="instances.mods.disabled" xml:space="preserve">
+    <value>Вимкнено</value>
+  </data>
+  <data name="instances.mods.installFailed" xml:space="preserve">
+    <value>Не вдалося встановити вибраний мод</value>
+  </data>
+  <data name="instances.browse.title" xml:space="preserve">
+    <value>Відкрити моди</value>
+  </data>
+  <data name="instances.browse.hint" xml:space="preserve">
+    <value>Знайти та встановити контент CurseForge у цей екземпляр</value>
+  </data>
+  <data name="instances.browse.search" xml:space="preserve">
+    <value>Шукати у каталозі модів</value>
+  </data>
+  <data name="instances.browse.emptyTitle" xml:space="preserve">
+    <value>Моди не знайдено</value>
+  </data>
+  <data name="instances.browse.emptyHint" xml:space="preserve">
+    <value>Спробуйте інший запит або перевірте налаштування API CurseForge</value>
+  </data>
+  <data name="instances.worlds.title" xml:space="preserve">
+    <value>Світи</value>
+  </data>
+  <data name="instances.worlds.hint" xml:space="preserve">
+    <value>Збережені світи цього екземпляра</value>
+  </data>
+  <data name="instances.worlds.emptyTitle" xml:space="preserve">
+    <value>Ще немає світів</value>
+  </data>
+  <data name="instances.worlds.emptyHint" xml:space="preserve">
+    <value>Світи, створені грою, з’являться тут</value>
+  </data>
+  <data name="instances.content.notInstalledTitle" xml:space="preserve">
+    <value>Спершу встановіть цей екземпляр</value>
+  </data>
+  <data name="instances.content.notInstalledHint" xml:space="preserve">
+    <value>Моди та світи стають доступними після встановлення файлів гри</value>
+  </data>
+  <data name="instances.content.back" xml:space="preserve">
+    <value>Екземпляр</value>
+  </data>
+  <data name="instances.info.status" xml:space="preserve">
+    <value>Статус</value>
+  </data>
+  <data name="instances.info.playtime" xml:space="preserve">
+    <value>Час гри</value>
+  </data>
+  <data name="instances.info.mods" xml:space="preserve">
+    <value>Моди</value>
+  </data>
+  <data name="instances.info.worlds" xml:space="preserve">
+    <value>Світи</value>
+  </data>
+  <data name="instances.info.playtimeValue" xml:space="preserve">
+    <value>{0} г {1} хв</value>
+  </data>
+  <data name="instances.console.title" xml:space="preserve">
+    <value>Консоль</value>
+  </data>
+  <data name="instances.console.hint" xml:space="preserve">
+    <value>Команди та вивід в реальному часі для цього екземпляра</value>
+  </data>
+  <data name="instances.console.emptyTitle" xml:space="preserve">
+    <value>Консоль ще недоступна</value>
+  </data>
+  <data name="instances.console.emptyHint" xml:space="preserve">
+    <value>Слідкування за консоллю для кожного екземпляра буде додано тут</value>
+  </data>
+  <data name="instances.logs.title" xml:space="preserve">
+    <value>Журнали</value>
+  </data>
+  <data name="instances.logs.hint" xml:space="preserve">
+    <value>Журнали запуску та гри для цього екземпляра</value>
+  </data>
+  <data name="instances.logs.emptyTitle" xml:space="preserve">
+    <value>Жодних журналів екземпляра ще не зареєстровано</value>
+  </data>
+  <data name="instances.logs.emptyHint" xml:space="preserve">
+    <value>Історія журналів по кожному екземпляру з’явиться тут</value>
   </data>
 </root>

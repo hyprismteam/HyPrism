@@ -151,7 +151,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>폴더 열기</value>
   </data>
   <data name="common.preRelease" xml:space="preserve">
-    <value>사전 릴리스</value>
+    <value>프리릴리스</value>
   </data>
   <data name="common.refresh" xml:space="preserve">
     <value>새로고침</value>
@@ -430,10 +430,10 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>아이콘 업로드</value>
   </data>
   <data name="instances.versionChangeWarning" xml:space="preserve">
-    <value>Changing version will remove game files</value>
+    <value>버전을 변경하면 게임 파일이 삭제됩니다</value>
   </data>
   <data name="instances.versionChangeWarningHint" xml:space="preserve">
-    <value>The game client will be deleted and you will need to re-download this version. User data (saves, mods) will be kept.</value>
+    <value>게임 클라이언트가 삭제되며 이 버전을 다시 다운로드해야 합니다. 저장 파일과 모드 같은 사용자 데이터는 유지됩니다.</value>
   </data>
   <data name="languageSelector.changeLanguage" xml:space="preserve">
     <value>언어 변경</value>
@@ -715,10 +715,10 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>플레이</value>
   </data>
   <data name="main.preRelease" xml:space="preserve">
-    <value>프리릴리즈</value>
+    <value>프리릴리스</value>
   </data>
   <data name="main.release" xml:space="preserve">
-    <value>릴리즈</value>
+    <value>릴리스</value>
   </data>
   <data name="main.running" xml:space="preserve">
     <value>실행 중</value>
@@ -856,7 +856,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>설명</value>
   </data>
   <data name="modManager.disableSelected" xml:space="preserve">
-    <value>Disable Selected</value>
+    <value>선택 항목 비활성화</value>
   </data>
   <data name="modManager.download" xml:space="preserve">
     <value>다운로드</value>
@@ -889,7 +889,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>여기에 모드를 드롭하세요</value>
   </data>
   <data name="modManager.enableSelected" xml:space="preserve">
-    <value>Enable Selected</value>
+    <value>선택 항목 활성화</value>
   </data>
   <data name="modManager.enabled" xml:space="preserve">
     <value>활성화됨</value>
@@ -967,10 +967,10 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>모드가 성공적으로 삭제되었습니다</value>
   </data>
   <data name="modManager.modsDisabled" xml:space="preserve">
-    <value>Mods disabled</value>
+    <value>모드 비활성화됨</value>
   </data>
   <data name="modManager.modsEnabled" xml:space="preserve">
-    <value>Mods enabled</value>
+    <value>모드 활성화됨</value>
   </data>
   <data name="modManager.modsInstalled" xml:space="preserve">
     <value>개 모드 설치됨</value>
@@ -1117,7 +1117,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>모드 관리자</value>
   </data>
   <data name="modManager.toggleFailed" xml:space="preserve">
-    <value>Failed to update mod state</value>
+    <value>모드 상태를 업데이트하지 못했습니다</value>
   </data>
   <data name="modManager.unknownAuthor" xml:space="preserve">
     <value>알 수 없는 제작자</value>
@@ -1366,7 +1366,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>1-16자</value>
   </data>
   <data name="onboarding.visual" xml:space="preserve">
-    <value>비주얼</value>
+    <value>외관</value>
   </data>
   <data name="onboarding.welcome" xml:space="preserve">
     <value>HyPrism에 오신 것을 환영합니다</value>
@@ -2194,7 +2194,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>환경 변수</value>
   </data>
   <data name="settings.visual" xml:space="preserve">
-    <value>비주얼</value>
+    <value>외관</value>
   </data>
   <data name="settings.visualSettings.autoShuffle" xml:space="preserve">
     <value>자동 / 셔플</value>
@@ -2348,5 +2348,461 @@ SPDX-License-Identifier: GPL-3.0-only
   </data>
   <data name="oauth.callback.failureHint" xml:space="preserve">
     <value>런처로 돌아가 다시 시도해 주세요</value>
+  </data>
+  <data name="common.remove" xml:space="preserve">
+    <value>제거</value>
+  </data>
+  <data name="common.selectVersion" xml:space="preserve">
+    <value>버전 선택</value>
+  </data>
+  <data name="desktopSettings.accountHytale" xml:space="preserve">
+    <value>하이테일 계정</value>
+  </data>
+  <data name="desktopSettings.accountOffline" xml:space="preserve">
+    <value>오프라인 계정</value>
+  </data>
+  <data name="desktopSettings.defaultLocation" xml:space="preserve">
+    <value>기본 시스템 위치</value>
+  </data>
+  <data name="desktopSettings.description" xml:space="preserve">
+    <value>런처, 게임 및 시스템 설정</value>
+  </data>
+  <data name="desktopSettings.discordAnnouncementsHint" xml:space="preserve">
+    <value>Discord에서 받은 런처 공지 표시</value>
+  </data>
+  <data name="desktopSettings.music" xml:space="preserve">
+    <value>배경 음악</value>
+  </data>
+  <data name="desktopSettings.musicHint" xml:space="preserve">
+    <value>탐색 중 런처 음악 재생</value>
+  </data>
+  <data name="home.createInstance" xml:space="preserve">
+    <value>인스턴스 생성</value>
+  </data>
+  <data name="home.currentInstance" xml:space="preserve">
+    <value>현재 인스턴스</value>
+  </data>
+  <data name="home.welcomeHint" xml:space="preserve">
+    <value>Hytale 버전을 선택하고, 파일을 다운로드하며, 다음 모험을 시작할 인스턴스를 생성합니다</value>
+  </data>
+  <data name="home.welcomeTitle" xml:space="preserve">
+    <value>HyPrism에 오신 것을 환영합니다</value>
+  </data>
+  <data name="instances.newInstance" xml:space="preserve">
+    <value>새 인스턴스</value>
+  </data>
+  <data name="instances.newInstanceHint" xml:space="preserve">
+    <value>새 인스턴스에 대한 브랜치와 게임 버전을 선택하세요</value>
+  </data>
+  <data name="instances.branchHint" xml:space="preserve">
+    <value>안정화 또는 사전 출시 빌드</value>
+  </data>
+  <data name="instances.actions.delete" xml:space="preserve">
+    <value>삭제</value>
+  </data>
+  <data name="instances.actions.deleteHint" xml:space="preserve">
+    <value>"{0}" 및 모든 데이터를 삭제하시겠습니까? 이 작업은 취소할 수 없습니다.</value>
+  </data>
+  <data name="instances.actions.deleteTitle" xml:space="preserve">
+    <value>인스턴스를 삭제하시겠습니까?</value>
+  </data>
+  <data name="instances.actions.install" xml:space="preserve">
+    <value>설치</value>
+  </data>
+  <data name="instances.actions.cancel" xml:space="preserve">
+    <value>취소</value>
+  </data>
+  <data name="instances.actions.launching" xml:space="preserve">
+    <value>실행 중</value>
+  </data>
+  <data name="instances.actions.running" xml:space="preserve">
+    <value>작동 중</value>
+  </data>
+  <data name="instances.actions.openFolder" xml:space="preserve">
+    <value>폴더 열기</value>
+  </data>
+  <data name="instances.actions.play" xml:space="preserve">
+    <value>실행</value>
+  </data>
+  <data name="instances.versionHint" xml:space="preserve">
+    <value>설치할 게임 버전</value>
+  </data>
+  <data name="instances.selectVersion" xml:space="preserve">
+    <value>버전 선택</value>
+  </data>
+  <data name="main.clickToOpenRelease" xml:space="preserve">
+    <value>GitHub에서 릴리스를 보려면 클릭</value>
+  </data>
+  <data name="news.articleLoadFailed" xml:space="preserve">
+    <value>기사를 불러올 수 없습니다. 그래도 hytale.com에서 열 수 있습니다.</value>
+  </data>
+  <data name="news.articleLoading" xml:space="preserve">
+    <value>기사 불러오는 중...</value>
+  </data>
+  <data name="news.loadMore" xml:space="preserve">
+    <value>더 보기</value>
+  </data>
+  <data name="news.selectArticle" xml:space="preserve">
+    <value>여기에서 읽으려면 뉴스 항목을 선택하세요.</value>
+  </data>
+  <data name="onboarding.warning.back" xml:space="preserve">
+    <value>로그인으로 돌아가기</value>
+  </data>
+  <data name="onboarding.warning.continue" xml:space="preserve">
+    <value>계속</value>
+  </data>
+  <data name="onboarding.warning.description" xml:space="preserve">
+    <value>Hytale 계정이 없으면 공식 서버에서 게임 파일을 다운로드할 수 없습니다.</value>
+  </data>
+  <data name="onboarding.warning.noSources" xml:space="preserve">
+    <value>다운로드할 수 있는 웹 리소스가 없습니다</value>
+  </data>
+  <data name="onboarding.warning.noSourcesHint" xml:space="preserve">
+    <value>게임을 다운로드하려면 설정 → 다운로드에서 미러를 추가하거나 나중에 Hytale 계정으로 로그인해야 합니다.</value>
+  </data>
+  <data name="onboarding.warning.title" xml:space="preserve">
+    <value>다운로드 소스 없음</value>
+  </data>
+  <data name="profiles.setActive" xml:space="preserve">
+    <value>선택</value>
+  </data>
+  <data name="profiles.active" xml:space="preserve">
+    <value>활성</value>
+  </data>
+  <data name="settings.aboutSettings.siteRole" xml:space="preserve">
+    <value>문서 웹사이트 개발자</value>
+  </data>
+  <data name="settings.aboutSettings.project" xml:space="preserve">
+    <value>프로젝트</value>
+  </data>
+  <data name="settings.aboutSettings.githubHint" xml:space="preserve">
+    <value>소스 코드, 릴리스 및 개발</value>
+  </data>
+  <data name="settings.aboutSettings.documentation" xml:space="preserve">
+    <value>문서</value>
+  </data>
+  <data name="settings.aboutSettings.documentationHint" xml:space="preserve">
+    <value>가이드, 아키텍처 및 기여자 참고</value>
+  </data>
+  <data name="settings.aboutSettings.community" xml:space="preserve">
+    <value>커뮤니티</value>
+  </data>
+  <data name="settings.aboutSettings.discordHint" xml:space="preserve">
+    <value>커뮤니티 뉴스, 토론 및 도움</value>
+  </data>
+  <data name="settings.aboutSettings.bugReportHint" xml:space="preserve">
+    <value>문제 보고 또는 개선 제안</value>
+  </data>
+  <data name="settings.aboutSettings.legal" xml:space="preserve">
+    <value>오픈 소스 및 법적 사항</value>
+  </data>
+  <data name="settings.aboutSettings.license" xml:space="preserve">
+    <value>라이선스</value>
+  </data>
+  <data name="settings.aboutSettings.licenseHint" xml:space="preserve">
+    <value>HyPrism 소스 코드는 GPL-3.0-only 하에 배포됩니다</value>
+  </data>
+  <data name="settings.aboutSettings.credits" xml:space="preserve">
+    <value>시각 자료</value>
+  </data>
+  <data name="settings.aboutSettings.creditsHint" xml:space="preserve">
+    <value>일러스트레이션 제공: Icons8</value>
+  </data>
+  <data name="settings.aboutSettings.lordicon" xml:space="preserve">
+    <value>애니메이션 자료</value>
+  </data>
+  <data name="settings.aboutSettings.lordiconHint" xml:space="preserve">
+    <value>애니메이션 아이콘 제공: Lordicon</value>
+  </data>
+  <data name="settings.aboutSettings.currentVersion" xml:space="preserve">
+    <value>현재 버전</value>
+  </data>
+  <data name="settings.aboutSettings.currentVersionHint" xml:space="preserve">
+    <value>이 장치에 설치된 런처 버전</value>
+  </data>
+  <data name="settings.aboutSettings.latestMainCommit" xml:space="preserve">
+    <value>메인에서 최신 커밋</value>
+  </data>
+  <data name="settings.aboutSettings.latestMainCommitLoading" xml:space="preserve">
+    <value>저장소 정보 로딩 중</value>
+  </data>
+  <data name="settings.aboutSettings.latestMainCommitUnavailable" xml:space="preserve">
+    <value>저장소 정보를 일시적으로 사용할 수 없음</value>
+  </data>
+  <data name="settings.aboutSettings.hytaleEula" xml:space="preserve">
+    <value>Hytale EULA</value>
+  </data>
+  <data name="settings.aboutSettings.hytaleEulaHint" xml:space="preserve">
+    <value>Hytale 최종 사용자 사용권 계약</value>
+  </data>
+  <data name="settings.downloads.sources" xml:space="preserve">
+    <value>다운로드 소스</value>
+  </data>
+  <data name="settings.downloads.columnLink" xml:space="preserve">
+    <value>링크</value>
+  </data>
+  <data name="settings.downloads.columnType" xml:space="preserve">
+    <value>유형</value>
+  </data>
+  <data name="settings.downloads.columnAvailability" xml:space="preserve">
+    <value>이용 가능 여부</value>
+  </data>
+  <data name="settings.downloads.columnPing" xml:space="preserve">
+    <value>핑</value>
+  </data>
+  <data name="settings.downloads.sourceTypeOfficial" xml:space="preserve">
+    <value>공식</value>
+  </data>
+  <data name="settings.downloads.checkingAvailability" xml:space="preserve">
+    <value>확인 중</value>
+  </data>
+  <data name="settings.downloads.sourceAvailable" xml:space="preserve">
+    <value>이용 가능</value>
+  </data>
+  <data name="settings.downloads.sourceUnavailable" xml:space="preserve">
+    <value>사용 불가</value>
+  </data>
+  <data name="settings.downloads.sourceDisabledState" xml:space="preserve">
+    <value>비활성화됨</value>
+  </data>
+  <data name="settings.downloads.officialSourceConnected" xml:space="preserve">
+    <value>계정 연결됨</value>
+  </data>
+  <data name="settings.downloads.officialSourceRequiresAccount" xml:space="preserve">
+    <value>Hytale 계정 필요</value>
+  </data>
+  <data name="settings.downloads.addSource" xml:space="preserve">
+    <value>소스 추가</value>
+  </data>
+  <data name="settings.downloads.add" xml:space="preserve">
+    <value>추가</value>
+  </data>
+  <data name="settings.downloads.addSourceTitle" xml:space="preserve">
+    <value>다운로드 소스 연결</value>
+  </data>
+  <data name="settings.downloads.addSourceHint" xml:space="preserve">
+    <value>공개 주소를 입력하면 HyPrism이 지원되는 미러 형식을 감지합니다</value>
+  </data>
+  <data name="settings.downloads.sourceUrlPlaceholder" xml:space="preserve">
+    <value>https://mirror.example.com</value>
+  </data>
+  <data name="settings.downloads.deleteSourceTitle" xml:space="preserve">
+    <value>이 소스를 제거하시겠습니까?</value>
+  </data>
+  <data name="settings.downloads.deleteSourceHint" xml:space="preserve">
+    <value>로컬 정의가 삭제되며 더 이상 다운로드에 사용되지 않습니다</value>
+  </data>
+  <data name="settings.downloads.sourceManagementUnavailable" xml:space="preserve">
+    <value>이 세션에서는 다운로드 소스 관리가 불가능합니다</value>
+  </data>
+  <data name="settings.downloads.invalidSourceUrl" xml:space="preserve">
+    <value>HTTPS 주소 또는 로컬 HTTP 주소를 입력하세요</value>
+  </data>
+  <data name="settings.downloads.sourceAlreadyExists" xml:space="preserve">
+    <value>이 다운로드 소스는 이미 구성되어 있습니다</value>
+  </data>
+  <data name="settings.downloads.detectingSource" xml:space="preserve">
+    <value>소스 호환성 확인 중</value>
+  </data>
+  <data name="settings.downloads.sourceDetectionFailed" xml:space="preserve">
+    <value>HyPrism이 이 주소에서 호환 가능한 미러를 감지할 수 없습니다</value>
+  </data>
+  <data name="settings.downloads.sourceSaveFailed" xml:space="preserve">
+    <value>다운로드 소스를 저장할 수 없습니다</value>
+  </data>
+  <data name="settings.downloads.sourceReadFailed" xml:space="preserve">
+    <value>저장된 다운로드 소스를 읽을 수 없습니다</value>
+  </data>
+  <data name="settings.downloads.sourceRemoveFailed" xml:space="preserve">
+    <value>다운로드 소스를 제거할 수 없습니다</value>
+  </data>
+  <data name="settings.downloads.sourceAdded" xml:space="preserve">
+    <value>다운로드 소스가 추가되었습니다</value>
+  </data>
+  <data name="settings.downloads.sourceRemoved" xml:space="preserve">
+    <value>다운로드 소스 제거됨</value>
+  </data>
+  <data name="settings.downloads.sourceEnabled" xml:space="preserve">
+    <value>다운로드 소스 활성화됨</value>
+  </data>
+  <data name="settings.downloads.sourceDisabled" xml:space="preserve">
+    <value>다운로드 소스 비활성화됨</value>
+  </data>
+  <data name="settings.downloads.sourceTypeJsonIndex" xml:space="preserve">
+    <value>JSON 인덱스</value>
+  </data>
+  <data name="settings.downloads.sourceTypePattern" xml:space="preserve">
+    <value>URL 템플릿</value>
+  </data>
+  <data name="settings.generalSettings.mirrorDescription" xml:space="preserve">
+    <value>공식 서버를 사용할 수 없을 때 게임 파일의 대체 소스로 커뮤니티 미러가 사용됩니다.</value>
+  </data>
+  <data name="settings.generalSettings.mirrorSettings" xml:space="preserve">
+    <value>미러 설정</value>
+  </data>
+  <data name="settings.generalSettings.mirrorTestSpeed" xml:space="preserve">
+    <value>속도 테스트</value>
+  </data>
+  <data name="settings.generalSettings.mirrorTesting" xml:space="preserve">
+    <value>테스트 중...</value>
+  </data>
+  <data name="settings.generalSettings.mirrorUnavailable" xml:space="preserve">
+    <value>사용 불가</value>
+  </data>
+  <data name="settings.java" xml:space="preserve">
+    <value>자바</value>
+  </data>
+  <data name="settings.javaSettings.jvmMemoryArgumentsManaged" xml:space="preserve">
+    <value>-Xms 및 -Xmx는 메모리 할당 슬라이더로 제어됩니다</value>
+  </data>
+  <data name="settings.networkSettings.authServerCheckNow" xml:space="preserve">
+    <value>지금 확인</value>
+  </data>
+  <data name="settings.networkSettings.authServerChecking" xml:space="preserve">
+    <value>확인 중...</value>
+  </data>
+  <data name="settings.networkSettings.authServerOfficialNote" xml:space="preserve">
+    <value>공식 서버는 항상 사용 가능한 것으로 간주됩니다.</value>
+  </data>
+  <data name="settings.networkSettings.authServerOffline" xml:space="preserve">
+    <value>오프라인</value>
+  </data>
+  <data name="settings.networkSettings.authServerOfflineWarning" xml:space="preserve">
+    <value>인증 서버에 연결할 수 없습니다. 온라인 모드가 일시적으로 비활성화되었습니다.</value>
+  </data>
+  <data name="settings.networkSettings.authServerOnline" xml:space="preserve">
+    <value>온라인</value>
+  </data>
+  <data name="settings.networkSettings.authServerPing" xml:space="preserve">
+    <value>{{ping}}ms</value>
+  </data>
+  <data name="settings.networkSettings.authServerStatus" xml:space="preserve">
+    <value>인증 서버 상태</value>
+  </data>
+  <data name="settings.networkSettings.authServerStatusHint" xml:space="preserve">
+    <value>인증 서버가 연결 가능한지 확인하세요.</value>
+  </data>
+  <data name="settings.networkSettings.officialProfileNote" xml:space="preserve">
+    <value>공식 계정은 공식 Hytale 인증만 사용할 수 있습니다.</value>
+  </data>
+  <data name="settings.networkSettings.unofficialProfileNote" xml:space="preserve">
+    <value>비공식 계정은 공식 Hytale 인증을 사용할 수 없습니다.</value>
+  </data>
+  <data name="desktopSettings.categories.language" xml:space="preserve">
+    <value>언어</value>
+  </data>
+  <data name="desktopSettings.categories.miscellaneous" xml:space="preserve">
+    <value>기타</value>
+  </data>
+  <data name="desktopSettings.categories.appearance" xml:space="preserve">
+    <value>외형</value>
+  </data>
+  <data name="instances.tab.mods" xml:space="preserve">
+    <value>모드</value>
+  </data>
+  <data name="instances.mods.title" xml:space="preserve">
+    <value>설치된 모드</value>
+  </data>
+  <data name="instances.mods.hint" xml:space="preserve">
+    <value>이번 인스턴스에만 설치된 콘텐츠</value>
+  </data>
+  <data name="instances.mods.search" xml:space="preserve">
+    <value>설치된 모드 검색</value>
+  </data>
+  <data name="instances.mods.emptyTitle" xml:space="preserve">
+    <value>설치된 모드 없음</value>
+  </data>
+  <data name="instances.mods.emptyHint" xml:space="preserve">
+    <value>이 인스턴스의 콘텐츠를 찾으려면 Discover를 열기</value>
+  </data>
+  <data name="instances.mods.install" xml:space="preserve">
+    <value>설치</value>
+  </data>
+  <data name="instances.mods.installed" xml:space="preserve">
+    <value>설치됨</value>
+  </data>
+  <data name="instances.mods.enabled" xml:space="preserve">
+    <value>활성화됨</value>
+  </data>
+  <data name="instances.mods.disabled" xml:space="preserve">
+    <value>비활성화됨</value>
+  </data>
+  <data name="instances.mods.installFailed" xml:space="preserve">
+    <value>선택한 모드를 설치할 수 없음</value>
+  </data>
+  <data name="instances.browse.title" xml:space="preserve">
+    <value>모드 발견</value>
+  </data>
+  <data name="instances.browse.hint" xml:space="preserve">
+    <value>이 인스턴스에 CurseForge 콘텐츠 찾기 및 설치</value>
+  </data>
+  <data name="instances.browse.search" xml:space="preserve">
+    <value>모드 카탈로그 검색</value>
+  </data>
+  <data name="instances.browse.emptyTitle" xml:space="preserve">
+    <value>모드가 없습니다</value>
+  </data>
+  <data name="instances.browse.emptyHint" xml:space="preserve">
+    <value>다른 쿼리를 시도하거나 CurseForge API 설정을 확인하세요</value>
+  </data>
+  <data name="instances.worlds.title" xml:space="preserve">
+    <value>세계</value>
+  </data>
+  <data name="instances.worlds.hint" xml:space="preserve">
+    <value>이 인스턴스에 속한 저장된 세계</value>
+  </data>
+  <data name="instances.worlds.emptyTitle" xml:space="preserve">
+    <value>아직 세계가 없습니다</value>
+  </data>
+  <data name="instances.worlds.emptyHint" xml:space="preserve">
+    <value>게임에서 생성된 세계가 여기에 표시됩니다</value>
+  </data>
+  <data name="instances.content.notInstalledTitle" xml:space="preserve">
+    <value>먼저 이 인스턴스를 설치하세요</value>
+  </data>
+  <data name="instances.content.notInstalledHint" xml:space="preserve">
+    <value>게임 파일을 설치한 후 모드와 세계를 사용할 수 있습니다</value>
+  </data>
+  <data name="instances.content.back" xml:space="preserve">
+    <value>인스턴스</value>
+  </data>
+  <data name="instances.info.status" xml:space="preserve">
+    <value>상태</value>
+  </data>
+  <data name="instances.info.playtime" xml:space="preserve">
+    <value>플레이 시간</value>
+  </data>
+  <data name="instances.info.mods" xml:space="preserve">
+    <value>모드</value>
+  </data>
+  <data name="instances.info.worlds" xml:space="preserve">
+    <value>월드</value>
+  </data>
+  <data name="instances.info.playtimeValue" xml:space="preserve">
+    <value>{0} 시 {1} 분</value>
+  </data>
+  <data name="instances.console.title" xml:space="preserve">
+    <value>콘솔</value>
+  </data>
+  <data name="instances.console.hint" xml:space="preserve">
+    <value>이 인스턴스의 명령어 및 실시간 출력</value>
+  </data>
+  <data name="instances.console.emptyTitle" xml:space="preserve">
+    <value>콘솔을 아직 사용할 수 없습니다</value>
+  </data>
+  <data name="instances.console.emptyHint" xml:space="preserve">
+    <value>인스턴스별 콘솔 추적이 여기에 추가됩니다</value>
+  </data>
+  <data name="instances.logs.title" xml:space="preserve">
+    <value>로그</value>
+  </data>
+  <data name="instances.logs.hint" xml:space="preserve">
+    <value>이 인스턴스의 실행 및 게임 로그</value>
+  </data>
+  <data name="instances.logs.emptyTitle" xml:space="preserve">
+    <value>아직 인스턴스 로그가 없습니다</value>
+  </data>
+  <data name="instances.logs.emptyHint" xml:space="preserve">
+    <value>인스턴스별 로그 기록이 여기에 나타납니다</value>
   </data>
 </root>

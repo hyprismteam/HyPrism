@@ -1,7 +1,10 @@
 // Copyright (C) 2026 HyPrism Launcher
 // SPDX-License-Identifier: GPL-3.0-only
 
+using System.Collections;
 using System.Globalization;
+using System.Resources;
+using System.Text.RegularExpressions;
 using HyPrism.Desktop.Localization;
 using Xunit;
 
@@ -43,13 +46,45 @@ public sealed class StringLocalizerTests
     }
 
     [Fact]
-    public void MissingTranslatedResource_UsesEnglishResXFallback()
+    public void LocalizedResource_ReturnsTranslatedValue()
     {
         using var culture = new CultureScope();
 
         var localizer = new StringLocalizer("de-DE");
 
-        Assert.Equal("Offline Account", localizer["desktopSettings.accountOffline"]);
+        Assert.Equal("Offline-Konto", localizer["desktopSettings.accountOffline"]);
+    }
+
+    [Fact]
+    public void SupportedLocaleResources_MatchDefaultKeysAndPlaceholders()
+    {
+        using var culture = new CultureScope();
+        var localizer = new StringLocalizer("en-US");
+        var resourceManager = new ResourceManager(
+            "HyPrism.Desktop.Localization.Resources",
+            typeof(StringLocalizer).Assembly);
+        var defaultValues = ReadResourceSet(resourceManager, CultureInfo.InvariantCulture);
+        var expectedKeys = defaultValues.Keys
+            .Where(key => key != "_supportedCultures")
+            .ToHashSet(StringComparer.Ordinal);
+
+        foreach (var language in localizer.AvailableLanguages.Keys.Where(language => language != "en-US"))
+        {
+            var localizedValues = ReadResourceSet(resourceManager, CultureInfo.GetCultureInfo(language));
+            var localizedKeys = localizedValues.Keys.ToHashSet(StringComparer.Ordinal);
+
+            Assert.True(
+                expectedKeys.SetEquals(localizedKeys),
+                $"{language} keys differ. Missing: {string.Join(", ", expectedKeys.Except(localizedKeys))}. " +
+                $"Extra: {string.Join(", ", localizedKeys.Except(expectedKeys))}");
+
+            foreach (var key in expectedKeys)
+            {
+                Assert.Equal(
+                    ExtractPlaceholders(defaultValues[key]),
+                    ExtractPlaceholders(localizedValues[key]));
+            }
+        }
     }
 
     [Fact]
@@ -83,7 +118,7 @@ public sealed class StringLocalizerTests
     }
 
     [Theory]
-    [InlineData("en-US", "Illustrations provided by Icons8", "Animated media", "Animated icons provided by Lordicon")]
+    [InlineData("en-US", "Illustrations provided by Icons8", "Animated materials", "Animated icons provided by Lordicon")]
     [InlineData("ru-RU", "Иллюстрации предоставлены Icons8", "Анимированные материалы", "Анимированные иконки предоставлены Lordicon")]
     public void AboutPage_ProvidesVisualAttribution(
         string language,
@@ -112,4 +147,23 @@ public sealed class StringLocalizerTests
             CultureInfo.CurrentUICulture = _uiCulture;
         }
     }
+
+    private static Dictionary<string, string> ReadResourceSet(
+        ResourceManager resourceManager,
+        CultureInfo culture)
+    {
+        var resourceSet = resourceManager.GetResourceSet(culture, true, false)
+            ?? throw new MissingManifestResourceException($"Resource set for {culture.Name} was not found.");
+
+        return resourceSet.Cast<DictionaryEntry>().ToDictionary(
+            entry => (string)entry.Key,
+            entry => (string?)entry.Value ?? string.Empty,
+            StringComparer.Ordinal);
+    }
+
+    private static string[] ExtractPlaceholders(string value)
+        => Regex.Matches(value, @"\{\{[^{}]+\}\}|(?<!\{)\{\d+(?::[^}]*)?\}(?!\})")
+            .Select(match => match.Value)
+            .Order(StringComparer.Ordinal)
+            .ToArray();
 }
