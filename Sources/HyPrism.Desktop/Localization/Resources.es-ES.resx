@@ -1446,6 +1446,9 @@ Es posible que necesites reinstalar el juego si cambias de unidad.</value>
   <data name="profiles.editor" xml:space="preserve">
     <value>Editor de Perfil</value>
   </data>
+  <data name="profiles.favoriteInstance" xml:space="preserve">
+    <value>Instancia favorita</value>
+  </data>
   <data name="profiles.enterName" xml:space="preserve">
     <value>Introduce nombre del perfil...</value>
   </data>

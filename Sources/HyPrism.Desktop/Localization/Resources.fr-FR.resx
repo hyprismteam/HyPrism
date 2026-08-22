@@ -1446,6 +1446,9 @@ Vous devrez peut-être réinstaller le jeu si vous changez de lecteur.</value>
   <data name="profiles.editor" xml:space="preserve">
     <value>Éditeur de Profil</value>
   </data>
+  <data name="profiles.favoriteInstance" xml:space="preserve">
+    <value>Instance favorite</value>
+  </data>
   <data name="profiles.enterName" xml:space="preserve">
     <value>Entre le nom du profil...</value>
   </data>

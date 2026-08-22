@@ -74,6 +74,15 @@ public interface IProfileRepository
     bool UpdateProfile(string profileId, string? newName, string? newUuid);
 
     /// <summary>
+    /// Adds tracked game time to a profile and its per-instance statistics
+    /// </summary>
+    /// <param name="profileId">The profile used for the game session</param>
+    /// <param name="instanceId">The instance used for the game session</param>
+    /// <param name="elapsedSeconds">The positive session duration in seconds</param>
+    /// <returns>True when the statistics were persisted; otherwise, false</returns>
+    bool RecordPlayTime(string profileId, string instanceId, long elapsedSeconds);
+
+    /// <summary>
     /// Duplicates an existing profile including all user data (mods, UserData folder)
     /// </summary>
     /// <param name="profileId">The unique identifier of the profile to duplicate</param>

@@ -1563,6 +1563,9 @@ You may need to reinstall the game if switching drives.</value>
   <data name="profiles.editor" xml:space="preserve">
     <value>Profile Editor</value>
   </data>
+  <data name="profiles.favoriteInstance" xml:space="preserve">
+    <value>Favorite instance</value>
+  </data>
   <data name="profiles.enterName" xml:space="preserve">
     <value>Enter profile name...</value>
   </data>

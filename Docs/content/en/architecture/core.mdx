@@ -32,7 +32,7 @@ description: Domain features, contracts, and orchestration owned by the launcher
 
 `Accounts` is divided into authentication, profiles, identity, and skins. Contracts stay beside their implementation instead of being collected in a separate abstractions directory
 
-Both the profile repository and the profile manager raise `ProfilesChanged` after creating, deleting, switching, reordering, or editing profiles, so hosts react to profile state through events instead of refreshing manually
+Both the profile repository and the profile manager raise `ProfilesChanged` after creating, deleting, switching, reordering, or editing profiles, so hosts react to profile state through events instead of refreshing manually. On game process exit, the profile repository accumulates total play time and per-instance counters used to resolve the profile's most played instance
 
 ## Dependency rule
 

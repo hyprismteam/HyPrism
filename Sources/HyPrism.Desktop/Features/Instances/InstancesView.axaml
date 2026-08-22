@@ -70,9 +70,35 @@ SPDX-License-Identifier: GPL-3.0-only
     </DataTemplate>
 
   </UserControl.Resources>
-  <Grid x:Name="InstancesLayout" Classes="instancesPage" ColumnDefinitions="276,*" RowDefinitions="*">
-    <Border x:Name="InstancesListPane" Classes="instancesListPane" Grid.Row="0" IsVisible="{Binding HasInstances}">
-      <Grid>
+  <Grid x:Name="InstancesLayout" Classes="instancesPage" ColumnDefinitions="Auto,*" RowDefinitions="*">
+    <Border x:Name="InstancesListPane"
+            Classes="instancesListPane"
+            Grid.Row="0"
+            Width="276"
+            ClipToBounds="True"
+            IsVisible="{Binding HasInstances}">
+      <Border.Transitions>
+        <Transitions>
+          <DoubleTransition Property="Width" Duration="0:0:0.19">
+            <DoubleTransition.Easing><easing:CubicEaseInOut /></DoubleTransition.Easing>
+          </DoubleTransition>
+          <DoubleTransition Property="Opacity" Duration="0:0:0.15">
+            <DoubleTransition.Easing><easing:CubicEaseOut /></DoubleTransition.Easing>
+          </DoubleTransition>
+        </Transitions>
+      </Border.Transitions>
+      <Border.RenderTransform>
+        <TranslateTransform>
+          <TranslateTransform.Transitions>
+            <Transitions>
+              <DoubleTransition Property="X" Duration="0:0:0.19">
+                <DoubleTransition.Easing><easing:CubicEaseInOut /></DoubleTransition.Easing>
+              </DoubleTransition>
+            </Transitions>
+          </TranslateTransform.Transitions>
+        </TranslateTransform>
+      </Border.RenderTransform>
+      <Grid MinWidth="276">
         <ScrollViewer Classes="instancesScroll"
                       Margin="14,18,4,18"
                       HorizontalContentAlignment="Stretch"

@@ -50,7 +50,10 @@ public sealed partial class InstancesView : UserControl
     public InstancesView()
     {
         InitializeComponent();
-        _creatorTransition = new WizardScreenTransition(InstancesOverview, InstanceCreatorScreen);
+        _creatorTransition = new WizardScreenTransition(
+            InstancesOverview,
+            InstanceCreatorScreen,
+            InstancesListPane);
         _versionSpinnerTimer = new DispatcherTimer
         {
             Interval = TimeSpan.FromMilliseconds(16)
@@ -153,6 +156,7 @@ public sealed partial class InstancesView : UserControl
         if (!hasInstances)
         {
             EnsureSingleLayoutRow();
+            _creatorTransition.ResetNavigationPane();
             InstancesLayout.ColumnDefinitions[0].Width = new GridLength(1, GridUnitType.Star);
             InstancesLayout.ColumnDefinitions[1].Width = new GridLength(0);
             InstancesLayout.RowDefinitions[0].Height = new GridLength(1, GridUnitType.Star);
@@ -184,12 +188,15 @@ public sealed partial class InstancesView : UserControl
 
         if (!compact)
         {
-            InstancesLayout.ColumnDefinitions[0].Width = new GridLength(276);
+            InstancesLayout.ColumnDefinitions[0].Width = GridLength.Auto;
             InstancesLayout.ColumnDefinitions[1].Width = new GridLength(1, GridUnitType.Star);
             Grid.SetColumn(InstancesListPane, 0);
             Grid.SetColumn(InstancesContent, 1);
             Grid.SetColumnSpan(InstancesContent, 1);
-            InstancesListPane.IsHitTestVisible = true;
+            if (viewModel.IsInstanceCreatorOpen)
+                _creatorTransition.HideNavigationPane(animate: false);
+            else
+                _creatorTransition.ShowNavigationPane(animate: false);
             InstancesContent.IsHitTestVisible = true;
             SetContentOffsetWithoutTransition(0);
             if (layoutModeChanged)
@@ -197,6 +204,7 @@ public sealed partial class InstancesView : UserControl
             return;
         }
 
+        _creatorTransition.ResetNavigationPane();
         InstancesLayout.ColumnDefinitions[0].Width = new GridLength(1, GridUnitType.Star);
         InstancesLayout.ColumnDefinitions[1].Width = new GridLength(0);
         Grid.SetColumn(InstancesListPane, 0);
@@ -432,6 +440,12 @@ public sealed partial class InstancesView : UserControl
             return;
         }
 
+        if (_usesCompactLayout is false &&
+            DataContext is MainWindowViewModel { HasInstances: true })
+        {
+            _creatorTransition.HideNavigationPane(animate: true);
+        }
+
         await _creatorTransition.OpenAsync(
             () => DataContext is MainWindowViewModel { IsInstanceCreatorOpen: true },
             () => UpdateBranchIndicator(animate: false));
@@ -461,7 +475,16 @@ public sealed partial class InstancesView : UserControl
 
         await _creatorTransition.CloseAsync(
             () => DataContext is MainWindowViewModel { IsInstanceCreatorOpen: false },
-            () => _creatorOpenedFromCompactList = false);
+            () =>
+            {
+                if (_usesCompactLayout is false &&
+                    DataContext is MainWindowViewModel { HasInstances: true })
+                {
+                    _creatorTransition.ShowNavigationPane(animate: true);
+                }
+
+                _creatorOpenedFromCompactList = false;
+            });
     }
 
     private void HideCreatorImmediately()
@@ -469,6 +492,11 @@ public sealed partial class InstancesView : UserControl
         ++_creatorNavigationRevision;
         _creatorOpenedFromCompactList = false;
         _creatorTransition.ShowOverviewImmediately();
+        if (_usesCompactLayout is false &&
+            DataContext is MainWindowViewModel { HasInstances: true })
+        {
+            _creatorTransition.ShowNavigationPane(animate: false);
+        }
     }
 
     private async Task PlaySectionOpenAnimationAsync()

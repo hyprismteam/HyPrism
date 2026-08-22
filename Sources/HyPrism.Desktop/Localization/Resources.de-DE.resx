@@ -1446,6 +1446,9 @@ Bei Laufwerkswechsel muss das Spiel möglicherweise neu installiert werden.</val
   <data name="profiles.editor" xml:space="preserve">
     <value>Profil-Editor</value>
   </data>
+  <data name="profiles.favoriteInstance" xml:space="preserve">
+    <value>Lieblingsinstanz</value>
+  </data>
   <data name="profiles.enterName" xml:space="preserve">
     <value>Profilnamen eingeben...</value>
   </data>

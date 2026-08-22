@@ -46,7 +46,10 @@ public sealed partial class ProfilesView : UserControl
     public ProfilesView()
     {
         InitializeComponent();
-        _creatorTransition = new WizardScreenTransition(ProfileOverview, ProfileCreatorScreen);
+        _creatorTransition = new WizardScreenTransition(
+            ProfileOverview,
+            ProfileCreatorScreen,
+            ProfilesListPane);
         DataContextChanged += OnDataContextChanged;
     }
 
@@ -69,11 +72,8 @@ public sealed partial class ProfilesView : UserControl
 
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs args)
     {
-        if (args.PropertyName is nameof(ProfilesViewModel.HasProfiles) or
-            nameof(ProfilesViewModel.IsCreationVisible))
-        {
+        if (args.PropertyName is nameof(ProfilesViewModel.HasProfiles))
             UpdateLayout(Bounds.Width);
-        }
 
         if (args.PropertyName is nameof(ProfilesViewModel.IsCreationVisible))
         {
@@ -121,6 +121,7 @@ public sealed partial class ProfilesView : UserControl
 
         if (!viewModel.HasProfiles)
         {
+            _creatorTransition.ResetNavigationPane();
             ProfilesLayout.ColumnDefinitions[0].Width = new GridLength(1, GridUnitType.Star);
             ProfilesLayout.ColumnDefinitions[1].Width = new GridLength(0);
             Grid.SetColumn(ProfileMain, 0);
@@ -137,16 +138,20 @@ public sealed partial class ProfilesView : UserControl
 
         if (!compact)
         {
-            ProfilesLayout.ColumnDefinitions[0].Width = new GridLength(276);
+            ProfilesLayout.ColumnDefinitions[0].Width = GridLength.Auto;
             ProfilesLayout.ColumnDefinitions[1].Width = new GridLength(1, GridUnitType.Star);
             Grid.SetColumn(ProfilesListPane, 0);
             Grid.SetColumn(ProfileMain, 1);
-            ProfilesListPane.IsHitTestVisible = true;
+            if (viewModel.IsCreationVisible)
+                _creatorTransition.HideNavigationPane(animate: false);
+            else
+                _creatorTransition.ShowNavigationPane(animate: false);
             ProfileMain.IsHitTestVisible = true;
             SetMainOffsetWithoutTransition(0);
             return;
         }
 
+        _creatorTransition.ResetNavigationPane();
         ProfilesLayout.ColumnDefinitions[0].Width = new GridLength(1, GridUnitType.Star);
         ProfilesLayout.ColumnDefinitions[1].Width = new GridLength(0);
         Grid.SetColumn(ProfilesListPane, 0);
@@ -418,6 +423,12 @@ public sealed partial class ProfilesView : UserControl
             return;
         }
 
+        if (_usesCompactLayout is false &&
+            DataContext is ProfilesViewModel { HasProfiles: true })
+        {
+            _creatorTransition.HideNavigationPane(animate: true);
+        }
+
         await _creatorTransition.OpenAsync(
             () => DataContext is ProfilesViewModel { IsCreationVisible: true });
     }
@@ -449,7 +460,12 @@ public sealed partial class ProfilesView : UserControl
             () =>
             {
                 if (DataContext is ProfilesViewModel viewModel)
+                {
+                    if (_usesCompactLayout is false && viewModel.HasProfiles)
+                        _creatorTransition.ShowNavigationPane(animate: true);
+
                     CompleteCreatorClose(viewModel);
+                }
             });
     }
 
@@ -458,6 +474,11 @@ public sealed partial class ProfilesView : UserControl
         ++_creatorNavigationRevision;
         _creatorOpenedFromCompactList = false;
         _creatorTransition.ShowOverviewImmediately();
+        if (_usesCompactLayout is false &&
+            DataContext is ProfilesViewModel { HasProfiles: true })
+        {
+            _creatorTransition.ShowNavigationPane(animate: false);
+        }
         RestoreCurrentCreatorStep();
     }
 

@@ -382,6 +382,40 @@ public class JsonProfileRepository : IProfileRepository
     }
 
     /// <inheritdoc/>
+    public bool RecordPlayTime(string profileId, string instanceId, long elapsedSeconds)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(profileId) ||
+                string.IsNullOrWhiteSpace(instanceId) ||
+                elapsedSeconds <= 0)
+            {
+                return false;
+            }
+
+            var profiles = LoadProfilesFromCache();
+            var profile = profiles.FirstOrDefault(candidate =>
+                string.Equals(candidate.Id, profileId, StringComparison.Ordinal));
+            if (profile is null)
+                return false;
+
+            profile.TotalPlaytime += TimeSpan.FromSeconds(elapsedSeconds);
+            profile.InstancePlayTimeSeconds ??= [];
+            profile.InstancePlayTimeSeconds[instanceId] =
+                Math.Max(0, profile.InstancePlayTimeSeconds.GetValueOrDefault(instanceId)) +
+                elapsedSeconds;
+            SaveProfilesToCache(profiles);
+            RaiseProfilesChanged();
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Logger.Error("Profile", $"Failed to record profile play time: {ex.Message}");
+            return false;
+        }
+    }
+
+    /// <inheritdoc/>
     /// <remarks>Copies UserData folder, mods folder, and skin data from the source profile</remarks>
     public Profile? DuplicateProfile(string profileId)
     {

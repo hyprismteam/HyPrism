@@ -19,6 +19,8 @@ public sealed partial class ProfileItemViewModel : ObservableObject, IDisposable
         bool isActive,
         bool isSelected,
         string accountType,
+        string playTime,
+        string favoriteInstance,
         Bitmap? avatar)
     {
         Id = id;
@@ -28,6 +30,8 @@ public sealed partial class ProfileItemViewModel : ObservableObject, IDisposable
         IsActive = isActive;
         IsSelected = isSelected;
         AccountType = accountType;
+        PlayTime = playTime;
+        FavoriteInstance = favoriteInstance;
         Avatar = avatar;
     }
 
@@ -36,6 +40,8 @@ public sealed partial class ProfileItemViewModel : ObservableObject, IDisposable
     public string Uuid { get; }
     public bool IsOfficial { get; }
     public string AccountType { get; }
+    public string PlayTime { get; }
+    public string FavoriteInstance { get; }
     public Bitmap? Avatar { get; }
     public bool HasAvatar => Avatar is not null;
     public string Initial => string.IsNullOrWhiteSpace(Name) ? "?" : Name[..1].ToUpperInvariant();

@@ -1446,6 +1446,9 @@ Sürücü değiştirirseniz oyunu yeniden yüklemeniz gerekebilir.</value>
   <data name="profiles.editor" xml:space="preserve">
     <value>Profil Düzenleyici</value>
   </data>
+  <data name="profiles.favoriteInstance" xml:space="preserve">
+    <value>Favori örnek</value>
+  </data>
   <data name="profiles.enterName" xml:space="preserve">
     <value>Profil adı girin...</value>
   </data>

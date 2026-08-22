@@ -124,6 +124,46 @@ public sealed class WizardScreenTransitionTests
         await transitionTask;
     }
 
+    [AvaloniaFact]
+    public void ImmediateNavigationPaneStatePreservesItsTransitions()
+    {
+        var navigationPane = CreateControl();
+        var paneTransitions = new Avalonia.Animation.Transitions();
+        var translationTransitions = new Avalonia.Animation.Transitions();
+        navigationPane.Width = 276;
+        navigationPane.Transitions = paneTransitions;
+        Assert.IsType<TranslateTransform>(navigationPane.RenderTransform).Transitions =
+            translationTransitions;
+        var transition = new WizardScreenTransition(
+            CreateControl(),
+            CreateControl(),
+            navigationPane);
+
+        transition.HideNavigationPane(animate: false);
+
+        Assert.Equal(0, navigationPane.Width);
+        Assert.Equal(0, navigationPane.Opacity);
+        Assert.False(navigationPane.IsHitTestVisible);
+        Assert.Equal(-24, Assert.IsType<TranslateTransform>(navigationPane.RenderTransform).X);
+        Assert.Same(paneTransitions, navigationPane.Transitions);
+        Assert.Same(
+            translationTransitions,
+            Assert.IsType<TranslateTransform>(navigationPane.RenderTransform).Transitions);
+
+        transition.ShowNavigationPane(animate: false);
+
+        Assert.Equal(276, navigationPane.Width);
+        Assert.Equal(1, navigationPane.Opacity);
+        Assert.True(navigationPane.IsHitTestVisible);
+        Assert.Equal(0, Assert.IsType<TranslateTransform>(navigationPane.RenderTransform).X);
+
+        transition.ResetNavigationPane();
+
+        Assert.True(double.IsNaN(navigationPane.Width));
+        Assert.Equal(1, navigationPane.Opacity);
+        Assert.Equal(0, Assert.IsType<TranslateTransform>(navigationPane.RenderTransform).X);
+    }
+
     private static Border CreateControl()
         => new()
         {

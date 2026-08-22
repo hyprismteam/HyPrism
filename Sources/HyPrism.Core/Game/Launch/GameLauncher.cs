@@ -42,6 +42,7 @@ public class GameLauncher : IGameLauncher
     private readonly IHytaleAuthenticator _hytaleGameSessionAuthenticator;
     private readonly IGpuProvider _gpuProvider;
     private readonly IProfileManager _profiles;
+    private readonly IProfileRepository _profileRepository;
     private readonly ILocalNodeServiceFactory _localNodeFactory;
     private readonly LogSessionPaths _logSession;
     private readonly string _appDir;
@@ -85,6 +86,7 @@ public class GameLauncher : IGameLauncher
         IGpuProvider gpuProvider,
         AppPathConfiguration appPath,
         IProfileManager profiles,
+        IProfileRepository profileRepository,
         ILocalNodeServiceFactory localNodeFactory,
         LogSessionPaths? logSession = null)
     {
@@ -101,6 +103,7 @@ public class GameLauncher : IGameLauncher
         _gpuProvider = gpuProvider;
         _appDir = appPath.AppDir;
         _profiles = profiles;
+        _profileRepository = profileRepository;
         _localNodeFactory = localNodeFactory;
         _logSession = logSession ?? new LogSessionPaths(appPath);
         _gameProcess.GameProcessExited += OnGameProcessExited;
@@ -130,7 +133,7 @@ public class GameLauncher : IGameLauncher
                 ? $"Reconciling game process {process.ProcessId} that exited while HyPrism was unavailable"
                 : "Game process exited, performing cleanup...");
 
-            RecordInstancePlayTime(process);
+            RecordPlayTime(process);
 
             if (!_gameProcess.IsGameRunning())
                 _skins.StopSkinProtection();
@@ -158,22 +161,27 @@ public class GameLauncher : IGameLauncher
         }
     }
 
-    private void RecordInstancePlayTime(GameProcessInfo process)
+    private void RecordPlayTime(GameProcessInfo process)
     {
-        var instancePath = _instances.GetInstancePathById(process.InstanceId);
-        if (string.IsNullOrWhiteSpace(instancePath))
-            return;
-
-        var meta = _instances.GetInstanceMeta(instancePath);
-        if (meta is null)
-            return;
-
         var elapsedSeconds = Math.Max(
             0,
             (long)(DateTime.UtcNow - process.ProcessStartedAtUtc).TotalSeconds);
-        meta.PlayTimeSeconds += elapsedSeconds;
-        meta.LastPlayedAt = DateTime.UtcNow;
-        _instances.SaveInstanceMeta(instancePath, meta);
+        var instancePath = _instances.GetInstancePathById(process.InstanceId);
+        if (!string.IsNullOrWhiteSpace(instancePath))
+        {
+            var meta = _instances.GetInstanceMeta(instancePath);
+            if (meta is not null)
+            {
+                meta.PlayTimeSeconds += elapsedSeconds;
+                meta.LastPlayedAt = DateTime.UtcNow;
+                _instances.SaveInstanceMeta(instancePath, meta);
+            }
+        }
+
+        _profileRepository.RecordPlayTime(
+            process.ProfileId,
+            process.InstanceId,
+            elapsedSeconds);
     }
 
     /// <inheritdoc/>

@@ -8,6 +8,7 @@ using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using HyPrism.Core.Accounts;
+using HyPrism.Core.Game.Instances;
 using HyPrism.Core.Models;
 using HyPrism.Desktop.Localization;
 using HyPrism.Desktop.Platform;
@@ -25,6 +26,7 @@ public sealed partial class ProfilesViewModel : ObservableObject, IDisposable
 
     private readonly IProfileManager _profileManager;
     private readonly IProfileRepository _profileRepository;
+    private readonly IInstanceRepository? _instanceRepository;
     private readonly IHytaleAuthenticator? _authenticator;
     private readonly IExternalUriLauncher _uriLauncher;
     private readonly StringLocalizer _localizer;
@@ -74,13 +76,15 @@ public sealed partial class ProfilesViewModel : ObservableObject, IDisposable
         IProfileRepository profileRepository,
         IExternalUriLauncher uriLauncher,
         StringLocalizer localizer,
-        IHytaleAuthenticator? authenticator = null)
+        IHytaleAuthenticator? authenticator = null,
+        IInstanceRepository? instanceRepository = null)
     {
         _profileManager = profileManager;
         _profileRepository = profileRepository;
         _uriLauncher = uriLauncher;
         _localizer = localizer;
         _authenticator = authenticator;
+        _instanceRepository = instanceRepository;
         _profileRepository.ProfilesChanged += OnProfilesChanged;
         _profileManager.ProfilesChanged += OnProfilesChanged;
 
@@ -106,6 +110,8 @@ public sealed partial class ProfilesViewModel : ObservableObject, IDisposable
 
     public string SavedProfilesLabel => _localizer["profiles.savedProfiles"];
     public string EditorLabel => _localizer["profiles.editor"];
+    public string PlayTimeLabel => _localizer["instances.info.playtime"];
+    public string FavoriteInstanceLabel => _localizer["profiles.favoriteInstance"];
     public string CreateProfileLabel => _localizer["profiles.wizard.title"];
     public string CreateProfileHint => _localizer["profiles.wizard.chooseType"];
     public string OfflineProfileLabel => _localizer["profiles.wizard.unofficial"];
@@ -201,6 +207,8 @@ public sealed partial class ProfilesViewModel : ObservableObject, IDisposable
                 string.Equals(profile.Id, activeProfileId, StringComparison.Ordinal),
                 string.Equals(profile.Id, selectedId, StringComparison.Ordinal),
                 profile.IsOfficial ? OfficialProfileLabel : OfflineProfileLabel,
+                FormatPlayTime(profile.TotalPlaytime),
+                ResolveFavoriteInstance(profile),
                 LoadAvatar(profile.UUID)));
         }
 
@@ -220,6 +228,7 @@ public sealed partial class ProfilesViewModel : ObservableObject, IDisposable
         foreach (var propertyName in new[]
                  {
                      nameof(SavedProfilesLabel), nameof(EditorLabel), nameof(CreateProfileLabel),
+                     nameof(PlayTimeLabel), nameof(FavoriteInstanceLabel),
                      nameof(CreateProfileHint), nameof(OfflineProfileLabel), nameof(OfflineProfileHint),
                      nameof(OfficialProfileLabel), nameof(OfficialProfileHint), nameof(ProfileNameLabel),
                      nameof(ProfileNameHint), nameof(UuidLabel), nameof(UuidHint), nameof(NamePlaceholder),
@@ -604,6 +613,29 @@ public sealed partial class ProfilesViewModel : ObservableObject, IDisposable
 
     private static string GenerateDefaultOfflineName()
         => $"Prism{Random.Shared.Next(1000, 10000)}";
+
+    private string FormatPlayTime(TimeSpan playTime)
+    {
+        var duration = playTime < TimeSpan.Zero ? TimeSpan.Zero : playTime;
+        return _localizer.Format(
+            "instances.info.playtimeValue",
+            (long)duration.TotalHours,
+            duration.Minutes);
+    }
+
+    private string ResolveFavoriteInstance(Profile profile)
+    {
+        var favorite = (profile.InstancePlayTimeSeconds ?? [])
+            .Where(entry => entry.Value > 0)
+            .OrderByDescending(entry => entry.Value)
+            .ThenBy(entry => entry.Key, StringComparer.Ordinal)
+            .FirstOrDefault();
+        if (string.IsNullOrWhiteSpace(favorite.Key))
+            return "—";
+
+        var instance = _instanceRepository?.FindInstanceById(favorite.Key);
+        return string.IsNullOrWhiteSpace(instance?.Name) ? "—" : instance.Name;
+    }
 
     partial void OnSelectedProfileChanged(ProfileItemViewModel? value)
     {

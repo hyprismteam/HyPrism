@@ -3,6 +3,7 @@
 
 using Avalonia.Headless.XUnit;
 using HyPrism.Core.Accounts;
+using HyPrism.Core.Game.Instances;
 using HyPrism.Core.Models;
 using HyPrism.Desktop.Features.Profiles;
 using HyPrism.Desktop.Localization;
@@ -290,6 +291,41 @@ public sealed class ProfilesViewModelTests
         uriLauncher.Verify(
             launcher => launcher.LaunchDirectoryAsync("/tmp/hyprism-preview-profile"),
             Times.Once);
+    }
+
+    [Fact]
+    public void ProfileStatistics_ShowTotalPlayTimeAndMostPlayedInstance()
+    {
+        var profile = new Profile
+        {
+            Id = "profile",
+            Name = "Player",
+            UUID = Guid.NewGuid().ToString(),
+            TotalPlaytime = TimeSpan.FromSeconds(11040),
+            InstancePlayTimeSeconds = new Dictionary<string, long>
+            {
+                ["secondary"] = 3600,
+                ["favorite"] = 7200
+            }
+        };
+        var profileManager = new Mock<IProfileManager>();
+        var profileRepository = new Mock<IProfileRepository>();
+        var instanceRepository = new Mock<IInstanceRepository>();
+        var uriLauncher = new Mock<IExternalUriLauncher>();
+        profileRepository.Setup(repository => repository.GetProfiles()).Returns([profile]);
+        profileRepository.Setup(repository => repository.GetSelectedProfileId()).Returns(profile.Id);
+        instanceRepository.Setup(repository => repository.FindInstanceById("favorite"))
+            .Returns(new InstanceInfo { Id = "favorite", Name = "Favorite Build" });
+
+        using var viewModel = new ProfilesViewModel(
+            profileManager.Object,
+            profileRepository.Object,
+            uriLauncher.Object,
+            new StringLocalizer("en-US"),
+            instanceRepository: instanceRepository.Object);
+
+        Assert.Equal("3 h 4 min", viewModel.SelectedProfile?.PlayTime);
+        Assert.Equal("Favorite Build", viewModel.SelectedProfile?.FavoriteInstance);
     }
 
     private static bool IsGuid(string value)

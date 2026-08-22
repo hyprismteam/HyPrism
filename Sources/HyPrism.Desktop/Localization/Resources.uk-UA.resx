@@ -1446,6 +1446,9 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="profiles.editor" xml:space="preserve">
     <value>Редактор профілю</value>
   </data>
+  <data name="profiles.favoriteInstance" xml:space="preserve">
+    <value>Улюблена збірка</value>
+  </data>
   <data name="profiles.enterName" xml:space="preserve">
     <value>Введіть назву профілю...</value>
   </data>

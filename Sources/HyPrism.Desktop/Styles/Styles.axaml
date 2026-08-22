@@ -2312,6 +2312,10 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="VerticalAlignment" Value="Stretch" />
   </Style>
 
+  <Style Selector="instances|InstancesView Border.instanceInfoCell > StackPanel, instances|InstancesView Border.instanceInfoCell > Grid, profiles|ProfilesView Border.instanceInfoCell > StackPanel, profiles|ProfilesView Border.instanceInfoCell > Grid">
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+
   <Style Selector="instances|InstancesView TextBlock.instanceInfoLabel, profiles|ProfilesView TextBlock.instanceInfoLabel">
     <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
     <Setter Property="FontSize" Value="11" />

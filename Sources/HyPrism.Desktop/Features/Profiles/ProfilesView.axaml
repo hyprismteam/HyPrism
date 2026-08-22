@@ -193,11 +193,35 @@ SPDX-License-Identifier: GPL-3.0-only
     </Style>
   </UserControl.Styles>
 
-  <Grid x:Name="ProfilesLayout" ColumnDefinitions="276,*" ClipToBounds="True">
+  <Grid x:Name="ProfilesLayout" ColumnDefinitions="Auto,*" ClipToBounds="True">
     <Border x:Name="ProfilesListPane"
             Classes="profileListPane"
+            Width="276"
+            ClipToBounds="True"
             IsVisible="{Binding HasProfiles}">
-      <ScrollViewer Margin="14,18,4,18"
+      <Border.Transitions>
+        <Transitions>
+          <DoubleTransition Property="Width" Duration="0:0:0.19">
+            <DoubleTransition.Easing><easing:CubicEaseInOut /></DoubleTransition.Easing>
+          </DoubleTransition>
+          <DoubleTransition Property="Opacity" Duration="0:0:0.15">
+            <DoubleTransition.Easing><easing:CubicEaseOut /></DoubleTransition.Easing>
+          </DoubleTransition>
+        </Transitions>
+      </Border.Transitions>
+      <Border.RenderTransform>
+        <TranslateTransform>
+          <TranslateTransform.Transitions>
+            <Transitions>
+              <DoubleTransition Property="X" Duration="0:0:0.19">
+                <DoubleTransition.Easing><easing:CubicEaseInOut /></DoubleTransition.Easing>
+              </DoubleTransition>
+            </Transitions>
+          </TranslateTransform.Transitions>
+        </TranslateTransform>
+      </Border.RenderTransform>
+      <ScrollViewer MinWidth="276"
+                    Margin="14,18,4,18"
                     HorizontalContentAlignment="Stretch"
                     HorizontalScrollBarVisibility="Disabled"
                     VerticalScrollBarVisibility="Auto">
@@ -556,21 +580,28 @@ SPDX-License-Identifier: GPL-3.0-only
                   <Grid ColumnDefinitions="*,2,*" RowDefinitions="Auto,2,Auto">
                     <Border Classes="instanceInfoCell">
                       <StackPanel Spacing="3">
-                        <TextBlock Text="{Binding ProfileNameLabel}" Classes="instanceInfoLabel" />
-                        <TextBlock Text="{Binding SelectedProfile.Name}" Classes="instanceInfoValue" />
+                        <TextBlock Text="{Binding EditorLabel}" Classes="instanceInfoLabel" />
+                        <TextBlock Text="{Binding SelectedProfile.AccountType}" Classes="instanceInfoValue" />
                       </StackPanel>
                     </Border>
                     <Border Grid.Column="1" Background="{DynamicResource SurfaceBrush}" />
                     <Border Grid.Column="2" Classes="instanceInfoCell">
                       <StackPanel Spacing="3">
-                        <TextBlock Text="{Binding EditorLabel}" Classes="instanceInfoLabel" />
-                        <TextBlock Text="{Binding SelectedProfile.AccountType}" Classes="instanceInfoValue" />
+                        <TextBlock Text="{Binding PlayTimeLabel}" Classes="instanceInfoLabel" />
+                        <TextBlock Text="{Binding SelectedProfile.PlayTime}" Classes="instanceInfoValue" />
                       </StackPanel>
                     </Border>
 
                     <Border Grid.Row="1" Grid.ColumnSpan="3" Background="{DynamicResource SurfaceBrush}" />
 
-                    <Border Grid.Row="2" Grid.ColumnSpan="3" Classes="instanceInfoCell">
+                    <Border Grid.Row="2" Classes="instanceInfoCell">
+                      <StackPanel Spacing="3">
+                        <TextBlock Text="{Binding FavoriteInstanceLabel}" Classes="instanceInfoLabel" />
+                        <TextBlock Text="{Binding SelectedProfile.FavoriteInstance}" Classes="instanceInfoValue" />
+                      </StackPanel>
+                    </Border>
+                    <Border Grid.Row="2" Grid.Column="1" Background="{DynamicResource SurfaceBrush}" />
+                    <Border Grid.Row="2" Grid.Column="2" Classes="instanceInfoCell">
                       <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
                         <StackPanel Spacing="3">
                           <TextBlock Text="{Binding UuidLabel}" Classes="instanceInfoLabel" />

@@ -336,7 +336,8 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
             profileRepository,
             _uriLauncher,
             _localizer,
-            authenticator);
+            authenticator,
+            _instances);
         _profiles.ActiveProfileChanged += OnActiveProfileChanged;
         DashboardBackground = LoadDashboardBackground(_settingsStore.BackgroundMode);
 

@@ -1446,6 +1446,9 @@ Você pode precisar reinstalar o jogo se trocar de unidade.</value>
   <data name="profiles.editor" xml:space="preserve">
     <value>Editor de Perfil</value>
   </data>
+  <data name="profiles.favoriteInstance" xml:space="preserve">
+    <value>Instância favorita</value>
+  </data>
   <data name="profiles.enterName" xml:space="preserve">
     <value>Digite o nome do perfil...</value>
   </data>

@@ -20,12 +20,20 @@ public sealed class WizardScreenTransition
 
     private readonly Control _overview;
     private readonly Control _wizard;
+    private readonly Control? _navigationPane;
+    private readonly double _navigationPaneWidth;
     private CancellationTokenSource? _animationCancellation;
 
-    public WizardScreenTransition(Control overview, Control wizard)
+    public WizardScreenTransition(
+        Control overview,
+        Control wizard,
+        Control? navigationPane = null,
+        double navigationPaneWidth = 276)
     {
         _overview = overview;
         _wizard = wizard;
+        _navigationPane = navigationPane;
+        _navigationPaneWidth = navigationPaneWidth;
     }
 
     public async Task OpenAsync(Func<bool> shouldRemainOpen, Action? onOpened = null)
@@ -164,6 +172,29 @@ public sealed class WizardScreenTransition
     public void ShowWizardImmediately()
         => ApplyImmediateState(showWizard: true);
 
+    public void ShowNavigationPane(bool animate)
+        => ApplyNavigationPaneState(isVisible: true, animate);
+
+    public void HideNavigationPane(bool animate)
+        => ApplyNavigationPaneState(isVisible: false, animate);
+
+    public void ResetNavigationPane()
+    {
+        if (_navigationPane is null)
+            return;
+
+        var translation = GetTranslation(_navigationPane);
+        var paneTransitions = _navigationPane.Transitions;
+        var translationTransitions = translation.Transitions;
+        _navigationPane.Transitions = null;
+        translation.Transitions = null;
+        _navigationPane.Width = double.NaN;
+        _navigationPane.Opacity = 1;
+        translation.X = 0;
+        _navigationPane.Transitions = paneTransitions;
+        translation.Transitions = translationTransitions;
+    }
+
     public void ShowStepImmediately(Control activeStep, params Control[] inactiveSteps)
     {
         RestoreVisibleState(activeStep);
@@ -186,6 +217,32 @@ public sealed class WizardScreenTransition
         Cancel();
         _animationCancellation = new CancellationTokenSource();
         return _animationCancellation.Token;
+    }
+
+    private void ApplyNavigationPaneState(bool isVisible, bool animate)
+    {
+        if (_navigationPane is null)
+            return;
+
+        var translation = GetTranslation(_navigationPane);
+        var paneTransitions = _navigationPane.Transitions;
+        var translationTransitions = translation.Transitions;
+        if (!animate)
+        {
+            _navigationPane.Transitions = null;
+            translation.Transitions = null;
+        }
+
+        _navigationPane.IsHitTestVisible = isVisible;
+        _navigationPane.Width = isVisible ? _navigationPaneWidth : 0;
+        _navigationPane.Opacity = isVisible ? 1 : 0;
+        translation.X = isVisible ? 0 : -24;
+
+        if (!animate)
+        {
+            _navigationPane.Transitions = paneTransitions;
+            translation.Transitions = translationTransitions;
+        }
     }
 
     private void ApplyImmediateState(bool showWizard)

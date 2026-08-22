@@ -1446,6 +1446,9 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="profiles.editor" xml:space="preserve">
     <value>프로필 편집기</value>
   </data>
+  <data name="profiles.favoriteInstance" xml:space="preserve">
+    <value>즐겨찾는 인스턴스</value>
+  </data>
   <data name="profiles.enterName" xml:space="preserve">
     <value>프로필 이름 입력...</value>
   </data>

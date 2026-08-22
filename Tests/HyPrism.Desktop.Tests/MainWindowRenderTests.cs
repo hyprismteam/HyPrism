@@ -127,6 +127,21 @@ public sealed class MainWindowRenderTests
                 .Where(button => button.Classes.Contains("deleteAction")),
             button => Assert.Equal(new Thickness(0), button.Padding));
 
+        var profileInfoGroup = view.GetVisualDescendants()
+            .OfType<Border>()
+            .Single(border => border.Classes.Contains("instanceInfoGroup"));
+        var profileInfoCells = profileInfoGroup.GetVisualDescendants()
+            .OfType<Border>()
+            .Where(border => border.Classes.Contains("instanceInfoCell"))
+            .ToArray();
+        Assert.Equal(4, profileInfoCells.Length);
+        Assert.All(
+            profileInfoCells,
+            cell => Assert.Equal(VerticalAlignment.Center, cell.Child?.VerticalAlignment));
+        Assert.DoesNotContain(
+            profileInfoGroup.GetVisualDescendants().OfType<TextBlock>(),
+            text => text.Text == "ActivePlayer");
+
         var previewPath = Environment.GetEnvironmentVariable("HYPRISM_PROFILES_RENDER_OUTPUT");
         if (!string.IsNullOrWhiteSpace(previewPath))
         {
@@ -151,6 +166,9 @@ public sealed class MainWindowRenderTests
 
         var profileOverview = view.FindControl<Grid>("ProfileOverview");
         var profileEditorContent = view.FindControl<Grid>("ProfileEditorContent");
+        var profilesListPane = view.FindControl<Border>("ProfilesListPane");
+        var profileMain = view.FindControl<Grid>("ProfileMain");
+        var profileMainWidthWithList = profileMain!.Bounds.Width;
         viewModel.ShowCreateChoiceCommand.Execute(null);
         Assert.True(profileOverview!.IsVisible);
         Assert.True(profileEditorContent!.IsVisible);
@@ -160,6 +178,10 @@ public sealed class MainWindowRenderTests
         var wizard = view.FindControl<Border>("ProfileCreatorScreen");
         Assert.NotNull(wizard);
         Assert.True(wizard!.IsEffectivelyVisible);
+        Assert.Equal(0, profilesListPane!.Bounds.Width);
+        Assert.Equal(0, profilesListPane.Opacity);
+        Assert.False(profilesListPane.IsHitTestVisible);
+        Assert.True(profileMain.Bounds.Width > profileMainWidthWithList + 275);
         Assert.Contains("profileWizardScreen", wizard.Classes);
         var profileWizardIcon = view.FindControl<Image>("ProfileWizardIcon");
         Assert.NotNull(profileWizardIcon);
@@ -214,8 +236,11 @@ public sealed class MainWindowRenderTests
         Assert.True(offlineProfileCreation.IsVisible);
 
         viewModel.CancelCreationCommand.Execute(null);
-        await Task.Delay(240);
+        await Task.Delay(420);
         Dispatcher.UIThread.RunJobs();
+        Assert.Equal(276, profilesListPane.Bounds.Width);
+        Assert.Equal(1, profilesListPane.Opacity);
+        Assert.True(profilesListPane.IsHitTestVisible);
         viewModel.ShowCreateChoiceCommand.Execute(null);
         await Task.Delay(420);
         Dispatcher.UIThread.RunJobs();
@@ -1845,6 +1870,25 @@ public sealed class MainWindowRenderTests
         var instanceContentTranslation = Assert.IsType<TranslateTransform>(instancesContent!.RenderTransform);
         Assert.Equal(usesCompactInstancesLayout, compactInstanceToolbar!.IsVisible);
 
+        if (!usesCompactInstancesLayout)
+        {
+            var contentWidthWithList = instancesContent.Bounds.Width;
+            addInstanceRow.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            await Task.Delay(420);
+            Dispatcher.UIThread.RunJobs();
+            Assert.Equal(0, instancesListPane!.Bounds.Width);
+            Assert.Equal(0, instancesListPane.Opacity);
+            Assert.False(instancesListPane.IsHitTestVisible);
+            Assert.True(instancesContent.Bounds.Width > contentWidthWithList + 275);
+
+            viewModel.CloseInstanceCreatorCommand.Execute(null);
+            await Task.Delay(420);
+            Dispatcher.UIThread.RunJobs();
+            Assert.Equal(276, instancesListPane.Bounds.Width);
+            Assert.Equal(1, instancesListPane.Opacity);
+            Assert.True(instancesListPane.IsHitTestVisible);
+        }
+
         if (usesCompactInstancesLayout)
         {
             Assert.True(instanceContentTranslation.X > 0);
@@ -1998,6 +2042,11 @@ public sealed class MainWindowRenderTests
             instanceInfoGroup.GetVisualDescendants()
                 .OfType<Border>()
                 .Count(border => border.Classes.Contains("instanceInfoCell")));
+        Assert.All(
+            instanceInfoGroup.GetVisualDescendants()
+                .OfType<Border>()
+                .Where(border => border.Classes.Contains("instanceInfoCell")),
+            cell => Assert.Equal(VerticalAlignment.Center, cell.Child?.VerticalAlignment));
         viewModel.SelectInstanceSectionCommand.Execute("mods");
         Assert.True(instanceHub!.IsVisible);
         Assert.Equal(usesCompactInstancesLayout, instanceSection!.IsVisible);

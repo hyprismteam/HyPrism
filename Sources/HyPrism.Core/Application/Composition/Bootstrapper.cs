@@ -160,6 +160,7 @@ public static class Bootstrapper
                     sp.GetRequiredService<IGpuProvider>(),
                     sp.GetRequiredService<AppPathConfiguration>(),
                     sp.GetRequiredService<IProfileManager>(),
+                    sp.GetRequiredService<IProfileRepository>(),
                     sp.GetRequiredService<ILocalNodeServiceFactory>(),
                     sp.GetRequiredService<LogSessionPaths>()));
             services.AddSingleton<IGameLauncher>(sp => sp.GetRequiredService<GameLauncher>());

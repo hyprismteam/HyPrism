@@ -1446,6 +1446,9 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="profiles.editor" xml:space="preserve">
     <value>配置文件编辑器</value>
   </data>
+  <data name="profiles.favoriteInstance" xml:space="preserve">
+    <value>最常用实例</value>
+  </data>
   <data name="profiles.enterName" xml:space="preserve">
     <value>输入配置文件名称...</value>
   </data>
