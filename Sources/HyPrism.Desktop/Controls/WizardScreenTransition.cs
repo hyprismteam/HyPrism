@@ -1,10 +1,13 @@
 // Copyright (C) 2026 HyPrism Launcher
 // SPDX-License-Identifier: GPL-3.0-only
 
+using Avalonia;
+using Avalonia.Animation;
+using Avalonia.Animation.Easings;
 using Avalonia.Controls;
 using Avalonia.Media;
+using Avalonia.Styling;
 using Avalonia.Threading;
-using System.Diagnostics;
 
 namespace HyPrism.Desktop.Controls;
 
@@ -243,32 +246,39 @@ public sealed class WizardScreenTransition
         double toOffset,
         CancellationToken cancellationToken)
     {
-        var stopwatch = Stopwatch.StartNew();
-        while (true)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            var progress = Math.Clamp(
-                stopwatch.Elapsed.TotalMilliseconds / PhaseDuration.TotalMilliseconds,
-                0,
-                1);
-            var easedProgress = EaseInOutCubic(progress);
-            target.Opacity = Lerp(fromOpacity, toOpacity, easedProgress);
-            GetTranslation(target).X = Lerp(fromOffset, toOffset, easedProgress);
+        var translation = GetTranslation(target);
+        target.Opacity = toOpacity;
+        translation.X = toOffset;
 
-            if (progress >= 1)
-                return;
-
-            await Task.Delay(TimeSpan.FromMilliseconds(16), cancellationToken);
-        }
+        await Task.WhenAll(
+            CreateAnimation(Visual.OpacityProperty, fromOpacity, toOpacity)
+                .RunAsync(target, cancellationToken),
+            CreateAnimation(TranslateTransform.XProperty, fromOffset, toOffset)
+                .RunAsync(target, cancellationToken));
     }
 
-    private static double EaseInOutCubic(double progress)
-        => progress < 0.5
-            ? 4 * progress * progress * progress
-            : 1 - Math.Pow(-2 * progress + 2, 3) / 2;
-
-    private static double Lerp(double from, double to, double progress)
-        => from + ((to - from) * progress);
+    private static Animation CreateAnimation(
+        AvaloniaProperty property,
+        object? from,
+        object? to)
+        => new()
+        {
+            Duration = PhaseDuration,
+            Easing = new CubicEaseInOut(),
+            Children =
+            {
+                new KeyFrame
+                {
+                    Cue = new Cue(0),
+                    Setters = { new Setter(property, from) }
+                },
+                new KeyFrame
+                {
+                    Cue = new Cue(1),
+                    Setters = { new Setter(property, to) }
+                }
+            }
+        };
 
     private static TranslateTransform GetTranslation(Control control)
         => (TranslateTransform)control.RenderTransform!;

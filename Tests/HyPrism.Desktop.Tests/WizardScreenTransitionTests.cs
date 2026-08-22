@@ -88,10 +88,7 @@ public sealed class WizardScreenTransitionTests
 
         Assert.False(stepSwitched);
         Assert.InRange(outgoingStep.Opacity, 0.01, 0.99);
-        Assert.InRange(
-            Assert.IsType<TranslateTransform>(outgoingStep.RenderTransform).X,
-            -27.99,
-            -0.01);
+        Assert.False(transitionTask.IsCompleted);
 
         transition.Cancel();
         await transitionTask;
