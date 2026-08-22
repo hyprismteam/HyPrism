@@ -88,8 +88,21 @@ public sealed class MainWindowRenderTests
             .OfType<Button>()
             .Where(button => button.Classes.Contains("instancesListItem"))
             .ToArray();
+        var profilesListPane = Assert.IsType<Border>(view.FindControl<Border>("ProfilesListPane"));
         Assert.Equal(2, cards.Length);
         Assert.All(cards, card => Assert.Equal(new Thickness(0), card.BorderThickness));
+        Assert.All(
+            cards,
+            card =>
+            {
+                var origin = card.TranslatePoint(default, profilesListPane);
+                Assert.NotNull(origin);
+                Assert.Equal(14, origin.Value.X, 3);
+                Assert.Equal(
+                    14,
+                    profilesListPane.Bounds.Width - origin.Value.X - card.Bounds.Width,
+                    3);
+            });
         Assert.Equal(2, view.GetVisualDescendants()
             .OfType<Border>()
             .Count(border => border.IsEffectivelyVisible && border.Classes.Contains("instancesListDragTarget")));
@@ -166,7 +179,6 @@ public sealed class MainWindowRenderTests
 
         var profileOverview = view.FindControl<Grid>("ProfileOverview");
         var profileEditorContent = view.FindControl<Grid>("ProfileEditorContent");
-        var profilesListPane = view.FindControl<Border>("ProfilesListPane");
         var profileMain = view.FindControl<Grid>("ProfileMain");
         var profileMainWidthWithList = profileMain!.Bounds.Width;
         viewModel.ShowCreateChoiceCommand.Execute(null);

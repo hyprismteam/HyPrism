@@ -220,12 +220,13 @@ SPDX-License-Identifier: GPL-3.0-only
           </TranslateTransform.Transitions>
         </TranslateTransform>
       </Border.RenderTransform>
-      <ScrollViewer MinWidth="276"
-                    Margin="14,18,4,18"
-                    HorizontalContentAlignment="Stretch"
-                    HorizontalScrollBarVisibility="Disabled"
-                    VerticalScrollBarVisibility="Auto">
-        <StackPanel Margin="0,0,10,0" Spacing="2">
+      <Grid MinWidth="276">
+        <ScrollViewer Classes="instancesScroll"
+                      Margin="14,18,4,18"
+                      HorizontalContentAlignment="Stretch"
+                      HorizontalScrollBarVisibility="Disabled"
+                      VerticalScrollBarVisibility="Auto">
+          <StackPanel Margin="0,0,10,0" Spacing="2">
           <ItemsControl x:Name="ProfilesItems" ItemsSource="{Binding Profiles}">
             <ItemsControl.ItemsPanel>
               <ItemsPanelTemplate>
@@ -331,8 +332,9 @@ SPDX-License-Identifier: GPL-3.0-only
               <TextBlock Text="{Binding AddLabel}" Classes="uiSettingsLabel" />
             </StackPanel>
           </Button>
-        </StackPanel>
-      </ScrollViewer>
+          </StackPanel>
+        </ScrollViewer>
+      </Grid>
     </Border>
 
     <Grid x:Name="ProfileMain"
