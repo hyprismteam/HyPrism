@@ -132,10 +132,12 @@ public sealed partial class MainWindow : Window
         LauncherShellScale.ScaleY = 0.975;
         LauncherShellTranslation.Y = 12;
         StartupLoadingContent.Opacity = 0;
+        StartupBrand.Opacity = 0;
         StartupContentScale.ScaleX = 0.9;
         StartupContentScale.ScaleY = 0.9;
         StartupMarkScale.ScaleX = 1;
         StartupMarkScale.ScaleY = 1;
+        StartupAnimation.Start();
         StartStartupFrameAnimation();
 
         Dispatcher.UIThread.Post(() =>
@@ -144,6 +146,7 @@ public sealed partial class MainWindow : Window
                 return;
 
             StartupLoadingContent.Opacity = 1;
+            StartupBrand.Opacity = 0.68;
             StartupContentScale.ScaleX = 1;
             StartupContentScale.ScaleY = 1;
         }, DispatcherPriority.Render);
@@ -154,6 +157,7 @@ public sealed partial class MainWindow : Window
         var transitionVersion = ++_startupTransitionVersion;
         StartupLoadingScreen.IsHitTestVisible = false;
         StartupLoadingContent.Opacity = 0;
+        StartupBrand.Opacity = 0;
         StartupContentScale.ScaleX = 0.96;
         StartupContentScale.ScaleY = 0.96;
         StartupMarkScale.ScaleX = 1.08;
@@ -173,6 +177,7 @@ public sealed partial class MainWindow : Window
 
         StartupLoadingScreen.IsVisible = false;
         LauncherShell.IsHitTestVisible = true;
+        StartupAnimation.Stop();
         StopStartupFrameAnimation();
     }
 
@@ -182,11 +187,13 @@ public sealed partial class MainWindow : Window
         StartupLoadingScreen.IsVisible = false;
         StartupLoadingScreen.IsHitTestVisible = false;
         StartupLoadingScreen.Opacity = 0;
+        StartupBrand.Opacity = 0;
         LauncherShell.IsHitTestVisible = true;
         LauncherShell.Opacity = 1;
         LauncherShellScale.ScaleX = 1;
         LauncherShellScale.ScaleY = 1;
         LauncherShellTranslation.Y = 0;
+        StartupAnimation.Stop();
         StopStartupFrameAnimation();
     }
 

@@ -1786,7 +1786,13 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>Визуальные материалы</value>
   </data>
   <data name="settings.aboutSettings.creditsHint" xml:space="preserve">
-    <value>Иллюстрации категорий настроек предоставлены Icons8</value>
+    <value>Иллюстрации предоставлены Icons8</value>
+  </data>
+  <data name="settings.aboutSettings.lordicon" xml:space="preserve">
+    <value>Анимированные материалы</value>
+  </data>
+  <data name="settings.aboutSettings.lordiconHint" xml:space="preserve">
+    <value>Анимированные иконки предоставлены Lordicon</value>
   </data>
   <data name="settings.aboutSettings.currentVersion" xml:space="preserve">
     <value>Текущая версия</value>

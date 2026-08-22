@@ -1,6 +1,6 @@
 Icons8 Universal Multimedia License
 
-The settings category bitmap icons are provided by Icons8 and remain subject to
+Bitmap icons are provided by Icons8 and remain subject to
 the Icons8 Universal Multimedia License. They are not licensed under the
 HyPrism project's GPL-3.0-only license.
 

@@ -50,3 +50,9 @@ path = "Sources/HyPrism.Desktop/Assets/Flags/*.png"
 precedence = "override"
 SPDX-FileCopyrightText = "2020 @catamphetamine <purecatamphetamine@gmail.com>"
 SPDX-License-Identifier = "MIT"
+
+[[annotations]]
+path = "Sources/HyPrism.Desktop/Assets/Lotties/*.json"
+precedence = "override"
+SPDX-FileCopyrightText = "Lordicon"
+SPDX-License-Identifier = "LicenseRef-Lordicon"

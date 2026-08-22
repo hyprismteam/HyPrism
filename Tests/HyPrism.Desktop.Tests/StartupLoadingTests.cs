@@ -6,6 +6,7 @@ using System.Net;
 using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
+using Avalonia.Labs.Lottie;
 using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using HyPrism.Core.Accounts;
@@ -88,9 +89,17 @@ public sealed class StartupLoadingTests
         var startupScreen = Assert.IsType<Border>(
             window.FindControl<Border>("StartupLoadingScreen"));
         var launcherShell = Assert.IsType<Grid>(window.FindControl<Grid>("LauncherShell"));
+        var startupAnimation = Assert.IsType<Lottie>(window.FindControl<Lottie>("StartupAnimation"));
+        var startupBrand = Assert.IsType<Image>(window.FindControl<Image>("StartupBrand"));
         Assert.True(startupScreen.IsEffectivelyVisible);
         Assert.True(startupScreen.IsHitTestVisible);
         Assert.Equal(0, launcherShell.Opacity);
+        Assert.Equal("/Assets/Lotties/figures.json", startupAnimation.Path);
+        Assert.Equal(128, startupAnimation.Width);
+        Assert.Equal(128, startupAnimation.Height);
+        Assert.NotNull(startupAnimation.OpacityMask);
+        Assert.Equal(1, Grid.GetRow(startupBrand));
+        Assert.True(startupBrand.Bounds.Top > startupAnimation.Bounds.Top);
 
         var renderPath = Environment.GetEnvironmentVariable("HYPRISM_STARTUP_RENDER_OUTPUT");
         if (!string.IsNullOrWhiteSpace(renderPath))

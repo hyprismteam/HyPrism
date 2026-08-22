@@ -14,6 +14,7 @@ SPDX-License-Identifier: GPL-3.0-only
         xmlns:settings="using:HyPrism.Desktop.Features.Settings"
         xmlns:animation="using:Avalonia.Animation"
         xmlns:easing="using:Avalonia.Animation.Easings"
+        xmlns:lottie="clr-namespace:Avalonia.Labs.Lottie;assembly=Avalonia.Labs.Lottie"
         x:Class="HyPrism.Desktop.Shell.MainWindow"
         x:DataType="shell:MainWindowViewModel"
         Title="HyPrism"
@@ -864,15 +865,18 @@ SPDX-License-Identifier: GPL-3.0-only
         </DoubleTransition>
       </Transitions>
     </Border.Transitions>
-    <Grid ClipToBounds="True">
+    <Grid ClipToBounds="True"
+          Margin="32,32,32,26"
+          RowDefinitions="*,Auto">
       <Grid x:Name="StartupLoadingContent"
-            Width="420"
+            Grid.Row="0"
+            Width="540"
             HorizontalAlignment="Center"
             VerticalAlignment="Center"
             Opacity="0"
             RenderTransformOrigin="50%,50%"
-            RowDefinitions="96,Auto,Auto"
-            RowSpacing="12">
+            RowDefinitions="128,Auto,Auto"
+            RowSpacing="13">
         <Grid.Transitions>
           <Transitions>
             <DoubleTransition Property="Opacity" Duration="0:0:0.32">
@@ -896,8 +900,8 @@ SPDX-License-Identifier: GPL-3.0-only
         </Grid.RenderTransform>
 
         <Grid x:Name="StartupMark"
-              Width="96"
-              Height="96"
+              Width="128"
+              Height="128"
               HorizontalAlignment="Center"
               RenderTransformOrigin="50%,50%">
           <Grid.RenderTransform>
@@ -915,20 +919,25 @@ SPDX-License-Identifier: GPL-3.0-only
             </ScaleTransform>
           </Grid.RenderTransform>
 
-          <Image Width="78"
-                 Height="78"
-                 HorizontalAlignment="Center"
-                 VerticalAlignment="Center"
-                 Source="avares://HyPrism.Desktop/Assets/Images/logo.png"
-                 Stretch="Uniform" />
+          <lottie:Lottie x:Name="StartupAnimation"
+                         Width="128"
+                         Height="128"
+                         HorizontalAlignment="Center"
+                         VerticalAlignment="Center"
+                         Path="/Assets/Lotties/figures.json"
+                         AutoPlay="True"
+                         RepeatCount="-1"
+                         OpacityMask="{DynamicResource AccentBrush}"
+                         Stretch="Uniform" />
         </Grid>
 
         <TextBlock Grid.Row="1"
                    Text="{Binding StartupLoadingTitle}"
                    HorizontalAlignment="Center"
                    Foreground="#FFD5D8DA"
-                   FontSize="14"
-                   FontWeight="SemiBold" />
+                   FontSize="26"
+                   FontWeight="Bold"
+                   TextAlignment="Center" />
 
         <StackPanel Grid.Row="2"
                     Orientation="Horizontal"
@@ -936,7 +945,7 @@ SPDX-License-Identifier: GPL-3.0-only
                     Spacing="8">
           <TextBlock Text="{Binding StartupLoadingStatus}"
                      Foreground="#FF777E84"
-                     FontSize="12" />
+                     FontSize="15" />
           <StackPanel Orientation="Horizontal"
                       VerticalAlignment="Center"
                       Spacing="4">
@@ -946,6 +955,23 @@ SPDX-License-Identifier: GPL-3.0-only
           </StackPanel>
         </StackPanel>
       </Grid>
+
+      <Image x:Name="StartupBrand"
+             Grid.Row="1"
+             Width="132"
+             Margin="0,32,0,0"
+             HorizontalAlignment="Center"
+             Opacity="0"
+             Source="avares://HyPrism.Desktop/Assets/Images/preview_logo.png"
+             Stretch="Uniform">
+        <Image.Transitions>
+          <Transitions>
+            <DoubleTransition Property="Opacity" Duration="0:0:0.52">
+              <DoubleTransition.Easing><easing:CubicEaseOut /></DoubleTransition.Easing>
+            </DoubleTransition>
+          </Transitions>
+        </Image.Transitions>
+      </Image>
     </Grid>
   </Border>
   </Grid>

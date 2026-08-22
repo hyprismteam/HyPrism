@@ -82,6 +82,25 @@ public sealed class StringLocalizerTests
         Assert.NotEqual("startup.loading.ready", localizer["startup.loading.ready"]);
     }
 
+    [Theory]
+    [InlineData("en-US", "Illustrations provided by Icons8", "Animated media", "Animated icons provided by Lordicon")]
+    [InlineData("ru-RU", "Иллюстрации предоставлены Icons8", "Анимированные материалы", "Анимированные иконки предоставлены Lordicon")]
+    public void AboutPage_ProvidesVisualAttribution(
+        string language,
+        string expectedIllustrationsHint,
+        string expectedLabel,
+        string expectedHint)
+    {
+        using var culture = new CultureScope();
+        var localizer = new StringLocalizer(language);
+
+        Assert.Equal(
+            expectedIllustrationsHint,
+            localizer["settings.aboutSettings.creditsHint"]);
+        Assert.Equal(expectedLabel, localizer["settings.aboutSettings.lordicon"]);
+        Assert.Equal(expectedHint, localizer["settings.aboutSettings.lordiconHint"]);
+    }
+
     private sealed class CultureScope : IDisposable
     {
         private readonly CultureInfo _culture = CultureInfo.CurrentCulture;

@@ -1789,7 +1789,13 @@ You may need to reinstall the game if switching drives.</value>
     <value>Visual credits</value>
   </data>
   <data name="settings.aboutSettings.creditsHint" xml:space="preserve">
-    <value>Settings category artwork is provided by Icons8</value>
+    <value>Illustrations provided by Icons8</value>
+  </data>
+  <data name="settings.aboutSettings.lordicon" xml:space="preserve">
+    <value>Animated media</value>
+  </data>
+  <data name="settings.aboutSettings.lordiconHint" xml:space="preserve">
+    <value>Animated icons provided by Lordicon</value>
   </data>
   <data name="settings.aboutSettings.currentVersion" xml:space="preserve">
     <value>Current version</value>

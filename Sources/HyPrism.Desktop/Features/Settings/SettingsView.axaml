@@ -985,12 +985,23 @@ SPDX-License-Identifier: GPL-3.0-only
                       </Grid>
                     </Button>
                   </Border>
-                  <Border Classes="uiSettingsRow settingsRow aboutRow last">
+                  <Border Classes="uiSettingsRow settingsRow aboutRow">
                     <Button Classes="aboutLink" Command="{Binding OpenIcons8Command}">
                       <Grid ColumnDefinitions="*,Auto" ColumnSpacing="18">
                         <StackPanel Spacing="3">
                           <TextBlock Text="{Binding AboutCreditsLabel}" Classes="uiSettingsLabel settingsLabel" />
                           <TextBlock Text="{Binding AboutCreditsHint}" Classes="uiSettingsHint settingsHint" />
+                        </StackPanel>
+                        <Path Grid.Column="1" Classes="aboutOpenIcon" Data="{StaticResource OpenIcon}" />
+                      </Grid>
+                    </Button>
+                  </Border>
+                  <Border Classes="uiSettingsRow settingsRow aboutRow last">
+                    <Button Classes="aboutLink" Command="{Binding OpenLordiconCommand}">
+                      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="18">
+                        <StackPanel Spacing="3">
+                          <TextBlock Text="{Binding AboutLordiconLabel}" Classes="uiSettingsLabel settingsLabel" />
+                          <TextBlock Text="{Binding AboutLordiconHint}" Classes="uiSettingsHint settingsHint" />
                         </StackPanel>
                         <Path Grid.Column="1" Classes="aboutOpenIcon" Data="{StaticResource OpenIcon}" />
                       </Grid>

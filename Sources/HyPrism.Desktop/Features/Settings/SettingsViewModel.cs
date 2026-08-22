@@ -320,6 +320,8 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     public string AboutLicenseHint { get; private set; } = string.Empty;
     public string AboutCreditsLabel { get; private set; } = string.Empty;
     public string AboutCreditsHint { get; private set; } = string.Empty;
+    public string AboutLordiconLabel { get; private set; } = string.Empty;
+    public string AboutLordiconHint { get; private set; } = string.Empty;
     public string AboutCurrentVersionLabel { get; private set; } = string.Empty;
     public string AboutCurrentVersionHint { get; private set; } = string.Empty;
     public string AboutCurrentVersion { get; private set; } = string.Empty;
@@ -430,6 +432,8 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         AboutLicenseHint = _localizer["settings.aboutSettings.licenseHint"];
         AboutCreditsLabel = _localizer["settings.aboutSettings.credits"];
         AboutCreditsHint = _localizer["settings.aboutSettings.creditsHint"];
+        AboutLordiconLabel = _localizer["settings.aboutSettings.lordicon"];
+        AboutLordiconHint = _localizer["settings.aboutSettings.lordiconHint"];
         AboutCurrentVersionLabel = _localizer["settings.aboutSettings.currentVersion"];
         AboutCurrentVersionHint = _localizer["settings.aboutSettings.currentVersionHint"];
         AboutCurrentVersion = GetApplicationVersion();
@@ -761,6 +765,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     [RelayCommand] private Task OpenLicense() => LaunchExternalAsync("https://github.com/hyprismteam/HyPrism/blob/main/LICENSE");
     [RelayCommand] private Task OpenHytaleEula() => LaunchExternalAsync("https://hytale.com/eula");
     [RelayCommand] private Task OpenIcons8() => LaunchExternalAsync("https://icons8.com");
+    [RelayCommand] private Task OpenLordicon() => LaunchExternalAsync("https://lordicon.com/");
     [RelayCommand]
     private Task OpenLatestCommit()
         => LaunchExternalAsync(_latestMainCommit?.HtmlUrl);
