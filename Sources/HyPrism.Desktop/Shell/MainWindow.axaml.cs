@@ -6,6 +6,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Media;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using HyPrism.Desktop.Features.Instances;
@@ -20,6 +21,18 @@ public sealed partial class MainWindow : Window
     private INotifyPropertyChanged? _observedViewModel;
     private bool? _usesWideNewsLayout;
     private int _wideArticleTransitionVersion;
+    private int _startupTransitionVersion;
+    private bool _startupAnimationFrameActive;
+    private TimeSpan? _startupAnimationStartedAt;
+
+    private ScaleTransform LauncherShellScale =>
+        ((TransformGroup)LauncherShell.RenderTransform!).Children.OfType<ScaleTransform>().Single();
+    private TranslateTransform LauncherShellTranslation =>
+        ((TransformGroup)LauncherShell.RenderTransform!).Children.OfType<TranslateTransform>().Single();
+    private ScaleTransform StartupContentScale =>
+        (ScaleTransform)StartupLoadingContent.RenderTransform!;
+    private ScaleTransform StartupMarkScale =>
+        (ScaleTransform)StartupMark.RenderTransform!;
 
     public MainWindow()
     {
@@ -38,10 +51,19 @@ public sealed partial class MainWindow : Window
 
         if (DataContext is MainWindowViewModel viewModel && _usesWideNewsLayout is { } useWideLayout)
             viewModel.IsWideNewsLayout = useWideLayout;
+
+        if (DataContext is MainWindowViewModel startupViewModel)
+            ApplyStartupLoadingState(startupViewModel.IsStartupLoading);
     }
 
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
+        if (e.PropertyName == nameof(MainWindowViewModel.IsStartupLoading) &&
+            DataContext is MainWindowViewModel startupViewModel)
+        {
+            ApplyStartupLoadingState(startupViewModel.IsStartupLoading);
+        }
+
         if (e.PropertyName == nameof(MainWindowViewModel.SelectedNewsArticle) &&
             DataContext is MainWindowViewModel { SelectedNewsArticle: not null } viewModel)
         {
@@ -83,6 +105,122 @@ public sealed partial class MainWindow : Window
             }, DispatcherPriority.Background);
         }
     }
+
+    private void ApplyStartupLoadingState(bool isLoading)
+    {
+        if (isLoading)
+        {
+            ShowStartupLoading();
+            return;
+        }
+
+        if (StartupLoadingScreen.IsVisible)
+            _ = HideStartupLoadingAsync();
+        else
+            ShowLauncherImmediately();
+    }
+
+    private void ShowStartupLoading()
+    {
+        _startupTransitionVersion++;
+        StartupLoadingScreen.IsVisible = true;
+        StartupLoadingScreen.IsHitTestVisible = true;
+        StartupLoadingScreen.Opacity = 1;
+        LauncherShell.IsHitTestVisible = false;
+        LauncherShell.Opacity = 0;
+        LauncherShellScale.ScaleX = 0.975;
+        LauncherShellScale.ScaleY = 0.975;
+        LauncherShellTranslation.Y = 12;
+        StartupLoadingContent.Opacity = 0;
+        StartupContentScale.ScaleX = 0.9;
+        StartupContentScale.ScaleY = 0.9;
+        StartupMarkScale.ScaleX = 1;
+        StartupMarkScale.ScaleY = 1;
+        StartStartupFrameAnimation();
+
+        Dispatcher.UIThread.Post(() =>
+        {
+            if (DataContext is not MainWindowViewModel { IsStartupLoading: true })
+                return;
+
+            StartupLoadingContent.Opacity = 1;
+            StartupContentScale.ScaleX = 1;
+            StartupContentScale.ScaleY = 1;
+        }, DispatcherPriority.Render);
+    }
+
+    private async Task HideStartupLoadingAsync()
+    {
+        var transitionVersion = ++_startupTransitionVersion;
+        StartupLoadingScreen.IsHitTestVisible = false;
+        StartupLoadingContent.Opacity = 0;
+        StartupContentScale.ScaleX = 0.96;
+        StartupContentScale.ScaleY = 0.96;
+        StartupMarkScale.ScaleX = 1.08;
+        StartupMarkScale.ScaleY = 1.08;
+        StartupLoadingScreen.Opacity = 0;
+        LauncherShell.Opacity = 1;
+        LauncherShellScale.ScaleX = 1;
+        LauncherShellScale.ScaleY = 1;
+        LauncherShellTranslation.Y = 0;
+
+        await Task.Delay(440);
+        if (transitionVersion != _startupTransitionVersion ||
+            DataContext is MainWindowViewModel { IsStartupLoading: true })
+        {
+            return;
+        }
+
+        StartupLoadingScreen.IsVisible = false;
+        LauncherShell.IsHitTestVisible = true;
+        StopStartupFrameAnimation();
+    }
+
+    private void ShowLauncherImmediately()
+    {
+        _startupTransitionVersion++;
+        StartupLoadingScreen.IsVisible = false;
+        StartupLoadingScreen.IsHitTestVisible = false;
+        StartupLoadingScreen.Opacity = 0;
+        LauncherShell.IsHitTestVisible = true;
+        LauncherShell.Opacity = 1;
+        LauncherShellScale.ScaleX = 1;
+        LauncherShellScale.ScaleY = 1;
+        LauncherShellTranslation.Y = 0;
+        StopStartupFrameAnimation();
+    }
+
+    private void StartStartupFrameAnimation()
+    {
+        if (_startupAnimationFrameActive)
+            return;
+
+        _startupAnimationFrameActive = true;
+        _startupAnimationStartedAt = null;
+        RequestAnimationFrame(UpdateStartupAnimationFrame);
+    }
+
+    private void StopStartupFrameAnimation()
+    {
+        _startupAnimationFrameActive = false;
+        _startupAnimationStartedAt = null;
+    }
+
+    private void UpdateStartupAnimationFrame(TimeSpan timestamp)
+    {
+        if (!_startupAnimationFrameActive || !StartupLoadingScreen.IsVisible)
+            return;
+
+        _startupAnimationStartedAt ??= timestamp;
+        var elapsed = (timestamp - _startupAnimationStartedAt.Value).TotalSeconds;
+        StartupDotOne.Opacity = CalculateStartupDotOpacity(elapsed, 0);
+        StartupDotTwo.Opacity = CalculateStartupDotOpacity(elapsed, 0.18);
+        StartupDotThree.Opacity = CalculateStartupDotOpacity(elapsed, 0.36);
+        RequestAnimationFrame(UpdateStartupAnimationFrame);
+    }
+
+    private static double CalculateStartupDotOpacity(double elapsed, double offset)
+        => 0.22 + Math.Max(0, Math.Sin((elapsed - offset) * Math.PI * 2)) * 0.78;
 
     private void OnNewsResponsiveSizeChanged(object? sender, SizeChangedEventArgs e)
         => UpdateNewsResponsiveLayout(e.NewSize.Width >= WideNewsLayoutThreshold);

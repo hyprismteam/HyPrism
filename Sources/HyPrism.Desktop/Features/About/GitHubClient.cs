@@ -5,6 +5,7 @@ using System.Collections.Concurrent;
 using System.Net.Http.Json;
 using System.Text.Json.Serialization;
 using HyPrism.Core.Infrastructure;
+using HyPrism.Desktop.Platform;
 
 namespace HyPrism.Desktop.Features.About;
 
@@ -60,6 +61,7 @@ public sealed class GitHubClient : IGitHubClient
     private const string RepositoryApi = "https://api.github.com/repos/hyprismteam/HyPrism";
 
     private readonly HttpClient _httpClient;
+    private readonly RemoteImageCache? _imageCache;
     private readonly object _cacheLock = new();
     private readonly ConcurrentDictionary<string, Task<byte[]?>> _avatarCache = new();
     private Task<List<GitHubUser>>? _contributorsTask;
@@ -69,9 +71,11 @@ public sealed class GitHubClient : IGitHubClient
     /// Initializes the GitHub integration
     /// </summary>
     /// <param name="httpClient">The shared client used for GitHub requests</param>
-    public GitHubClient(HttpClient httpClient)
+    /// <param name="imageCache">The persistent cache for contributor and team avatars</param>
+    public GitHubClient(HttpClient httpClient, RemoteImageCache? imageCache = null)
     {
         _httpClient = httpClient;
+        _imageCache = imageCache;
         if (!_httpClient.DefaultRequestHeaders.Contains("User-Agent"))
             _httpClient.DefaultRequestHeaders.Add("User-Agent", "HyPrism-Launcher");
     }
@@ -207,9 +211,10 @@ public sealed class GitHubClient : IGitHubClient
         try
         {
             var separator = string.IsNullOrEmpty(uri.Query) ? '?' : '&';
-            return await _httpClient
-                .GetByteArrayAsync($"{uri.AbsoluteUri}{separator}s={decodeWidth}")
-                .ConfigureAwait(false);
+            var sizedUrl = $"{uri.AbsoluteUri}{separator}s={decodeWidth}";
+            return _imageCache is null
+                ? await _httpClient.GetByteArrayAsync(sizedUrl).ConfigureAwait(false)
+                : await _imageCache.GetBytesAsync(sizedUrl, "github").ConfigureAwait(false);
         }
         catch (Exception exception)
         {

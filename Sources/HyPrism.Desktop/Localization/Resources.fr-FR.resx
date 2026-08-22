@@ -1444,7 +1444,16 @@ Vous devrez peut-être réinstaller le jeu si vous changez de lecteur.</value>
     <value>Modifier l'UUID</value>
   </data>
   <data name="profiles.editor" xml:space="preserve">
-    <value>Éditeur de Profil</value>
+    <value>Type de profil</value>
+  </data>
+  <data name="startup.loading.title" xml:space="preserve">
+    <value>Préparation du launcher</value>
+  </data>
+  <data name="startup.loading.content" xml:space="preserve">
+    <value>Mise en cache des actualités et de la communauté</value>
+  </data>
+  <data name="startup.loading.ready" xml:space="preserve">
+    <value>Prêt</value>
   </data>
   <data name="profiles.favoriteInstance" xml:space="preserve">
     <value>Instance favorite</value>

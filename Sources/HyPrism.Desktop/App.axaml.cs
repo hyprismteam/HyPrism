@@ -4,6 +4,7 @@
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using Avalonia.Threading;
 using HyPrism.Desktop.Features.About;
 using HyPrism.Desktop.Features.News;
 using HyPrism.Desktop.Features.Settings;
@@ -68,13 +69,18 @@ public sealed partial class App : Application
                 services.GetRequiredService<IMirrorDiscovery>(),
                 services.GetRequiredService<IGameVersionCatalog>(),
                 services.GetRequiredService<IModManager>(),
-                services.GetRequiredService<IHytaleAuthenticator>());
+                services.GetRequiredService<IHytaleAuthenticator>(),
+                services.GetRequiredService<RemoteImageCache>());
 
+            _mainWindowViewModel.BeginStartupLoading();
             mainWindow.DataContext = _mainWindowViewModel;
             desktop.MainWindow = mainWindow;
 
             desktop.Exit += OnDesktopExit;
-            _bootstrapTask = InitializeAsync(services, _bootstrapCancellation.Token);
+            _bootstrapTask = InitializeAsync(
+                services,
+                _mainWindowViewModel,
+                _bootstrapCancellation.Token);
         }
 
         base.OnFrameworkInitializationCompleted();
@@ -88,18 +94,66 @@ public sealed partial class App : Application
         Logger.Shutdown();
     }
 
-    private static async Task InitializeAsync(IServiceProvider services, CancellationToken cancellationToken)
+    private static async Task InitializeAsync(
+        IServiceProvider services,
+        MainWindowViewModel viewModel,
+        CancellationToken cancellationToken)
     {
+        var minimumVisibleTime = Task.Delay(TimeSpan.FromMilliseconds(950), cancellationToken);
         try
         {
-            await Bootstrapper.InitializeAsync(services, cancellationToken);
+            await Task.WhenAll(
+                InitializeCoreAsync(services, cancellationToken),
+                PreloadDynamicContentAsync(viewModel, cancellationToken),
+                minimumVisibleTime);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
+            return;
+        }
+
+        await Dispatcher.UIThread.InvokeAsync(viewModel.CompleteStartupLoading);
+    }
+
+    private static async Task InitializeCoreAsync(
+        IServiceProvider services,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            await Bootstrapper.InitializeAsync(services, cancellationToken).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
         }
         catch (Exception exception)
         {
             Logger.Error("Bootstrapper", $"Asynchronous initialization failed: {exception}");
+        }
+    }
+
+    private static async Task PreloadDynamicContentAsync(
+        MainWindowViewModel viewModel,
+        CancellationToken cancellationToken)
+    {
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeout.CancelAfter(TimeSpan.FromSeconds(12));
+        try
+        {
+            await viewModel.PreloadStartupDataAsync(timeout.Token).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            Logger.Warning("Startup", "Dynamic content preload exceeded the startup time limit");
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            Logger.Warning("Startup", $"Dynamic content preload failed: {exception.Message}");
         }
     }
 }

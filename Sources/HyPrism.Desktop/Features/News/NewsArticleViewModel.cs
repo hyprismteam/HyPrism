@@ -106,7 +106,10 @@ public sealed class NewsArticleViewModel : ObservableObject, IDisposable
                 .Where(value => !string.IsNullOrWhiteSpace(value)));
     }
 
-    public async Task LoadImagesAsync(HttpClient httpClient, CancellationToken cancellationToken)
+    public async Task LoadImagesAsync(
+        HttpClient httpClient,
+        CancellationToken cancellationToken,
+        RemoteImageCache? imageCache = null)
     {
         using var concurrencyGate = new SemaphoreSlim(3, 3);
         try
@@ -119,7 +122,7 @@ public sealed class NewsArticleViewModel : ObservableObject, IDisposable
                 await concurrencyGate.WaitAsync(cancellationToken);
                 try
                 {
-                    await block.LoadImageAsync(httpClient, cancellationToken);
+                    await block.LoadImageAsync(httpClient, cancellationToken, imageCache);
                 }
                 finally
                 {
@@ -435,15 +438,21 @@ public sealed partial class NewsArticleBlockViewModel : ObservableObject, IDispo
             : [];
     }
 
-    public async Task LoadImageAsync(HttpClient httpClient, CancellationToken cancellationToken)
+    public async Task LoadImageAsync(
+        HttpClient httpClient,
+        CancellationToken cancellationToken,
+        RemoteImageCache? imageCache = null)
     {
         var inlineTasks = InlineImages.Select(image =>
-            image.LoadAsync(httpClient, cancellationToken));
+            image.LoadAsync(httpClient, cancellationToken, imageCache));
 
         if (!IsImage)
         {
             await Task.WhenAll(inlineTasks.Concat(
-                DetailsBlocks.Select(block => block.LoadImageAsync(httpClient, cancellationToken))));
+                DetailsBlocks.Select(block => block.LoadImageAsync(
+                    httpClient,
+                    cancellationToken,
+                    imageCache))));
             return;
         }
 
@@ -453,7 +462,12 @@ public sealed partial class NewsArticleBlockViewModel : ObservableObject, IDispo
             return;
         }
 
-        var blockTask = RemoteNewsBitmap.LoadAsync(ImageUrl, 1400, httpClient, cancellationToken);
+        var blockTask = RemoteNewsBitmap.LoadAsync(
+            ImageUrl,
+            1400,
+            httpClient,
+            cancellationToken,
+            imageCache);
         await Task.WhenAll(inlineTasks.Append(LoadBlockImageAsync(blockTask, cancellationToken)));
     }
 
@@ -507,7 +521,10 @@ public sealed partial class NewsInlineImageViewModel : ObservableObject, IDispos
     public bool IsSticker { get; }
     public double DisplaySize => IsSticker ? 64 : 24;
 
-    public async Task LoadAsync(HttpClient httpClient, CancellationToken cancellationToken)
+    public async Task LoadAsync(
+        HttpClient httpClient,
+        CancellationToken cancellationToken,
+        RemoteImageCache? imageCache = null)
     {
         if (Image is not null)
             return;
@@ -516,7 +533,8 @@ public sealed partial class NewsInlineImageViewModel : ObservableObject, IDispos
             Url,
             IsSticker ? 128 : 48,
             httpClient,
-            cancellationToken).ConfigureAwait(false);
+            cancellationToken,
+            imageCache).ConfigureAwait(false);
         if (bitmap is null)
             return;
 
@@ -542,7 +560,8 @@ internal static class RemoteNewsBitmap
         string? url,
         int decodeWidth,
         HttpClient httpClient,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        RemoteImageCache? imageCache = null)
     {
         if (string.IsNullOrWhiteSpace(url) ||
             !Uri.TryCreate(url, UriKind.Absolute, out var imageUri) ||
@@ -553,19 +572,32 @@ internal static class RemoteNewsBitmap
 
         try
         {
-            using var response = await httpClient.GetAsync(
-                    imageUri,
-                    HttpCompletionOption.ResponseHeadersRead,
-                    cancellationToken)
-                .ConfigureAwait(false);
-            response.EnsureSuccessStatusCode();
+            byte[] imageBytes;
+            if (imageCache is not null)
+            {
+                imageBytes = await imageCache
+                    .GetBytesAsync(imageUri.AbsoluteUri, "news", cancellationToken)
+                    .ConfigureAwait(false) ?? [];
+            }
+            else
+            {
+                using var response = await httpClient.GetAsync(
+                        imageUri,
+                        HttpCompletionOption.ResponseHeadersRead,
+                        cancellationToken)
+                    .ConfigureAwait(false);
+                response.EnsureSuccessStatusCode();
 
-            await using var source = await response.Content
-                .ReadAsStreamAsync(cancellationToken)
-                .ConfigureAwait(false);
-            using var buffer = new MemoryStream();
-            await source.CopyToAsync(buffer, cancellationToken).ConfigureAwait(false);
-            var imageBytes = buffer.ToArray();
+                await using var source = await response.Content
+                    .ReadAsStreamAsync(cancellationToken)
+                    .ConfigureAwait(false);
+                using var buffer = new MemoryStream();
+                await source.CopyToAsync(buffer, cancellationToken).ConfigureAwait(false);
+                imageBytes = buffer.ToArray();
+            }
+
+            if (imageBytes.Length == 0)
+                return null;
 
             // Decoding large covers is CPU-bound and can otherwise resume on the
             // Avalonia dispatcher, freezing an in-progress page transition.

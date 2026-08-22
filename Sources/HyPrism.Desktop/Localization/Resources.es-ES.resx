@@ -1444,7 +1444,16 @@ Es posible que necesites reinstalar el juego si cambias de unidad.</value>
     <value>Editar UUID</value>
   </data>
   <data name="profiles.editor" xml:space="preserve">
-    <value>Editor de Perfil</value>
+    <value>Tipo de perfil</value>
+  </data>
+  <data name="startup.loading.title" xml:space="preserve">
+    <value>Preparando el launcher</value>
+  </data>
+  <data name="startup.loading.content" xml:space="preserve">
+    <value>Guardando noticias y comunidad</value>
+  </data>
+  <data name="startup.loading.ready" xml:space="preserve">
+    <value>Todo listo</value>
   </data>
   <data name="profiles.favoriteInstance" xml:space="preserve">
     <value>Instancia favorita</value>

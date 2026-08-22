@@ -56,6 +56,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     private readonly IGameVersionCatalog? _versionCatalog;
     private readonly IModManager? _modManager;
     private readonly HttpClient _httpClient;
+    private readonly RemoteImageCache? _remoteImageCache;
     private readonly StringLocalizer _localizer;
     private InstanceInfo? _selectedInstance;
     private InstanceInfo? _managedInstance;
@@ -87,6 +88,12 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     private long _compactNewsTransitionReadyAt;
     private SettingsViewModel _settings;
     private readonly ProfilesViewModel _profiles;
+
+    [ObservableProperty]
+    private bool _isStartupLoading;
+
+    [ObservableProperty]
+    private string _startupLoadingStatus = string.Empty;
 
     [ObservableProperty]
     private string _currentPage = DashboardPage;
@@ -310,7 +317,8 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         IMirrorDiscovery? mirrorDiscovery = null,
         IGameVersionCatalog? versionCatalog = null,
         IModManager? modManager = null,
-        IHytaleAuthenticator? authenticator = null)
+        IHytaleAuthenticator? authenticator = null,
+        RemoteImageCache? remoteImageCache = null)
     {
         _instances = instances;
         _gameLaunchCoordinator = gameLaunchCoordinator;
@@ -327,6 +335,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         _versionCatalog = versionCatalog;
         _modManager = modManager;
         _httpClient = httpClient;
+        _remoteImageCache = remoteImageCache;
         _localizer = localizer;
         _localizer.LanguageChanged += ApplyLanguage;
         _settingsStore.BackgroundChanged += OnBackgroundChanged;
@@ -406,6 +415,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     public string InstanceVersionHint => _localizer["instances.versionHint"];
     public string CancelLabel => _localizer["common.cancel"];
     public string NewsLoadingLabel => _localizer["news.loading"];
+    public string StartupLoadingTitle => _localizer["startup.loading.title"];
     public string NewsEmptyLabel => _localizer["news.noNewsFound"];
     public string BackLabel => _localizer["common.back"];
     public string OpenOriginalLabel => _localizer["news.readMore"];
@@ -614,7 +624,12 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         NotifyPageStateChanged();
 
         if (IsNews)
-            _ = LoadNewsAsync();
+        {
+            if (_hasLoadedNews)
+                RestartNewsImageLoading();
+            else
+                _ = LoadNewsAsync();
+        }
     }
 
     [RelayCommand]
@@ -1411,7 +1426,39 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
             .FirstOrDefault(option => option.Version == selectedVersion);
     }
 
-    private async Task LoadNewsAsync()
+    /// <summary>
+    /// Activates the startup overlay before the window is presented
+    /// </summary>
+    public void BeginStartupLoading()
+    {
+        StartupLoadingStatus = _localizer["startup.loading.content"];
+        IsStartupLoading = true;
+    }
+
+    /// <summary>
+    /// Preloads dynamic launcher content while the startup overlay is visible
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation requested when the desktop exits</param>
+    public async Task PreloadStartupDataAsync(CancellationToken cancellationToken)
+    {
+        StartupLoadingStatus = _localizer["startup.loading.content"];
+        await Task.WhenAll(
+            LoadNewsAsync(waitForImages: true, cancellationToken: cancellationToken),
+            Settings.PreloadAboutDataAsync(cancellationToken));
+        cancellationToken.ThrowIfCancellationRequested();
+        StartupLoadingStatus = _localizer["startup.loading.ready"];
+        await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
+    }
+
+    /// <summary>
+    /// Starts the transition from the startup overlay to the launcher shell
+    /// </summary>
+    public void CompleteStartupLoading()
+        => IsStartupLoading = false;
+
+    private async Task LoadNewsAsync(
+        bool waitForImages = false,
+        CancellationToken cancellationToken = default)
     {
         if (_hasLoadedNews || IsNewsLoading)
             return;
@@ -1424,6 +1471,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
             var news = (await _newsClient.GetNewsAsync(InitialNewsCount))
                 .Take(InitialNewsCount)
                 .ToList();
+            cancellationToken.ThrowIfCancellationRequested();
 
             foreach (var item in _allNews)
                 item.Dispose();
@@ -1434,7 +1482,20 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
             _hasLoadedNews = true;
             PresentNews();
 
-            RestartNewsImageLoading();
+            if (waitForImages)
+            {
+                _newsImagesCancellation.Cancel();
+                _newsImagesCancellation.Dispose();
+                _newsImagesCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                await LoadNewsImagesAsync(_allNews.ToArray(), _newsImagesCancellation.Token);
+            }
+            else
+            {
+                RestartNewsImageLoading();
+            }
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
         }
         catch (Exception ex)
         {
@@ -1674,7 +1735,10 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         _articleImagesCancellation.Cancel();
         _articleImagesCancellation.Dispose();
         _articleImagesCancellation = new CancellationTokenSource();
-        _ = article.LoadImagesAsync(_httpClient, _articleImagesCancellation.Token);
+        _ = article.LoadImagesAsync(
+            _httpClient,
+            _articleImagesCancellation.Token,
+            _remoteImageCache);
     }
 
     private async Task RestartArticlePresentationAsync(NewsArticleViewModel article)
@@ -1744,7 +1808,10 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
                 await concurrencyGate.WaitAsync(cancellationToken);
                 try
                 {
-                    await item.LoadImageAsync(_httpClient, cancellationToken);
+                    await item.LoadImageAsync(
+                        _httpClient,
+                        cancellationToken,
+                        _remoteImageCache);
                 }
                 finally
                 {

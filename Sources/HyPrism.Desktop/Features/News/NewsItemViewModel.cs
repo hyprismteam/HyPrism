@@ -80,7 +80,10 @@ public sealed partial class NewsItemViewModel : ObservableObject, IDisposable
             ? _uriLauncher.LaunchAsync(uri)
             : Task.FromResult(false);
 
-    public async Task LoadImageAsync(HttpClient httpClient, CancellationToken cancellationToken)
+    public async Task LoadImageAsync(
+        HttpClient httpClient,
+        CancellationToken cancellationToken,
+        RemoteImageCache? imageCache = null)
     {
         if (Image is not null)
             return;
@@ -91,7 +94,8 @@ public sealed partial class NewsItemViewModel : ObservableObject, IDisposable
                     ImageUrl,
                     1200,
                     httpClient,
-                    cancellationToken)
+                    cancellationToken,
+                    imageCache)
                 .ConfigureAwait(false);
             if (bitmap is null)
                 return;

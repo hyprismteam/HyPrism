@@ -15,6 +15,6 @@ Article content supports headings, paragraphs, links, images, inline and block c
 
 ## Caching
 
-Feed metadata, parsed articles, and remote images are cached so repeated visits avoid unnecessary network and parsing work. A skeleton is shown only while uncached content is being prepared
+Feed metadata and preview images are warmed during launcher startup, so opening the News destination does not initiate feed parsing or large image decoding on the UI thread. Parsed articles and encoded remote images use persistent caches, while bitmap decoding stays on background workers. A skeleton is shown only while uncached article content is being prepared
 
 Use **Load more** at the end of the feed to request older entries

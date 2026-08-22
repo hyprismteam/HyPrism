@@ -34,6 +34,7 @@ internal static class Program
             services.AddSingleton<GitHubClient>();
             services.AddSingleton<IGitHubClient>(provider =>
                 provider.GetRequiredService<GitHubClient>());
+            services.AddSingleton<RemoteImageCache>();
             services.AddSingleton<DiscordPresence>();
             services.AddSingleton<IDiscordPresence>(provider =>
                 provider.GetRequiredService<DiscordPresence>());

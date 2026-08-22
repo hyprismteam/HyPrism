@@ -14,7 +14,9 @@ HyPrism keeps durable state separate from data that can be recreated
 | `Profiles/<profile-id>/` | profile-scoped skins, avatars, and session data | no |
 | `Instances/` | instance registry and game installations | no |
 | `Mirrors/` | user-provided mirror metadata | only if custom mirrors are no longer needed |
-| `Cache/News/` | parsed articles and downloaded article images | yes |
+| `Cache/News/` | parsed news feed and articles | yes |
+| `Cache/RemoteImages/news/` | encoded news preview and article images | yes |
+| `Cache/RemoteImages/github/` | encoded team and contributor avatars | yes |
 | `Logs/` | launcher, game-instance, and Local Node diagnostics grouped by launch | yes, when HyPrism and related game sessions are closed |
 
 `config.json` stores only `SelectedProfileId` for profile selection. Legacy identity fields are consumed by a one-time load migration and are not represented in the runtime configuration model

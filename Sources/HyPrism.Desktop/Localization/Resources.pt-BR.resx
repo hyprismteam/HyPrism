@@ -1444,7 +1444,16 @@ Você pode precisar reinstalar o jogo se trocar de unidade.</value>
     <value>Editar UUID</value>
   </data>
   <data name="profiles.editor" xml:space="preserve">
-    <value>Editor de Perfil</value>
+    <value>Tipo de perfil</value>
+  </data>
+  <data name="startup.loading.title" xml:space="preserve">
+    <value>Preparando o launcher</value>
+  </data>
+  <data name="startup.loading.content" xml:space="preserve">
+    <value>Armazenando notícias e comunidade</value>
+  </data>
+  <data name="startup.loading.ready" xml:space="preserve">
+    <value>Tudo pronto</value>
   </data>
   <data name="profiles.favoriteInstance" xml:space="preserve">
     <value>Instância favorita</value>

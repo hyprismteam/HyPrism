@@ -68,6 +68,20 @@ public sealed class StringLocalizerTests
         Assert.Equal("Настройки", localizer["dock.settings"]);
     }
 
+    [Theory]
+    [InlineData("en-US", "Profile type")]
+    [InlineData("ru-RU", "Тип профиля")]
+    public void ProfileStatistics_UseProfileTypeLabel(string language, string expected)
+    {
+        using var culture = new CultureScope();
+        var localizer = new StringLocalizer(language);
+
+        Assert.Equal(expected, localizer["profiles.editor"]);
+        Assert.NotEqual("startup.loading.title", localizer["startup.loading.title"]);
+        Assert.NotEqual("startup.loading.content", localizer["startup.loading.content"]);
+        Assert.NotEqual("startup.loading.ready", localizer["startup.loading.ready"]);
+    }
+
     private sealed class CultureScope : IDisposable
     {
         private readonly CultureInfo _culture = CultureInfo.CurrentCulture;

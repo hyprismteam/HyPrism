@@ -1444,7 +1444,16 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>Рэдагаваць UUID</value>
   </data>
   <data name="profiles.editor" xml:space="preserve">
-    <value>Рэдактар профілю</value>
+    <value>Тып профілю</value>
+  </data>
+  <data name="startup.loading.title" xml:space="preserve">
+    <value>Падрыхтоўваем лаўнчар</value>
+  </data>
+  <data name="startup.loading.content" xml:space="preserve">
+    <value>Кэшуем навіны і супольнасць</value>
+  </data>
+  <data name="startup.loading.ready" xml:space="preserve">
+    <value>Усё гатова</value>
   </data>
   <data name="profiles.favoriteInstance" xml:space="preserve">
     <value>Улюбёная зборка</value>

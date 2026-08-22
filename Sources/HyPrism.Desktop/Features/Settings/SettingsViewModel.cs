@@ -785,6 +785,13 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
             ? _uriLauncher.LaunchAsync(uri)
             : Task.FromResult(false);
 
+    /// <summary>
+    /// Warms repository metadata and avatar caches during launcher startup
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation requested when the desktop exits</param>
+    public Task PreloadAboutDataAsync(CancellationToken cancellationToken)
+        => LoadAboutDataAsync().WaitAsync(cancellationToken);
+
     private async Task LoadAboutDataAsync()
     {
         if (_gitHubClient is null || _aboutDataLoadStarted || _disposed)
@@ -819,8 +826,11 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
                 contributor.Contributions,
                 contributor.AvatarUrl))
             .ToList();
+        var contributorAvatarWarmup = WarmContributorAvatarCacheAsync(contributorViewModels);
 
-        await Task.WhenAll(teamAvatarTasks).ConfigureAwait(false);
+        await Task.WhenAll(
+                teamAvatarTasks.Cast<Task>().Append(contributorAvatarWarmup))
+            .ConfigureAwait(false);
         var commit = await commitTask.ConfigureAwait(false);
 
         if (_disposed)
@@ -914,6 +924,27 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
             foreach (var result in results)
                 result.Contributor.Avatar = result.Avatar;
         });
+    }
+
+    private async Task WarmContributorAvatarCacheAsync(
+        IReadOnlyCollection<AboutContributorViewModel> contributors)
+    {
+        if (_gitHubClient is null)
+            return;
+
+        using var concurrencyGate = new SemaphoreSlim(4, 4);
+        await Task.WhenAll(contributors.Select(async contributor =>
+        {
+            await concurrencyGate.WaitAsync().ConfigureAwait(false);
+            try
+            {
+                await _gitHubClient.LoadAvatarAsync(contributor.AvatarUrl, 96).ConfigureAwait(false);
+            }
+            finally
+            {
+                concurrencyGate.Release();
+            }
+        })).ConfigureAwait(false);
     }
 
     private async Task<Bitmap?> LoadGitHubAvatarAsync(string url)

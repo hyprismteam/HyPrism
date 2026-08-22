@@ -1444,7 +1444,16 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>UUIDを編集</value>
   </data>
   <data name="profiles.editor" xml:space="preserve">
-    <value>プロファイルエディタ</value>
+    <value>プロファイルの種類</value>
+  </data>
+  <data name="startup.loading.title" xml:space="preserve">
+    <value>ランチャーを準備しています</value>
+  </data>
+  <data name="startup.loading.content" xml:space="preserve">
+    <value>ニュースとコミュニティをキャッシュしています</value>
+  </data>
+  <data name="startup.loading.ready" xml:space="preserve">
+    <value>準備完了</value>
   </data>
   <data name="profiles.favoriteInstance" xml:space="preserve">
     <value>お気に入りのインスタンス</value>

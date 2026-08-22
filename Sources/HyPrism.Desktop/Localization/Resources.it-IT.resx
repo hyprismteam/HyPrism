@@ -1444,7 +1444,16 @@ Potrebbe essere necessario reinstallare il gioco se si cambia drive.</value>
     <value>Modifica UUID</value>
   </data>
   <data name="profiles.editor" xml:space="preserve">
-    <value>Editor profilo</value>
+    <value>Tipo di profilo</value>
+  </data>
+  <data name="startup.loading.title" xml:space="preserve">
+    <value>Preparazione del launcher</value>
+  </data>
+  <data name="startup.loading.content" xml:space="preserve">
+    <value>Cache di notizie e community</value>
+  </data>
+  <data name="startup.loading.ready" xml:space="preserve">
+    <value>Tutto pronto</value>
   </data>
   <data name="profiles.favoriteInstance" xml:space="preserve">
     <value>Istanza preferita</value>

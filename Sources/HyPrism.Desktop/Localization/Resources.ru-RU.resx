@@ -1558,7 +1558,16 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>Изменить UUID</value>
   </data>
   <data name="profiles.editor" xml:space="preserve">
-    <value>Редактор профиля</value>
+    <value>Тип профиля</value>
+  </data>
+  <data name="startup.loading.title" xml:space="preserve">
+    <value>Подготавливаем лаунчер</value>
+  </data>
+  <data name="startup.loading.content" xml:space="preserve">
+    <value>Кешируем новости и сообщество</value>
+  </data>
+  <data name="startup.loading.ready" xml:space="preserve">
+    <value>Всё готово</value>
   </data>
   <data name="profiles.favoriteInstance" xml:space="preserve">
     <value>Любимая сборка</value>

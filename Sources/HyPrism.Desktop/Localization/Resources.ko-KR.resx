@@ -1444,7 +1444,16 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>UUID 편집</value>
   </data>
   <data name="profiles.editor" xml:space="preserve">
-    <value>프로필 편집기</value>
+    <value>프로필 유형</value>
+  </data>
+  <data name="startup.loading.title" xml:space="preserve">
+    <value>런처 준비 중</value>
+  </data>
+  <data name="startup.loading.content" xml:space="preserve">
+    <value>뉴스와 커뮤니티 캐시 중</value>
+  </data>
+  <data name="startup.loading.ready" xml:space="preserve">
+    <value>준비 완료</value>
   </data>
   <data name="profiles.favoriteInstance" xml:space="preserve">
     <value>즐겨찾는 인스턴스</value>

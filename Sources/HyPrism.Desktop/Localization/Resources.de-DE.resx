@@ -1444,7 +1444,16 @@ Bei Laufwerkswechsel muss das Spiel möglicherweise neu installiert werden.</val
     <value>UUID bearbeiten</value>
   </data>
   <data name="profiles.editor" xml:space="preserve">
-    <value>Profil-Editor</value>
+    <value>Profiltyp</value>
+  </data>
+  <data name="startup.loading.title" xml:space="preserve">
+    <value>Launcher wird vorbereitet</value>
+  </data>
+  <data name="startup.loading.content" xml:space="preserve">
+    <value>News und Community werden zwischengespeichert</value>
+  </data>
+  <data name="startup.loading.ready" xml:space="preserve">
+    <value>Startklar</value>
   </data>
   <data name="profiles.favoriteInstance" xml:space="preserve">
     <value>Lieblingsinstanz</value>

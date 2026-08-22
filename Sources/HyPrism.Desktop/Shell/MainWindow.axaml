@@ -532,7 +532,42 @@ SPDX-License-Identifier: GPL-3.0-only
     </DataTemplate>
   </Window.Resources>
 
-  <Grid RowDefinitions="30,*">
+  <Grid x:Name="WindowRoot">
+  <Grid x:Name="LauncherShell"
+        RowDefinitions="30,*"
+        RenderTransformOrigin="50%,50%">
+    <Grid.Transitions>
+      <Transitions>
+        <DoubleTransition Property="Opacity" Duration="0:0:0.42">
+          <DoubleTransition.Easing><easing:CubicEaseOut /></DoubleTransition.Easing>
+        </DoubleTransition>
+      </Transitions>
+    </Grid.Transitions>
+    <Grid.RenderTransform>
+      <TransformGroup>
+        <ScaleTransform ScaleX="1" ScaleY="1">
+          <ScaleTransform.Transitions>
+            <Transitions>
+              <DoubleTransition Property="ScaleX" Duration="0:0:0.42">
+                <DoubleTransition.Easing><easing:CubicEaseOut /></DoubleTransition.Easing>
+              </DoubleTransition>
+              <DoubleTransition Property="ScaleY" Duration="0:0:0.42">
+                <DoubleTransition.Easing><easing:CubicEaseOut /></DoubleTransition.Easing>
+              </DoubleTransition>
+            </Transitions>
+          </ScaleTransform.Transitions>
+        </ScaleTransform>
+        <TranslateTransform>
+          <TranslateTransform.Transitions>
+            <Transitions>
+              <DoubleTransition Property="Y" Duration="0:0:0.42">
+                <DoubleTransition.Easing><easing:CubicEaseOut /></DoubleTransition.Easing>
+              </DoubleTransition>
+            </Transitions>
+          </TranslateTransform.Transitions>
+        </TranslateTransform>
+      </TransformGroup>
+    </Grid.RenderTransform>
     <Grid Grid.Row="0" ColumnDefinitions="*,Auto">
       <Border Grid.Column="0"
               Background="Transparent"
@@ -814,5 +849,104 @@ SPDX-License-Identifier: GPL-3.0-only
     <Border x:Name="ResizeNorthEast" Grid.RowSpan="2" Width="10" Height="10" HorizontalAlignment="Right" VerticalAlignment="Top" Background="Transparent" Cursor="TopRightCorner" PointerPressed="OnResizeNorthEast" />
     <Border x:Name="ResizeSouthWest" Grid.RowSpan="2" Width="10" Height="10" HorizontalAlignment="Left" VerticalAlignment="Bottom" Background="Transparent" Cursor="BottomLeftCorner" PointerPressed="OnResizeSouthWest" />
     <Border x:Name="ResizeSouthEast" Grid.RowSpan="2" Width="10" Height="10" HorizontalAlignment="Right" VerticalAlignment="Bottom" Background="Transparent" Cursor="BottomRightCorner" PointerPressed="OnResizeSouthEast" />
+  </Grid>
+
+  <Border x:Name="StartupLoadingScreen"
+          IsVisible="False"
+          IsHitTestVisible="False"
+          Opacity="0"
+          Background="#FF0B0C0E"
+          ZIndex="1000">
+    <Border.Transitions>
+      <Transitions>
+        <DoubleTransition Property="Opacity" Duration="0:0:0.38">
+          <DoubleTransition.Easing><easing:CubicEaseInOut /></DoubleTransition.Easing>
+        </DoubleTransition>
+      </Transitions>
+    </Border.Transitions>
+    <Grid ClipToBounds="True">
+      <Grid x:Name="StartupLoadingContent"
+            Width="420"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            Opacity="0"
+            RenderTransformOrigin="50%,50%"
+            RowDefinitions="96,Auto,Auto"
+            RowSpacing="12">
+        <Grid.Transitions>
+          <Transitions>
+            <DoubleTransition Property="Opacity" Duration="0:0:0.32">
+              <DoubleTransition.Easing><easing:CubicEaseOut /></DoubleTransition.Easing>
+            </DoubleTransition>
+          </Transitions>
+        </Grid.Transitions>
+        <Grid.RenderTransform>
+          <ScaleTransform ScaleX="0.9" ScaleY="0.9">
+            <ScaleTransform.Transitions>
+              <Transitions>
+                <DoubleTransition Property="ScaleX" Duration="0:0:0.42">
+                  <DoubleTransition.Easing><easing:CubicEaseOut /></DoubleTransition.Easing>
+                </DoubleTransition>
+                <DoubleTransition Property="ScaleY" Duration="0:0:0.42">
+                  <DoubleTransition.Easing><easing:CubicEaseOut /></DoubleTransition.Easing>
+                </DoubleTransition>
+              </Transitions>
+            </ScaleTransform.Transitions>
+          </ScaleTransform>
+        </Grid.RenderTransform>
+
+        <Grid x:Name="StartupMark"
+              Width="96"
+              Height="96"
+              HorizontalAlignment="Center"
+              RenderTransformOrigin="50%,50%">
+          <Grid.RenderTransform>
+            <ScaleTransform ScaleX="1" ScaleY="1">
+              <ScaleTransform.Transitions>
+                <Transitions>
+                  <DoubleTransition Property="ScaleX" Duration="0:0:0.32">
+                    <DoubleTransition.Easing><easing:CubicEaseInOut /></DoubleTransition.Easing>
+                  </DoubleTransition>
+                  <DoubleTransition Property="ScaleY" Duration="0:0:0.32">
+                    <DoubleTransition.Easing><easing:CubicEaseInOut /></DoubleTransition.Easing>
+                  </DoubleTransition>
+                </Transitions>
+              </ScaleTransform.Transitions>
+            </ScaleTransform>
+          </Grid.RenderTransform>
+
+          <Image Width="78"
+                 Height="78"
+                 HorizontalAlignment="Center"
+                 VerticalAlignment="Center"
+                 Source="avares://HyPrism.Desktop/Assets/Images/logo.png"
+                 Stretch="Uniform" />
+        </Grid>
+
+        <TextBlock Grid.Row="1"
+                   Text="{Binding StartupLoadingTitle}"
+                   HorizontalAlignment="Center"
+                   Foreground="#FFD5D8DA"
+                   FontSize="14"
+                   FontWeight="SemiBold" />
+
+        <StackPanel Grid.Row="2"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Center"
+                    Spacing="8">
+          <TextBlock Text="{Binding StartupLoadingStatus}"
+                     Foreground="#FF777E84"
+                     FontSize="12" />
+          <StackPanel Orientation="Horizontal"
+                      VerticalAlignment="Center"
+                      Spacing="4">
+            <Ellipse x:Name="StartupDotOne" Width="4" Height="4" Fill="{DynamicResource AccentBrush}" />
+            <Ellipse x:Name="StartupDotTwo" Width="4" Height="4" Fill="{DynamicResource AccentBrush}" />
+            <Ellipse x:Name="StartupDotThree" Width="4" Height="4" Fill="{DynamicResource AccentBrush}" />
+          </StackPanel>
+        </StackPanel>
+      </Grid>
+    </Grid>
+  </Border>
   </Grid>
 </Window>

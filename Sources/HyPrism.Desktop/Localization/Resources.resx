@@ -1561,7 +1561,16 @@ You may need to reinstall the game if switching drives.</value>
     <value>Edit UUID</value>
   </data>
   <data name="profiles.editor" xml:space="preserve">
-    <value>Profile Editor</value>
+    <value>Profile type</value>
+  </data>
+  <data name="startup.loading.title" xml:space="preserve">
+    <value>Preparing your launcher</value>
+  </data>
+  <data name="startup.loading.content" xml:space="preserve">
+    <value>Caching news and community</value>
+  </data>
+  <data name="startup.loading.ready" xml:space="preserve">
+    <value>Ready to launch</value>
   </data>
   <data name="profiles.favoriteInstance" xml:space="preserve">
     <value>Favorite instance</value>

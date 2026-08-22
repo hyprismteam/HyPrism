@@ -1444,7 +1444,16 @@ Sürücü değiştirirseniz oyunu yeniden yüklemeniz gerekebilir.</value>
     <value>UUID'yi Düzenle</value>
   </data>
   <data name="profiles.editor" xml:space="preserve">
-    <value>Profil Düzenleyici</value>
+    <value>Profil türü</value>
+  </data>
+  <data name="startup.loading.title" xml:space="preserve">
+    <value>Başlatıcı hazırlanıyor</value>
+  </data>
+  <data name="startup.loading.content" xml:space="preserve">
+    <value>Haberler ve topluluk önbelleğe alınıyor</value>
+  </data>
+  <data name="startup.loading.ready" xml:space="preserve">
+    <value>Hazır</value>
   </data>
   <data name="profiles.favoriteInstance" xml:space="preserve">
     <value>Favori örnek</value>
