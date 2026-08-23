@@ -15,11 +15,14 @@ HyPrism keeps durable state separate from data that can be recreated
 | `Instances/` | instance registry and game installations | no |
 | `Mirrors/` | user-provided mirror metadata | only if custom mirrors are no longer needed |
 | `Cache/News/` | parsed news feed and articles | yes |
-| `Cache/RemoteImages/news/` | encoded news preview and article images | yes |
-| `Cache/RemoteImages/github/` | encoded team and contributor avatars | yes |
+| `Cache/Game/Downloads/` | resumable game payloads, including incomplete `.part` files | yes, when no download or update is active |
+| `Cache/Images/News/` | encoded news preview and article images | yes |
+| `Cache/Images/Github/` | encoded team and contributor avatars | yes |
 | `Logs/` | launcher, game-instance, and Local Node diagnostics grouped by launch | yes, when HyPrism and related game sessions are closed |
 
 `config.json` stores only `SelectedProfileId` for profile selection. Legacy identity fields are consumed by a one-time load migration and are not represented in the runtime configuration model
+
+On startup, HyPrism moves legacy PWR payloads from the `Cache/` root into `Cache/Game/Downloads/` and migrates `Cache/RemoteImages/` into the capitalized `Cache/Images/News/` and `Cache/Images/Github/` directories
 
 ## Session logs
 

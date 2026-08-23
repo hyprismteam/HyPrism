@@ -15,6 +15,7 @@ namespace HyPrism.Desktop.Platform;
 public sealed class RemoteImageCache
 {
     private static readonly TimeSpan DiskLifetime = TimeSpan.FromDays(14);
+    private static readonly object MigrationLock = new();
 
     private readonly HttpClient _httpClient;
     private readonly string? _cacheDirectory;
@@ -31,7 +32,10 @@ public sealed class RemoteImageCache
         _httpClient = httpClient;
         _cacheDirectory = appPath is null
             ? null
-            : Path.Combine(appPath.AppDir, "Cache", "RemoteImages");
+            : Path.Combine(appPath.AppDir, "Cache", "Images");
+
+        if (appPath is not null)
+            MigrateLegacyDirectories(appPath.AppDir);
     }
 
     /// <summary>
@@ -54,11 +58,13 @@ public sealed class RemoteImageCache
             return null;
         }
 
-        var normalizedCategory = string.Concat(category
+        var categoryKey = string.Concat(category
             .ToLowerInvariant()
             .Where(character => char.IsAsciiLetterOrDigit(character) || character == '-'));
-        if (normalizedCategory.Length == 0)
+        if (categoryKey.Length == 0)
             return null;
+
+        var normalizedCategory = char.ToUpperInvariant(categoryKey[0]) + categoryKey[1..];
 
         var cacheKey = $"{normalizedCategory}|{uri.AbsoluteUri}";
         var pending = _memoryCache.GetOrAdd(
@@ -128,5 +134,106 @@ public sealed class RemoteImageCache
                 SHA256.HashData(Encoding.UTF8.GetBytes(uri.AbsoluteUri)))
             .ToLowerInvariant();
         return Path.Combine(_cacheDirectory, category, $"{hash}.bin");
+    }
+
+    private static void MigrateLegacyDirectories(string appDirectory)
+    {
+        lock (MigrationLock)
+        {
+            var cacheDirectory = Path.Combine(appDirectory, "Cache");
+            var imagesDirectory = Path.Combine(cacheDirectory, "Images");
+            var legacyDirectory = Path.Combine(cacheDirectory, "RemoteImages");
+
+            try
+            {
+                if (Directory.Exists(legacyDirectory))
+                {
+                    Directory.CreateDirectory(imagesDirectory);
+                    MergeImageDirectory(legacyDirectory, imagesDirectory, normalizeCategories: true);
+                    DeleteDirectoryIfEmpty(legacyDirectory);
+                }
+
+                if (!Directory.Exists(imagesDirectory))
+                    return;
+
+                foreach (var categoryDirectory in Directory
+                             .EnumerateDirectories(imagesDirectory)
+                             .ToArray())
+                {
+                    var categoryName = Path.GetFileName(categoryDirectory);
+                    if (string.IsNullOrEmpty(categoryName) || !char.IsLower(categoryName[0]))
+                        continue;
+
+                    var normalizedName = char.ToUpperInvariant(categoryName[0]) + categoryName[1..];
+                    var destinationDirectory = Path.Combine(imagesDirectory, normalizedName);
+                    var sourceDirectory = categoryDirectory;
+
+                    if (string.Equals(
+                            sourceDirectory,
+                            destinationDirectory,
+                            StringComparison.OrdinalIgnoreCase))
+                    {
+                        sourceDirectory = Path.Combine(
+                            imagesDirectory,
+                            $".{categoryName}.{Guid.NewGuid():N}.migrating");
+                        Directory.Move(categoryDirectory, sourceDirectory);
+                    }
+
+                    MergeImageDirectory(sourceDirectory, destinationDirectory, normalizeCategories: false);
+                    DeleteDirectoryIfEmpty(sourceDirectory);
+                }
+            }
+            catch (Exception exception)
+            {
+                Logger.Warning("Images", $"Could not migrate the image cache: {exception.Message}");
+            }
+        }
+    }
+
+    private static void MergeImageDirectory(
+        string sourceDirectory,
+        string destinationDirectory,
+        bool normalizeCategories)
+    {
+        Directory.CreateDirectory(destinationDirectory);
+
+        foreach (var sourceFile in Directory.EnumerateFiles(sourceDirectory))
+        {
+            var destinationFile = Path.Combine(destinationDirectory, Path.GetFileName(sourceFile));
+            MoveCacheFile(sourceFile, destinationFile);
+        }
+
+        foreach (var sourceChild in Directory.EnumerateDirectories(sourceDirectory).ToArray())
+        {
+            var childName = Path.GetFileName(sourceChild);
+            if (normalizeCategories && childName.Length > 0)
+                childName = char.ToUpperInvariant(childName[0]) + childName[1..];
+
+            var destinationChild = Path.Combine(destinationDirectory, childName);
+            MergeImageDirectory(sourceChild, destinationChild, normalizeCategories: false);
+            DeleteDirectoryIfEmpty(sourceChild);
+        }
+    }
+
+    private static void MoveCacheFile(string sourcePath, string destinationPath)
+    {
+        if (!File.Exists(destinationPath))
+        {
+            File.Move(sourcePath, destinationPath);
+            return;
+        }
+
+        var source = new FileInfo(sourcePath);
+        var destination = new FileInfo(destinationPath);
+        if (source.LastWriteTimeUtc > destination.LastWriteTimeUtc)
+            File.Move(sourcePath, destinationPath, overwrite: true);
+        else
+            File.Delete(sourcePath);
+    }
+
+    private static void DeleteDirectoryIfEmpty(string path)
+    {
+        if (Directory.Exists(path) && !Directory.EnumerateFileSystemEntries(path).Any())
+            Directory.Delete(path);
     }
 }

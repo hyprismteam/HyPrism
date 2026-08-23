@@ -41,7 +41,7 @@ public sealed class RemoteImageCacheTests
 
             Assert.Equal(1, onlineHandler.Requests);
             Assert.Single(Directory.EnumerateFiles(
-                Path.Combine(appDirectory, "Cache", "RemoteImages", "news"),
+                Path.Combine(appDirectory, "Cache", "Images", "News"),
                 "*.bin"));
 
             var offlineHandler = new ImageHandler(null);
@@ -57,6 +57,57 @@ public sealed class RemoteImageCacheTests
                     "news",
                     TestContext.Current.CancellationToken));
             Assert.Equal(0, offlineHandler.Requests);
+        }
+        finally
+        {
+            if (Directory.Exists(appDirectory))
+                Directory.Delete(appDirectory, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void LegacyImageCacheIsMigratedAndCategoryNamesAreCapitalized()
+    {
+        var appDirectory = Path.Combine(
+            Path.GetTempPath(),
+            $"hyprism-image-cache-migration-{Guid.NewGuid():N}");
+
+        try
+        {
+            var legacyNewsDirectory = Path.Combine(
+                appDirectory,
+                "Cache",
+                "RemoteImages",
+                "news");
+            var legacyGithubDirectory = Path.Combine(
+                appDirectory,
+                "Cache",
+                "RemoteImages",
+                "github");
+            Directory.CreateDirectory(legacyNewsDirectory);
+            Directory.CreateDirectory(legacyGithubDirectory);
+            File.WriteAllBytes(Path.Combine(legacyNewsDirectory, "cover.bin"), [1, 2]);
+            File.WriteAllBytes(Path.Combine(legacyGithubDirectory, "avatar.bin"), [3, 4]);
+
+            using var client = new HttpClient(new ImageHandler(null));
+            _ = new RemoteImageCache(client, new AppPathConfiguration(appDirectory));
+
+            Assert.True(File.Exists(Path.Combine(
+                appDirectory,
+                "Cache",
+                "Images",
+                "News",
+                "cover.bin")));
+            Assert.True(File.Exists(Path.Combine(
+                appDirectory,
+                "Cache",
+                "Images",
+                "Github",
+                "avatar.bin")));
+            Assert.False(Directory.Exists(Path.Combine(
+                appDirectory,
+                "Cache",
+                "RemoteImages")));
         }
         finally
         {

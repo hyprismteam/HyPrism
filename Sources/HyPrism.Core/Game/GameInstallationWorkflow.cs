@@ -37,7 +37,7 @@ public class GameInstallationWorkflow : IGameInstallationWorkflow
     private readonly IPatchManager _patchManager;
     private readonly IGameLauncher _gameLauncher;
     private readonly HttpClient _httpClient;
-    private readonly string _appDir;
+    private readonly string _downloadsCacheDirectory;
 
     private readonly Dictionary<string, CancellationTokenSource> _downloadOperations =
         new(StringComparer.OrdinalIgnoreCase);
@@ -80,7 +80,8 @@ public class GameInstallationWorkflow : IGameInstallationWorkflow
         _patchManager = patchManager;
         _gameLauncher = gameLauncher;
         _httpClient = httpClient;
-        _appDir = appPath.AppDir;
+        LauncherCachePaths.MigrateLegacyGameDownloads(appPath.AppDir);
+        _downloadsCacheDirectory = LauncherCachePaths.GetGameDownloadsDirectory(appPath.AppDir);
     }
 
     private Config _config => _configStore.Configuration;
@@ -411,7 +412,7 @@ public class GameInstallationWorkflow : IGameInstallationWorkflow
         var receiptPath = Path.Combine(versionPath, ".itch", "receipt.json.gz");
         if (!File.Exists(receiptPath)) return 0;
 
-        var cacheDir = Path.Combine(_appDir, "Cache");
+        var cacheDir = _downloadsCacheDirectory;
         if (!Directory.Exists(cacheDir)) return 0;
 
         var pwrFiles = Directory.GetFiles(cacheDir, $"{branch}_patch_*.pwr")
@@ -521,7 +522,9 @@ public class GameInstallationWorkflow : IGameInstallationWorkflow
                 && versionEntry.PwrUrl.Contains("game-patches.hytale.com")
                 && versionEntry.PwrUrl.Contains("verify=");
 
-            string pwrPath = Path.Combine(_appDir, "Cache", $"{branch}_{(isLatestInstance ? "latest" : "version")}_{targetVersion}.pwr");
+            string pwrPath = Path.Combine(
+                _downloadsCacheDirectory,
+                $"{branch}_{(isLatestInstance ? "latest" : "version")}_{targetVersion}.pwr");
 
             Directory.CreateDirectory(Path.GetDirectoryName(pwrPath)!);
 
@@ -658,7 +661,7 @@ public class GameInstallationWorkflow : IGameInstallationWorkflow
                 authorizationUriPresenter,
                 string.IsNullOrWhiteSpace(instanceId) ? null : instanceId);
 
-            var cacheDir = Path.Combine(_appDir, "Cache");
+            var cacheDir = _downloadsCacheDirectory;
             if (Directory.Exists(cacheDir))
             {
                 foreach (var file in Directory.GetFiles(cacheDir, $"{branch}_*.pwr"))
@@ -689,7 +692,9 @@ public class GameInstallationWorkflow : IGameInstallationWorkflow
 
         for (int baseVersion = targetVersion - 1; baseVersion >= 1; baseVersion--)
         {
-            var bootstrapPath = Path.Combine(_appDir, "Cache", $"{branch}_bootstrap_{baseVersion}.pwr");
+            var bootstrapPath = Path.Combine(
+                _downloadsCacheDirectory,
+                $"{branch}_bootstrap_{baseVersion}.pwr");
             Directory.CreateDirectory(Path.GetDirectoryName(bootstrapPath)!);
 
             try

@@ -25,7 +25,7 @@ public class PatchManager : IPatchManager
     private readonly IInstanceRepository _instances;
     private readonly IProgressReporter _progress;
     private readonly HttpClient _httpClient;
-    private readonly string _appDir;
+    private readonly string _downloadsCacheDirectory;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PatchManager"/> class.
@@ -52,7 +52,8 @@ public class PatchManager : IPatchManager
         _instances = instances;
         _progress = progress;
         _httpClient = httpClient;
-        _appDir = appPath.AppDir;
+        LauncherCachePaths.MigrateLegacyGameDownloads(appPath.AppDir);
+        _downloadsCacheDirectory = LauncherCachePaths.GetGameDownloadsDirectory(appPath.AppDir);
     }
 
     /// <inheritdoc/>
@@ -99,7 +100,9 @@ public class PatchManager : IPatchManager
             _progress.ReportDownloadProgress("update", baseProgress,
                 $"Downloading patch {i + 1}/{patchesToApply.Count} (v{patchVersion})...", null, 0, 0);
 
-            string patchPwrPath = Path.Combine(_appDir, "Cache", $"{branch}_patch_{patchVersion}.pwr");
+            string patchPwrPath = Path.Combine(
+                _downloadsCacheDirectory,
+                $"{branch}_patch_{patchVersion}.pwr");
             Directory.CreateDirectory(Path.GetDirectoryName(patchPwrPath)!);
 
             if (officialDown)
@@ -165,7 +168,9 @@ public class PatchManager : IPatchManager
         if (mirrorUrl == null)
             throw new Exception($"Mirror does not have release v{version} for {os}/{arch}");
 
-        string pwrPath = Path.Combine(_appDir, "Cache", $"{branch}_mirror_full_{version}.pwr");
+        string pwrPath = Path.Combine(
+            _downloadsCacheDirectory,
+            $"{branch}_mirror_full_{version}.pwr");
         Directory.CreateDirectory(Path.GetDirectoryName(pwrPath)!);
 
         Logger.Info("Download", $"Downloading full copy from mirror: {mirrorUrl}");
