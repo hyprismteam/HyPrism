@@ -17,6 +17,7 @@ using AngleSharp.Dom;
 using AngleSharp.Html.Parser;
 using HyPrism.Core;
 using HyPrism.Core.Infrastructure;
+using HyPrism.Desktop.Platform;
 
 namespace HyPrism.Desktop.Features.News;
 
@@ -45,7 +46,7 @@ public sealed class HytaleNewsClient : IHytaleNewsClient
         // Ensure headers are set if they aren't already
         if (!_httpClient.DefaultRequestHeaders.Contains("User-Agent"))
         {
-            _httpClient.DefaultRequestHeaders.Add("User-Agent", "HyPrism/1.0");
+            _httpClient.DefaultRequestHeaders.Add("User-Agent", DesktopApplicationInfo.UserAgent);
         }
     }
     private const string HytaleNewsUrl = "https://hytale.com/news";

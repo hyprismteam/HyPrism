@@ -23,6 +23,7 @@ internal static class Program
     public static void Main(string[] args)
     {
         Logger.CaptureOriginalConsole();
+        LauncherUserAgent.ConfigureVersion(DesktopApplicationInfo.Version);
         DesktopRuntime.Services = Bootstrapper.Initialize(services =>
         {
             services.AddSingleton<DesktopSettingsStore>();

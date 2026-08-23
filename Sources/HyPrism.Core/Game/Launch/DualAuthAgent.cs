@@ -82,7 +82,7 @@ public static class DualAuthAgent
         try
         {
             using var request = new HttpRequestMessage(HttpMethod.Get, GitHubReleasesApiUrl);
-            request.Headers.Add("User-Agent", "HyPrism/1.0");
+            request.Headers.Add("User-Agent", LauncherUserAgent.Value);
             request.Headers.Add("Accept", "application/vnd.github+json");
 
             using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
@@ -192,7 +192,7 @@ public static class DualAuthAgent
         try
         {
             using var dlRequest = new HttpRequestMessage(HttpMethod.Get, downloadUrl);
-            dlRequest.Headers.Add("User-Agent", "HyPrism/1.0");
+            dlRequest.Headers.Add("User-Agent", LauncherUserAgent.Value);
             using var response = await _httpClient.SendAsync(dlRequest, HttpCompletionOption.ResponseHeadersRead, ct);
             response.EnsureSuccessStatusCode();
 

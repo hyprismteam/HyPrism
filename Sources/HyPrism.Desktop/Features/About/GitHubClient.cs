@@ -77,7 +77,7 @@ public sealed class GitHubClient : IGitHubClient
         _httpClient = httpClient;
         _imageCache = imageCache;
         if (!_httpClient.DefaultRequestHeaders.Contains("User-Agent"))
-            _httpClient.DefaultRequestHeaders.Add("User-Agent", "HyPrism-Launcher");
+            _httpClient.DefaultRequestHeaders.Add("User-Agent", DesktopApplicationInfo.UserAgent);
     }
 
     /// <inheritdoc />

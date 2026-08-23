@@ -2,8 +2,10 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 using System.Net;
+using System.Reflection;
 using HyPrism.Core;
 using HyPrism.Desktop.Features.News;
+using HyPrism.Desktop.Platform;
 using Xunit;
 
 namespace HyPrism.Desktop.Tests;
@@ -12,6 +14,22 @@ public sealed class HytaleNewsClientTests
 {
     private const string ArticleUrl =
         "https://hytale.com/news/2026/7/community-spotlight-worldgen-v2";
+
+    [Fact]
+    public void Constructor_UsesVersionGeneratedForDesktopAssembly()
+    {
+        using var handler = new FixtureHttpHandler();
+        using var client = new HttpClient(handler);
+
+        _ = new HytaleNewsClient(client);
+
+        var informationalVersion = typeof(HytaleNewsClient).Assembly
+            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()!
+            .InformationalVersion;
+        var productVersion = informationalVersion.Split('+', 2)[0];
+        Assert.Equal(productVersion, DesktopApplicationInfo.Version);
+        Assert.Equal($"HyPrism/{productVersion}", client.DefaultRequestHeaders.UserAgent.ToString());
+    }
 
     [Fact]
     public async Task GetNewsAsync_ParsesSemanticHytaleArticleCards()

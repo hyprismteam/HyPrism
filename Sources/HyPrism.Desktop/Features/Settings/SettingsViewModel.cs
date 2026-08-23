@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 using System.Collections.ObjectModel;
-using System.Reflection;
 using System.Text.Json;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
@@ -469,7 +468,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         AboutLordiconHint = _localizer["settings.aboutSettings.lordiconHint"];
         AboutCurrentVersionLabel = _localizer["settings.aboutSettings.currentVersion"];
         AboutCurrentVersionHint = _localizer["settings.aboutSettings.currentVersionHint"];
-        AboutCurrentVersion = GetApplicationVersion();
+        AboutCurrentVersion = DesktopApplicationInfo.Version;
         AboutLatestCommitLabel = _localizer["settings.aboutSettings.latestMainCommit"];
         AboutContributorsTitle = _localizer["settings.aboutSettings.contributors"];
         AboutHytaleEulaLabel = _localizer["settings.aboutSettings.hytaleEula"];
@@ -1453,26 +1452,6 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         return separatorIndex >= 0
             ? cultureName[(separatorIndex + 1)..].ToUpperInvariant()
             : cultureName.ToUpperInvariant();
-    }
-
-    private static string GetApplicationVersion()
-    {
-        var assembly = typeof(SettingsViewModel).Assembly;
-        var informationalVersion = assembly
-            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
-            .InformationalVersion;
-        if (!string.IsNullOrWhiteSpace(informationalVersion))
-        {
-            var metadataIndex = informationalVersion.IndexOf('+');
-            return metadataIndex > 0
-                ? informationalVersion[..metadataIndex]
-                : informationalVersion;
-        }
-
-        var version = assembly.GetName().Version;
-        return version is null
-            ? "0.0.0"
-            : $"{version.Major}.{version.Minor}.{Math.Max(0, version.Build)}";
     }
 
     /// <inheritdoc />

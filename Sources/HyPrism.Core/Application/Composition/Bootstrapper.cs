@@ -58,7 +58,7 @@ public static class Bootstrapper
             services.AddSingleton(_ =>
             {
                 var client = new HttpClient { Timeout = TimeSpan.FromMinutes(30) };
-                client.DefaultRequestHeaders.Add("User-Agent", "HyPrism/1.0");
+                client.DefaultRequestHeaders.Add("User-Agent", LauncherUserAgent.Value);
                 return client;
             });
 

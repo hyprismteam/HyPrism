@@ -7,6 +7,8 @@ description: Responsibilities and placement of the public HyPrism.Core contracts
 
 `Bootstrapper.Initialize` registers the default implementations and returns an `IServiceProvider`. A host may add platform-specific registrations through its configuration callback
 
+Desktop reads the launcher version generated from `HyPrism.Desktop.csproj` and configures the shared HTTP identity during startup. News, runtime provisioning, GitHub, and DualAuth requests use `HyPrism/<version>` without a separately maintained version constant
+
 | Feature | Main contracts | Responsibility |
 | --- | --- | --- |
 | Configuration | `IConfigStore` | shared launcher and game configuration persistence |

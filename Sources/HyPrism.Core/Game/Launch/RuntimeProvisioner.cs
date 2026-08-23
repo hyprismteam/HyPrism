@@ -182,7 +182,7 @@ public class RuntimeProvisioner : IRuntimeProvisioner
         // Download with proper headers for Adoptium API
         // Reuse injected HttpClient instead of creating a new one (avoids socket exhaustion)
         using var request = new HttpRequestMessage(HttpMethod.Get, url);
-        request.Headers.Add("User-Agent", "HyPrism/1.0");
+        request.Headers.Add("User-Agent", LauncherUserAgent.Value);
         request.Headers.Add("Accept", "*/*");
 
         using var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
