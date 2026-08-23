@@ -355,6 +355,9 @@ public sealed partial class SettingsView : UserControl
                 if (_usesCompactLayout is false)
                     _downloadSourceTransition.ShowNavigationPane(animate: true);
 
+                if (DataContext is SettingsViewModel viewModel)
+                    viewModel.CompleteMirrorAdditionTransition();
+
                 RestoreDownloadSourceWizardStep();
             });
     }
@@ -364,6 +367,9 @@ public sealed partial class SettingsView : UserControl
         _downloadSourceTransition.ShowOverviewImmediately();
         if (_usesCompactLayout is false)
             _downloadSourceTransition.ShowNavigationPane(animate: false);
+
+        if (DataContext is SettingsViewModel viewModel)
+            viewModel.CompleteMirrorAdditionTransition();
 
         RestoreDownloadSourceWizardStep();
     }

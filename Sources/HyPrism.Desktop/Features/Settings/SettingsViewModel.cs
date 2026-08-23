@@ -604,6 +604,8 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         MirrorAdditionStep = DownloadSourceAdditionStep.ChooseMethod;
         IsAddingMirror = true;
         PendingMirrorDelete = null;
+        MirrorUrl = string.Empty;
+        ManualMirrorJson = string.Empty;
         MirrorOperationError = string.Empty;
         MirrorOperationStatus = string.Empty;
     }
@@ -633,6 +635,13 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     private void CancelAddMirror()
     {
         IsAddingMirror = false;
+    }
+
+    internal void CompleteMirrorAdditionTransition()
+    {
+        if (IsAddingMirror)
+            return;
+
         MirrorAdditionStep = DownloadSourceAdditionStep.None;
         MirrorUrl = string.Empty;
         ManualMirrorJson = string.Empty;
@@ -687,9 +696,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
             _mirrorCatalog.Save(result.Mirror);
             _versionCatalog.ReloadMirrorSources();
 
-            MirrorUrl = string.Empty;
             IsAddingMirror = false;
-            MirrorAdditionStep = DownloadSourceAdditionStep.None;
             MirrorOperationStatus = _localizer["settings.downloads.sourceAdded"];
             ReloadMirrorItems(clearStatus: false);
         }
@@ -744,9 +751,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
             _mirrorCatalog.Save(mirror);
             _versionCatalog.ReloadMirrorSources();
 
-            ManualMirrorJson = string.Empty;
             IsAddingMirror = false;
-            MirrorAdditionStep = DownloadSourceAdditionStep.None;
             MirrorOperationStatus = _localizer["settings.downloads.sourceAdded"];
             ReloadMirrorItems(clearStatus: false);
         }

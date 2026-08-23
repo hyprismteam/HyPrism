@@ -26,6 +26,38 @@ namespace HyPrism.Desktop.Tests;
 
 public sealed class MirrorSettingsViewModelTests
 {
+    [AvaloniaFact]
+    public void CancelAddMirrorKeepsCurrentStepUntilTheVisualTransitionCompletes()
+    {
+        using var viewModel = new SettingsViewModel(
+            CreateSettingsStore().Object,
+            new Mock<IExternalUriLauncher>().Object,
+            new StringLocalizer("en-US"));
+
+        viewModel.ShowAddMirrorCommand.Execute(null);
+        viewModel.BeginManualMirrorAdditionCommand.Execute(null);
+        viewModel.ManualMirrorJson = "source definition";
+        viewModel.CancelAddMirrorCommand.Execute(null);
+
+        Assert.False(viewModel.IsAddingMirror);
+        Assert.True(viewModel.IsManualSourceVisible);
+        Assert.Equal("source definition", viewModel.ManualMirrorJson);
+
+        viewModel.CompleteMirrorAdditionTransition();
+
+        Assert.False(viewModel.IsAddSourceChoiceVisible);
+        Assert.False(viewModel.IsAutomaticSourceVisible);
+        Assert.False(viewModel.IsManualSourceVisible);
+        Assert.Empty(viewModel.ManualMirrorJson);
+
+        viewModel.ShowAddMirrorCommand.Execute(null);
+
+        Assert.True(viewModel.IsAddingMirror);
+        Assert.True(viewModel.IsAddSourceChoiceVisible);
+        Assert.False(viewModel.IsAutomaticSourceVisible);
+        Assert.False(viewModel.IsManualSourceVisible);
+    }
+
     [Fact]
     public async Task AvailabilityProbeDetectsMirrorWithoutVersionsForCurrentPlatform()
     {
@@ -413,8 +445,16 @@ public sealed class MirrorSettingsViewModelTests
                 window.CaptureRenderedFrame()!.Save(wizardRenderPath, PngBitmapEncoderOptions.Default);
 
             viewModel.CancelAddMirrorCommand.Execute(null);
-            await Task.Delay(260);
             Dispatcher.UIThread.RunJobs();
+            Assert.True(manualContent.IsEffectivelyVisible);
+            await Task.Delay(80);
+            Dispatcher.UIThread.RunJobs();
+            Assert.True(manualContent.IsEffectivelyVisible);
+
+            await Task.Delay(180);
+            Dispatcher.UIThread.RunJobs();
+            Assert.False(wizard.IsEffectivelyVisible);
+            Assert.False(viewModel.IsManualSourceVisible);
             Assert.InRange(Math.Abs(categoryDescription.Bounds.Width - categoryDescriptionSize.Width), 0, 0.01);
             Assert.InRange(Math.Abs(categoryDescription.Bounds.Height - categoryDescriptionSize.Height), 0, 0.01);
 
