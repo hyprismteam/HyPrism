@@ -281,6 +281,38 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="BorderThickness" Value="0" />
   </Style>
 
+  <Style Selector="controls|SettingsRow">
+    <Setter Property="MinHeight" Value="66" />
+    <Setter Property="Padding" Value="18,14" />
+    <Setter Property="BorderBrush" Value="{DynamicResource SurfaceBrush}" />
+    <Setter Property="BorderThickness" Value="0,0,0,3" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="{TemplateBinding BorderThickness}"
+                Padding="{TemplateBinding Padding}">
+          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="24">
+            <StackPanel Spacing="3" VerticalAlignment="Center">
+              <TextBlock Classes="uiSettingsLabel" Text="{TemplateBinding Label}" />
+              <TextBlock Classes="uiSettingsHint" Text="{TemplateBinding Hint}" />
+            </StackPanel>
+            <ContentPresenter Grid.Column="1"
+                              Content="{TemplateBinding Content}"
+                              ContentTemplate="{TemplateBinding ContentTemplate}"
+                              HorizontalContentAlignment="Stretch"
+                              VerticalContentAlignment="Center" />
+          </Grid>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+  </Style>
+
+  <Style Selector="controls|SettingsRow.last">
+    <Setter Property="BorderThickness" Value="0" />
+  </Style>
+
   <Style Selector="Button.uiSettingsNavigationRow">
     <Setter Property="MinHeight" Value="66" />
     <Setter Property="Padding" Value="18,14" />
@@ -394,5 +426,52 @@ SPDX-License-Identifier: GPL-3.0-only
 
   <Style Selector="Button.uiSegmentedItem.selected">
     <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+  </Style>
+
+  <Style Selector="Button.wizardAction">
+    <Setter Property="Height" Value="36" />
+    <Setter Property="MinWidth" Value="88" />
+    <Setter Property="Padding" Value="14,0" />
+    <Setter Property="Background" Value="#343539" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="CornerRadius" Value="10" />
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="RenderTransform" Value="{x:Null}" />
+    <Setter Property="Transitions">
+      <Transitions>
+        <BrushTransition Property="Background" Duration="0:0:0.16" />
+        <BrushTransition Property="Foreground" Duration="0:0:0.16" />
+      </Transitions>
+    </Setter>
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Background="{TemplateBinding Background}"
+                CornerRadius="{TemplateBinding CornerRadius}">
+          <ContentPresenter Content="{TemplateBinding Content}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}"
+                            Foreground="{TemplateBinding Foreground}"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            HorizontalContentAlignment="Center"
+                            VerticalContentAlignment="Center" />
+        </Border>
+      </ControlTemplate>
+    </Setter>
+  </Style>
+
+  <Style Selector="Button.wizardAction:pointerover">
+    <Setter Property="Background" Value="#414247" />
+  </Style>
+
+  <Style Selector="Button.wizardAction.create">
+    <Setter Property="Background" Value="{DynamicResource TextPrimaryBrush}" />
+    <Setter Property="Foreground" Value="#111111" />
+  </Style>
+
+  <Style Selector="Button.wizardAction.create:disabled">
+    <Setter Property="Opacity" Value="0.45" />
   </Style>
 </Styles>

@@ -9,7 +9,6 @@ SPDX-License-Identifier: GPL-3.0-only
              xmlns:dashboard="using:HyPrism.Desktop.Features.Dashboard"
              xmlns:instances="using:HyPrism.Desktop.Features.Instances"
              xmlns:controls="using:HyPrism.Desktop.Controls"
-             xmlns:lottie="clr-namespace:Avalonia.Labs.Lottie;assembly=Avalonia.Labs.Lottie"
              xmlns:easing="using:Avalonia.Animation.Easings"
              x:Class="HyPrism.Desktop.Features.Instances.InstancesView"
              x:Name="InstancesRoot"
@@ -41,6 +40,7 @@ SPDX-License-Identifier: GPL-3.0-only
               VerticalAlignment="Center">
           <Path Classes="managedActionSpinner"
                 IsVisible="{Binding !IsManagedInstanceActionRunning}"
+                controls:RotatingVisual.IsActive="{Binding ShouldSpinManagedInstanceAction}"
                 HorizontalAlignment="Center"
                 Data="M10,2 A8,8 0 1 1 2,10" />
           <Path Classes="managedActionIcon running"
@@ -852,27 +852,8 @@ SPDX-License-Identifier: GPL-3.0-only
                     VerticalAlignment="Center"
                     Margin="32"
                     Spacing="12">
-            <Border x:Name="InstanceWizardAnimationAnchor"
-                    Width="64"
-                    Height="64"
-                    HorizontalAlignment="Center">
-              <Border.RenderTransform>
-                <TranslateTransform />
-              </Border.RenderTransform>
-              <Border x:Name="InstanceWizardAnimationMotion">
-                <Border.RenderTransform>
-                  <TranslateTransform />
-                </Border.RenderTransform>
-                <lottie:Lottie x:Name="InstanceWizardAnimation"
-                               Width="64"
-                               Height="64"
-                               Path="/Assets/Lotties/server-reveal.json"
-                               AutoPlay="True"
-                               RepeatCount="1"
-                               OpacityMask="{DynamicResource AccentBrush}"
-                               Stretch="Uniform" />
-              </Border>
-            </Border>
+            <controls:WizardRevealIcon x:Name="InstanceWizardReveal"
+                                       AnimationPath="/Assets/Lotties/server-reveal.json" />
             <TextBlock Text="{Binding NewInstanceTitle}"
                        HorizontalAlignment="Center"
                        FontSize="26"
@@ -965,6 +946,7 @@ SPDX-License-Identifier: GPL-3.0-only
                               HorizontalAlignment="Center"
                               VerticalAlignment="Center"
                               IsHitTestVisible="False"
+                              controls:RotatingVisual.IsActive="{Binding IsVisible, RelativeSource={RelativeSource Self}}"
                               Opacity="0">
                           <Path.Transitions>
                             <Transitions>
@@ -993,11 +975,11 @@ SPDX-License-Identifier: GPL-3.0-only
                         HorizontalAlignment="Center"
                         Margin="0,10,0,0"
                         Spacing="10">
-              <Button Classes="instancesHeaderAction cancel"
+              <Button Classes="wizardAction cancel"
                       Command="{Binding CloseInstanceCreatorCommand}">
                 <TextBlock Text="{Binding BackLabel}" />
               </Button>
-              <Button Classes="instancesHeaderAction create"
+              <Button Classes="wizardAction create"
                       IsEnabled="{Binding CanCreateInstance}"
                       Command="{Binding CreateInstanceCommand}">
                 <TextBlock Text="{Binding CreateInstanceLabel}" />

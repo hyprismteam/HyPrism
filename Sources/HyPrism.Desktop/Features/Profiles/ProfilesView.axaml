@@ -7,7 +7,6 @@ SPDX-License-Identifier: GPL-3.0-only
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:profiles="using:HyPrism.Desktop.Features.Profiles"
              xmlns:controls="using:HyPrism.Desktop.Controls"
-             xmlns:lottie="clr-namespace:Avalonia.Labs.Lottie;assembly=Avalonia.Labs.Lottie"
              xmlns:easing="using:Avalonia.Animation.Easings"
              x:Class="HyPrism.Desktop.Features.Profiles.ProfilesView"
              x:Name="ProfilesRoot"
@@ -168,30 +167,6 @@ SPDX-License-Identifier: GPL-3.0-only
       <Setter Property="Foreground" Value="{DynamicResource DangerSoftBrush}" />
     </Style>
 
-    <Style Selector="Button.profileWizardAction">
-      <Setter Property="Height" Value="36" />
-      <Setter Property="MinWidth" Value="88" />
-      <Setter Property="Padding" Value="14,0" />
-      <Setter Property="Background" Value="#343539" />
-      <Setter Property="BorderThickness" Value="0" />
-      <Setter Property="CornerRadius" Value="10" />
-      <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
-      <Setter Property="FontWeight" Value="SemiBold" />
-      <Setter Property="RenderTransform" Value="{x:Null}" />
-    </Style>
-
-    <Style Selector="Button.profileWizardAction:pointerover">
-      <Setter Property="Background" Value="#414247" />
-    </Style>
-
-    <Style Selector="Button.profileWizardAction.create">
-      <Setter Property="Background" Value="{DynamicResource TextPrimaryBrush}" />
-      <Setter Property="Foreground" Value="#111111" />
-    </Style>
-
-    <Style Selector="Button.profileWizardAction.create:disabled">
-      <Setter Property="Opacity" Value="0.45" />
-    </Style>
   </UserControl.Styles>
 
   <Grid x:Name="ProfilesLayout" ColumnDefinitions="Auto,*" ClipToBounds="True">
@@ -687,10 +662,10 @@ SPDX-License-Identifier: GPL-3.0-only
                   <StackPanel Orientation="Horizontal"
                               HorizontalAlignment="Center"
                               Spacing="10">
-                    <Button Classes="profileWizardAction" Command="{Binding CancelEditingCommand}">
+                    <Button Classes="wizardAction" Command="{Binding CancelEditingCommand}">
                       <TextBlock Text="{Binding CancelLabel}" />
                     </Button>
-                    <Button Classes="profileWizardAction create" Command="{Binding SaveProfileCommand}">
+                    <Button Classes="wizardAction create" Command="{Binding SaveProfileCommand}">
                       <TextBlock Text="{Binding SaveLabel}" />
                     </Button>
                   </StackPanel>
@@ -737,27 +712,8 @@ SPDX-License-Identifier: GPL-3.0-only
                       VerticalAlignment="Center"
                       Margin="32"
                       Spacing="12">
-            <Border x:Name="ProfileWizardAnimationAnchor"
-                    Width="64"
-                    Height="64"
-                    HorizontalAlignment="Center">
-              <Border.RenderTransform>
-                <TranslateTransform />
-              </Border.RenderTransform>
-              <Border x:Name="ProfileWizardAnimationMotion">
-                <Border.RenderTransform>
-                  <TranslateTransform />
-                </Border.RenderTransform>
-                <lottie:Lottie x:Name="ProfileWizardAnimation"
-                               Width="64"
-                               Height="64"
-                               Path="/Assets/Lotties/avatar-reveal.json"
-                               AutoPlay="True"
-                               RepeatCount="1"
-                               OpacityMask="{DynamicResource AccentBrush}"
-                               Stretch="Uniform" />
-              </Border>
-            </Border>
+            <controls:WizardRevealIcon x:Name="ProfileWizardReveal"
+                                       AnimationPath="/Assets/Lotties/avatar-reveal.json" />
 
             <StackPanel x:Name="ProfileCreationChoiceContent"
                         Classes="profileWizardStep"
@@ -835,7 +791,7 @@ SPDX-License-Identifier: GPL-3.0-only
                 </StackPanel>
               </Border>
 
-              <Button Classes="profileWizardAction"
+              <Button Classes="wizardAction"
                       HorizontalAlignment="Center"
                       Margin="0,10,0,0"
                       Command="{Binding CancelCreationCommand}">
@@ -896,11 +852,11 @@ SPDX-License-Identifier: GPL-3.0-only
                           Margin="0,10,0,0"
                           Spacing="10">
                 <Button x:Name="OfflineProfileCreationBackButton"
-                        Classes="profileWizardAction"
+                        Classes="wizardAction"
                         Click="OnReturnToProfileCreationChoiceClicked">
                   <TextBlock Text="{Binding BackLabel}" />
                 </Button>
-                <Button Classes="profileWizardAction create"
+                <Button Classes="wizardAction create"
                         IsEnabled="{Binding CanCreateOfflineProfile}"
                         Command="{Binding CreateOfflineProfileCommand}">
                   <TextBlock Text="{Binding CreateLabel}" />
@@ -947,12 +903,12 @@ SPDX-License-Identifier: GPL-3.0-only
                           HorizontalAlignment="Center"
                           Margin="0,10,0,0"
                           Spacing="10">
-                <Button Classes="profileWizardAction"
+                <Button Classes="wizardAction"
                         IsEnabled="{Binding !IsAuthenticating}"
                         Click="OnReturnToProfileCreationChoiceClicked">
                   <TextBlock Text="{Binding BackLabel}" />
                 </Button>
-                <Button Classes="profileWizardAction create"
+                <Button Classes="wizardAction create"
                         IsEnabled="{Binding !IsAuthenticating}"
                         Command="{Binding SignInWithHytaleCommand}">
                   <Grid>
@@ -1019,10 +975,10 @@ SPDX-License-Identifier: GPL-3.0-only
                      FontWeight="SemiBold"
                      TextTrimming="CharacterEllipsis" />
           <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
-            <Button Classes="profileWizardAction" Command="{Binding CancelProfileDeletionCommand}">
+            <Button Classes="wizardAction" Command="{Binding CancelProfileDeletionCommand}">
               <TextBlock Text="{Binding CancelLabel}" />
             </Button>
-            <Button Classes="profileWizardAction create"
+            <Button Classes="wizardAction create"
                     Background="{DynamicResource DangerBrush}"
                     Command="{Binding ConfirmProfileDeletionCommand}">
               <TextBlock Text="{Binding DeleteLabel}" />

@@ -10,7 +10,7 @@ namespace HyPrism.Desktop.Controls;
 
 public sealed partial class FadingTextBlock : UserControl
 {
-    private static readonly TimeSpan TransitionDuration = TimeSpan.FromMilliseconds(250);
+    private static readonly TimeSpan TransitionDuration = MotionDurations.TextReplacement;
 
     public static readonly StyledProperty<string?> TextProperty =
         AvaloniaProperty.Register<FadingTextBlock, string?>(nameof(Text));

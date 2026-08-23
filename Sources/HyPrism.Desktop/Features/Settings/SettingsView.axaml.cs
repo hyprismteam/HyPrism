@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 using System.ComponentModel;
-using System.Diagnostics;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
@@ -11,70 +10,38 @@ using Avalonia.Media;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using HyPrism.Desktop.Controls;
-using ShapePath = Avalonia.Controls.Shapes.Path;
 
 namespace HyPrism.Desktop.Features.Settings;
 
 public sealed partial class SettingsView : UserControl
 {
-    private const double WideLayoutThreshold = 940;
-    private const double WideContentMaxWidth = 720;
-
-    private bool? _usesCompactLayout;
-    private bool _compactContentOpen;
-    private bool _returnToCompactContent;
     private double _backgroundPickerWidth;
-    private readonly Stopwatch _availabilitySpinnerClock = new();
-    private readonly DispatcherTimer _availabilitySpinnerTimer;
-    private readonly WizardScreenTransition _downloadSourceTransition;
+    private readonly WizardHost _downloadSourceWizard;
+    private readonly AdaptiveMasterDetailHost _layoutHost;
     private INotifyPropertyChanged? _viewModel;
     private bool _isDownloadSourceWizardVisible;
-
-    private TranslateTransform MainTranslation
-        => (TranslateTransform)SettingsMain.RenderTransform!;
 
     public SettingsView()
     {
         InitializeComponent();
-        _downloadSourceTransition = new WizardScreenTransition(
+        _downloadSourceWizard = new WizardHost(
             SettingsOverview,
             DownloadSourceWizardScreen,
             SettingsCategoryRail,
-            DownloadSourceWizardAnimationAnchor,
-            DownloadSourceWizardAnimationMotion);
-        _availabilitySpinnerTimer = new DispatcherTimer
-        {
-            Interval = TimeSpan.FromMilliseconds(16)
-        };
-        _availabilitySpinnerTimer.Tick += OnAvailabilitySpinnerTick;
-        AttachedToVisualTree += (_, _) =>
-        {
-            _availabilitySpinnerClock.Restart();
-            _availabilitySpinnerTimer.Start();
-        };
-        DetachedFromVisualTree += (_, _) =>
-        {
-            _availabilitySpinnerTimer.Stop();
-            _availabilitySpinnerClock.Reset();
-        };
+            DownloadSourceWizardReveal.Anchor,
+            DownloadSourceWizardReveal.MotionTarget,
+            DownloadSourceWizardReveal.Animation,
+            SourceAdditionChoiceContent,
+            AutomaticSourceAdditionContent,
+            ManualSourceAdditionContent);
+        _layoutHost = new AdaptiveMasterDetailHost(
+            SettingsLayout,
+            SettingsCategoryRail,
+            SettingsMain,
+            CompactSettingsToolbar,
+            SettingsContentHost,
+            compact => SettingsCategoryRail.Classes.Set("compact", compact));
         DataContextChanged += OnDataContextChanged;
-    }
-
-    private void OnAvailabilitySpinnerTick(object? sender, EventArgs args)
-    {
-        if (!IsEffectivelyVisible)
-            return;
-
-        const double rotationDurationMilliseconds = 800;
-        var angle = _availabilitySpinnerClock.Elapsed.TotalMilliseconds % rotationDurationMilliseconds /
-                    rotationDurationMilliseconds * 360;
-        foreach (var spinner in this.GetVisualDescendants()
-                     .OfType<ShapePath>()
-                     .Where(path => path.Classes.Contains("sourceAvailabilitySpinner")))
-        {
-            spinner.RenderTransform ??= new RotateTransform();
-            ((RotateTransform)spinner.RenderTransform).Angle = angle;
-        }
     }
 
     private void OnDataContextChanged(object? sender, EventArgs args)
@@ -111,77 +78,31 @@ public sealed partial class SettingsView : UserControl
 
     private void OnSettingsViewSizeChanged(object? sender, SizeChangedEventArgs e)
     {
-        var compact = e.NewSize.Width < WideLayoutThreshold;
-        if (_usesCompactLayout != compact)
-        {
-            if (compact)
-            {
-                _compactContentOpen = _returnToCompactContent;
-            }
-            else if (_usesCompactLayout is true)
-            {
-                _returnToCompactContent = _compactContentOpen;
-            }
-
-            _usesCompactLayout = compact;
-            ApplyLayoutMode(compact, e.NewSize.Width);
-        }
-        else if (compact && !_compactContentOpen)
-        {
-            SetMainOffsetWithoutTransition(e.NewSize.Width);
-        }
-
-        SettingsContentHost.Margin = compact
-            ? new Thickness(24, 16, 24, 36)
-            : new Thickness(32, 28, 32, 40);
-        SettingsContentHost.MaxWidth = compact
-            ? double.PositiveInfinity
-            : WideContentMaxWidth;
-    }
-
-    private void ApplyLayoutMode(bool compact, double width)
-    {
-        SettingsCategoryRail.Classes.Set("compact", compact);
+        _layoutHost.Update(e.NewSize.Width, hasMaster: true);
         var viewModel = DataContext as SettingsViewModel;
         if (viewModel is not null)
-            viewModel.IsCompactLayout = compact;
+            viewModel.IsCompactLayout = _layoutHost.IsCompact;
 
-        CompactSettingsToolbar.IsVisible = compact;
-        if (compact)
+        if (_layoutHost.IsCompact)
         {
-            _downloadSourceTransition.ResetNavigationPane();
-            SettingsLayout.ColumnDefinitions[0].Width = new GridLength(1, GridUnitType.Star);
-            SettingsLayout.ColumnDefinitions[1].Width = new GridLength(0);
-            Grid.SetColumn(SettingsMain, 0);
-            SettingsCategoryRail.IsHitTestVisible = !_compactContentOpen;
-            SettingsMain.IsHitTestVisible = _compactContentOpen;
-            SetMainOffsetWithoutTransition(_compactContentOpen ? 0 : width);
+            _downloadSourceWizard.ResetNavigationPane();
             return;
         }
 
-        SettingsLayout.ColumnDefinitions[0].Width = GridLength.Auto;
-        SettingsLayout.ColumnDefinitions[1].Width = new GridLength(1, GridUnitType.Star);
-        Grid.SetColumn(SettingsMain, 1);
         if (viewModel?.IsAddingMirror == true)
-            _downloadSourceTransition.HideNavigationPane(animate: false);
+            _downloadSourceWizard.HideNavigationPane(animate: false);
         else
-            _downloadSourceTransition.ShowNavigationPane(animate: false);
-        SettingsCategoryRail.IsHitTestVisible = true;
-        SettingsMain.IsHitTestVisible = true;
-        SetMainOffsetWithoutTransition(0);
+            _downloadSourceWizard.ShowNavigationPane(animate: false);
     }
 
     private void OnSettingsCategoryClicked(object? sender, RoutedEventArgs e)
     {
-        _returnToCompactContent = true;
+        _layoutHost.RememberDetail();
         Dispatcher.UIThread.Post(SettingsContent.ScrollToHome, DispatcherPriority.Background);
-        if (_usesCompactLayout is not true)
+        if (!_layoutHost.IsCompact)
             return;
 
-        _compactContentOpen = true;
-        SettingsCategoryRail.IsHitTestVisible = false;
-        SettingsMain.IsHitTestVisible = true;
-        MainTranslation.X = 0;
+        _layoutHost.OpenDetail();
     }
 
     private void OnCompactSettingsBackClicked(object? sender, RoutedEventArgs e)
@@ -209,7 +130,7 @@ public sealed partial class SettingsView : UserControl
         if (DataContext is not SettingsViewModel viewModel)
             return;
 
-        await _downloadSourceTransition.SwitchStepAsync(
+        await _downloadSourceWizard.SwitchStepAsync(
             SourceAdditionChoiceContent,
             AutomaticSourceAdditionContent,
             forward: true,
@@ -222,7 +143,7 @@ public sealed partial class SettingsView : UserControl
         if (DataContext is not SettingsViewModel viewModel)
             return;
 
-        await _downloadSourceTransition.SwitchStepAsync(
+        await _downloadSourceWizard.SwitchStepAsync(
             SourceAdditionChoiceContent,
             ManualSourceAdditionContent,
             forward: true,
@@ -238,7 +159,7 @@ public sealed partial class SettingsView : UserControl
         var outgoingStep = viewModel.IsManualSourceVisible
             ? ManualSourceAdditionContent
             : AutomaticSourceAdditionContent;
-        await _downloadSourceTransition.SwitchStepAsync(
+        await _downloadSourceWizard.SwitchStepAsync(
             outgoingStep,
             SourceAdditionChoiceContent,
             forward: false,
@@ -310,93 +231,40 @@ public sealed partial class SettingsView : UserControl
             return true;
         }
 
-        if (_usesCompactLayout is not true || !_compactContentOpen)
-            return false;
-
-        _returnToCompactContent = false;
-        _compactContentOpen = false;
-        SettingsMain.IsHitTestVisible = false;
-        SettingsCategoryRail.IsHitTestVisible = true;
-        MainTranslation.X = Bounds.Width;
-        return true;
-    }
-
-    private void SetMainOffsetWithoutTransition(double offset)
-    {
-        var transitions = MainTranslation.Transitions;
-        MainTranslation.Transitions = null;
-        MainTranslation.X = offset;
-        MainTranslation.Transitions = transitions;
+        return _layoutHost.TryCloseDetail();
     }
 
     private async Task PlayDownloadSourceWizardOpenAsync()
     {
-        RestoreDownloadSourceWizardStep();
-        if (_usesCompactLayout is false)
-            _downloadSourceTransition.HideNavigationPane(animate: true);
+        if (!_layoutHost.IsCompact)
+            _downloadSourceWizard.HideNavigationPane(animate: true);
 
-        await _downloadSourceTransition.OpenAsync(
-            () => DataContext is SettingsViewModel { IsAddingMirror: true },
-            RestartDownloadSourceWizardAnimation);
-    }
-
-    private void RestartDownloadSourceWizardAnimation()
-    {
-        DownloadSourceWizardAnimation.SeekToProgress(0);
-        DownloadSourceWizardAnimation.Start();
+        await _downloadSourceWizard.OpenAsync(
+            () => DataContext is SettingsViewModel { IsAddingMirror: true });
     }
 
     private async Task PlayDownloadSourceWizardCloseAsync()
     {
-        await _downloadSourceTransition.CloseAsync(
+        await _downloadSourceWizard.CloseAsync(
             () => DataContext is SettingsViewModel { IsAddingMirror: false },
             () =>
             {
-                if (_usesCompactLayout is false)
-                    _downloadSourceTransition.ShowNavigationPane(animate: true);
+                if (!_layoutHost.IsCompact)
+                    _downloadSourceWizard.ShowNavigationPane(animate: true);
 
                 if (DataContext is SettingsViewModel viewModel)
                     viewModel.CompleteMirrorAdditionTransition();
-
-                RestoreDownloadSourceWizardStep();
             });
     }
 
     private void HideDownloadSourceWizardImmediately()
     {
-        _downloadSourceTransition.ShowOverviewImmediately();
-        if (_usesCompactLayout is false)
-            _downloadSourceTransition.ShowNavigationPane(animate: false);
-
-        if (DataContext is SettingsViewModel viewModel)
-            viewModel.CompleteMirrorAdditionTransition();
-
-        RestoreDownloadSourceWizardStep();
-    }
-
-    private void RestoreDownloadSourceWizardStep()
-    {
-        if (DataContext is SettingsViewModel { IsAutomaticSourceVisible: true })
+        _downloadSourceWizard.ShowOverviewImmediately(() =>
         {
-            _downloadSourceTransition.ShowStepImmediately(
-                AutomaticSourceAdditionContent,
-                SourceAdditionChoiceContent,
-                ManualSourceAdditionContent);
-            return;
-        }
-
-        if (DataContext is SettingsViewModel { IsManualSourceVisible: true })
-        {
-            _downloadSourceTransition.ShowStepImmediately(
-                ManualSourceAdditionContent,
-                SourceAdditionChoiceContent,
-                AutomaticSourceAdditionContent);
-            return;
-        }
-
-        _downloadSourceTransition.ShowStepImmediately(
-            SourceAdditionChoiceContent,
-            AutomaticSourceAdditionContent,
-            ManualSourceAdditionContent);
+            if (DataContext is SettingsViewModel viewModel)
+                viewModel.CompleteMirrorAdditionTransition();
+        });
+        if (!_layoutHost.IsCompact)
+            _downloadSourceWizard.ShowNavigationPane(animate: false);
     }
 }

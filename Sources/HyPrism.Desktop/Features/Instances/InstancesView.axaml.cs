@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 using System.ComponentModel;
-using System.Diagnostics;
 using Avalonia;
 using Avalonia.Animation;
 using Avalonia.Controls;
@@ -10,62 +9,53 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Threading;
-using Avalonia.VisualTree;
 using HyPrism.Desktop.Controls;
 using HyPrism.Desktop.Features.Dashboard;
 using HyPrism.Desktop.Shell;
-using ShapePath = Avalonia.Controls.Shapes.Path;
 
 namespace HyPrism.Desktop.Features.Instances;
 
 public sealed partial class InstancesView : UserControl
 {
-    private const double WideLayoutThreshold = 940;
-    private static readonly TimeSpan CompactContentTransitionDuration = TimeSpan.FromMilliseconds(320);
-    private static readonly TimeSpan CompactSectionSlideDuration = TimeSpan.FromMilliseconds(300);
-    private static readonly TimeSpan WideSectionSlideDuration = TimeSpan.FromMilliseconds(180);
-    private static readonly TimeSpan VersionLoadingFadeDuration = TimeSpan.FromMilliseconds(170);
-    private readonly Stopwatch _versionSpinnerClock = new();
-    private readonly DispatcherTimer _versionSpinnerTimer;
-    private readonly Stopwatch _actionSpinnerClock = new();
-    private readonly DispatcherTimer _actionSpinnerTimer;
-    private readonly WizardScreenTransition _creatorTransition;
+    private static readonly TimeSpan CompactContentTransitionDuration = MotionDurations.CompactPageSlide;
+    private static readonly TimeSpan CompactSectionSlideDuration = MotionDurations.CompactSectionSlide;
+    private static readonly TimeSpan WideSectionSlideDuration = MotionDurations.ContentFade;
+    private static readonly TimeSpan VersionLoadingFadeDuration = MotionDurations.VersionLoadingFade;
+    private readonly WizardHost _creatorWizard;
+    private readonly AdaptiveMasterDetailHost _layoutHost;
+    private readonly ReorderableListController _instanceReorder;
     private INotifyPropertyChanged? _viewModel;
-    private bool? _usesCompactLayout;
-    private bool _compactContentOpen;
-    private bool _returnToCompactContent;
     private bool _creatorOpenedFromCompactList;
     private int _creatorNavigationRevision;
     private CancellationTokenSource? _sectionAnimationCancellation;
     private CancellationTokenSource? _versionLoadingCancellation;
-    private Control? _instanceDragHandle;
-    private Button? _instanceDragRow;
-    private string? _draggedInstanceId;
-    private Point _instanceDragStart;
-    private Point _instanceDragStartInLayout;
-    private Point _instanceDragPreviewOrigin;
-    private int _instanceDragTargetIndex = -1;
-    private bool _isInstanceDragActive;
 
     public InstancesView()
     {
         InitializeComponent();
-        _creatorTransition = new WizardScreenTransition(
+        _creatorWizard = new WizardHost(
             InstancesOverview,
             InstanceCreatorScreen,
             InstancesListPane,
-            InstanceWizardAnimationAnchor,
-            InstanceWizardAnimationMotion);
-        _versionSpinnerTimer = new DispatcherTimer
-        {
-            Interval = TimeSpan.FromMilliseconds(16)
-        };
-        _versionSpinnerTimer.Tick += OnVersionSpinnerTick;
-        _actionSpinnerTimer = new DispatcherTimer
-        {
-            Interval = TimeSpan.FromMilliseconds(16)
-        };
-        _actionSpinnerTimer.Tick += OnActionSpinnerTick;
+            InstanceWizardReveal.Anchor,
+            InstanceWizardReveal.MotionTarget,
+            InstanceWizardReveal.Animation);
+        _layoutHost = new AdaptiveMasterDetailHost(
+            InstancesLayout,
+            InstancesListPane,
+            InstancesContent,
+            CompactInstanceToolbar,
+            InstanceHubContent,
+            compact =>
+            {
+                Classes.Set("compact", compact);
+                Classes.Set("wide", !compact);
+            });
+        _instanceReorder = new ReorderableListController(
+            InstancesItems,
+            InstancesLayout,
+            InstanceDragPreview,
+            InstancesListPane);
         SizeChanged += (_, args) => UpdateLayout(args.NewSize.Width);
         DataContextChanged += OnDataContextChanged;
     }
@@ -82,7 +72,6 @@ public sealed partial class InstancesView : UserControl
         UpdateLayout(Bounds.Width);
         UpdateBranchIndicator(animate: false);
         ApplyVersionLoadingStateImmediately();
-        UpdateActionSpinnerState();
         ApplySectionStateImmediately();
 
         if (DataContext is MainWindowViewModel { IsInstanceCreatorOpen: true })
@@ -123,11 +112,6 @@ public sealed partial class InstancesView : UserControl
                 _ = PlayCreatorCloseAnimationAsync();
         }
 
-        if (args.PropertyName is nameof(MainWindowViewModel.IsManagedInstanceActionActive) or
-            nameof(MainWindowViewModel.IsManagedInstanceActionRunning))
-        {
-            UpdateActionSpinnerState();
-        }
     }
 
     private void UpdateLayout(double width)
@@ -135,42 +119,18 @@ public sealed partial class InstancesView : UserControl
         if (width <= 0 || DataContext is not MainWindowViewModel viewModel)
             return;
 
-        var compact = width < WideLayoutThreshold;
         var hasInstances = viewModel.HasInstances;
-        Classes.Set("compact", compact);
-        Classes.Set("wide", !compact);
-
-        var layoutModeChanged = _usesCompactLayout != compact;
-        if (layoutModeChanged)
-        {
-            if (compact)
-            {
-                _compactContentOpen = _returnToCompactContent;
-            }
-            else if (_usesCompactLayout is true)
-            {
-                _returnToCompactContent = _compactContentOpen;
-            }
-
-            _usesCompactLayout = compact;
-        }
+        var wasCompact = _layoutHost.IsCompact;
+        _layoutHost.Update(width, hasInstances);
+        var layoutModeChanged = wasCompact != _layoutHost.IsCompact;
 
         if (!hasInstances)
         {
             EnsureSingleLayoutRow();
-            _creatorTransition.ResetNavigationPane();
-            InstancesLayout.ColumnDefinitions[0].Width = new GridLength(1, GridUnitType.Star);
-            InstancesLayout.ColumnDefinitions[1].Width = new GridLength(0);
+            _creatorWizard.ResetNavigationPane();
             InstancesLayout.RowDefinitions[0].Height = new GridLength(1, GridUnitType.Star);
-            Grid.SetColumn(InstancesContent, 0);
-            Grid.SetColumnSpan(InstancesContent, 2);
             Grid.SetRow(InstancesContent, 0);
             Grid.SetRowSpan(InstancesContent, 1);
-            Grid.SetColumnSpan(InstancesContent, 2);
-            InstancesListPane.IsHitTestVisible = false;
-            InstancesContent.IsHitTestVisible = true;
-            CompactInstanceToolbar.IsVisible = false;
-            SetContentOffsetWithoutTransition(0);
             if (layoutModeChanged)
                 ApplySectionStateImmediately();
             return;
@@ -182,40 +142,19 @@ public sealed partial class InstancesView : UserControl
         Grid.SetRow(InstancesContent, 0);
         Grid.SetRowSpan(InstancesContent, 1);
 
-        InstanceHubContent.Margin = compact
-            ? new Thickness(24, 16, 24, 36)
-            : new Thickness(32, 28, 32, 40);
-        InstanceHubContent.MaxWidth = compact ? double.PositiveInfinity : 720;
-        CompactInstanceToolbar.IsVisible = compact;
-
-        if (!compact)
+        if (!_layoutHost.IsCompact)
         {
-            InstancesLayout.ColumnDefinitions[0].Width = GridLength.Auto;
-            InstancesLayout.ColumnDefinitions[1].Width = new GridLength(1, GridUnitType.Star);
-            Grid.SetColumn(InstancesListPane, 0);
-            Grid.SetColumn(InstancesContent, 1);
-            Grid.SetColumnSpan(InstancesContent, 1);
             if (viewModel.IsInstanceCreatorOpen)
-                _creatorTransition.HideNavigationPane(animate: false);
+                _creatorWizard.HideNavigationPane(animate: false);
             else
-                _creatorTransition.ShowNavigationPane(animate: false);
-            InstancesContent.IsHitTestVisible = true;
-            SetContentOffsetWithoutTransition(0);
+                _creatorWizard.ShowNavigationPane(animate: false);
             if (layoutModeChanged)
                 ApplySectionStateImmediately();
             return;
         }
 
-        _creatorTransition.ResetNavigationPane();
-        InstancesLayout.ColumnDefinitions[0].Width = new GridLength(1, GridUnitType.Star);
-        InstancesLayout.ColumnDefinitions[1].Width = new GridLength(0);
-        Grid.SetColumn(InstancesListPane, 0);
-        Grid.SetColumn(InstancesContent, 0);
-        Grid.SetColumnSpan(InstancesContent, 2);
+        _creatorWizard.ResetNavigationPane();
         Grid.SetRowSpan(InstancesContent, 1);
-        InstancesListPane.IsHitTestVisible = !_compactContentOpen;
-        InstancesContent.IsHitTestVisible = _compactContentOpen;
-        SetContentOffsetWithoutTransition(_compactContentOpen ? 0 : width);
         if (layoutModeChanged)
             ApplySectionStateImmediately();
     }
@@ -228,11 +167,11 @@ public sealed partial class InstancesView : UserControl
 
     private void OnInstanceClicked(object? sender, RoutedEventArgs args)
     {
-        _returnToCompactContent = true;
-        if (_usesCompactLayout is not true)
+        _layoutHost.RememberDetail();
+        if (!_layoutHost.IsCompact)
             return;
 
-        OpenCompactContent();
+        _layoutHost.OpenDetail();
     }
 
     private void OnManagedInstanceActionPointerExited(object? sender, PointerEventArgs args)
@@ -243,118 +182,40 @@ public sealed partial class InstancesView : UserControl
 
     private void OnInstanceDragHandlePressed(object? sender, PointerPressedEventArgs args)
     {
-        if (sender is not Border { DataContext: InstanceItemViewModel instance } handle ||
-            !args.GetCurrentPoint(handle).Properties.IsLeftButtonPressed)
-        {
+        if (sender is not Border { DataContext: InstanceItemViewModel instance } handle)
             return;
-        }
 
-        _instanceDragHandle = handle;
-        _instanceDragRow = handle.FindAncestorOfType<Button>();
-        _draggedInstanceId = instance.Id;
-        _instanceDragStart = args.GetPosition(InstancesItems);
-        _instanceDragStartInLayout = args.GetPosition(InstancesLayout);
-        _instanceDragPreviewOrigin = _instanceDragRow?.TranslatePoint(default, InstancesLayout) ?? default;
-        _instanceDragTargetIndex = -1;
-        _isInstanceDragActive = false;
-        InstanceDragPreviewName.Text = instance.Name;
-        InstanceDragPreviewBranch.Text = instance.Branch;
-        InstanceDragPreview.Width = _instanceDragRow?.Bounds.Width ?? InstancesListPane.Bounds.Width;
-        InstanceDragPreview.Height = _instanceDragRow?.Bounds.Height ?? 66;
-        args.Pointer.Capture(handle);
-        args.Handled = true;
+        _instanceReorder.Begin(handle, instance.Id, args, 66, () =>
+        {
+            InstanceDragPreviewName.Text = instance.Name;
+            InstanceDragPreviewBranch.Text = instance.Branch;
+        });
     }
 
     private void OnInstanceDragHandleMoved(object? sender, PointerEventArgs args)
-    {
-        if (_instanceDragHandle is null || _draggedInstanceId is null)
-            return;
-
-        var position = args.GetPosition(InstancesItems);
-        if (!_isInstanceDragActive)
-        {
-            var delta = position - _instanceDragStart;
-            if (Math.Abs(delta.X) + Math.Abs(delta.Y) < 5)
-                return;
-
-            _isInstanceDragActive = true;
-            _instanceDragRow?.Classes.Add("dragging");
-            InstanceDragPreview.IsVisible = true;
-        }
-
-        UpdateInstanceDragPreview(args.GetPosition(InstancesLayout));
-        _instanceDragTargetIndex = GetInstanceDropTargetIndex(position.Y);
-        args.Handled = true;
-    }
+        => _instanceReorder.Move(args);
 
     private void OnInstanceDragHandleReleased(object? sender, PointerReleasedEventArgs args)
     {
-        if (_isInstanceDragActive &&
-            _instanceDragTargetIndex >= 0 &&
-            _draggedInstanceId is not null &&
-            DataContext is MainWindowViewModel viewModel)
-        {
-            viewModel.MoveInstance(_draggedInstanceId, _instanceDragTargetIndex);
-        }
-
-        args.Pointer.Capture(null);
-        ResetInstanceDragState();
-        args.Handled = true;
-    }
-
-    private int GetInstanceDropTargetIndex(double pointerY)
-    {
-        var rows = InstancesItems.GetVisualDescendants()
-            .OfType<Button>()
-            .Where(button => button.Classes.Contains("instancesListItem"))
-            .Select(button => new
+        _instanceReorder.Complete(
+            args,
+            (instanceId, targetIndex) =>
             {
-                Button = button,
-                Origin = button.TranslatePoint(default, InstancesItems)
-            })
-            .Where(item => item.Origin.HasValue)
-            .OrderBy(item => item.Origin!.Value.Y)
-            .ToList();
-
-        for (var index = 0; index < rows.Count; index++)
-        {
-            var midpoint = rows[index].Origin!.Value.Y + rows[index].Button.Bounds.Height / 2;
-            if (pointerY < midpoint)
-                return index;
-        }
-
-        return Math.Max(0, rows.Count - 1);
-    }
-
-    private void UpdateInstanceDragPreview(Point pointerPosition)
-    {
-        var transform = (TranslateTransform)InstanceDragPreview.RenderTransform!;
-        transform.X =
-            _instanceDragPreviewOrigin.X + pointerPosition.X - _instanceDragStartInLayout.X + 10;
-        transform.Y =
-            _instanceDragPreviewOrigin.Y + pointerPosition.Y - _instanceDragStartInLayout.Y + 8;
-    }
-
-    private void ResetInstanceDragState()
-    {
-        _instanceDragRow?.Classes.Remove("dragging");
-        InstanceDragPreview.IsVisible = false;
-        InstanceDragPreviewName.Text = string.Empty;
-        InstanceDragPreviewBranch.Text = string.Empty;
-        _instanceDragHandle = null;
-        _instanceDragRow = null;
-        _draggedInstanceId = null;
-        _instanceDragTargetIndex = -1;
-        _isInstanceDragActive = false;
+                if (DataContext is MainWindowViewModel viewModel)
+                    viewModel.MoveInstance(instanceId, targetIndex);
+            },
+            () =>
+            {
+                InstanceDragPreviewName.Text = string.Empty;
+                InstanceDragPreviewBranch.Text = string.Empty;
+            });
     }
 
     private void OnOpenCreatorClicked(object? sender, RoutedEventArgs args)
     {
-        _creatorOpenedFromCompactList = _usesCompactLayout is true &&
-                                        !_compactContentOpen &&
-                                        DataContext is MainWindowViewModel { HasInstances: true };
-        if (_usesCompactLayout is true && !_creatorOpenedFromCompactList)
-            OpenCompactContent();
+        _creatorOpenedFromCompactList = _layoutHost.IsOpeningWizardFromMaster();
+        if (_layoutHost.IsCompact && !_creatorOpenedFromCompactList)
+            _layoutHost.OpenDetail();
 
         if (DataContext is MainWindowViewModel viewModel)
             viewModel.OpenInstanceCreatorCommand.Execute(null);
@@ -373,21 +234,12 @@ public sealed partial class InstancesView : UserControl
     private void OnToggleCompactInstanceMenuClicked(object? sender, RoutedEventArgs args)
         => CompactInstanceMenuPopup.IsRequestedOpen = !CompactInstanceMenuPopup.IsRequestedOpen;
 
-    private void OpenCompactContent()
-    {
-        _returnToCompactContent = true;
-        _compactContentOpen = true;
-        InstancesListPane.IsHitTestVisible = false;
-        InstancesContent.IsHitTestVisible = true;
-        ((TranslateTransform)InstancesContent.RenderTransform!).X = 0;
-    }
-
     private void OnCompactInstanceBackClicked(object? sender, RoutedEventArgs args)
         => TryCloseCompactContent();
 
     public bool TryCloseCompactContent()
     {
-        if (_usesCompactLayout is not true || !_compactContentOpen)
+        if (!_layoutHost.IsCompact || !_layoutHost.IsDetailOpen)
             return false;
 
         if (DataContext is MainWindowViewModel { IsInstanceCreatorOpen: true } viewModel)
@@ -396,12 +248,7 @@ public sealed partial class InstancesView : UserControl
             return true;
         }
 
-        _returnToCompactContent = false;
-        _compactContentOpen = false;
-        InstancesContent.IsHitTestVisible = false;
-        InstancesListPane.IsHitTestVisible = true;
-        ((TranslateTransform)InstancesContent.RenderTransform!).X = Bounds.Width;
-        return true;
+        return _layoutHost.TryCloseDetail();
     }
 
     public bool TryNavigateBack()
@@ -415,85 +262,60 @@ public sealed partial class InstancesView : UserControl
         return TryCloseCompactContent();
     }
 
-    private void SetContentOffsetWithoutTransition(double offset)
-    {
-        var translation = (TranslateTransform)InstancesContent.RenderTransform!;
-        var transitions = translation.Transitions;
-        translation.Transitions = null;
-        translation.X = offset;
-        translation.Transitions = transitions;
-    }
-
     private async Task PlayCreatorOpenAnimationAsync()
     {
         var revision = ++_creatorNavigationRevision;
-        if (_creatorOpenedFromCompactList && _usesCompactLayout is true)
+        if (_creatorOpenedFromCompactList && _layoutHost.IsCompact)
         {
-            _creatorTransition.ShowWizardImmediately();
-            await Dispatcher.UIThread.InvokeAsync(static () => { }, DispatcherPriority.Loaded);
+            await _creatorWizard.ShowWizardForCompactEntryAsync();
             if (revision != _creatorNavigationRevision ||
                 DataContext is not MainWindowViewModel { IsInstanceCreatorOpen: true })
             {
                 return;
             }
 
-            RestartInstanceWizardAnimation();
-            OpenCompactContent();
+            _layoutHost.OpenDetail();
             UpdateBranchIndicator(animate: false);
             return;
         }
 
-        if (_usesCompactLayout is false &&
+        if (!_layoutHost.IsCompact &&
             DataContext is MainWindowViewModel { HasInstances: true })
         {
-            _creatorTransition.HideNavigationPane(animate: true);
+            _creatorWizard.HideNavigationPane(animate: true);
         }
 
-        await _creatorTransition.OpenAsync(
+        await _creatorWizard.OpenAsync(
             () => DataContext is MainWindowViewModel { IsInstanceCreatorOpen: true },
-            () =>
-            {
-                RestartInstanceWizardAnimation();
-                UpdateBranchIndicator(animate: false);
-            });
-    }
-
-    private void RestartInstanceWizardAnimation()
-    {
-        InstanceWizardAnimation.SeekToProgress(0);
-        InstanceWizardAnimation.Start();
+            () => UpdateBranchIndicator(animate: false));
     }
 
     private async Task PlayCreatorCloseAnimationAsync()
     {
         var revision = ++_creatorNavigationRevision;
-        if (_creatorOpenedFromCompactList && _usesCompactLayout is true)
+        if (_creatorOpenedFromCompactList && _layoutHost.IsCompact)
         {
-            _creatorTransition.Cancel();
-            _returnToCompactContent = false;
-            _compactContentOpen = false;
-            InstancesContent.IsHitTestVisible = false;
-            InstancesListPane.IsHitTestVisible = true;
-            ((TranslateTransform)InstancesContent.RenderTransform!).X = Bounds.Width;
+            _creatorWizard.Cancel();
+            _layoutHost.TryCloseDetail();
             await Task.Delay(CompactContentTransitionDuration);
             if (revision == _creatorNavigationRevision &&
                 DataContext is MainWindowViewModel { IsInstanceCreatorOpen: false })
             {
-                _creatorTransition.ShowOverviewImmediately();
+                _creatorWizard.ShowOverviewImmediately();
                 _creatorOpenedFromCompactList = false;
             }
 
             return;
         }
 
-        await _creatorTransition.CloseAsync(
+        await _creatorWizard.CloseAsync(
             () => DataContext is MainWindowViewModel { IsInstanceCreatorOpen: false },
             () =>
             {
-                if (_usesCompactLayout is false &&
+                if (!_layoutHost.IsCompact &&
                     DataContext is MainWindowViewModel { HasInstances: true })
                 {
-                    _creatorTransition.ShowNavigationPane(animate: true);
+                    _creatorWizard.ShowNavigationPane(animate: true);
                 }
 
                 _creatorOpenedFromCompactList = false;
@@ -504,18 +326,18 @@ public sealed partial class InstancesView : UserControl
     {
         ++_creatorNavigationRevision;
         _creatorOpenedFromCompactList = false;
-        _creatorTransition.ShowOverviewImmediately();
-        if (_usesCompactLayout is false &&
+        _creatorWizard.ShowOverviewImmediately();
+        if (!_layoutHost.IsCompact &&
             DataContext is MainWindowViewModel { HasInstances: true })
         {
-            _creatorTransition.ShowNavigationPane(animate: false);
+            _creatorWizard.ShowNavigationPane(animate: false);
         }
     }
 
     private async Task PlaySectionOpenAnimationAsync()
     {
         CancelSectionAnimation();
-        if (_usesCompactLayout is true)
+        if (_layoutHost.IsCompact)
         {
             await PlayCompactSectionOpenAnimationAsync();
             return;
@@ -565,7 +387,7 @@ public sealed partial class InstancesView : UserControl
     private async Task PlaySectionCloseAnimationAsync()
     {
         CancelSectionAnimation();
-        if (_usesCompactLayout is true)
+        if (_layoutHost.IsCompact)
         {
             await PlayCompactSectionCloseAnimationAsync();
             return;
@@ -625,7 +447,7 @@ public sealed partial class InstancesView : UserControl
         InstanceSectionScreen.Transitions = null;
         hubTranslation.Transitions = null;
         sectionTranslation.Transitions = null;
-        var compact = _usesCompactLayout is true;
+        var compact = _layoutHost.IsCompact;
         InstanceHubScreen.IsVisible = compact || showHub;
         InstanceHubScreen.IsHitTestVisible = showHub;
         InstanceHubScreen.Opacity = compact || showHub ? 1 : 0;
@@ -795,7 +617,6 @@ public sealed partial class InstancesView : UserControl
         InstanceVersionComboBox.IsHitTestVisible = !isLoading;
         VersionLoadingSpinner.IsVisible = isLoading;
         VersionLoadingSpinner.Opacity = isLoading ? 1 : 0;
-        SetVersionSpinnerRunning(isLoading);
         InstanceVersionComboBox.Transitions = comboTransitions;
         VersionLoadingSpinner.Transitions = spinnerTransitions;
     }
@@ -807,7 +628,6 @@ public sealed partial class InstancesView : UserControl
         InstanceVersionComboBox.Opacity = 0;
         VersionLoadingSpinner.IsVisible = true;
         VersionLoadingSpinner.Opacity = 1;
-        SetVersionSpinnerRunning(true);
     }
 
     private async Task HideVersionLoadingAsync()
@@ -827,7 +647,6 @@ public sealed partial class InstancesView : UserControl
             }
 
             VersionLoadingSpinner.IsVisible = false;
-            SetVersionSpinnerRunning(false);
             InstanceVersionComboBox.IsHitTestVisible = true;
             InstanceVersionComboBox.Opacity = 1;
         }
@@ -844,65 +663,4 @@ public sealed partial class InstancesView : UserControl
         _versionLoadingCancellation = null;
     }
 
-    private void SetVersionSpinnerRunning(bool isRunning)
-    {
-        if (isRunning)
-        {
-            _versionSpinnerClock.Restart();
-            _versionSpinnerTimer.Start();
-            return;
-        }
-
-        _versionSpinnerTimer.Stop();
-        _versionSpinnerClock.Reset();
-        ((RotateTransform)VersionLoadingSpinner.RenderTransform!).Angle = 0;
-    }
-
-    private void OnVersionSpinnerTick(object? sender, EventArgs args)
-    {
-        const double rotationDurationMilliseconds = 800;
-        ((RotateTransform)VersionLoadingSpinner.RenderTransform!).Angle =
-            _versionSpinnerClock.Elapsed.TotalMilliseconds % rotationDurationMilliseconds /
-            rotationDurationMilliseconds * 360;
-    }
-
-    private void UpdateActionSpinnerState()
-    {
-        var shouldSpin = DataContext is MainWindowViewModel
-        {
-            IsManagedInstanceActionActive: true,
-            IsManagedInstanceActionRunning: false
-        };
-
-        if (shouldSpin)
-        {
-            if (!_actionSpinnerTimer.IsEnabled)
-                _actionSpinnerClock.Restart();
-            _actionSpinnerTimer.Start();
-            return;
-        }
-
-        _actionSpinnerTimer.Stop();
-        _actionSpinnerClock.Reset();
-        RotateActionSpinners(0);
-    }
-
-    private void OnActionSpinnerTick(object? sender, EventArgs args)
-    {
-        const double rotationDurationMilliseconds = 800;
-        var angle = _actionSpinnerClock.Elapsed.TotalMilliseconds % rotationDurationMilliseconds /
-                    rotationDurationMilliseconds * 360;
-        RotateActionSpinners(angle);
-    }
-
-    private void RotateActionSpinners(double angle)
-    {
-        foreach (var spinner in this.GetVisualDescendants()
-                     .OfType<ShapePath>()
-                     .Where(path => path.Classes.Contains("managedActionSpinner")))
-        {
-            spinner.RenderTransform ??= new RotateTransform();
-            ((RotateTransform)spinner.RenderTransform).Angle = angle;
-        }
-    }
 }

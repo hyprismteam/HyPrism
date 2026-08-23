@@ -13,7 +13,7 @@ namespace HyPrism.Desktop.Controls;
 
 public sealed class FadingPopup : Popup
 {
-    private static readonly TimeSpan CloseRetentionDuration = TimeSpan.FromMilliseconds(210);
+    private static readonly TimeSpan CloseRetentionDuration = MotionDurations.PopupCloseRetention;
 
     public static readonly StyledProperty<bool> IsRequestedOpenProperty =
         AvaloniaProperty.Register<FadingPopup, bool>(nameof(IsRequestedOpen));

@@ -946,14 +946,6 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
   </Style>
 
-  <Style Selector="Border.settingsGroup">
-    <Setter Property="Background" Value="#151618" />
-    <Setter Property="BorderBrush" Value="Transparent" />
-    <Setter Property="BorderThickness" Value="0" />
-    <Setter Property="CornerRadius" Value="14" />
-    <Setter Property="ClipToBounds" Value="True" />
-  </Style>
-
   <Style Selector="TextBlock.settingsCategoryHeading">
     <Setter Property="Margin" Value="4,0,4,2" />
     <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
@@ -962,23 +954,12 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="TextWrapping" Value="Wrap" />
   </Style>
 
-  <Style Selector="Border.settingsRow">
-    <Setter Property="MinHeight" Value="66" />
-    <Setter Property="Padding" Value="18,14" />
-    <Setter Property="BorderBrush" Value="{DynamicResource SurfaceBrush}" />
-    <Setter Property="BorderThickness" Value="0,0,0,3" />
-  </Style>
-
-  <Style Selector="Border.settingsRow.last">
-    <Setter Property="BorderThickness" Value="0" />
-  </Style>
-
-  <Style Selector="Border.settingsRow.runtime">
+  <Style Selector="Border.uiSettingsRow.runtime">
     <Setter Property="MinHeight" Value="0" />
     <Setter Property="Padding" Value="0" />
   </Style>
 
-  <Style Selector="Border.settingsRow.mirrorSourceRow">
+  <Style Selector="Border.uiSettingsRow.mirrorSourceRow">
     <Setter Property="MinHeight" Value="74" />
   </Style>
 
@@ -1207,20 +1188,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="Foreground" Value="#EE9A9A" />
   </Style>
 
-  <Style Selector="TextBlock.settingsLabel">
-    <Setter Property="FontSize" Value="14" />
-    <Setter Property="FontWeight" Value="SemiBold" />
-    <Setter Property="TextWrapping" Value="Wrap" />
-  </Style>
-
-  <Style Selector="TextBlock.settingsHint">
-    <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
-    <Setter Property="FontSize" Value="12" />
-    <Setter Property="LineHeight" Value="17" />
-    <Setter Property="TextWrapping" Value="Wrap" />
-  </Style>
-
-  <Style Selector="Border.settingsRow.aboutRow">
+  <Style Selector="Border.uiSettingsRow.aboutRow">
     <Setter Property="Padding" Value="0" />
   </Style>
 
@@ -1836,27 +1804,6 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="Fill" Value="{DynamicResource TextPrimaryBrush}" />
   </Style>
 
-  <Style Selector="settings|SettingsView Button.sourceWizardAction">
-    <Setter Property="Height" Value="36" />
-    <Setter Property="MinWidth" Value="88" />
-    <Setter Property="Padding" Value="14,0" />
-    <Setter Property="Background" Value="#343539" />
-    <Setter Property="BorderThickness" Value="0" />
-    <Setter Property="CornerRadius" Value="10" />
-    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
-    <Setter Property="FontWeight" Value="SemiBold" />
-    <Setter Property="RenderTransform" Value="{x:Null}" />
-  </Style>
-
-  <Style Selector="settings|SettingsView Button.sourceWizardAction:pointerover">
-    <Setter Property="Background" Value="#414247" />
-  </Style>
-
-  <Style Selector="settings|SettingsView Button.sourceWizardAction.create">
-    <Setter Property="Background" Value="{DynamicResource TextPrimaryBrush}" />
-    <Setter Property="Foreground" Value="#111111" />
-  </Style>
-
   <Style Selector="settings|SettingsView TextBox.sourceJsonEditor">
     <Setter Property="Height" Value="260" />
     <Setter Property="FontFamily" Value="monospace" />
@@ -1870,55 +1817,6 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="CornerRadius" Value="14" />
     <Setter Property="BoxShadow" Value="{DynamicResource PopupShadow}" />
   </Style>
-
-  <Style Selector="instances|InstancesView Button.instancesHeaderAction">
-    <Setter Property="Height" Value="36" />
-    <Setter Property="MinWidth" Value="88" />
-    <Setter Property="Padding" Value="14,0" />
-    <Setter Property="Background" Value="#343539" />
-    <Setter Property="BorderThickness" Value="0" />
-    <Setter Property="CornerRadius" Value="10" />
-    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
-    <Setter Property="FontWeight" Value="SemiBold" />
-    <Setter Property="HorizontalContentAlignment" Value="Center" />
-    <Setter Property="VerticalContentAlignment" Value="Center" />
-    <Setter Property="RenderTransform" Value="{x:Null}" />
-    <Setter Property="Transitions">
-      <Transitions>
-        <BrushTransition Property="Background" Duration="0:0:0.16" />
-        <BrushTransition Property="Foreground" Duration="0:0:0.16" />
-      </Transitions>
-    </Setter>
-    <Setter Property="Template">
-      <ControlTemplate>
-        <Border Background="{TemplateBinding Background}"
-                CornerRadius="{TemplateBinding CornerRadius}">
-          <ContentPresenter Content="{TemplateBinding Content}"
-                            ContentTemplate="{TemplateBinding ContentTemplate}"
-                            Foreground="{TemplateBinding Foreground}"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            HorizontalContentAlignment="Center"
-                            VerticalContentAlignment="Center" />
-        </Border>
-      </ControlTemplate>
-    </Setter>
-  </Style>
-
-  <Style Selector="instances|InstancesView Button.instancesHeaderAction:pointerover">
-    <Setter Property="Background" Value="#414247" />
-    <Setter Property="RenderTransform" Value="{x:Null}" />
-  </Style>
-
-  <Style Selector="instances|InstancesView Button.instancesHeaderAction.create">
-    <Setter Property="Background" Value="{DynamicResource TextPrimaryBrush}" />
-    <Setter Property="Foreground" Value="#111111" />
-  </Style>
-
-  <Style Selector="instances|InstancesView Button.instancesHeaderAction.create:disabled">
-    <Setter Property="Opacity" Value="0.45" />
-  </Style>
-
 
   <Style Selector="instances|InstancesView Border.instancesVersionPicker">
     <Setter Property="Height" Value="44" />

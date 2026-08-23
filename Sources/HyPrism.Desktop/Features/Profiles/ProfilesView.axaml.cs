@@ -7,9 +7,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Input.Platform;
 using Avalonia.Interactivity;
-using Avalonia.Media;
 using Avalonia.Threading;
-using Avalonia.VisualTree;
 using HyPrism.Desktop.Controls;
 
 namespace HyPrism.Desktop.Features.Profiles;
@@ -19,39 +17,45 @@ namespace HyPrism.Desktop.Features.Profiles;
 /// </summary>
 public sealed partial class ProfilesView : UserControl
 {
-    private const double WideLayoutThreshold = 940;
-    private const double WideContentMaxWidth = 720;
-    private static readonly TimeSpan CompactContentTransitionDuration = TimeSpan.FromMilliseconds(320);
+    private static readonly TimeSpan CompactContentTransitionDuration = MotionDurations.CompactPageSlide;
 
-    private readonly WizardScreenTransition _creatorTransition;
+    private readonly WizardHost _creatorWizard;
+    private readonly AdaptiveMasterDetailHost _layoutHost;
+    private readonly ReorderableListController _profileReorder;
     private INotifyPropertyChanged? _viewModel;
-    private bool? _usesCompactLayout;
-    private bool _compactContentOpen;
-    private bool _returnToCompactContent;
     private bool _creatorOpenedFromCompactList;
     private bool _isCreatorVisible;
-    private Button? _profileDragRow;
-    private Control? _profileDragHandle;
-    private string? _draggedProfileId;
-    private Point _profileDragStart;
-    private Point _profileDragStartInLayout;
-    private Point _profileDragPreviewOrigin;
-    private int _profileDragTargetIndex = -1;
-    private bool _isProfileDragActive;
     private int _creatorNavigationRevision;
-
-    private TranslateTransform MainTranslation
-        => (TranslateTransform)ProfileMain.RenderTransform!;
 
     public ProfilesView()
     {
         InitializeComponent();
-        _creatorTransition = new WizardScreenTransition(
+        _creatorWizard = new WizardHost(
             ProfileOverview,
             ProfileCreatorScreen,
             ProfilesListPane,
-            ProfileWizardAnimationAnchor,
-            ProfileWizardAnimationMotion);
+            ProfileWizardReveal.Anchor,
+            ProfileWizardReveal.MotionTarget,
+            ProfileWizardReveal.Animation,
+            ProfileCreationChoiceContent,
+            OfflineProfileCreationContent,
+            OfficialProfileCreationContent);
+        _layoutHost = new AdaptiveMasterDetailHost(
+            ProfilesLayout,
+            ProfilesListPane,
+            ProfileMain,
+            CompactProfilesToolbar,
+            ProfilesContentHost,
+            compact =>
+            {
+                Classes.Set("compact", compact);
+                Classes.Set("wide", !compact);
+            });
+        _profileReorder = new ReorderableListController(
+            ProfilesItems,
+            ProfilesLayout,
+            ProfileDragPreview,
+            ProfilesListPane);
         DataContextChanged += OnDataContextChanged;
     }
 
@@ -99,69 +103,24 @@ public sealed partial class ProfilesView : UserControl
         if (width <= 0 || DataContext is not ProfilesViewModel viewModel)
             return;
 
-        var compact = width < WideLayoutThreshold;
-        var layoutModeChanged = _usesCompactLayout != compact;
-        Classes.Set("compact", compact);
-        Classes.Set("wide", !compact);
-
-        if (layoutModeChanged)
-        {
-            if (compact)
-                _compactContentOpen = _returnToCompactContent;
-            else if (_usesCompactLayout is true)
-                _returnToCompactContent = _compactContentOpen;
-
-            _usesCompactLayout = compact;
-        }
-
-        ProfilesContentHost.Margin = compact
-            ? new Thickness(24, 16, 24, 36)
-            : new Thickness(32, 28, 32, 40);
-        ProfilesContentHost.MaxWidth = compact
-            ? double.PositiveInfinity
-            : WideContentMaxWidth;
+        _layoutHost.Update(width, viewModel.HasProfiles, viewModel.IsProfileEditorVisible);
 
         if (!viewModel.HasProfiles)
         {
-            _creatorTransition.ResetNavigationPane();
-            ProfilesLayout.ColumnDefinitions[0].Width = new GridLength(1, GridUnitType.Star);
-            ProfilesLayout.ColumnDefinitions[1].Width = new GridLength(0);
-            Grid.SetColumn(ProfileMain, 0);
-            Grid.SetColumnSpan(ProfileMain, 2);
-            ProfilesListPane.IsHitTestVisible = false;
-            ProfileMain.IsHitTestVisible = true;
-            CompactProfilesToolbar.IsVisible = false;
-            SetMainOffsetWithoutTransition(0);
+            _creatorWizard.ResetNavigationPane();
             return;
         }
 
-        CompactProfilesToolbar.IsVisible = compact && viewModel.IsProfileEditorVisible;
-        Grid.SetColumnSpan(ProfileMain, 1);
-
-        if (!compact)
+        if (!_layoutHost.IsCompact)
         {
-            ProfilesLayout.ColumnDefinitions[0].Width = GridLength.Auto;
-            ProfilesLayout.ColumnDefinitions[1].Width = new GridLength(1, GridUnitType.Star);
-            Grid.SetColumn(ProfilesListPane, 0);
-            Grid.SetColumn(ProfileMain, 1);
             if (viewModel.IsCreationVisible)
-                _creatorTransition.HideNavigationPane(animate: false);
+                _creatorWizard.HideNavigationPane(animate: false);
             else
-                _creatorTransition.ShowNavigationPane(animate: false);
-            ProfileMain.IsHitTestVisible = true;
-            SetMainOffsetWithoutTransition(0);
+                _creatorWizard.ShowNavigationPane(animate: false);
             return;
         }
 
-        _creatorTransition.ResetNavigationPane();
-        ProfilesLayout.ColumnDefinitions[0].Width = new GridLength(1, GridUnitType.Star);
-        ProfilesLayout.ColumnDefinitions[1].Width = new GridLength(0);
-        Grid.SetColumn(ProfilesListPane, 0);
-        Grid.SetColumn(ProfileMain, 0);
-        Grid.SetColumnSpan(ProfileMain, 2);
-        ProfilesListPane.IsHitTestVisible = !_compactContentOpen;
-        ProfileMain.IsHitTestVisible = _compactContentOpen;
-        SetMainOffsetWithoutTransition(_compactContentOpen ? 0 : width);
+        _creatorWizard.ResetNavigationPane();
     }
 
     private void OnProfileSelectedClicked(object? sender, RoutedEventArgs args)
@@ -172,18 +131,16 @@ public sealed partial class ProfilesView : UserControl
             viewModel.SelectProfileCommand.Execute(profile);
         }
 
-        _returnToCompactContent = true;
-        if (_usesCompactLayout is true)
-            OpenCompactContent();
+        _layoutHost.RememberDetail();
+        if (_layoutHost.IsCompact)
+            _layoutHost.OpenDetail();
     }
 
     private void OnCreateProfileClicked(object? sender, RoutedEventArgs args)
     {
-        _creatorOpenedFromCompactList = _usesCompactLayout is true &&
-                                        !_compactContentOpen &&
-                                        DataContext is ProfilesViewModel { HasProfiles: true };
-        if (_usesCompactLayout is true && !_creatorOpenedFromCompactList)
-            OpenCompactContent();
+        _creatorOpenedFromCompactList = _layoutHost.IsOpeningWizardFromMaster();
+        if (_layoutHost.IsCompact && !_creatorOpenedFromCompactList)
+            _layoutHost.OpenDetail();
 
         if (DataContext is ProfilesViewModel viewModel)
             viewModel.ShowCreateChoiceCommand.Execute(null);
@@ -194,7 +151,7 @@ public sealed partial class ProfilesView : UserControl
         if (DataContext is not ProfilesViewModel viewModel)
             return;
 
-        await _creatorTransition.SwitchStepAsync(
+        await _creatorWizard.SwitchStepAsync(
             ProfileCreationChoiceContent,
             OfficialProfileCreationContent,
             forward: true,
@@ -207,7 +164,7 @@ public sealed partial class ProfilesView : UserControl
         if (DataContext is not ProfilesViewModel viewModel)
             return;
 
-        await _creatorTransition.SwitchStepAsync(
+        await _creatorWizard.SwitchStepAsync(
             ProfileCreationChoiceContent,
             OfflineProfileCreationContent,
             forward: true,
@@ -223,7 +180,7 @@ public sealed partial class ProfilesView : UserControl
         var outgoingStep = viewModel.IsOfficialCreationVisible
             ? OfficialProfileCreationContent
             : OfflineProfileCreationContent;
-        await _creatorTransition.SwitchStepAsync(
+        await _creatorWizard.SwitchStepAsync(
             outgoingStep,
             ProfileCreationChoiceContent,
             forward: false,
@@ -253,107 +210,33 @@ public sealed partial class ProfilesView : UserControl
 
     private void OnProfileDragHandlePressed(object? sender, PointerPressedEventArgs args)
     {
-        if (sender is not Border { DataContext: ProfileItemViewModel profile } handle ||
-            !args.GetCurrentPoint(handle).Properties.IsLeftButtonPressed)
-        {
+        if (sender is not Border { DataContext: ProfileItemViewModel profile } handle)
             return;
-        }
 
-        _profileDragHandle = handle;
-        _profileDragRow = handle.FindAncestorOfType<Button>();
-        _draggedProfileId = profile.Id;
-        _profileDragStart = args.GetPosition(ProfilesItems);
-        _profileDragStartInLayout = args.GetPosition(ProfilesLayout);
-        _profileDragPreviewOrigin = _profileDragRow?.TranslatePoint(default, ProfilesLayout) ?? default;
-        _profileDragTargetIndex = -1;
-        _isProfileDragActive = false;
-        ProfileDragPreviewName.Text = profile.Name;
-        ProfileDragPreviewType.Text = profile.AccountType;
-        ProfileDragPreview.Width = _profileDragRow?.Bounds.Width ?? ProfilesListPane.Bounds.Width;
-        ProfileDragPreview.Height = _profileDragRow?.Bounds.Height ?? 72;
-        args.Pointer.Capture(handle);
-        args.Handled = true;
+        _profileReorder.Begin(handle, profile.Id, args, 72, () =>
+        {
+            ProfileDragPreviewName.Text = profile.Name;
+            ProfileDragPreviewType.Text = profile.AccountType;
+        });
     }
 
     private void OnProfileDragHandleMoved(object? sender, PointerEventArgs args)
-    {
-        if (_profileDragHandle is null || _draggedProfileId is null)
-            return;
-
-        var position = args.GetPosition(ProfilesItems);
-        if (!_isProfileDragActive)
-        {
-            var delta = position - _profileDragStart;
-            if (Math.Abs(delta.X) + Math.Abs(delta.Y) < 5)
-                return;
-
-            _isProfileDragActive = true;
-            _profileDragRow?.Classes.Add("dragging");
-            ProfileDragPreview.IsVisible = true;
-        }
-
-        var pointerInLayout = args.GetPosition(ProfilesLayout);
-        var transform = (TranslateTransform)ProfileDragPreview.RenderTransform!;
-        transform.X = _profileDragPreviewOrigin.X +
-                      pointerInLayout.X -
-                      _profileDragStartInLayout.X + 10;
-        transform.Y = _profileDragPreviewOrigin.Y +
-                      pointerInLayout.Y -
-                      _profileDragStartInLayout.Y + 8;
-        _profileDragTargetIndex = GetProfileDropTargetIndex(position.Y);
-        args.Handled = true;
-    }
+        => _profileReorder.Move(args);
 
     private void OnProfileDragHandleReleased(object? sender, PointerReleasedEventArgs args)
     {
-        if (_isProfileDragActive &&
-            _profileDragTargetIndex >= 0 &&
-            _draggedProfileId is not null &&
-            DataContext is ProfilesViewModel viewModel)
-        {
-            viewModel.MoveProfile(_draggedProfileId, _profileDragTargetIndex);
-        }
-
-        args.Pointer.Capture(null);
-        ResetProfileDragState();
-        args.Handled = true;
-    }
-
-    private int GetProfileDropTargetIndex(double pointerY)
-    {
-        var rows = ProfilesItems.GetVisualDescendants()
-            .OfType<Button>()
-            .Where(button => button.Classes.Contains("instancesListItem"))
-            .Select(button => new
+        _profileReorder.Complete(
+            args,
+            (profileId, targetIndex) =>
             {
-                Button = button,
-                Origin = button.TranslatePoint(default, ProfilesItems)
-            })
-            .Where(item => item.Origin.HasValue)
-            .OrderBy(item => item.Origin!.Value.Y)
-            .ToList();
-
-        for (var index = 0; index < rows.Count; index++)
-        {
-            var midpoint = rows[index].Origin!.Value.Y + rows[index].Button.Bounds.Height / 2;
-            if (pointerY < midpoint)
-                return index;
-        }
-
-        return Math.Max(0, rows.Count - 1);
-    }
-
-    private void ResetProfileDragState()
-    {
-        _profileDragRow?.Classes.Remove("dragging");
-        ProfileDragPreview.IsVisible = false;
-        ProfileDragPreviewName.Text = string.Empty;
-        ProfileDragPreviewType.Text = string.Empty;
-        _profileDragHandle = null;
-        _profileDragRow = null;
-        _draggedProfileId = null;
-        _profileDragTargetIndex = -1;
-        _isProfileDragActive = false;
+                if (DataContext is ProfilesViewModel viewModel)
+                    viewModel.MoveProfile(profileId, targetIndex);
+            },
+            () =>
+            {
+                ProfileDragPreviewName.Text = string.Empty;
+                ProfileDragPreviewType.Text = string.Empty;
+            });
     }
 
     private async void OnCopyUuidClicked(object? sender, RoutedEventArgs args)
@@ -374,7 +257,7 @@ public sealed partial class ProfilesView : UserControl
 
     public bool TryCloseCompactContent()
     {
-        if (_usesCompactLayout is not true || !_compactContentOpen)
+        if (!_layoutHost.IsCompact || !_layoutHost.IsDetailOpen)
             return false;
 
         if (DataContext is ProfilesViewModel { IsCreationVisible: true } viewModel)
@@ -383,96 +266,61 @@ public sealed partial class ProfilesView : UserControl
             return true;
         }
 
-        _returnToCompactContent = false;
-        _compactContentOpen = false;
-        ProfileMain.IsHitTestVisible = false;
-        ProfilesListPane.IsHitTestVisible = true;
-        MainTranslation.X = Bounds.Width;
-        return true;
-    }
-
-    private void OpenCompactContent()
-    {
-        _compactContentOpen = true;
-        ProfilesListPane.IsHitTestVisible = false;
-        ProfileMain.IsHitTestVisible = true;
-        MainTranslation.X = 0;
-    }
-
-    private void SetMainOffsetWithoutTransition(double offset)
-    {
-        var transitions = MainTranslation.Transitions;
-        MainTranslation.Transitions = null;
-        MainTranslation.X = offset;
-        MainTranslation.Transitions = transitions;
+        return _layoutHost.TryCloseDetail();
     }
 
     private async Task PlayCreatorOpenAnimationAsync()
     {
-        RestoreCurrentCreatorStep();
         var revision = ++_creatorNavigationRevision;
-        if (_creatorOpenedFromCompactList && _usesCompactLayout is true)
+        if (_creatorOpenedFromCompactList && _layoutHost.IsCompact)
         {
-            _creatorTransition.ShowWizardImmediately();
-            await Dispatcher.UIThread.InvokeAsync(static () => { }, DispatcherPriority.Loaded);
+            await _creatorWizard.ShowWizardForCompactEntryAsync();
             if (revision != _creatorNavigationRevision ||
                 DataContext is not ProfilesViewModel { IsCreationVisible: true })
             {
                 return;
             }
 
-            RestartProfileWizardAnimation();
-            OpenCompactContent();
+            _layoutHost.OpenDetail();
             return;
         }
 
-        if (_usesCompactLayout is false &&
+        if (!_layoutHost.IsCompact &&
             DataContext is ProfilesViewModel { HasProfiles: true })
         {
-            _creatorTransition.HideNavigationPane(animate: true);
+            _creatorWizard.HideNavigationPane(animate: true);
         }
 
-        await _creatorTransition.OpenAsync(
-            () => DataContext is ProfilesViewModel { IsCreationVisible: true },
-            RestartProfileWizardAnimation);
-    }
-
-    private void RestartProfileWizardAnimation()
-    {
-        ProfileWizardAnimation.SeekToProgress(0);
-        ProfileWizardAnimation.Start();
+        await _creatorWizard.OpenAsync(
+            () => DataContext is ProfilesViewModel { IsCreationVisible: true });
     }
 
     private async Task PlayCreatorCloseAnimationAsync()
     {
         var revision = ++_creatorNavigationRevision;
-        if (_creatorOpenedFromCompactList && _usesCompactLayout is true)
+        if (_creatorOpenedFromCompactList && _layoutHost.IsCompact)
         {
-            _creatorTransition.Cancel();
-            _returnToCompactContent = false;
-            _compactContentOpen = false;
-            ProfileMain.IsHitTestVisible = false;
-            ProfilesListPane.IsHitTestVisible = true;
-            MainTranslation.X = Bounds.Width;
+            _creatorWizard.Cancel();
+            _layoutHost.TryCloseDetail();
             await Task.Delay(CompactContentTransitionDuration);
             if (revision == _creatorNavigationRevision &&
                 DataContext is ProfilesViewModel { IsCreationVisible: false } viewModel)
             {
-                _creatorTransition.ShowOverviewImmediately();
+                _creatorWizard.ShowOverviewImmediately();
                 CompleteCreatorClose(viewModel);
             }
 
             return;
         }
 
-        await _creatorTransition.CloseAsync(
+        await _creatorWizard.CloseAsync(
             () => DataContext is ProfilesViewModel { IsCreationVisible: false },
             () =>
             {
                 if (DataContext is ProfilesViewModel viewModel)
                 {
-                    if (_usesCompactLayout is false && viewModel.HasProfiles)
-                        _creatorTransition.ShowNavigationPane(animate: true);
+                    if (!_layoutHost.IsCompact && viewModel.HasProfiles)
+                        _creatorWizard.ShowNavigationPane(animate: true);
 
                     CompleteCreatorClose(viewModel);
                 }
@@ -483,45 +331,17 @@ public sealed partial class ProfilesView : UserControl
     {
         ++_creatorNavigationRevision;
         _creatorOpenedFromCompactList = false;
-        _creatorTransition.ShowOverviewImmediately();
-        if (_usesCompactLayout is false &&
+        _creatorWizard.ShowOverviewImmediately();
+        if (!_layoutHost.IsCompact &&
             DataContext is ProfilesViewModel { HasProfiles: true })
         {
-            _creatorTransition.ShowNavigationPane(animate: false);
+            _creatorWizard.ShowNavigationPane(animate: false);
         }
-        RestoreCurrentCreatorStep();
     }
 
     private void CompleteCreatorClose(ProfilesViewModel viewModel)
     {
         _creatorOpenedFromCompactList = false;
         viewModel.CompleteCreationTransition();
-        RestoreCurrentCreatorStep();
-    }
-
-    private void RestoreCurrentCreatorStep()
-    {
-        if (DataContext is ProfilesViewModel { IsOfficialCreationVisible: true })
-        {
-            _creatorTransition.ShowStepImmediately(
-                OfficialProfileCreationContent,
-                ProfileCreationChoiceContent,
-                OfflineProfileCreationContent);
-            return;
-        }
-
-        if (DataContext is ProfilesViewModel { IsOfflineCreationVisible: true })
-        {
-            _creatorTransition.ShowStepImmediately(
-                OfflineProfileCreationContent,
-                ProfileCreationChoiceContent,
-                OfficialProfileCreationContent);
-            return;
-        }
-
-        _creatorTransition.ShowStepImmediately(
-            ProfileCreationChoiceContent,
-            OfflineProfileCreationContent,
-            OfficialProfileCreationContent);
     }
 }

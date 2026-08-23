@@ -196,16 +196,16 @@ public sealed class MainWindowRenderTests
         Assert.False(profilesListPane.IsHitTestVisible);
         Assert.True(profileMain.Bounds.Width > profileMainWidthWithList + 275);
         Assert.Contains("profileWizardScreen", wizard.Classes);
-        var profileWizardAnimation = Assert.IsType<Lottie>(
-            view.FindControl<Lottie>("ProfileWizardAnimation"));
+        var profileWizardReveal = Assert.IsType<WizardRevealIcon>(
+            view.FindControl<WizardRevealIcon>("ProfileWizardReveal"));
+        var profileWizardAnimation = profileWizardReveal.Animation;
         Assert.Equal("/Assets/Lotties/avatar-reveal.json", profileWizardAnimation.Path);
         Assert.True(profileWizardAnimation.AutoPlay);
         Assert.Equal(1, profileWizardAnimation.RepeatCount);
         Assert.NotNull(profileWizardAnimation.OpacityMask);
         Assert.Equal(64, profileWizardAnimation.Width);
         Assert.Equal(64, profileWizardAnimation.Height);
-        var profileWizardAnimationMotion = Assert.IsType<Border>(
-            view.FindControl<Border>("ProfileWizardAnimationMotion"));
+        var profileWizardAnimationMotion = profileWizardReveal.MotionTarget;
         var profileWizardAnimationTranslation = Assert.IsType<TranslateTransform>(
             profileWizardAnimationMotion.RenderTransform);
 
@@ -1897,8 +1897,9 @@ public sealed class MainWindowRenderTests
         Assert.Equal(Avalonia.Layout.HorizontalAlignment.Center, wideInstanceActions!.HorizontalAlignment);
         var instanceContentTranslation = Assert.IsType<TranslateTransform>(instancesContent!.RenderTransform);
         Assert.Equal(usesCompactInstancesLayout, compactInstanceToolbar!.IsVisible);
-        var instanceWizardAnimation = Assert.IsType<Lottie>(
-            instancesView.FindControl<Lottie>("InstanceWizardAnimation"));
+        var instanceWizardReveal = Assert.IsType<WizardRevealIcon>(
+            instancesView.FindControl<WizardRevealIcon>("InstanceWizardReveal"));
+        var instanceWizardAnimation = instanceWizardReveal.Animation;
         Assert.Equal("/Assets/Lotties/server-reveal.json", instanceWizardAnimation.Path);
         Assert.True(instanceWizardAnimation.AutoPlay);
         Assert.Equal(1, instanceWizardAnimation.RepeatCount);
@@ -1921,9 +1922,13 @@ public sealed class MainWindowRenderTests
             var instanceWizardPreviewPath = Environment.GetEnvironmentVariable(
                 "HYPRISM_INSTANCE_WIZARD_RENDER_OUTPUT");
             if (!string.IsNullOrWhiteSpace(instanceWizardPreviewPath) && width == 1280)
+            {
+                await Task.Delay(700);
+                Dispatcher.UIThread.RunJobs();
                 window.CaptureRenderedFrame()!.Save(
                     instanceWizardPreviewPath,
                     PngBitmapEncoderOptions.Default);
+            }
 
             viewModel.CloseInstanceCreatorCommand.Execute(null);
             await Task.Delay(420);
@@ -2972,8 +2977,10 @@ public sealed class MainWindowRenderTests
             Assert.Equal(new CornerRadius(14), group.CornerRadius);
 
             var rows = group.GetVisualDescendants()
-                .OfType<Border>()
-                .Where(border => border.IsEffectivelyVisible && border.Classes.Contains("settingsRow"))
+                .OfType<TemplatedControl>()
+                .Where(control =>
+                    control.IsEffectivelyVisible &&
+                    (control is SettingsRow || control.Classes.Contains("uiSettingsRow")))
                 .ToArray();
             Assert.NotEmpty(rows);
             Assert.All(rows.Where(row => !row.Classes.Contains("last")), row =>

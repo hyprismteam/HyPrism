@@ -1,0 +1,30 @@
+<!--
+Copyright (C) 2026 HyPrism Launcher
+SPDX-License-Identifier: GPL-3.0-only
+-->
+
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:lottie="clr-namespace:Avalonia.Labs.Lottie;assembly=Avalonia.Labs.Lottie"
+             x:Class="HyPrism.Desktop.Controls.WizardRevealIcon"
+             x:Name="RevealRoot"
+             Width="64"
+             Height="64"
+             HorizontalAlignment="Center">
+  <UserControl.RenderTransform>
+    <TranslateTransform />
+  </UserControl.RenderTransform>
+  <Border x:Name="AnimationMotionTarget">
+    <Border.RenderTransform>
+      <TranslateTransform />
+    </Border.RenderTransform>
+    <lottie:Lottie x:Name="AnimationPlayer"
+                   Width="64"
+                   Height="64"
+                   Path="{Binding AnimationPath, ElementName=RevealRoot}"
+                   AutoPlay="True"
+                   RepeatCount="1"
+                   OpacityMask="{DynamicResource AccentBrush}"
+                   Stretch="Uniform" />
+  </Border>
+</UserControl>

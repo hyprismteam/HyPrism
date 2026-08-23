@@ -16,7 +16,7 @@ namespace HyPrism.Desktop.Controls;
 /// </summary>
 public sealed class WizardScreenTransition
 {
-    public static readonly TimeSpan PhaseDuration = TimeSpan.FromMilliseconds(190);
+    public static readonly TimeSpan PhaseDuration = MotionDurations.WizardPhase;
     public static readonly TimeSpan AnchorMoveDuration = PhaseDuration;
 
     private readonly Control _overview;

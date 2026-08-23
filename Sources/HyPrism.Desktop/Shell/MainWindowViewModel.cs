@@ -517,6 +517,8 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
              _managedInstanceActionInstanceId,
              StringComparison.OrdinalIgnoreCase));
     public bool IsManagedInstanceActionRunning => IsManagedInstanceRunning;
+    public bool ShouldSpinManagedInstanceAction =>
+        IsManagedInstanceActionActive && !IsManagedInstanceActionRunning;
     private bool IsManagedInstanceRunning => _managedInstance is not null
         && _gameProcess.IsInstanceRunning(_managedInstance.Id);
     private bool IsSelectedInstanceRunning => _selectedInstance is not null
@@ -2031,6 +2033,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     {
         OnPropertyChanged(nameof(IsManagedInstanceActionActive));
         OnPropertyChanged(nameof(IsManagedInstanceActionRunning));
+        OnPropertyChanged(nameof(ShouldSpinManagedInstanceAction));
         OnPropertyChanged(nameof(IsManagedInstanceCancellationArmed));
         OnPropertyChanged(nameof(CanRunManagedInstanceAction));
         OnPropertyChanged(nameof(CanDeleteManagedInstance));

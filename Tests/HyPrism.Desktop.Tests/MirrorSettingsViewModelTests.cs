@@ -406,8 +406,9 @@ public sealed class MirrorSettingsViewModelTests
             Dispatcher.UIThread.RunJobs();
             var wizard = Assert.IsType<Border>(view.FindControl<Border>("DownloadSourceWizardScreen"));
             var choice = Assert.IsType<StackPanel>(view.FindControl<StackPanel>("SourceAdditionChoiceContent"));
-            var wizardAnimation = Assert.IsType<Lottie>(
-                view.FindControl<Lottie>("DownloadSourceWizardAnimation"));
+            var wizardReveal = Assert.IsType<WizardRevealIcon>(
+                view.FindControl<WizardRevealIcon>("DownloadSourceWizardReveal"));
+            var wizardAnimation = wizardReveal.Animation;
             Assert.True(wizard.IsEffectivelyVisible);
             Assert.True(choice.IsEffectivelyVisible);
             Assert.Equal("/Assets/Lotties/loader-reveal.json", wizardAnimation.Path);
@@ -416,12 +417,10 @@ public sealed class MirrorSettingsViewModelTests
             Assert.NotNull(wizardAnimation.OpacityMask);
             Assert.Equal(64, wizardAnimation.Width);
             Assert.Equal(64, wizardAnimation.Height);
-            var wizardAnimationAnchor = Assert.IsType<Border>(
-                view.FindControl<Border>("DownloadSourceWizardAnimationAnchor"));
+            var wizardAnimationAnchor = wizardReveal.Anchor;
             var wizardAnimationTranslation = Assert.IsType<TranslateTransform>(
                 wizardAnimationAnchor.RenderTransform);
-            var wizardAnimationMotion = Assert.IsType<Border>(
-                view.FindControl<Border>("DownloadSourceWizardAnimationMotion"));
+            var wizardAnimationMotion = wizardReveal.MotionTarget;
             var wizardAnimationMotionTranslation = Assert.IsType<TranslateTransform>(
                 wizardAnimationMotion.RenderTransform);
 
@@ -442,7 +441,11 @@ public sealed class MirrorSettingsViewModelTests
 
             var wizardRenderPath = Environment.GetEnvironmentVariable("HYPRISM_DOWNLOAD_SOURCE_WIZARD_RENDER_OUTPUT");
             if (!string.IsNullOrWhiteSpace(wizardRenderPath))
+            {
+                await Task.Delay(800);
+                Dispatcher.UIThread.RunJobs();
                 window.CaptureRenderedFrame()!.Save(wizardRenderPath, PngBitmapEncoderOptions.Default);
+            }
 
             viewModel.CancelAddMirrorCommand.Execute(null);
             Dispatcher.UIThread.RunJobs();

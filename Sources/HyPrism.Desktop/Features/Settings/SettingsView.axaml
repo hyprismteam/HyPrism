@@ -7,7 +7,6 @@ SPDX-License-Identifier: GPL-3.0-only
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:HyPrism.Desktop.Features.Settings"
              xmlns:controls="using:HyPrism.Desktop.Controls"
-             xmlns:lottie="clr-namespace:Avalonia.Labs.Lottie;assembly=Avalonia.Labs.Lottie"
              xmlns:easing="clr-namespace:Avalonia.Animation.Easings;assembly=Avalonia.Base"
              x:Class="HyPrism.Desktop.Features.Settings.SettingsView"
              x:Name="SettingsRoot"
@@ -197,6 +196,7 @@ SPDX-License-Identifier: GPL-3.0-only
                 ToolTip.Tip="{Binding Availability}">
             <Grid Classes="sourceAvailabilityState checking">
               <Path Classes="sourceAvailabilitySpinner"
+                    controls:RotatingVisual.IsActive="{Binding IsChecking}"
                     Data="M10,2 A8,8 0 1 1 2,10" />
             </Grid>
             <Grid Classes="sourceAvailabilityState available">
@@ -452,20 +452,15 @@ SPDX-License-Identifier: GPL-3.0-only
             <StackPanel Spacing="10">
               <TextBlock Text="{Binding LanguageCategoryTitle}" Classes="settingsCategoryHeading" />
               <Border Classes="uiSettingsGroup settingsGroup">
-                <Border Classes="uiSettingsRow settingsRow">
-                  <Grid ColumnDefinitions="*,220" ColumnSpacing="24">
-                    <StackPanel Spacing="3" VerticalAlignment="Center">
-                      <TextBlock Text="{Binding LanguageLabel}" Classes="uiSettingsLabel settingsLabel" />
-                      <TextBlock Text="{Binding LanguageHint}" Classes="uiSettingsHint settingsHint" />
-                    </StackPanel>
-                    <controls:FadingComboBox Grid.Column="1"
-                                             Classes="uiComboBox"
-                                             ItemsSource="{Binding Languages}"
-                                             ItemTemplate="{StaticResource SettingChoiceTemplate}"
-                                             ItemContainerTheme="{StaticResource UiComboBoxItemTheme}"
-                                             SelectedItem="{Binding SelectedLanguage}" />
-                  </Grid>
-                </Border>
+                <controls:SettingsRow Label="{Binding LanguageLabel}"
+                                      Hint="{Binding LanguageHint}">
+                  <controls:FadingComboBox Width="220"
+                                           Classes="uiComboBox"
+                                           ItemsSource="{Binding Languages}"
+                                           ItemTemplate="{StaticResource SettingChoiceTemplate}"
+                                           ItemContainerTheme="{StaticResource UiComboBoxItemTheme}"
+                                           SelectedItem="{Binding SelectedLanguage}" />
+                </controls:SettingsRow>
               </Border>
             </StackPanel>
 
@@ -473,42 +468,18 @@ SPDX-License-Identifier: GPL-3.0-only
               <TextBlock Text="{Binding GeneralTitle}" Classes="settingsCategoryHeading" />
               <Border Classes="uiSettingsGroup settingsGroup">
                 <StackPanel>
-                <Border Classes="uiSettingsRow settingsRow">
-                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="24">
-                    <StackPanel Spacing="3">
-                      <TextBlock Text="{Binding CloseAfterLaunchLabel}" Classes="uiSettingsLabel settingsLabel" />
-                      <TextBlock Text="{Binding CloseAfterLaunchHint}" Classes="uiSettingsHint settingsHint" />
-                    </StackPanel>
-                    <ToggleSwitch Grid.Column="1" Classes="uiToggle" IsChecked="{Binding CloseAfterLaunch}" />
-                  </Grid>
-                </Border>
-                <Border Classes="uiSettingsRow settingsRow">
-                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="24">
-                    <StackPanel Spacing="3">
-                      <TextBlock Text="{Binding AlphaModsLabel}" Classes="uiSettingsLabel settingsLabel" />
-                      <TextBlock Text="{Binding AlphaModsHint}" Classes="uiSettingsHint settingsHint" />
-                    </StackPanel>
-                    <ToggleSwitch Grid.Column="1" Classes="uiToggle" IsChecked="{Binding ShowAlphaMods}" />
-                  </Grid>
-                </Border>
-                <Border Classes="uiSettingsRow settingsRow">
-                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="24">
-                    <StackPanel Spacing="3">
-                      <TextBlock Text="{Binding DiscordAnnouncementsLabel}" Classes="uiSettingsLabel settingsLabel" />
-                      <TextBlock Text="{Binding DiscordAnnouncementsHint}" Classes="uiSettingsHint settingsHint" />
-                    </StackPanel>
-                    <ToggleSwitch Grid.Column="1" Classes="uiToggle" IsChecked="{Binding ShowDiscordAnnouncements}" />
-                  </Grid>
-                </Border>
-                <Border Classes="uiSettingsRow settingsRow last">
-                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="24">
-                    <StackPanel Spacing="3">
-                      <TextBlock Text="{Binding MusicLabel}" Classes="uiSettingsLabel settingsLabel" />
-                      <TextBlock Text="{Binding MusicHint}" Classes="uiSettingsHint settingsHint" />
-                    </StackPanel>
-                    <ToggleSwitch Grid.Column="1" Classes="uiToggle" IsChecked="{Binding MusicEnabled}" />
-                  </Grid>
-                </Border>
+                <controls:SettingsRow Label="{Binding CloseAfterLaunchLabel}" Hint="{Binding CloseAfterLaunchHint}">
+                  <ToggleSwitch Classes="uiToggle" IsChecked="{Binding CloseAfterLaunch}" />
+                </controls:SettingsRow>
+                <controls:SettingsRow Label="{Binding AlphaModsLabel}" Hint="{Binding AlphaModsHint}">
+                  <ToggleSwitch Classes="uiToggle" IsChecked="{Binding ShowAlphaMods}" />
+                </controls:SettingsRow>
+                <controls:SettingsRow Label="{Binding DiscordAnnouncementsLabel}" Hint="{Binding DiscordAnnouncementsHint}">
+                  <ToggleSwitch Classes="uiToggle" IsChecked="{Binding ShowDiscordAnnouncements}" />
+                </controls:SettingsRow>
+                <controls:SettingsRow Classes="last" Label="{Binding MusicLabel}" Hint="{Binding MusicHint}">
+                  <ToggleSwitch Classes="uiToggle" IsChecked="{Binding MusicEnabled}" />
+                </controls:SettingsRow>
                 </StackPanel>
               </Border>
             </StackPanel>
@@ -784,15 +755,11 @@ SPDX-License-Identifier: GPL-3.0-only
               <TextBlock Text="{Binding NetworkTitle}" Classes="settingsCategoryHeading" />
               <Border Classes="uiSettingsGroup settingsGroup">
                 <StackPanel>
-                <Border Classes="uiSettingsRow settingsRow last">
-                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="24">
-                    <StackPanel Spacing="3">
-                      <TextBlock Text="{Binding OnlineModeLabel}" Classes="uiSettingsLabel settingsLabel" />
-                      <TextBlock Text="{Binding OnlineModeHint}" Classes="uiSettingsHint settingsHint" />
-                    </StackPanel>
-                    <ToggleSwitch Grid.Column="1" Classes="uiToggle" IsChecked="{Binding OnlineMode}" />
-                  </Grid>
-                </Border>
+                <controls:SettingsRow Classes="last"
+                                      Label="{Binding OnlineModeLabel}"
+                                      Hint="{Binding OnlineModeHint}">
+                  <ToggleSwitch Classes="uiToggle" IsChecked="{Binding OnlineMode}" />
+                </controls:SettingsRow>
                 </StackPanel>
               </Border>
             </StackPanel>
@@ -966,7 +933,7 @@ SPDX-License-Identifier: GPL-3.0-only
 
             <StackPanel Spacing="10">
               <TextBlock Text="{Binding AboutTeamTitle}" Classes="settingsCategoryHeading" />
-              <Border Classes="settingsGroup aboutTeamGroup">
+              <Border Classes="uiSettingsGroup aboutTeamGroup">
                 <ItemsControl ItemsSource="{Binding AboutTeamMembers}"
                               ItemTemplate="{StaticResource AboutTeamMemberTemplate}">
                   <ItemsControl.ItemsPanel>
@@ -981,7 +948,7 @@ SPDX-License-Identifier: GPL-3.0-only
             <StackPanel Spacing="10">
               <TextBlock Text="{Binding AboutContributorsTitle}" Classes="settingsCategoryHeading" />
               <Border x:Name="AboutContributorsContainer"
-                      Classes="settingsGroup aboutContributorsGroup"
+                      Classes="uiSettingsGroup aboutContributorsGroup"
                       SizeChanged="OnAboutContributorsSizeChanged">
                 <StackPanel x:Name="AboutContributorsRow"
                             Orientation="Horizontal"
@@ -1103,27 +1070,8 @@ SPDX-License-Identifier: GPL-3.0-only
                       VerticalAlignment="Center"
                       Margin="32"
                       Spacing="12">
-            <Border x:Name="DownloadSourceWizardAnimationAnchor"
-                    Width="64"
-                    Height="64"
-                    HorizontalAlignment="Center">
-              <Border.RenderTransform>
-                <TranslateTransform />
-              </Border.RenderTransform>
-              <Border x:Name="DownloadSourceWizardAnimationMotion">
-                <Border.RenderTransform>
-                  <TranslateTransform />
-                </Border.RenderTransform>
-                <lottie:Lottie x:Name="DownloadSourceWizardAnimation"
-                               Width="64"
-                               Height="64"
-                               Path="/Assets/Lotties/loader-reveal.json"
-                               AutoPlay="True"
-                               RepeatCount="1"
-                               OpacityMask="{DynamicResource AccentBrush}"
-                               Stretch="Uniform" />
-              </Border>
-            </Border>
+            <controls:WizardRevealIcon x:Name="DownloadSourceWizardReveal"
+                                       AnimationPath="/Assets/Lotties/loader-reveal.json" />
 
             <StackPanel x:Name="SourceAdditionChoiceContent"
                         IsVisible="{Binding IsAddSourceChoiceVisible}"
@@ -1186,7 +1134,7 @@ SPDX-License-Identifier: GPL-3.0-only
                 </StackPanel>
               </Border>
 
-              <Button Classes="sourceWizardAction"
+              <Button Classes="wizardAction"
                       HorizontalAlignment="Center"
                       Margin="0,10,0,0"
                       Command="{Binding CancelAddMirrorCommand}">
@@ -1228,12 +1176,12 @@ SPDX-License-Identifier: GPL-3.0-only
                           HorizontalAlignment="Center"
                           Margin="0,10,0,0"
                           Spacing="10">
-                <Button Classes="sourceWizardAction"
+                <Button Classes="wizardAction"
                         Click="OnReturnToSourceAdditionChoiceClicked"
                         IsEnabled="{Binding !IsMirrorOperationBusy}">
                   <TextBlock Text="{Binding BackLabel}" />
                 </Button>
-                <Button Classes="sourceWizardAction create"
+                <Button Classes="wizardAction create"
                         Command="{Binding AddMirrorCommand}"
                         IsEnabled="{Binding !IsMirrorOperationBusy}">
                   <TextBlock Text="{Binding AddSourceLabel}" />
@@ -1280,11 +1228,11 @@ SPDX-License-Identifier: GPL-3.0-only
                           HorizontalAlignment="Center"
                           Margin="0,10,0,0"
                           Spacing="10">
-                <Button Classes="sourceWizardAction"
+                <Button Classes="wizardAction"
                         Click="OnReturnToSourceAdditionChoiceClicked">
                   <TextBlock Text="{Binding BackLabel}" />
                 </Button>
-                <Button Classes="sourceWizardAction create"
+                <Button Classes="wizardAction create"
                         Command="{Binding AddManualMirrorCommand}">
                   <TextBlock Text="{Binding AddSourceLabel}" />
                 </Button>
@@ -1310,10 +1258,10 @@ SPDX-License-Identifier: GPL-3.0-only
                      FontWeight="SemiBold"
                      TextTrimming="CharacterEllipsis" />
           <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
-            <Button Classes="sourceWizardAction" Command="{Binding CancelDeleteMirrorCommand}">
+            <Button Classes="wizardAction" Command="{Binding CancelDeleteMirrorCommand}">
               <TextBlock Text="{Binding CancelLabel}" />
             </Button>
-            <Button Classes="sourceWizardAction create"
+            <Button Classes="wizardAction create"
                     Background="{DynamicResource DangerBrush}"
                     Command="{Binding ConfirmDeleteMirrorCommand}">
               <TextBlock Text="{Binding RemoveLabel}" />

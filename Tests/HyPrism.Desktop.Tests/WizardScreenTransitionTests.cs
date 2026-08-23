@@ -16,6 +16,180 @@ namespace HyPrism.Desktop.Tests;
 public sealed class WizardScreenTransitionTests
 {
     [AvaloniaFact]
+    public async Task RotatingVisualRunsOnlyWhileAttachedAndActive()
+    {
+        var spinner = new Border();
+        RotatingVisual.SetIsActive(spinner, true);
+
+        Assert.Null(spinner.RenderTransform);
+
+        var window = new Window { Content = spinner };
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        await Task.Delay(20);
+        var rotation = Assert.IsType<RotateTransform>(spinner.RenderTransform);
+        rotation.Angle = 42;
+
+        window.Close();
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.Equal(0, rotation.Angle);
+    }
+
+    [AvaloniaFact]
+    public async Task WizardHostKeepsActiveContentVisibleUntilExitPhaseCompletes()
+    {
+        var overview = CreateControl();
+        var wizard = CreateControl();
+        var activeStep = CreateControl();
+        var inactiveStep = CreateControl();
+        activeStep.IsVisible = true;
+        inactiveStep.IsVisible = false;
+        var host = new WizardHost(
+            overview,
+            wizard,
+            steps: [activeStep, inactiveStep]);
+        host.ShowWizardImmediately();
+        var callbackInvoked = false;
+
+        var closeTask = host.CloseAsync(() => true, () => callbackInvoked = true);
+        await Task.Delay(60);
+
+        Assert.True(activeStep.IsVisible);
+        Assert.False(callbackInvoked);
+        Assert.False(closeTask.IsCompleted);
+
+        await closeTask;
+
+        Assert.True(callbackInvoked);
+        Assert.True(overview.IsVisible);
+        Assert.False(wizard.IsVisible);
+    }
+
+    [AvaloniaFact]
+    public void WizardHostNormalizesStepStateWithoutRunningAnEntryTransition()
+    {
+        var overview = CreateControl();
+        var wizard = CreateControl();
+        var activeStep = CreateControl();
+        var inactiveStep = CreateControl();
+        activeStep.IsVisible = true;
+        activeStep.Opacity = 0;
+        activeStep.IsHitTestVisible = false;
+        Assert.IsType<TranslateTransform>(activeStep.RenderTransform).X = 28;
+        inactiveStep.IsVisible = false;
+        var host = new WizardHost(
+            overview,
+            wizard,
+            steps: [activeStep, inactiveStep]);
+
+        host.ShowWizardImmediately();
+
+        Assert.True(activeStep.IsVisible);
+        Assert.Equal(1, activeStep.Opacity);
+        Assert.True(activeStep.IsHitTestVisible);
+        Assert.Equal(0, Assert.IsType<TranslateTransform>(activeStep.RenderTransform).X);
+        Assert.False(inactiveStep.IsVisible);
+        Assert.Equal(0, inactiveStep.Opacity);
+    }
+
+    [AvaloniaFact]
+    public void AdaptiveMasterDetailHostPreservesDetailIntentAcrossLayoutChanges()
+    {
+        var layout = new Grid
+        {
+            ColumnDefinitions = new ColumnDefinitions("Auto,*")
+        };
+        var master = CreateControl();
+        var detail = CreateControl();
+        var toolbar = CreateControl();
+        var contentHost = CreateControl();
+        layout.Children.Add(master);
+        layout.Children.Add(detail);
+        var host = new AdaptiveMasterDetailHost(
+            layout,
+            master,
+            detail,
+            toolbar,
+            contentHost);
+
+        host.Update(800, hasMaster: true);
+        Assert.True(host.IsCompact);
+        Assert.False(host.IsDetailOpen);
+        Assert.False(detail.IsHitTestVisible);
+        Assert.Equal(800, Assert.IsType<TranslateTransform>(detail.RenderTransform).X);
+
+        host.OpenDetail();
+        Assert.True(host.IsDetailOpen);
+        Assert.True(detail.IsHitTestVisible);
+        Assert.Equal(0, Assert.IsType<TranslateTransform>(detail.RenderTransform).X);
+
+        host.Update(1200, hasMaster: true);
+        Assert.False(host.IsCompact);
+        Assert.True(detail.IsHitTestVisible);
+
+        host.Update(800, hasMaster: true);
+        Assert.True(host.IsCompact);
+        Assert.True(host.IsDetailOpen);
+
+        Assert.True(host.TryCloseDetail());
+        Assert.False(host.IsDetailOpen);
+        Assert.False(detail.IsHitTestVisible);
+    }
+
+    [AvaloniaFact]
+    public async Task AdaptiveMasterDetailHostAnimatesUserNavigationButNotLayoutSync()
+    {
+        var layout = new Grid
+        {
+            Width = 800,
+            Height = 600,
+            ColumnDefinitions = new ColumnDefinitions("Auto,*")
+        };
+        var master = CreateControl();
+        var detail = CreateControl();
+        var translation = Assert.IsType<TranslateTransform>(detail.RenderTransform);
+        translation.Transitions = new Avalonia.Animation.Transitions
+        {
+            new Avalonia.Animation.DoubleTransition
+            {
+                Property = TranslateTransform.XProperty,
+                Duration = TimeSpan.FromMilliseconds(300)
+            }
+        };
+        layout.Children.Add(master);
+        layout.Children.Add(detail);
+        var host = new AdaptiveMasterDetailHost(layout, master, detail);
+        var window = new Window
+        {
+            Width = 800,
+            Height = 600,
+            Content = layout
+        };
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+
+        host.Update(800, hasMaster: true);
+        Assert.Equal(800, translation.X);
+
+        host.OpenDetail();
+        await Task.Delay(70);
+        Dispatcher.UIThread.RunJobs();
+        Assert.InRange(translation.X, 1, 799);
+
+        await Task.Delay(280);
+        Dispatcher.UIThread.RunJobs();
+        Assert.InRange(Math.Abs(translation.X), 0, 0.01);
+
+        Assert.True(host.TryCloseDetail());
+        await Task.Delay(70);
+        Dispatcher.UIThread.RunJobs();
+        Assert.InRange(translation.X, 1, 799);
+
+        window.Close();
+    }
+
+    [AvaloniaFact]
     public async Task CancelledStepTransitionRestoresTheCurrentStep()
     {
         var overview = CreateControl();
