@@ -7,6 +7,7 @@ SPDX-License-Identifier: GPL-3.0-only
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:HyPrism.Desktop.Features.Settings"
              xmlns:controls="using:HyPrism.Desktop.Controls"
+             xmlns:lottie="clr-namespace:Avalonia.Labs.Lottie;assembly=Avalonia.Labs.Lottie"
              xmlns:easing="clr-namespace:Avalonia.Animation.Easings;assembly=Avalonia.Base"
              x:Class="HyPrism.Desktop.Features.Settings.SettingsView"
              x:Name="SettingsRoot"
@@ -1097,11 +1098,27 @@ SPDX-License-Identifier: GPL-3.0-only
                       VerticalAlignment="Center"
                       Margin="32"
                       Spacing="12">
-            <Image Width="64"
-                   Height="64"
-                   HorizontalAlignment="Center"
-                   Source="avares://HyPrism.Desktop/Assets/Fluent/downloads.png"
-                   Stretch="Uniform" />
+            <Border x:Name="DownloadSourceWizardAnimationAnchor"
+                    Width="64"
+                    Height="64"
+                    HorizontalAlignment="Center">
+              <Border.RenderTransform>
+                <TranslateTransform />
+              </Border.RenderTransform>
+              <Border x:Name="DownloadSourceWizardAnimationMotion">
+                <Border.RenderTransform>
+                  <TranslateTransform />
+                </Border.RenderTransform>
+                <lottie:Lottie x:Name="DownloadSourceWizardAnimation"
+                               Width="64"
+                               Height="64"
+                               Path="/Assets/Lotties/loader-reveal.json"
+                               AutoPlay="True"
+                               RepeatCount="1"
+                               OpacityMask="{DynamicResource AccentBrush}"
+                               Stretch="Uniform" />
+              </Border>
+            </Border>
 
             <StackPanel x:Name="SourceAdditionChoiceContent"
                         IsVisible="{Binding IsAddSourceChoiceVisible}"

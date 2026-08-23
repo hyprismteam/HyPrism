@@ -1,9 +1,13 @@
 // Copyright (C) 2026 HyPrism Launcher
 // SPDX-License-Identifier: GPL-3.0-only
 
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
+using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Threading;
+using Avalonia.VisualTree;
 using HyPrism.Desktop.Controls;
 using Xunit;
 
@@ -162,6 +166,80 @@ public sealed class WizardScreenTransitionTests
         Assert.True(double.IsNaN(navigationPane.Width));
         Assert.Equal(1, navigationPane.Opacity);
         Assert.Equal(0, Assert.IsType<TranslateTransform>(navigationPane.RenderTransform).X);
+    }
+
+    [AvaloniaFact]
+    public async Task LayoutAnchorMovesSmoothlyWhenCenteredWizardContentChangesHeight()
+    {
+        var overview = CreateControl();
+        var anchor = new Border
+        {
+            Width = 64,
+            Height = 64,
+            RenderTransform = new TranslateTransform()
+        };
+        var variableContent = new Border
+        {
+            Width = 240,
+            Height = 80
+        };
+        var wizardContent = new StackPanel
+        {
+            VerticalAlignment = VerticalAlignment.Center,
+            Spacing = 20,
+            Children =
+            {
+                anchor,
+                variableContent
+            }
+        };
+        var wizard = new Border
+        {
+            Width = 400,
+            Height = 500,
+            Child = wizardContent,
+            RenderTransform = new TranslateTransform()
+        };
+        Assert.Same(wizardContent, anchor.Parent);
+        var transition = new WizardScreenTransition(
+            overview,
+            wizard,
+            layoutAnchor: anchor);
+        var window = new Window
+        {
+            Width = 400,
+            Height = 500,
+            Content = wizard
+        };
+
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        transition.ShowWizardImmediately();
+        var initialY = anchor.TranslatePoint(default, wizard)!.Value.Y;
+
+        variableContent.Height = 280;
+        Dispatcher.UIThread.RunJobs();
+        await Task.Delay(40);
+        Dispatcher.UIThread.RunJobs();
+
+        var translation = Assert.IsType<TranslateTransform>(anchor.RenderTransform);
+        var movingY = anchor.TranslatePoint(default, wizard)!.Value.Y;
+        Assert.True(
+            translation.Y is >= 1 and <= 199,
+            $"Initial Y: {initialY}, moving Y: {movingY}, translation Y: {translation.Y}, " +
+            $"anchor bounds: {anchor.Bounds}, content bounds: {variableContent.Bounds}, " +
+            $"stack bounds: {wizardContent.Bounds}");
+        Assert.InRange(movingY, initialY - 199, initialY);
+
+        await Task.Delay(WizardScreenTransition.AnchorMoveDuration + TimeSpan.FromMilliseconds(80));
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.InRange(Math.Abs(translation.Y), 0, 0.01);
+        var settledY = anchor.TranslatePoint(default, wizard)!.Value.Y;
+        Assert.InRange(initialY - settledY, 99, 101);
+
+        transition.Cancel();
+        window.Close();
     }
 
     private static Border CreateControl()

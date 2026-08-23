@@ -39,7 +39,9 @@ public sealed partial class SettingsView : UserControl
         _downloadSourceTransition = new WizardScreenTransition(
             SettingsOverview,
             DownloadSourceWizardScreen,
-            SettingsCategoryRail);
+            SettingsCategoryRail,
+            DownloadSourceWizardAnimationAnchor,
+            DownloadSourceWizardAnimationMotion);
         _availabilitySpinnerTimer = new DispatcherTimer
         {
             Interval = TimeSpan.FromMilliseconds(16)
@@ -334,7 +336,14 @@ public sealed partial class SettingsView : UserControl
             _downloadSourceTransition.HideNavigationPane(animate: true);
 
         await _downloadSourceTransition.OpenAsync(
-            () => DataContext is SettingsViewModel { IsAddingMirror: true });
+            () => DataContext is SettingsViewModel { IsAddingMirror: true },
+            RestartDownloadSourceWizardAnimation);
+    }
+
+    private void RestartDownloadSourceWizardAnimation()
+    {
+        DownloadSourceWizardAnimation.SeekToProgress(0);
+        DownloadSourceWizardAnimation.Start();
     }
 
     private async Task PlayDownloadSourceWizardCloseAsync()

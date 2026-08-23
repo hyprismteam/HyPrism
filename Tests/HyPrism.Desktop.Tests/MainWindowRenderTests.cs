@@ -14,6 +14,7 @@ using Avalonia.Headless.XUnit;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
+using Avalonia.Labs.Lottie;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Threading;
@@ -195,11 +196,18 @@ public sealed class MainWindowRenderTests
         Assert.False(profilesListPane.IsHitTestVisible);
         Assert.True(profileMain.Bounds.Width > profileMainWidthWithList + 275);
         Assert.Contains("profileWizardScreen", wizard.Classes);
-        var profileWizardIcon = view.FindControl<Image>("ProfileWizardIcon");
-        Assert.NotNull(profileWizardIcon);
-        Assert.NotNull(profileWizardIcon!.Source);
-        Assert.Equal(64, profileWizardIcon.Width);
-        Assert.Equal(64, profileWizardIcon.Height);
+        var profileWizardAnimation = Assert.IsType<Lottie>(
+            view.FindControl<Lottie>("ProfileWizardAnimation"));
+        Assert.Equal("/Assets/Lotties/avatar-reveal.json", profileWizardAnimation.Path);
+        Assert.True(profileWizardAnimation.AutoPlay);
+        Assert.Equal(1, profileWizardAnimation.RepeatCount);
+        Assert.NotNull(profileWizardAnimation.OpacityMask);
+        Assert.Equal(64, profileWizardAnimation.Width);
+        Assert.Equal(64, profileWizardAnimation.Height);
+        var profileWizardAnimationMotion = Assert.IsType<Border>(
+            view.FindControl<Border>("ProfileWizardAnimationMotion"));
+        var profileWizardAnimationTranslation = Assert.IsType<TranslateTransform>(
+            profileWizardAnimationMotion.RenderTransform);
 
         if (!string.IsNullOrWhiteSpace(previewPath))
         {
@@ -207,6 +215,11 @@ public sealed class MainWindowRenderTests
             var stem = Path.GetFileNameWithoutExtension(previewPath);
             window.CaptureRenderedFrame()!.Save(
                 Path.Combine(directory, $"{stem}-wizard.png"),
+                PngBitmapEncoderOptions.Default);
+            await Task.Delay(1600);
+            Dispatcher.UIThread.RunJobs();
+            window.CaptureRenderedFrame()!.Save(
+                Path.Combine(directory, $"{stem}-wizard-final.png"),
                 PngBitmapEncoderOptions.Default);
         }
 
@@ -221,6 +234,9 @@ public sealed class MainWindowRenderTests
         Dispatcher.UIThread.RunJobs();
         Assert.True(profileCreationChoice.IsVisible);
         Assert.False(offlineProfileCreation.IsVisible);
+        Assert.True(
+            Math.Abs(profileWizardAnimationTranslation.Y) > 0.05,
+            $"Motion Y: {profileWizardAnimationTranslation.Y}");
         await Task.Delay(140);
         Dispatcher.UIThread.RunJobs();
         Assert.False(profileCreationChoice.IsVisible);
@@ -1881,6 +1897,14 @@ public sealed class MainWindowRenderTests
         Assert.Equal(Avalonia.Layout.HorizontalAlignment.Center, wideInstanceActions!.HorizontalAlignment);
         var instanceContentTranslation = Assert.IsType<TranslateTransform>(instancesContent!.RenderTransform);
         Assert.Equal(usesCompactInstancesLayout, compactInstanceToolbar!.IsVisible);
+        var instanceWizardAnimation = Assert.IsType<Lottie>(
+            instancesView.FindControl<Lottie>("InstanceWizardAnimation"));
+        Assert.Equal("/Assets/Lotties/server-reveal.json", instanceWizardAnimation.Path);
+        Assert.True(instanceWizardAnimation.AutoPlay);
+        Assert.Equal(1, instanceWizardAnimation.RepeatCount);
+        Assert.NotNull(instanceWizardAnimation.OpacityMask);
+        Assert.Equal(64, instanceWizardAnimation.Width);
+        Assert.Equal(64, instanceWizardAnimation.Height);
 
         if (!usesCompactInstancesLayout)
         {
@@ -1892,6 +1916,14 @@ public sealed class MainWindowRenderTests
             Assert.Equal(0, instancesListPane.Opacity);
             Assert.False(instancesListPane.IsHitTestVisible);
             Assert.True(instancesContent.Bounds.Width > contentWidthWithList + 275);
+            Assert.True(instanceWizardAnimation.IsEffectivelyVisible);
+
+            var instanceWizardPreviewPath = Environment.GetEnvironmentVariable(
+                "HYPRISM_INSTANCE_WIZARD_RENDER_OUTPUT");
+            if (!string.IsNullOrWhiteSpace(instanceWizardPreviewPath) && width == 1280)
+                window.CaptureRenderedFrame()!.Save(
+                    instanceWizardPreviewPath,
+                    PngBitmapEncoderOptions.Default);
 
             viewModel.CloseInstanceCreatorCommand.Execute(null);
             await Task.Delay(420);
@@ -1924,6 +1956,7 @@ public sealed class MainWindowRenderTests
             Assert.True(viewModel.IsInstanceCreatorOpen);
             Assert.Equal(0, instanceContentTranslation.X);
             Assert.True(instanceCreatorScreen!.IsEffectivelyVisible);
+            Assert.True(instanceWizardAnimation.IsEffectivelyVisible);
             Assert.False(instancesOverview!.IsVisible);
 
             viewModel.CloseInstanceCreatorCommand.Execute(null);

@@ -26,10 +26,8 @@ public class JsonMirrorSource : IVersionSource
     private readonly SemaphoreSlim _fetchLock = new(1, 1);
     private readonly SemaphoreSlim _speedTestLock = new(1, 1);
 
-    // Cache for version lists: cacheKey → (timestamp, versions)
     private readonly Dictionary<string, (DateTime CachedAt, List<int> Versions)> _versionCache = new();
 
-    // Cache for JSON index API response
     private JsonElement? _cachedJsonIndex;
     private DateTime _jsonIndexCachedAt = DateTime.MinValue;
 
@@ -79,7 +77,6 @@ public class JsonMirrorSource : IVersionSource
         {
             var expandedValue = headerValue;
 
-            // Expand {hytaleAgent} variable
             if (expandedValue.Contains("{hytaleAgent}", StringComparison.OrdinalIgnoreCase))
             {
                 if (hytaleAgent == null)
@@ -158,15 +155,11 @@ public class JsonMirrorSource : IVersionSource
             return await GetDownloadUrlFromJsonIndexAsync(os, arch, branch, version, ct);
         }
 
-        // Pattern-based: build URL directly from template
         if (IsDiffBasedBranch(branch))
         {
-            // For diff-based branches, full download is only v0~1
-            if (version == 1 && _meta.Pattern?.DiffPatchUrl != null)
-            {
-                return BuildPatternUrl(_meta.Pattern.DiffPatchUrl, os, arch, branch, version, 0, 1);
-            }
-            return null;
+            return version == 1 && _meta.Pattern?.DiffPatchUrl != null
+                ? BuildPatternUrl(_meta.Pattern.DiffPatchUrl, os, arch, branch, version, 0, 1)
+                : null;
         }
 
         return BuildPatternUrl(_meta.Pattern!.FullBuildUrl, os, arch, branch, version, 0, version);
@@ -209,21 +202,16 @@ public class JsonMirrorSource : IVersionSource
 
         try
         {
-            // Get known versions for this branch
             var versions = await GetVersionsAsync(os, arch, branch, ct);
             if (versions.Count == 0) return steps;
 
             var sortedVersions = versions.Select(v => v.Version).OrderBy(v => v).ToList();
 
-            // Determine whether this source can produce diff patches for this branch.
-            // Pattern-based: diffs available when DiffPatchUrl template is set.
-            // Json-index:    diffs always attempted (files may or may not exist in index).
             bool hasDiffSupport = _meta.SourceType == "json-index"
                 || _meta.Pattern?.DiffPatchUrl != null;
 
             if (hasDiffSupport)
             {
-                // Build diff chain: v0→v1, v1→v2, ..., v(N-1)→vN
                 int prev = 0;
                 foreach (var ver in sortedVersions)
                 {
@@ -236,8 +224,6 @@ public class JsonMirrorSource : IVersionSource
                 }
             }
 
-            // If no diff steps were produced (source doesn't support diffs for this branch,
-            // or json-index had no patch entries), fall back to full-build entries.
             if (steps.Count == 0)
             {
                 foreach (var ver in sortedVersions)
@@ -293,7 +279,6 @@ public class JsonMirrorSource : IVersionSource
 
             try
             {
-                // Ping test - try HEAD first, fall back to GET if HEAD not supported
                 var pingStart = DateTime.UtcNow;
                 using var pingCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
                 pingCts.CancelAfter(TimeSpan.FromSeconds(_meta.SpeedTest.PingTimeoutSeconds));
@@ -303,7 +288,6 @@ public class JsonMirrorSource : IVersionSource
 
                 result.PingMs = (long)(DateTime.UtcNow - pingStart).TotalMilliseconds;
 
-                // Check if HEAD succeeded, or if server returns codes that indicate "API exists but HEAD not supported"
                 var headStatusCode = (int)pingResp.StatusCode;
                 var headSucceeded = pingResp.IsSuccessStatusCode ||
                     headStatusCode == 405 || // Method Not Allowed - API exists, HEAD not supported
@@ -312,7 +296,6 @@ public class JsonMirrorSource : IVersionSource
 
                 if (!headSucceeded)
                 {
-                    // Try GET as fallback
                     var getStart = DateTime.UtcNow;
                     using var getCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
                     getCts.CancelAfter(TimeSpan.FromSeconds(_meta.SpeedTest.PingTimeoutSeconds));
@@ -337,7 +320,6 @@ public class JsonMirrorSource : IVersionSource
 
                 Logger.Debug($"Mirror:{SourceId}", $"Ping successful: {result.PingMs}ms, proceeding to speed test");
 
-                // Speed test: download real file data
                 var os = LauncherUtilities.GetOS();
                 var arch = LauncherUtilities.GetArch();
                 var testUrl = await GetSpeedTestUrlAsync(os, arch, ct);
@@ -368,7 +350,7 @@ public class JsonMirrorSource : IVersionSource
                         var elapsed = (DateTime.UtcNow - speedStart).TotalSeconds;
                         if (elapsed > 0 && totalRead > 0)
                         {
-                            result.SpeedMBps = (totalRead / 1_048_576.0) / elapsed;
+                            result.SpeedMBps = totalRead / 1_048_576.0 / elapsed;
                         }
                     }
                 }
@@ -467,8 +449,6 @@ public class JsonMirrorSource : IVersionSource
 
         if (IsDiffBasedBranch(branch) && config.DiffPatchUrl != null)
         {
-            // For diff branches, we don't know from~to pairs from version discovery.
-            // Return full downloads from version 0 so the caller can request diffs
             return versions.Select(v => new CachedVersionEntry
             {
                 Version = v,
@@ -532,7 +512,7 @@ public class JsonMirrorSource : IVersionSource
                     break;
                 default:
                     Logger.Warning($"Mirror:{SourceId}", $"Unknown discovery method: {discovery.Method}");
-                    versions = new List<int>();
+                    versions = [];
                     break;
             }
 
@@ -564,7 +544,7 @@ public class JsonMirrorSource : IVersionSource
         string os, string arch, string branch, CancellationToken ct)
     {
         var discovery = _meta.Pattern!.VersionDiscovery;
-        if (string.IsNullOrEmpty(discovery.Url)) return new List<int>();
+        if (string.IsNullOrEmpty(discovery.Url)) return [];
 
         var url = ApplyPlaceholders(discovery.Url, os, arch, branch, 0, 0, 0);
         Logger.Info($"Mirror:{SourceId}", $"Fetching versions from {url}...");
@@ -576,12 +556,11 @@ public class JsonMirrorSource : IVersionSource
         if (!response.IsSuccessStatusCode)
         {
             Logger.Warning($"Mirror:{SourceId}", $"API returned {response.StatusCode}");
-            return new List<int>();
+            return [];
         }
 
         var json = await response.Content.ReadAsStringAsync(cts.Token);
 
-        // Apply placeholders to jsonPath (for paths like "{os}-{arch}.{branch}.newest")
         var resolvedJsonPath = discovery.JsonPath != null
             ? ApplyPlaceholders(discovery.JsonPath, os, arch, branch, 0, 0, 0)
             : null;
@@ -605,7 +584,7 @@ public class JsonMirrorSource : IVersionSource
         if (!response.IsSuccessStatusCode)
         {
             Logger.Warning($"Mirror:{SourceId}", $"HTML index returned {response.StatusCode}");
-            return new List<int>();
+            return [];
         }
 
         var html = await response.Content.ReadAsStringAsync(cts.Token);
@@ -622,8 +601,8 @@ public class JsonMirrorSource : IVersionSource
         var discovery = _meta.Pattern!.VersionDiscovery;
         if (string.IsNullOrEmpty(discovery.Url)) return new List<int>();
 
-        var url = discovery.Url; // Manifest URL is absolute, no placeholders
-        Logger.Info($"Mirror:{SourceId}", $"Fetching manifest from {url}...");
+        var url = discovery.Url;
+        Logger.Info($"Mirror: {SourceId}", $"Fetching manifest from {url}...");
 
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
         cts.CancelAfter(TimeSpan.FromSeconds(15));
@@ -631,8 +610,8 @@ public class JsonMirrorSource : IVersionSource
         var response = await GetWithHeadersAsync(url, cts.Token);
         if (!response.IsSuccessStatusCode)
         {
-            Logger.Warning($"Mirror:{SourceId}", $"Manifest returned {response.StatusCode}");
-            return new List<int>();
+            Logger.Warning($"Mirror: {SourceId}", $"Manifest returned {response.StatusCode}");
+            return [];
         }
 
         var json = await response.Content.ReadAsStringAsync(cts.Token);
@@ -652,19 +631,17 @@ public class JsonMirrorSource : IVersionSource
             if (!doc.RootElement.TryGetProperty("files", out var filesNode) ||
                 filesNode.ValueKind != JsonValueKind.Object)
             {
-                Logger.Warning($"Mirror:{SourceId}", "Manifest missing 'files' object");
-                return new List<int>();
+                Logger.Warning($"Mirror: {SourceId}", "Manifest missing 'files' object");
+                return [];
             }
 
-            // Apply OS/arch mappings to match manifest paths
             var mappedOs = ApplyMapping(_meta.Pattern?.OsMapping, os);
             var mappedArch = ApplyMapping(_meta.Pattern?.ArchMapping, arch);
 
-            // Pattern: {os}/{arch}/{branch}/{from}_to_{to}.pwr
             var prefix = $"{mappedOs}/{mappedArch}/{branch}/";
-            var patchPattern = new System.Text.RegularExpressions.Regex(
+            var patchPattern = new Regex(
                 @"(\d+)_to_(\d+)\.pwr$",
-                System.Text.RegularExpressions.RegexOptions.Compiled);
+                RegexOptions.Compiled);
 
             var versions = new HashSet<int>();
 
@@ -676,7 +653,6 @@ public class JsonMirrorSource : IVersionSource
                 var match = patchPattern.Match(file.Name);
                 if (match.Success)
                 {
-                    // Add target version (to)
                     if (int.TryParse(match.Groups[2].Value, out var toVersion))
                     {
                         versions.Add(toVersion);
@@ -684,13 +660,13 @@ public class JsonMirrorSource : IVersionSource
                 }
             }
 
-            Logger.Debug($"Mirror:{SourceId}", $"Manifest: found {versions.Count} versions for {mappedOs}/{mappedArch}/{branch}");
+            Logger.Debug($"Mirror: {SourceId}", $"Manifest: found {versions.Count} versions for {mappedOs}/{mappedArch}/{branch}");
             return versions.OrderByDescending(v => v).ToList();
         }
         catch (Exception ex)
         {
-            Logger.Warning($"Mirror:{SourceId}", $"Failed to parse manifest: {ex.Message}");
-            return new List<int>();
+            Logger.Warning($"Mirror: {SourceId}", $"Failed to parse manifest: {ex.Message}");
+            return [];
         }
     }
 
@@ -717,7 +693,6 @@ public class JsonMirrorSource : IVersionSource
             var root = doc.RootElement;
             var versions = new List<int>();
 
-            // "items[].version" addresses an array of objects with a version field
             if (jsonPath != null && jsonPath.Contains("[]."))
             {
                 var parts = jsonPath.Split("[].");
@@ -742,7 +717,6 @@ public class JsonMirrorSource : IVersionSource
                 return versions.Distinct().OrderByDescending(v => v).ToList();
             }
 
-            // "$root" or null means that the root is an array
             if (jsonPath == null || jsonPath == "$root")
             {
                 if (root.ValueKind == JsonValueKind.Array)
@@ -756,7 +730,6 @@ public class JsonMirrorSource : IVersionSource
                 return versions.Distinct().OrderByDescending(v => v).ToList();
             }
 
-            // Dot-notation nested path: "linux-amd64.release.newest" -> navigate to single value
             if (jsonPath.Contains('.'))
             {
                 var pathParts = jsonPath.Split('.');
@@ -766,24 +739,23 @@ public class JsonMirrorSource : IVersionSource
                 {
                     if (current.ValueKind != JsonValueKind.Object)
                     {
-                        Logger.Debug($"Mirror:{SourceId}", $"JsonPath '{jsonPath}': expected object at '{part}', got {current.ValueKind}");
+                        Logger.Debug($"Mirror: {SourceId}", $"JsonPath '{jsonPath}': expected object at '{part}', got {current.ValueKind}");
                         return versions;
                     }
 
                     if (!current.TryGetProperty(part, out current))
                     {
-                        Logger.Debug($"Mirror:{SourceId}", $"JsonPath '{jsonPath}': property '{part}' not found");
+                        Logger.Debug($"Mirror: {SourceId}", $"JsonPath '{jsonPath}': property '{part}' not found");
                         return versions;
                     }
                 }
 
-                // Final element should be a number (single version) or array of numbers
                 if (current.ValueKind == JsonValueKind.Number)
                 {
                     if (current.TryGetInt32(out int v))
                     {
                         versions.Add(v);
-                        Logger.Debug($"Mirror:{SourceId}", $"JsonPath '{jsonPath}': found version {v}");
+                        Logger.Debug($"Mirror: {SourceId}", $"JsonPath '{jsonPath}': found version {v}");
                     }
                 }
                 else if (current.ValueKind == JsonValueKind.Array)
@@ -816,8 +788,8 @@ public class JsonMirrorSource : IVersionSource
         }
         catch (JsonException ex)
         {
-            Logger.Warning($"Mirror:{SourceId}", $"Failed to parse JSON: {ex.Message}");
-            return new List<int>();
+            Logger.Warning($"Mirror: {SourceId}", $"Failed to parse JSON: {ex.Message}");
+            return [];
         }
     }
 
@@ -826,7 +798,7 @@ public class JsonMirrorSource : IVersionSource
     /// </summary>
     private static List<int> ParseVersionsFromHtml(string html, string? pattern, long minFileSize)
     {
-        if (string.IsNullOrEmpty(pattern)) return new List<int>();
+        if (string.IsNullOrEmpty(pattern)) return [];
 
         var versions = new List<int>();
         var regex = new Regex(pattern, RegexOptions.IgnoreCase);
@@ -837,7 +809,6 @@ public class JsonMirrorSource : IVersionSource
             if (match.Groups.Count < 2) continue;
             if (!int.TryParse(match.Groups[1].Value, out int version)) continue;
 
-            // If the regex has a second capture group (file size), check minimum
             if (minFileSize > 0 && match.Groups.Count > 2
                 && long.TryParse(match.Groups[2].Value, out long fileSize)
                 && fileSize < minFileSize)
@@ -907,7 +878,6 @@ public class JsonMirrorSource : IVersionSource
             return entries.OrderByDescending(e => e.Version).ThenBy(e => e.FromVersion).ToList();
         }
 
-        // Release: use base files (full builds)
         var baseFiles = config.Structure == "grouped"
             ? await GetIndexFilesAsync(os, branch, "base", ct)
             : await GetIndexFilesAsync(os, branch, null, ct);
@@ -974,7 +944,6 @@ public class JsonMirrorSource : IVersionSource
         var config = _meta.JsonIndex!;
         var rootEl = root.Value;
 
-        // Navigate: root → rootPath → branch → platform [→ group]
         if (!rootEl.TryGetProperty(config.RootPath, out var gameNode) || gameNode.ValueKind != JsonValueKind.Object)
             return result;
         if (!gameNode.TryGetProperty(branch, out var branchNode) || branchNode.ValueKind != JsonValueKind.Object)

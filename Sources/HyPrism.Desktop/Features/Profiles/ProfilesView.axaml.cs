@@ -49,7 +49,9 @@ public sealed partial class ProfilesView : UserControl
         _creatorTransition = new WizardScreenTransition(
             ProfileOverview,
             ProfileCreatorScreen,
-            ProfilesListPane);
+            ProfilesListPane,
+            ProfileWizardAnimationAnchor,
+            ProfileWizardAnimationMotion);
         DataContextChanged += OnDataContextChanged;
     }
 
@@ -419,6 +421,7 @@ public sealed partial class ProfilesView : UserControl
                 return;
             }
 
+            RestartProfileWizardAnimation();
             OpenCompactContent();
             return;
         }
@@ -430,7 +433,14 @@ public sealed partial class ProfilesView : UserControl
         }
 
         await _creatorTransition.OpenAsync(
-            () => DataContext is ProfilesViewModel { IsCreationVisible: true });
+            () => DataContext is ProfilesViewModel { IsCreationVisible: true },
+            RestartProfileWizardAnimation);
+    }
+
+    private void RestartProfileWizardAnimation()
+    {
+        ProfileWizardAnimation.SeekToProgress(0);
+        ProfileWizardAnimation.Start();
     }
 
     private async Task PlayCreatorCloseAnimationAsync()

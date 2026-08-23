@@ -17,23 +17,42 @@ namespace HyPrism.Desktop.Controls;
 public sealed class WizardScreenTransition
 {
     public static readonly TimeSpan PhaseDuration = TimeSpan.FromMilliseconds(190);
+    public static readonly TimeSpan AnchorMoveDuration = PhaseDuration;
 
     private readonly Control _overview;
     private readonly Control _wizard;
     private readonly Control? _navigationPane;
+    private readonly Control? _layoutAnchor;
+    private readonly Control? _layoutMotionTarget;
+    private readonly Control? _layoutContainer;
     private readonly double _navigationPaneWidth;
     private CancellationTokenSource? _animationCancellation;
+    private double? _anchorTargetY;
+    private bool _isPlannedAnchorMove;
+    private bool _suppressAnchorLayoutTracking;
+    private double _plannedAnchorLayoutDelta;
 
     public WizardScreenTransition(
         Control overview,
         Control wizard,
         Control? navigationPane = null,
+        Control? layoutAnchor = null,
+        Control? layoutMotionTarget = null,
         double navigationPaneWidth = 276)
     {
         _overview = overview;
         _wizard = wizard;
         _navigationPane = navigationPane;
+        _layoutAnchor = layoutAnchor;
+        _layoutMotionTarget = layoutMotionTarget ?? layoutAnchor;
         _navigationPaneWidth = navigationPaneWidth;
+        if (_layoutAnchor is not null)
+        {
+            _layoutAnchor.RenderTransform ??= new TranslateTransform();
+            _layoutMotionTarget!.RenderTransform ??= new TranslateTransform();
+            _layoutContainer = _layoutAnchor.Parent as Control ?? _wizard;
+            _layoutContainer.PropertyChanged += OnLayoutContainerPropertyChanged;
+        }
     }
 
     public async Task OpenAsync(Func<bool> shouldRemainOpen, Action? onOpened = null)
@@ -60,6 +79,7 @@ public sealed class WizardScreenTransition
             _wizard.IsHitTestVisible = true;
             _wizard.Opacity = 1;
             GetTranslation(_wizard).X = 0;
+            InitializeAnchorTarget();
             onOpened?.Invoke();
         }
         catch (OperationCanceledException)
@@ -113,6 +133,8 @@ public sealed class WizardScreenTransition
         Func<bool> shouldRemainOpen)
     {
         var cancellationToken = BeginAnimation();
+        InitializeAnchorTarget();
+        BeginPlannedAnchorMove(outgoingStep, incomingStep);
         var stepSwitched = false;
         PrepareHiddenState(incomingStep, forward ? 28 : -28);
         outgoingStep.IsHitTestVisible = false;
@@ -145,13 +167,16 @@ public sealed class WizardScreenTransition
                 return;
             }
 
-            await RunStepAnimationAsync(
-                incomingStep,
-                fromOpacity: 0,
-                toOpacity: 1,
-                fromOffset: forward ? 28 : -28,
-                toOffset: 0,
-                cancellationToken);
+            var anchorMoveCompletion = ContinuePlannedAnchorMove(cancellationToken);
+            await Task.WhenAll(
+                RunStepAnimationAsync(
+                    incomingStep,
+                    fromOpacity: 0,
+                    toOpacity: 1,
+                    fromOffset: forward ? 28 : -28,
+                    toOffset: 0,
+                    cancellationToken),
+                anchorMoveCompletion);
             if (cancellationToken.IsCancellationRequested || !shouldRemainOpen())
                 return;
 
@@ -163,6 +188,10 @@ public sealed class WizardScreenTransition
             // does not also close the wizard
             if (shouldRemainOpen())
                 RestoreVisibleState(stepSwitched ? incomingStep : outgoingStep);
+        }
+        finally
+        {
+            FinishPlannedAnchorMove(cancellationToken);
         }
     }
 
@@ -210,6 +239,10 @@ public sealed class WizardScreenTransition
         _animationCancellation?.Cancel();
         _animationCancellation?.Dispose();
         _animationCancellation = null;
+        ResetAnchorTranslation();
+        ResetMotionTranslation();
+        _isPlannedAnchorMove = false;
+        _plannedAnchorLayoutDelta = 0;
     }
 
     private CancellationToken BeginAnimation()
@@ -267,6 +300,9 @@ public sealed class WizardScreenTransition
         wizardTranslation.X = showWizard ? 0 : 36;
         _wizard.IsVisible = showWizard;
         _wizard.IsHitTestVisible = showWizard;
+
+        if (showWizard)
+            InitializeAnchorTarget();
 
         _overview.Transitions = overviewTransitions;
         _wizard.Transitions = wizardTransitions;
@@ -336,6 +372,169 @@ public sealed class WizardScreenTransition
                 }
             }
         };
+
+    private void OnLayoutContainerPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs args)
+    {
+        if (args.Property != Visual.BoundsProperty ||
+            _layoutAnchor is null ||
+            !_wizard.IsVisible ||
+            !_layoutAnchor.IsVisible)
+            return;
+
+        var oldBounds = args.GetOldValue<Rect>();
+        var newBounds = args.GetNewValue<Rect>();
+        var layoutOffset = oldBounds.Y - newBounds.Y;
+        if (Math.Abs(layoutOffset) < 0.5 || _anchorTargetY is null || _suppressAnchorLayoutTracking)
+            return;
+
+        var translation = GetTranslation(_layoutAnchor);
+        _anchorTargetY += newBounds.Y - oldBounds.Y;
+        if (_isPlannedAnchorMove)
+        {
+            _plannedAnchorLayoutDelta += newBounds.Y - oldBounds.Y;
+            translation.Y += layoutOffset;
+            return;
+        }
+
+        StartAnchorAnimation(translation.Y + layoutOffset);
+    }
+
+    private void BeginPlannedAnchorMove(Control outgoingStep, Control incomingStep)
+    {
+        if (_layoutAnchor is null || _layoutMotionTarget is null || _layoutContainer is null)
+            return;
+
+        var incomingHeight = MeasureStepHeight(incomingStep, outgoingStep.Bounds.Width);
+        var outgoingHeight = outgoingStep.Bounds.Height;
+        if (incomingHeight <= 0 || outgoingHeight <= 0)
+            return;
+
+        var predictedLayoutDelta = (outgoingHeight - incomingHeight) / 2;
+        if (Math.Abs(predictedLayoutDelta) < 0.5)
+            return;
+
+        _isPlannedAnchorMove = true;
+        _plannedAnchorLayoutDelta = 0;
+        SetTranslationImmediately(GetTranslation(_layoutAnchor), 0);
+        SetTranslationImmediately(GetTranslation(_layoutMotionTarget), 0);
+        AnimateTranslation(
+            GetTranslation(_layoutMotionTarget),
+            predictedLayoutDelta / 2,
+            new SineEaseIn());
+    }
+
+    private double MeasureStepHeight(Control step, double currentStepWidth)
+    {
+        var wasVisible = step.IsVisible;
+        _suppressAnchorLayoutTracking = true;
+        try
+        {
+            step.SetCurrentValue(Visual.IsVisibleProperty, true);
+            var availableWidth = currentStepWidth > 0
+                ? currentStepWidth
+                : Math.Max(0, _layoutContainer?.Bounds.Width ?? 0);
+            step.Measure(new Size(availableWidth, double.PositiveInfinity));
+            return step.DesiredSize.Height;
+        }
+        finally
+        {
+            step.SetCurrentValue(Visual.IsVisibleProperty, wasVisible);
+            _suppressAnchorLayoutTracking = false;
+        }
+    }
+
+    private Task ContinuePlannedAnchorMove(CancellationToken cancellationToken)
+    {
+        if (!_isPlannedAnchorMove || _layoutMotionTarget is null)
+            return Task.CompletedTask;
+
+        AnimateTranslation(
+            GetTranslation(_layoutMotionTarget),
+            _plannedAnchorLayoutDelta,
+            new SineEaseOut());
+        return Task.Delay(
+            PhaseDuration + TimeSpan.FromMilliseconds(16),
+            cancellationToken);
+    }
+
+    private void FinishPlannedAnchorMove(CancellationToken cancellationToken)
+    {
+        if (!_isPlannedAnchorMove ||
+            _animationCancellation is null ||
+            _animationCancellation.Token != cancellationToken)
+            return;
+
+        ResetAnchorTranslation();
+        ResetMotionTranslation();
+        _isPlannedAnchorMove = false;
+        _plannedAnchorLayoutDelta = 0;
+    }
+
+    private static void AnimateTranslation(
+        TranslateTransform translation,
+        double target,
+        Easing easing)
+    {
+        translation.Transitions = new Transitions
+        {
+            new DoubleTransition
+            {
+                Property = TranslateTransform.YProperty,
+                Duration = PhaseDuration,
+                Easing = easing
+            }
+        };
+        translation.Y = target;
+    }
+
+    private static void SetTranslationImmediately(TranslateTransform translation, double value)
+    {
+        translation.Transitions = null;
+        translation.Y = value;
+    }
+
+    private void InitializeAnchorTarget()
+    {
+        if (_layoutAnchor is null || !_wizard.IsVisible || !_layoutAnchor.IsVisible)
+            return;
+
+        var point = _layoutAnchor.TranslatePoint(default, _wizard);
+        if (point is null)
+            return;
+
+        _anchorTargetY = point.Value.Y - GetTranslation(_layoutAnchor).Y;
+    }
+
+    private void StartAnchorAnimation(double fromOffset)
+    {
+        if (_layoutAnchor is null)
+            return;
+
+        var translation = GetTranslation(_layoutAnchor);
+        SetTranslationImmediately(translation, fromOffset);
+        translation.Transitions = new Transitions
+        {
+            new DoubleTransition
+            {
+                Property = TranslateTransform.YProperty,
+                Duration = AnchorMoveDuration,
+                Easing = new CubicEaseInOut()
+            }
+        };
+        translation.Y = 0;
+    }
+
+    private void ResetAnchorTranslation()
+    {
+        if (_layoutAnchor?.RenderTransform is TranslateTransform translation)
+            SetTranslationImmediately(translation, 0);
+    }
+
+    private void ResetMotionTranslation()
+    {
+        if (_layoutMotionTarget?.RenderTransform is TranslateTransform translation)
+            SetTranslationImmediately(translation, 0);
+    }
 
     private static TranslateTransform GetTranslation(Control control)
         => (TranslateTransform)control.RenderTransform!;

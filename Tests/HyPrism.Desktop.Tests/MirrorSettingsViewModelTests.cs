@@ -6,6 +6,8 @@ using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Interactivity;
+using Avalonia.Labs.Lottie;
+using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
@@ -310,16 +312,39 @@ public sealed class MirrorSettingsViewModelTests
             Dispatcher.UIThread.RunJobs();
             var wizard = Assert.IsType<Border>(view.FindControl<Border>("DownloadSourceWizardScreen"));
             var choice = Assert.IsType<StackPanel>(view.FindControl<StackPanel>("SourceAdditionChoiceContent"));
+            var wizardAnimation = Assert.IsType<Lottie>(
+                view.FindControl<Lottie>("DownloadSourceWizardAnimation"));
             Assert.True(wizard.IsEffectivelyVisible);
             Assert.True(choice.IsEffectivelyVisible);
+            Assert.Equal("/Assets/Lotties/loader-reveal.json", wizardAnimation.Path);
+            Assert.True(wizardAnimation.AutoPlay);
+            Assert.Equal(1, wizardAnimation.RepeatCount);
+            Assert.NotNull(wizardAnimation.OpacityMask);
+            Assert.Equal(64, wizardAnimation.Width);
+            Assert.Equal(64, wizardAnimation.Height);
+            var wizardAnimationAnchor = Assert.IsType<Border>(
+                view.FindControl<Border>("DownloadSourceWizardAnimationAnchor"));
+            var wizardAnimationTranslation = Assert.IsType<TranslateTransform>(
+                wizardAnimationAnchor.RenderTransform);
+            var wizardAnimationMotion = Assert.IsType<Border>(
+                view.FindControl<Border>("DownloadSourceWizardAnimationMotion"));
+            var wizardAnimationMotionTranslation = Assert.IsType<TranslateTransform>(
+                wizardAnimationMotion.RenderTransform);
 
             var manualButton = Assert.IsType<Button>(view.FindControl<Button>("BeginManualSourceAdditionButton"));
             manualButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-            await Task.Delay(420);
+            await Task.Delay(100);
+            Dispatcher.UIThread.RunJobs();
+            Assert.True(Math.Abs(wizardAnimationMotionTranslation.Y) > 0.5);
+            await Task.Delay(140);
+            Dispatcher.UIThread.RunJobs();
+            Assert.True(Math.Abs(wizardAnimationTranslation.Y) > 0.5);
+            await Task.Delay(230);
             Dispatcher.UIThread.RunJobs();
             var manualContent = Assert.IsType<StackPanel>(
                 view.FindControl<StackPanel>("ManualSourceAdditionContent"));
             Assert.True(manualContent.IsEffectivelyVisible);
+            Assert.InRange(Math.Abs(wizardAnimationTranslation.Y), 0, 0.01);
 
             var wizardRenderPath = Environment.GetEnvironmentVariable("HYPRISM_DOWNLOAD_SOURCE_WIZARD_RENDER_OUTPUT");
             if (!string.IsNullOrWhiteSpace(wizardRenderPath))

@@ -53,7 +53,9 @@ public sealed partial class InstancesView : UserControl
         _creatorTransition = new WizardScreenTransition(
             InstancesOverview,
             InstanceCreatorScreen,
-            InstancesListPane);
+            InstancesListPane,
+            InstanceWizardAnimationAnchor,
+            InstanceWizardAnimationMotion);
         _versionSpinnerTimer = new DispatcherTimer
         {
             Interval = TimeSpan.FromMilliseconds(16)
@@ -435,6 +437,7 @@ public sealed partial class InstancesView : UserControl
                 return;
             }
 
+            RestartInstanceWizardAnimation();
             OpenCompactContent();
             UpdateBranchIndicator(animate: false);
             return;
@@ -448,7 +451,17 @@ public sealed partial class InstancesView : UserControl
 
         await _creatorTransition.OpenAsync(
             () => DataContext is MainWindowViewModel { IsInstanceCreatorOpen: true },
-            () => UpdateBranchIndicator(animate: false));
+            () =>
+            {
+                RestartInstanceWizardAnimation();
+                UpdateBranchIndicator(animate: false);
+            });
+    }
+
+    private void RestartInstanceWizardAnimation()
+    {
+        InstanceWizardAnimation.SeekToProgress(0);
+        InstanceWizardAnimation.Start();
     }
 
     private async Task PlayCreatorCloseAnimationAsync()
