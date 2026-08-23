@@ -960,7 +960,7 @@ public class GameVersionCatalog : IGameVersionCatalog
     }
 
     /// <inheritdoc/>
-    public Task<MirrorSpeedTestResult> ProbeSourceAvailabilityAsync(
+    public async Task<MirrorSpeedTestResult> ProbeSourceAvailabilityAsync(
         string sourceId,
         CancellationToken ct = default)
     {
@@ -971,17 +971,54 @@ public class GameVersionCatalog : IGameVersionCatalog
 
         if (source is null || !source.IsAvailable)
         {
-            return Task.FromResult(new MirrorSpeedTestResult
+            return new MirrorSpeedTestResult
             {
                 MirrorId = sourceId,
                 MirrorName = sourceId,
                 PingMs = -1,
                 IsAvailable = false,
                 TestedAt = DateTime.UtcNow
-            });
+            };
         }
 
-        return source.ProbeAvailabilityAsync(ct);
+        var result = await source.ProbeAvailabilityAsync(ct);
+        if (result.IsAvailable && source.Type == VersionSourceType.Mirror)
+        {
+            result.HasVersionsForCurrentPlatform = await CheckCurrentPlatformVersionsAsync(source, ct);
+        }
+
+        return result;
+    }
+
+    private static async Task<bool?> CheckCurrentPlatformVersionsAsync(
+        IVersionSource source,
+        CancellationToken ct)
+    {
+        var os = LauncherUtilities.GetOS();
+        var arch = LauncherUtilities.GetArch();
+        var checkFailed = false;
+
+        foreach (var branch in new[] { "release", "pre-release" })
+        {
+            try
+            {
+                if ((await source.GetVersionsAsync(os, arch, branch, ct)).Count > 0)
+                    return true;
+            }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                checkFailed = true;
+                Logger.Debug(
+                    "Version",
+                    $"Platform version probe failed for '{source.SourceId}' ({os}/{arch}/{branch}): {ex.Message}");
+            }
+        }
+
+        return checkFailed ? null : false;
     }
 
     /// <summary>

@@ -2559,6 +2559,9 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="settings.downloads.sourceAvailable" xml:space="preserve">
     <value>利用可能</value>
   </data>
+  <data name="settings.downloads.sourceNoCompatibleVersions" xml:space="preserve">
+    <value>利用可能ですが、このシステム向けのバージョンはありません</value>
+  </data>
   <data name="settings.downloads.sourceUnavailable" xml:space="preserve">
     <value>利用不可</value>
   </data>

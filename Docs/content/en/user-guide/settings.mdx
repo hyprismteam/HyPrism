@@ -35,7 +35,7 @@ The Local Node persists profiles, saved skins, and presence preferences on the d
 
 ## Download sources
 
-The Downloads page shows the official Hytale source and community mirrors in one table under **Download sources**. Its columns show the endpoint link, source type, current availability, and enabled state. Availability starts with a spinner that smoothly changes to a check or cross when the background probe finishes. HyPrism continues measuring source latency for automatic source selection without displaying ping in the table. A connected Hytale account is required for the official source
+The Downloads page shows the official Hytale source and community mirrors in one table under **Download sources**. Its columns show the endpoint link, source type, current availability, and enabled state. Availability starts with a spinner that smoothly changes when the background probe finishes. A check means the source is available, a cross means it is unavailable, and a yellow-orange warning symbol means the mirror responds but exposes no release or pre-release versions for the current operating system and CPU architecture. HyPrism continues measuring source latency for automatic source selection without displaying ping in the table. A connected Hytale account is required for the official source
 
 Selecting **Add** opens a wizard with a load-balancer reveal animation that plays once on every opening. When a step changes the centered content height, the animation starts moving with the outgoing step and settles with the incoming step. The first step lets you enter a public HTTPS address for automatic format detection or paste a complete `.mirror.json` definition manually. HyPrism validates either result before saving the source
 

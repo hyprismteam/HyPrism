@@ -1992,6 +1992,9 @@ You may need to reinstall the game if switching drives.</value>
   <data name="settings.downloads.sourceAvailable" xml:space="preserve">
     <value>Available</value>
   </data>
+  <data name="settings.downloads.sourceNoCompatibleVersions" xml:space="preserve">
+    <value>Available, but no versions for this system</value>
+  </data>
   <data name="settings.downloads.sourceUnavailable" xml:space="preserve">
     <value>Unavailable</value>
   </data>

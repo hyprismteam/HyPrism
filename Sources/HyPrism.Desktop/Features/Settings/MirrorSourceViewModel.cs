@@ -47,6 +47,7 @@ public sealed partial class MirrorSourceViewModel : ObservableObject
     public bool IsLast { get; }
     public bool IsChecking => _availabilityState == SourceAvailabilityState.Checking;
     public bool IsAvailable => _availabilityState == SourceAvailabilityState.Available;
+    public bool HasNoCompatibleVersions => _availabilityState == SourceAvailabilityState.NoCompatibleVersions;
     public bool IsUnavailable => _availabilityState is SourceAvailabilityState.Disabled or SourceAvailabilityState.Unavailable;
 
     [ObservableProperty] private string _availability;
@@ -89,12 +90,25 @@ public sealed partial class MirrorSourceViewModel : ObservableObject
         NotifyAvailabilityChanged();
     }
 
-    public void ApplyProbe(MirrorSpeedTestResult result, string availableLabel, string unavailableLabel)
+    public void ApplyProbe(
+        MirrorSpeedTestResult result,
+        string availableLabel,
+        string noCompatibleVersionsLabel,
+        string unavailableLabel)
     {
-        _availabilityState = result.IsAvailable
-            ? SourceAvailabilityState.Available
-            : SourceAvailabilityState.Unavailable;
-        Availability = result.IsAvailable ? availableLabel : unavailableLabel;
+        _availabilityState = result switch
+        {
+            { IsAvailable: true, HasVersionsForCurrentPlatform: false } =>
+                SourceAvailabilityState.NoCompatibleVersions,
+            { IsAvailable: true } => SourceAvailabilityState.Available,
+            _ => SourceAvailabilityState.Unavailable
+        };
+        Availability = _availabilityState switch
+        {
+            SourceAvailabilityState.Available => availableLabel,
+            SourceAvailabilityState.NoCompatibleVersions => noCompatibleVersionsLabel,
+            _ => unavailableLabel
+        };
         Ping = result.IsAvailable && result.PingMs >= 0 ? $"{result.PingMs} ms" : "—";
         NotifyAvailabilityChanged();
     }
@@ -103,6 +117,7 @@ public sealed partial class MirrorSourceViewModel : ObservableObject
         string checkingLabel,
         string disabledLabel,
         string availableLabel,
+        string noCompatibleVersionsLabel,
         string unavailableLabel)
     {
         Availability = _availabilityState switch
@@ -110,6 +125,7 @@ public sealed partial class MirrorSourceViewModel : ObservableObject
             SourceAvailabilityState.Checking => checkingLabel,
             SourceAvailabilityState.Disabled => disabledLabel,
             SourceAvailabilityState.Available => availableLabel,
+            SourceAvailabilityState.NoCompatibleVersions => noCompatibleVersionsLabel,
             _ => unavailableLabel
         };
     }
@@ -118,6 +134,7 @@ public sealed partial class MirrorSourceViewModel : ObservableObject
     {
         OnPropertyChanged(nameof(IsChecking));
         OnPropertyChanged(nameof(IsAvailable));
+        OnPropertyChanged(nameof(HasNoCompatibleVersions));
         OnPropertyChanged(nameof(IsUnavailable));
     }
 
@@ -148,5 +165,6 @@ internal enum SourceAvailabilityState
     Checking,
     Disabled,
     Available,
+    NoCompatibleVersions,
     Unavailable
 }

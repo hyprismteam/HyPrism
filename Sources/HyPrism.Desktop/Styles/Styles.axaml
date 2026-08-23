@@ -1082,12 +1082,12 @@ SPDX-License-Identifier: GPL-3.0-only
     </Setter>
   </Style>
 
-  <Style Selector="Grid.sourceAvailability.checking Grid.sourceAvailabilityState.checking, Grid.sourceAvailability.available Grid.sourceAvailabilityState.available, Grid.sourceAvailability.unavailable Grid.sourceAvailabilityState.unavailable">
+  <Style Selector="Grid.sourceAvailability.checking Grid.sourceAvailabilityState.checking, Grid.sourceAvailability.available Grid.sourceAvailabilityState.available, Grid.sourceAvailability.noVersions Grid.sourceAvailabilityState.noVersions, Grid.sourceAvailability.unavailable Grid.sourceAvailabilityState.unavailable">
     <Setter Property="Opacity" Value="1" />
     <Setter Property="RenderTransform" Value="translate(0px, 0px)" />
   </Style>
 
-  <Style Selector="Grid.sourceAvailability.available Grid.sourceAvailabilityState.checking, Grid.sourceAvailability.unavailable Grid.sourceAvailabilityState.checking">
+  <Style Selector="Grid.sourceAvailability.available Grid.sourceAvailabilityState.checking, Grid.sourceAvailability.noVersions Grid.sourceAvailabilityState.checking, Grid.sourceAvailability.unavailable Grid.sourceAvailabilityState.checking">
     <Setter Property="RenderTransform" Value="translate(0px, -8px)" />
   </Style>
 
@@ -1109,6 +1109,10 @@ SPDX-License-Identifier: GPL-3.0-only
 
   <Style Selector="PathIcon.sourceAvailabilityIcon.available">
     <Setter Property="Foreground" Value="{DynamicResource SuccessBrush}" />
+  </Style>
+
+  <Style Selector="PathIcon.sourceAvailabilityIcon.noVersions">
+    <Setter Property="Foreground" Value="{DynamicResource WarningBrush}" />
   </Style>
 
   <Style Selector="PathIcon.sourceAvailabilityIcon.unavailable">

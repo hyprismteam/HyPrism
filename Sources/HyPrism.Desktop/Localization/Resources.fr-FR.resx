@@ -2559,6 +2559,9 @@ Vous devrez peut-être réinstaller le jeu si vous changez de lecteur.</value>
   <data name="settings.downloads.sourceAvailable" xml:space="preserve">
     <value>Disponible</value>
   </data>
+  <data name="settings.downloads.sourceNoCompatibleVersions" xml:space="preserve">
+    <value>Disponible, mais aucune version pour ce système</value>
+  </data>
   <data name="settings.downloads.sourceUnavailable" xml:space="preserve">
     <value>Indisponible</value>
   </data>

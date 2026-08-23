@@ -2562,6 +2562,9 @@ Potrebbe essere necessario reinstallare il gioco se si cambia drive.</value>
   <data name="settings.downloads.sourceAvailable" xml:space="preserve">
     <value>Disponibile</value>
   </data>
+  <data name="settings.downloads.sourceNoCompatibleVersions" xml:space="preserve">
+    <value>Disponibile, ma nessuna versione per questo sistema</value>
+  </data>
   <data name="settings.downloads.sourceUnavailable" xml:space="preserve">
     <value>Non disponibile</value>
   </data>

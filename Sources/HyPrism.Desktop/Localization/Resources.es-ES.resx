@@ -2559,6 +2559,9 @@ Es posible que necesites reinstalar el juego si cambias de unidad.</value>
   <data name="settings.downloads.sourceAvailable" xml:space="preserve">
     <value>Disponible</value>
   </data>
+  <data name="settings.downloads.sourceNoCompatibleVersions" xml:space="preserve">
+    <value>Disponible, pero sin versiones para este sistema</value>
+  </data>
   <data name="settings.downloads.sourceUnavailable" xml:space="preserve">
     <value>No disponible</value>
   </data>

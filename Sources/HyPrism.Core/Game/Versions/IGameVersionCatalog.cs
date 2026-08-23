@@ -206,7 +206,7 @@ public interface IGameVersionCatalog
     /// </summary>
     /// <param name="sourceId">The source identifier, including <c>hytale</c> for the official source</param>
     /// <param name="ct">Token used to cancel the network request</param>
-    /// <returns>The current availability and request latency</returns>
+    /// <returns>The current availability, request latency, and mirror compatibility with the current platform</returns>
     /// <exception cref="OperationCanceledException">Thrown when the operation is cancelled</exception>
     Task<MirrorSpeedTestResult> ProbeSourceAvailabilityAsync(string sourceId, CancellationToken ct = default);
 

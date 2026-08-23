@@ -13,6 +13,7 @@ using Avalonia.Threading;
 using Avalonia.VisualTree;
 using HyPrism.Core.Game.Sources;
 using HyPrism.Core.Game.Versions;
+using HyPrism.Core.Infrastructure;
 using HyPrism.Core.Models;
 using HyPrism.Desktop.Controls;
 using HyPrism.Desktop.Features.Settings;
@@ -25,6 +26,58 @@ namespace HyPrism.Desktop.Tests;
 
 public sealed class MirrorSettingsViewModelTests
 {
+    [Fact]
+    public async Task AvailabilityProbeDetectsMirrorWithoutVersionsForCurrentPlatform()
+    {
+        var appDir = Path.Combine(Path.GetTempPath(), $"hyprism-platform-probe-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(appDir);
+
+        try
+        {
+            var source = new Mock<IVersionSource>();
+            source.SetupGet(item => item.SourceId).Returns("platform-limited");
+            source.SetupGet(item => item.Type).Returns(VersionSourceType.Mirror);
+            source.SetupGet(item => item.IsAvailable).Returns(true);
+            source.SetupGet(item => item.Priority).Returns(10);
+            source.SetupGet(item => item.LayoutInfo).Returns(new VersionSourceLayoutInfo());
+            source.Setup(item => item.ProbeAvailabilityAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new MirrorSpeedTestResult
+                {
+                    MirrorId = "platform-limited",
+                    IsAvailable = true,
+                    PingMs = 24
+                });
+            source.Setup(item => item.GetVersionsAsync(
+                    LauncherUtilities.GetOS(),
+                    LauncherUtilities.GetArch(),
+                    It.IsAny<string>(),
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync([]);
+            using var httpClient = new HttpClient();
+            var catalog = new GameVersionCatalog(
+                appDir,
+                new Mock<IConfigStore>().Object,
+                httpClient,
+                mirrorSources: [source.Object]);
+
+            var result = await catalog.ProbeSourceAvailabilityAsync(
+                "platform-limited",
+                TestContext.Current.CancellationToken);
+
+            Assert.True(result.IsAvailable);
+            Assert.False(result.HasVersionsForCurrentPlatform);
+            source.Verify(item => item.GetVersionsAsync(
+                LauncherUtilities.GetOS(),
+                LauncherUtilities.GetArch(),
+                It.IsAny<string>(),
+                It.IsAny<CancellationToken>()), Times.Exactly(2));
+        }
+        finally
+        {
+            Directory.Delete(appDir, recursive: true);
+        }
+    }
+
     [AvaloniaFact]
     public async Task AddToggleAndDeleteMirrorUpdatesPersistedAndRuntimeCatalogs()
     {
@@ -180,6 +233,7 @@ public sealed class MirrorSettingsViewModelTests
             {
                 MirrorId = "detected-source",
                 IsAvailable = true,
+                HasVersionsForCurrentPlatform = false,
                 PingMs = 42
             };
             using var viewModel = new SettingsViewModel(
@@ -278,14 +332,22 @@ public sealed class MirrorSettingsViewModelTests
             await Task.Delay(300);
             Dispatcher.UIThread.RunJobs();
             Assert.False(source.IsChecking);
-            Assert.True(source.IsAvailable);
-            Assert.Contains("available", mirrorAvailability.Classes);
+            Assert.False(source.IsAvailable);
+            Assert.True(source.HasNoCompatibleVersions);
+            Assert.Equal("Available, but no versions for this system", source.Availability);
+            Assert.Contains("noVersions", mirrorAvailability.Classes);
             Assert.InRange(checkingState.Opacity, 0, 0.01);
-            var availableState = Assert.Single(
+            var noVersionsState = Assert.Single(
                 mirrorAvailability.GetVisualDescendants().OfType<Grid>(),
                 grid => grid.Classes.Contains("sourceAvailabilityState") &&
-                        grid.Classes.Contains("available"));
-            Assert.InRange(availableState.Opacity, 0.99, 1);
+                        grid.Classes.Contains("noVersions"));
+            Assert.InRange(noVersionsState.Opacity, 0.99, 1);
+            var warningIcon = Assert.Single(
+                noVersionsState.GetVisualDescendants().OfType<PathIcon>(),
+                icon => icon.Classes.Contains("noVersions"));
+            Assert.Equal(
+                Color.Parse("#FFC54D"),
+                Assert.IsAssignableFrom<ISolidColorBrush>(warningIcon.Foreground).Color);
 
             var tableRenderPath = Environment.GetEnvironmentVariable("HYPRISM_DOWNLOAD_SOURCES_RENDER_OUTPUT");
             if (!string.IsNullOrWhiteSpace(tableRenderPath))

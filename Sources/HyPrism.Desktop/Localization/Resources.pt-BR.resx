@@ -2559,6 +2559,9 @@ Você pode precisar reinstalar o jogo se trocar de unidade.</value>
   <data name="settings.downloads.sourceAvailable" xml:space="preserve">
     <value>Disponível</value>
   </data>
+  <data name="settings.downloads.sourceNoCompatibleVersions" xml:space="preserve">
+    <value>Disponível, mas sem versões para este sistema</value>
+  </data>
   <data name="settings.downloads.sourceUnavailable" xml:space="preserve">
     <value>Indisponível</value>
   </data>

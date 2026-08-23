@@ -190,6 +190,7 @@ SPDX-License-Identifier: GPL-3.0-only
                 Classes="sourceAvailability"
                 Classes.checking="{Binding IsChecking}"
                 Classes.available="{Binding IsAvailable}"
+                Classes.noVersions="{Binding HasNoCompatibleVersions}"
                 Classes.unavailable="{Binding IsUnavailable}"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"
@@ -201,6 +202,10 @@ SPDX-License-Identifier: GPL-3.0-only
             <Grid Classes="sourceAvailabilityState available">
               <PathIcon Data="{StaticResource CheckIcon}"
                         Classes="sourceAvailabilityIcon available" />
+            </Grid>
+            <Grid Classes="sourceAvailabilityState noVersions">
+              <PathIcon Data="{StaticResource WarningIcon}"
+                        Classes="sourceAvailabilityIcon noVersions" />
             </Grid>
             <Grid Classes="sourceAvailabilityState unavailable">
               <PathIcon Data="{StaticResource CloseIcon}"

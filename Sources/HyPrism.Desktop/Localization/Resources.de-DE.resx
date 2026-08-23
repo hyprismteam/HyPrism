@@ -2559,6 +2559,9 @@ Bei Laufwerkswechsel muss das Spiel möglicherweise neu installiert werden.</val
   <data name="settings.downloads.sourceAvailable" xml:space="preserve">
     <value>Verfügbar</value>
   </data>
+  <data name="settings.downloads.sourceNoCompatibleVersions" xml:space="preserve">
+    <value>Verfügbar, aber keine Versionen für dieses System</value>
+  </data>
   <data name="settings.downloads.sourceUnavailable" xml:space="preserve">
     <value>Nicht verfügbar</value>
   </data>

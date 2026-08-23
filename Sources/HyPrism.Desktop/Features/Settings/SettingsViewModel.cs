@@ -512,6 +512,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
                 _localizer["settings.downloads.checkingAvailability"],
                 _localizer["settings.downloads.sourceDisabledState"],
                 _localizer["settings.downloads.sourceAvailable"],
+                _localizer["settings.downloads.sourceNoCompatibleVersions"],
                 _localizer["settings.downloads.sourceUnavailable"]);
         }
 
@@ -1269,6 +1270,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
                 source.ApplyProbe(
                     result,
                     _localizer["settings.downloads.sourceAvailable"],
+                    _localizer["settings.downloads.sourceNoCompatibleVersions"],
                     _localizer["settings.downloads.sourceUnavailable"]);
             }
         }
@@ -1283,6 +1285,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
                 source.ApplyProbe(
                     new MirrorSpeedTestResult { IsAvailable = false, PingMs = -1 },
                     _localizer["settings.downloads.sourceAvailable"],
+                    _localizer["settings.downloads.sourceNoCompatibleVersions"],
                     _localizer["settings.downloads.sourceUnavailable"]);
             }
         }

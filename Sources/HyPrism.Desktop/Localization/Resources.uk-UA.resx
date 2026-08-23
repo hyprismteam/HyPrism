@@ -2559,6 +2559,9 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="settings.downloads.sourceAvailable" xml:space="preserve">
     <value>Доступний</value>
   </data>
+  <data name="settings.downloads.sourceNoCompatibleVersions" xml:space="preserve">
+    <value>Доступний, але немає версій для цієї системи</value>
+  </data>
   <data name="settings.downloads.sourceUnavailable" xml:space="preserve">
     <value>Недоступно</value>
   </data>

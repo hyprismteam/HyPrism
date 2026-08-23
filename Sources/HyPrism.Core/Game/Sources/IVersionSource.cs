@@ -19,6 +19,11 @@ public class MirrorSpeedTestResult
     /// </summary>
     public double SpeedMBps { get; set; } = 0;
     public bool IsAvailable { get; set; }
+    /// <summary>
+    /// Whether an available mirror exposes at least one version for the current OS and architecture.
+    /// Null means the compatibility check does not apply or could not be completed
+    /// </summary>
+    public bool? HasVersionsForCurrentPlatform { get; set; }
     public DateTime TestedAt { get; set; } = DateTime.UtcNow;
 }
 

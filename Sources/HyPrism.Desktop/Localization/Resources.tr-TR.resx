@@ -2559,6 +2559,9 @@ Sürücü değiştirirseniz oyunu yeniden yüklemeniz gerekebilir.</value>
   <data name="settings.downloads.sourceAvailable" xml:space="preserve">
     <value>Mevcut</value>
   </data>
+  <data name="settings.downloads.sourceNoCompatibleVersions" xml:space="preserve">
+    <value>Mevcut, ancak bu sistem için sürüm yok</value>
+  </data>
   <data name="settings.downloads.sourceUnavailable" xml:space="preserve">
     <value>Kullanılamıyor</value>
   </data>
