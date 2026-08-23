@@ -239,6 +239,7 @@ public sealed class WizardScreenTransition
         _animationCancellation?.Cancel();
         _animationCancellation?.Dispose();
         _animationCancellation = null;
+        _anchorTargetY = null;
         ResetAnchorTranslation();
         ResetMotionTranslation();
         _isPlannedAnchorMove = false;

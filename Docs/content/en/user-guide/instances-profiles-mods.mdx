@@ -27,6 +27,8 @@ The responsive structure matches Settings. Wide windows keep the instance list b
 
 When no instances exist, the page starts with the first step of an instance wizard. Selecting **Select version** uses a phased transition that removes the first step before showing a configuration screen with a one-time server reveal animation, title, explanation, branch switch, and version picker. The animation restarts once whenever the wizard opens and smoothly moves to its new vertical position when the active step changes the height of the centered content. The branch switch uses a light gray sliding selection. The version picker shows a spinner only while uncached data is loading. Switching to a branch with fresh cached versions updates the picker immediately without another catalog request. Cancelling or completing the wizard stops its pending version request and resets the branch, version selection, and error before the next opening. Creating an instance does not download game files immediately. Select it and use the main action to download or launch it
 
+The server reveal appears at its settled position and does not travel vertically while the instance wizard itself opens or closes
+
 Core can also migrate legacy layouts, change versions, import ZIP archives, and delete installations
 
 ## Profiles

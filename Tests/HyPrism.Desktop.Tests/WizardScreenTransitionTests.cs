@@ -242,6 +242,66 @@ public sealed class WizardScreenTransitionTests
         window.Close();
     }
 
+    [AvaloniaFact]
+    public async Task CancelledTransitionDoesNotAnimateAnchorForLaterLayoutChanges()
+    {
+        var overview = CreateControl();
+        var anchor = new Border
+        {
+            Width = 64,
+            Height = 64,
+            RenderTransform = new TranslateTransform()
+        };
+        var variableContent = new Border
+        {
+            Width = 240,
+            Height = 80
+        };
+        var wizardContent = new StackPanel
+        {
+            VerticalAlignment = VerticalAlignment.Center,
+            Spacing = 20,
+            Children =
+            {
+                anchor,
+                variableContent
+            }
+        };
+        var wizard = new Border
+        {
+            Width = 400,
+            Height = 500,
+            Child = wizardContent,
+            RenderTransform = new TranslateTransform()
+        };
+        var transition = new WizardScreenTransition(
+            overview,
+            wizard,
+            layoutAnchor: anchor);
+        var window = new Window
+        {
+            Width = 400,
+            Height = 500,
+            Content = wizard
+        };
+
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        transition.ShowWizardImmediately();
+        transition.Cancel();
+
+        variableContent.Height = 280;
+        Dispatcher.UIThread.RunJobs();
+        await Task.Delay(40);
+        Dispatcher.UIThread.RunJobs();
+
+        var translation = Assert.IsType<TranslateTransform>(anchor.RenderTransform);
+        Assert.InRange(Math.Abs(translation.Y), 0, 0.01);
+        Assert.Null(translation.Transitions);
+
+        window.Close();
+    }
+
     private static Border CreateControl()
         => new()
         {
