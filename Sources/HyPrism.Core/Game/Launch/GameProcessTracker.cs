@@ -259,7 +259,6 @@ public sealed class GameProcessTracker : IGameProcessTracker, IDisposable
         }
         catch
         {
-            // The exit code is unavailable for a process that is still tearing down.
             return 0;
         }
     }

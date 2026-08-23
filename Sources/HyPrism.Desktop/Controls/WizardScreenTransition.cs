@@ -125,7 +125,7 @@ public sealed class WizardScreenTransition
         }
     }
 
-    public async Task SwitchStepAsync(
+    public async Task<bool> SwitchStepAsync(
         Control outgoingStep,
         Control incomingStep,
         bool forward,
@@ -154,7 +154,7 @@ public sealed class WizardScreenTransition
             {
                 if (shouldRemainOpen())
                     RestoreVisibleState(outgoingStep);
-                return;
+                return false;
             }
 
             switchStep();
@@ -164,7 +164,7 @@ public sealed class WizardScreenTransition
             {
                 if (shouldRemainOpen())
                     RestoreVisibleState(incomingStep);
-                return;
+                return false;
             }
 
             var anchorMoveCompletion = ContinuePlannedAnchorMove(cancellationToken);
@@ -178,9 +178,10 @@ public sealed class WizardScreenTransition
                     cancellationToken),
                 anchorMoveCompletion);
             if (cancellationToken.IsCancellationRequested || !shouldRemainOpen())
-                return;
+                return false;
 
             incomingStep.IsHitTestVisible = true;
+            return true;
         }
         catch (OperationCanceledException)
         {
@@ -188,6 +189,7 @@ public sealed class WizardScreenTransition
             // does not also close the wizard
             if (shouldRemainOpen())
                 RestoreVisibleState(stepSwitched ? incomingStep : outgoingStep);
+            return false;
         }
         finally
         {

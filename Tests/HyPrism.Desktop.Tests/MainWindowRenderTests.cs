@@ -203,6 +203,7 @@ public sealed class MainWindowRenderTests
         var profileWizardAnimation = profileWizardReveal.Animation;
         Assert.Equal("/Assets/Lotties/avatar-reveal.json", profileWizardAnimation.Path);
         Assert.True(profileWizardAnimation.AutoPlay);
+        Assert.Equal(2, profileWizardAnimation.PlayBackRate);
         Assert.Equal(1, profileWizardAnimation.RepeatCount);
         Assert.NotNull(profileWizardAnimation.OpacityMask);
         Assert.Equal(64, profileWizardAnimation.Width);
@@ -239,10 +240,22 @@ public sealed class MainWindowRenderTests
         Assert.True(
             Math.Abs(profileWizardAnimationTranslation.Y) > 0.05,
             $"Motion Y: {profileWizardAnimationTranslation.Y}");
+        Assert.Equal("/Assets/Lotties/avatar-reveal.json", profileWizardAnimation.Path);
+        if (!string.IsNullOrWhiteSpace(previewPath))
+        {
+            var directory = Path.GetDirectoryName(previewPath)!;
+            var stem = Path.GetFileNameWithoutExtension(previewPath);
+            window.CaptureRenderedFrame()!.Save(
+                Path.Combine(directory, $"{stem}-wizard-step-transition.png"),
+                PngBitmapEncoderOptions.Default);
+        }
         await Task.Delay(140);
         Dispatcher.UIThread.RunJobs();
         Assert.False(profileCreationChoice.IsVisible);
         Assert.True(offlineProfileCreation.IsVisible);
+        await Task.Delay(180);
+        Dispatcher.UIThread.RunJobs();
+        Assert.Equal("/Assets/Lotties/avatar-jumping.json", profileWizardAnimation.Path);
 
         view.FindControl<Button>("OfflineProfileCreationBackButton")!
             .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
@@ -257,6 +270,17 @@ public sealed class MainWindowRenderTests
         Dispatcher.UIThread.RunJobs();
         Assert.True(profileCreationChoice.IsVisible);
         Assert.False(offlineProfileCreation.IsVisible);
+        await Task.Delay(180);
+        Dispatcher.UIThread.RunJobs();
+        Assert.Equal("/Assets/Lotties/avatar-reveal.json", profileWizardAnimation.Path);
+        if (!string.IsNullOrWhiteSpace(previewPath))
+        {
+            var directory = Path.GetDirectoryName(previewPath)!;
+            var stem = Path.GetFileNameWithoutExtension(previewPath);
+            window.CaptureRenderedFrame()!.Save(
+                Path.Combine(directory, $"{stem}-wizard-after-back.png"),
+                PngBitmapEncoderOptions.Default);
+        }
 
         view.FindControl<Button>("BeginOfflineProfileCreationButton")!
             .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
@@ -2079,6 +2103,7 @@ public sealed class MainWindowRenderTests
         var instanceWizardAnimation = instanceWizardReveal.Animation;
         Assert.Equal("/Assets/Lotties/server-reveal.json", instanceWizardAnimation.Path);
         Assert.True(instanceWizardAnimation.AutoPlay);
+        Assert.Equal(2, instanceWizardAnimation.PlayBackRate);
         Assert.Equal(1, instanceWizardAnimation.RepeatCount);
         Assert.NotNull(instanceWizardAnimation.OpacityMask);
         Assert.Equal(64, instanceWizardAnimation.Width);

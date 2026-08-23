@@ -106,8 +106,7 @@ public static class DualAuthAgent
             if (string.IsNullOrEmpty(tag))
                 return null;
 
-            // Try to find the agent JAR in release assets
-            string downloadUrl = AgentUrl; // fall back to the known direct URL
+            string downloadUrl = AgentUrl;
             if (root.TryGetProperty("assets", out var assets))
             {
                 foreach (var asset in assets.EnumerateArray())
@@ -159,7 +158,6 @@ public static class DualAuthAgent
 
         if (releaseInfo == null)
         {
-            // Fall back to checking the local agent when the GitHub API is unreachable
             Logger.Warning("DualAuth", "Cannot check for updates (GitHub unreachable), falling back to local check");
             return await EnsureAgentAvailableAsync(appDir, progressCallback, ct);
         }
@@ -210,7 +208,7 @@ public static class DualAuthAgent
                 downloadedBytes += bytesRead;
                 if (totalBytes > 0)
                 {
-                    var percent = (int)((downloadedBytes * 100) / totalBytes);
+                    var percent = (int)(downloadedBytes * 100 / totalBytes);
                     progressCallback?.Invoke($"Downloading agent {latestTag}... {downloadedBytes / 1024} KB", percent);
                 }
             }
@@ -221,14 +219,12 @@ public static class DualAuthAgent
             Logger.Error("DualAuth", $"Failed to download updated agent: {ex.Message}");
             if (File.Exists(tempPath)) File.Delete(tempPath);
 
-            // Keep using the installed agent when an update cannot be downloaded
             if (IsAgentAvailable(appDir))
                 return new DualAuthResult { Success = true, AgentPath = agentPath, AlreadyExists = true };
 
             return new DualAuthResult { Success = false, Error = ex.Message };
         }
 
-        // Validate downloaded file
         var tempInfo = new FileInfo(tempPath);
         if (tempInfo.Length < MinAgentSizeBytes)
         {
@@ -277,14 +273,12 @@ public static class DualAuthAgent
         var agentPath = GetAgentPath(appDir);
         var agentDir = Path.GetDirectoryName(agentPath)!;
 
-        // Check if already exists and valid
         if (IsAgentAvailable(appDir))
         {
             Logger.Info("DualAuth", "Agent already available");
             return new DualAuthResult { Success = true, AgentPath = agentPath, AlreadyExists = true };
         }
 
-        // Ensure DualAuth directory exists
         if (!Directory.Exists(agentDir))
         {
             Directory.CreateDirectory(agentDir);
@@ -330,7 +324,6 @@ public static class DualAuthAgent
             return new DualAuthResult { Success = false, Error = ex.Message };
         }
 
-        // Validate the downloaded file
         var tempInfo = new FileInfo(tempPath);
         if (tempInfo.Length < MinAgentSizeBytes)
         {
@@ -340,7 +333,6 @@ public static class DualAuthAgent
             return new DualAuthResult { Success = false, Error = error };
         }
 
-        // Replace the final file only after the temporary download passed validation
         File.Move(tempPath, agentPath, overwrite: true);
 
         progressCallback?.Invoke("DualAuth Agent ready", 100);
@@ -363,10 +355,8 @@ public static class DualAuthAgent
     {
         var env = new Dictionary<string, string>
         {
-            // Java agent flag - this tells the JVM to use the DualAuth agent
             ["JAVA_TOOL_OPTIONS"] = $"-javaagent:\"{agentPath}\"",
 
-            // DualAuth configuration
             ["HYTALE_AUTH_DOMAIN"] = authDomain,
             ["HYTALE_TRUST_ALL_ISSUERS"] = "true",
             ["HYTALE_TRUST_OFFICIAL"] = trustOfficialIssuers ? "true" : "false",

@@ -140,8 +140,6 @@ public class GameInstallationWorkflow : IGameInstallationWorkflow
             var isLatestInstance = selectedInstance.Version == 0;
             var targetVersion = selectedInstance.Version;
 
-            // Resolve instance path strictly by ID. Create the directory if it does not exist yet
-            // (first-time launch before any files have been downloaded).
             var versionPath = _instances.GetInstancePathById(selectedInstance.Id)
                 ?? _instances.CreateInstanceDirectory(branch, selectedInstance.Id);
 
@@ -151,8 +149,6 @@ public class GameInstallationWorkflow : IGameInstallationWorkflow
 
             bool gameIsInstalled = _instances.IsClientPresent(versionPath);
 
-            // OPTIMIZATION: If game is already installed and this is NOT a "latest" instance,
-            // Skip version fetching because an installed instance can launch without network requests
             if (gameIsInstalled && !isLatestInstance && targetVersion > 0)
             {
                 Logger.Success("Download", $"Fast path: Game already installed at v{targetVersion}, skipping version check");
@@ -164,7 +160,6 @@ public class GameInstallationWorkflow : IGameInstallationWorkflow
                     authorizationUriPresenter);
             }
 
-            // For "latest" instances or fresh installs, we need to fetch version list
             _progress.ReportDownloadProgress("preparing", 1, "launch.detail.checking_versions", null, 0, 0);
             var versions = await _versions.GetVersionListAsync(branch, cts.Token);
             cts.Token.ThrowIfCancellationRequested();
@@ -172,7 +167,6 @@ public class GameInstallationWorkflow : IGameInstallationWorkflow
             if (versions.Count == 0)
                 return new DownloadProgress { Error = "No versions available for this branch" };
 
-            // Resolve targetVersion from versions list
             if (targetVersion <= 0 || !versions.Contains(targetVersion))
                 targetVersion = versions[0];
 
@@ -182,8 +176,6 @@ public class GameInstallationWorkflow : IGameInstallationWorkflow
             Logger.Info("Download", $"Target version: {targetVersion}", false);
             Logger.Info("Download", $"Client exists (game installed): {gameIsInstalled}", false);
 
-            // Check for interrupted install/patch: if PendingVersion is set,
-            // a previous download or patch was interrupted and needs to be resumed.
             var instanceMeta = _instances.GetInstanceMeta(versionPath);
             if (instanceMeta != null && instanceMeta.PendingVersion > 0)
             {
@@ -191,7 +183,6 @@ public class GameInstallationWorkflow : IGameInstallationWorkflow
 
                 if (gameIsInstalled && instanceMeta.InstalledVersion > 0 && instanceMeta.InstalledVersion < instanceMeta.PendingVersion)
                 {
-                    // Resume the differential update for a partially patched game
                     Logger.Info("Download", $"Resuming differential update from v{instanceMeta.InstalledVersion} to v{instanceMeta.PendingVersion}");
                     try
                     {
@@ -213,12 +204,10 @@ public class GameInstallationWorkflow : IGameInstallationWorkflow
                 }
                 else if (!gameIsInstalled)
                 {
-                    // Preserve PendingVersion while reinstalling a missing client
                     Logger.Info("Download", "Client not present despite PendingVersion, will re-install");
                 }
             }
 
-            // Set PendingVersion before starting install/patch
             if (instanceMeta != null)
             {
                 instanceMeta.PendingVersion = targetVersion;
@@ -334,7 +323,6 @@ public class GameInstallationWorkflow : IGameInstallationWorkflow
     {
         Logger.Success("Download", "Game is already installed");
 
-        // Check for differential updates (only for latest instance)
         if (isLatestInstance)
         {
             await TryApplyDifferentialUpdateAsync(versionPath, branch, versions, ct);
@@ -363,7 +351,6 @@ public class GameInstallationWorkflow : IGameInstallationWorkflow
         int installedVersion = info?.Version ?? 0;
         int latestVersion = versions[0];
 
-        // Detect installed version from cache if no latest.json
         if (installedVersion == 0)
         {
             installedVersion = DetectInstalledVersion(versionPath, branch);
@@ -373,7 +360,6 @@ public class GameInstallationWorkflow : IGameInstallationWorkflow
 
         if (installedVersion > 0 && installedVersion < latestVersion)
         {
-            // Set PendingVersion so interrupted updates can be resumed
             var meta = _instances.GetInstanceMeta(versionPath);
             if (meta != null)
             {
@@ -385,7 +371,6 @@ public class GameInstallationWorkflow : IGameInstallationWorkflow
             {
                 await _patchManager.ApplyDifferentialUpdateAsync(versionPath, branch, installedVersion, latestVersion, ct);
 
-                // Update completed: clear PendingVersion, set InstalledVersion
                 if (meta != null)
                 {
                     meta.InstalledVersion = latestVersion;
@@ -475,8 +460,6 @@ public class GameInstallationWorkflow : IGameInstallationWorkflow
         string arch = LauncherUtilities.GetArch();
         string apiVersionType = LauncherUtilities.NormalizeVersionType(branch);
 
-        // Mirror + pre-release: diff-based branch requires applying the entire patch chain
-        // from version 0 (empty) up to the target version sequentially.
         if (officialDown && _versions.IsDiffBasedBranch(apiVersionType))
         {
             Logger.Info("Download", $"Mirror pre-release: installing via diff chain v0 -> v{targetVersion}");
@@ -503,8 +486,6 @@ public class GameInstallationWorkflow : IGameInstallationWorkflow
         }
         else
         {
-            // Official server or mirror release: download a single full PWR and apply.
-            // Get the download URL (will refresh cache if needed)
             string downloadUrl;
             CachedVersionEntry versionEntry;
             try
@@ -528,7 +509,6 @@ public class GameInstallationWorkflow : IGameInstallationWorkflow
 
             Directory.CreateDirectory(Path.GetDirectoryName(pwrPath)!);
 
-            // Determine if we should skip official and go straight to mirror
             bool skipOfficial = officialDown || !hasOfficialUrl;
 
             try
@@ -537,7 +517,6 @@ public class GameInstallationWorkflow : IGameInstallationWorkflow
             }
             catch (MirrorDiffRequiredException)
             {
-                // Pre-release official download failed, mirror requires diff-based approach
                 Logger.Info("Download", $"Switching to mirror diff chain for pre-release v{targetVersion}");
                 _progress.ReportDownloadProgress("download", 5, "launch.detail.downloading_mirror", null, 0, 0);
 
@@ -561,8 +540,6 @@ public class GameInstallationWorkflow : IGameInstallationWorkflow
             }
             catch (MirrorBootstrapRequiredException ex)
             {
-                // Full pre-release file is unavailable/corrupted (often 0-byte placeholder).
-                // Try previous full build + patch to target.
                 if (!apiVersionType.Equals("pre-release", StringComparison.OrdinalIgnoreCase))
                 {
                     return new DownloadProgress { Error = ex.Message };
@@ -593,7 +570,6 @@ public class GameInstallationWorkflow : IGameInstallationWorkflow
                     authorizationUriPresenter);
             }
 
-            // Extract PWR with Butler
             _progress.ReportDownloadProgress("install", 65, "launch.detail.installing_butler_pwr", null, 0, 0);
 
             try
@@ -634,7 +610,6 @@ public class GameInstallationWorkflow : IGameInstallationWorkflow
         if (isLatestInstance)
             _instances.SaveLatestInfo(branch, targetVersion);
 
-        // Update instance meta: clear PendingVersion, set InstalledVersion
         var meta = _instances.GetInstanceMeta(versionPath);
         if (meta != null)
         {
@@ -746,11 +721,10 @@ public class GameInstallationWorkflow : IGameInstallationWorkflow
         bool needDownload = true;
         long remoteSize = -1;
 
-        // Only check remote size from official if we have a valid URL
         if (!skipOfficial && hasOfficialUrl)
         {
             try { remoteSize = await _downloader.GetFileSizeAsync(downloadUrl, ct); }
-            catch { /* Proceed to download anyway */ }
+            catch { }
         }
 
         if (File.Exists(pwrPath))
@@ -790,7 +764,6 @@ public class GameInstallationWorkflow : IGameInstallationWorkflow
             string partPath = pwrPath + ".part";
             bool downloaded = false;
 
-            // Try official URL first (skip if server is known to be down or no valid URL)
             if (!skipOfficial && hasOfficialUrl)
             {
                 try
@@ -809,11 +782,8 @@ public class GameInstallationWorkflow : IGameInstallationWorkflow
                 catch (Exception ex)
                 {
                     Logger.Warning("Download", $"Official download failed: {ex.Message}");
-                    // Clean up partial file before mirror attempt
                     if (File.Exists(partPath)) try { File.Delete(partPath); } catch { }
 
-                    // 403 from official CDN usually means expired/invalid signed verify token.
-                    // Force-refresh version cache and retry official once with a new signed URL.
                     if (IsHttpForbidden(ex))
                     {
                         try
@@ -865,7 +835,6 @@ public class GameInstallationWorkflow : IGameInstallationWorkflow
                 Logger.Info("Download", "Official server is down, skipping to mirror...");
             }
 
-            // Fallback to mirror (or primary if official is known down)
             if (!downloaded)
             {
                 var mirrorUrl = await _versions.GetMirrorDownloadUrlAsync(os, arch, branch, version, ct);
@@ -882,10 +851,7 @@ public class GameInstallationWorkflow : IGameInstallationWorkflow
                             }
                         }
                         catch (MirrorBootstrapRequiredException) { throw; }
-                        catch
-                        {
-                            // Ignore HEAD/size-check failures and try real download.
-                        }
+                        catch { }
 
                         Logger.Info("Download", $"Retrying from mirror: {mirrorUrl}");
                         _progress.ReportDownloadProgress("download", 5, "launch.detail.downloading_mirror", null, 0, 0);
@@ -911,8 +877,6 @@ public class GameInstallationWorkflow : IGameInstallationWorkflow
                     {
                         Logger.Error("Download", $"Mirror download also failed: {mirrorEx.Message}");
 
-                        // If mirror returned 404, invalidate this version from cache
-                        // to prevent showing unavailable versions to users
                         if (IsHttpNotFound(mirrorEx))
                         {
                             Logger.Warning("Download", $"Version v{version} not found on mirror, invalidating cache entry");
@@ -922,7 +886,6 @@ public class GameInstallationWorkflow : IGameInstallationWorkflow
                 }
                 else if (_versions.IsDiffBasedBranch(branch))
                 {
-                    // Pre-release uses diff patches on the mirror; signal caller to use diff chain
                     Logger.Info("Download", "Pre-release branch detected - falling back to diff-based mirror download");
                     throw new MirrorDiffRequiredException(version);
                 }
@@ -969,7 +932,6 @@ public class GameInstallationWorkflow : IGameInstallationWorkflow
 
     private async Task EnsureRuntimeDependenciesAsync(CancellationToken ct)
     {
-        // VC++ Redist check (Windows only)
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
             _progress.ReportDownloadProgress("install", 94, "launch.detail.vc_redist", null, 0, 0);
@@ -987,7 +949,6 @@ public class GameInstallationWorkflow : IGameInstallationWorkflow
             }
         }
 
-        // JRE check
         string jrePath = _runtime.GetJavaPath();
         if (!File.Exists(jrePath))
         {

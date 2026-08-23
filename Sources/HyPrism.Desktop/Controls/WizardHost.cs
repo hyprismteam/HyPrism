@@ -14,6 +14,8 @@ public sealed class WizardHost
 {
     private readonly WizardScreenTransition _transition;
     private readonly Lottie? _revealAnimation;
+    private readonly WizardRevealIcon? _revealIcon;
+    private readonly IReadOnlyDictionary<Control, string> _stepAnimationPaths;
     private readonly Control[] _steps;
 
     public WizardHost(
@@ -32,12 +34,35 @@ public sealed class WizardHost
             layoutAnchor,
             layoutMotionTarget);
         _revealAnimation = revealAnimation;
+        _stepAnimationPaths = new Dictionary<Control, string>();
         _steps = steps;
+    }
+
+    public WizardHost(
+        Control overview,
+        Control wizard,
+        Control? navigationPane,
+        WizardRevealIcon revealIcon,
+        params WizardStepDefinition[] steps)
+        : this(
+            overview,
+            wizard,
+            navigationPane,
+            revealIcon.Anchor,
+            revealIcon.MotionTarget,
+            revealIcon.Animation,
+            steps.Select(step => step.Content).ToArray())
+    {
+        _revealIcon = revealIcon;
+        _stepAnimationPaths = steps.ToDictionary(
+            step => step.Content,
+            step => step.AnimationPath);
     }
 
     public Task OpenAsync(Func<bool> shouldRemainOpen, Action? onOpened = null)
     {
         NormalizeSteps();
+        SelectActiveStepAnimation();
         return _transition.OpenAsync(
             shouldRemainOpen,
             () =>
@@ -58,22 +83,32 @@ public sealed class WizardHost
                 NormalizeSteps();
             });
 
-    public Task SwitchStepAsync(
+    public async Task SwitchStepAsync(
         Control outgoingStep,
         Control incomingStep,
         bool forward,
         Action switchStep,
         Func<bool> shouldRemainOpen)
-        => _transition.SwitchStepAsync(
+    {
+        var completed = await _transition.SwitchStepAsync(
             outgoingStep,
             incomingStep,
             forward,
             switchStep,
             shouldRemainOpen);
+        if (completed && shouldRemainOpen())
+        {
+            if (!forward && ReferenceEquals(incomingStep, _steps.FirstOrDefault()))
+                ShowStepAnimationFinalFrame(incomingStep);
+            else
+                PlayStepAnimation(incomingStep);
+        }
+    }
 
     public async Task ShowWizardForCompactEntryAsync()
     {
         NormalizeSteps();
+        SelectActiveStepAnimation();
         _transition.ShowWizardImmediately();
         await Dispatcher.UIThread.InvokeAsync(static () => { }, DispatcherPriority.Loaded);
         RestartReveal();
@@ -89,6 +124,7 @@ public sealed class WizardHost
     public void ShowWizardImmediately()
     {
         NormalizeSteps();
+        SelectActiveStepAnimation();
         _transition.ShowWizardImmediately();
     }
 
@@ -106,11 +142,46 @@ public sealed class WizardHost
 
     public void RestartReveal()
     {
+        var activeStep = _steps.FirstOrDefault(step => step.IsVisible);
+        if (activeStep is not null && PlayStepAnimation(activeStep))
+            return;
+
         if (_revealAnimation is null)
             return;
 
         _revealAnimation.SeekToProgress(0);
         _revealAnimation.Start();
+    }
+
+    private bool PlayStepAnimation(Control step)
+    {
+        if (_revealIcon is null || !_stepAnimationPaths.TryGetValue(step, out var animationPath))
+            return false;
+
+        _revealIcon.Play(animationPath);
+        return true;
+    }
+
+    private void ShowStepAnimationFinalFrame(Control step)
+    {
+        if (_revealIcon is not null &&
+            _stepAnimationPaths.TryGetValue(step, out var animationPath))
+        {
+            _revealIcon.ShowFinalFrame(animationPath);
+        }
+    }
+
+    private void SelectActiveStepAnimation()
+    {
+        if (_revealIcon is null)
+            return;
+
+        var activeStep = _steps.FirstOrDefault(step => step.IsVisible);
+        if (activeStep is not null &&
+            _stepAnimationPaths.TryGetValue(activeStep, out var animationPath))
+        {
+            _revealIcon.Select(animationPath);
+        }
     }
 
     private void NormalizeSteps()
@@ -124,3 +195,5 @@ public sealed class WizardHost
             _steps.Where(step => !ReferenceEquals(step, activeStep)).ToArray());
     }
 }
+
+public sealed record WizardStepDefinition(Control Content, string AnimationPath);

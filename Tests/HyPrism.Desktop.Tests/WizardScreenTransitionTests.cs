@@ -6,6 +6,7 @@ using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Platform;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using HyPrism.Desktop.Controls;
@@ -15,6 +16,86 @@ namespace HyPrism.Desktop.Tests;
 
 public sealed class WizardScreenTransitionTests
 {
+    [AvaloniaTheory]
+    [InlineData("loader-reveal.json", 13)]
+    [InlineData("avatar-jumping.json", 0)]
+    [InlineData("avatar-looking.json", 0)]
+    [InlineData("server-pinch.json", 0)]
+    public void WizardAnimationsPreserveDarkThemeContrast(
+        string assetName,
+        int expectedBlackDetails)
+    {
+        var uri = new Uri($"avares://HyPrism.Desktop/Assets/Lotties/{assetName}");
+        using var stream = AssetLoader.Open(uri);
+        using var reader = new StreamReader(stream);
+        var json = reader.ReadToEnd();
+
+        Assert.Equal(
+            expectedBlackDetails,
+            json.Split("\"k\":[0,0,0,1]", StringSplitOptions.None).Length - 1);
+        Assert.Contains("\"k\":[0.960784,0.960784,0.964706,1]", json);
+    }
+
+    [AvaloniaFact]
+    public async Task WizardHostChangesIconStateOnlyAfterStepTransitionCompletes()
+    {
+        var overview = CreateControl();
+        var wizard = CreateControl();
+        var choice = CreateControl();
+        var form = CreateControl();
+        choice.IsVisible = true;
+        form.IsVisible = false;
+        var revealIcon = new WizardRevealIcon
+        {
+            AnimationPath = "/Assets/Lotties/avatar-reveal.json"
+        };
+        var host = new WizardHost(
+            overview,
+            wizard,
+            navigationPane: null,
+            revealIcon,
+            new WizardStepDefinition(choice, "/Assets/Lotties/avatar-reveal.json"),
+            new WizardStepDefinition(form, "/Assets/Lotties/avatar-jumping.json"));
+        host.ShowWizardImmediately();
+
+        var switchTask = host.SwitchStepAsync(
+            choice,
+            form,
+            forward: true,
+            () =>
+            {
+                choice.IsVisible = false;
+                form.IsVisible = true;
+            },
+            () => true);
+        await Task.Delay(WizardScreenTransition.PhaseDuration + TimeSpan.FromMilliseconds(40));
+
+        Assert.Equal("/Assets/Lotties/avatar-reveal.json", revealIcon.AnimationPath);
+
+        await switchTask;
+
+        Assert.Equal("/Assets/Lotties/avatar-jumping.json", revealIcon.AnimationPath);
+        Assert.True(revealIcon.LastSelectionWasAnimated);
+
+        await host.SwitchStepAsync(
+            form,
+            choice,
+            forward: false,
+            () =>
+            {
+                form.IsVisible = false;
+                choice.IsVisible = true;
+            },
+            () => true);
+
+        Assert.Equal("/Assets/Lotties/avatar-reveal.json", revealIcon.AnimationPath);
+        Assert.False(revealIcon.LastSelectionWasAnimated);
+        Assert.True(revealIcon.Animation.AutoPlay);
+        Assert.False(revealIcon.ClipToBounds);
+        Assert.False(revealIcon.MotionTarget.ClipToBounds);
+        Assert.False(revealIcon.Animation.ClipToBounds);
+    }
+
     [AvaloniaFact]
     public async Task RotatingVisualRunsOnlyWhileAttachedAndActive()
     {
@@ -28,7 +109,18 @@ public sealed class WizardScreenTransitionTests
         Dispatcher.UIThread.RunJobs();
         await Task.Delay(20);
         var rotation = Assert.IsType<RotateTransform>(spinner.RenderTransform);
-        rotation.Angle = 42;
+        await Task.Delay(120);
+        Dispatcher.UIThread.RunJobs();
+        Assert.InRange(rotation.Angle, 1, 359);
+
+        RotatingVisual.SetIsActive(spinner, false);
+        Dispatcher.UIThread.RunJobs();
+        Assert.Equal(0, rotation.Angle);
+
+        RotatingVisual.SetIsActive(spinner, true);
+        await Task.Delay(120);
+        Dispatcher.UIThread.RunJobs();
+        Assert.InRange(rotation.Angle, 1, 359);
 
         window.Close();
         Dispatcher.UIThread.RunJobs();

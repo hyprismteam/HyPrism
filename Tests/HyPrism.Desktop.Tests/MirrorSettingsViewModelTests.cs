@@ -111,6 +111,102 @@ public sealed class MirrorSettingsViewModelTests
     }
 
     [AvaloniaFact]
+    public async Task DownloadCategoryReusesProbeResultsAcrossRepeatedSelectionAndReentry()
+    {
+        var appDir = Path.Combine(Path.GetTempPath(), $"hyprism-download-category-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(appDir);
+
+        try
+        {
+            using var httpClient = new HttpClient();
+            var catalog = new MirrorCatalog(appDir, httpClient);
+            catalog.Save(CreateMirror());
+            var versions = new Mock<IGameVersionCatalog>();
+            versions
+                .Setup(service => service.ProbeSourceAvailabilityAsync(
+                    "detected-source",
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new MirrorSpeedTestResult
+                {
+                    MirrorId = "detected-source",
+                    IsAvailable = true,
+                    HasVersionsForCurrentPlatform = false,
+                    PingMs = 42
+                });
+            using var viewModel = new SettingsViewModel(
+                CreateSettingsStore().Object,
+                new Mock<IExternalUriLauncher>().Object,
+                new StringLocalizer("en-US"),
+                mirrorCatalog: catalog,
+                versionCatalog: versions.Object);
+            var source = Assert.Single(viewModel.MirrorSources);
+            var downloads = viewModel.Categories.Single(category => category.Id == "downloads");
+            var general = viewModel.Categories.Single(category => category.Id == "general");
+
+            viewModel.SelectCategoryCommand.Execute(downloads);
+            await WaitUntilAsync(() => source.HasNoCompatibleVersions);
+
+            viewModel.RefreshLocalization();
+            viewModel.SelectCategoryCommand.Execute(downloads);
+            viewModel.SelectCategoryCommand.Execute(general);
+            viewModel.SelectCategoryCommand.Execute(downloads);
+            await Task.Delay(80);
+
+            Assert.Same(source, Assert.Single(viewModel.MirrorSources));
+            Assert.False(source.IsChecking);
+            Assert.True(source.HasNoCompatibleVersions);
+            Assert.Equal("Available, but no versions for this system", source.Availability);
+            versions.Verify(service => service.ProbeSourceAvailabilityAsync(
+                "detected-source",
+                It.IsAny<CancellationToken>()), Times.Once);
+        }
+        finally
+        {
+            Directory.Delete(appDir, recursive: true);
+        }
+    }
+
+    [AvaloniaFact]
+    public async Task OfficialSourceIsProbedOnceWhenAnOfficialAccountExists()
+    {
+        var versions = new Mock<IGameVersionCatalog>();
+        versions.SetupGet(service => service.HasOfficialAccount).Returns(true);
+        versions
+            .Setup(service => service.ProbeSourceAvailabilityAsync(
+                "hytale",
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new MirrorSpeedTestResult
+            {
+                MirrorId = "hytale",
+                IsAvailable = true,
+                PingMs = 24
+            });
+        using var viewModel = new SettingsViewModel(
+            CreateSettingsStore().Object,
+            new Mock<IExternalUriLauncher>().Object,
+            new StringLocalizer("en-US"),
+            versionCatalog: versions.Object);
+        var downloads = viewModel.Categories.Single(category => category.Id == "downloads");
+        var general = viewModel.Categories.Single(category => category.Id == "general");
+
+        viewModel.SelectCategoryCommand.Execute(downloads);
+        await WaitUntilAsync(() => viewModel.OfficialSourceIsAvailable);
+
+        viewModel.RefreshLocalization();
+        viewModel.SelectCategoryCommand.Execute(downloads);
+        viewModel.SelectCategoryCommand.Execute(general);
+        viewModel.SelectCategoryCommand.Execute(downloads);
+        await Task.Delay(80);
+
+        Assert.False(viewModel.OfficialSourceIsChecking);
+        Assert.False(viewModel.OfficialSourceIsUnavailable);
+        Assert.Equal("Available", viewModel.OfficialSourceAvailability);
+        versions.Verify(service => service.ProbeSourceAvailabilityAsync(
+            "hytale",
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [AvaloniaFact]
     public async Task AddToggleAndDeleteMirrorUpdatesPersistedAndRuntimeCatalogs()
     {
         var appDir = Path.Combine(Path.GetTempPath(), $"hyprism-mirror-settings-{Guid.NewGuid():N}");
@@ -413,6 +509,7 @@ public sealed class MirrorSettingsViewModelTests
             Assert.True(choice.IsEffectivelyVisible);
             Assert.Equal("/Assets/Lotties/loader-reveal.json", wizardAnimation.Path);
             Assert.True(wizardAnimation.AutoPlay);
+            Assert.Equal(2, wizardAnimation.PlayBackRate);
             Assert.Equal(1, wizardAnimation.RepeatCount);
             Assert.NotNull(wizardAnimation.OpacityMask);
             Assert.Equal(64, wizardAnimation.Width);
@@ -438,6 +535,8 @@ public sealed class MirrorSettingsViewModelTests
                 view.FindControl<StackPanel>("ManualSourceAdditionContent"));
             Assert.True(manualContent.IsEffectivelyVisible);
             Assert.InRange(Math.Abs(wizardAnimationTranslation.Y), 0, 0.01);
+            Assert.Equal("/Assets/Lotties/loader-reveal.json", wizardAnimation.Path);
+            Assert.False(wizardReveal.LastSelectionWasAnimated);
 
             var wizardRenderPath = Environment.GetEnvironmentVariable("HYPRISM_DOWNLOAD_SOURCE_WIZARD_RENDER_OUTPUT");
             if (!string.IsNullOrWhiteSpace(wizardRenderPath))

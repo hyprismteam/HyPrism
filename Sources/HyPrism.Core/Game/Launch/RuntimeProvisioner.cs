@@ -54,7 +54,6 @@ public class RuntimeProvisioner : IRuntimeProvisioner
             javaBin = Path.Combine(jreDir, "bin", "java");
         }
 
-        // Check if correct JRE version is installed by looking for version marker file
         string versionMarkerPath = Path.Combine(jreDir, ".jre_version");
 
         if (File.Exists(javaBin) && File.Exists(versionMarkerPath))
@@ -78,11 +77,9 @@ public class RuntimeProvisioner : IRuntimeProvisioner
         }
         else if (File.Exists(javaBin))
         {
-            // Old installation without version marker - reinstall
             Logger.Warning("JRE", "JRE version marker not found. Reinstalling official Hytale JRE...");
         }
 
-        // Delete old JRE if exists
         if (Directory.Exists(jreDir))
         {
             try
@@ -99,16 +96,13 @@ public class RuntimeProvisioner : IRuntimeProvisioner
         progressCallback(0, "Downloading Java Runtime...");
         Logger.Info("JRE", "Downloading official Hytale Java Runtime...");
 
-        // Determine platform - Hytale uses different naming convention
         string osName = RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? "darwin" :
                         RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "windows" : "linux";
         string arch = RuntimeInformation.OSArchitecture == Architecture.Arm64 ? "arm64" : "amd64";
         string archiveType = osName == "windows" ? "zip" : "tar.gz";
 
-        // First try to fetch latest JRE info from Hytale launcher directly
         string? url = null;
-        string? expectedSha256 = null;
-
+        string? expectedSha256;
         try
         {
             Logger.Info("JRE", "Fetching JRE info from launcher.hytale.com...");
@@ -135,7 +129,6 @@ public class RuntimeProvisioner : IRuntimeProvisioner
             Logger.Warning("JRE", $"Failed to fetch from launcher.hytale.com: {ex.Message}");
         }
 
-        // Fallback to local jre.json config
         if (string.IsNullOrEmpty(url))
         {
             try
@@ -168,7 +161,6 @@ public class RuntimeProvisioner : IRuntimeProvisioner
             }
         }
 
-        // Ultimate fallback - hardcoded URLs for official Hytale JRE
         if (string.IsNullOrEmpty(url))
         {
             url = $"https://launcher.hytale.com/redist/jre/{osName}/{arch}/jre-{RequiredJreVersion}.{archiveType}";
@@ -179,8 +171,6 @@ public class RuntimeProvisioner : IRuntimeProvisioner
         Directory.CreateDirectory(cacheDir);
         string archivePath = Path.Combine(cacheDir, $"jre.{archiveType}");
 
-        // Download with proper headers for Adoptium API
-        // Reuse injected HttpClient instead of creating a new one (avoids socket exhaustion)
         using var request = new HttpRequestMessage(HttpMethod.Get, url);
         request.Headers.Add("User-Agent", LauncherUserAgent.Value);
         request.Headers.Add("Accept", "*/*");
@@ -203,7 +193,7 @@ public class RuntimeProvisioner : IRuntimeProvisioner
 
             if (totalBytes > 0)
             {
-                var progress = (int)((totalRead * 80) / totalBytes); // 0-80%
+                var progress = (int)(totalRead * 80 / totalBytes);
                 progressCallback(progress, $"Downloading Java Runtime... {progress}%");
             }
         }
@@ -212,17 +202,14 @@ public class RuntimeProvisioner : IRuntimeProvisioner
         progressCallback(85, "Extracting Java Runtime...");
         Logger.Info("JRE", "Extracting Java Runtime...");
 
-        // Create jre directory
         Directory.CreateDirectory(jreDir);
 
-        // Extract
         if (archiveType == "zip")
         {
             ZipFile.ExtractToDirectory(archivePath, jreDir, true);
         }
         else
         {
-            // Use tar on Unix systems
             var tarProcess = new ProcessStartInfo("tar", $"-xzf \"{archivePath}\" -C \"{jreDir}\"")
             {
                 UseShellExecute = false,
@@ -232,13 +219,11 @@ public class RuntimeProvisioner : IRuntimeProvisioner
             tar?.WaitForExit();
         }
 
-        // Normalize JRE structure - move contents up if nested
         var entries = Directory.GetDirectories(jreDir);
         if (entries.Length == 1)
         {
             var subDir = entries[0];
 
-            // On macOS, structure is different
             if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
                 var contentsDir = Path.Combine(subDir, "Contents", "Home");
@@ -248,7 +233,6 @@ public class RuntimeProvisioner : IRuntimeProvisioner
                 }
             }
 
-            // Move files from subdirectory to jreDir
             foreach (var entry in Directory.GetFileSystemEntries(subDir))
             {
                 var name = Path.GetFileName(entry);
@@ -259,11 +243,9 @@ public class RuntimeProvisioner : IRuntimeProvisioner
                 }
             }
 
-            // Remove empty subdirectory
             try { Directory.Delete(entries[0], true); } catch { }
         }
 
-        // Make java executable on Unix
         if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
             var chmod = new ProcessStartInfo("chmod", $"+x \"{javaBin}\"")
@@ -274,19 +256,15 @@ public class RuntimeProvisioner : IRuntimeProvisioner
             Process.Start(chmod)?.WaitForExit();
         }
 
-        // Cleanup archive
         try { File.Delete(archivePath); } catch { }
 
-        // On macOS, create java symlink structure like old launcher
         if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {
             await SetupMacOSJavaSymlinksAsync(jreDir);
         }
 
-        // Wrap java to strip unsupported flags and point to the freshly installed JRE
         EnsureJavaWrapper(javaBin);
 
-        // Write version marker file to track installed version
         try
         {
             await File.WriteAllTextAsync(versionMarkerPath, RequiredJreVersion);
@@ -303,7 +281,6 @@ public class RuntimeProvisioner : IRuntimeProvisioner
 
     private async Task SetupMacOSJavaSymlinksAsync(string jreDir)
     {
-        // Create java directory structure like old launcher
         string javaDir = Path.Combine(_appDir, "java");
         string javaHomeBin = Path.Combine(javaDir, "Contents", "Home", "bin");
 
@@ -318,7 +295,6 @@ public class RuntimeProvisioner : IRuntimeProvisioner
 
                 Directory.CreateDirectory(Path.Combine(javaDir, "Contents", "Home"));
 
-                // Create symlinks
                 var lnBin = new ProcessStartInfo("ln", $"-sf \"{Path.Combine(jreDir, "bin")}\" \"{Path.Combine(javaDir, "Contents", "Home", "bin")}\"")
                 {
                     UseShellExecute = false,
@@ -339,7 +315,6 @@ public class RuntimeProvisioner : IRuntimeProvisioner
             }
         }
 
-        // Sign JRE
         Logger.Info("JRE", "Signing Java Runtime...");
         RunSilentProcess("xattr", $"-cr \"{jreDir}\"");
         RunSilentProcess("codesign", $"--force --deep --sign - \"{jreDir}\"");
@@ -452,13 +427,12 @@ public class RuntimeProvisioner : IRuntimeProvisioner
         return false;
     }
 
-    private const string WrapperVersion = "v4"; // Bump when wrapper content changes
+    private const string WrapperVersion = "v4";
 
     private void EnsureJavaWrapper(string javaBin)
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-            // Windows already uses java.exe; wrapper not required.
             return;
         }
 
@@ -478,7 +452,6 @@ public class RuntimeProvisioner : IRuntimeProvisioner
                 {
                     if (File.Exists(javaBin))
                     {
-                        // If javaBin is already a wrapper script, check if it's ours
                         byte[] headBytes = new byte[2];
                         using (var fs = new FileStream(javaBin, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                         {
@@ -502,16 +475,15 @@ public class RuntimeProvisioner : IRuntimeProvisioner
                 }
             }
 
-            // Check if wrapper is already up-to-date via version marker
             var versionMarker = Path.Combine(javaDir, ".wrapper-version");
             if (File.Exists(javaBin) && File.Exists(versionMarker))
             {
                 try
                 {
                     if (File.ReadAllText(versionMarker).Trim() == WrapperVersion)
-                        return; // Wrapper is current
+                        return;
                 }
-                catch { /* Re-write if we can't read */ }
+                catch { }
             }
 
             var wrapper = "#!/bin/bash\n" +
@@ -555,7 +527,6 @@ public class RuntimeProvisioner : IRuntimeProvisioner
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {
-            // Use the symlinked java path on macOS like old launcher
             return Path.Combine(_appDir, "java", "Contents", "Home", "bin", "java");
         }
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
@@ -580,12 +551,11 @@ public class RuntimeProvisioner : IRuntimeProvisioner
     {
         if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-            return true; // Not Windows - not needed
+            return true;
         }
 
         try
         {
-            // Check registry for VC++ 14.x (VS 2015-2022 uses the same redistributable)
             using var key = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(
                 @"SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64");
 
@@ -634,7 +604,6 @@ public class RuntimeProvisioner : IRuntimeProvisioner
 
         try
         {
-            // Download the installer
             using var response = await _httpClient.GetAsync(VCRedistUrl, HttpCompletionOption.ResponseHeadersRead);
             response.EnsureSuccessStatusCode();
 
@@ -653,7 +622,7 @@ public class RuntimeProvisioner : IRuntimeProvisioner
 
                 if (totalBytes > 0)
                 {
-                    int percent = (int)((downloadedBytes * 50) / totalBytes); // 0-50%
+                    int percent = (int)(downloadedBytes * 50 / totalBytes);
                     progressCallback(percent, $"Downloading VC++ Redistributable... {percent * 2}%");
                 }
             }
@@ -661,13 +630,12 @@ public class RuntimeProvisioner : IRuntimeProvisioner
             Logger.Info("VCRedist", "Download complete, running installer...");
             progressCallback(50, "Installing Visual C++ Redistributable...");
 
-            // Run the installer silently
             var startInfo = new ProcessStartInfo
             {
                 FileName = installerPath,
                 Arguments = "/install /quiet /norestart",
                 UseShellExecute = true,
-                Verb = "runas" // Request elevation
+                Verb = "runas"
             };
 
             using var process = Process.Start(startInfo);
@@ -675,12 +643,12 @@ public class RuntimeProvisioner : IRuntimeProvisioner
             {
                 await process.WaitForExitAsync();
 
-                if (process.ExitCode == 0 || process.ExitCode == 1638) // 1638 = already installed
+                if (process.ExitCode == 0 || process.ExitCode == 1638)
                 {
                     Logger.Success("VCRedist", "VC++ Redistributable installed successfully");
                     progressCallback(100, "VC++ Redistributable installed");
                 }
-                else if (process.ExitCode == 3010) // Restart required
+                else if (process.ExitCode == 3010)
                 {
                     Logger.Success("VCRedist", "VC++ Redistributable installed (restart may be required)");
                     progressCallback(100, "VC++ Redistributable installed");
@@ -692,13 +660,12 @@ public class RuntimeProvisioner : IRuntimeProvisioner
                 }
             }
 
-            // Clean up installer
-            try { File.Delete(installerPath); } catch { }
+            try { File.Delete(installerPath); }
+            catch { }
         }
         catch (Exception ex)
         {
             Logger.Error("VCRedist", $"Failed to install VC++ Redistributable: {ex.Message}");
-            // Don't fail the game launch - the game might work anyway
             progressCallback(100, "VC++ installation skipped");
         }
     }

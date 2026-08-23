@@ -111,7 +111,7 @@ public class ButlerClient : IButlerClient
 
                 if (totalBytes > 0)
                 {
-                    int progress = (int)((totalRead * 80) / totalBytes);
+                    int progress = (int)(totalRead * 80 / totalBytes);
                     progressCallback?.Invoke(progress, "launch.detail.downloading_butler");
                 }
             }
@@ -200,7 +200,7 @@ public class ButlerClient : IButlerClient
             using var process = Process.Start(psi);
             if (process != null)
             {
-                var cts = new System.Threading.CancellationTokenSource(TimeSpan.FromSeconds(10));
+                var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
                 try
                 {
                     await process.WaitForExitAsync(cts.Token);
@@ -252,13 +252,8 @@ public class ButlerClient : IButlerClient
             WorkingDirectory = targetDir
         };
 
-        using var process = Process.Start(psi);
-        if (process == null)
-        {
-            throw new Exception("Failed to start Butler process");
-        }
-
-        using var timeoutCts = new System.Threading.CancellationTokenSource(TimeSpan.FromMinutes(8));
+        using var process = Process.Start(psi) ?? throw new Exception("Failed to start Butler process");
+        using var timeoutCts = new CancellationTokenSource(TimeSpan.FromMinutes(8));
         using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(timeoutCts.Token, externalCancellationToken);
         var cts = linkedCts;
 
@@ -292,10 +287,10 @@ public class ButlerClient : IButlerClient
                         int read = await process.StandardOutput.ReadAsync(buffer, cts.Token);
                         if (read == 0) break;
 
-                        string chunk = new string(buffer, 0, read);
+                        string chunk = new(buffer, 0, read);
                         outputBuilder.Append(chunk);
 
-                        if (chunk.Contains("%"))
+                        if (chunk.Contains('%'))
                         {
                             var match = System.Text.RegularExpressions.Regex.Match(chunk, @"(\d+(?:\.\d+)?)%");
                             if (match.Success && double.TryParse(match.Groups[1].Value,

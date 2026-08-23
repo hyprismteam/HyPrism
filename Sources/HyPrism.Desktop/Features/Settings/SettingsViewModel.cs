@@ -50,6 +50,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     private bool _updatingJavaArguments;
     private bool _aboutDataLoadStarted;
     private bool _aboutDataLoaded;
+    private bool _downloadSourcesProbeStarted;
     private bool _disposed;
     private CancellationTokenSource? _sourceProbeCancellation;
     private int _aboutContributorSlotCapacity = 9;
@@ -394,9 +395,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         SourcePingColumn = _localizer["settings.downloads.columnPing"];
         SourceEnabledColumn = _localizer["settings.downloads.columnEnabled"];
         OfficialSourceType = _localizer["settings.downloads.sourceTypeOfficial"];
-        OfficialSourceAvailability = _localizer[_versionCatalog?.HasOfficialAccount == true
-            ? "settings.downloads.checkingAvailability"
-            : "settings.downloads.officialSourceRequiresAccount"];
+        OfficialSourceAvailability = GetOfficialSourceAvailabilityLabel();
         AddSourceButtonLabel = _localizer["settings.downloads.add"];
         AddSourceLabel = _localizer["settings.downloads.addSource"];
         AddSourceTitle = _localizer["settings.downloads.addSourceTitle"];
@@ -516,8 +515,6 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         }
 
         OnPropertyChanged(string.Empty);
-        if (IsDownloads)
-            _ = ProbeDownloadSourcesAsync();
     }
 
     partial void OnSelectedLanguageChanged(SettingChoiceViewModel value)
@@ -583,7 +580,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private void SelectCategory(SettingCategoryViewModel? category)
     {
-        if (category is null)
+        if (category is null || string.Equals(SelectedCategory, category.Id, StringComparison.Ordinal))
             return;
 
         SelectedCategory = category.Id;
@@ -594,7 +591,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         if (string.Equals(category.Id, "about", StringComparison.Ordinal))
             _ = LoadAboutDataAsync();
         else if (string.Equals(category.Id, "downloads", StringComparison.Ordinal))
-            ReloadMirrorItems();
+            EnsureDownloadSourcesProbed();
     }
 
     [RelayCommand]
@@ -1111,6 +1108,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
 
     private void ReloadMirrorItems(bool clearStatus = true)
     {
+        _downloadSourcesProbeStarted = false;
         if (clearStatus)
         {
             MirrorOperationError = string.Empty;
@@ -1160,7 +1158,16 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(OfficialSourceIsUnavailable));
 
         if (IsDownloads)
-            _ = ProbeDownloadSourcesAsync();
+            EnsureDownloadSourcesProbed();
+    }
+
+    private void EnsureDownloadSourcesProbed()
+    {
+        if (_downloadSourcesProbeStarted)
+            return;
+
+        _downloadSourcesProbeStarted = true;
+        _ = ProbeDownloadSourcesAsync();
     }
 
     private void PersistMirrorEnabledState(MirrorSourceViewModel source)
@@ -1198,6 +1205,17 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         => _localizer[mirror.SourceType == "json-index"
             ? "settings.downloads.sourceTypeJsonIndex"
             : "settings.downloads.sourceTypePattern"];
+
+    private string GetOfficialSourceAvailabilityLabel()
+        => _localizer[OfficialSourceIsChecking
+            ? "settings.downloads.checkingAvailability"
+            : OfficialSourceIsAvailable
+                ? "settings.downloads.sourceAvailable"
+                : _versionCatalog?.HasOfficialAccount != true
+                    ? "settings.downloads.officialSourceRequiresAccount"
+                    : OfficialSourceIsUnavailable
+                        ? "settings.downloads.sourceUnavailable"
+                        : "settings.downloads.checkingAvailability"];
 
     private async Task ProbeDownloadSourcesAsync()
     {

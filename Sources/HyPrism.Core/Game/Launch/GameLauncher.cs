@@ -141,7 +141,6 @@ public class GameLauncher : IGameLauncher
             {
                 _skins.BackupProfileSkinData(launchedProfileUuid);
 
-                // Copy the latest game avatar to persistent backup
                 _avatars.BackupAvatar(launchedProfileUuid);
             }
         }
@@ -194,7 +193,6 @@ public class GameLauncher : IGameLauncher
     {
         Logger.Info("Game", $"Preparing to launch from {versionPath}");
 
-        // Resolve identity exclusively through the explicitly selected profile
         var currentProfile = GetSelectedProfileOrThrow();
         string sessionUuid = currentProfile.UUID;
         string profileName = currentProfile.Name;
@@ -212,7 +210,6 @@ public class GameLauncher : IGameLauncher
             Logger.Warning("Game", $"Unofficial profile with official auth domain '{_config.AuthDomain}'. Falling back to custom auth domain '{DefaultCustomAuthDomain}' for this launch.");
         }
 
-        // Check auth server availability before proceeding (only for online mode with custom auth)
         if (onlineMode && !isOfficialProfile)
         {
             var authAvailable = await CheckAuthServerAvailabilityAsync(effectiveAuthDomain!, ct);
@@ -420,7 +417,6 @@ public class GameLauncher : IGameLauncher
 
             using var response = await _httpClient.GetAsync(pingUrl, cts.Token);
 
-            // Consider server reachable if we get any response (including 404, 401, 403)
             var isAvailable = response.IsSuccessStatusCode ||
                 (int)response.StatusCode == 404 ||
                 (int)response.StatusCode == 401 ||
@@ -528,8 +524,6 @@ public class GameLauncher : IGameLauncher
 
             var patcher = new ClientPatcher(baseDomain);
 
-            // Restore installations created by releases that statically patched the server JAR.
-            // The current launch path always keeps the original server binary intact.
             if (ClientPatcher.IsServerJarPatched(versionPath))
             {
                 Logger.Info("Game", "Restoring server JAR from a legacy static patch");
@@ -588,7 +582,6 @@ public class GameLauncher : IGameLauncher
 
             _progress.ReportDownloadProgress("patching", 100, "launch.detail.patching_complete", null, 0, 0);
 
-            // Force GC to reclaim the large byte[] arrays used during binary patching
             GC.Collect(2, GCCollectionMode.Aggressive, true, true);
             GC.WaitForPendingFinalizers();
         }
@@ -627,14 +620,11 @@ public class GameLauncher : IGameLauncher
 
         if (isOfficialProfile)
         {
-            // Use HytaleAuthenticator for OAuth tokens from an official account
-            // Always create a fresh game session before launch to avoid SESSION EXPIRED errors
             _progress.ReportDownloadProgress("launching", 20, "launch.detail.authenticating_official", null, 0, 0);
             Logger.Info("Game", "Official profile detected. Refreshing tokens and creating a fresh game session");
 
             try
             {
-                // EnsureFreshSessionForLaunchAsync: refreshes access token if expired + always creates new game session
                 var session = await _hytaleGameSessionAuthenticator.EnsureFreshSessionForLaunchAsync();
                 if (session == null)
                 {
@@ -654,7 +644,7 @@ public class GameLauncher : IGameLauncher
                         Logger.Error("Game", "Full re-authentication failed. Authenticated launch is unavailable");
                         throw new Exception("Official Hytale session expired and re-login failed. Please try logging in again from the profile settings.");
                     }
-                    // Save session to the active profile after successful re-authentication
+
                     _hytaleGameSessionAuthenticator.SaveCurrentSession();
                 }
 
@@ -689,7 +679,6 @@ public class GameLauncher : IGameLauncher
             return (omniSession.IdentityToken, omniSession.SessionToken, profileName);
         }
 
-        // Use a configured custom authentication domain for connected non-official profiles
         var effectiveAuthDomain = GetEffectiveCustomAuthDomain(logFallback: true, configuredAuthDomain);
 
         _progress.ReportDownloadProgress("launching", 20, "launch.detail.authenticating", [effectiveAuthDomain], 0, 0);
@@ -838,12 +827,11 @@ public class GameLauncher : IGameLauncher
             {
                 string storedHash = File.ReadAllText(markerPath).Trim();
                 if (storedHash == currentHash)
-                    return; // No change in JVM flags
+                    return;
             }
             catch { /* If we can't read, re-invalidate */ }
         }
 
-        // Delete AOT cache files
         try
         {
             int deletedCount = 0;
@@ -860,7 +848,6 @@ public class GameLauncher : IGameLauncher
                 }
             }
 
-            // Also look for AOT-related directories (e.g., ".jsa" shared archives)
             foreach (var jsaFile in Directory.EnumerateFiles(serverDir, "*.jsa", SearchOption.AllDirectories))
             {
                 try
@@ -877,7 +864,6 @@ public class GameLauncher : IGameLauncher
             if (deletedCount > 0)
                 Logger.Info("Game", $"Invalidated {deletedCount} AOT/shared archive cache file(s) due to JVM flags change");
 
-            // Store current hash
             File.WriteAllText(markerPath, currentHash);
         }
         catch (Exception ex)
@@ -1212,19 +1198,16 @@ exec env ""${{ENV_ARGS[@]}}"" ""{executable}"" {argsString}
             var sb = new StringBuilder();
             sb.AppendLine("# GPU preference: dedicated (discrete GPU)");
 
-            // Detect the vendor of the dedicated GPU
             var adapters = _gpuProvider.GetAdapters();
             var dedicatedGpu = adapters.FirstOrDefault(a => a.Type == "dedicated");
 
             if (dedicatedGpu != null && !string.IsNullOrEmpty(dedicatedGpu.PciId))
             {
-                // Use explicit PCI ID for DRI_PRIME if available for more precise selection
                 Logger.Info("Game", $"Using dedicated GPU PCI ID for DRI_PRIME: {dedicatedGpu.PciId}");
                 sb.AppendLine($"export DRI_PRIME=pci:{dedicatedGpu.PciId}");
             }
             else
             {
-                // Fallback to DRI_PRIME=1 if PCI ID detection failed or not applicable
                 Logger.Info("Game", "Using generic DRI_PRIME=1 for dedicated GPU");
                 sb.AppendLine("export DRI_PRIME=1");
             }
@@ -1250,7 +1233,6 @@ exec env ""${{ENV_ARGS[@]}}"" ""{executable}"" {argsString}
             }
             else
             {
-                // Apply both NVIDIA and AMD variables when the vendor is unknown
                 Logger.Info("Game", "GPU preference: dedicated (generic env vars, unknown vendor)");
                 sb.AppendLine("export __NV_PRIME_RENDER_OFFLOAD=1");
                 sb.AppendLine("export __GLX_VENDOR_LIBRARY_NAME=nvidia");
@@ -1332,19 +1314,14 @@ export __NV_PRIME_RENDER_OFFLOAD=0
         var lines = customEnv.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
         var validCount = 0;
 
-        // Regex for parsing space-separated KEY=VALUE pairs (supports quotes)
-        // Matches: KEY="VALUE" OR KEY='VALUE' OR KEY=VALUE
         var envVarRegex = new Regex(@"(?<key>[A-Za-z_][A-Za-z0-9_]*)=(?<value>""[^""]*""|'[^']*'|[^""'\s]+)", RegexOptions.Compiled);
 
         foreach (var line in lines)
         {
             var trimmed = line.Trim();
-            // Skip comments and empty lines
             if (string.IsNullOrEmpty(trimmed) || trimmed.StartsWith("#"))
                 continue;
 
-            // Check if line contains multiple assignments (heuristic: "KEY=" appearing after whitespace)
-            // If so, use regex parsing to robustly extract multiple variables from one line
             bool isMultiVarLine = Regex.IsMatch(trimmed, @"\s+[A-Za-z_][A-Za-z0-9_]*=");
 
             if (isMultiVarLine)
@@ -1355,7 +1332,6 @@ export __NV_PRIME_RENDER_OFFLOAD=0
                     var key = match.Groups["key"].Value;
                     var val = match.Groups["value"].Value;
 
-                    // Remove surrounding quotes if present
                     if ((val.StartsWith('"') && val.EndsWith('"')) || (val.StartsWith('\'') && val.EndsWith('\'')))
                     {
                         if (val.Length >= 2) val = val.Substring(1, val.Length - 2);
@@ -1368,19 +1344,15 @@ export __NV_PRIME_RENDER_OFFLOAD=0
             }
             else
             {
-                // Classic parsing: treat entire remainder of line as value
-                // Validate KEY=VALUE format
                 var eqIndex = trimmed.IndexOf('=');
                 if (eqIndex <= 0) continue;
 
                 var key = trimmed[..eqIndex].Trim();
                 var value = trimmed[(eqIndex + 1)..].Trim();
 
-                // Validate key is a valid env var name (alphanumeric + underscore, starts with letter/underscore)
                 if (!Regex.IsMatch(key, @"^[A-Za-z_][A-Za-z0-9_]*$"))
                     continue;
 
-                // Escape value for bash
                 var escapedValue = EscapeForBashDoubleQuoted(value);
                 sb.AppendLine($"ENV_ARGS+=({key}=\"{escapedValue}\")");
                 validCount++;
@@ -1414,13 +1386,6 @@ export __NV_PRIME_RENDER_OFFLOAD=0
 
         Logger.Info("Game", $"DualAuth env lines for Unix script: {authDomain}");
 
-        // Store DualAuth values in separate shell variables, then compose the
-        // JAVA_TOOL_OPTIONS=KEY=VALUE pair when building ENV_ARGS.
-        // This avoids nested quoting issues where paths with spaces (e.g.
-        // "Application Support") broke the javaagent argument.
-        // The JAVA_TOOL_OPTIONS value includes literal double quotes so Java's
-        // tokenizer treats the entire -javaagent:... as one token even when
-        // the path contains spaces.
         return $@"# DualAuth Agent Configuration
 DUALAUTH_JAVA_TOOL_OPTIONS=""\""-javaagent:{_dualAuthAgentPath}\""""
 DUALAUTH_AUTH_DOMAIN=""{authDomain}""
@@ -1549,14 +1514,12 @@ DUALAUTH_TRUST_OFFICIAL=""true""
                     .AttachGameProcessAsync(process.Id);
             }
 
-            // Transfer ownership to GameProcessTracker (it will handle disposal and notify subscribers)
             _gameProcess.TrackGameProcess(process, instanceId, profileId, officialAccountId);
             Logger.Success("Game", $"Game started with PID: {process.Id}");
 
             _discord.SetPresence(PresenceState.Playing, $"Playing as {profileName}");
             _progress.ReportDownloadProgress("launching", 100, "launch.detail.waiting_for_window", null, 0, 0);
 
-            // Wait for interface loaded signal, process exit, or timeout (60s)
             var timeoutTask = Task.Delay(TimeSpan.FromSeconds(60));
             var completedTask = await Task.WhenAny(
                 interfaceLoadedTcs.Task,
@@ -1581,7 +1544,6 @@ DUALAUTH_TRUST_OFFICIAL=""true""
             instanceLog.Write("ERR", "HyPrism", $"Failed to start game process: {ex}");
             Logger.Error("Game", $"Failed to start game process: {ex.Message}");
 
-            // Cleanup process if failed before transferring to GameProcessTracker
             if (process != null && !_gameProcess.GetRunningProcesses().Any(
                     tracked => tracked.ProcessId == process.Id))
             {

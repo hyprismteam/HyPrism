@@ -542,6 +542,7 @@ SPDX-License-Identifier: GPL-3.0-only
                             ToolTip.Tip="{Binding OfficialSourceAvailability}">
                         <Grid Classes="sourceAvailabilityState checking">
                           <Path Classes="sourceAvailabilitySpinner"
+                                controls:RotatingVisual.IsActive="{Binding OfficialSourceIsChecking}"
                                 Data="M10,2 A8,8 0 1 1 2,10" />
                         </Grid>
                         <Grid Classes="sourceAvailabilityState available">

@@ -378,6 +378,7 @@ public class HytaleVersionSource : IVersionSource
     private readonly SemaphoreSlim _speedTestLock = new(1, 1);
     private MirrorSpeedTestResult? _speedTestResult;
     private MirrorSpeedTestResult? _availabilityResult;
+    private bool _availabilityHadOfficialAccount;
 
     /// <summary>
     /// Returns cached speed test result if still valid
@@ -527,7 +528,9 @@ public class HytaleVersionSource : IVersionSource
     /// <inheritdoc/>
     public async Task<MirrorSpeedTestResult> ProbeAvailabilityAsync(CancellationToken ct = default)
     {
+        var hasOfficialAccount = IsAvailable;
         if (_availabilityResult is not null &&
+            _availabilityHadOfficialAccount == hasOfficialAccount &&
             DateTime.UtcNow - _availabilityResult.TestedAt <= AvailabilityCacheTtl)
         {
             return _availabilityResult;
@@ -542,7 +545,8 @@ public class HytaleVersionSource : IVersionSource
             TestedAt = DateTime.UtcNow
         };
 
-        if (!IsAvailable)
+        _availabilityHadOfficialAccount = hasOfficialAccount;
+        if (!hasOfficialAccount)
         {
             _availabilityResult = result;
             return result;
@@ -553,19 +557,27 @@ public class HytaleVersionSource : IVersionSource
             using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
             timeout.CancelAfter(TimeSpan.FromSeconds(5));
             var startedAt = DateTime.UtcNow;
-            using var request = new HttpRequestMessage(HttpMethod.Head, result.MirrorUrl);
-            using var response = await _httpClient.SendAsync(
-                request,
-                HttpCompletionOption.ResponseHeadersRead,
-                timeout.Token);
-            result.PingMs = Math.Max(0, (long)(DateTime.UtcNow - startedAt).TotalMilliseconds);
-            result.IsAvailable = response.IsSuccessStatusCode;
+            var os = LauncherUtilities.GetOS();
+            var arch = LauncherUtilities.GetArch();
+            foreach (var branch in new[] { "release", "pre-release" })
+            {
+                var patches = await GetPatchesAsync(os, arch, branch, 0, timeout.Token);
+                if (patches?.Steps is { Count: > 0 })
+                {
+                    result.IsAvailable = true;
+                    break;
+                }
+            }
+
+            result.PingMs = result.IsAvailable
+                ? Math.Max(0, (long)(DateTime.UtcNow - startedAt).TotalMilliseconds)
+                : -1;
         }
         catch (OperationCanceledException) when (!ct.IsCancellationRequested)
         {
             result.IsAvailable = false;
         }
-        catch (HttpRequestException ex)
+        catch (Exception ex)
         {
             Logger.Debug("HytaleSource", $"Availability probe failed: {ex.Message}");
             result.IsAvailable = false;

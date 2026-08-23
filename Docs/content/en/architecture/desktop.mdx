@@ -24,9 +24,9 @@ description: Avalonia views, view models, localization, and native controls
 - `Features/About` provides repository metadata, contributors, commits, and avatars for the About page
 - `Features/Settings` owns the adaptive settings UI and Desktop preferences
 - `Features/Profiles` owns the instance-aligned adaptive profile cards, content view, and creation wizard while delegating ordering, storage, switching, and session persistence to Core account services
-- `Controls/WizardHost` owns wizard lifecycle, active-step normalization, reveal playback, delayed cleanup, and navigation-pane coordination for instance, profile, and download-source flows
+- `Controls/WizardHost` owns wizard lifecycle, active-step normalization, per-step animation selection after completed transitions, final-frame restoration without replay when returning to step zero, delayed cleanup, and navigation-pane coordination for instance, profile, and download-source flows
 - `Controls/WizardScreenTransition` provides the lower-level phased overview-to-wizard and wizard-step transitions, including render-clock-driven step animation, active-step recovery after interruption, and anchor tracking limited to an open wizard
-- `Controls/WizardRevealIcon` provides the common anchor, motion layer, and Lottie player so reveal icons load consistently without animating their layout position while a wizard opens or closes
+- `Controls/WizardRevealIcon` provides the unclipped border anchor, motion layer, configurable playback rate with a shared `2x` default, and single-play Lottie player so wizard icons initialize before their first visible frame and remain visible while centered content changes height. Alternate Lottie states use the reveal palette while preserving dark internal details on light shapes
 - `Controls/AdaptiveMasterDetailHost` owns the shared wide and compact master-detail state, breakpoint, column placement, content sizing, and remembered detail intent while keeping layout synchronization immediate and user navigation animated
 - `Controls/ReorderableListController` owns pointer capture, drag previews, and drop-index calculation for profile and instance lists
 - `Platform` contains native URI, file picker, memory, and GPU adapters plus the shared persistent remote image cache
@@ -43,7 +43,7 @@ Reusable desktop presentation is split into two layers:
 
 Feature views opt into reusable controls with `uiComboBox`, `uiPopupSurface`, `uiToggle`, `uiSettingsGroup`, `uiSettingsRow`, and `uiSegmentedControl` classes. Enabled buttons, selectors, toggles, and sliders receive the shared hand cursor while text input and resize surfaces keep their specialized cursors. `FadingPopup` owns opening, closing, light dismiss, keyboard dismiss, animation timing, and close retention for both ComboBox lists and feature menus. New interaction colors and animation timings belong in this foundation instead of feature-scoped styles
 
-`MotionDurations` names shared animation timings by purpose. `RotatingVisual.IsActive` provides one render-clock-driven spinner behavior that starts and stops from binding state instead of feature-owned timers
+`MotionDurations` names shared animation timings by purpose. `RotatingVisual.IsActive` provides one monotonic UI-timer-driven spinner behavior that starts only while its visual is active and attached, then resets on stop or detach
 
 The desktop project uses compiled bindings by default. View models expose state and commands while code-behind is limited to control behavior that depends on Avalonia input, layout, or animation primitives
 

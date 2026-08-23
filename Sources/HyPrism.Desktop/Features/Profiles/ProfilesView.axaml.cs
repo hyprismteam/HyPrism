@@ -34,12 +34,16 @@ public sealed partial class ProfilesView : UserControl
             ProfileOverview,
             ProfileCreatorScreen,
             ProfilesListPane,
-            ProfileWizardReveal.Anchor,
-            ProfileWizardReveal.MotionTarget,
-            ProfileWizardReveal.Animation,
-            ProfileCreationChoiceContent,
-            OfflineProfileCreationContent,
-            OfficialProfileCreationContent);
+            ProfileWizardReveal,
+            new WizardStepDefinition(
+                ProfileCreationChoiceContent,
+                "/Assets/Lotties/avatar-reveal.json"),
+            new WizardStepDefinition(
+                OfflineProfileCreationContent,
+                "/Assets/Lotties/avatar-jumping.json"),
+            new WizardStepDefinition(
+                OfficialProfileCreationContent,
+                "/Assets/Lotties/avatar-looking.json"));
         _layoutHost = new AdaptiveMasterDetailHost(
             ProfilesLayout,
             ProfilesListPane,
