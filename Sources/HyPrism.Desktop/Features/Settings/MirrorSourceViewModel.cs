@@ -45,6 +45,7 @@ public sealed partial class MirrorSourceViewModel : ObservableObject
     public string Endpoint { get; }
     public string SourceType { get; private set; }
     public bool IsLast { get; }
+    public bool IsChecking => _availabilityState == SourceAvailabilityState.Checking;
     public bool IsAvailable => _availabilityState == SourceAvailabilityState.Available;
     public bool IsUnavailable => _availabilityState is SourceAvailabilityState.Disabled or SourceAvailabilityState.Unavailable;
 
@@ -53,6 +54,9 @@ public sealed partial class MirrorSourceViewModel : ObservableObject
 
     [ObservableProperty]
     private bool _isEnabled;
+
+    [ObservableProperty]
+    private bool _isMenuOpen;
 
     partial void OnIsEnabledChanged(bool value)
     {
@@ -112,6 +116,7 @@ public sealed partial class MirrorSourceViewModel : ObservableObject
 
     private void NotifyAvailabilityChanged()
     {
+        OnPropertyChanged(nameof(IsChecking));
         OnPropertyChanged(nameof(IsAvailable));
         OnPropertyChanged(nameof(IsUnavailable));
     }

@@ -2805,4 +2805,37 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="instances.logs.emptyHint" xml:space="preserve">
     <value>인스턴스별 로그 기록이 여기에 나타납니다</value>
   </data>
+  <data name="settings.downloads.columnEnabled" xml:space="preserve">
+    <value>사용</value>
+  </data>
+  <data name="settings.downloads.addSourceMethodHint" xml:space="preserve">
+    <value>HyPrism이 소스를 구성할 방법을 선택하세요</value>
+  </data>
+  <data name="settings.downloads.addSourceAutomatic" xml:space="preserve">
+    <value>자동 감지</value>
+  </data>
+  <data name="settings.downloads.addSourceAutomaticHint" xml:space="preserve">
+    <value>주소를 입력하면 HyPrism이 소스 형식을 감지합니다</value>
+  </data>
+  <data name="settings.downloads.addSourceManual" xml:space="preserve">
+    <value>JSON 직접 입력</value>
+  </data>
+  <data name="settings.downloads.addSourceManualHint" xml:space="preserve">
+    <value>자동 감지가 적합하지 않으면 전체 미러 정의를 붙여넣으세요</value>
+  </data>
+  <data name="settings.downloads.manualSourceTitle" xml:space="preserve">
+    <value>JSON에서 소스 추가</value>
+  </data>
+  <data name="settings.downloads.manualSourceHint" xml:space="preserve">
+    <value>.mirror.json 정의를 붙여넣으세요. 저장 전에 HyPrism이 검증합니다</value>
+  </data>
+  <data name="settings.downloads.manualSourceJson" xml:space="preserve">
+    <value>소스 정의</value>
+  </data>
+  <data name="settings.downloads.invalidSourceJson" xml:space="preserve">
+    <value>지원되는 HTTPS 주소가 포함된 올바른 미러 JSON 정의를 입력하세요</value>
+  </data>
+  <data name="settings.downloads.manualSourceJsonPlaceholder" xml:space="preserve">
+    <value>{"schemaVersion":1,"id":"my-mirror","name":"My mirror","sourceType":"pattern","pattern":{"baseUrl":"https://mirror.example.com"}}</value>
+  </data>
 </root>

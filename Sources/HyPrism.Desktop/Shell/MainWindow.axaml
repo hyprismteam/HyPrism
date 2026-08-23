@@ -251,8 +251,6 @@ SPDX-License-Identifier: GPL-3.0-only
           </Border>
 
           <Grid Grid.Column="1" RowDefinitions="*,Auto">
-            <!-- Keep room for exactly three text lines. The title consumes one or two
-                 according to its measured width; the excerpt naturally receives the rest. -->
             <StackPanel VerticalAlignment="Top"
                         Height="55"
                         ClipToBounds="True"
@@ -569,47 +567,6 @@ SPDX-License-Identifier: GPL-3.0-only
         </TranslateTransform>
       </TransformGroup>
     </Grid.RenderTransform>
-    <Grid Grid.Row="0" ColumnDefinitions="*,Auto">
-      <Border Grid.Column="0"
-              Background="Transparent"
-              PointerPressed="OnTitleBarPointerPressed"
-              WindowDecorationProperties.ElementRole="TitleBar" />
-
-      <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="0">
-        <Button x:Name="MinimizeWindowButton"
-                Classes="window"
-                VerticalContentAlignment="Stretch"
-                Click="OnMinimizeClicked"
-                WindowDecorationProperties.ElementRole="MinimizeButton">
-          <Border Classes="windowMinimize"
-                  Width="11"
-                  Height="1.5"
-                  Margin="0,0,0,10"
-                  VerticalAlignment="Bottom" />
-        </Button>
-        <Button x:Name="MaximizeWindowButton"
-                Classes="window"
-                Click="OnMaximizeClicked"
-                WindowDecorationProperties.ElementRole="MaximizeButton">
-          <Path Classes="windowIcon"
-                Width="11"
-                Height="11"
-                Stretch="Uniform"
-                Data="{StaticResource MaximizeIcon}" />
-        </Button>
-        <Button x:Name="CloseWindowButton"
-                Classes="window"
-                Click="OnCloseClicked"
-                WindowDecorationProperties.ElementRole="CloseButton">
-          <Path Classes="windowIcon"
-                Width="11"
-                Height="11"
-                Stretch="Uniform"
-                Data="{StaticResource CloseIcon}" />
-        </Button>
-      </StackPanel>
-    </Grid>
-
     <Grid Grid.Row="1"
           ColumnDefinitions="238,*"
           ColumnSpacing="18"
@@ -841,15 +798,6 @@ SPDX-License-Identifier: GPL-3.0-only
       </Border>
     </Grid>
 
-    <!-- Explicit resize zones keep borderless windows resizable on X11 and Wayland. -->
-    <Border x:Name="ResizeNorth" Grid.RowSpan="2" Height="6" VerticalAlignment="Top" Background="Transparent" Cursor="SizeNorthSouth" PointerPressed="OnResizeNorth" />
-    <Border x:Name="ResizeSouth" Grid.RowSpan="2" Height="6" VerticalAlignment="Bottom" Background="Transparent" Cursor="SizeNorthSouth" PointerPressed="OnResizeSouth" />
-    <Border x:Name="ResizeWest" Grid.RowSpan="2" Width="6" HorizontalAlignment="Left" Background="Transparent" Cursor="SizeWestEast" PointerPressed="OnResizeWest" />
-    <Border x:Name="ResizeEast" Grid.RowSpan="2" Width="6" HorizontalAlignment="Right" Background="Transparent" Cursor="SizeWestEast" PointerPressed="OnResizeEast" />
-    <Border x:Name="ResizeNorthWest" Grid.RowSpan="2" Width="10" Height="10" HorizontalAlignment="Left" VerticalAlignment="Top" Background="Transparent" Cursor="TopLeftCorner" PointerPressed="OnResizeNorthWest" />
-    <Border x:Name="ResizeNorthEast" Grid.RowSpan="2" Width="10" Height="10" HorizontalAlignment="Right" VerticalAlignment="Top" Background="Transparent" Cursor="TopRightCorner" PointerPressed="OnResizeNorthEast" />
-    <Border x:Name="ResizeSouthWest" Grid.RowSpan="2" Width="10" Height="10" HorizontalAlignment="Left" VerticalAlignment="Bottom" Background="Transparent" Cursor="BottomLeftCorner" PointerPressed="OnResizeSouthWest" />
-    <Border x:Name="ResizeSouthEast" Grid.RowSpan="2" Width="10" Height="10" HorizontalAlignment="Right" VerticalAlignment="Bottom" Background="Transparent" Cursor="BottomRightCorner" PointerPressed="OnResizeSouthEast" />
   </Grid>
 
   <Border x:Name="StartupLoadingScreen"
@@ -900,8 +848,8 @@ SPDX-License-Identifier: GPL-3.0-only
         </Grid.RenderTransform>
 
         <Grid x:Name="StartupMark"
-              Width="128"
-              Height="128"
+              Width="96"
+              Height="96"
               HorizontalAlignment="Center"
               RenderTransformOrigin="50%,50%">
           <Grid.RenderTransform>
@@ -920,8 +868,8 @@ SPDX-License-Identifier: GPL-3.0-only
           </Grid.RenderTransform>
 
           <lottie:Lottie x:Name="StartupAnimation"
-                         Width="128"
-                         Height="128"
+                         Width="96"
+                         Height="96"
                          HorizontalAlignment="Center"
                          VerticalAlignment="Center"
                          Path="/Assets/Lotties/figures.json"
@@ -974,5 +922,59 @@ SPDX-License-Identifier: GPL-3.0-only
       </Image>
     </Grid>
   </Border>
+
+  <Grid x:Name="WindowChrome"
+        Height="30"
+        VerticalAlignment="Top"
+        ColumnDefinitions="*,Auto"
+        ZIndex="2000">
+    <Border Grid.Column="0"
+            Background="Transparent"
+            PointerPressed="OnTitleBarPointerPressed"
+            WindowDecorationProperties.ElementRole="TitleBar" />
+
+    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="0">
+      <Button x:Name="MinimizeWindowButton"
+              Classes="window"
+              VerticalContentAlignment="Stretch"
+              Click="OnMinimizeClicked"
+              WindowDecorationProperties.ElementRole="MinimizeButton">
+        <Border Classes="windowMinimize"
+                Width="11"
+                Height="1.5"
+                Margin="0,0,0,10"
+                VerticalAlignment="Bottom" />
+      </Button>
+      <Button x:Name="MaximizeWindowButton"
+              Classes="window"
+              Click="OnMaximizeClicked"
+              WindowDecorationProperties.ElementRole="MaximizeButton">
+        <Path Classes="windowIcon"
+              Width="11"
+              Height="11"
+              Stretch="Uniform"
+              Data="{StaticResource MaximizeIcon}" />
+      </Button>
+      <Button x:Name="CloseWindowButton"
+              Classes="window"
+              Click="OnCloseClicked"
+              WindowDecorationProperties.ElementRole="CloseButton">
+        <Path Classes="windowIcon"
+              Width="11"
+              Height="11"
+              Stretch="Uniform"
+              Data="{StaticResource CloseIcon}" />
+      </Button>
+    </StackPanel>
+  </Grid>
+
+  <Border x:Name="ResizeNorth" ZIndex="2001" Height="6" VerticalAlignment="Top" Background="Transparent" Cursor="SizeNorthSouth" PointerPressed="OnResizeNorth" />
+  <Border x:Name="ResizeSouth" ZIndex="2001" Height="6" VerticalAlignment="Bottom" Background="Transparent" Cursor="SizeNorthSouth" PointerPressed="OnResizeSouth" />
+  <Border x:Name="ResizeWest" ZIndex="2001" Width="6" HorizontalAlignment="Left" Background="Transparent" Cursor="SizeWestEast" PointerPressed="OnResizeWest" />
+  <Border x:Name="ResizeEast" ZIndex="2001" Width="6" HorizontalAlignment="Right" Background="Transparent" Cursor="SizeWestEast" PointerPressed="OnResizeEast" />
+  <Border x:Name="ResizeNorthWest" ZIndex="2002" Width="10" Height="10" HorizontalAlignment="Left" VerticalAlignment="Top" Background="Transparent" Cursor="TopLeftCorner" PointerPressed="OnResizeNorthWest" />
+  <Border x:Name="ResizeNorthEast" ZIndex="2002" Width="10" Height="10" HorizontalAlignment="Right" VerticalAlignment="Top" Background="Transparent" Cursor="TopRightCorner" PointerPressed="OnResizeNorthEast" />
+  <Border x:Name="ResizeSouthWest" ZIndex="2002" Width="10" Height="10" HorizontalAlignment="Left" VerticalAlignment="Bottom" Background="Transparent" Cursor="BottomLeftCorner" PointerPressed="OnResizeSouthWest" />
+  <Border x:Name="ResizeSouthEast" ZIndex="2002" Width="10" Height="10" HorizontalAlignment="Right" VerticalAlignment="Bottom" Background="Transparent" Cursor="BottomRightCorner" PointerPressed="OnResizeSouthEast" />
   </Grid>
 </Window>

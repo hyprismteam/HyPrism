@@ -1,12 +1,18 @@
 // Copyright (C) 2026 HyPrism Launcher
 // SPDX-License-Identifier: GPL-3.0-only
 
+using System.ComponentModel;
+using System.Diagnostics;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
+using HyPrism.Desktop.Controls;
+using ShapePath = Avalonia.Controls.Shapes.Path;
+
 namespace HyPrism.Desktop.Features.Settings;
 
 public sealed partial class SettingsView : UserControl
@@ -18,12 +24,88 @@ public sealed partial class SettingsView : UserControl
     private bool _compactContentOpen;
     private bool _returnToCompactContent;
     private double _backgroundPickerWidth;
+    private readonly Stopwatch _availabilitySpinnerClock = new();
+    private readonly DispatcherTimer _availabilitySpinnerTimer;
+    private readonly WizardScreenTransition _downloadSourceTransition;
+    private INotifyPropertyChanged? _viewModel;
+    private bool _isDownloadSourceWizardVisible;
 
     private TranslateTransform MainTranslation
         => (TranslateTransform)SettingsMain.RenderTransform!;
 
     public SettingsView()
-        => InitializeComponent();
+    {
+        InitializeComponent();
+        _downloadSourceTransition = new WizardScreenTransition(
+            SettingsOverview,
+            DownloadSourceWizardScreen,
+            SettingsCategoryRail);
+        _availabilitySpinnerTimer = new DispatcherTimer
+        {
+            Interval = TimeSpan.FromMilliseconds(16)
+        };
+        _availabilitySpinnerTimer.Tick += OnAvailabilitySpinnerTick;
+        AttachedToVisualTree += (_, _) =>
+        {
+            _availabilitySpinnerClock.Restart();
+            _availabilitySpinnerTimer.Start();
+        };
+        DetachedFromVisualTree += (_, _) =>
+        {
+            _availabilitySpinnerTimer.Stop();
+            _availabilitySpinnerClock.Reset();
+        };
+        DataContextChanged += OnDataContextChanged;
+    }
+
+    private void OnAvailabilitySpinnerTick(object? sender, EventArgs args)
+    {
+        if (!IsEffectivelyVisible)
+            return;
+
+        const double rotationDurationMilliseconds = 800;
+        var angle = _availabilitySpinnerClock.Elapsed.TotalMilliseconds % rotationDurationMilliseconds /
+                    rotationDurationMilliseconds * 360;
+        foreach (var spinner in this.GetVisualDescendants()
+                     .OfType<ShapePath>()
+                     .Where(path => path.Classes.Contains("sourceAvailabilitySpinner")))
+        {
+            spinner.RenderTransform ??= new RotateTransform();
+            ((RotateTransform)spinner.RenderTransform).Angle = angle;
+        }
+    }
+
+    private void OnDataContextChanged(object? sender, EventArgs args)
+    {
+        if (_viewModel is not null)
+            _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
+
+        _viewModel = DataContext as INotifyPropertyChanged;
+        if (_viewModel is not null)
+            _viewModel.PropertyChanged += OnViewModelPropertyChanged;
+
+        _isDownloadSourceWizardVisible = DataContext is SettingsViewModel { IsAddingMirror: true };
+        if (_isDownloadSourceWizardVisible)
+            _ = PlayDownloadSourceWizardOpenAsync();
+        else
+            HideDownloadSourceWizardImmediately();
+    }
+
+    private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs args)
+    {
+        if (args.PropertyName != nameof(SettingsViewModel.IsAddingMirror))
+            return;
+
+        var isVisible = DataContext is SettingsViewModel { IsAddingMirror: true };
+        if (_isDownloadSourceWizardVisible == isVisible)
+            return;
+
+        _isDownloadSourceWizardVisible = isVisible;
+        if (isVisible)
+            _ = PlayDownloadSourceWizardOpenAsync();
+        else
+            _ = PlayDownloadSourceWizardCloseAsync();
+    }
 
     private void OnSettingsViewSizeChanged(object? sender, SizeChangedEventArgs e)
     {
@@ -58,12 +140,14 @@ public sealed partial class SettingsView : UserControl
     private void ApplyLayoutMode(bool compact, double width)
     {
         SettingsCategoryRail.Classes.Set("compact", compact);
-        if (DataContext is SettingsViewModel viewModel)
+        var viewModel = DataContext as SettingsViewModel;
+        if (viewModel is not null)
             viewModel.IsCompactLayout = compact;
 
         CompactSettingsToolbar.IsVisible = compact;
         if (compact)
         {
+            _downloadSourceTransition.ResetNavigationPane();
             SettingsLayout.ColumnDefinitions[0].Width = new GridLength(1, GridUnitType.Star);
             SettingsLayout.ColumnDefinitions[1].Width = new GridLength(0);
             Grid.SetColumn(SettingsMain, 0);
@@ -73,9 +157,13 @@ public sealed partial class SettingsView : UserControl
             return;
         }
 
-        SettingsLayout.ColumnDefinitions[0].Width = new GridLength(276);
+        SettingsLayout.ColumnDefinitions[0].Width = GridLength.Auto;
         SettingsLayout.ColumnDefinitions[1].Width = new GridLength(1, GridUnitType.Star);
         Grid.SetColumn(SettingsMain, 1);
+        if (viewModel?.IsAddingMirror == true)
+            _downloadSourceTransition.HideNavigationPane(animate: false);
+        else
+            _downloadSourceTransition.ShowNavigationPane(animate: false);
         SettingsCategoryRail.IsHitTestVisible = true;
         SettingsMain.IsHitTestVisible = true;
         SetMainOffsetWithoutTransition(0);
@@ -96,6 +184,65 @@ public sealed partial class SettingsView : UserControl
 
     private void OnCompactSettingsBackClicked(object? sender, RoutedEventArgs e)
         => TryCloseCompactContent();
+
+    private static void OnMirrorMenuPointerPressed(object? sender, PointerPressedEventArgs args)
+        => args.Handled = true;
+
+    private void OnToggleMirrorMenuPointerReleased(object? sender, PointerReleasedEventArgs args)
+    {
+        if (sender is Border { DataContext: MirrorSourceViewModel mirror })
+            mirror.IsMenuOpen = !mirror.IsMenuOpen;
+
+        args.Handled = true;
+    }
+
+    private void OnCloseMirrorMenuClicked(object? sender, RoutedEventArgs args)
+    {
+        if (sender is Button { DataContext: MirrorSourceViewModel mirror })
+            mirror.IsMenuOpen = false;
+    }
+
+    private async void OnBeginAutomaticSourceAdditionClicked(object? sender, RoutedEventArgs args)
+    {
+        if (DataContext is not SettingsViewModel viewModel)
+            return;
+
+        await _downloadSourceTransition.SwitchStepAsync(
+            SourceAdditionChoiceContent,
+            AutomaticSourceAdditionContent,
+            forward: true,
+            () => viewModel.BeginAutomaticMirrorAdditionCommand.Execute(null),
+            () => viewModel.IsAddingMirror);
+    }
+
+    private async void OnBeginManualSourceAdditionClicked(object? sender, RoutedEventArgs args)
+    {
+        if (DataContext is not SettingsViewModel viewModel)
+            return;
+
+        await _downloadSourceTransition.SwitchStepAsync(
+            SourceAdditionChoiceContent,
+            ManualSourceAdditionContent,
+            forward: true,
+            () => viewModel.BeginManualMirrorAdditionCommand.Execute(null),
+            () => viewModel.IsAddingMirror);
+    }
+
+    private async void OnReturnToSourceAdditionChoiceClicked(object? sender, RoutedEventArgs args)
+    {
+        if (DataContext is not SettingsViewModel viewModel)
+            return;
+
+        var outgoingStep = viewModel.IsManualSourceVisible
+            ? ManualSourceAdditionContent
+            : AutomaticSourceAdditionContent;
+        await _downloadSourceTransition.SwitchStepAsync(
+            outgoingStep,
+            SourceAdditionChoiceContent,
+            forward: false,
+            () => viewModel.ReturnToMirrorAdditionChoiceCommand.Execute(null),
+            () => viewModel.IsAddingMirror);
+    }
 
     private void OnBackgroundPickerSizeChanged(object? sender, SizeChangedEventArgs e)
     {
@@ -155,6 +302,12 @@ public sealed partial class SettingsView : UserControl
 
     public bool TryCloseCompactContent()
     {
+        if (DataContext is SettingsViewModel { IsAddingMirror: true } viewModel)
+        {
+            viewModel.CancelAddMirrorCommand.Execute(null);
+            return true;
+        }
+
         if (_usesCompactLayout is not true || !_compactContentOpen)
             return false;
 
@@ -172,5 +325,63 @@ public sealed partial class SettingsView : UserControl
         MainTranslation.Transitions = null;
         MainTranslation.X = offset;
         MainTranslation.Transitions = transitions;
+    }
+
+    private async Task PlayDownloadSourceWizardOpenAsync()
+    {
+        RestoreDownloadSourceWizardStep();
+        if (_usesCompactLayout is false)
+            _downloadSourceTransition.HideNavigationPane(animate: true);
+
+        await _downloadSourceTransition.OpenAsync(
+            () => DataContext is SettingsViewModel { IsAddingMirror: true });
+    }
+
+    private async Task PlayDownloadSourceWizardCloseAsync()
+    {
+        await _downloadSourceTransition.CloseAsync(
+            () => DataContext is SettingsViewModel { IsAddingMirror: false },
+            () =>
+            {
+                if (_usesCompactLayout is false)
+                    _downloadSourceTransition.ShowNavigationPane(animate: true);
+
+                RestoreDownloadSourceWizardStep();
+            });
+    }
+
+    private void HideDownloadSourceWizardImmediately()
+    {
+        _downloadSourceTransition.ShowOverviewImmediately();
+        if (_usesCompactLayout is false)
+            _downloadSourceTransition.ShowNavigationPane(animate: false);
+
+        RestoreDownloadSourceWizardStep();
+    }
+
+    private void RestoreDownloadSourceWizardStep()
+    {
+        if (DataContext is SettingsViewModel { IsAutomaticSourceVisible: true })
+        {
+            _downloadSourceTransition.ShowStepImmediately(
+                AutomaticSourceAdditionContent,
+                SourceAdditionChoiceContent,
+                ManualSourceAdditionContent);
+            return;
+        }
+
+        if (DataContext is SettingsViewModel { IsManualSourceVisible: true })
+        {
+            _downloadSourceTransition.ShowStepImmediately(
+                ManualSourceAdditionContent,
+                SourceAdditionChoiceContent,
+                AutomaticSourceAdditionContent);
+            return;
+        }
+
+        _downloadSourceTransition.ShowStepImmediately(
+            SourceAdditionChoiceContent,
+            AutomaticSourceAdditionContent,
+            ManualSourceAdditionContent);
     }
 }

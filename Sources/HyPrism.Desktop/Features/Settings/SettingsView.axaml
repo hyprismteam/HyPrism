@@ -174,39 +174,68 @@ SPDX-License-Identifier: GPL-3.0-only
     <DataTemplate x:Key="MirrorSourceTemplate" x:DataType="vm:MirrorSourceViewModel">
       <Border Classes="uiSettingsRow settingsRow mirrorSourceRow"
               Classes.last="{Binding IsLast}">
-        <Grid ColumnDefinitions="2.3*,1.05*,1.15*,70,Auto,Auto" ColumnSpacing="14">
+        <Grid ColumnDefinitions="2.4*,1.1*,1.05*,84,34" ColumnSpacing="16">
           <TextBlock Text="{Binding Endpoint}"
                      Classes="sourceTableValue link"
                      ToolTip.Tip="{Binding Name}"
-                     TextTrimming="CharacterEllipsis" />
+                     TextTrimming="CharacterEllipsis"
+                     VerticalAlignment="Center" />
           <TextBlock Grid.Column="1"
                      Text="{Binding SourceType}"
                      Classes="sourceTableValue"
-                     TextTrimming="CharacterEllipsis" />
+                     TextTrimming="CharacterEllipsis"
+                     VerticalAlignment="Center" />
           <Grid Grid.Column="2"
                 Classes="sourceAvailability"
+                Classes.checking="{Binding IsChecking}"
+                Classes.available="{Binding IsAvailable}"
+                Classes.unavailable="{Binding IsUnavailable}"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
                 ToolTip.Tip="{Binding Availability}">
-            <PathIcon Data="{StaticResource CheckIcon}"
-                      Classes="sourceAvailabilityIcon available"
-                      IsVisible="{Binding IsAvailable}" />
-            <PathIcon Data="{StaticResource CloseIcon}"
-                      Classes="sourceAvailabilityIcon unavailable"
-                      IsVisible="{Binding IsUnavailable}" />
+            <Grid Classes="sourceAvailabilityState checking">
+              <Path Classes="sourceAvailabilitySpinner"
+                    Data="M10,2 A8,8 0 1 1 2,10" />
+            </Grid>
+            <Grid Classes="sourceAvailabilityState available">
+              <PathIcon Data="{StaticResource CheckIcon}"
+                        Classes="sourceAvailabilityIcon available" />
+            </Grid>
+            <Grid Classes="sourceAvailabilityState unavailable">
+              <PathIcon Data="{StaticResource CloseIcon}"
+                        Classes="sourceAvailabilityIcon unavailable" />
+            </Grid>
           </Grid>
-          <TextBlock Grid.Column="3"
-                     Text="{Binding Ping}"
-                     Classes="sourceTableValue ping" />
-          <ToggleSwitch Grid.Column="4"
+          <ToggleSwitch Grid.Column="3"
                         Classes="uiToggle"
                         IsChecked="{Binding IsEnabled}"
+                        HorizontalAlignment="Center"
                         VerticalAlignment="Center" />
-          <Button Grid.Column="5"
-                  Classes="mirrorRemove"
-                  Command="{Binding DataContext.RequestDeleteMirrorCommand, ElementName=SettingsRoot}"
-                  CommandParameter="{Binding}"
-                  ToolTip.Tip="{Binding DataContext.RemoveLabel, ElementName=SettingsRoot}">
-            <TextBlock Text="×" FontSize="22" FontWeight="Normal" />
-          </Button>
+          <Grid Grid.Column="4">
+            <Border x:Name="MirrorMoreTarget"
+                    Classes="sourceMoreTarget"
+                    Cursor="Hand"
+                    PointerPressed="OnMirrorMenuPointerPressed"
+                    PointerReleased="OnToggleMirrorMenuPointerReleased">
+              <Path Classes="sourceMoreIcon" Data="{StaticResource MoreVerticalIcon}" />
+            </Border>
+            <controls:FadingPopup Placement="BottomEdgeAlignedRight"
+                                  PlacementTarget="MirrorMoreTarget"
+                                  VerticalOffset="8"
+                                  IsRequestedOpen="{Binding IsMenuOpen, Mode=TwoWay}">
+              <Border Classes="uiPopupSurface sourceActionFlyout">
+                <Button Classes="sourceMenuAction danger"
+                        Command="{Binding DataContext.RequestDeleteMirrorCommand, ElementName=SettingsRoot}"
+                        CommandParameter="{Binding}"
+                        Click="OnCloseMirrorMenuClicked">
+                  <StackPanel Orientation="Horizontal" Spacing="10">
+                    <Path Classes="sourceMenuIcon" Data="{StaticResource DeleteIcon}" />
+                    <TextBlock Text="{Binding DataContext.RemoveLabel, ElementName=SettingsRoot}" />
+                  </StackPanel>
+                </Button>
+              </Border>
+            </controls:FadingPopup>
+          </Grid>
         </Grid>
       </Border>
     </DataTemplate>
@@ -267,29 +296,53 @@ SPDX-License-Identifier: GPL-3.0-only
   </UserControl.Resources>
 
   <Grid x:Name="SettingsLayout"
-        ColumnDefinitions="276,*"
+        ColumnDefinitions="Auto,*"
         ClipToBounds="True"
         Background="{DynamicResource SurfaceBrush}">
     <Border x:Name="SettingsCategoryRail"
             Grid.Column="0"
+            Width="276"
             Classes="settingsRail">
-      <ScrollViewer x:Name="SettingsCategoryScroll"
-                    Classes="settingsCategoryScroll"
-                    Margin="14,18,4,18"
-                    HorizontalContentAlignment="Stretch"
-                    HorizontalScrollBarVisibility="Disabled"
-                    VerticalScrollBarVisibility="Auto">
-        <ItemsControl ItemsSource="{Binding Categories}"
-                      HorizontalAlignment="Stretch"
-                      Margin="0,0,10,0"
-                      ItemTemplate="{StaticResource SettingRailCategoryTemplate}">
-          <ItemsControl.ItemsPanel>
-            <ItemsPanelTemplate>
-              <StackPanel HorizontalAlignment="Stretch" Spacing="2" />
-            </ItemsPanelTemplate>
-          </ItemsControl.ItemsPanel>
-        </ItemsControl>
-      </ScrollViewer>
+      <Border.Transitions>
+        <Transitions>
+          <DoubleTransition Property="Width" Duration="0:0:0.19">
+            <DoubleTransition.Easing><easing:CubicEaseInOut /></DoubleTransition.Easing>
+          </DoubleTransition>
+          <DoubleTransition Property="Opacity" Duration="0:0:0.15">
+            <DoubleTransition.Easing><easing:CubicEaseOut /></DoubleTransition.Easing>
+          </DoubleTransition>
+        </Transitions>
+      </Border.Transitions>
+      <Border.RenderTransform>
+        <TranslateTransform>
+          <TranslateTransform.Transitions>
+            <Transitions>
+              <DoubleTransition Property="X" Duration="0:0:0.19">
+                <DoubleTransition.Easing><easing:CubicEaseInOut /></DoubleTransition.Easing>
+              </DoubleTransition>
+            </Transitions>
+          </TranslateTransform.Transitions>
+        </TranslateTransform>
+      </Border.RenderTransform>
+      <Grid MinWidth="276">
+        <ScrollViewer x:Name="SettingsCategoryScroll"
+                      Classes="settingsCategoryScroll"
+                      Margin="14,18,4,18"
+                      HorizontalContentAlignment="Stretch"
+                      HorizontalScrollBarVisibility="Disabled"
+                      VerticalScrollBarVisibility="Auto">
+          <ItemsControl ItemsSource="{Binding Categories}"
+                        HorizontalAlignment="Stretch"
+                        Margin="0,0,10,0"
+                        ItemTemplate="{StaticResource SettingRailCategoryTemplate}">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate>
+                <StackPanel HorizontalAlignment="Stretch" Spacing="2" />
+              </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+          </ItemsControl>
+        </ScrollViewer>
+      </Grid>
     </Border>
 
     <Grid x:Name="SettingsMain"
@@ -310,6 +363,28 @@ SPDX-License-Identifier: GPL-3.0-only
           </TranslateTransform.Transitions>
         </TranslateTransform>
       </Grid.RenderTransform>
+
+      <Grid x:Name="SettingsOverview"
+            Grid.RowSpan="2"
+            RowDefinitions="Auto,*">
+        <Grid.Transitions>
+          <Transitions>
+            <DoubleTransition Property="Opacity" Duration="0:0:0.18">
+              <DoubleTransition.Easing><easing:CubicEaseInOut /></DoubleTransition.Easing>
+            </DoubleTransition>
+          </Transitions>
+        </Grid.Transitions>
+        <Grid.RenderTransform>
+          <TranslateTransform>
+            <TranslateTransform.Transitions>
+              <Transitions>
+                <DoubleTransition Property="X" Duration="0:0:0.18">
+                  <DoubleTransition.Easing><easing:CubicEaseInOut /></DoubleTransition.Easing>
+                </DoubleTransition>
+              </Transitions>
+            </TranslateTransform.Transitions>
+          </TranslateTransform>
+        </Grid.RenderTransform>
 
       <Border x:Name="CompactSettingsToolbar"
               Classes="articleToolbar compact scrolled"
@@ -440,7 +515,8 @@ SPDX-License-Identifier: GPL-3.0-only
                            Classes="settingsCategoryHeading"
                            Margin="0"
                            VerticalAlignment="Center" />
-                <Button Grid.Column="1"
+                <Button x:Name="AddDownloadSourceButton"
+                        Grid.Column="1"
                         Classes="sourceAdd"
                         Theme="{StaticResource SourceAddButtonTheme}"
                         Command="{Binding ShowAddMirrorCommand}">
@@ -453,38 +529,60 @@ SPDX-License-Identifier: GPL-3.0-only
                 </Button>
               </Grid>
 
-              <Border Classes="uiSettingsGroup settingsGroup">
+              <Border x:Name="DownloadSourcesTable"
+                      Classes="uiSettingsGroup settingsGroup">
                 <StackPanel>
                   <Border Classes="sourceTableHeader">
-                    <Grid ColumnDefinitions="2.3*,1.05*,1.15*,70,82" ColumnSpacing="14">
+                    <Grid ColumnDefinitions="2.4*,1.1*,1.05*,84,34" ColumnSpacing="16">
                       <TextBlock Text="{Binding SourceLinkColumn}" />
                       <TextBlock Grid.Column="1" Text="{Binding SourceTypeColumn}" />
-                      <TextBlock Grid.Column="2" Text="{Binding SourceAvailabilityColumn}" />
-                      <TextBlock Grid.Column="3" Text="{Binding SourcePingColumn}" />
+                      <TextBlock Grid.Column="2"
+                                 Text="{Binding SourceAvailabilityColumn}"
+                                 HorizontalAlignment="Center" />
+                      <TextBlock Grid.Column="3"
+                                 Text="{Binding SourceEnabledColumn}"
+                                 HorizontalAlignment="Center" />
                     </Grid>
                   </Border>
                   <Border Classes="uiSettingsRow settingsRow"
                           Classes.last="{Binding HasNoMirrors}">
-                    <Grid ColumnDefinitions="2.3*,1.05*,1.15*,70,82" ColumnSpacing="14">
+                    <Grid ColumnDefinitions="2.4*,1.1*,1.05*,84,34" ColumnSpacing="16">
                       <TextBlock Text="{Binding OfficialSourceLink}"
                                  Classes="sourceTableValue link"
-                                 TextTrimming="CharacterEllipsis" />
+                                 TextTrimming="CharacterEllipsis"
+                                 VerticalAlignment="Center" />
                       <TextBlock Grid.Column="1"
                                  Text="{Binding OfficialSourceType}"
-                                 Classes="sourceTableValue" />
+                                 Classes="sourceTableValue"
+                                 VerticalAlignment="Center" />
                       <Grid Grid.Column="2"
                             Classes="sourceAvailability"
+                            Classes.checking="{Binding OfficialSourceIsChecking}"
+                            Classes.available="{Binding OfficialSourceIsAvailable}"
+                            Classes.unavailable="{Binding OfficialSourceIsUnavailable}"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
                             ToolTip.Tip="{Binding OfficialSourceAvailability}">
-                        <PathIcon Data="{StaticResource CheckIcon}"
-                                  Classes="sourceAvailabilityIcon available"
-                                  IsVisible="{Binding OfficialSourceIsAvailable}" />
-                        <PathIcon Data="{StaticResource CloseIcon}"
-                                  Classes="sourceAvailabilityIcon unavailable"
-                                  IsVisible="{Binding OfficialSourceIsUnavailable}" />
+                        <Grid Classes="sourceAvailabilityState checking">
+                          <Path Classes="sourceAvailabilitySpinner"
+                                Data="M10,2 A8,8 0 1 1 2,10" />
+                        </Grid>
+                        <Grid Classes="sourceAvailabilityState available">
+                          <PathIcon Data="{StaticResource CheckIcon}"
+                                    Classes="sourceAvailabilityIcon available" />
+                        </Grid>
+                        <Grid Classes="sourceAvailabilityState unavailable">
+                          <PathIcon Data="{StaticResource CloseIcon}"
+                                    Classes="sourceAvailabilityIcon unavailable" />
+                        </Grid>
                       </Grid>
-                      <TextBlock Grid.Column="3"
-                                 Text="{Binding OfficialSourcePing}"
-                                 Classes="sourceTableValue ping" />
+                      <ToggleSwitch Grid.Column="3"
+                                    Classes="uiToggle"
+                                    IsChecked="{Binding OfficialSourceIsEnabled}"
+                                    IsEnabled="False"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    ToolTip.Tip="{Binding OfficialSourceAvailability}" />
                     </Grid>
                   </Border>
                   <ItemsControl ItemsSource="{Binding MirrorSources}"
@@ -495,57 +593,6 @@ SPDX-License-Identifier: GPL-3.0-only
 
               <TextBlock Text="{Binding DownloadsInfo}"
                          Classes="settingsHint sourceSelectionHint" />
-
-              <Border Classes="uiSettingsGroup settingsGroup"
-                      IsVisible="{Binding IsAddingMirror}">
-                <StackPanel>
-                  <Border Classes="uiSettingsRow settingsRow">
-                    <StackPanel Spacing="5">
-                      <TextBlock Text="{Binding AddSourceTitle}" Classes="uiSettingsLabel settingsLabel" />
-                      <TextBlock Text="{Binding AddSourceHint}" Classes="uiSettingsHint settingsHint" />
-                    </StackPanel>
-                  </Border>
-                  <Border Classes="uiSettingsRow settingsRow last">
-                    <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">
-                      <TextBox Text="{Binding MirrorUrl}"
-                               PlaceholderText="{Binding MirrorUrlPlaceholder}"
-                               IsEnabled="{Binding !IsMirrorOperationBusy}" />
-                      <Button Grid.Column="1"
-                              Classes="sourceCancel"
-                              Command="{Binding CancelAddMirrorCommand}"
-                              IsEnabled="{Binding !IsMirrorOperationBusy}"
-                              Content="{Binding CancelLabel}" />
-                      <Button Grid.Column="2"
-                              Classes="settingsAction"
-                              Command="{Binding AddMirrorCommand}"
-                              IsEnabled="{Binding !IsMirrorOperationBusy}"
-                              Content="{Binding AddSourceLabel}" />
-                    </Grid>
-                  </Border>
-                  <ProgressBar Classes="sourceProgress"
-                               IsIndeterminate="True"
-                               IsVisible="{Binding IsMirrorOperationBusy}" />
-                </StackPanel>
-              </Border>
-
-              <Border Classes="uiSettingsGroup settingsGroup" IsVisible="{Binding HasPendingMirrorDelete}">
-                <Border Classes="uiSettingsRow settingsRow last">
-                  <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">
-                    <StackPanel Spacing="3">
-                      <TextBlock Text="{Binding DeleteSourceTitle}" Classes="uiSettingsLabel settingsLabel" />
-                      <TextBlock Text="{Binding DeleteSourceHint}" Classes="uiSettingsHint settingsHint" />
-                    </StackPanel>
-                    <Button Grid.Column="1"
-                            Classes="sourceCancel"
-                            Command="{Binding CancelDeleteMirrorCommand}"
-                            Content="{Binding CancelLabel}" />
-                    <Button Grid.Column="2"
-                            Classes="sourceRemoveConfirm"
-                            Command="{Binding ConfirmDeleteMirrorCommand}"
-                            Content="{Binding RemoveLabel}" />
-                  </Grid>
-                </Border>
-              </Border>
 
               <TextBlock Text="{Binding MirrorOperationStatus}"
                          Classes="sourceOperationStatus"
@@ -1018,6 +1065,240 @@ SPDX-License-Identifier: GPL-3.0-only
 
         </Grid>
       </ScrollViewer>
+      </Grid>
+
+      <Border x:Name="DownloadSourceWizardScreen"
+              Grid.RowSpan="2"
+              Classes="downloadSourceWizardScreen"
+              IsVisible="False"
+              Opacity="0">
+        <Border.Transitions>
+          <Transitions>
+            <DoubleTransition Property="Opacity" Duration="0:0:0.18">
+              <DoubleTransition.Easing><easing:CubicEaseInOut /></DoubleTransition.Easing>
+            </DoubleTransition>
+          </Transitions>
+        </Border.Transitions>
+        <Border.RenderTransform>
+          <TranslateTransform X="36">
+            <TranslateTransform.Transitions>
+              <Transitions>
+                <DoubleTransition Property="X" Duration="0:0:0.18">
+                  <DoubleTransition.Easing><easing:CubicEaseInOut /></DoubleTransition.Easing>
+                </DoubleTransition>
+              </Transitions>
+            </TranslateTransform.Transitions>
+          </TranslateTransform>
+        </Border.RenderTransform>
+        <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+                      VerticalScrollBarVisibility="Auto">
+          <StackPanel MaxWidth="560"
+                      HorizontalAlignment="Stretch"
+                      VerticalAlignment="Center"
+                      Margin="32"
+                      Spacing="12">
+            <Image Width="64"
+                   Height="64"
+                   HorizontalAlignment="Center"
+                   Source="avares://HyPrism.Desktop/Assets/Fluent/downloads.png"
+                   Stretch="Uniform" />
+
+            <StackPanel x:Name="SourceAdditionChoiceContent"
+                        IsVisible="{Binding IsAddSourceChoiceVisible}"
+                        Spacing="12">
+              <StackPanel.RenderTransform><TranslateTransform /></StackPanel.RenderTransform>
+              <TextBlock Text="{Binding AddSourceTitle}"
+                         HorizontalAlignment="Center"
+                         FontSize="26"
+                         FontWeight="Bold"
+                         TextAlignment="Center" />
+              <TextBlock Text="{Binding AddSourceMethodHint}"
+                         Classes="muted"
+                         MaxWidth="460"
+                         HorizontalAlignment="Center"
+                         TextAlignment="Center"
+                         TextWrapping="Wrap" />
+
+              <Border Classes="uiSettingsGroup" Margin="0,16,0,0">
+                <StackPanel>
+                  <Button x:Name="BeginAutomaticSourceAdditionButton"
+                          Classes="uiSettingsNavigationRow"
+                          Click="OnBeginAutomaticSourceAdditionClicked">
+                    <Grid ColumnDefinitions="44,*,Auto" ColumnSpacing="14">
+                      <Border Classes="sourceWizardChoiceIcon">
+                        <Path Width="21" Height="21" Data="{StaticResource DownloadIcon}" />
+                      </Border>
+                      <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="3">
+                        <TextBlock Text="{Binding AutomaticSourceLabel}" Classes="uiSettingsLabel" />
+                        <TextBlock Text="{Binding AutomaticSourceHint}" Classes="uiSettingsHint" />
+                      </StackPanel>
+                      <Path Grid.Column="2"
+                            Width="15"
+                            Height="15"
+                            VerticalAlignment="Center"
+                            Stretch="Uniform"
+                            Fill="{DynamicResource TextSecondaryBrush}"
+                            Data="{StaticResource NextIcon}" />
+                    </Grid>
+                  </Button>
+                  <Button x:Name="BeginManualSourceAdditionButton"
+                          Classes="uiSettingsNavigationRow last"
+                          Click="OnBeginManualSourceAdditionClicked">
+                    <Grid ColumnDefinitions="44,*,Auto" ColumnSpacing="14">
+                      <Border Classes="sourceWizardChoiceIcon">
+                        <Path Width="21" Height="21" Data="{StaticResource SettingsIcon}" />
+                      </Border>
+                      <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="3">
+                        <TextBlock Text="{Binding ManualSourceLabel}" Classes="uiSettingsLabel" />
+                        <TextBlock Text="{Binding ManualSourceHint}" Classes="uiSettingsHint" />
+                      </StackPanel>
+                      <Path Grid.Column="2"
+                            Width="15"
+                            Height="15"
+                            VerticalAlignment="Center"
+                            Stretch="Uniform"
+                            Fill="{DynamicResource TextSecondaryBrush}"
+                            Data="{StaticResource NextIcon}" />
+                    </Grid>
+                  </Button>
+                </StackPanel>
+              </Border>
+
+              <Button Classes="sourceWizardAction"
+                      HorizontalAlignment="Center"
+                      Margin="0,10,0,0"
+                      Command="{Binding CancelAddMirrorCommand}">
+                <TextBlock Text="{Binding CancelLabel}" />
+              </Button>
+            </StackPanel>
+
+            <StackPanel x:Name="AutomaticSourceAdditionContent"
+                        IsVisible="{Binding IsAutomaticSourceVisible}"
+                        Spacing="12">
+              <StackPanel.RenderTransform><TranslateTransform /></StackPanel.RenderTransform>
+              <TextBlock Text="{Binding AutomaticSourceLabel}"
+                         HorizontalAlignment="Center"
+                         FontSize="26"
+                         FontWeight="Bold"
+                         TextAlignment="Center" />
+              <TextBlock Text="{Binding AddSourceHint}"
+                         Classes="muted"
+                         MaxWidth="460"
+                         HorizontalAlignment="Center"
+                         TextAlignment="Center"
+                         TextWrapping="Wrap" />
+
+              <Border Classes="uiSettingsGroup" Margin="0,16,0,0">
+                <Border Classes="uiSettingsRow last">
+                  <TextBox Text="{Binding MirrorUrl, Mode=TwoWay}"
+                           PlaceholderText="{Binding MirrorUrlPlaceholder}"
+                           IsEnabled="{Binding !IsMirrorOperationBusy}" />
+                </Border>
+              </Border>
+              <TextBlock Text="{Binding MirrorOperationError}"
+                         Classes="sourceOperationError"
+                         TextAlignment="Center"
+                         IsVisible="{Binding HasMirrorOperationError}" />
+              <ProgressBar Classes="sourceProgress"
+                           IsIndeterminate="True"
+                           IsVisible="{Binding IsMirrorOperationBusy}" />
+              <StackPanel Orientation="Horizontal"
+                          HorizontalAlignment="Center"
+                          Margin="0,10,0,0"
+                          Spacing="10">
+                <Button Classes="sourceWizardAction"
+                        Click="OnReturnToSourceAdditionChoiceClicked"
+                        IsEnabled="{Binding !IsMirrorOperationBusy}">
+                  <TextBlock Text="{Binding BackLabel}" />
+                </Button>
+                <Button Classes="sourceWizardAction create"
+                        Command="{Binding AddMirrorCommand}"
+                        IsEnabled="{Binding !IsMirrorOperationBusy}">
+                  <TextBlock Text="{Binding AddSourceLabel}" />
+                </Button>
+              </StackPanel>
+            </StackPanel>
+
+            <StackPanel x:Name="ManualSourceAdditionContent"
+                        IsVisible="{Binding IsManualSourceVisible}"
+                        Spacing="12">
+              <StackPanel.RenderTransform><TranslateTransform /></StackPanel.RenderTransform>
+              <TextBlock Text="{Binding ManualSourceTitle}"
+                         HorizontalAlignment="Center"
+                         FontSize="26"
+                         FontWeight="Bold"
+                         TextAlignment="Center" />
+              <TextBlock Text="{Binding ManualSourceDescription}"
+                         Classes="muted"
+                         MaxWidth="460"
+                         HorizontalAlignment="Center"
+                         TextAlignment="Center"
+                         TextWrapping="Wrap" />
+
+              <Border Classes="uiSettingsGroup" Margin="0,16,0,0">
+                <Border Classes="uiSettingsRow last">
+                  <StackPanel Spacing="8">
+                    <TextBlock Text="{Binding ManualSourceJsonLabel}" Classes="uiSettingsLabel" />
+                    <TextBox Classes="sourceJsonEditor"
+                             Text="{Binding ManualMirrorJson, Mode=TwoWay}"
+                             PlaceholderText="{Binding ManualSourceJsonPlaceholder}"
+                             AcceptsReturn="True"
+                             TextWrapping="NoWrap"
+                             ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                             ScrollViewer.VerticalScrollBarVisibility="Auto"
+                             IsEnabled="{Binding !IsMirrorOperationBusy}" />
+                  </StackPanel>
+                </Border>
+              </Border>
+              <TextBlock Text="{Binding MirrorOperationError}"
+                         Classes="sourceOperationError"
+                         TextAlignment="Center"
+                         IsVisible="{Binding HasMirrorOperationError}" />
+              <StackPanel Orientation="Horizontal"
+                          HorizontalAlignment="Center"
+                          Margin="0,10,0,0"
+                          Spacing="10">
+                <Button Classes="sourceWizardAction"
+                        Click="OnReturnToSourceAdditionChoiceClicked">
+                  <TextBlock Text="{Binding BackLabel}" />
+                </Button>
+                <Button Classes="sourceWizardAction create"
+                        Command="{Binding AddManualMirrorCommand}">
+                  <TextBlock Text="{Binding AddSourceLabel}" />
+                </Button>
+              </StackPanel>
+            </StackPanel>
+          </StackPanel>
+        </ScrollViewer>
+      </Border>
+    </Grid>
+
+    <Grid Grid.ColumnSpan="2"
+          IsVisible="{Binding HasPendingMirrorDelete}"
+          Background="{DynamicResource SurfaceElevatedBrush}"
+          ZIndex="110">
+      <Border Classes="sourceDeleteConfirmation"
+              HorizontalAlignment="Center"
+              VerticalAlignment="Center">
+        <StackPanel Spacing="12">
+          <TextBlock Text="{Binding DeleteSourceTitle}" FontSize="18" FontWeight="SemiBold" />
+          <TextBlock Text="{Binding DeleteSourceHint}" Classes="muted" FontSize="13" TextWrapping="Wrap" />
+          <TextBlock Text="{Binding PendingMirrorDelete.Name}"
+                     FontSize="16"
+                     FontWeight="SemiBold"
+                     TextTrimming="CharacterEllipsis" />
+          <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+            <Button Classes="sourceWizardAction" Command="{Binding CancelDeleteMirrorCommand}">
+              <TextBlock Text="{Binding CancelLabel}" />
+            </Button>
+            <Button Classes="sourceWizardAction create"
+                    Background="{DynamicResource DangerBrush}"
+                    Command="{Binding ConfirmDeleteMirrorCommand}">
+              <TextBlock Text="{Binding RemoveLabel}" />
+            </Button>
+          </StackPanel>
+        </StackPanel>
+      </Border>
     </Grid>
   </Grid>
 </UserControl>

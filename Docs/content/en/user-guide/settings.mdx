@@ -35,13 +35,13 @@ The Local Node persists profiles, saved skins, and presence preferences on the d
 
 ## Download sources
 
-The Downloads page shows the official Hytale source and community mirrors in one table under **Download sources**. Its columns show the endpoint link, source type, current availability, and lightweight request latency. A connected Hytale account is required for the official source
+The Downloads page shows the official Hytale source and community mirrors in one table under **Download sources**. Its columns show the endpoint link, source type, current availability, and enabled state. Availability starts with a spinner that smoothly changes to a check or cross when the background probe finishes. HyPrism continues measuring source latency for automatic source selection without displaying ping in the table. A connected Hytale account is required for the official source
 
-To add a community source, select **Add**, enter its public HTTPS address, and let HyPrism detect the mirror format. The source becomes available immediately after a successful check
+Selecting **Add** opens a wizard. Its first step lets you enter a public HTTPS address for automatic format detection or paste a complete `.mirror.json` definition manually. HyPrism validates either result before saving the source
 
-Each user-provided source can be enabled, disabled, or removed. HyPrism prioritizes the official download source and automatically selects the fastest added user mirror when the official source is unavailable
+Each user-provided source can be enabled or disabled from the table. Its three-dot action menu contains source-specific actions, including removal with confirmation. HyPrism prioritizes the official download source and automatically selects the fastest added user mirror when the official source is unavailable
 
-Only add sources you trust. The regular form does not request custom authorization headers or expose the generated JSON definition
+Only add sources you trust. Automatic mode only requests the public address, while manual JSON mode accepts the complete source definition, including optional custom headers
 
 The About page shows the installed launcher version, the latest commit in `main`, project and community links, the core team, an adaptive row of recent contributors, the source-code license, the Hytale EULA, visual credits, and the disclaimer. Visual credits separate illustrations provided by Icons8 from animated media provided by Lordicon, with the required Lordicon link on its row
 

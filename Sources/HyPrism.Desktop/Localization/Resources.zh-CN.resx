@@ -2805,4 +2805,37 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="instances.logs.emptyHint" xml:space="preserve">
     <value>每个实例的日志历史将显示在此处</value>
   </data>
+  <data name="settings.downloads.columnEnabled" xml:space="preserve">
+    <value>已启用</value>
+  </data>
+  <data name="settings.downloads.addSourceMethodHint" xml:space="preserve">
+    <value>选择 HyPrism 配置下载源的方式</value>
+  </data>
+  <data name="settings.downloads.addSourceAutomatic" xml:space="preserve">
+    <value>自动检测</value>
+  </data>
+  <data name="settings.downloads.addSourceAutomaticHint" xml:space="preserve">
+    <value>输入地址，由 HyPrism 检测下载源格式</value>
+  </data>
+  <data name="settings.downloads.addSourceManual" xml:space="preserve">
+    <value>手动输入 JSON</value>
+  </data>
+  <data name="settings.downloads.addSourceManualHint" xml:space="preserve">
+    <value>不适合自动检测时，请粘贴完整的镜像定义</value>
+  </data>
+  <data name="settings.downloads.manualSourceTitle" xml:space="preserve">
+    <value>从 JSON 添加下载源</value>
+  </data>
+  <data name="settings.downloads.manualSourceHint" xml:space="preserve">
+    <value>粘贴 .mirror.json 定义，HyPrism 会在保存前进行验证</value>
+  </data>
+  <data name="settings.downloads.manualSourceJson" xml:space="preserve">
+    <value>下载源定义</value>
+  </data>
+  <data name="settings.downloads.invalidSourceJson" xml:space="preserve">
+    <value>请输入包含受支持 HTTPS 地址的有效镜像 JSON 定义</value>
+  </data>
+  <data name="settings.downloads.manualSourceJsonPlaceholder" xml:space="preserve">
+    <value>{"schemaVersion":1,"id":"my-mirror","name":"My mirror","sourceType":"pattern","pattern":{"baseUrl":"https://mirror.example.com"}}</value>
+  </data>
 </root>

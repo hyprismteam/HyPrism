@@ -3,6 +3,7 @@
 
 using System.Collections.ObjectModel;
 using System.Reflection;
+using System.Text.Json;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using Avalonia.Threading;
@@ -15,6 +16,7 @@ using HyPrism.Core.Infrastructure;
 using HyPrism.Core.Game.Launch;
 using HyPrism.Core.Game.Sources;
 using HyPrism.Core.Game.Versions;
+using HyPrism.Core.Models;
 
 namespace HyPrism.Desktop.Features.Settings;
 
@@ -112,6 +114,12 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     [NotifyPropertyChangedFor(nameof(HasMirrorOperationStatus))]
     private string _mirrorOperationStatus = string.Empty;
     [ObservableProperty] private string _mirrorUrl = string.Empty;
+    [ObservableProperty] private string _manualMirrorJson = string.Empty;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsAddSourceChoiceVisible))]
+    [NotifyPropertyChangedFor(nameof(IsAutomaticSourceVisible))]
+    [NotifyPropertyChangedFor(nameof(IsManualSourceVisible))]
+    private DownloadSourceAdditionStep _mirrorAdditionStep;
     [ObservableProperty] private bool _isAddingMirror;
     [ObservableProperty] private bool _isMirrorOperationBusy;
     [ObservableProperty]
@@ -231,6 +239,9 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     public bool HasMirrorOperationError => !string.IsNullOrWhiteSpace(MirrorOperationError);
     public bool HasMirrorOperationStatus => !string.IsNullOrWhiteSpace(MirrorOperationStatus);
     public bool HasPendingMirrorDelete => PendingMirrorDelete is not null;
+    public bool IsAddSourceChoiceVisible => MirrorAdditionStep == DownloadSourceAdditionStep.ChooseMethod;
+    public bool IsAutomaticSourceVisible => MirrorAdditionStep == DownloadSourceAdditionStep.Automatic;
+    public bool IsManualSourceVisible => MirrorAdditionStep == DownloadSourceAdditionStep.Manual;
 
     public string PageTitle { get; private set; } = string.Empty;
     public string PageDescription { get; private set; } = string.Empty;
@@ -258,17 +269,29 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     public string SourceTypeColumn { get; private set; } = string.Empty;
     public string SourceAvailabilityColumn { get; private set; } = string.Empty;
     public string SourcePingColumn { get; private set; } = string.Empty;
+    public string SourceEnabledColumn { get; private set; } = string.Empty;
     public string OfficialSourceLink => "https://account-data.hytale.com";
     public string OfficialSourceType { get; private set; } = string.Empty;
     public string OfficialSourceAvailability { get; private set; } = string.Empty;
     public string OfficialSourcePing { get; private set; } = "—";
+    public bool OfficialSourceIsChecking { get; private set; }
     public bool OfficialSourceIsAvailable { get; private set; }
     public bool OfficialSourceIsUnavailable { get; private set; }
+    public bool OfficialSourceIsEnabled { get; private set; }
     public string AddSourceButtonLabel { get; private set; } = string.Empty;
     public string AddSourceLabel { get; private set; } = string.Empty;
     public string AddSourceTitle { get; private set; } = string.Empty;
     public string AddSourceHint { get; private set; } = string.Empty;
     public string MirrorUrlPlaceholder { get; private set; } = string.Empty;
+    public string AddSourceMethodHint { get; private set; } = string.Empty;
+    public string AutomaticSourceLabel { get; private set; } = string.Empty;
+    public string AutomaticSourceHint { get; private set; } = string.Empty;
+    public string ManualSourceLabel { get; private set; } = string.Empty;
+    public string ManualSourceHint { get; private set; } = string.Empty;
+    public string ManualSourceTitle { get; private set; } = string.Empty;
+    public string ManualSourceDescription { get; private set; } = string.Empty;
+    public string ManualSourceJsonLabel { get; private set; } = string.Empty;
+    public string ManualSourceJsonPlaceholder { get; private set; } = string.Empty;
     public string CancelLabel { get; private set; } = string.Empty;
     public string RemoveLabel { get; private set; } = string.Empty;
     public string DeleteSourceTitle { get; private set; } = string.Empty;
@@ -370,6 +393,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         SourceTypeColumn = _localizer["settings.downloads.columnType"];
         SourceAvailabilityColumn = _localizer["settings.downloads.columnAvailability"];
         SourcePingColumn = _localizer["settings.downloads.columnPing"];
+        SourceEnabledColumn = _localizer["settings.downloads.columnEnabled"];
         OfficialSourceType = _localizer["settings.downloads.sourceTypeOfficial"];
         OfficialSourceAvailability = _localizer[_versionCatalog?.HasOfficialAccount == true
             ? "settings.downloads.checkingAvailability"
@@ -379,6 +403,15 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         AddSourceTitle = _localizer["settings.downloads.addSourceTitle"];
         AddSourceHint = _localizer["settings.downloads.addSourceHint"];
         MirrorUrlPlaceholder = _localizer["settings.downloads.sourceUrlPlaceholder"];
+        AddSourceMethodHint = _localizer["settings.downloads.addSourceMethodHint"];
+        AutomaticSourceLabel = _localizer["settings.downloads.addSourceAutomatic"];
+        AutomaticSourceHint = _localizer["settings.downloads.addSourceAutomaticHint"];
+        ManualSourceLabel = _localizer["settings.downloads.addSourceManual"];
+        ManualSourceHint = _localizer["settings.downloads.addSourceManualHint"];
+        ManualSourceTitle = _localizer["settings.downloads.manualSourceTitle"];
+        ManualSourceDescription = _localizer["settings.downloads.manualSourceHint"];
+        ManualSourceJsonLabel = _localizer["settings.downloads.manualSourceJson"];
+        ManualSourceJsonPlaceholder = _localizer["settings.downloads.manualSourceJsonPlaceholder"];
         CancelLabel = _localizer["common.cancel"];
         RemoveLabel = _localizer["common.remove"];
         DeleteSourceTitle = _localizer["settings.downloads.deleteSourceTitle"];
@@ -567,6 +600,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private void ShowAddMirror()
     {
+        MirrorAdditionStep = DownloadSourceAdditionStep.ChooseMethod;
         IsAddingMirror = true;
         PendingMirrorDelete = null;
         MirrorOperationError = string.Empty;
@@ -574,10 +608,33 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     }
 
     [RelayCommand]
+    private void BeginAutomaticMirrorAddition()
+    {
+        MirrorAdditionStep = DownloadSourceAdditionStep.Automatic;
+        MirrorOperationError = string.Empty;
+    }
+
+    [RelayCommand]
+    private void BeginManualMirrorAddition()
+    {
+        MirrorAdditionStep = DownloadSourceAdditionStep.Manual;
+        MirrorOperationError = string.Empty;
+    }
+
+    [RelayCommand]
+    private void ReturnToMirrorAdditionChoice()
+    {
+        MirrorAdditionStep = DownloadSourceAdditionStep.ChooseMethod;
+        MirrorOperationError = string.Empty;
+    }
+
+    [RelayCommand]
     private void CancelAddMirror()
     {
         IsAddingMirror = false;
+        MirrorAdditionStep = DownloadSourceAdditionStep.None;
         MirrorUrl = string.Empty;
+        ManualMirrorJson = string.Empty;
         MirrorOperationError = string.Empty;
     }
 
@@ -631,6 +688,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
 
             MirrorUrl = string.Empty;
             IsAddingMirror = false;
+            MirrorAdditionStep = DownloadSourceAdditionStep.None;
             MirrorOperationStatus = _localizer["settings.downloads.sourceAdded"];
             ReloadMirrorItems(clearStatus: false);
         }
@@ -646,6 +704,65 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         finally
         {
             IsMirrorOperationBusy = false;
+        }
+    }
+
+    [RelayCommand]
+    private void AddManualMirror()
+    {
+        if (IsMirrorOperationBusy)
+            return;
+
+        if (_mirrorCatalog is null || _versionCatalog is null)
+        {
+            MirrorOperationError = _localizer["settings.downloads.sourceManagementUnavailable"];
+            return;
+        }
+
+        MirrorOperationError = string.Empty;
+        try
+        {
+            var mirror = JsonSerializer.Deserialize<MirrorMeta>(
+                ManualMirrorJson,
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            if (mirror is null || !TryGetMirrorEndpoint(mirror, out var endpoint))
+            {
+                MirrorOperationError = _localizer["settings.downloads.invalidSourceJson"];
+                return;
+            }
+
+            var existing = _mirrorCatalog.GetAll();
+            if (existing.Any(source => string.Equals(source.Id, mirror.Id, StringComparison.OrdinalIgnoreCase)) ||
+                MirrorSources.Any(source => EndpointsEqual(source.Endpoint, endpoint)))
+            {
+                MirrorOperationError = _localizer["settings.downloads.sourceAlreadyExists"];
+                return;
+            }
+
+            mirror.Priority = Math.Max(100, mirror.Priority);
+            _mirrorCatalog.Save(mirror);
+            _versionCatalog.ReloadMirrorSources();
+
+            ManualMirrorJson = string.Empty;
+            IsAddingMirror = false;
+            MirrorAdditionStep = DownloadSourceAdditionStep.None;
+            MirrorOperationStatus = _localizer["settings.downloads.sourceAdded"];
+            ReloadMirrorItems(clearStatus: false);
+        }
+        catch (JsonException exception)
+        {
+            Logger.Debug("Settings", $"Invalid manual download source JSON: {exception.Message}");
+            MirrorOperationError = _localizer["settings.downloads.invalidSourceJson"];
+        }
+        catch (ArgumentException exception)
+        {
+            Logger.Debug("Settings", $"Invalid manual download source definition: {exception.Message}");
+            MirrorOperationError = _localizer["settings.downloads.invalidSourceJson"];
+        }
+        catch (Exception exception)
+        {
+            Logger.Warning("Settings", $"Failed to add manual download source: {exception.Message}");
+            MirrorOperationError = _localizer["settings.downloads.sourceSaveFailed"];
         }
     }
 
@@ -1026,10 +1143,14 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
             ? "settings.downloads.checkingAvailability"
             : "settings.downloads.officialSourceRequiresAccount"];
         OfficialSourcePing = "—";
+        OfficialSourceIsEnabled = _versionCatalog?.HasOfficialAccount == true;
+        OfficialSourceIsChecking = _versionCatalog?.HasOfficialAccount == true;
         OfficialSourceIsAvailable = false;
         OfficialSourceIsUnavailable = _versionCatalog?.HasOfficialAccount != true;
         OnPropertyChanged(nameof(OfficialSourceAvailability));
         OnPropertyChanged(nameof(OfficialSourcePing));
+        OnPropertyChanged(nameof(OfficialSourceIsEnabled));
+        OnPropertyChanged(nameof(OfficialSourceIsChecking));
         OnPropertyChanged(nameof(OfficialSourceIsAvailable));
         OnPropertyChanged(nameof(OfficialSourceIsUnavailable));
 
@@ -1110,10 +1231,12 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
                 ? "settings.downloads.sourceAvailable"
                 : "settings.downloads.sourceUnavailable"];
             OfficialSourcePing = result.IsAvailable && result.PingMs >= 0 ? $"{result.PingMs} ms" : "—";
+            OfficialSourceIsChecking = false;
             OfficialSourceIsAvailable = result.IsAvailable;
             OfficialSourceIsUnavailable = !result.IsAvailable;
             OnPropertyChanged(nameof(OfficialSourceAvailability));
             OnPropertyChanged(nameof(OfficialSourcePing));
+            OnPropertyChanged(nameof(OfficialSourceIsChecking));
             OnPropertyChanged(nameof(OfficialSourceIsAvailable));
             OnPropertyChanged(nameof(OfficialSourceIsUnavailable));
         }
@@ -1125,10 +1248,12 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
             Logger.Debug("Settings", $"Official source probe failed: {ex.Message}");
             OfficialSourceAvailability = _localizer["settings.downloads.sourceUnavailable"];
             OfficialSourcePing = "—";
+            OfficialSourceIsChecking = false;
             OfficialSourceIsAvailable = false;
             OfficialSourceIsUnavailable = true;
             OnPropertyChanged(nameof(OfficialSourceAvailability));
             OnPropertyChanged(nameof(OfficialSourcePing));
+            OnPropertyChanged(nameof(OfficialSourceIsChecking));
             OnPropertyChanged(nameof(OfficialSourceIsAvailable));
             OnPropertyChanged(nameof(OfficialSourceIsUnavailable));
         }
@@ -1180,6 +1305,18 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
             return true;
 
         return uri.Scheme == Uri.UriSchemeHttp && uri.IsLoopback;
+    }
+
+    private static bool TryGetMirrorEndpoint(MirrorMeta mirror, out Uri endpoint)
+    {
+        var value = mirror.SourceType switch
+        {
+            "pattern" => mirror.Pattern?.BaseUrl,
+            "json-index" => mirror.JsonIndex?.ApiUrl,
+            _ => null
+        };
+
+        return IsAllowedMirrorUrl(value ?? string.Empty, out endpoint);
     }
 
     private static bool EndpointsEqual(string existingEndpoint, Uri candidate)
@@ -1346,6 +1483,14 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         _aboutContributorPool.Clear();
         AboutContributors.Clear();
     }
+}
+
+public enum DownloadSourceAdditionStep
+{
+    None,
+    ChooseMethod,
+    Automatic,
+    Manual
 }
 
 public sealed partial class AboutTeamMemberViewModel : ObservableObject, IDisposable

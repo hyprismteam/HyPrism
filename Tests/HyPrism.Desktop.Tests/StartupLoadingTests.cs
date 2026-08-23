@@ -91,15 +91,23 @@ public sealed class StartupLoadingTests
         var launcherShell = Assert.IsType<Grid>(window.FindControl<Grid>("LauncherShell"));
         var startupAnimation = Assert.IsType<Lottie>(window.FindControl<Lottie>("StartupAnimation"));
         var startupBrand = Assert.IsType<Image>(window.FindControl<Image>("StartupBrand"));
+        var windowChrome = Assert.IsType<Grid>(window.FindControl<Grid>("WindowChrome"));
+        var minimizeButton = Assert.IsType<Button>(window.FindControl<Button>("MinimizeWindowButton"));
+        var resizeEast = Assert.IsType<Border>(window.FindControl<Border>("ResizeEast"));
         Assert.True(startupScreen.IsEffectivelyVisible);
         Assert.True(startupScreen.IsHitTestVisible);
         Assert.Equal(0, launcherShell.Opacity);
         Assert.Equal("/Assets/Lotties/figures.json", startupAnimation.Path);
-        Assert.Equal(128, startupAnimation.Width);
-        Assert.Equal(128, startupAnimation.Height);
+        Assert.Equal(96, startupAnimation.Width);
+        Assert.Equal(96, startupAnimation.Height);
         Assert.NotNull(startupAnimation.OpacityMask);
         Assert.Equal(1, Grid.GetRow(startupBrand));
         Assert.True(startupBrand.Bounds.Top > startupAnimation.Bounds.Top);
+        Assert.True(windowChrome.IsEffectivelyVisible);
+        Assert.True(minimizeButton.IsEffectivelyVisible);
+        Assert.True(minimizeButton.IsHitTestVisible);
+        Assert.True(resizeEast.IsEffectivelyVisible);
+        Assert.True(resizeEast.IsHitTestVisible);
 
         var renderPath = Environment.GetEnvironmentVariable("HYPRISM_STARTUP_RENDER_OUTPUT");
         if (!string.IsNullOrWhiteSpace(renderPath))
