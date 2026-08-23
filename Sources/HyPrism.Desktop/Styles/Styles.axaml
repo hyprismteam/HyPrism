@@ -572,6 +572,90 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="Opacity" Value="1" />
   </Style>
 
+  <Style Selector="StackPanel.articleBody.preparing">
+    <Setter Property="Opacity" Value="0" />
+    <Setter Property="Transitions">
+      <Transitions />
+    </Setter>
+  </Style>
+
+  <Style Selector="StackPanel.articleBodySkeleton">
+    <Setter Property="Opacity" Value="1" />
+    <Setter Property="Transitions">
+      <Transitions>
+        <DoubleTransition Property="Opacity" Duration="0:0:0.18" />
+      </Transitions>
+    </Setter>
+  </Style>
+
+  <Style Selector="StackPanel.articleBodySkeleton.fading">
+    <Setter Property="Opacity" Value="0" />
+  </Style>
+
+  <Style Selector="Border.articleTextSkeleton">
+    <Setter Property="CornerRadius" Value="7" />
+    <Setter Property="Opacity" Value="0.5" />
+    <Setter Property="Background">
+      <LinearGradientBrush StartPoint="0%,50%" EndPoint="100%,50%">
+        <GradientStop Color="#16FFFFFF" Offset="0" />
+        <GradientStop Color="#32FFFFFF" Offset="0.5" />
+        <GradientStop Color="#16FFFFFF" Offset="1" />
+      </LinearGradientBrush>
+    </Setter>
+    <Style.Animations>
+      <Animation Duration="0:0:1.25" IterationCount="Infinite">
+        <KeyFrame Cue="0%">
+          <Setter Property="Opacity" Value="0.38" />
+        </KeyFrame>
+        <KeyFrame Cue="50%">
+          <Setter Property="Opacity" Value="0.82" />
+        </KeyFrame>
+        <KeyFrame Cue="100%">
+          <Setter Property="Opacity" Value="0.38" />
+        </KeyFrame>
+      </Animation>
+    </Style.Animations>
+  </Style>
+
+  <Style Selector="Border.articleTextSkeleton.phase2">
+    <Style.Animations>
+      <Animation Duration="0:0:1.25" IterationCount="Infinite">
+        <KeyFrame Cue="0%">
+          <Setter Property="Opacity" Value="0.7" />
+        </KeyFrame>
+        <KeyFrame Cue="50%">
+          <Setter Property="Opacity" Value="0.34" />
+        </KeyFrame>
+        <KeyFrame Cue="100%">
+          <Setter Property="Opacity" Value="0.7" />
+        </KeyFrame>
+      </Animation>
+    </Style.Animations>
+  </Style>
+
+  <Style Selector="Border.articleTextSkeleton.phase3">
+    <Style.Animations>
+      <Animation Duration="0:0:1.55" IterationCount="Infinite">
+        <KeyFrame Cue="0%">
+          <Setter Property="Opacity" Value="0.32" />
+        </KeyFrame>
+        <KeyFrame Cue="45%">
+          <Setter Property="Opacity" Value="0.74" />
+        </KeyFrame>
+        <KeyFrame Cue="100%">
+          <Setter Property="Opacity" Value="0.32" />
+        </KeyFrame>
+      </Animation>
+    </Style.Animations>
+  </Style>
+
+  <Style Selector="Border.articleSkeletonCard">
+    <Setter Property="Background" Value="#12FFFFFF" />
+    <Setter Property="BorderBrush" Value="#18FFFFFF" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="13" />
+  </Style>
+
   <Style Selector="Border.articleToolbar">
     <Setter Property="HorizontalAlignment" Value="Stretch" />
     <Setter Property="Padding" Value="0" />

@@ -9,6 +9,7 @@ using Avalonia.Controls.Documents;
 using Avalonia.Data;
 using Avalonia.Input;
 using Avalonia.Media;
+using Avalonia.Threading;
 using HyPrism.Desktop.Platform;
 
 namespace HyPrism.Desktop.Features.News;
@@ -26,6 +27,8 @@ public sealed class NewsRichTextBlock : TextBlock
     private LinkInline? _hoveredLink;
     private LinkInline? _pressedLink;
     private int _textPosition;
+    private bool _rebuildScheduled;
+    private int _rebuildGeneration;
 
     public static readonly StyledProperty<IReadOnlyList<NewsContentNode>?> NodesProperty =
         AvaloniaProperty.Register<NewsRichTextBlock, IReadOnlyList<NewsContentNode>?>(nameof(Nodes));
@@ -39,9 +42,9 @@ public sealed class NewsRichTextBlock : TextBlock
 
     static NewsRichTextBlock()
     {
-        NodesProperty.Changed.AddClassHandler<NewsRichTextBlock>((control, _) => control.Rebuild());
-        InlineImagesProperty.Changed.AddClassHandler<NewsRichTextBlock>((control, _) => control.Rebuild());
-        LinkCommandProperty.Changed.AddClassHandler<NewsRichTextBlock>((control, _) => control.Rebuild());
+        NodesProperty.Changed.AddClassHandler<NewsRichTextBlock>((control, _) => control.ScheduleRebuild());
+        InlineImagesProperty.Changed.AddClassHandler<NewsRichTextBlock>((control, _) => control.ScheduleRebuild());
+        LinkCommandProperty.Changed.AddClassHandler<NewsRichTextBlock>((control, _) => control.ScheduleRebuild());
     }
 
     public IReadOnlyList<NewsContentNode>? Nodes
@@ -60,6 +63,30 @@ public sealed class NewsRichTextBlock : TextBlock
     {
         get => GetValue(LinkCommandProperty);
         set => SetValue(LinkCommandProperty, value);
+    }
+
+    private void ScheduleRebuild()
+    {
+        if (_rebuildScheduled)
+            return;
+
+        _rebuildScheduled = true;
+        var generation = _rebuildGeneration;
+        Dispatcher.UIThread.Post(() =>
+        {
+            if (generation != _rebuildGeneration)
+                return;
+
+            _rebuildScheduled = false;
+            Rebuild();
+        }, DispatcherPriority.Background);
+    }
+
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        _rebuildGeneration++;
+        _rebuildScheduled = false;
+        base.OnDetachedFromVisualTree(e);
     }
 
     private void Rebuild()

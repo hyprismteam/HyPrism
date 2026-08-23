@@ -3,6 +3,8 @@
 
 using System.Net;
 using System.Globalization;
+using System.Collections.Specialized;
+using System.ComponentModel;
 using Avalonia;
 using Avalonia.Animation;
 using Avalonia.Animation.Easings;
@@ -416,6 +418,107 @@ public sealed class MainWindowRenderTests
         block.Dispose();
     }
 
+    [AvaloniaFact]
+    public async Task ArticleReleasesDecodedImagesWithoutDiscardingParsedContent()
+    {
+        using var client = new HttpClient(new TinyPngHandler());
+        using var article = new NewsArticleViewModel(
+            new NewsArticleResponse
+            {
+                Title = "Image article",
+                Url = "https://hytale.com/news/image-article",
+                Content =
+                [
+                    new NewsContentNode
+                    {
+                        Kind = "image",
+                        ImageUrl = "https://cdn.hytale.com/gallery.png"
+                    },
+                    new NewsContentNode
+                    {
+                        Kind = "paragraph",
+                        Children =
+                        [
+                            new NewsContentNode
+                            {
+                                Kind = "inline-image",
+                                ImageUrl = "https://cdn.hytale.com/emotes/heart.png",
+                                ImagePresentation = "emote"
+                            }
+                        ]
+                    }
+                ]
+            },
+            Mock.Of<IExternalUriLauncher>());
+
+        await article.LoadImagesAsync(client, CancellationToken.None);
+
+        Assert.True(article.Blocks[0].HasImage);
+        Assert.NotNull(Assert.Single(article.Blocks[1].InlineImages).Image);
+
+        article.ReleaseImages();
+
+        Assert.False(article.Blocks[0].HasImage);
+        Assert.Null(Assert.Single(article.Blocks[1].InlineImages).Image);
+        Assert.Equal(2, article.Blocks.Count);
+    }
+
+    [AvaloniaFact]
+    public async Task ArticleRenderingYieldsToInputBeforeRevealingStableContent()
+    {
+        using var article = new NewsArticleViewModel(
+            new NewsArticleResponse
+            {
+                Title = "Long article",
+                Url = "https://hytale.com/news/long-article",
+                Content = Enumerable.Range(0, 25)
+                    .Select(index => new NewsContentNode
+                    {
+                        Kind = "paragraph",
+                        Children =
+                        [
+                            new NewsContentNode
+                            {
+                                Kind = "text",
+                                Text = $"Paragraph {index}"
+                            }
+                        ]
+                    })
+                    .ToList()
+            },
+            Mock.Of<IExternalUriLauncher>());
+        var changes = new List<NotifyCollectionChangedEventArgs>();
+        var blocksWhenInputRan = -1;
+        article.RenderedBlocks.CollectionChanged += (_, args) =>
+        {
+            changes.Add(args);
+            if (args.Action == NotifyCollectionChangedAction.Add && blocksWhenInputRan < 0)
+            {
+                Dispatcher.UIThread.Post(
+                    () => blocksWhenInputRan = article.RenderedBlocks.Count,
+                    DispatcherPriority.Input);
+            }
+        };
+        var blocksWhenRevealed = -1;
+
+        await article.PrepareForDisplayAsync(
+            CancellationToken.None,
+            () =>
+            {
+                blocksWhenRevealed = article.RenderedBlocks.Count;
+                return Task.CompletedTask;
+            });
+
+        Assert.Equal(article.Blocks.Count, article.RenderedBlocks.Count);
+        var additions = changes
+            .Where(change => change.Action == NotifyCollectionChangedAction.Add)
+            .ToArray();
+        Assert.Equal([4, 4, 4, 4, 4, 4, 1], additions
+            .Select(change => change.NewItems!.Count));
+        Assert.Equal(4, blocksWhenInputRan);
+        Assert.Equal(25, blocksWhenRevealed);
+    }
+
     [AvaloniaTheory]
     [InlineData(1024)]
     [InlineData(1280)]
@@ -667,6 +770,7 @@ public sealed class MainWindowRenderTests
             InlineImages = [media],
             Nodes = [node]
         };
+        Dispatcher.UIThread.RunJobs();
 
         var inline = Assert.IsType<InlineUIContainer>(Assert.Single(control.Inlines!));
         var image = Assert.IsType<Image>(inline.Child);
@@ -813,6 +917,7 @@ public sealed class MainWindowRenderTests
         ]));
         var item = Assert.Single(block.ListItems);
         var control = new NewsRichTextBlock { Nodes = item.Nodes };
+        Dispatcher.UIThread.RunJobs();
 
         Assert.NotNull(control.Inlines);
         Assert.Equal("Compact patch note.", Assert.IsType<Run>(Assert.Single(control.Inlines!)).Text);
@@ -846,6 +951,7 @@ public sealed class MainWindowRenderTests
                 }
             ]
         };
+        Dispatcher.UIThread.RunJobs();
 
         var plainText = Assert.IsType<Run>(control.Inlines![0]);
         var link = Assert.IsType<Run>(control.Inlines[1]);
@@ -968,16 +1074,87 @@ public sealed class MainWindowRenderTests
         await Task.Delay(200);
         Dispatcher.UIThread.RunJobs();
 
+        var articleSelected = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var bodySkeletonFading = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var bodySkeletonHidden = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        viewModel.PropertyChanged += (_, args) =>
+        {
+            if (args.PropertyName == nameof(MainWindowViewModel.SelectedNewsArticle) &&
+                viewModel.SelectedNewsArticle is not null)
+            {
+                articleSelected.TrySetResult();
+            }
+
+            if (args.PropertyName == nameof(
+                    MainWindowViewModel.IsNewsArticleBodySkeletonFadingOut) &&
+                viewModel.IsNewsArticleBodySkeletonFadingOut)
+            {
+                bodySkeletonFading.TrySetResult();
+            }
+
+            if (args.PropertyName == nameof(
+                    MainWindowViewModel.IsNewsArticleBodySkeletonVisible) &&
+                !viewModel.IsNewsArticleBodySkeletonVisible)
+            {
+                bodySkeletonHidden.TrySetResult();
+            }
+        };
         articleCompletion.SetResult(new NewsArticleResponse
         {
             Title = "Uncached article",
             Url = "https://hytale.com/news/2026/8/uncached-article",
             PublishedAt = "2026-08-08",
             Author = "Hytale Team",
-            Content = [new NewsContentNode { Kind = "paragraph", Text = "Loaded." }]
+            Content = Enumerable.Range(0, 25)
+                .Select(index => new NewsContentNode
+                {
+                    Kind = "paragraph",
+                    Text = $"Loaded paragraph {index}."
+                })
+                .ToList()
         });
+        await articleSelected.Task.WaitAsync(TimeSpan.FromSeconds(2));
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.True(viewModel.IsNewsArticleBodyPreparing);
+        Assert.False(viewModel.IsNewsArticleBodyVisible);
+        var bodySkeleton = articleHost.GetVisualDescendants()
+            .OfType<StackPanel>()
+            .Single(panel => panel.Name == "ArticleBodySkeleton");
+        Assert.True(bodySkeleton.IsEffectivelyVisible);
+        Assert.Equal(
+            12,
+            bodySkeleton.GetVisualDescendants()
+                .OfType<Border>()
+                .Count(border => border.Classes.Contains("articleTextSkeleton")));
+        var bodySkeletonPreviewPath = Environment.GetEnvironmentVariable(
+            "HYPRISM_ARTICLE_BODY_SKELETON_RENDER_OUTPUT");
+        if (!string.IsNullOrWhiteSpace(bodySkeletonPreviewPath))
+        {
+            var bodySkeletonFrame = window.CaptureRenderedFrame();
+            Assert.NotNull(bodySkeletonFrame);
+            bodySkeletonFrame!.Save(bodySkeletonPreviewPath, PngBitmapEncoderOptions.Default);
+        }
+
+        await bodySkeletonFading.Task.WaitAsync(TimeSpan.FromSeconds(2));
+        Dispatcher.UIThread.RunJobs();
+        Assert.True(viewModel.IsNewsArticleBodySkeletonVisible);
+        Assert.True(viewModel.IsNewsArticleBodySkeletonFadingOut);
+        Assert.False(viewModel.IsNewsArticleBodyVisible);
+
+        await bodySkeletonHidden.Task.WaitAsync(TimeSpan.FromSeconds(2));
+        Dispatcher.UIThread.RunJobs();
+        Assert.False(viewModel.IsNewsArticleBodySkeletonVisible);
+        Assert.False(viewModel.IsNewsArticleBodyVisible);
+
         await openTask;
         Dispatcher.UIThread.RunJobs();
+        Assert.False(viewModel.IsNewsArticleBodyPreparing);
+        Assert.True(viewModel.IsNewsArticleBodyVisible);
+        Assert.False(bodySkeleton.IsVisible);
         window.Close();
     }
 
@@ -2326,6 +2503,11 @@ public sealed class MainWindowRenderTests
         Assert.Contains("revealed", articleBody.Classes);
         Assert.NotNull(articleBody.Transitions);
         Assert.InRange(articleBody.Opacity, 0.99, 1);
+        Assert.Empty(articleBody.GetVisualDescendants().OfType<VirtualizingStackPanel>());
+        Assert.InRange(
+            articleBody.GetVisualDescendants().OfType<NewsRichTextBlock>().Count(),
+            6,
+            10);
         var articleScrollViewer = activeArticleHost.GetVisualDescendants()
             .OfType<ScrollViewer>()
             .Single(scrollViewer => scrollViewer.Classes.Contains("newsArticleScroll"));
@@ -2701,6 +2883,42 @@ public sealed class MainWindowRenderTests
         {
             readerFrame.Save(wideReaderPreviewPath, PngBitmapEncoderOptions.Default);
             Assert.True(File.Exists(wideReaderPreviewPath));
+        }
+
+        if (usesWideLayout)
+        {
+            var nextNewsItem = Assert.IsType<NewsItemViewModel>(newsListItems[1].DataContext);
+            var readerDisappeared = false;
+            PropertyChangedEventHandler readerVisibilityObserver = (_, args) =>
+            {
+                if (args.PropertyName == nameof(MainWindowViewModel.SelectedNewsArticle) &&
+                    viewModel.SelectedNewsArticle is null)
+                {
+                    readerDisappeared = true;
+                }
+            };
+            viewModel.PropertyChanged += readerVisibilityObserver;
+            var switchTask = nextNewsItem.OpenCommand.ExecuteAsync(null);
+            Dispatcher.UIThread.RunJobs();
+
+            Assert.True(viewModel.IsNewsArticleVisible);
+            Assert.True(viewModel.IsNewsArticleBodySkeletonVisible);
+            Assert.False(viewModel.IsNewsArticleBodyVisible);
+            Assert.Equal(nextNewsItem.Title, viewModel.NewsArticleDisplayTitle);
+            Assert.NotNull(viewModel.SelectedNewsArticle);
+            Assert.True(activeArticleHost.GetVisualDescendants()
+                .OfType<StackPanel>()
+                .Single(panel => panel.Name == "ArticleBodySkeleton")
+                .IsEffectivelyVisible);
+
+            await switchTask;
+            viewModel.PropertyChanged -= readerVisibilityObserver;
+            Dispatcher.UIThread.RunJobs();
+            Assert.False(readerDisappeared);
+            Assert.Same(nextNewsItem, viewModel.SelectedNewsItem);
+            Assert.NotSame(selectedArticle, viewModel.SelectedNewsArticle);
+            Assert.True(viewModel.IsNewsArticleBodyVisible);
+            Assert.False(viewModel.IsNewsArticleBodySkeletonVisible);
         }
 
         var closeTask = viewModel.CloseNewsArticleCommand.ExecuteAsync(null);

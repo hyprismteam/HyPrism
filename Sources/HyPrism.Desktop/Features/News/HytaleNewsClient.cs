@@ -62,7 +62,10 @@ public sealed class HytaleNewsClient : IHytaleNewsClient
     private readonly ConcurrentDictionary<string, Lazy<Task<NewsArticleResponse?>>> _articleLoads =
         new(StringComparer.OrdinalIgnoreCase);
 
+    internal int CachedArticleCount => _articleCache.Count;
+
     private const int CacheExpirationMinutes = 30;
+    private const int MaximumCachedArticles = 4;
     private static readonly TimeSpan ArticleDiskCacheLifetime = TimeSpan.FromDays(7);
     private const int ArticleCacheSchemaVersion = 1;
 
@@ -168,7 +171,7 @@ public sealed class HytaleNewsClient : IHytaleNewsClient
         var diskCached = await TryReadArticleCacheAsync(cacheKey).ConfigureAwait(false);
         if (diskCached is not null)
         {
-            _articleCache[cacheKey] = (diskCached, DateTime.UtcNow);
+            CacheArticle(cacheKey, diskCached);
             return diskCached;
         }
 
@@ -205,7 +208,7 @@ public sealed class HytaleNewsClient : IHytaleNewsClient
                 return null;
             }
 
-            _articleCache[cacheKey] = (article, DateTime.UtcNow);
+            CacheArticle(cacheKey, article);
             await WriteArticleCacheAsync(cacheKey, article).ConfigureAwait(false);
             return article;
         }
@@ -213,6 +216,25 @@ public sealed class HytaleNewsClient : IHytaleNewsClient
         {
             Logger.Warning("News", $"Failed to fetch Hytale article: {ex.Message}");
             return null;
+        }
+    }
+
+    private void CacheArticle(string cacheKey, NewsArticleResponse article)
+    {
+        _articleCache[cacheKey] = (article, DateTime.UtcNow);
+        while (_articleCache.Count > MaximumCachedArticles)
+        {
+            var oldest = _articleCache
+                .Where(pair => !string.Equals(
+                    pair.Key,
+                    cacheKey,
+                    StringComparison.OrdinalIgnoreCase))
+                .OrderBy(pair => pair.Value.CachedAt)
+                .FirstOrDefault();
+            if (string.IsNullOrEmpty(oldest.Key))
+                return;
+
+            _articleCache.TryRemove(oldest.Key, out _);
         }
     }
 

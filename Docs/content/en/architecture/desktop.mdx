@@ -19,6 +19,8 @@ description: Avalonia views, view models, localization, and native controls
 - `SystemMemoryProvider` provides the memory limit shown by Java settings
 - `GpuProvider` implements the Core GPU boundary with host platform tools
 - `Features/News` retrieves official Hytale news and keeps parsed feed and article caches under `Cache/News`
+- the news reader prepares view models away from the dispatcher, realizes controls in background-priority ranges, reveals the document only after the final range, and creates only the template selected by each content kind
+- news image decoding runs after text presentation at background dispatcher priority, limits decode concurrency, and releases decoded bitmaps when the selected article closes
 - `Features/About` provides repository metadata, contributors, commits, and avatars for the About page
 - `Features/Settings` owns the adaptive settings UI and Desktop preferences
 - `Features/Profiles` owns the instance-aligned adaptive profile cards, content view, and creation wizard while delegating ordering, storage, switching, and session persistence to Core account services

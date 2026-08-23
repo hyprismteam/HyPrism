@@ -73,7 +73,9 @@ public sealed class RemoteImageCache
                 () => LoadCoreAsync(uri, normalizedCategory),
                 LazyThreadSafetyMode.ExecutionAndPublication));
         var bytes = await pending.Value.WaitAsync(cancellationToken).ConfigureAwait(false);
-        if (bytes is null)
+        if (bytes is null ||
+            (_cacheDirectory is not null &&
+             string.Equals(normalizedCategory, "News", StringComparison.OrdinalIgnoreCase)))
         {
             _memoryCache.TryRemove(
                 new KeyValuePair<string, Lazy<Task<byte[]?>>>(cacheKey, pending));

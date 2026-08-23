@@ -133,6 +133,22 @@ public sealed class HytaleNewsClientTests
     }
 
     [Fact]
+    public async Task GetNewsArticleAsync_BoundsParsedArticleMemoryCache()
+    {
+        using var handler = new FixtureHttpHandler();
+        using var client = new HttpClient(handler);
+        var service = new HytaleNewsClient(client);
+
+        for (var index = 0; index < 6; index++)
+        {
+            Assert.NotNull(await service.GetNewsArticleAsync(
+                $"https://hytale.com/news/2026/7/cached-article-{index}"));
+        }
+
+        Assert.Equal(4, service.CachedArticleCount);
+    }
+
+    [Fact]
     public async Task NewsAndArticlesSurviveServiceRestartInFileCache()
     {
         var appDirectory = Path.Combine(

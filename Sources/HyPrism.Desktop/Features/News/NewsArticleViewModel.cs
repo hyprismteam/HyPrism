@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
+using System.ComponentModel;
 using System.Windows.Input;
 using Avalonia.Media.Imaging;
 using Avalonia.Threading;
@@ -13,8 +15,10 @@ namespace HyPrism.Desktop.Features.News;
 
 public sealed class NewsArticleViewModel : ObservableObject, IDisposable
 {
+    private const int RenderBatchSize = 4;
     private readonly IExternalUriLauncher _uriLauncher;
     private readonly string _publishedAt;
+    private readonly ObservableRangeCollection<NewsArticleBlockViewModel> _renderedBlocks = [];
     private string _date = string.Empty;
     private string _metadata = string.Empty;
 
@@ -49,7 +53,7 @@ public sealed class NewsArticleViewModel : ObservableObject, IDisposable
         private set => SetProperty(ref _metadata, value);
     }
     public IReadOnlyList<NewsArticleBlockViewModel> Blocks { get; }
-    public ObservableCollection<NewsArticleBlockViewModel> RenderedBlocks { get; } = [];
+    public ObservableCollection<NewsArticleBlockViewModel> RenderedBlocks => _renderedBlocks;
     public IRelayCommand OpenOriginalCommand { get; }
     public IRelayCommand<string?> OpenLinkCommand { get; }
     public bool HasExcerpt => !string.IsNullOrWhiteSpace(Excerpt);
@@ -62,39 +66,44 @@ public sealed class NewsArticleViewModel : ObservableObject, IDisposable
 
     public async Task PrepareForDisplayAsync(
         CancellationToken cancellationToken,
-        Func<Task>? firstBatchReady = null)
+        Func<Task>? contentReady = null)
     {
-        const int BatchSize = 3;
-
-        await Dispatcher.UIThread.InvokeAsync(() => RenderedBlocks.Clear());
+        await Dispatcher.UIThread.InvokeAsync(() => _renderedBlocks.Clear());
         if (Blocks.Count == 0)
         {
-            if (firstBatchReady is not null)
-                await firstBatchReady().ConfigureAwait(false);
+            if (contentReady is not null)
+                await contentReady().ConfigureAwait(false);
             return;
         }
 
-        for (var offset = 0; offset < Blocks.Count; offset += BatchSize)
+        for (var offset = 0; offset < Blocks.Count; offset += RenderBatchSize)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var batch = Blocks.Skip(offset).Take(BatchSize).ToArray();
+            var batch = Blocks.Skip(offset).Take(RenderBatchSize).ToArray();
             await Dispatcher.UIThread.InvokeAsync(
-                () =>
-                {
-                    foreach (var block in batch)
-                        RenderedBlocks.Add(block);
-                },
-                DispatcherPriority.Background);
+                () => _renderedBlocks.AddRange(batch),
+                DispatcherPriority.Background,
+                cancellationToken);
 
-            if (offset == 0 && firstBatchReady is not null)
-                await firstBatchReady().ConfigureAwait(false);
-
-            // Let layout, input and animations complete a real frame between rich
-            // groups. A one-millisecond yield can enqueue the next group before the
-            // compositor has presented anything on long patch-note articles.
-            if (offset + BatchSize < Blocks.Count)
+            if (offset + RenderBatchSize < Blocks.Count)
                 await Task.Delay(16, cancellationToken).ConfigureAwait(false);
         }
+
+        // Wait behind the rich-text jobs queued by the final group before the
+        // document becomes interactive and exposes its stable scroll extent
+        await Dispatcher.UIThread.InvokeAsync(
+            static () => { },
+            DispatcherPriority.Background,
+            cancellationToken);
+
+        if (contentReady is not null)
+            await contentReady().ConfigureAwait(false);
+    }
+
+    public void ReleaseImages()
+    {
+        foreach (var block in Blocks)
+            block.ReleaseImages();
     }
 
     public void RefreshCulture()
@@ -111,7 +120,7 @@ public sealed class NewsArticleViewModel : ObservableObject, IDisposable
         CancellationToken cancellationToken,
         RemoteImageCache? imageCache = null)
     {
-        using var concurrencyGate = new SemaphoreSlim(3, 3);
+        using var concurrencyGate = new SemaphoreSlim(1, 1);
         try
         {
             await Task.WhenAll(Blocks.Select(async block =>
@@ -206,7 +215,7 @@ public sealed partial class NewsArticleBlockViewModel : ObservableObject, IDispo
         ImageUrl = node.ImageUrl;
         AltText = node.AltText ?? string.Empty;
         HeadingLevel = node.Level ?? 2;
-        PlainText = ExtractText(node);
+        PlainText = IsCode ? ExtractText(node) : string.Empty;
         if (IsList)
             ListItems = CreateListItems(node, linkCommand);
     }
@@ -464,7 +473,7 @@ public sealed partial class NewsArticleBlockViewModel : ObservableObject, IDispo
 
         var blockTask = RemoteNewsBitmap.LoadAsync(
             ImageUrl,
-            1400,
+            960,
             httpClient,
             cancellationToken,
             imageCache);
@@ -485,15 +494,26 @@ public sealed partial class NewsArticleBlockViewModel : ObservableObject, IDispo
             return;
         }
 
-        await Dispatcher.UIThread.InvokeAsync(() => Image = bitmap);
+        await Dispatcher.UIThread.InvokeAsync(
+            () => Image = bitmap,
+            DispatcherPriority.Background);
     }
 
     partial void OnImageChanging(Bitmap? oldValue, Bitmap? newValue)
         => oldValue?.Dispose();
 
-    public void Dispose()
+    public void ReleaseImages()
     {
         Image = null;
+        foreach (var inlineImage in InlineImages)
+            inlineImage.ReleaseImage();
+        foreach (var detailBlock in DetailsBlocks)
+            detailBlock.ReleaseImages();
+    }
+
+    public void Dispose()
+    {
+        ReleaseImages();
         foreach (var inlineImage in InlineImages)
             inlineImage.Dispose();
         foreach (var detailBlock in DetailsBlocks)
@@ -544,14 +564,39 @@ public sealed partial class NewsInlineImageViewModel : ObservableObject, IDispos
             return;
         }
 
-        await Dispatcher.UIThread.InvokeAsync(() => Image = bitmap);
+        await Dispatcher.UIThread.InvokeAsync(
+            () => Image = bitmap,
+            DispatcherPriority.Background);
     }
 
     partial void OnImageChanging(Bitmap? oldValue, Bitmap? newValue)
         => oldValue?.Dispose();
 
-    public void Dispose()
+    public void ReleaseImage()
         => Image = null;
+
+    public void Dispose()
+        => ReleaseImage();
+}
+
+internal sealed class ObservableRangeCollection<T> : ObservableCollection<T>
+{
+    public void AddRange(IReadOnlyList<T> items)
+    {
+        if (items.Count == 0)
+            return;
+
+        var startIndex = Count;
+        foreach (var item in items)
+            Items.Add(item);
+
+        OnPropertyChanged(new PropertyChangedEventArgs(nameof(Count)));
+        OnPropertyChanged(new PropertyChangedEventArgs("Item[]"));
+        OnCollectionChanged(new NotifyCollectionChangedEventArgs(
+            NotifyCollectionChangedAction.Add,
+            items.ToList(),
+            startIndex));
+    }
 }
 
 internal static class RemoteNewsBitmap

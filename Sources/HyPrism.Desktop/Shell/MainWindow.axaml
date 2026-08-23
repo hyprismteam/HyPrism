@@ -66,167 +66,230 @@ SPDX-License-Identifier: GPL-3.0-only
     </DataTemplate>
 
     <DataTemplate x:Key="NewsArticleBlockTemplate" x:DataType="news:NewsArticleBlockViewModel">
-      <Grid Margin="0,0,0,22">
-        <news:NewsRichTextBlock IsVisible="{Binding IsParagraph}"
-                                    Nodes="{Binding Nodes}"
-                                    InlineImages="{Binding InlineImages}"
-                                    LinkCommand="{Binding LinkCommand}"
-                                    Classes="articleParagraph"
-                                    TextWrapping="Wrap" />
-
-        <StackPanel IsVisible="{Binding IsStickerParagraph}" Spacing="8">
-          <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
-            <Image Width="64"
-                   Height="64"
-                   Source="{Binding StickerImage.Image}"
-                   VerticalAlignment="Center"
-                   Stretch="Uniform" />
-            <news:NewsRichTextBlock Grid.Column="1"
-                                        Nodes="{Binding StickerLeadNodes}"
+      <ContentControl Content="{Binding}"
+                      Margin="0,0,0,22"
+                      Classes.paragraph="{Binding IsParagraph}"
+                      Classes.sticker="{Binding IsStickerParagraph}"
+                      Classes.heading="{Binding IsHeading}"
+                      Classes.quote="{Binding IsQuote}"
+                      Classes.details="{Binding IsDetails}"
+                      Classes.list="{Binding IsList}"
+                      Classes.image="{Binding IsImage}"
+                      Classes.code="{Binding IsCode}"
+                      Classes.divider="{Binding IsDivider}"
+                      Classes.caption="{Binding IsCaption}">
+        <ContentControl.Styles>
+          <Style Selector="ContentControl.paragraph">
+            <Setter Property="ContentTemplate">
+              <DataTemplate x:DataType="news:NewsArticleBlockViewModel">
+                <news:NewsRichTextBlock Nodes="{Binding Nodes}"
                                         InlineImages="{Binding InlineImages}"
                                         LinkCommand="{Binding LinkCommand}"
                                         Classes="articleParagraph"
-                                        VerticalAlignment="Center"
                                         TextWrapping="Wrap" />
-          </Grid>
-          <news:NewsRichTextBlock Nodes="{Binding StickerBodyNodes}"
-                                      InlineImages="{Binding InlineImages}"
-                                      LinkCommand="{Binding LinkCommand}"
-                                      Classes="articleParagraph"
-                                      TextWrapping="Wrap" />
-        </StackPanel>
+              </DataTemplate>
+            </Setter>
+          </Style>
 
-        <news:NewsRichTextBlock IsVisible="{Binding IsHeading}"
-                                    Nodes="{Binding Nodes}"
-                                    InlineImages="{Binding InlineImages}"
-                                    LinkCommand="{Binding LinkCommand}"
-                                    Classes="articleHeading"
-                                    FontSize="{Binding HeadingSize}"
-                                    TextWrapping="Wrap" />
-
-        <Border IsVisible="{Binding IsQuote}"
-                Classes="articleQuote">
-          <news:NewsRichTextBlock Nodes="{Binding Nodes}"
-                                      InlineImages="{Binding InlineImages}"
-                                      LinkCommand="{Binding LinkCommand}"
-                                      Classes="articleParagraph"
-                                      FontStyle="Italic"
-                                      TextWrapping="Wrap" />
-        </Border>
-
-        <Border IsVisible="{Binding IsDetails}"
-                Classes="articleDetails">
-          <StackPanel>
-            <Button Classes="articleDetailsHeader"
-                    HorizontalAlignment="Stretch"
-                    Cursor="Hand"
-                    Command="{Binding ToggleDetailsCommand}">
-              <Grid ColumnDefinitions="18,*" ColumnSpacing="8">
-                <Path IsVisible="{Binding IsDetailsCollapsed}"
-                      Width="7"
-                      Height="11"
-                      HorizontalAlignment="Center"
-                      VerticalAlignment="Center"
-                      Fill="{DynamicResource WarningBrush}"
-                      Stretch="Uniform"
-                      Data="M 2,1 L 8,6 L 2,11 Z" />
-                <Path IsVisible="{Binding IsDetailsExpanded}"
-                      Width="11"
-                      Height="7"
-                      HorizontalAlignment="Center"
-                      VerticalAlignment="Center"
-                      Fill="{DynamicResource WarningBrush}"
-                      Stretch="Uniform"
-                      Data="M 1,2 L 6,8 L 11,2 Z" />
-                <StackPanel Grid.Column="1"
-                            Orientation="Horizontal"
-                            Spacing="7"
-                            VerticalAlignment="Center">
-                  <news:NewsRichTextBlock Nodes="{Binding DetailsSummaryTextNodes}"
-                                              LinkCommand="{Binding LinkCommand}"
-                                              Classes="articleDetailsSummary"
-                                              MaxWidth="560"
-                                              VerticalAlignment="Center"
-                                              TextWrapping="Wrap" />
-                  <ItemsControl ItemsSource="{Binding DetailsSummaryImages}"
-                                VerticalAlignment="Center">
-                    <ItemsControl.ItemsPanel>
-                      <ItemsPanelTemplate>
-                        <StackPanel Orientation="Horizontal" Spacing="4" />
-                      </ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
-                    <ItemsControl.ItemTemplate>
-                      <DataTemplate x:DataType="news:NewsInlineImageViewModel">
-                        <Image Width="{Binding DisplaySize}"
-                               Height="{Binding DisplaySize}"
-                               Source="{Binding Image}"
-                               VerticalAlignment="Center"
-                               Stretch="Uniform" />
-                      </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                  </ItemsControl>
+          <Style Selector="ContentControl.sticker">
+            <Setter Property="ContentTemplate">
+              <DataTemplate x:DataType="news:NewsArticleBlockViewModel">
+                <StackPanel Spacing="8">
+                  <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
+                    <Image Width="64"
+                           Height="64"
+                           Source="{Binding StickerImage.Image}"
+                           VerticalAlignment="Center"
+                           Stretch="Uniform" />
+                    <news:NewsRichTextBlock Grid.Column="1"
+                                            Nodes="{Binding StickerLeadNodes}"
+                                            InlineImages="{Binding InlineImages}"
+                                            LinkCommand="{Binding LinkCommand}"
+                                            Classes="articleParagraph"
+                                            VerticalAlignment="Center"
+                                            TextWrapping="Wrap" />
+                  </Grid>
+                  <news:NewsRichTextBlock Nodes="{Binding StickerBodyNodes}"
+                                          InlineImages="{Binding InlineImages}"
+                                          LinkCommand="{Binding LinkCommand}"
+                                          Classes="articleParagraph"
+                                          TextWrapping="Wrap" />
                 </StackPanel>
-              </Grid>
-            </Button>
+              </DataTemplate>
+            </Setter>
+          </Style>
 
-            <Border IsVisible="{Binding IsDetailsExpanded}"
-                    Classes="articleDetailsBody">
-              <ItemsControl ItemsSource="{Binding VisibleDetailsBlocks}"
-                            ItemTemplate="{StaticResource NewsArticleBlockTemplate}" />
-            </Border>
-          </StackPanel>
-        </Border>
+          <Style Selector="ContentControl.heading">
+            <Setter Property="ContentTemplate">
+              <DataTemplate x:DataType="news:NewsArticleBlockViewModel">
+                <news:NewsRichTextBlock Nodes="{Binding Nodes}"
+                                        InlineImages="{Binding InlineImages}"
+                                        LinkCommand="{Binding LinkCommand}"
+                                        Classes="articleHeading"
+                                        FontSize="{Binding HeadingSize}"
+                                        TextWrapping="Wrap" />
+              </DataTemplate>
+            </Setter>
+          </Style>
 
-        <ItemsControl IsVisible="{Binding IsList}"
-                      ItemsSource="{Binding ListItems}"
-                      ItemTemplate="{StaticResource NewsArticleListItemTemplate}">
-          <ItemsControl.ItemsPanel>
-            <ItemsPanelTemplate>
-              <StackPanel Spacing="10" />
-            </ItemsPanelTemplate>
-          </ItemsControl.ItemsPanel>
-        </ItemsControl>
+          <Style Selector="ContentControl.quote">
+            <Setter Property="ContentTemplate">
+              <DataTemplate x:DataType="news:NewsArticleBlockViewModel">
+                <Border Classes="articleQuote">
+                  <news:NewsRichTextBlock Nodes="{Binding Nodes}"
+                                          InlineImages="{Binding InlineImages}"
+                                          LinkCommand="{Binding LinkCommand}"
+                                          Classes="articleParagraph"
+                                          FontStyle="Italic"
+                                          TextWrapping="Wrap" />
+                </Border>
+              </DataTemplate>
+            </Setter>
+          </Style>
 
-        <Border IsVisible="{Binding IsImage}"
-                Classes="articleImage"
-                MaxHeight="520">
-          <Grid>
-            <Image IsVisible="{Binding HasImage}"
-                   Source="{Binding Image}"
-                   Stretch="Uniform" />
-            <TextBlock IsVisible="{Binding HasNoImage}"
-                       Text="{Binding AltText}"
-                       Classes="muted"
-                       Margin="24"
-                       HorizontalAlignment="Center"
-                       VerticalAlignment="Center"
-                       TextAlignment="Center"
-                       TextWrapping="Wrap" />
-          </Grid>
-        </Border>
+          <Style Selector="ContentControl.details">
+            <Setter Property="ContentTemplate">
+              <DataTemplate x:DataType="news:NewsArticleBlockViewModel">
+                <Border Classes="articleDetails">
+                  <StackPanel>
+                    <Button Classes="articleDetailsHeader"
+                            HorizontalAlignment="Stretch"
+                            Cursor="Hand"
+                            Command="{Binding ToggleDetailsCommand}">
+                      <Grid ColumnDefinitions="18,*" ColumnSpacing="8">
+                        <Path IsVisible="{Binding IsDetailsCollapsed}"
+                              Width="7"
+                              Height="11"
+                              HorizontalAlignment="Center"
+                              VerticalAlignment="Center"
+                              Fill="{DynamicResource WarningBrush}"
+                              Stretch="Uniform"
+                              Data="M 2,1 L 8,6 L 2,11 Z" />
+                        <Path IsVisible="{Binding IsDetailsExpanded}"
+                              Width="11"
+                              Height="7"
+                              HorizontalAlignment="Center"
+                              VerticalAlignment="Center"
+                              Fill="{DynamicResource WarningBrush}"
+                              Stretch="Uniform"
+                              Data="M 1,2 L 6,8 L 11,2 Z" />
+                        <StackPanel Grid.Column="1"
+                                    Orientation="Horizontal"
+                                    Spacing="7"
+                                    VerticalAlignment="Center">
+                          <news:NewsRichTextBlock Nodes="{Binding DetailsSummaryTextNodes}"
+                                                  LinkCommand="{Binding LinkCommand}"
+                                                  Classes="articleDetailsSummary"
+                                                  MaxWidth="560"
+                                                  VerticalAlignment="Center"
+                                                  TextWrapping="Wrap" />
+                          <ItemsControl ItemsSource="{Binding DetailsSummaryImages}"
+                                        VerticalAlignment="Center">
+                            <ItemsControl.ItemsPanel>
+                              <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal" Spacing="4" />
+                              </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                              <DataTemplate x:DataType="news:NewsInlineImageViewModel">
+                                <Image Width="{Binding DisplaySize}"
+                                       Height="{Binding DisplaySize}"
+                                       Source="{Binding Image}"
+                                       VerticalAlignment="Center"
+                                       Stretch="Uniform" />
+                              </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                          </ItemsControl>
+                        </StackPanel>
+                      </Grid>
+                    </Button>
 
-        <Border IsVisible="{Binding IsCode}"
-                Classes="articleCode">
-          <TextBlock Text="{Binding PlainText}"
-                     FontFamily="{DynamicResource JetBrainsMonoFont}"
-                     FontSize="13"
-                     LineHeight="21"
-                     Foreground="#DDD8F2"
-                     TextWrapping="Wrap" />
-        </Border>
+                    <Border IsVisible="{Binding IsDetailsExpanded}"
+                            Classes="articleDetailsBody">
+                      <ItemsControl ItemsSource="{Binding VisibleDetailsBlocks}"
+                                    ItemTemplate="{StaticResource NewsArticleBlockTemplate}" />
+                    </Border>
+                  </StackPanel>
+                </Border>
+              </DataTemplate>
+            </Setter>
+          </Style>
 
-        <Border IsVisible="{Binding IsDivider}"
-                Height="1"
-                Background="{DynamicResource StrokeStrongBrush}"
-                Margin="0,8" />
+          <Style Selector="ContentControl.list">
+            <Setter Property="ContentTemplate">
+              <DataTemplate x:DataType="news:NewsArticleBlockViewModel">
+                <ItemsControl ItemsSource="{Binding ListItems}"
+                              ItemTemplate="{StaticResource NewsArticleListItemTemplate}">
+                  <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                      <StackPanel Spacing="10" />
+                    </ItemsPanelTemplate>
+                  </ItemsControl.ItemsPanel>
+                </ItemsControl>
+              </DataTemplate>
+            </Setter>
+          </Style>
 
-        <news:NewsRichTextBlock IsVisible="{Binding IsCaption}"
-                                    Nodes="{Binding Nodes}"
-                                    InlineImages="{Binding InlineImages}"
-                                    LinkCommand="{Binding LinkCommand}"
-                                    Classes="articleCaption"
-                                    TextWrapping="Wrap" />
-      </Grid>
+          <Style Selector="ContentControl.image">
+            <Setter Property="ContentTemplate">
+              <DataTemplate x:DataType="news:NewsArticleBlockViewModel">
+                <Border Classes="articleImage" MaxHeight="520">
+                  <Grid>
+                    <Image IsVisible="{Binding HasImage}"
+                           Source="{Binding Image}"
+                           Stretch="Uniform" />
+                    <TextBlock IsVisible="{Binding HasNoImage}"
+                               Text="{Binding AltText}"
+                               Classes="muted"
+                               Margin="24"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"
+                               TextAlignment="Center"
+                               TextWrapping="Wrap" />
+                  </Grid>
+                </Border>
+              </DataTemplate>
+            </Setter>
+          </Style>
+
+          <Style Selector="ContentControl.code">
+            <Setter Property="ContentTemplate">
+              <DataTemplate x:DataType="news:NewsArticleBlockViewModel">
+                <Border Classes="articleCode">
+                  <TextBlock Text="{Binding PlainText}"
+                             FontFamily="{DynamicResource JetBrainsMonoFont}"
+                             FontSize="13"
+                             LineHeight="21"
+                             Foreground="#DDD8F2"
+                             TextWrapping="Wrap" />
+                </Border>
+              </DataTemplate>
+            </Setter>
+          </Style>
+
+          <Style Selector="ContentControl.divider">
+            <Setter Property="ContentTemplate">
+              <DataTemplate x:DataType="news:NewsArticleBlockViewModel">
+                <Border Height="1"
+                        Background="{DynamicResource StrokeStrongBrush}"
+                        Margin="0,8" />
+              </DataTemplate>
+            </Setter>
+          </Style>
+
+          <Style Selector="ContentControl.caption">
+            <Setter Property="ContentTemplate">
+              <DataTemplate x:DataType="news:NewsArticleBlockViewModel">
+                <news:NewsRichTextBlock Nodes="{Binding Nodes}"
+                                        InlineImages="{Binding InlineImages}"
+                                        LinkCommand="{Binding LinkCommand}"
+                                        Classes="articleCaption"
+                                        TextWrapping="Wrap" />
+              </DataTemplate>
+            </Setter>
+          </Style>
+        </ContentControl.Styles>
+      </ContentControl>
     </DataTemplate>
 
     <DataTemplate x:Key="NewsListItemTemplate" x:DataType="news:NewsItemViewModel">
@@ -382,7 +445,7 @@ SPDX-License-Identifier: GPL-3.0-only
 
             <TextBlock Grid.Column="1"
                        Classes="articleToolbarTitle"
-                       Text="{Binding SelectedNewsArticle.Title}"
+                       Text="{Binding NewsArticleDisplayTitle}"
                        Margin="12,0"
                        MaxWidth="280"
                        MaxLines="1"
@@ -465,6 +528,7 @@ SPDX-License-Identifier: GPL-3.0-only
                                      ScrollContextKey="{Binding SelectedNewsItem.Url}"
                                      Background="{DynamicResource SurfaceBrush}"
                                      Classes="newsArticleScroll"
+                                     IsHitTestVisible="{Binding IsNewsArticleBodyVisible}"
                                      HorizontalScrollBarVisibility="Disabled"
                                      VerticalScrollBarVisibility="Auto">
           <StackPanel MaxWidth="820"
@@ -505,12 +569,12 @@ SPDX-License-Identifier: GPL-3.0-only
                       <Path Width="14" Height="14" Stretch="Uniform" Data="{StaticResource OpenIcon}" />
                     </StackPanel>
                   </Button>
-                  <TextBlock Text="{Binding SelectedNewsArticle.Title}"
+                  <TextBlock Text="{Binding NewsArticleDisplayTitle}"
                              FontSize="32"
                              FontWeight="Bold"
                              MaxLines="3"
                              TextTrimming="CharacterEllipsis" />
-                  <TextBlock Text="{Binding SelectedNewsArticle.Metadata}"
+                  <TextBlock Text="{Binding NewsArticleDisplayMetadata}"
                              Foreground="#D1D2D6"
                              FontSize="12"
                              FontWeight="SemiBold"
@@ -519,12 +583,52 @@ SPDX-License-Identifier: GPL-3.0-only
               </Grid>
             </Border>
 
-            <StackPanel Margin="4,30,4,0"
-                        Classes="articleBody"
-                        Classes.revealed="{Binding IsNewsArticleBodyVisible}">
-              <ItemsControl ItemsSource="{Binding SelectedNewsArticle.RenderedBlocks}"
-                            ItemTemplate="{StaticResource NewsArticleBlockTemplate}" />
-            </StackPanel>
+            <Grid Margin="4,30,4,0">
+              <StackPanel x:Name="ArticleBodySkeleton"
+                          IsVisible="{Binding IsNewsArticleBodySkeletonVisible}"
+                          Classes="articleBodySkeleton"
+                          Classes.fading="{Binding IsNewsArticleBodySkeletonFadingOut}"
+                          Spacing="20">
+                <Border Classes="articleTextSkeleton phase1"
+                        Width="340"
+                        Height="27"
+                        HorizontalAlignment="Left" />
+
+                <StackPanel Spacing="10">
+                  <Border Classes="articleTextSkeleton phase1" Height="13" HorizontalAlignment="Stretch" />
+                  <Border Classes="articleTextSkeleton phase2" Height="13" HorizontalAlignment="Stretch" />
+                  <Border Classes="articleTextSkeleton phase3" Height="13" Width="610" HorizontalAlignment="Left" />
+                </StackPanel>
+
+                <StackPanel Spacing="10">
+                  <Border Classes="articleTextSkeleton phase2" Height="13" HorizontalAlignment="Stretch" />
+                  <Border Classes="articleTextSkeleton phase3" Height="13" Width="560" HorizontalAlignment="Left" />
+                </StackPanel>
+
+                <Border Classes="articleSkeletonCard"
+                        Padding="18"
+                        HorizontalAlignment="Stretch">
+                  <StackPanel Spacing="11">
+                    <Border Classes="articleTextSkeleton phase1" Height="13" Width="520" HorizontalAlignment="Left" />
+                    <Border Classes="articleTextSkeleton phase2" Height="13" HorizontalAlignment="Stretch" />
+                    <Border Classes="articleTextSkeleton phase3" Height="13" Width="590" HorizontalAlignment="Left" />
+                  </StackPanel>
+                </Border>
+
+                <StackPanel Spacing="10">
+                  <Border Classes="articleTextSkeleton phase3" Height="13" HorizontalAlignment="Stretch" />
+                  <Border Classes="articleTextSkeleton phase1" Height="13" HorizontalAlignment="Stretch" />
+                  <Border Classes="articleTextSkeleton phase2" Height="13" Width="470" HorizontalAlignment="Left" />
+                </StackPanel>
+              </StackPanel>
+
+              <StackPanel Classes="articleBody"
+                          Classes.preparing="{Binding IsNewsArticleBodySkeletonVisible}"
+                          Classes.revealed="{Binding IsNewsArticleBodyVisible}">
+                <ItemsControl ItemsSource="{Binding SelectedNewsArticle.RenderedBlocks}"
+                              ItemTemplate="{StaticResource NewsArticleBlockTemplate}" />
+              </StackPanel>
+            </Grid>
           </StackPanel>
         </controls:SmoothScrollViewer>
       </Grid>

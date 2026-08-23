@@ -37,8 +37,10 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     private const int InitialNewsCount = 12;
     private const int NewsPageSize = 8;
     private const int MaximumNewsCount = 30;
+    private const int MaximumCachedNewsArticles = 2;
     private const int CompactTransitionMilliseconds = 320;
     private const int ArticleSkeletonDelayMilliseconds = 180;
+    private const int ArticleBodySkeletonFadeMilliseconds = 180;
     private static readonly TimeSpan InstanceVersionCacheMaxAge = TimeSpan.FromMinutes(15);
 
     private readonly IInstanceRepository _instances;
@@ -188,19 +190,33 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     [NotifyPropertyChangedFor(nameof(IsNewsFeedVisible))]
     [NotifyPropertyChangedFor(nameof(IsNewsArticleContext))]
     [NotifyPropertyChangedFor(nameof(IsNewsArticleEmpty))]
+    [NotifyPropertyChangedFor(nameof(NewsArticleDisplayTitle))]
+    [NotifyPropertyChangedFor(nameof(NewsArticleDisplayMetadata))]
     private NewsItemViewModel? _selectedNewsItem;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsNewsArticleVisible))]
     [NotifyPropertyChangedFor(nameof(IsNewsLandingVisible))]
+    [NotifyPropertyChangedFor(nameof(IsNewsArticleBodyPreparing))]
+    [NotifyPropertyChangedFor(nameof(NewsArticleDisplayTitle))]
+    [NotifyPropertyChangedFor(nameof(NewsArticleDisplayMetadata))]
     private NewsArticleViewModel? _selectedNewsArticle;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsNewsArticleBodyPreparing))]
     private bool _isNewsArticleBodyVisible = true;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsNewsArticleBodyPreparing))]
+    private bool _isNewsArticleBodySkeletonVisible;
+
+    [ObservableProperty]
+    private bool _isNewsArticleBodySkeletonFadingOut;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsNewsLandingVisible))]
     [NotifyPropertyChangedFor(nameof(IsNewsArticleStatusVisible))]
+    [NotifyPropertyChangedFor(nameof(NewsArticleDisplayMetadata))]
     private bool _isNewsArticleLoading;
 
     [ObservableProperty]
@@ -573,6 +589,17 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     public bool IsNewsLandingVisible =>
         IsNews && HasFeaturedNews && !IsNewsLoading && !HasNewsError;
     public bool IsNewsArticleVisible => IsNews && SelectedNewsArticle is not null;
+    public string NewsArticleDisplayTitle =>
+        SelectedNewsItem?.Title ?? SelectedNewsArticle?.Title ?? string.Empty;
+    public string NewsArticleDisplayMetadata =>
+        SelectedNewsArticle is not null && !IsNewsArticleLoading
+            ? SelectedNewsArticle.Metadata
+            : string.Join(
+                "  ·  ",
+                new[] { SelectedNewsItem?.Author, SelectedNewsItem?.Date }
+                    .Where(value => !string.IsNullOrWhiteSpace(value)));
+    public bool IsNewsArticleBodyPreparing =>
+        SelectedNewsArticle is not null && IsNewsArticleBodySkeletonVisible;
     public bool IsNewsArticleStatusVisible =>
         IsNews && SelectedNewsArticle is null && (IsNewsArticleSkeletonVisible || HasNewsArticleError);
     public bool IsCompactNewsLayout => !IsWideNewsLayout;
@@ -1571,10 +1598,14 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         if (ReferenceEquals(SelectedNewsItem, item))
             return;
 
+        var previousArticle = SelectedNewsArticle;
         var loadVersion = ++_articleLoadVersion;
         _newsImagesCancellation.Cancel();
         _articleImagesCancellation.Cancel();
         _articlePresentationCancellation.Cancel();
+        BeginArticleBodyPreparation();
+        previousArticle?.ResetRenderedBlocks();
+        previousArticle?.ReleaseImages();
         IsNewsArticleScrolled = false;
 
         foreach (var newsItem in _allNews)
@@ -1582,7 +1613,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         SelectedNewsItem = item;
         NewsArticleError = string.Empty;
         IsNewsArticleSkeletonVisible = false;
-        IsNewsArticleBodyVisible = !IsCompactNewsLayout;
+        IsNewsArticleLoading = true;
 
         if (_articleViewModelCache.TryGetValue(item.Url, out var cachedArticle))
         {
@@ -1590,15 +1621,19 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
             // rich tree synchronously during the SelectedNewsArticle binding change.
             cachedArticle.ResetRenderedBlocks();
             SelectedNewsArticle = cachedArticle;
-            IsNewsArticleLoading = false;
             NotifyNewsStateChanged();
             StartCompactArticleTransition();
             await RestartArticlePresentationAsync(cachedArticle);
+            if (loadVersion == _articleLoadVersion)
+            {
+                IsNewsArticleLoading = false;
+                NotifyNewsStateChanged();
+            }
             return;
         }
 
-        SelectedNewsArticle = null;
-        IsNewsArticleLoading = true;
+        if (IsCompactNewsLayout || previousArticle is null)
+            SelectedNewsArticle = null;
         NotifyNewsStateChanged();
         StartCompactArticleTransition();
         _ = ShowArticleSkeletonAfterDelayAsync(loadVersion);
@@ -1611,7 +1646,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
 
             if (article is null)
             {
-                NewsArticleError = _localizer["news.articleLoadFailed"];
+                ShowNewsArticleError(_localizer["news.articleLoadFailed"]);
                 return;
             }
 
@@ -1623,18 +1658,18 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
                 return;
             }
 
-            _articleViewModelCache[item.Url] = articleViewModel;
             IsNewsArticleSkeletonVisible = false;
             SelectedNewsArticle = articleViewModel;
+            CacheArticleViewModel(item.Url, articleViewModel);
             await RestartArticlePresentationAsync(articleViewModel);
         }
         catch (ArgumentException ex)
         {
-            NewsArticleError = ex.Message;
+            ShowNewsArticleError(ex.Message);
         }
         catch (Exception)
         {
-            NewsArticleError = _localizer["news.articleLoadFailed"];
+            ShowNewsArticleError(_localizer["news.articleLoadFailed"]);
         }
         finally
         {
@@ -1678,6 +1713,11 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
                 return;
         }
 
+        SelectedNewsArticle?.ResetRenderedBlocks();
+        SelectedNewsArticle?.ReleaseImages();
+        IsNewsArticleBodySkeletonVisible = false;
+        IsNewsArticleBodySkeletonFadingOut = false;
+        IsNewsArticleBodyVisible = false;
         SelectedNewsArticle = null;
         SelectedNewsItem = null;
         NewsArticleError = string.Empty;
@@ -1743,6 +1783,27 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
             _remoteImageCache);
     }
 
+    private void CacheArticleViewModel(string url, NewsArticleViewModel article)
+    {
+        if (_articleViewModelCache.TryGetValue(url, out var replaced) &&
+            !ReferenceEquals(replaced, article))
+        {
+            replaced.Dispose();
+        }
+
+        _articleViewModelCache[url] = article;
+        while (_articleViewModelCache.Count > MaximumCachedNewsArticles)
+        {
+            var candidate = _articleViewModelCache.FirstOrDefault(pair =>
+                !ReferenceEquals(pair.Value, SelectedNewsArticle));
+            if (string.IsNullOrEmpty(candidate.Key))
+                return;
+
+            _articleViewModelCache.Remove(candidate.Key);
+            candidate.Value.Dispose();
+        }
+    }
+
     private async Task RestartArticlePresentationAsync(NewsArticleViewModel article)
     {
         _articlePresentationCancellation.Cancel();
@@ -1760,15 +1821,16 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
                 await Task.Delay((int)remainingDelay, cancellationToken).ConfigureAwait(false);
 
             cancellationToken.ThrowIfCancellationRequested();
+            await PrepareArticleForDisplayAsync(
+                    article,
+                    cancellationToken,
+                    () => RevealNewsArticleBodyAsync(cancellationToken))
+                .ConfigureAwait(false);
+            cancellationToken.ThrowIfCancellationRequested();
             await Dispatcher.UIThread.InvokeAsync(
                 () => RestartArticleImageLoading(article),
                 DispatcherPriority.Background,
                 cancellationToken);
-            await PrepareArticleForDisplayAsync(
-                    article,
-                    cancellationToken,
-                    readyAt > 0 ? RevealNewsArticleBodyAsync : null)
-                .ConfigureAwait(false);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -1778,11 +1840,11 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     private static async Task PrepareArticleForDisplayAsync(
         NewsArticleViewModel article,
         CancellationToken cancellationToken,
-        Func<Task>? firstBatchReady)
+        Func<Task>? contentReady)
     {
         try
         {
-            await article.PrepareForDisplayAsync(cancellationToken, firstBatchReady)
+            await article.PrepareForDisplayAsync(cancellationToken, contentReady)
                 .ConfigureAwait(false);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -1790,11 +1852,41 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         }
     }
 
-    private async Task RevealNewsArticleBodyAsync()
+    private void BeginArticleBodyPreparation()
+    {
+        IsNewsArticleBodySkeletonFadingOut = false;
+        IsNewsArticleBodySkeletonVisible = true;
+        IsNewsArticleBodyVisible = false;
+    }
+
+    private void ShowNewsArticleError(string message)
+    {
+        IsNewsArticleBodySkeletonVisible = false;
+        IsNewsArticleBodySkeletonFadingOut = false;
+        IsNewsArticleBodyVisible = false;
+        SelectedNewsArticle = null;
+        NewsArticleError = message;
+    }
+
+    private async Task RevealNewsArticleBodyAsync(CancellationToken cancellationToken)
     {
         await Dispatcher.UIThread.InvokeAsync(
-            () => IsNewsArticleBodyVisible = true,
+            () => IsNewsArticleBodySkeletonFadingOut = true,
             DispatcherPriority.Render);
+        await Task.Delay(ArticleBodySkeletonFadeMilliseconds, cancellationToken)
+            .ConfigureAwait(false);
+        await Dispatcher.UIThread.InvokeAsync(() =>
+        {
+            IsNewsArticleBodySkeletonVisible = false;
+            IsNewsArticleBodySkeletonFadingOut = false;
+        }, DispatcherPriority.Render, cancellationToken);
+
+        // Restore the body transition for one frame before starting its reveal
+        await Task.Delay(16, cancellationToken).ConfigureAwait(false);
+        await Dispatcher.UIThread.InvokeAsync(
+            () => IsNewsArticleBodyVisible = true,
+            DispatcherPriority.Render,
+            cancellationToken);
     }
 
     private async Task LoadNewsImagesAsync(

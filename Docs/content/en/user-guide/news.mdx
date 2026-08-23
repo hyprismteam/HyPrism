@@ -15,6 +15,8 @@ Article content supports headings, paragraphs, links, images, inline and block c
 
 ## Caching
 
-Feed metadata and preview images are warmed during launcher startup, so opening the News destination does not initiate feed parsing or large image decoding on the UI thread. Parsed articles and encoded remote images use persistent caches, while bitmap decoding stays on background workers. A skeleton is shown only while uncached article content is being prepared
+Feed metadata and preview images are warmed during launcher startup, so opening the News destination does not initiate feed parsing or large image decoding on the UI thread. A skeleton is shown only while uncached article content is being prepared
+
+Long articles prepare their controls in small background-priority groups that leave time for input and rendering between groups. After the header is available, animated text placeholders fill the article body until the final group is ready. The placeholders fade out completely before the finished text fades in, and the reader then becomes interactive with a stable scrollbar range. Wide-layout article switching keeps the reader mounted throughout this sequence. Each block creates only the controls required by its content type. Images start after the text layout is ready, decode on background workers at reader size, and are released when the article closes. Parsed articles and encoded image files remain available through bounded memory caches and the persistent disk cache
 
 Use **Load more** at the end of the feed to request older entries
