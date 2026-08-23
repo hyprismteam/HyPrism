@@ -1,6 +1,8 @@
 // Copyright (C) 2026 HyPrism Launcher
 // SPDX-License-Identifier: GPL-3.0-only
 
+using System.Net;
+
 namespace HyPrism.Core.Accounts;
 
 internal sealed class DefaultOAuthCallbackPageRenderer : IOAuthCallbackPageRenderer
@@ -14,7 +16,7 @@ internal sealed class DefaultOAuthCallbackPageRenderer : IOAuthCallbackPageRende
     public string Render(bool success, string message)
     {
         var title = success ? "Authorization successful" : "Authorization failed";
-        var encodedMessage = System.Net.WebUtility.HtmlEncode(message);
+        var encodedMessage = WebUtility.HtmlEncode(message);
         var closeHint = success
             ? "<p>You can close this window and return to the launcher</p>"
             : string.Empty;

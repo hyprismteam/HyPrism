@@ -28,26 +28,26 @@ public class Config
     /// </summary>
     [Obsolete("Instance cache is now stored in Instances/instances.json")]
     public List<InstanceInfo>? Instances { get; set; }
-    
+
     /// <summary>
     /// [DEPRECATED] Use SelectedInstanceId instead.
     /// Game branch type. Kept for backwards compatibility during migration.
     /// </summary>
     [Obsolete("Use SelectedInstanceId and Instances instead")]
     public string VersionType { get; set; } = "release";
-    
+
     /// <summary>
     /// [DEPRECATED] Use SelectedInstanceId instead.
     /// Selected version number. Kept for backwards compatibility during migration.
     /// </summary>
     [Obsolete("Use SelectedInstanceId and Instances instead")]
     public int SelectedVersion { get; set; } = 0;
-    
+
     /// <summary>Custom root directory for game instances. Empty string means the default OS-specific path is used.</summary>
     public string InstanceDirectory { get; set; } = "";
     /// <summary>Whether the launcher background music is enabled.</summary>
     public bool MusicEnabled { get; set; } = true;
-    
+
     /// <summary>
     /// If true, the launcher will close after successfully launching the game.
     /// </summary>
@@ -57,12 +57,12 @@ public class Config
     /// If true, Discord announcements will be shown in the launcher.
     /// </summary>
     public bool ShowDiscordAnnouncements { get; set; } = true;
-    
+
     /// <summary>
     /// List of Discord announcement IDs that have been dismissed by the user.
     /// </summary>
-    public List<string> DismissedAnnouncementIds { get; set; } = new();
-    
+    public List<string> DismissedAnnouncementIds { get; set; } = [];
+
     /// <summary>
     /// If true, news will not be fetched or displayed.
     /// </summary>
@@ -73,19 +73,19 @@ public class Config
     /// Changed from "slideshow" to "auto" in v2.0.4.
     /// </summary>
     public string BackgroundMode { get; set; } = "auto";
-    
+
     /// <summary>
     /// Current interface language code (e.g., "en-US", "ru-RU", "de-DE")
     /// </summary>
     public string Language { get; set; } = "en-US";
-    
+
     /// <summary>
     /// If true, local profiles request a session from the configured authentication service.
     /// If false, local profiles use an ephemeral on-device OmniAuth session.
     /// Official profiles always use official Hytale authentication.
     /// </summary>
     public bool OnlineMode { get; set; } = true;
-    
+
     /// <summary>
     /// Authentication service domain used by connected local profiles (e.g., "sessions.sanasol.ws").
     /// </summary>
@@ -106,41 +106,41 @@ public class Config
     /// Absolute path to custom Java executable (java/java.exe).
     /// </summary>
     public string CustomJavaPath { get; set; } = "";
-    
+
     /// <summary>
     /// Last directory used for mod export. Defaults to Desktop.
     /// </summary>
     public string LastExportPath { get; set; } = "";
-    
+
     /// <summary>
     /// If true, show alpha/beta mods in mod search results.
     /// </summary>
     public bool ShowAlphaMods { get; set; } = false;
-    
+
     /// <summary>
     /// Whether the user has completed the initial onboarding flow.
     /// </summary>
     public bool HasCompletedOnboarding { get; set; } = false;
-    
+
     /// <summary>
     /// GPU preference for game launch: "dedicated" (default), "integrated", or "auto".
     /// On laptops with dual GPUs, this controls which GPU the game uses via environment variables.
     /// </summary>
     public string GpuPreference { get; set; } = "dedicated";
-    
+
     /// <summary>
     /// Custom environment variables for game launch in KEY=VALUE format (one per line).
     /// These are applied to the game process and can override default variables.
     /// Example: "SDL_VIDEODRIVER=x11" or "VK_ICD_FILENAMES=/path/to/icd.json"
     /// </summary>
     public string GameEnvironmentVariables { get; set; } = "";
-    
+
     /// <summary>
     /// CurseForge API key for mod manager functionality.
     /// Automatically fetched on first launch if not set.
     /// </summary>
     public string CurseForgeKey { get; set; } = "";
-    
+
     /// <summary>
     /// [DEPRECATED] Mirror selection is now automatic at runtime and this value is ignored.
     /// Kept for reading old configs without JSON parse errors.

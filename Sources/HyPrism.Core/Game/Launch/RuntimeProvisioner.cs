@@ -4,6 +4,7 @@
 using System.Diagnostics;
 using System.IO.Compression;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using HyPrism.Core.Infrastructure;
@@ -18,7 +19,7 @@ namespace HyPrism.Core.Game.Launch;
 /// Uses the official Hytale JRE distribution for maximum compatibility.
 /// On Windows, also ensures the Visual C++ Redistributable is installed
 /// </remarks>
-public class RuntimeProvisioner : IRuntimeProvisioner
+public partial class RuntimeProvisioner : IRuntimeProvisioner
 {
     private const string RequiredJreVersion = "25.0.1_8";
     private const string VCRedistUrl = "https://aka.ms/vs/17/release/vc_redist.x64.exe";
@@ -40,8 +41,12 @@ public class RuntimeProvisioner : IRuntimeProvisioner
     #region JRE Management
 
     /// <inheritdoc/>
-    public async Task EnsureJREInstalledAsync(Action<int, string> progressCallback)
+    public async Task EnsureJREInstalledAsync(
+        Action<int, string> progressCallback,
+        CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         string jreDir = Path.Combine(_appDir, "Jre");
         string javaBin;
 
@@ -60,15 +65,19 @@ public class RuntimeProvisioner : IRuntimeProvisioner
         {
             try
             {
-                string installedVersion = await File.ReadAllTextAsync(versionMarkerPath);
+                string installedVersion = await File.ReadAllTextAsync(versionMarkerPath, cancellationToken);
                 if (installedVersion.Trim() == RequiredJreVersion)
                 {
                     Logger.Info("JRE", $"Java Runtime {RequiredJreVersion} already installed");
-                    EnsureJavaWrapper(javaBin);
+                    await EnsureJavaWrapperAsync(javaBin, cancellationToken);
                     progressCallback(100, "Java Runtime ready");
                     return;
                 }
                 Logger.Warning("JRE", $"Installed JRE version {installedVersion.Trim()} != required {RequiredJreVersion}. Reinstalling...");
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
             }
             catch (Exception ex)
             {
@@ -102,11 +111,13 @@ public class RuntimeProvisioner : IRuntimeProvisioner
         string archiveType = osName == "windows" ? "zip" : "tar.gz";
 
         string? url = null;
-        string? expectedSha256;
+        string? expectedSha256 = null;
         try
         {
             Logger.Info("JRE", "Fetching JRE info from launcher.hytale.com...");
-            var jreInfoResponse = await _httpClient.GetStringAsync("https://launcher.hytale.com/version/release/jre.json");
+            var jreInfoResponse = await _httpClient.GetStringAsync(
+                "https://launcher.hytale.com/version/release/jre.json",
+                cancellationToken);
             var jreInfo = JsonSerializer.Deserialize<JsonElement>(jreInfoResponse);
 
             if (jreInfo.TryGetProperty("download_url", out var downloadUrls) &&
@@ -124,6 +135,10 @@ public class RuntimeProvisioner : IRuntimeProvisioner
                 Logger.Info("JRE", $"Got JRE URL from Hytale launcher: {url}");
             }
         }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             Logger.Warning("JRE", $"Failed to fetch from launcher.hytale.com: {ex.Message}");
@@ -136,7 +151,7 @@ public class RuntimeProvisioner : IRuntimeProvisioner
                 var jreConfigPath = Path.Combine(AppContext.BaseDirectory, "jre.json");
                 if (File.Exists(jreConfigPath))
                 {
-                    var jreConfigJson = await File.ReadAllTextAsync(jreConfigPath);
+                    var jreConfigJson = await File.ReadAllTextAsync(jreConfigPath, cancellationToken);
                     var jreConfig = JsonSerializer.Deserialize<JsonElement>(jreConfigJson);
 
                     if (jreConfig.TryGetProperty("download_url", out var downloadUrls) &&
@@ -154,6 +169,10 @@ public class RuntimeProvisioner : IRuntimeProvisioner
                         Logger.Info("JRE", $"Using JRE URL from local config: {url}");
                     }
                 }
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
             }
             catch (Exception ex)
             {
@@ -175,20 +194,23 @@ public class RuntimeProvisioner : IRuntimeProvisioner
         request.Headers.Add("User-Agent", LauncherUserAgent.Value);
         request.Headers.Add("Accept", "*/*");
 
-        using var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+        using var response = await _httpClient.SendAsync(
+            request,
+            HttpCompletionOption.ResponseHeadersRead,
+            cancellationToken);
         response.EnsureSuccessStatusCode();
 
         var totalBytes = response.Content.Headers.ContentLength ?? -1;
-        using var stream = await response.Content.ReadAsStreamAsync();
+        using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
         using var fileStream = new FileStream(archivePath, FileMode.Create, FileAccess.Write, FileShare.None, 8192);
 
         var buffer = new byte[8192];
         long totalRead = 0;
         int bytesRead;
 
-        while ((bytesRead = await stream.ReadAsync(buffer)) > 0)
+        while ((bytesRead = await stream.ReadAsync(buffer, cancellationToken)) > 0)
         {
-            await fileStream.WriteAsync(buffer.AsMemory(0, bytesRead));
+            await fileStream.WriteAsync(buffer.AsMemory(0, bytesRead), cancellationToken);
             totalRead += bytesRead;
 
             if (totalBytes > 0)
@@ -197,7 +219,20 @@ public class RuntimeProvisioner : IRuntimeProvisioner
                 progressCallback(progress, $"Downloading Java Runtime... {progress}%");
             }
         }
+        await fileStream.FlushAsync(cancellationToken);
         fileStream.Close();
+
+        if (!string.IsNullOrWhiteSpace(expectedSha256))
+        {
+            await using var archiveStream = File.OpenRead(archivePath);
+            var actualSha256 = Convert.ToHexString(
+                await SHA256.HashDataAsync(archiveStream, cancellationToken));
+            if (!actualSha256.Equals(expectedSha256, StringComparison.OrdinalIgnoreCase))
+            {
+                File.Delete(archivePath);
+                throw new InvalidDataException("Downloaded Java Runtime failed SHA-256 verification");
+            }
+        }
 
         progressCallback(85, "Extracting Java Runtime...");
         Logger.Info("JRE", "Extracting Java Runtime...");
@@ -206,7 +241,11 @@ public class RuntimeProvisioner : IRuntimeProvisioner
 
         if (archiveType == "zip")
         {
-            ZipFile.ExtractToDirectory(archivePath, jreDir, true);
+            await ZipFile.ExtractToDirectoryAsync(
+                archivePath,
+                jreDir,
+                overwriteFiles: true,
+                cancellationToken);
         }
         else
         {
@@ -215,8 +254,15 @@ public class RuntimeProvisioner : IRuntimeProvisioner
                 UseShellExecute = false,
                 CreateNoWindow = true
             };
-            var tar = Process.Start(tarProcess);
-            tar?.WaitForExit();
+            using var tar = Process.Start(tarProcess);
+            if (tar is not null)
+            {
+                await tar.WaitForExitAsync(cancellationToken);
+                if (tar.ExitCode != 0)
+                {
+                    throw new InvalidDataException($"Java Runtime extraction failed with exit code {tar.ExitCode}");
+                }
+            }
         }
 
         var entries = Directory.GetDirectories(jreDir);
@@ -253,21 +299,23 @@ public class RuntimeProvisioner : IRuntimeProvisioner
                 UseShellExecute = false,
                 CreateNoWindow = true
             };
-            Process.Start(chmod)?.WaitForExit();
+            using var chmodProcess = Process.Start(chmod);
+            if (chmodProcess is not null)
+                await chmodProcess.WaitForExitAsync(cancellationToken);
         }
 
         try { File.Delete(archivePath); } catch { }
 
         if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {
-            await SetupMacOSJavaSymlinksAsync(jreDir);
+            await SetupMacOSJavaSymlinksAsync(jreDir, cancellationToken);
         }
 
-        EnsureJavaWrapper(javaBin);
+        await EnsureJavaWrapperAsync(javaBin, cancellationToken);
 
         try
         {
-            await File.WriteAllTextAsync(versionMarkerPath, RequiredJreVersion);
+            await File.WriteAllTextAsync(versionMarkerPath, RequiredJreVersion, cancellationToken);
             Logger.Info("JRE", $"Written version marker: {RequiredJreVersion}");
         }
         catch (Exception ex)
@@ -279,7 +327,9 @@ public class RuntimeProvisioner : IRuntimeProvisioner
         Logger.Success("JRE", $"Hytale Java Runtime {RequiredJreVersion} installed successfully");
     }
 
-    private async Task SetupMacOSJavaSymlinksAsync(string jreDir)
+    private async Task SetupMacOSJavaSymlinksAsync(
+        string jreDir,
+        CancellationToken cancellationToken)
     {
         string javaDir = Path.Combine(_appDir, "java");
         string javaHomeBin = Path.Combine(javaDir, "Contents", "Home", "bin");
@@ -300,14 +350,22 @@ public class RuntimeProvisioner : IRuntimeProvisioner
                     UseShellExecute = false,
                     CreateNoWindow = true
                 };
-                Process.Start(lnBin)?.WaitForExit();
+                using var binLinkProcess = Process.Start(lnBin);
+                if (binLinkProcess is not null)
+                    await binLinkProcess.WaitForExitAsync(cancellationToken);
 
                 var lnLib = new ProcessStartInfo("ln", $"-sf \"{Path.Combine(jreDir, "lib")}\" \"{Path.Combine(javaDir, "Contents", "Home", "lib")}\"")
                 {
                     UseShellExecute = false,
                     CreateNoWindow = true
                 };
-                Process.Start(lnLib)?.WaitForExit();
+                using var libLinkProcess = Process.Start(lnLib);
+                if (libLinkProcess is not null)
+                    await libLinkProcess.WaitForExitAsync(cancellationToken);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
             }
             catch (Exception ex)
             {
@@ -316,9 +374,8 @@ public class RuntimeProvisioner : IRuntimeProvisioner
         }
 
         Logger.Info("JRE", "Signing Java Runtime...");
-        RunSilentProcess("xattr", $"-cr \"{jreDir}\"");
-        RunSilentProcess("codesign", $"--force --deep --sign - \"{jreDir}\"");
-        await Task.CompletedTask;
+        await RunSilentProcessAsync("xattr", $"-cr \"{jreDir}\"", cancellationToken);
+        await RunSilentProcessAsync("codesign", $"--force --deep --sign - \"{jreDir}\"", cancellationToken);
     }
 
     /// <inheritdoc/>
@@ -345,7 +402,7 @@ public class RuntimeProvisioner : IRuntimeProvisioner
             await proc.WaitForExitAsync();
 
             var combined = string.IsNullOrWhiteSpace(stdout) ? stderr : stdout + "\n" + stderr;
-            var match = Regex.Match(combined, "version \"?([0-9][^\"\\s]*)");
+            var match = JavaVersionRegex().Match(combined);
             if (match.Success)
             {
                 return ParseJavaMajor(match.Groups[1].Value);
@@ -359,7 +416,7 @@ public class RuntimeProvisioner : IRuntimeProvisioner
         return 0;
     }
 
-    private int ParseJavaMajor(string versionString)
+    private static int ParseJavaMajor(string versionString)
     {
         if (string.IsNullOrWhiteSpace(versionString))
         {
@@ -429,7 +486,9 @@ public class RuntimeProvisioner : IRuntimeProvisioner
 
     private const string WrapperVersion = "v4";
 
-    private void EnsureJavaWrapper(string javaBin)
+    private static async Task EnsureJavaWrapperAsync(
+        string javaBin,
+        CancellationToken cancellationToken)
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
@@ -453,10 +512,14 @@ public class RuntimeProvisioner : IRuntimeProvisioner
                     if (File.Exists(javaBin))
                     {
                         byte[] headBytes = new byte[2];
-                        using (var fs = new FileStream(javaBin, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-                        {
-                            _ = fs.Read(headBytes, 0, 2);
-                        }
+                        await using var fs = new FileStream(
+                            javaBin,
+                            FileMode.Open,
+                            FileAccess.Read,
+                            FileShare.ReadWrite,
+                            bufferSize: 2,
+                            useAsync: true);
+                        _ = await fs.ReadAsync(headBytes, cancellationToken);
 
                         bool looksLikeScript = headBytes[0] == (byte)'#' && headBytes[1] == (byte)'!';
                         if (looksLikeScript)
@@ -480,8 +543,12 @@ public class RuntimeProvisioner : IRuntimeProvisioner
             {
                 try
                 {
-                    if (File.ReadAllText(versionMarker).Trim() == WrapperVersion)
+                    if ((await File.ReadAllTextAsync(versionMarker, cancellationToken)).Trim() == WrapperVersion)
                         return;
+                }
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                {
+                    throw;
                 }
                 catch { }
             }
@@ -506,15 +573,21 @@ public class RuntimeProvisioner : IRuntimeProvisioner
                          "fi\n" +
                          "exec \"$REAL_JAVA\" \"${ARGS[@]}\"\n";
 
-            File.WriteAllText(javaBin, wrapper);
-            File.WriteAllText(versionMarker, WrapperVersion);
+            await File.WriteAllTextAsync(javaBin, wrapper, cancellationToken);
+            await File.WriteAllTextAsync(versionMarker, WrapperVersion, cancellationToken);
             var chmod = new ProcessStartInfo("chmod", $"+x \"{javaBin}\"")
             {
                 UseShellExecute = false,
                 CreateNoWindow = true
             };
-            Process.Start(chmod)?.WaitForExit();
+            using var chmodProcess = Process.Start(chmod);
+            if (chmodProcess is not null)
+                await chmodProcess.WaitForExitAsync(cancellationToken);
             Logger.Info("JRE", $"Java wrapper script installed/updated ({WrapperVersion})");
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
         }
         catch (Exception ex)
         {
@@ -581,8 +654,12 @@ public class RuntimeProvisioner : IRuntimeProvisioner
     /// Ensures Visual C++ Redistributable is installed on Windows.
     /// Downloads and runs the installer if not present
     /// </summary>
-    public async Task EnsureVCRedistInstalledAsync(Action<int, string> progressCallback)
+    public async Task EnsureVCRedistInstalledAsync(
+        Action<int, string> progressCallback,
+        CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
             progressCallback(100, "VC++ not required on this platform");
@@ -604,20 +681,23 @@ public class RuntimeProvisioner : IRuntimeProvisioner
 
         try
         {
-            using var response = await _httpClient.GetAsync(VCRedistUrl, HttpCompletionOption.ResponseHeadersRead);
+            using var response = await _httpClient.GetAsync(
+                VCRedistUrl,
+                HttpCompletionOption.ResponseHeadersRead,
+                cancellationToken);
             response.EnsureSuccessStatusCode();
 
             var totalBytes = response.Content.Headers.ContentLength ?? 0;
-            using var contentStream = await response.Content.ReadAsStreamAsync();
+            using var contentStream = await response.Content.ReadAsStreamAsync(cancellationToken);
             using var fileStream = new FileStream(installerPath, FileMode.Create, FileAccess.Write, FileShare.None, 8192, true);
 
             var buffer = new byte[8192];
             long downloadedBytes = 0;
             int bytesRead;
 
-            while ((bytesRead = await contentStream.ReadAsync(buffer, 0, buffer.Length)) > 0)
+            while ((bytesRead = await contentStream.ReadAsync(buffer, cancellationToken)) > 0)
             {
-                await fileStream.WriteAsync(buffer, 0, bytesRead);
+                await fileStream.WriteAsync(buffer.AsMemory(0, bytesRead), cancellationToken);
                 downloadedBytes += bytesRead;
 
                 if (totalBytes > 0)
@@ -641,7 +721,7 @@ public class RuntimeProvisioner : IRuntimeProvisioner
             using var process = Process.Start(startInfo);
             if (process != null)
             {
-                await process.WaitForExitAsync();
+                await process.WaitForExitAsync(cancellationToken);
 
                 if (process.ExitCode == 0 || process.ExitCode == 1638)
                 {
@@ -663,6 +743,10 @@ public class RuntimeProvisioner : IRuntimeProvisioner
             try { File.Delete(installerPath); }
             catch { }
         }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             Logger.Error("VCRedist", $"Failed to install VC++ Redistributable: {ex.Message}");
@@ -674,7 +758,10 @@ public class RuntimeProvisioner : IRuntimeProvisioner
 
     #region Utilities
 
-    private void RunSilentProcess(string fileName, string arguments)
+    private static async Task RunSilentProcessAsync(
+        string fileName,
+        string arguments,
+        CancellationToken cancellationToken)
     {
         try
         {
@@ -686,14 +773,22 @@ public class RuntimeProvisioner : IRuntimeProvisioner
                 CreateNoWindow = true
             };
 
-            var proc = Process.Start(psi);
-            proc?.WaitForExit();
+            using var process = Process.Start(psi);
+            if (process is not null)
+                await process.WaitForExitAsync(cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
         }
         catch (Exception ex)
         {
             Logger.Warning("Process", $"Failed to run {fileName} {arguments}: {ex.Message}");
         }
     }
+
+    [GeneratedRegex("version \"?([0-9][^\"\\s]*)")]
+    private static partial Regex JavaVersionRegex();
 
     #endregion
 }

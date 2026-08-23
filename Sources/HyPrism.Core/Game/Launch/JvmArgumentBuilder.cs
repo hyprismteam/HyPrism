@@ -11,7 +11,7 @@ namespace HyPrism.Core.Game.Launch;
 /// Provides helpers for building, sanitizing, and applying JVM arguments
 /// to game process start configurations.
 /// </summary>
-public static class JvmArgumentBuilder
+public static partial class JvmArgumentBuilder
 {
     /// <summary>
     /// Reads the maximum JVM heap size (<c>-Xmx</c>) and returns it in megabytes.
@@ -41,12 +41,8 @@ public static class JvmArgumentBuilder
     /// </summary>
     public static string RemoveHeapArguments(string? args)
     {
-        var withoutHeap = Regex.Replace(
-            args ?? string.Empty,
-            @"(?:^|\s)-Xm[sx]\S*",
-            " ",
-            RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-        return Regex.Replace(withoutHeap, @"\s+", " ").Trim();
+        var withoutHeap = HeapArgumentRegex().Replace(args ?? string.Empty, " ");
+        return WhitespaceRegex().Replace(withoutHeap, " ").Trim();
     }
 
     /// <summary>
@@ -55,7 +51,7 @@ public static class JvmArgumentBuilder
     public static bool ContainsHeapArguments(string? args)
         => !string.Equals(
             RemoveHeapArguments(args),
-            Regex.Replace(args ?? string.Empty, @"\s+", " ").Trim(),
+            WhitespaceRegex().Replace(args ?? string.Empty, " ").Trim(),
             StringComparison.Ordinal);
 
     /// <summary>
@@ -68,26 +64,8 @@ public static class JvmArgumentBuilder
     {
         var sanitized = args;
 
-        var blockedPatterns = new[]
-        {
-            @"(?:^|\s)-javaagent:\S+",
-            @"(?:^|\s)-agentlib:\S+",
-            @"(?:^|\s)-agentpath:\S+",
-            @"(?:^|\s)-Xbootclasspath(?::\S+)?",
-            @"(?:^|\s)-jar(?:\s+\S+)?",
-            @"(?:^|\s)-cp(?:\s+\S+)?",
-            @"(?:^|\s)-classpath(?:\s+\S+)?",
-            @"(?:^|\s)--class-path(?:\s+\S+)?",
-            @"(?:^|\s)--module-path(?:\s+\S+)?",
-            @"(?:^|\s)-Djava\.home=\S+",
-        };
-
-        foreach (var pattern in blockedPatterns)
-        {
-            sanitized = Regex.Replace(sanitized, pattern, " ", RegexOptions.IgnoreCase);
-        }
-
-        sanitized = Regex.Replace(sanitized, @"\s+", " ").Trim();
+        sanitized = BlockedArgumentRegex().Replace(sanitized, " ");
+        sanitized = WhitespaceRegex().Replace(sanitized, " ").Trim();
         return sanitized;
     }
 
@@ -170,10 +148,9 @@ USER_JAVA_TOOL_OPTIONS=""{escaped}""
         if (string.IsNullOrWhiteSpace(args))
             return null;
 
-        var match = Regex.Match(
-            args,
-            $@"(?:^|\s)-{flag}(\d+(?:\.\d+)?)([KMG])(?=\s|$)",
-            RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+        var match = flag == "Xmx"
+            ? MaximumHeapValueRegex().Match(args)
+            : InitialHeapValueRegex().Match(args);
         if (!match.Success ||
             !double.TryParse(match.Groups[1].Value, NumberStyles.Float, CultureInfo.InvariantCulture, out var value) ||
             !double.IsFinite(value) ||
@@ -196,14 +173,39 @@ USER_JAVA_TOOL_OPTIONS=""{escaped}""
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(memoryMb);
 
-        var withoutHeap = Regex.Replace(
-            args ?? string.Empty,
-            $@"(?:^|\s)-{flag}\S+",
-            " ",
-            RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-        withoutHeap = Regex.Replace(withoutHeap, @"\s+", " ").Trim();
+        var withoutHeap = (flag == "Xmx"
+            ? MaximumHeapArgumentRegex()
+            : InitialHeapArgumentRegex()).Replace(args ?? string.Empty, " ");
+        withoutHeap = WhitespaceRegex().Replace(withoutHeap, " ").Trim();
 
         var heapArgument = $"-{flag}{memoryMb}M";
         return withoutHeap.Length == 0 ? heapArgument : $"{heapArgument} {withoutHeap}";
     }
+
+    [GeneratedRegex(@"(?:^|\s)-Xm[sx]\S*", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+    private static partial Regex HeapArgumentRegex();
+
+    [GeneratedRegex(
+        @"(?:^|\s)-Xmx(\d+(?:\.\d+)?)([KMG])(?=\s|$)",
+        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+    private static partial Regex MaximumHeapValueRegex();
+
+    [GeneratedRegex(
+        @"(?:^|\s)-Xms(\d+(?:\.\d+)?)([KMG])(?=\s|$)",
+        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+    private static partial Regex InitialHeapValueRegex();
+
+    [GeneratedRegex(@"(?:^|\s)-Xmx\S+", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+    private static partial Regex MaximumHeapArgumentRegex();
+
+    [GeneratedRegex(@"(?:^|\s)-Xms\S+", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+    private static partial Regex InitialHeapArgumentRegex();
+
+    [GeneratedRegex(@"\s+")]
+    private static partial Regex WhitespaceRegex();
+
+    [GeneratedRegex(
+        @"(?:^|\s)(?:-javaagent:\S+|-agentlib:\S+|-agentpath:\S+|-Xbootclasspath(?::\S+)?|-jar(?:\s+\S+)?|-cp(?:\s+\S+)?|-classpath(?:\s+\S+)?|--class-path(?:\s+\S+)?|--module-path(?:\s+\S+)?|-Djava\.home=\S+)",
+        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+    private static partial Regex BlockedArgumentRegex();
 }

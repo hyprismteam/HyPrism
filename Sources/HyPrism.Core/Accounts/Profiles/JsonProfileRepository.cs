@@ -1,6 +1,7 @@
 // Copyright (C) 2026 HyPrism Launcher
 // SPDX-License-Identifier: GPL-3.0-only
 
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using HyPrism.Core.Models;
 using HyPrism.Core.Infrastructure;
@@ -58,7 +59,7 @@ public class JsonProfileRepository : IProfileRepository
     {
         PropertyNameCaseInsensitive = true,
         WriteIndented = true,
-        Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
     };
 
     #endregion
@@ -76,7 +77,7 @@ public class JsonProfileRepository : IProfileRepository
         {
             try
             {
-                return JsonSerializer.Deserialize<List<Profile>>(File.ReadAllText(path), _profileJsonOpts) ?? new();
+                return JsonSerializer.Deserialize<List<Profile>>(File.ReadAllText(path), _profileJsonOpts) ?? [];
             }
             catch (Exception ex)
             {
@@ -84,7 +85,7 @@ public class JsonProfileRepository : IProfileRepository
             }
         }
 
-        return new List<Profile>();
+        return [];
     }
 
     /// <summary>Saves the profile list to profiles.json</summary>
@@ -123,7 +124,6 @@ public class JsonProfileRepository : IProfileRepository
 
         var profiles = LoadProfilesFromCache();
 
-        // Clean up any null/empty profiles
         var valid = profiles
             .Where(p => !string.IsNullOrWhiteSpace(p.Name) && !string.IsNullOrWhiteSpace(p.UUID))
             .ToList();
@@ -168,7 +168,7 @@ public class JsonProfileRepository : IProfileRepository
 
         try
         {
-            var profiles = LoadProfilesFromCache(); // also triggers config migration
+            var profiles = LoadProfilesFromCache();
 
             bool changed = false;
             foreach (var profile in profiles)
@@ -208,7 +208,6 @@ public class JsonProfileRepository : IProfileRepository
                 return null;
             }
 
-            // Validate name length (1-16 characters)
             var trimmedName = name.Trim();
             if (trimmedName.Length < 1 || trimmedName.Length > 16)
             {
@@ -216,7 +215,6 @@ public class JsonProfileRepository : IProfileRepository
                 return null;
             }
 
-            // Validate UUID format
             if (!Guid.TryParse(uuid.Trim(), out var parsedUuid))
             {
                 Logger.Warning("Profile", $"Invalid UUID format: {uuid}");
@@ -235,7 +233,6 @@ public class JsonProfileRepository : IProfileRepository
             var profiles = LoadProfilesFromCache();
             profiles.Add(profile);
 
-            // Auto-activate the first profile created, or if none is selected yet
             var config = _configStore.Configuration;
             if (profiles.Count == 1 || string.IsNullOrEmpty(config.SelectedProfileId))
             {
@@ -248,7 +245,6 @@ public class JsonProfileRepository : IProfileRepository
             Logger.Info("Profile", $"Profile added to list. Total profiles: {profiles.Count}");
             Logger.Info("Profile", $"Config saved to disk");
 
-            // Save profile to disk folder
             SaveProfileToDisk(profile);
 
             Logger.Success("Profile", $"Created profile '{trimmedName}' with UUID {parsedUuid}");
@@ -279,7 +275,6 @@ public class JsonProfileRepository : IProfileRepository
             profiles.Remove(profile);
             SaveProfilesToCache(profiles);
 
-            // If the deleted profile was active, clear selection
             var config = _configStore.Configuration;
             if (config.SelectedProfileId == profileId)
             {
@@ -287,7 +282,6 @@ public class JsonProfileRepository : IProfileRepository
             }
             _configStore.SaveConfig();
 
-            // Delete profile folder from disk
             DeleteProfileFromDisk(profileId, profile.Name);
 
             Logger.Success("Profile", $"Deleted profile '{profile.Name}'");
@@ -312,18 +306,15 @@ public class JsonProfileRepository : IProfileRepository
             if (profile == null)
                 return false;
 
-            // Backup current profile's skin data before switching
             var currentUuid = _identity.GetCurrentUuid();
             if (!string.IsNullOrWhiteSpace(currentUuid))
                 _skins.BackupProfileSkinData(currentUuid);
 
-            // Restore skin data for the incoming profile
             _skins.RestoreProfileSkinData(profile);
 
             var config = _configStore.Configuration;
             config.SelectedProfileId = profile.Id;
 
-            // Auth domain handling
             if (profile.IsOfficial)
             {
                 config.AuthDomain = "sessions.hytale.com";
@@ -367,7 +358,6 @@ public class JsonProfileRepository : IProfileRepository
 
             SaveProfilesToCache(profiles);
 
-            // Update profile on disk
             UpdateProfileOnDisk(profile);
 
             Logger.Success("Profile", $"Updated profile '{profile.Name}'");
@@ -445,7 +435,6 @@ public class JsonProfileRepository : IProfileRepository
             SaveProfilesToCache(allProfiles);
             SaveProfileToDisk(newProfile);
 
-            // Copy source profile's mods folder to new profile
             try
             {
                 var sourceModsPath = GetProfileModsFolder(sourceProfile);
@@ -453,7 +442,7 @@ public class JsonProfileRepository : IProfileRepository
 
                 if (Directory.Exists(sourceModsPath))
                 {
-                    CopyDirectory(sourceModsPath, destModsPath);
+                    LauncherUtilities.CopyDirectory(sourceModsPath, destModsPath);
                     Logger.Info("Profile", $"Copied mods from '{sourceProfile.Name}' to '{newProfile.Name}'");
                 }
             }
@@ -462,7 +451,6 @@ public class JsonProfileRepository : IProfileRepository
                 Logger.Warning("Profile", $"Failed to copy mods during duplication: {ex.Message}");
             }
 
-            // Copy UserData from source profile if it exists
             try
             {
                 var versionPath = TryGetCurrentExistingInstancePath();
@@ -481,10 +469,9 @@ public class JsonProfileRepository : IProfileRepository
                         var destProfileFolder = LauncherUtilities.GetProfileFolderPath(_appDir, newProfile);
                         var destUserDataBackup = Path.Combine(destProfileFolder, "UserData");
 
-                        // If source profile has a UserData backup, copy it
                         if (Directory.Exists(sourceUserDataBackup))
                         {
-                            CopyDirectory(sourceUserDataBackup, destUserDataBackup);
+                            LauncherUtilities.CopyDirectory(sourceUserDataBackup, destUserDataBackup);
                             Logger.Info("Profile", $"Copied UserData from '{sourceProfile.Name}' to '{newProfile.Name}'");
                         }
                     }
@@ -495,20 +482,17 @@ public class JsonProfileRepository : IProfileRepository
                 Logger.Warning("Profile", $"Failed to copy UserData during duplication: {ex.Message}");
             }
 
-            // Copy skin/avatar data
             try
             {
                 var sourceProfileDir = LauncherUtilities.GetProfileFolderPath(_appDir, sourceProfile);
                 var destProfileDir = LauncherUtilities.GetProfileFolderPath(_appDir, newProfile);
 
-                // Copy skin.png if exists
                 var sourceSkin = Path.Combine(sourceProfileDir, "skin.png");
                 if (File.Exists(sourceSkin))
                 {
                     File.Copy(sourceSkin, Path.Combine(destProfileDir, "skin.png"), true);
                 }
 
-                // Copy avatar.png if exists
                 var sourceAvatar = Path.Combine(sourceProfileDir, "avatar.png");
                 if (File.Exists(sourceAvatar))
                 {
@@ -560,10 +544,8 @@ public class JsonProfileRepository : IProfileRepository
             allProfiles.Add(newProfile);
             SaveProfilesToCache(allProfiles);
 
-            // Save profile to disk
             SaveProfileToDisk(newProfile);
 
-            // Copy source profile's mods folder to new profile
             try
             {
                 var sourceModsPath = GetProfileModsFolder(sourceProfile);
@@ -571,7 +553,7 @@ public class JsonProfileRepository : IProfileRepository
 
                 if (Directory.Exists(sourceModsPath))
                 {
-                    CopyDirectory(sourceModsPath, destModsPath);
+                    LauncherUtilities.CopyDirectory(sourceModsPath, destModsPath);
                     Logger.Info("Profile", $"Copied mods from '{sourceProfile.Name}' to '{newProfile.Name}'");
                 }
             }
@@ -580,20 +562,17 @@ public class JsonProfileRepository : IProfileRepository
                 Logger.Warning("Profile", $"Failed to copy mods during duplication: {ex.Message}");
             }
 
-            // Copy skin/avatar data (but NOT UserData)
             try
             {
                 var sourceProfileDir = LauncherUtilities.GetProfileFolderPath(_appDir, sourceProfile);
                 var destProfileDir = LauncherUtilities.GetProfileFolderPath(_appDir, newProfile);
 
-                // Copy skin.png if exists
                 var sourceSkin = Path.Combine(sourceProfileDir, "skin.png");
                 if (File.Exists(sourceSkin))
                 {
                     File.Copy(sourceSkin, Path.Combine(destProfileDir, "skin.png"), true);
                 }
 
-                // Copy avatar.png if exists
                 var sourceAvatar = Path.Combine(sourceProfileDir, "avatar.png");
                 if (File.Exists(sourceAvatar))
                 {
@@ -638,7 +617,6 @@ public class JsonProfileRepository : IProfileRepository
                 Directory.CreateDirectory(profileDir);
                 Logger.Info("Profile", $"Created profile folder: {profileDir}");
 
-                // Write profile info to the folder so it always has matching data
                 try
                 {
                     var profileInfo = new
@@ -648,11 +626,7 @@ public class JsonProfileRepository : IProfileRepository
                         createdAt = DateTime.UtcNow.ToString("o")
                     };
                     var infoPath = Path.Combine(profileDir, "profile.json");
-                    var json = System.Text.Json.JsonSerializer.Serialize(profileInfo, new System.Text.Json.JsonSerializerOptions
-                    {
-                        WriteIndented = true,
-                        Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
-                    });
+                    var json = JsonSerializer.Serialize(profileInfo, JsonDefaults.IndentedUnsafeRelaxed);
                     File.WriteAllText(infoPath, json);
                     Logger.Info("Profile", $"Created profile info file: {infoPath}");
                 }
@@ -684,8 +658,7 @@ public class JsonProfileRepository : IProfileRepository
                 return;
             }
 
-            // Backward compatibility: if old builds created profile symlink/junction,
-            // migrate it back into the real instance UserData/Mods directory.
+            // Older builds linked Mods into profile folders; migrate those links back into UserData
             EnsureInstanceModsDirectory(profile);
         }
         catch (Exception ex)
@@ -733,7 +706,6 @@ public class JsonProfileRepository : IProfileRepository
 
             Directory.CreateDirectory(userDataPath);
 
-            // Handle the case where Hytale created a file named "Mods" instead of a directory
             if (File.Exists(gameModsPath))
             {
                 Logger.Warning("Mods",
@@ -747,7 +719,6 @@ public class JsonProfileRepository : IProfileRepository
                 return;
             }
 
-            // Detect legacy symlink/junction created by older builds
             var dirInfo = new DirectoryInfo(gameModsPath);
             bool isSymlink = dirInfo.Attributes.HasFlag(FileAttributes.ReparsePoint);
             if (!isSymlink)
@@ -762,7 +733,7 @@ public class JsonProfileRepository : IProfileRepository
             }
             catch
             {
-                // ResolveLinkTarget may fail for some junctions; continue best-effort
+                // Junction target resolution is platform-dependent
             }
 
             var migrationSources = new List<string>();
@@ -795,14 +766,14 @@ public class JsonProfileRepository : IProfileRepository
             Directory.CreateDirectory(gameModsPath);
 
             foreach (var source in migrationSources)
-            if (Directory.Exists(source))
-            {
-                foreach (var file in Directory.GetFiles(source))
+                if (Directory.Exists(source))
                 {
-                    var destFile = Path.Combine(gameModsPath, Path.GetFileName(file));
-                    File.Copy(file, destFile, true);
+                    foreach (var file in Directory.GetFiles(source))
+                    {
+                        var destFile = Path.Combine(gameModsPath, Path.GetFileName(file));
+                        File.Copy(file, destFile, true);
+                    }
                 }
-            }
 
             Logger.Success("Mods", $"Using instance-local mods directory: {gameModsPath}");
         }
@@ -822,7 +793,7 @@ public class JsonProfileRepository : IProfileRepository
                 return path;
         }
 
-        // Fall back to any installed instance when nothing is explicitly selected.
+        // Profile data remains instance-scoped when no instance is selected
         return _instances.GetInstalledInstances().FirstOrDefault()?.Path;
     }
 
@@ -836,11 +807,9 @@ public class JsonProfileRepository : IProfileRepository
             var profileDir = LauncherUtilities.GetProfileFolderPath(_appDir, profile);
             Directory.CreateDirectory(profileDir);
 
-            // Create the Mods folder for this profile
             var modsDir = Path.Combine(profileDir, "Mods");
             Directory.CreateDirectory(modsDir);
 
-            // Create the shell script with profile info
             var shPath = Path.Combine(profileDir, $"{profile.Name}.sh");
             var shContent = $@"#!/bin/bash
 # HyPrism Profile - {profile.Name}
@@ -855,7 +824,6 @@ export HYPRISM_PROFILE_ID=""{profile.Id}""
 ";
             File.WriteAllText(shPath, shContent);
 
-            // Copy skin and avatar from game cache to profile folder
             _skins.CopyProfileSkinData(profile.UUID, profileDir);
 
             Logger.Info("Profile", $"Saved profile to disk: {profileDir}");
@@ -881,13 +849,11 @@ export HYPRISM_PROFILE_ID=""{profile.Id}""
                 return;
             }
 
-            // Remove old .sh files
             foreach (var oldSh in Directory.GetFiles(profileDir, "*.sh"))
             {
                 File.Delete(oldSh);
             }
 
-            // Create new .sh file
             var shPath = Path.Combine(profileDir, $"{profile.Name}.sh");
             var shContent = $@"#!/bin/bash
 # HyPrism Profile - {profile.Name}
@@ -920,7 +886,6 @@ export HYPRISM_PROFILE_ID=""{profile.Id}""
         {
             var profilesDir = GetProfilesFolder();
 
-            // Try to delete by name first if provided
             if (!string.IsNullOrEmpty(profileName))
             {
                 var safeName = LauncherUtilities.SanitizeFileName(profileName);
@@ -932,7 +897,6 @@ export HYPRISM_PROFILE_ID=""{profile.Id}""
                 }
             }
 
-            // Fallback to ID-based folder (for migration)
             var profileDir = Path.Combine(profilesDir, profileId);
             if (Directory.Exists(profileDir))
             {
@@ -946,12 +910,5 @@ export HYPRISM_PROFILE_ID=""{profile.Id}""
         }
     }
 
-    /// <summary>
-    /// Recursively copies a directory and all its contents
-    /// </summary>
-    private void CopyDirectory(string sourceDir, string destDir)
-    {
-        LauncherUtilities.CopyDirectory(sourceDir, destDir);
-    }
     #endregion
 }

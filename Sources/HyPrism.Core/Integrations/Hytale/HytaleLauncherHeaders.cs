@@ -113,7 +113,6 @@ internal static class HytaleLauncherHeaders
         }
         catch
         {
-            // ignored
         }
 
         return null;

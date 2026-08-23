@@ -95,7 +95,6 @@ internal sealed class CurseForgeClient
                 $"Get file info returned {fileResponse.StatusCode} for mod {modId} file {fileId}, falling back to latest file");
         }
 
-        // Fetch the most recent file for this mod.
         var filesEndpoint = $"/v1/mods/{modId}/files?pageSize=1";
         using var filesRequest = CreateRequest(HttpMethod.Get, filesEndpoint);
         using var filesResponse = await _http.SendAsync(filesRequest);

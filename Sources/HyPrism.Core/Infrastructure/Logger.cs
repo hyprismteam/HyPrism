@@ -11,10 +11,10 @@ namespace HyPrism.Core.Infrastructure;
 /// </summary>
 public static class Logger
 {
-    private static readonly object _lock = new();
+    private static readonly Lock _lock = new();
     private static readonly Queue<string> _logBuffer = new();
     private const int MaxLogEntries = 100;
-    
+
     /// <summary>
     /// The original stdout TextWriter, captured before another component replaces
     /// Console.Out. Logger writes directly to this stream so output remains visible
@@ -64,7 +64,7 @@ public static class Logger
             FilePath = null;
         }
     }
-    
+
     /// <summary>
     /// Saves a reference to the current Console.Out so that Logger can continue
     /// writing colored output after the stream is replaced.
@@ -73,7 +73,7 @@ public static class Logger
     {
         _originalOut = Console.Out;
     }
-    
+
     /// <summary>
     /// Logs an informational message.
     /// </summary>
@@ -89,7 +89,7 @@ public static class Logger
             WriteToConsole("INF", category, message, ConsoleColor.Gray);
         }
     }
-    
+
     /// <summary>
     /// Logs a success message (displayed in green in console).
     /// </summary>
@@ -105,7 +105,7 @@ public static class Logger
             WriteToConsole("SUC", category, message, ConsoleColor.Green);
         }
     }
-    
+
     /// <summary>
     /// Logs a warning message (displayed in yellow in console).
     /// </summary>
@@ -121,7 +121,7 @@ public static class Logger
             WriteToConsole("WRN", category, message, ConsoleColor.Yellow);
         }
     }
-    
+
     /// <summary>
     /// Logs an error message (displayed in red in console).
     /// </summary>
@@ -137,7 +137,7 @@ public static class Logger
             WriteToConsole("ERR", category, message, ConsoleColor.Red);
         }
     }
-    
+
     /// <summary>
     /// Logs a debug message. The file sink keeps debug records in every build.
     /// </summary>
@@ -149,7 +149,7 @@ public static class Logger
         WriteToConsole("DBG", category, message, ConsoleColor.DarkGray);
         AddToBuffer("DBG", category, message);
     }
-    
+
     /// <summary>
     /// Retrieves the most recent log entries from the in-memory buffer.
     /// </summary>
@@ -169,7 +169,7 @@ public static class Logger
             return result;
         }
     }
-    
+
     /// <summary>
     /// Writes a formatted log entry to the console with color coding.
     /// </summary>
@@ -181,20 +181,20 @@ public static class Logger
     {
         lock (_lock)
         {
-            try 
+            try
             {
                 var timestamp = DateTime.Now.ToString("HH:mm:ss");
-                
+
                 _originalOut.Write($"{timestamp} ");
-                
+
                 var originalColor = Console.ForegroundColor;
                 Console.ForegroundColor = color;
                 _originalOut.Write(level);
                 Console.ForegroundColor = originalColor;
-                
+
                 _originalOut.WriteLine($" {category}: {message}");
             }
-            catch { /* Ignore */ }
+            catch { }
         }
     }
 
@@ -210,7 +210,7 @@ public static class Logger
         {
             var timestamp = DateTime.Now.ToString("HH:mm:ss");
             var logEntry = $"{timestamp} | {level} | {category} | {message}";
-            
+
             _logBuffer.Enqueue(logEntry);
             while (_logBuffer.Count > MaxLogEntries)
             {
@@ -230,18 +230,19 @@ public static class Logger
     {
         lock (_lock)
         {
-            try {
+            try
+            {
                 _originalOut.Write($"\r[{category}] {message,-40} [{ProgressBar(percent, 20)}] {percent,3}%");
                 if (percent >= 100)
                 {
                     _originalOut.WriteLine();
                 }
             }
-            catch { /* Ignore */ }
+            catch { }
         }
     }
 
-    
+
     /// <summary>
     /// Generates an ASCII progress bar string.
     /// </summary>

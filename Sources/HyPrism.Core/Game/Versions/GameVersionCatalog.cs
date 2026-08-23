@@ -25,14 +25,12 @@ public class GameVersionCatalog : IGameVersionCatalog
     private readonly HttpClient _httpClient;
     private readonly IMirrorCatalog? _mirrorCatalog;
     private readonly List<IVersionSource> _sources;
-    private readonly object _sourceSync = new();
+    private readonly Lock _sourceSync = new();
     private readonly SemaphoreSlim _versionFetchLock = new(1, 1);
 
-    // Keep direct references for source-specific operations
     private readonly HytaleVersionSource? _hytaleSource;
-    private readonly List<IVersionSource> _mirrorSources = new();
+    private readonly List<IVersionSource> _mirrorSources = [];
 
-    // Selected mirror for downloads (set after speed test)
     private volatile IVersionSource? _selectedMirror;
 
     /// <summary>
@@ -56,8 +54,7 @@ public class GameVersionCatalog : IGameVersionCatalog
         _httpClient = httpClient;
         _mirrorCatalog = mirrorCatalog;
 
-        // Build source list
-        _sources = new List<IVersionSource>();
+        _sources = [];
 
         if (hytaleSource != null)
         {
@@ -75,10 +72,8 @@ public class GameVersionCatalog : IGameVersionCatalog
             }
         }
 
-        // Sort by priority
         _sources.Sort((a, b) => a.Priority.CompareTo(b.Priority));
 
-        // Initialise cache (must be done after _mirrorSources is populated)
         _cache = new VersionCache(appDir, GetMirrorSourceIdsSnapshot);
 
         foreach (var source in GetSourcesSnapshot())
@@ -100,7 +95,6 @@ public class GameVersionCatalog : IGameVersionCatalog
         string arch = LauncherUtilities.GetArch();
         var maxAge = TimeSpan.FromMinutes(15);
 
-        // Fast path: return from cache if this specific branch is fresh
         var cachedSnapshot = _cache.TryGet(osName, arch);
         if (cachedSnapshot != null && _cache.IsBranchFresh(cachedSnapshot, normalizedBranch, maxAge))
         {
@@ -112,11 +106,10 @@ public class GameVersionCatalog : IGameVersionCatalog
             }
         }
 
-        // Serialize network fetches so parallel callers don't duplicate work
+        // Prevent duplicate requests; the cache must be checked again after acquiring the lock
         await _versionFetchLock.WaitAsync(ct);
         try
         {
-            // Re-check cache: another caller may have populated it while we waited
             cachedSnapshot = _cache.TryGet(osName, arch);
             if (cachedSnapshot != null && _cache.IsBranchFresh(cachedSnapshot, normalizedBranch, maxAge))
             {
@@ -137,7 +130,6 @@ public class GameVersionCatalog : IGameVersionCatalog
 
     private async Task<List<int>> FetchVersionListCoreAsync(string normalizedBranch, string osName, string arch, CancellationToken ct)
     {
-        // Load existing cache or create new
         var snapshot = _cache.Load() ?? new VersionsCacheSnapshot
         {
             Os = osName,
@@ -151,7 +143,6 @@ public class GameVersionCatalog : IGameVersionCatalog
         snapshot.Arch = arch;
         snapshot.FetchedAtUtc = DateTime.UtcNow;
 
-        // Load existing patch cache (same structure, saved alongside versions)
         var patchSnapshot = _cache.LoadPatches() ?? new PatchesCacheSnapshot
         {
             Os = osName,
@@ -163,7 +154,6 @@ public class GameVersionCatalog : IGameVersionCatalog
         patchSnapshot.Arch = arch;
         patchSnapshot.FetchedAtUtc = DateTime.UtcNow;
 
-        // Fetch versions AND patches from ALL sources
         foreach (var source in GetSourcesSnapshot())
         {
             if (!source.IsAvailable)
@@ -178,7 +168,6 @@ public class GameVersionCatalog : IGameVersionCatalog
                 var versions = await source.GetVersionsAsync(osName, arch, normalizedBranch, ct);
                 if (versions.Count > 0)
                 {
-                    // Store in appropriate cache based on source type
                     if (source.Type == VersionSourceType.Official)
                     {
                         snapshot.Data.Hytale ??= new OfficialSourceCache();
@@ -186,7 +175,6 @@ public class GameVersionCatalog : IGameVersionCatalog
                     }
                     else
                     {
-                        // Mirror source
                         var mirrorCache = snapshot.Data.Mirrors.FirstOrDefault(m => m.MirrorId == source.SourceId);
                         if (mirrorCache == null)
                         {
@@ -208,7 +196,6 @@ public class GameVersionCatalog : IGameVersionCatalog
                 Logger.Warning("Version", $"{source.SourceId} fetch failed for {normalizedBranch}: {ex.Message}");
             }
 
-            // Fetch patch chain from the same source (runs in sync, no fire-and-forget)
             try
             {
                 var patchSteps = await source.GetPatchChainAsync(osName, arch, normalizedBranch, ct);
@@ -216,7 +203,7 @@ public class GameVersionCatalog : IGameVersionCatalog
                 {
                     if (source.Type == VersionSourceType.Official)
                     {
-                        patchSnapshot.Data.Hytale ??= new Dictionary<string, List<CachedPatchStep>>();
+                        patchSnapshot.Data.Hytale ??= [];
                         patchSnapshot.Data.Hytale[normalizedBranch] = patchSteps;
                     }
                     else
@@ -239,15 +226,12 @@ public class GameVersionCatalog : IGameVersionCatalog
             }
         }
 
-        // Update per-branch fetch timestamp
         snapshot.BranchFetchedAt[normalizedBranch] = DateTime.UtcNow;
 
-        // Save both caches together
         _cache.Save(snapshot);
         _cache.SavePatches(patchSnapshot);
         _cache.Set(snapshot);
 
-        // Return merged version list
         var result = GetMergedVersionList(snapshot, normalizedBranch);
         Logger.Info("Version", $"Total versions for {normalizedBranch}: [{string.Join(", ", result)}]");
         return result;
@@ -256,11 +240,10 @@ public class GameVersionCatalog : IGameVersionCatalog
     /// <summary>
     /// Gets merged version list from cache, preferring official source for duplicates
     /// </summary>
-    private List<int> GetMergedVersionList(VersionsCacheSnapshot snapshot, string branch)
+    private static List<int> GetMergedVersionList(VersionsCacheSnapshot snapshot, string branch)
     {
         var allVersions = new Dictionary<int, VersionSource>();
 
-        // Add mirror versions first
         foreach (var mirror in snapshot.Data.Mirrors)
         {
             if (mirror.Branches.TryGetValue(branch, out var mirrorVersions))
@@ -272,7 +255,6 @@ public class GameVersionCatalog : IGameVersionCatalog
             }
         }
 
-        // Add/override with official versions (they take priority)
         if (snapshot.Data.Hytale?.Branches.TryGetValue(branch, out var officialVersions) == true)
         {
             foreach (var v in officialVersions)
@@ -281,13 +263,13 @@ public class GameVersionCatalog : IGameVersionCatalog
             }
         }
 
-        return allVersions.Keys.OrderByDescending(v => v).ToList();
+        return [.. allVersions.Keys.OrderByDescending(v => v)];
     }
 
     /// <inheritdoc/>
     public bool TryGetCachedVersions(string branch, TimeSpan maxAge, out List<int> versions)
     {
-        versions = new List<int>();
+        versions = [];
         var normalizedBranch = NormalizeBranch(branch);
         string osName = LauncherUtilities.GetOS();
         string arch = LauncherUtilities.GetArch();
@@ -309,7 +291,6 @@ public class GameVersionCatalog : IGameVersionCatalog
     {
         var normalizedBranch = NormalizeBranch(branch);
 
-        // Ensure we have fetched the versions
         await GetVersionListAsync(normalizedBranch, ct);
 
         var snapshot = _cache.Current ?? _cache.Load();
@@ -328,10 +309,8 @@ public class GameVersionCatalog : IGameVersionCatalog
             return response;
         }
 
-        // Build version info list with proper sources
         var versionMap = new Dictionary<int, VersionInfo>();
 
-        // Add mirror versions first
         foreach (var mirror in snapshot.Data.Mirrors)
         {
             if (mirror.Branches.TryGetValue(normalizedBranch, out var mirrorVersions))
@@ -348,7 +327,6 @@ public class GameVersionCatalog : IGameVersionCatalog
             }
         }
 
-        // Override with official versions (they take priority)
         if (snapshot.Data.Hytale?.Branches.TryGetValue(normalizedBranch, out var officialVersions) == true)
         {
             foreach (var v in officialVersions)
@@ -362,7 +340,6 @@ public class GameVersionCatalog : IGameVersionCatalog
             }
         }
 
-        // Sort and mark latest
         var sortedVersions = versionMap.Values.OrderByDescending(v => v.Version).ToList();
         if (sortedVersions.Count > 0)
         {
@@ -400,7 +377,6 @@ public class GameVersionCatalog : IGameVersionCatalog
 
         if (snapshot == null) return null;
 
-        // Check official source first
         if (snapshot.Data.Hytale?.Branches.TryGetValue(normalizedBranch, out var officialVersions) == true)
         {
             var entry = officialVersions.FirstOrDefault(v => v.Version == version);
@@ -410,7 +386,6 @@ public class GameVersionCatalog : IGameVersionCatalog
             }
         }
 
-        // Fallback to mirror
         foreach (var mirror in snapshot.Data.Mirrors)
         {
             if (mirror.Branches.TryGetValue(normalizedBranch, out var mirrorVersions))
@@ -436,7 +411,6 @@ public class GameVersionCatalog : IGameVersionCatalog
 
         if (snapshot == null) return null;
 
-        // Check official source first
         if (snapshot.Data.Hytale?.Branches.TryGetValue(normalizedBranch, out var officialVersions) == true)
         {
             var entry = officialVersions.FirstOrDefault(v => v.Version == version);
@@ -446,7 +420,6 @@ public class GameVersionCatalog : IGameVersionCatalog
             }
         }
 
-        // Fallback to mirror
         foreach (var mirror in snapshot.Data.Mirrors)
         {
             if (mirror.Branches.TryGetValue(normalizedBranch, out var mirrorVersions))
@@ -467,7 +440,6 @@ public class GameVersionCatalog : IGameVersionCatalog
     {
         var normalizedBranch = NormalizeBranch(branch);
 
-        // 1. Check cache first
         var url = GetVersionDownloadUrl(normalizedBranch, version);
         if (!string.IsNullOrEmpty(url))
         {
@@ -475,11 +447,9 @@ public class GameVersionCatalog : IGameVersionCatalog
             return url;
         }
 
-        // 2. Cache miss - refresh from all sources
         Logger.Info("Version", $"No cached URL for {normalizedBranch} v{version}, refreshing cache...");
         await ForceRefreshCacheAsync(normalizedBranch, ct);
 
-        // 3. Try again after refresh
         url = GetVersionDownloadUrl(normalizedBranch, version);
         if (!string.IsNullOrEmpty(url))
         {
@@ -487,7 +457,6 @@ public class GameVersionCatalog : IGameVersionCatalog
             return url;
         }
 
-        // 4. Still no URL - version doesn't exist in any source
         throw new Exception($"No download URL available for {normalizedBranch} v{version}. " +
             "The version may not exist or all sources are unavailable.");
     }
@@ -497,7 +466,6 @@ public class GameVersionCatalog : IGameVersionCatalog
     {
         var normalizedBranch = NormalizeBranch(branch);
 
-        // 1. Check cache first
         var entry = GetVersionEntry(normalizedBranch, version);
         if (entry != null && !string.IsNullOrEmpty(entry.PwrUrl))
         {
@@ -505,11 +473,9 @@ public class GameVersionCatalog : IGameVersionCatalog
             return entry;
         }
 
-        // 2. Cache miss - refresh from all sources
         Logger.Info("Version", $"No cached entry for {normalizedBranch} v{version}, refreshing cache...");
         await ForceRefreshCacheAsync(normalizedBranch, ct);
 
-        // 3. Try again after refresh
         entry = GetVersionEntry(normalizedBranch, version);
         if (entry != null && !string.IsNullOrEmpty(entry.PwrUrl))
         {
@@ -517,7 +483,6 @@ public class GameVersionCatalog : IGameVersionCatalog
             return entry;
         }
 
-        // 4. Still no entry - version doesn't exist in any source
         throw new Exception($"Version {normalizedBranch} v{version} not found in any source. " +
             "The version may not exist or all sources are unavailable.");
     }
@@ -529,7 +494,6 @@ public class GameVersionCatalog : IGameVersionCatalog
         string osName = LauncherUtilities.GetOS();
         string arch = LauncherUtilities.GetArch();
 
-        // Clear memory cache to force re-fetch
         _cache.Invalidate();
 
         await _versionFetchLock.WaitAsync(ct);
@@ -558,7 +522,6 @@ public class GameVersionCatalog : IGameVersionCatalog
 
         bool modified = false;
 
-        // Remove from official source if applicable
         if (sourceId == null || sourceId.Equals("official", StringComparison.OrdinalIgnoreCase))
         {
             if (snapshot.Data.Hytale?.Branches.TryGetValue(normalizedBranch, out var officialVersions) == true)
@@ -572,7 +535,6 @@ public class GameVersionCatalog : IGameVersionCatalog
             }
         }
 
-        // Remove from mirror sources
         foreach (var mirror in snapshot.Data.Mirrors)
         {
             if (sourceId != null && !mirror.MirrorId.Equals(sourceId, StringComparison.OrdinalIgnoreCase))
@@ -589,7 +551,6 @@ public class GameVersionCatalog : IGameVersionCatalog
             }
         }
 
-        // Also invalidate from patch cache
         var patchSnapshot = _cache.LoadPatches();
         if (patchSnapshot != null)
         {
@@ -871,13 +832,11 @@ public class GameVersionCatalog : IGameVersionCatalog
         var normalizedBranch = NormalizeBranch(branch);
         var snapshot = _cache.Current ?? _cache.Load();
 
-        // Official is "down" if we don't have official data for this branch
         return snapshot?.Data.Hytale?.Branches.ContainsKey(normalizedBranch) != true
             || snapshot.Data.Hytale.Branches[normalizedBranch].Count == 0;
     }
 
-    // Utility methods
-    private string NormalizeBranch(string branch)
+    private static string NormalizeBranch(string branch)
     {
         return branch.ToLowerInvariant() switch
         {
@@ -1026,9 +985,7 @@ public class GameVersionCatalog : IGameVersionCatalog
     /// </summary>
     public List<(string Id, string Name)> GetAvailableMirrors()
     {
-        return GetMirrorSourcesSnapshot()
-            .Select(m => (m.SourceId, m.GetCachedSpeedTest()?.MirrorName ?? m.SourceId))
-            .ToList();
+        return [.. GetMirrorSourcesSnapshot().Select(m => (m.SourceId, m.GetCachedSpeedTest()?.MirrorName ?? m.SourceId))];
     }
 
     /// <summary>
@@ -1044,7 +1001,6 @@ public class GameVersionCatalog : IGameVersionCatalog
             return null;
         }
 
-        // If only one mirror, use it
         if (mirrors.Count == 1)
         {
             _selectedMirror = mirrors[0];
@@ -1056,7 +1012,6 @@ public class GameVersionCatalog : IGameVersionCatalog
 
         var results = new List<(IVersionSource Source, MirrorSpeedTestResult Result)>();
 
-        // Test all mirrors concurrently
         var tasks = mirrors.Select(async mirror =>
         {
             try
@@ -1081,7 +1036,6 @@ public class GameVersionCatalog : IGameVersionCatalog
         var testResults = await Task.WhenAll(tasks);
         results.AddRange(testResults);
 
-        // Filter available mirrors and sort by speed (descending)
         var availableMirrors = results
             .Where(r => r.Result.IsAvailable && r.Result.SpeedMBps > 0)
             .OrderByDescending(r => r.Result.SpeedMBps)
@@ -1095,9 +1049,9 @@ public class GameVersionCatalog : IGameVersionCatalog
             return _selectedMirror;
         }
 
-        var best = availableMirrors[0];
-        _selectedMirror = best.Source;
-        Logger.Success("Version", $"Selected mirror: {best.Source.SourceId} ({best.Result.SpeedMBps:F2} MB/s, {best.Result.PingMs}ms ping)");
+        var (Source, Result) = availableMirrors[0];
+        _selectedMirror = Source;
+        Logger.Success("Version", $"Selected mirror: {Source.SourceId} ({Result.SpeedMBps:F2} MB/s, {Result.PingMs}ms ping)");
 
         return _selectedMirror;
     }
@@ -1145,7 +1099,6 @@ public class GameVersionCatalog : IGameVersionCatalog
             Logger.Debug("Version", $"Mirror {source.SourceId}: priority={source.Priority}");
         }
 
-        // If no download sources remain, clear the version cache
         if (!HasDownloadSources())
         {
             Logger.Info("Version", "No download sources available after reload, clearing version cache");
@@ -1181,18 +1134,16 @@ public class GameVersionCatalog : IGameVersionCatalog
             return [.. _mirrorSources];
     }
 
-    private IEnumerable<string> GetMirrorSourceIdsSnapshot()
-        => GetMirrorSourcesSnapshot().Select(source => source.SourceId).ToArray();
+    private string[] GetMirrorSourceIdsSnapshot()
+        => [.. GetMirrorSourcesSnapshot().Select(source => source.SourceId)];
 
     /// <inheritdoc/>
     public void ClearVersionCache()
     {
         try
         {
-            // Clear in-memory cache
             _cache.Invalidate();
 
-            // Delete versions cache file
             var versionsPath = _cache.GetSnapshotPath();
             if (File.Exists(versionsPath))
             {
@@ -1200,7 +1151,6 @@ public class GameVersionCatalog : IGameVersionCatalog
                 Logger.Info("Version", "Deleted versions cache file");
             }
 
-            // Delete patches cache file
             var patchesPath = _cache.GetPatchSnapshotPath();
             if (File.Exists(patchesPath))
             {

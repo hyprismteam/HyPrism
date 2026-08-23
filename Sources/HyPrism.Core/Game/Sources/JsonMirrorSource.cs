@@ -1,6 +1,8 @@
 // Copyright (C) 2026 HyPrism Launcher
 // SPDX-License-Identifier: GPL-3.0-only
 
+using System.Net;
+using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using HyPrism.Core.Models;
@@ -18,7 +20,7 @@ namespace HyPrism.Core.Game.Sources;
 ///   <item><b>json-index</b>: Single API endpoint returning a full file index</item>
 /// </list>
 /// </summary>
-public class JsonMirrorSource : IVersionSource
+public partial class JsonMirrorSource : IVersionSource
 {
     private readonly MirrorMeta _meta;
     private readonly HttpClient _httpClient;
@@ -26,7 +28,7 @@ public class JsonMirrorSource : IVersionSource
     private readonly SemaphoreSlim _fetchLock = new(1, 1);
     private readonly SemaphoreSlim _speedTestLock = new(1, 1);
 
-    private readonly Dictionary<string, (DateTime CachedAt, List<int> Versions)> _versionCache = new();
+    private readonly Dictionary<string, (DateTime CachedAt, List<int> Versions)> _versionCache = [];
 
     private JsonElement? _cachedJsonIndex;
     private DateTime _jsonIndexCachedAt = DateTime.MinValue;
@@ -174,7 +176,6 @@ public class JsonMirrorSource : IVersionSource
             return await GetDiffUrlFromJsonIndexAsync(os, arch, branch, fromVersion, toVersion, ct);
         }
 
-        // Pattern-based: build URL from diff template
         if (_meta.Pattern?.DiffPatchUrl == null) return null;
         return BuildPatternUrl(_meta.Pattern.DiffPatchUrl, os, arch, branch, 0, fromVersion, toVersion);
     }
@@ -288,11 +289,10 @@ public class JsonMirrorSource : IVersionSource
 
                 result.PingMs = (long)(DateTime.UtcNow - pingStart).TotalMilliseconds;
 
-                var headStatusCode = (int)pingResp.StatusCode;
                 var headSucceeded = pingResp.IsSuccessStatusCode ||
-                    headStatusCode == 405 || // Method Not Allowed - API exists, HEAD not supported
-                    headStatusCode == 400 || // Bad Request - API exists, needs different method
-                    headStatusCode == 422;   // Unprocessable Entity - API exists, needs body/params
+                    pingResp.StatusCode is HttpStatusCode.MethodNotAllowed
+                        or HttpStatusCode.BadRequest
+                        or HttpStatusCode.UnprocessableEntity;
 
                 if (!headSucceeded)
                 {
@@ -332,10 +332,10 @@ public class JsonMirrorSource : IVersionSource
                     speedCts.CancelAfter(TimeSpan.FromSeconds(30));
 
                     using var req = await CreateRequestWithHeadersAsync(HttpMethod.Get, testUrl, speedCts.Token);
-                    req.Headers.Range = new System.Net.Http.Headers.RangeHeaderValue(0, testSize - 1);
+                    req.Headers.Range = new RangeHeaderValue(0, testSize - 1);
 
                     using var resp = await _httpClient.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, speedCts.Token);
-                    if (resp.IsSuccessStatusCode || resp.StatusCode == System.Net.HttpStatusCode.PartialContent)
+                    if (resp.IsSuccessStatusCode || resp.StatusCode == HttpStatusCode.PartialContent)
                     {
                         await using var stream = await resp.Content.ReadAsStreamAsync(speedCts.Token);
                         var buffer = new byte[81920];
@@ -449,7 +449,7 @@ public class JsonMirrorSource : IVersionSource
 
         if (IsDiffBasedBranch(branch) && config.DiffPatchUrl != null)
         {
-            return versions.Select(v => new CachedVersionEntry
+            return [.. versions.Select(v => new CachedVersionEntry
             {
                 Version = v,
                 FromVersion = 0,
@@ -457,10 +457,10 @@ public class JsonMirrorSource : IVersionSource
                 SigUrl = config.SignatureUrl != null
                     ? BuildPatternUrl(config.SignatureUrl, os, arch, branch, v, 0, v)
                     : null
-            }).OrderByDescending(e => e.Version).ToList();
+            }).OrderByDescending(e => e.Version)];
         }
 
-        return versions.Select(v => new CachedVersionEntry
+        return [.. versions.Select(v => new CachedVersionEntry
         {
             Version = v,
             FromVersion = 0,
@@ -468,7 +468,7 @@ public class JsonMirrorSource : IVersionSource
             SigUrl = config.SignatureUrl != null
                 ? BuildPatternUrl(config.SignatureUrl, os, arch, branch, v, 0, v)
                 : null
-        }).OrderByDescending(e => e.Version).ToList();
+        }).OrderByDescending(e => e.Version)];
     }
 
     /// <summary>
@@ -508,7 +508,7 @@ public class JsonMirrorSource : IVersionSource
                     versions = await DiscoverVersionsManifestAsync(os, arch, branch, ct);
                     break;
                 case "static-list":
-                    versions = discovery.StaticVersions?.OrderByDescending(v => v).ToList() ?? new List<int>();
+                    versions = discovery.StaticVersions?.OrderByDescending(v => v).ToList() ?? [];
                     break;
                 default:
                     Logger.Warning($"Mirror:{SourceId}", $"Unknown discovery method: {discovery.Method}");
@@ -527,12 +527,12 @@ public class JsonMirrorSource : IVersionSource
         catch (OperationCanceledException) when (!ct.IsCancellationRequested)
         {
             Logger.Warning($"Mirror:{SourceId}", "Version discovery timed out");
-            return _versionCache.TryGetValue(cacheKey, out var fb) ? fb.Versions : new List<int>();
+            return _versionCache.TryGetValue(cacheKey, out var fb) ? fb.Versions : [];
         }
         catch (Exception ex)
         {
             Logger.Warning($"Mirror:{SourceId}", $"Version discovery failed: {ex.Message}");
-            return _versionCache.TryGetValue(cacheKey, out var fb) ? fb.Versions : new List<int>();
+            return _versionCache.TryGetValue(cacheKey, out var fb) ? fb.Versions : [];
         }
         finally
         {
@@ -572,7 +572,7 @@ public class JsonMirrorSource : IVersionSource
         string os, string arch, string branch, CancellationToken ct)
     {
         var discovery = _meta.Pattern!.VersionDiscovery;
-        if (string.IsNullOrEmpty(discovery.Url)) return new List<int>();
+        if (string.IsNullOrEmpty(discovery.Url)) return [];
 
         var url = ApplyPlaceholders(discovery.Url, os, arch, branch, 0, 0, 0);
         Logger.Info($"Mirror:{SourceId}", $"Fetching HTML index from {url}...");
@@ -599,7 +599,7 @@ public class JsonMirrorSource : IVersionSource
         string os, string arch, string branch, CancellationToken ct)
     {
         var discovery = _meta.Pattern!.VersionDiscovery;
-        if (string.IsNullOrEmpty(discovery.Url)) return new List<int>();
+        if (string.IsNullOrEmpty(discovery.Url)) return [];
 
         var url = discovery.Url;
         Logger.Info($"Mirror: {SourceId}", $"Fetching manifest from {url}...");
@@ -639,9 +639,7 @@ public class JsonMirrorSource : IVersionSource
             var mappedArch = ApplyMapping(_meta.Pattern?.ArchMapping, arch);
 
             var prefix = $"{mappedOs}/{mappedArch}/{branch}/";
-            var patchPattern = new Regex(
-                @"(\d+)_to_(\d+)\.pwr$",
-                RegexOptions.Compiled);
+            var patchPattern = PatchFileNameRegex();
 
             var versions = new HashSet<int>();
 
@@ -661,7 +659,7 @@ public class JsonMirrorSource : IVersionSource
             }
 
             Logger.Debug($"Mirror: {SourceId}", $"Manifest: found {versions.Count} versions for {mappedOs}/{mappedArch}/{branch}");
-            return versions.OrderByDescending(v => v).ToList();
+            return [.. versions.OrderByDescending(v => v)];
         }
         catch (Exception ex)
         {
@@ -714,7 +712,7 @@ public class JsonMirrorSource : IVersionSource
                     }
                 }
 
-                return versions.Distinct().OrderByDescending(v => v).ToList();
+                return [.. versions.Distinct().OrderByDescending(v => v)];
             }
 
             if (jsonPath == null || jsonPath == "$root")
@@ -727,7 +725,7 @@ public class JsonMirrorSource : IVersionSource
                         else if (el.ValueKind == JsonValueKind.String && int.TryParse(el.GetString(), out v)) versions.Add(v);
                     }
                 }
-                return versions.Distinct().OrderByDescending(v => v).ToList();
+                return [.. versions.Distinct().OrderByDescending(v => v)];
             }
 
             if (jsonPath.Contains('.'))
@@ -771,10 +769,9 @@ public class JsonMirrorSource : IVersionSource
                     versions.Add(sv);
                 }
 
-                return versions.Distinct().OrderByDescending(v => v).ToList();
+                return [.. versions.Distinct().OrderByDescending(v => v)];
             }
 
-            // Simple property name like "versions" or "targets"
             if (!root.TryGetProperty(jsonPath, out var versionsArray) || versionsArray.ValueKind != JsonValueKind.Array)
                 return versions;
 
@@ -784,7 +781,7 @@ public class JsonMirrorSource : IVersionSource
                 else if (el.ValueKind == JsonValueKind.String && int.TryParse(el.GetString(), out v)) versions.Add(v);
             }
 
-            return versions.Distinct().OrderByDescending(v => v).ToList();
+            return [.. versions.Distinct().OrderByDescending(v => v)];
         }
         catch (JsonException ex)
         {
@@ -800,26 +797,41 @@ public class JsonMirrorSource : IVersionSource
     {
         if (string.IsNullOrEmpty(pattern)) return [];
 
-        var versions = new List<int>();
-        var regex = new Regex(pattern, RegexOptions.IgnoreCase);
-        var matches = regex.Matches(html);
-
-        foreach (Match match in matches)
+        try
         {
-            if (match.Groups.Count < 2) continue;
-            if (!int.TryParse(match.Groups[1].Value, out int version)) continue;
+            var versions = new List<int>();
+            var regex = new Regex(
+                pattern,
+                RegexOptions.IgnoreCase | RegexOptions.CultureInvariant,
+                TimeSpan.FromSeconds(1));
 
-            if (minFileSize > 0 && match.Groups.Count > 2
-                && long.TryParse(match.Groups[2].Value, out long fileSize)
-                && fileSize < minFileSize)
+            foreach (Match match in regex.Matches(html))
             {
-                continue;
+                if (match.Groups.Count < 2) continue;
+                if (!int.TryParse(match.Groups[1].Value, out int version)) continue;
+
+                if (minFileSize > 0 && match.Groups.Count > 2
+                    && long.TryParse(match.Groups[2].Value, out long fileSize)
+                    && fileSize < minFileSize)
+                {
+                    continue;
+                }
+
+                versions.Add(version);
             }
 
-            versions.Add(version);
+            return [.. versions.Distinct().OrderByDescending(v => v)];
         }
-
-        return versions.Distinct().OrderByDescending(v => v).ToList();
+        catch (ArgumentException ex)
+        {
+            Logger.Warning("Mirror", $"Invalid HTML version pattern: {ex.Message}");
+            return [];
+        }
+        catch (RegexMatchTimeoutException)
+        {
+            Logger.Warning("Mirror", "HTML version pattern exceeded the one-second match limit");
+            return [];
+        }
     }
 
     /// <summary>
@@ -875,7 +887,7 @@ public class JsonMirrorSource : IVersionSource
                 }
             }
 
-            return entries.OrderByDescending(e => e.Version).ThenBy(e => e.FromVersion).ToList();
+            return [.. entries.OrderByDescending(e => e.Version).ThenBy(e => e.FromVersion)];
         }
 
         var baseFiles = config.Structure == "grouped"
@@ -895,11 +907,10 @@ public class JsonMirrorSource : IVersionSource
             }
         }
 
-        return entries
+        return [.. entries
             .GroupBy(e => e.Version)
             .Select(g => g.OrderBy(e => e.FromVersion).First())
-            .OrderByDescending(e => e.Version)
-            .ToList();
+            .OrderByDescending(e => e.Version)];
     }
 
     private async Task<string?> GetDownloadUrlFromJsonIndexAsync(
@@ -1029,7 +1040,7 @@ public class JsonMirrorSource : IVersionSource
         }
     }
 
-    private bool TryParseBaseFileName(string fileName, string os, string arch, out int version)
+    private static bool TryParseBaseFileName(string fileName, string os, string arch, out int version)
     {
         version = 0;
         var fileOs = NormalizeFileOs(os);
@@ -1042,7 +1053,7 @@ public class JsonMirrorSource : IVersionSource
         return int.TryParse(numPart, out version);
     }
 
-    private bool TryParseDiffFileName(string fileName, string os, string arch, out int fromVer, out int toVer)
+    private static bool TryParseDiffFileName(string fileName, string os, string arch, out int fromVer, out int toVer)
     {
         fromVer = 0;
         toVer = 0;
@@ -1059,10 +1070,10 @@ public class JsonMirrorSource : IVersionSource
         return int.TryParse(core[..tilde], out fromVer) && int.TryParse(core[(tilde + 1)..], out toVer);
     }
 
-    private string BuildBaseFileNameFromPattern(int version, string os, string arch)
+    private static string BuildBaseFileNameFromPattern(int version, string os, string arch)
         => $"v{version}-{NormalizeFileOs(os)}-{arch}.pwr";
 
-    private string BuildDiffFileNameFromPattern(int from, int to, string os, string arch)
+    private static string BuildDiffFileNameFromPattern(int from, int to, string os, string arch)
         => $"v{from}~{to}-{NormalizeFileOs(os)}-{arch}.pwr";
 
     private static string NormalizeFileOs(string os)
@@ -1108,6 +1119,9 @@ public class JsonMirrorSource : IVersionSource
             CachePolicy = $"In-memory version cache TTL {_meta.Cache.IndexTtlMinutes}m; speed test cache TTL {_meta.Cache.SpeedTestTtlMinutes}m"
         };
     }
+
+    [GeneratedRegex(@"(\d+)_to_(\d+)\.pwr$")]
+    private static partial Regex PatchFileNameRegex();
 
     #endregion
 }

@@ -60,10 +60,9 @@ public class GameSessionAuthenticator
             candidates.Add(fallbackBuilder.Uri.ToString().TrimEnd('/'));
         }
 
-        return candidates
+        return [.. candidates
             .Where(s => !string.IsNullOrWhiteSpace(s))
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToArray();
+            .Distinct(StringComparer.OrdinalIgnoreCase)];
     }
 
     /// <summary>
@@ -82,13 +81,10 @@ public class GameSessionAuthenticator
             {
                 UUID = uuid,
                 Name = playerName,
-                Scopes = new[] { "hytale:client", "hytale:server" }  // Request both client and server scopes
+                Scopes = ["hytale:client", "hytale:server"]
             };
 
-            var json = JsonSerializer.Serialize(requestBody, new JsonSerializerOptions
-            {
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-            });
+            var json = JsonSerializer.Serialize(requestBody, JsonDefaults.CamelCase);
 
             string[] endpoints = ["/game-session/child", "/game-session"];
             string? lastError = null;
@@ -115,11 +111,9 @@ public class GameSessionAuthenticator
 
                         Logger.Info("Auth", $"Auth response received from {requestUrl} ({responseBody.Length} chars)");
 
-                        var result = JsonSerializer.Deserialize<GameSessionResponse>(responseBody, new JsonSerializerOptions
-                        {
-                            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                            PropertyNameCaseInsensitive = true
-                        });
+                        var result = JsonSerializer.Deserialize<GameSessionResponse>(
+                            responseBody,
+                            JsonDefaults.CamelCaseInsensitive);
 
                         if (result == null)
                         {
@@ -187,16 +181,15 @@ public class GameSessionAuthenticator
         {
             try
             {
-                var request = new HttpRequestMessage(HttpMethod.Get, $"{authServerUrl}/validate");
+                using var request = new HttpRequestMessage(HttpMethod.Get, $"{authServerUrl}/validate");
                 request.Headers.Add("Authorization", $"Bearer {token}");
 
-                var response = await _httpClient.SendAsync(request);
+                using var response = await _httpClient.SendAsync(request);
                 if (response.IsSuccessStatusCode)
                     return true;
             }
             catch
             {
-                // Try next candidate
             }
         }
 
@@ -213,20 +206,17 @@ public class GameSessionRequest
     public string Name { get; set; } = "";
 
     [JsonPropertyName("scopes")]
-    public string[] Scopes { get; set; } = Array.Empty<string>();
+    public string[] Scopes { get; set; } = [];
 }
 
 public class GameSessionResponse
 {
-    // Primary token field (from /game-session/child endpoint)
     [JsonPropertyName("identityToken")]
     public string? IdentityToken { get; set; }
 
-    // Snake_case variant (from /auth endpoint)
     [JsonPropertyName("identity_token")]
     public string? IdentityTokenAlt { get; set; }
 
-    // Alternative token fields for compatibility
     [JsonPropertyName("token")]
     public string? Token { get; set; }
 

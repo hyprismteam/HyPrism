@@ -32,10 +32,9 @@ public sealed partial class MirrorCatalog : IMirrorCatalog
 
     /// <inheritdoc/>
     public IReadOnlyList<MirrorMeta> GetAll()
-        => MirrorCatalogLoader.GetAllMirrorMetas(_appDir)
+        => [.. MirrorCatalogLoader.GetAllMirrorMetas(_appDir)
             .OrderBy(mirror => mirror.Priority)
-            .ThenBy(mirror => mirror.Name, StringComparer.OrdinalIgnoreCase)
-            .ToArray();
+            .ThenBy(mirror => mirror.Name, StringComparer.OrdinalIgnoreCase)];
 
     /// <inheritdoc/>
     public void Save(MirrorMeta mirror)

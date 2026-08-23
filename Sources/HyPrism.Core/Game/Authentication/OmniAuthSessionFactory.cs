@@ -185,7 +185,7 @@ public sealed class OmniAuthSessionIssuer
         return SignToken(claims, includePrivateKey: false);
     }
 
-    private static void AddSkinClaim(IDictionary<string, object> claims, string? skin)
+    private static void AddSkinClaim(Dictionary<string, object> claims, string? skin)
     {
         if (!string.IsNullOrWhiteSpace(skin))
             claims["skin"] = skin;

@@ -25,7 +25,7 @@ namespace HyPrism.Core.Game;
 /// </remarks>
 public class GameInstallationWorkflow : IGameInstallationWorkflow
 {
-    private const long MinValidPwrBytes = 1_048_576; // 1 MB
+    private const long MinValidPwrBytes = 1_048_576;
 
     private readonly IConfigStore _configStore;
     private readonly IInstanceRepository _instances;
@@ -41,7 +41,7 @@ public class GameInstallationWorkflow : IGameInstallationWorkflow
 
     private readonly Dictionary<string, CancellationTokenSource> _downloadOperations =
         new(StringComparer.OrdinalIgnoreCase);
-    private readonly object _ctsLock = new();
+    private readonly Lock _ctsLock = new();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GameInstallationWorkflow"/> class
@@ -84,7 +84,7 @@ public class GameInstallationWorkflow : IGameInstallationWorkflow
         _downloadsCacheDirectory = LauncherCachePaths.GetGameDownloadsDirectory(appPath.AppDir);
     }
 
-    private Config _config => _configStore.Configuration;
+    private Config CurrentConfig => _configStore.Configuration;
 
     /// <inheritdoc/>
     public Task<DownloadProgress> DownloadAndLaunchAsync(
@@ -156,8 +156,8 @@ public class GameInstallationWorkflow : IGameInstallationWorkflow
                     versionPath,
                     branch,
                     selectedInstance.Id,
-                    cts.Token,
-                    authorizationUriPresenter);
+                    authorizationUriPresenter,
+                    cts.Token);
             }
 
             _progress.ReportDownloadProgress("preparing", 1, "launch.detail.checking_versions", null, 0, 0);
@@ -193,8 +193,8 @@ public class GameInstallationWorkflow : IGameInstallationWorkflow
                             branch,
                             isLatestInstance,
                             instanceMeta.PendingVersion,
-                            cts.Token,
-                            authorizationUriPresenter);
+                            authorizationUriPresenter,
+                            cts.Token);
                     }
                     catch (OperationCanceledException) { throw; }
                     catch (Exception ex)
@@ -222,8 +222,8 @@ public class GameInstallationWorkflow : IGameInstallationWorkflow
                     isLatestInstance,
                     versions,
                     selectedInstance.Id,
-                    cts.Token,
-                    authorizationUriPresenter);
+                    authorizationUriPresenter,
+                    cts.Token);
             }
 
             return await HandleFreshInstallAsync(
@@ -231,8 +231,8 @@ public class GameInstallationWorkflow : IGameInstallationWorkflow
                 branch,
                 isLatestInstance,
                 targetVersion,
-                cts.Token,
-                authorizationUriPresenter);
+                authorizationUriPresenter,
+                cts.Token);
         }
         catch (OperationCanceledException)
         {
@@ -283,6 +283,8 @@ public class GameInstallationWorkflow : IGameInstallationWorkflow
             }
             _downloadOperations.Clear();
         }
+
+        GC.SuppressFinalize(this);
     }
 
     /// <summary>
@@ -293,8 +295,8 @@ public class GameInstallationWorkflow : IGameInstallationWorkflow
         string versionPath,
         string branch,
         string instanceId,
-        CancellationToken ct,
-        AuthUriPresenter? authorizationUriPresenter)
+        AuthUriPresenter? authorizationUriPresenter,
+        CancellationToken ct)
     {
         Logger.Success("Download", "Fast path: Game is already installed, skipping version check");
 
@@ -303,7 +305,7 @@ public class GameInstallationWorkflow : IGameInstallationWorkflow
         _progress.ReportDownloadProgress("complete", 100, "launch.detail.launching_game", null, 0, 0);
         try
         {
-            await _gameLauncher.LaunchGameAsync(versionPath, branch, ct, authorizationUriPresenter, instanceId);
+            await _gameLauncher.LaunchGameAsync(versionPath, branch, authorizationUriPresenter, instanceId, ct);
             return new DownloadProgress { Success = true, Progress = 100 };
         }
         catch (Exception ex)
@@ -318,8 +320,8 @@ public class GameInstallationWorkflow : IGameInstallationWorkflow
         string versionPath, string branch, bool isLatestInstance,
         List<int> versions,
         string instanceId,
-        CancellationToken ct,
-        AuthUriPresenter? authorizationUriPresenter)
+        AuthUriPresenter? authorizationUriPresenter,
+        CancellationToken ct)
     {
         Logger.Success("Download", "Game is already installed");
 
@@ -333,7 +335,7 @@ public class GameInstallationWorkflow : IGameInstallationWorkflow
         _progress.ReportDownloadProgress("complete", 100, "launch.detail.launching_game", null, 0, 0);
         try
         {
-            await _gameLauncher.LaunchGameAsync(versionPath, branch, ct, authorizationUriPresenter, instanceId);
+            await _gameLauncher.LaunchGameAsync(versionPath, branch, authorizationUriPresenter, instanceId, ct);
             return new DownloadProgress { Success = true, Progress = 100 };
         }
         catch (Exception ex)
@@ -432,8 +434,8 @@ public class GameInstallationWorkflow : IGameInstallationWorkflow
     private async Task<DownloadProgress> HandleFreshInstallAsync(
         string versionPath, string branch, bool isLatestInstance,
         int targetVersion,
-        CancellationToken ct,
-        AuthUriPresenter? authorizationUriPresenter)
+        AuthUriPresenter? authorizationUriPresenter,
+        CancellationToken ct)
     {
         Logger.Info("Download", "Game not installed, starting download...");
         _progress.ReportDownloadProgress("download", 1, "launch.detail.preparing_download", null, 0, 0);
@@ -445,7 +447,11 @@ public class GameInstallationWorkflow : IGameInstallationWorkflow
             {
                 int mappedProgress = 2 + (int)(progress * 0.03);
                 _progress.ReportDownloadProgress("download", mappedProgress, message, null, 0, 0);
-            });
+            }, ct);
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
         }
         catch (Exception ex)
         {
@@ -481,8 +487,8 @@ public class GameInstallationWorkflow : IGameInstallationWorkflow
                 branch,
                 isLatestInstance,
                 targetVersion,
-                ct,
-                authorizationUriPresenter);
+                authorizationUriPresenter,
+                ct);
         }
         else
         {
@@ -528,8 +534,8 @@ public class GameInstallationWorkflow : IGameInstallationWorkflow
                         branch,
                         isLatestInstance,
                         targetVersion,
-                        ct,
-                        authorizationUriPresenter);
+                        authorizationUriPresenter,
+                        ct);
                 }
                 catch (OperationCanceledException) { throw; }
                 catch (Exception ex)
@@ -566,8 +572,8 @@ public class GameInstallationWorkflow : IGameInstallationWorkflow
                     branch,
                     isLatestInstance,
                     targetVersion,
-                    ct,
-                    authorizationUriPresenter);
+                    authorizationUriPresenter,
+                    ct);
             }
 
             _progress.ReportDownloadProgress("install", 65, "launch.detail.installing_butler_pwr", null, 0, 0);
@@ -595,8 +601,8 @@ public class GameInstallationWorkflow : IGameInstallationWorkflow
             branch,
             isLatestInstance,
             targetVersion,
-            ct,
-            authorizationUriPresenter);
+            authorizationUriPresenter,
+            ct);
     }
 
     private async Task<DownloadProgress> CompleteInstallAsync(
@@ -604,8 +610,8 @@ public class GameInstallationWorkflow : IGameInstallationWorkflow
         string branch,
         bool isLatestInstance,
         int targetVersion,
-        CancellationToken ct,
-        AuthUriPresenter? authorizationUriPresenter)
+        AuthUriPresenter? authorizationUriPresenter,
+        CancellationToken ct)
     {
         if (isLatestInstance)
             _instances.SaveLatestInfo(branch, targetVersion);
@@ -632,9 +638,9 @@ public class GameInstallationWorkflow : IGameInstallationWorkflow
             await _gameLauncher.LaunchGameAsync(
                 versionPath,
                 branch,
-                ct,
                 authorizationUriPresenter,
-                string.IsNullOrWhiteSpace(instanceId) ? null : instanceId);
+                string.IsNullOrWhiteSpace(instanceId) ? null : instanceId,
+                ct);
 
             var cacheDir = _downloadsCacheDirectory;
             if (Directory.Exists(cacheDir))
@@ -941,7 +947,11 @@ public class GameInstallationWorkflow : IGameInstallationWorkflow
                 {
                     int mappedProgress = 94 + (int)(progress * 0.02);
                     _progress.ReportDownloadProgress("install", mappedProgress, message, null, 0, 0);
-                });
+                }, ct);
+            }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
+                throw;
             }
             catch (Exception ex)
             {
@@ -958,7 +968,7 @@ public class GameInstallationWorkflow : IGameInstallationWorkflow
             {
                 int mappedProgress = 96 + (int)(progress * 0.03);
                 _progress.ReportDownloadProgress("install", mappedProgress, message, null, 0, 0);
-            });
+            }, ct);
         }
     }
 }

@@ -60,8 +60,9 @@ public interface IHytaleAuthenticator
     /// Gets a valid session from any official profile (not just the active one).
     /// Used for fetching version info when the current profile may not be official
     /// </summary>
+    /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Valid session from any official profile, or null if none available</returns>
-    Task<HytaleAuthSession?> GetValidOfficialSessionAsync();
+    Task<HytaleAuthSession?> GetValidOfficialSessionAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Saves the current session to the active profile's folder.

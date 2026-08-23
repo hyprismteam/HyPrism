@@ -40,7 +40,6 @@ public class UserIdentityProvider : IUserIdentityProvider
         if (string.IsNullOrWhiteSpace(username))
             return _profiles.GetCurrentUuid();
 
-        // Look up UUID from profiles (case-insensitive)
         var existingProfile = _profiles.GetProfiles()
             .FirstOrDefault(p => p.Name.Equals(username, StringComparison.OrdinalIgnoreCase));
 
@@ -58,14 +57,13 @@ public class UserIdentityProvider : IUserIdentityProvider
     {
         var currentNick = _profiles.GetNick();
 
-        return _profiles.GetProfiles()
+        return [.. _profiles.GetProfiles()
             .Select(p => new UuidMapping
             {
                 Username = p.Name,
                 Uuid = p.UUID,
                 IsCurrent = p.Name.Equals(currentNick, StringComparison.OrdinalIgnoreCase)
-            })
-            .ToList();
+            })];
     }
 
     /// <inheritdoc/>
@@ -74,7 +72,6 @@ public class UserIdentityProvider : IUserIdentityProvider
         if (string.IsNullOrWhiteSpace(username)) return false;
         if (!Guid.TryParse(uuid.Trim(), out var parsed)) return false;
 
-        // If it's the current active profile, update through IProfileManager
         if (username.Equals(_profiles.GetNick(), StringComparison.OrdinalIgnoreCase))
         {
             var updated = _profiles.SetUUID(parsed.ToString());
@@ -92,7 +89,6 @@ public class UserIdentityProvider : IUserIdentityProvider
     {
         if (string.IsNullOrWhiteSpace(username)) return false;
 
-        // Don't allow deleting current user's UUID
         if (username.Equals(_profiles.GetNick(), StringComparison.OrdinalIgnoreCase))
         {
             Logger.Warning("UUID", $"Cannot delete UUID for current user '{username}'");
@@ -139,7 +135,6 @@ public class UserIdentityProvider : IUserIdentityProvider
             return existingProfile.UUID;
         }
 
-        // Create a complete profile when the username does not exist
         var newUuid = Guid.NewGuid().ToString();
         if (!_profiles.CreateProfile(username, newUuid))
             return null;
@@ -167,7 +162,6 @@ public class UserIdentityProvider : IUserIdentityProvider
                 return false;
             }
 
-            // Resolve instance path for skin cache
             string? versionPath = null;
             var selected = _instances.GetSelectedInstance();
             if (selected != null)
@@ -188,14 +182,12 @@ public class UserIdentityProvider : IUserIdentityProvider
 
             var currentSkinPath = Path.Combine(skinCacheDir, $"{currentUuid}.json");
 
-            // If current user already has a skin, don't overwrite
             if (File.Exists(currentSkinPath))
             {
                 Logger.Info("UUID", $"Current user already has skin data. Use SetUuidForUser to switch to the orphaned UUID: {orphanedUuid}");
                 return false;
             }
 
-            // Copy orphaned skin to current UUID
             var orphanSkinPath = Path.Combine(skinCacheDir, $"{orphanedUuid}.json");
             if (File.Exists(orphanSkinPath))
             {
@@ -204,7 +196,6 @@ public class UserIdentityProvider : IUserIdentityProvider
                 Logger.Success("UUID", $"Copied orphaned skin from {orphanedUuid} to {currentUuid}");
             }
 
-            // Copy orphaned avatar to current UUID
             var orphanAvatarPath = Path.Combine(avatarCacheDir, $"{orphanedUuid}.png");
             var currentAvatarPath = Path.Combine(avatarCacheDir, $"{currentUuid}.png");
             if (File.Exists(orphanAvatarPath))

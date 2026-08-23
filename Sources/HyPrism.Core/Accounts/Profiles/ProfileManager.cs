@@ -1,6 +1,7 @@
 // Copyright (C) 2026 HyPrism Launcher
 // SPDX-License-Identifier: GPL-3.0-only
 
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using HyPrism.Core.Models;
 using HyPrism.Core.Infrastructure;
@@ -22,7 +23,7 @@ public class ProfileManager : IProfileManager
     {
         PropertyNameCaseInsensitive = true,
         WriteIndented = true,
-        Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
     };
 
     /// <summary>
@@ -91,7 +92,6 @@ public class ProfileManager : IProfileManager
             if (string.IsNullOrWhiteSpace(uuid))
                 return null;
 
-            // 1. Check profile folder's avatar.png (most reliable, persisted)
             var profile = ReadProfilesFromCache().FirstOrDefault(p => p.UUID == uuid);
             if (profile != null)
             {
@@ -105,19 +105,16 @@ public class ProfileManager : IProfileManager
                 }
             }
 
-            // 2. Check AvatarBackups (persistent backup from AvatarCache)
             if (_avatars != null)
             {
                 var backupPath = _avatars.GetAvatarBackupPath(uuid);
                 if (File.Exists(backupPath) && new FileInfo(backupPath).Length > 100)
                 {
                     var bytes = File.ReadAllBytes(backupPath);
-                    // Also copy to profile folder for future quick access
                     CopyAvatarToProfile(profile, bytes);
                     return $"data:image/png;base64,{Convert.ToBase64String(bytes)}";
                 }
 
-                // 3. Try to backup from CachedAvatarPreviews (game instances)
                 if (_avatars.BackupAvatar(uuid))
                 {
                     var freshBackupPath = _avatars.GetAvatarBackupPath(uuid);
@@ -130,7 +127,6 @@ public class ProfileManager : IProfileManager
                 }
             }
 
-            // 4. Legacy fallback: check skins/{uuid}/skin.png|jpg
             var skinsPath = Path.Combine(_appDataPath, "skins", uuid);
             if (Directory.Exists(skinsPath))
             {
@@ -166,7 +162,7 @@ public class ProfileManager : IProfileManager
             Directory.CreateDirectory(profileDir);
             File.WriteAllBytes(Path.Combine(profileDir, "avatar.png"), avatarBytes);
         }
-        catch { /* Best effort */ }
+        catch { }
     }
 
     /// <inheritdoc/>
@@ -199,7 +195,6 @@ public class ProfileManager : IProfileManager
         return skinsPath;
     }
 
-    //  ── Profile cache helpers ───────────────────────────────────────────────
 
     private string GetProfileCachePath()
     {
@@ -211,9 +206,9 @@ public class ProfileManager : IProfileManager
     private List<Profile> ReadProfilesFromCache()
     {
         var path = GetProfileCachePath();
-        if (!File.Exists(path)) return new();
-        try { return JsonSerializer.Deserialize<List<Profile>>(File.ReadAllText(path), JsonOpts) ?? new(); }
-        catch { return new(); }
+        if (!File.Exists(path)) return [];
+        try { return JsonSerializer.Deserialize<List<Profile>>(File.ReadAllText(path), JsonOpts) ?? []; }
+        catch { return []; }
     }
 
     private void WriteProfilesToCache(List<Profile> profiles)

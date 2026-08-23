@@ -80,7 +80,7 @@ internal static class MirrorSchemaInferrer
                     Url = "{base}/infos",
                     JsonPath = "{os}-{arch}.{branch}.newest"
                 },
-                BranchMapping = new Dictionary<string, string>(),
+                BranchMapping = [],
                 OsMapping = new Dictionary<string, string>
                 {
                     ["linux"] = "linux",
@@ -93,7 +93,7 @@ internal static class MirrorSchemaInferrer
                     ["amd64"] = "amd64",
                     ["arm64"] = "arm64"
                 },
-                DiffBasedBranches = new List<string>()
+                DiffBasedBranches = []
             },
             SpeedTest = new MirrorSpeedTestConfig
             {
@@ -150,8 +150,8 @@ internal static class MirrorSchemaInferrer
                     ["amd64"] = "amd64",
                     ["arm64"] = "arm64"
                 },
-                BranchMapping = new Dictionary<string, string>(),
-                DiffBasedBranches = branches.ToList()
+                BranchMapping = [],
+                DiffBasedBranches = [.. branches]
             },
             SpeedTest = new MirrorSpeedTestConfig
             {
@@ -198,7 +198,7 @@ internal static class MirrorSchemaInferrer
                 {
                     ["pre-release"] = "prerelease"
                 },
-                DiffBasedBranches = new List<string>()
+                DiffBasedBranches = []
             },
             SpeedTest = new MirrorSpeedTestConfig
             {
@@ -243,7 +243,7 @@ internal static class MirrorSchemaInferrer
                     HtmlPattern = @"<a\s+href=""(\d+)\.pwr"">\d+\.pwr</a>\s+\S+\s+\S+\s+(\d+)",
                     MinFileSizeBytes = 1_048_576
                 },
-                DiffBasedBranches = new List<string>()
+                DiffBasedBranches = []
             },
             SpeedTest = new MirrorSpeedTestConfig
             {

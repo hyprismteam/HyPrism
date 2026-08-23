@@ -25,8 +25,11 @@ public interface IButlerClient
     /// Ensures Butler is installed, downloading it if necessary
     /// </summary>
     /// <param name="progressCallback">Optional callback for reporting progress (percentage, status message)</param>
+    /// <param name="cancellationToken">Token used to cancel installation</param>
     /// <returns>The path to the installed Butler executable</returns>
-    Task<string> EnsureButlerInstalledAsync(Action<int, string>? progressCallback = null);
+    Task<string> EnsureButlerInstalledAsync(
+        Action<int, string>? progressCallback = null,
+        CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Applies a PWR (patch) file to a target directory using Butler

@@ -4,6 +4,7 @@
 using System.Diagnostics;
 using System.IO.Compression;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -26,8 +27,9 @@ namespace HyPrism.Core.Game.Launch;
 /// Extracted from the former monolithic GameInstallationWorkflow for better separation of concerns.
 /// Coordinates between multiple services to prepare and launch the game
 /// </remarks>
-public class GameLauncher : IGameLauncher
+public partial class GameLauncher : IGameLauncher
 {
+    private const int JvmFlagsHashLength = 16;
     private const string DefaultCustomAuthDomain = "sessions.sanasol.ws";
 
     private readonly IConfigStore _configStore;
@@ -47,7 +49,7 @@ public class GameLauncher : IGameLauncher
     private readonly LogSessionPaths _logSession;
     private readonly string _appDir;
 
-    private Config _config => _configStore.Configuration;
+    private Config CurrentConfig => _configStore.Configuration;
 
     /// <summary>
     /// Stores the DualAuth agent path after download, used when building process start info
@@ -187,9 +189,9 @@ public class GameLauncher : IGameLauncher
     public async Task LaunchGameAsync(
         string versionPath,
         string branch,
-        CancellationToken ct = default,
         AuthUriPresenter? authorizationUriPresenter = null,
-        string? instanceId = null)
+        string? instanceId = null,
+        CancellationToken ct = default)
     {
         Logger.Info("Game", $"Preparing to launch from {versionPath}");
 
@@ -197,8 +199,8 @@ public class GameLauncher : IGameLauncher
         string sessionUuid = currentProfile.UUID;
         string profileName = currentProfile.Name;
         bool isOfficialProfile = currentProfile.IsOfficial;
-        var onlineMode = _config.OnlineMode;
-        var configuredAuthDomain = _config.AuthDomain;
+        var onlineMode = CurrentConfig.OnlineMode;
+        var configuredAuthDomain = CurrentConfig.AuthDomain;
         ILocalNodeService? localNode = null;
         using var officialLaunchGate = isOfficialProfile ? new OfficialLaunchGate() : null;
         officialLaunchGate?.Enter();
@@ -207,7 +209,7 @@ public class GameLauncher : IGameLauncher
 
         if (!isOfficialProfile && IsOfficialDomain(configuredAuthDomain) && onlineMode)
         {
-            Logger.Warning("Game", $"Unofficial profile with official auth domain '{_config.AuthDomain}'. Falling back to custom auth domain '{DefaultCustomAuthDomain}' for this launch.");
+            Logger.Warning("Game", $"Unofficial profile with official auth domain '{CurrentConfig.AuthDomain}'. Falling back to custom auth domain '{DefaultCustomAuthDomain}' for this launch.");
         }
 
         if (onlineMode && !isOfficialProfile)
@@ -257,11 +259,11 @@ public class GameLauncher : IGameLauncher
             sessionUuid,
             profileName,
             authorizationUriPresenter,
-            ct,
             currentProfile,
             onlineMode,
             configuredAuthDomain,
-            localNode);
+            localNode,
+            ct);
         string launchPlayerName = ResolveLaunchPlayerName(profileName, authPlayerName, identityToken);
 
         string javaPath = ResolveJavaPath();
@@ -296,7 +298,6 @@ public class GameLauncher : IGameLauncher
         var trackedInstanceId = instanceId ?? versionPath;
         await StartAndMonitorProcessAsync(
             startInfo,
-            sessionUuid,
             launchPlayerName,
             trackedInstanceId,
             currentProfile.Id,
@@ -333,9 +334,9 @@ public class GameLauncher : IGameLauncher
 
     private string ResolveJavaPath()
     {
-        if (_config.UseCustomJava)
+        if (CurrentConfig.UseCustomJava)
         {
-            var customJavaPath = _config.CustomJavaPath?.Trim();
+            var customJavaPath = CurrentConfig.CustomJavaPath?.Trim();
             if (string.IsNullOrWhiteSpace(customJavaPath))
             {
                 throw new Exception("Custom Java is enabled, but no executable path is configured.");
@@ -357,19 +358,14 @@ public class GameLauncher : IGameLauncher
 
     private Profile GetSelectedProfileOrThrow()
     {
-        if (string.IsNullOrWhiteSpace(_config.SelectedProfileId))
+        if (string.IsNullOrWhiteSpace(CurrentConfig.SelectedProfileId))
         {
             throw new InvalidOperationException("Create or select a profile before launching the game");
         }
 
         var profile = _profiles.GetProfiles()
-            .FirstOrDefault(candidate => candidate.Id == _config.SelectedProfileId);
-        if (profile is null)
-        {
-            throw new InvalidOperationException(
-                $"Selected profile '{_config.SelectedProfileId}' does not exist");
-        }
-
+            .FirstOrDefault(candidate => candidate.Id == CurrentConfig.SelectedProfileId) ?? throw new InvalidOperationException(
+                $"Selected profile '{CurrentConfig.SelectedProfileId}' does not exist");
         if (string.IsNullOrWhiteSpace(profile.Name) || !Guid.TryParse(profile.UUID, out _))
         {
             throw new InvalidOperationException(
@@ -434,7 +430,7 @@ public class GameLauncher : IGameLauncher
 
     private string GetEffectiveCustomAuthDomain(bool logFallback, string? configuredDomain = null)
     {
-        var normalizedConfiguredDomain = configuredDomain?.Trim() ?? _config.AuthDomain?.Trim();
+        var normalizedConfiguredDomain = configuredDomain?.Trim() ?? CurrentConfig.AuthDomain?.Trim();
         if (string.IsNullOrWhiteSpace(normalizedConfiguredDomain))
         {
             if (logFallback)
@@ -606,11 +602,11 @@ public class GameLauncher : IGameLauncher
         string sessionUuid,
         string profileName,
         AuthUriPresenter? authorizationUriPresenter,
-        CancellationToken cancellationToken,
         Profile currentProfile,
         bool onlineMode,
         string? configuredAuthDomain,
-        ILocalNodeService? localNode)
+        ILocalNodeService? localNode,
+        CancellationToken cancellationToken)
     {
         string? identityToken = null;
         string? sessionToken = null;
@@ -818,7 +814,7 @@ public class GameLauncher : IGameLauncher
             return;
 
         string markerPath = Path.Combine(serverDir, ".jvm-flags-hash");
-        string currentFlags = _config.JavaArguments?.Trim() ?? "";
+        string currentFlags = CurrentConfig.JavaArguments?.Trim() ?? "";
         string currentHash = ComputeSimpleHash(currentFlags);
 
         if (File.Exists(markerPath))
@@ -829,7 +825,7 @@ public class GameLauncher : IGameLauncher
                 if (storedHash == currentHash)
                     return;
             }
-            catch { /* If we can't read, re-invalidate */ }
+            catch { }
         }
 
         try
@@ -878,8 +874,8 @@ public class GameLauncher : IGameLauncher
     private static string ComputeSimpleHash(string input)
     {
         var bytes = Encoding.UTF8.GetBytes(input);
-        var hash = System.Security.Cryptography.SHA256.HashData(bytes);
-        return Convert.ToHexString(hash)[..16]; // 16 hex chars is sufficient for comparison
+        var hash = SHA256.HashData(bytes);
+        return Convert.ToHexString(hash)[..JvmFlagsHashLength];
     }
 
     private void LogLaunchInfo(string executable, string javaPath, string gameDir, string userDataDir, string sessionUuid, string launchPlayerName)
@@ -888,7 +884,7 @@ public class GameLauncher : IGameLauncher
         Logger.Info("Game", $"Java: {javaPath}");
         Logger.Info("Game", $"AppDir: {gameDir}");
         Logger.Info("Game", $"UserData: {userDataDir}");
-        Logger.Info("Game", $"Online Mode: {_config.OnlineMode}");
+        Logger.Info("Game", $"Online Mode: {CurrentConfig.OnlineMode}");
         Logger.Info("Game", $"Session UUID: {sessionUuid}");
         Logger.Info("Game", $"Launch Player Name: {launchPlayerName}");
     }
@@ -942,7 +938,7 @@ public class GameLauncher : IGameLauncher
     /// </summary>
     private void ApplyUserJavaArguments(ProcessStartInfo startInfo)
     {
-        if (JvmArgumentBuilder.ApplyToProcess(startInfo, _config.JavaArguments))
+        if (JvmArgumentBuilder.ApplyToProcess(startInfo, CurrentConfig.JavaArguments))
             Logger.Info("Game", "Applied custom Java arguments from settings");
     }
 
@@ -999,17 +995,14 @@ public class GameLauncher : IGameLauncher
     /// </summary>
     private void ApplyGpuEnvironment(ProcessStartInfo startInfo)
     {
-        var gpuPref = _config.GpuPreference?.ToLowerInvariant() ?? "dedicated";
+        var gpuPref = CurrentConfig.GpuPreference?.ToLowerInvariant() ?? "dedicated";
         if (gpuPref == "auto") return;
 
         if (gpuPref == "dedicated")
         {
-            // NVIDIA Optimus: request dedicated GPU
             startInfo.Environment["__NV_PRIME_RENDER_OFFLOAD"] = "1";
             startInfo.Environment["__GLX_VENDOR_LIBRARY_NAME"] = "nvidia";
-            // AMD switchable graphics
             startInfo.Environment["DRI_PRIME"] = "1";
-            // Windows: hint to driver to use high-performance GPU
             startInfo.Environment["DXGI_GPU_PREFERENCE"] = "2";
             Logger.Info("Game", "GPU preference: dedicated (NVIDIA/AMD env vars set)");
         }
@@ -1022,7 +1015,7 @@ public class GameLauncher : IGameLauncher
         }
     }
 
-    private ProcessStartInfo BuildWindowsStartInfo(
+    private static ProcessStartInfo BuildWindowsStartInfo(
         string executable, string workingDir, string gameDir,
         string userDataDir, string javaPath, string sessionUuid,
         string? identityToken, string? sessionToken, string launchPlayerName)
@@ -1190,7 +1183,7 @@ exec env ""${{ENV_ARGS[@]}}"" ""{executable}"" {argsString}
     /// </summary>
     private string BuildGpuEnvLines()
     {
-        var gpuPref = _config.GpuPreference?.ToLowerInvariant() ?? "dedicated";
+        var gpuPref = CurrentConfig.GpuPreference?.ToLowerInvariant() ?? "dedicated";
         if (gpuPref == "auto") return "# GPU preference: auto (system decides)\n\n";
 
         if (gpuPref == "dedicated")
@@ -1304,25 +1297,25 @@ export __NV_PRIME_RENDER_OFFLOAD=0
     /// </summary>
     private string BuildCustomEnvLines()
     {
-        var customEnv = _config.GameEnvironmentVariables?.Trim();
+        var customEnv = CurrentConfig.GameEnvironmentVariables?.Trim();
         if (string.IsNullOrWhiteSpace(customEnv))
             return "# No custom environment variables\n\n";
 
         var sb = new StringBuilder();
         sb.AppendLine("# Custom environment variables from Settings");
 
-        var lines = customEnv.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
+        var lines = customEnv.Split(['\n', '\r'], StringSplitOptions.RemoveEmptyEntries);
         var validCount = 0;
 
-        var envVarRegex = new Regex(@"(?<key>[A-Za-z_][A-Za-z0-9_]*)=(?<value>""[^""]*""|'[^']*'|[^""'\s]+)", RegexOptions.Compiled);
+        var envVarRegex = EnvironmentVariableAssignmentRegex();
 
         foreach (var line in lines)
         {
             var trimmed = line.Trim();
-            if (string.IsNullOrEmpty(trimmed) || trimmed.StartsWith("#"))
+            if (string.IsNullOrEmpty(trimmed) || trimmed.StartsWith('#'))
                 continue;
 
-            bool isMultiVarLine = Regex.IsMatch(trimmed, @"\s+[A-Za-z_][A-Za-z0-9_]*=");
+            bool isMultiVarLine = MultipleEnvironmentVariablesRegex().IsMatch(trimmed);
 
             if (isMultiVarLine)
             {
@@ -1334,7 +1327,7 @@ export __NV_PRIME_RENDER_OFFLOAD=0
 
                     if ((val.StartsWith('"') && val.EndsWith('"')) || (val.StartsWith('\'') && val.EndsWith('\'')))
                     {
-                        if (val.Length >= 2) val = val.Substring(1, val.Length - 2);
+                        if (val.Length >= 2) val = val[1..^1];
                     }
 
                     var escaped = EscapeForBashDoubleQuoted(val);
@@ -1350,7 +1343,7 @@ export __NV_PRIME_RENDER_OFFLOAD=0
                 var key = trimmed[..eqIndex].Trim();
                 var value = trimmed[(eqIndex + 1)..].Trim();
 
-                if (!Regex.IsMatch(key, @"^[A-Za-z_][A-Za-z0-9_]*$"))
+                if (!EnvironmentVariableNameRegex().IsMatch(key))
                     continue;
 
                 var escapedValue = EscapeForBashDoubleQuoted(value);
@@ -1396,14 +1389,13 @@ DUALAUTH_TRUST_OFFICIAL=""true""
     }
 
     private string BuildUserJavaEnvLines()
-        => JvmArgumentBuilder.BuildEnvLine(_config.JavaArguments);
+        => JvmArgumentBuilder.BuildEnvLine(CurrentConfig.JavaArguments);
 
     private static string EscapeForBashDoubleQuoted(string value)
         => JvmArgumentBuilder.EscapeForBash(value);
 
     private async Task StartAndMonitorProcessAsync(
         ProcessStartInfo startInfo,
-        string sessionUuid,
         string profileName,
         string instanceId,
         string profileId,
@@ -1443,7 +1435,7 @@ DUALAUTH_TRUST_OFFICIAL=""true""
                 if (string.IsNullOrEmpty(e.Data)) return;
                 string line = e.Data;
                 instanceLog.Write("OUT", "Game", line);
-                bool isNewLogEntry = Regex.IsMatch(line, @"^\d{4}-\d{2}-\d{2}");
+                bool isNewLogEntry = LogTimestampRegex().IsMatch(line);
 
                 if (line.StartsWith("Set log path to")) { Logger.Info("Game", line); return; }
 
@@ -1579,4 +1571,16 @@ DUALAUTH_TRUST_OFFICIAL=""true""
             throw new Exception($"Failed to start game: {ex.Message}");
         }
     }
+
+    [GeneratedRegex(@"(?<key>[A-Za-z_][A-Za-z0-9_]*)=(?<value>""[^""]*""|'[^']*'|[^""'\s]+)")]
+    private static partial Regex EnvironmentVariableAssignmentRegex();
+
+    [GeneratedRegex(@"\s+[A-Za-z_][A-Za-z0-9_]*=")]
+    private static partial Regex MultipleEnvironmentVariablesRegex();
+
+    [GeneratedRegex(@"^[A-Za-z_][A-Za-z0-9_]*$")]
+    private static partial Regex EnvironmentVariableNameRegex();
+
+    [GeneratedRegex(@"^\d{4}-\d{2}-\d{2}")]
+    private static partial Regex LogTimestampRegex();
 }

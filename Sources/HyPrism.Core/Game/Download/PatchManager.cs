@@ -72,11 +72,9 @@ public class PatchManager : IPatchManager
         Logger.Info("Download", $"Differential update: v{installedVersion} -> v{latestVersion} (official={!officialDown})");
         _progress.ReportDownloadProgress("update", 0, $"Updating game from v{installedVersion} to v{latestVersion}...", null, 0, 0);
 
-        // Ensure Butler is available
-        await _butler.EnsureButlerInstalledAsync((_, _) => { });
+        await _butler.EnsureButlerInstalledAsync((_, _) => { }, ct);
 
-        // Mirror + release: use a single full standalone game copy.
-        // Differential release updates are intentionally not used here.
+        // Release mirrors provide full copies; differential updates are reserved for pre-release
         if (officialDown && !_versions.IsDiffBasedBranch(normalizedBranch))
         {
             Logger.Info("Download", $"Mirror release: downloading full copy v{latestVersion}");
@@ -84,14 +82,13 @@ public class PatchManager : IPatchManager
             return;
         }
 
-        // Official server or mirror pre-release: apply patches sequentially
         var patchesToApply = _versions.GetPatchSequence(installedVersion, latestVersion);
         Logger.Info("Download", $"Patches to apply: {string.Join(" -> ", patchesToApply)}");
 
         for (int i = 0; i < patchesToApply.Count; i++)
         {
             int patchVersion = patchesToApply[i];
-            int prevVersion = patchVersion - 1; // Sequence is always contiguous
+            int prevVersion = patchVersion - 1;
             ct.ThrowIfCancellationRequested();
 
             int baseProgress = (i * 90) / patchesToApply.Count;
@@ -107,13 +104,11 @@ public class PatchManager : IPatchManager
 
             if (officialDown)
             {
-                // Mirror pre-release: download diff v{prev}~{version} directly
                 await DownloadMirrorDiffAsync(os, arch, normalizedBranch, prevVersion, patchVersion,
                     patchPwrPath, i, patchesToApply.Count, baseProgress, progressPerPatch, ct);
             }
             else
             {
-                // Get URL from cache (will refresh if needed)
                 string patchUrl;
                 try
                 {
@@ -122,19 +117,17 @@ public class PatchManager : IPatchManager
                 catch (Exception ex)
                 {
                     Logger.Warning("Download", $"Failed to get official URL for patch v{patchVersion}: {ex.Message}");
-                    // Fall back to mirror diff
                     await DownloadMirrorDiffAsync(os, arch, normalizedBranch, prevVersion, patchVersion,
                         patchPwrPath, i, patchesToApply.Count, baseProgress, progressPerPatch, ct);
                     goto applyPatch;
                 }
-                
+
                 Logger.Info("Download", $"Downloading patch: {patchUrl}");
                 await DownloadPatchWithFallbackAsync(patchUrl, patchPwrPath, os, arch, normalizedBranch,
                     prevVersion, patchVersion, i, patchesToApply.Count, baseProgress, progressPerPatch, ct);
             }
 
-            applyPatch:
-            // Apply the downloaded patch with Butler
+        applyPatch:
             ct.ThrowIfCancellationRequested();
             int applyBaseProgress = baseProgress + (progressPerPatch / 2);
             _progress.ReportDownloadProgress("update", applyBaseProgress,
@@ -164,10 +157,7 @@ public class PatchManager : IPatchManager
         string versionPath, string branch, string os, string arch,
         int version, CancellationToken ct)
     {
-        var mirrorUrl = await _versions.GetMirrorDownloadUrlAsync(os, arch, branch, version, ct);
-        if (mirrorUrl == null)
-            throw new Exception($"Mirror does not have release v{version} for {os}/{arch}");
-
+        var mirrorUrl = await _versions.GetMirrorDownloadUrlAsync(os, arch, branch, version, ct) ?? throw new Exception($"Mirror does not have release v{version} for {os}/{arch}");
         string pwrPath = Path.Combine(
             _downloadsCacheDirectory,
             $"{branch}_mirror_full_{version}.pwr");
@@ -210,10 +200,7 @@ public class PatchManager : IPatchManager
         int baseProgress, int progressPerPatch,
         CancellationToken ct)
     {
-        var mirrorUrl = await _versions.GetMirrorDiffUrlAsync(os, arch, branch, fromVersion, toVersion, ct);
-        if (mirrorUrl == null)
-            throw new Exception($"Mirror does not have diff v{fromVersion}~{toVersion} for {os}/{arch}/{branch}");
-
+        var mirrorUrl = await _versions.GetMirrorDiffUrlAsync(os, arch, branch, fromVersion, toVersion, ct) ?? throw new Exception($"Mirror does not have diff v{fromVersion}~{toVersion} for {os}/{arch}/{branch}");
         Logger.Info("Download", $"Downloading diff v{fromVersion}~{toVersion} from mirror: {mirrorUrl}");
         _progress.ReportDownloadProgress("update", baseProgress,
             $"Downloading patch {patchIndex + 1}/{totalPatches} from mirror (v{fromVersion}→v{toVersion})...", null, 0, 0);
@@ -242,7 +229,6 @@ public class PatchManager : IPatchManager
     {
         bool downloaded = false;
 
-        // Try official URL first
         try
         {
             await _downloader.DownloadFileAsync(officialUrl, destPath, (progress, dl, total) =>
@@ -260,10 +246,8 @@ public class PatchManager : IPatchManager
             if (File.Exists(destPath)) try { File.Delete(destPath); } catch { }
         }
 
-        // Fallback to mirror
         if (!downloaded)
         {
-            // Try the correct mirror method based on branch type
             string? mirrorUrl;
             if (_versions.IsDiffBasedBranch(branch))
                 mirrorUrl = await _versions.GetMirrorDiffUrlAsync(os, arch, branch, prevVersion, patchVersion, ct);

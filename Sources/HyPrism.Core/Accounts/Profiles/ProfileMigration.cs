@@ -1,6 +1,7 @@
 // Copyright (C) 2026 HyPrism Launcher
 // SPDX-License-Identifier: GPL-3.0-only
 
+using System.Text.Json;
 using HyPrism.Core.Models;
 using HyPrism.Core.Infrastructure;
 
@@ -31,11 +32,9 @@ public static class ProfileMigration
         {
             var folderName = Path.GetFileName(folder);
 
-            // Only process GUID-named folders (ID-based layout)
             if (!Guid.TryParse(folderName, out _))
                 continue;
 
-            // Skip if already tracked in meta
             if (profiles.Any(p => string.Equals(p.Id, folderName, StringComparison.OrdinalIgnoreCase)))
                 continue;
 
@@ -82,11 +81,9 @@ public static class ProfileMigration
                 }
             }
 
-            // Fall back to folder name as ID if the .sh didn't have it
             if (string.IsNullOrWhiteSpace(profileId))
                 profileId = folderName;
 
-            // We must have at least a UUID to create a valid profile
             if (string.IsNullOrWhiteSpace(uuid))
                 return null;
 
@@ -190,7 +187,7 @@ public static class ProfileMigration
             if (File.Exists(profileJsonPath))
             {
                 var json = File.ReadAllText(profileJsonPath);
-                using var doc = System.Text.Json.JsonDocument.Parse(json);
+                using var doc = JsonDocument.Parse(json);
                 var root = doc.RootElement;
 
                 if (root.TryGetProperty("uuid", out var uuidEl))
@@ -237,7 +234,6 @@ public static class ProfileMigration
         }
         catch
         {
-            // Best effort only
         }
 
         return null;

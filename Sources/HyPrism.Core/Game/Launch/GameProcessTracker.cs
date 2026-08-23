@@ -1,6 +1,7 @@
 // Copyright (C) 2026 HyPrism Launcher
 // SPDX-License-Identifier: GPL-3.0-only
 
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Text.Json;
 using HyPrism.Core.Infrastructure;
@@ -15,7 +16,7 @@ namespace HyPrism.Core.Game.Launch;
 public sealed class GameProcessTracker : IGameProcessTracker, IDisposable
 {
     private const string RegistryFileName = "game-processes.json";
-    private readonly object _processLock = new();
+    private readonly Lock _processLock = new();
     private readonly Dictionary<int, TrackedProcess> _processes = [];
     private readonly List<GameProcessInfo> _processesExitedWhileUnavailable = [];
     private readonly string? _registryPath;
@@ -83,10 +84,9 @@ public sealed class GameProcessTracker : IGameProcessTracker, IDisposable
         {
             RestoreProcessesTrackedByOtherLaunchersLocked();
             RemoveExitedProcessesLocked();
-            return _processes.Values
+            return [.. _processes.Values
                 .Select(tracked => tracked.Info)
-                .OrderBy(tracked => tracked.RegisteredAtUtc)
-                .ToArray();
+                .OrderBy(tracked => tracked.RegisteredAtUtc)];
         }
     }
 
@@ -200,7 +200,7 @@ public sealed class GameProcessTracker : IGameProcessTracker, IDisposable
         }
     }
 
-    private Process? TryRestoreProcess(GameProcessInfo record)
+    private static Process? TryRestoreProcess(GameProcessInfo record)
     {
         try
         {
@@ -221,7 +221,7 @@ public sealed class GameProcessTracker : IGameProcessTracker, IDisposable
         {
             return null;
         }
-        catch (System.ComponentModel.Win32Exception)
+        catch (Win32Exception)
         {
             return null;
         }
@@ -314,7 +314,7 @@ public sealed class GameProcessTracker : IGameProcessTracker, IDisposable
             var temporaryPath = $"{_registryPath}.{Environment.ProcessId}.{Guid.NewGuid():N}.tmp";
             var content = JsonSerializer.Serialize(
                 records,
-                new JsonSerializerOptions { WriteIndented = true });
+                JsonDefaults.Indented);
             File.WriteAllText(temporaryPath, content);
             File.Move(temporaryPath, _registryPath, overwrite: true);
         }
@@ -344,7 +344,7 @@ public sealed class GameProcessTracker : IGameProcessTracker, IDisposable
         }
     }
 
-    private IReadOnlyCollection<GameProcessInfo> ReadRegistryRecords()
+    private List<GameProcessInfo> ReadRegistryRecords()
     {
         if (string.IsNullOrWhiteSpace(_registryPath) || !File.Exists(_registryPath))
             return [];
@@ -414,7 +414,7 @@ public sealed class GameProcessTracker : IGameProcessTracker, IDisposable
         {
             return null;
         }
-        catch (System.ComponentModel.Win32Exception)
+        catch (Win32Exception)
         {
             return null;
         }
@@ -452,7 +452,7 @@ public sealed class GameProcessTracker : IGameProcessTracker, IDisposable
         {
             return false;
         }
-        catch (System.ComponentModel.Win32Exception)
+        catch (Win32Exception)
         {
             return false;
         }

@@ -19,7 +19,7 @@ public sealed class GameLaunchCoordinator(
     IProgressReporter progress) : IGameLaunchCoordinator
 {
     private readonly HashSet<string> _launchingInstanceIds = new(StringComparer.OrdinalIgnoreCase);
-    private readonly object _launchLock = new();
+    private readonly Lock _launchLock = new();
     private const int ExitSuccess = 0;
     private const int ErrorGenericLaunch = 1;
     private const int ErrorNotInstalled = 11;

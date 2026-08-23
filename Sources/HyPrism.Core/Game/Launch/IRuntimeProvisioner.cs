@@ -12,8 +12,11 @@ public interface IRuntimeProvisioner
     /// Ensures that a compatible Java Runtime Environment is installed
     /// </summary>
     /// <param name="progressCallback">Callback for reporting progress (percentage, status message)</param>
+    /// <param name="cancellationToken">Token used to cancel runtime download and installation</param>
     /// <returns>A task that completes when a compatible runtime is available</returns>
-    Task EnsureJREInstalledAsync(Action<int, string> progressCallback);
+    Task EnsureJREInstalledAsync(
+        Action<int, string> progressCallback,
+        CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Gets the Java feature version number from a Java binary
@@ -45,6 +48,9 @@ public interface IRuntimeProvisioner
     /// Ensures that the Visual C++ Redistributable is installed (Windows only)
     /// </summary>
     /// <param name="progressCallback">Callback for reporting progress (percentage, status message)</param>
+    /// <param name="cancellationToken">Token used to cancel the download and installer wait</param>
     /// <returns>A task that completes when the redistributable is available</returns>
-    Task EnsureVCRedistInstalledAsync(Action<int, string> progressCallback);
+    Task EnsureVCRedistInstalledAsync(
+        Action<int, string> progressCallback,
+        CancellationToken cancellationToken = default);
 }

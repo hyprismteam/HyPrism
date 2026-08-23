@@ -15,7 +15,7 @@ public sealed class ProgressReporter : IProgressReporter
     private const int BroadcastIntervalMilliseconds = 100;
 
     private readonly IDiscordPresence _discord;
-    private readonly object _broadcastGate = new();
+    private readonly Lock _broadcastGate = new();
     private readonly AsyncLocal<string?> _operationInstanceId = new();
     private readonly Dictionary<string, BroadcastState> _broadcastStates =
         new(StringComparer.Ordinal);
@@ -70,7 +70,7 @@ public sealed class ProgressReporter : IProgressReporter
     /// <inheritdoc/>
     public void ReportDownloadProgress(string stage, int progress, string messageKey, object[]? args = null, long downloaded = 0, long total = 0, string? instanceId = null)
     {
-        // Download loops report on every buffer read; broadcast at most ~10 updates
+        // Download loops report on every buffer read; broadcast at most about 10 updates
         // per second per stage, always letting stage changes and completion through
         if (!ShouldBroadcast(stage, progress, instanceId))
             return;

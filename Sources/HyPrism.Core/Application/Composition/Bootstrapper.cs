@@ -1,6 +1,7 @@
 // Copyright (C) 2026 HyPrism Launcher
 // SPDX-License-Identifier: GPL-3.0-only
 
+using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.DependencyInjection;
 using HyPrism.Core.Infrastructure;
@@ -22,16 +23,16 @@ namespace HyPrism.Core;
 /// <summary>
 /// Builds and initializes the shared launcher service graph
 /// </summary>
-public static class Bootstrapper
+public static partial class Bootstrapper
 {
     /// <summary>
     /// URL parts for fetching CurseForge API key.
     /// Per legacy policy, the key cannot be stored in plain text
     /// </summary>
     private static string CurseForgeKeySourceUrl => string.Concat(
-        System.Text.Encoding.UTF8.GetString(Convert.FromBase64String("aHR0cHM6Ly9yYXcuZ2l0aHVidXNlcmNvbnRlbnQuY29tLw==")),
-        System.Text.Encoding.UTF8.GetString(Convert.FromBase64String("UHJpc21MYXVuY2hlci9QcmlzbUxhdW5jaGVy")),
-        System.Text.Encoding.UTF8.GetString(Convert.FromBase64String("L2RldmVsb3AvQ01ha2VMaXN0cy50eHQ=")));
+        Encoding.UTF8.GetString(Convert.FromBase64String("aHR0cHM6Ly9yYXcuZ2l0aHVidXNlcmNvbnRlbnQuY29tLw==")),
+        Encoding.UTF8.GetString(Convert.FromBase64String("UHJpc21MYXVuY2hlci9QcmlzbUxhdW5jaGVy")),
+        Encoding.UTF8.GetString(Convert.FromBase64String("L2RldmVsb3AvQ01ha2VMaXN0cy50eHQ=")));
 
     /// <summary>
     /// Creates the shared launcher service graph and applies host-specific registrations
@@ -226,7 +227,6 @@ public static class Bootstrapper
                     sp.GetService<IOAuthCallbackPageRenderer>()));
             services.AddSingleton<IHytaleAuthenticator>(sp => sp.GetRequiredService<HytaleAuthenticator>());
 
-            // Official version source that requires authentication
             services.AddSingleton(sp =>
                 new HytaleVersionSource(
                     sp.GetRequiredService<AppPathConfiguration>().AppDir,
@@ -235,8 +235,6 @@ public static class Bootstrapper
                     sp.GetRequiredService<IConfigStore>(),
                     sp.GetRequiredService<IProfileManager>()));
 
-            // Mirror sources are loaded from JSON meta files by MirrorCatalogLoader
-            // (see GameVersionCatalog registration above)
 
             #endregion
 
@@ -252,7 +250,6 @@ public static class Bootstrapper
 
             #endregion
 
-            // Platform hosts add their adapters after the shared launcher graph.
             configureHost?.Invoke(services);
 
             var provider = services.BuildServiceProvider();
@@ -302,7 +299,7 @@ public static class Bootstrapper
         {
             var cmakeContent = await httpClient.GetStringAsync(CurseForgeKeySourceUrl, cancellationToken);
 
-            var match = Regex.Match(cmakeContent, @"set\(Launcher_CURSEFORGE_API_KEY\s+""([^""]+)""");
+            var match = CurseForgeApiKeyRegex().Match(cmakeContent);
 
             if (match.Success)
             {
@@ -325,6 +322,9 @@ public static class Bootstrapper
             Logger.Warning("Bootstrapper", $"Failed to fetch CurseForge API key: {ex.Message}");
         }
     }
+
+    [GeneratedRegex(@"set\(Launcher_CURSEFORGE_API_KEY\s+""([^""]+)""")]
+    private static partial Regex CurseForgeApiKeyRegex();
 }
 
 /// <summary>

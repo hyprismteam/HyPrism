@@ -65,7 +65,7 @@ internal static class TokenStore
     {
         try
         {
-            var json = JsonSerializer.Serialize(session, new JsonSerializerOptions { WriteIndented = true });
+            var json = JsonSerializer.Serialize(session, JsonDefaults.Indented);
             File.WriteAllText(filePath, json);
         }
         catch (Exception ex)

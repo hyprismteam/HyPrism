@@ -8,7 +8,7 @@ namespace HyPrism.Core.Infrastructure;
 /// </summary>
 public static class LauncherCachePaths
 {
-    private static readonly object MigrationLock = new();
+    private static readonly Lock MigrationLock = new();
 
     /// <summary>
     /// Gets the directory used for resumable game payload downloads

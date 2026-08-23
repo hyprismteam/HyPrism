@@ -258,8 +258,9 @@ public interface IInstanceRepository
     /// deduplicates instance IDs, and moves the contents to the instances directory
     /// </summary>
     /// <param name="zipPath">The path to the ZIP archive to import</param>
+    /// <param name="cancellationToken">Token used to cancel extraction and metadata I/O</param>
     /// <returns>A task that completes after the instance is imported</returns>
     /// <exception cref="FileNotFoundException">Thrown when the archive does not exist</exception>
     /// <exception cref="InvalidDataException">Thrown when the archive does not contain a valid game instance</exception>
-    Task ImportFromZipAsync(string zipPath);
+    Task ImportFromZipAsync(string zipPath, CancellationToken cancellationToken = default);
 }

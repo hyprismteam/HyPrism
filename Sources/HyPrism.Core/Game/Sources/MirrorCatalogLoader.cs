@@ -3,6 +3,7 @@
 
 using System.Text.Encodings.Web;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using HyPrism.Core.Models;
 using HyPrism.Core.Infrastructure;
 
@@ -22,7 +23,7 @@ public static class MirrorCatalogLoader
     {
         WriteIndented = true,
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
         Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
     };
 
@@ -37,7 +38,6 @@ public static class MirrorCatalogLoader
     {
         var mirrorsDir = Path.Combine(appDir, MirrorsDirName);
 
-        // Generate defaults on first launch (directory missing or empty)
         if (!Directory.Exists(mirrorsDir) || !Directory.EnumerateFiles(mirrorsDir, $"*{MirrorFileExtension}").Any())
         {
             Logger.Info("MirrorLoader", "No mirror definitions found, generating defaults...");
@@ -72,7 +72,6 @@ public static class MirrorCatalogLoader
                     continue;
                 }
 
-                // Validate sourceType has matching config
                 if (meta.SourceType == "pattern" && meta.Pattern == null)
                 {
                     Logger.Warning("MirrorLoader", $"Mirror '{meta.Id}' has sourceType 'pattern' but no pattern config");
@@ -99,7 +98,6 @@ public static class MirrorCatalogLoader
             }
         }
 
-        // Sort by priority
         sources.Sort((a, b) => a.Priority.CompareTo(b.Priority));
 
         Logger.Success("MirrorLoader", $"Loaded {sources.Count} mirror source(s) from {mirrorsDir}");
@@ -141,7 +139,7 @@ public static class MirrorCatalogLoader
             }
         }
 
-        return metas.OrderBy(m => m.Priority).ToList();
+        return [.. metas.OrderBy(m => m.Priority)];
     }
 
     /// <summary>
@@ -235,8 +233,6 @@ public static class MirrorCatalogLoader
     /// </summary>
     private static List<MirrorMeta> GetDefaultMirrors()
     {
-        // No preset mirrors - users must add them manually via Settings > Downloads
-        // or by placing .mirror.json files in the Mirrors folder
-        return new List<MirrorMeta>();
+        return [];
     }
 }

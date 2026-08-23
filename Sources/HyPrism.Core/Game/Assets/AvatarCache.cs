@@ -42,7 +42,6 @@ public class AvatarCache : IAvatarCache
         {
             if (string.IsNullOrWhiteSpace(uuid)) return false;
 
-            // Search all instances for the latest cached avatar
             var instanceRoot = _instances.GetInstanceRoot();
             if (!Directory.Exists(instanceRoot)) return false;
 
@@ -68,7 +67,6 @@ public class AvatarCache : IAvatarCache
 
             if (latestAvatarPath == null) return false;
 
-            // Copy to persistent backup
             var backupDir = Path.Combine(_appDir, "AvatarBackups");
             Directory.CreateDirectory(backupDir);
             var backupPath = GetAvatarBackupPath(uuid);
@@ -92,7 +90,6 @@ public class AvatarCache : IAvatarCache
         {
             if (string.IsNullOrWhiteSpace(uuid)) return false;
 
-            // Clear persistent backup
             var persistentPath = Path.Combine(_appDir, "AvatarBackups", $"{uuid}.png");
             if (File.Exists(persistentPath))
             {
@@ -100,7 +97,6 @@ public class AvatarCache : IAvatarCache
                 Logger.Info("Avatar", $"Deleted persistent avatar for {uuid}");
             }
 
-            // Clear game cache for all instances
             var instanceRoot = _instances.GetInstanceRoot();
             if (Directory.Exists(instanceRoot))
             {

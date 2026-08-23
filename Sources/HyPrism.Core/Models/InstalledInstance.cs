@@ -10,13 +10,13 @@ public enum InstanceValidationStatus
 {
     /// <summary>All required files are present and the instance is ready to launch.</summary>
     Valid,
-    
+
     /// <summary>The instance directory exists but no game files are present.</summary>
     NotInstalled,
-    
+
     /// <summary>Critical files are missing or corrupted.</summary>
     Corrupted,
-    
+
     /// <summary>Validation status has not been checked yet.</summary>
     Unknown
 }
@@ -30,7 +30,7 @@ public class InstanceValidationDetails
     public bool HasAssets { get; set; }
     public bool HasLibraries { get; set; }
     public bool HasConfig { get; set; }
-    public List<string> MissingComponents { get; set; } = new();
+    public List<string> MissingComponents { get; set; } = [];
     public string? ErrorMessage { get; set; }
 }
 
@@ -53,23 +53,23 @@ public class InstalledInstance
     public long UserDataSize { get; set; }
     /// <summary>Total size in bytes of the entire instance directory.</summary>
     public long TotalSize { get; set; }
-    
+
     /// <summary>
     /// Legacy property for backwards compatibility.
     /// Use ValidationStatus for more detailed information.
     /// </summary>
     public bool IsValid { get; set; }
-    
+
     /// <summary>
     /// Detailed validation status of the instance.
     /// </summary>
     public InstanceValidationStatus ValidationStatus { get; set; } = InstanceValidationStatus.Unknown;
-    
+
     /// <summary>
     /// Detailed information about validation results.
     /// </summary>
     public InstanceValidationDetails? ValidationDetails { get; set; }
-    
+
     /// <summary>Optional user-defined display name for the instance.</summary>
     public string? CustomName { get; set; }
 }

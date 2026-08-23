@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 using System.Text.Json;
+using System.Diagnostics.CodeAnalysis;
 using HyPrism.Core.Models;
 using HyPrism.Core.Infrastructure;
 
@@ -63,17 +64,19 @@ public class VersionCache
     /// <summary>
     /// Checks if a specific branch's data in the cache is fresh (within <paramref name="maxAge"/>).
     /// </summary>
+    [SuppressMessage(
+        "Performance",
+        "CA1822:Mark members as static",
+        Justification = "Public instance API is retained for source compatibility")]
     public bool IsBranchFresh(VersionsCacheSnapshot snapshot, string branch, TimeSpan maxAge)
     {
-        // Check per-branch timestamp first (new format)
         if (snapshot.BranchFetchedAt.TryGetValue(branch, out var branchFetchedAt))
         {
             var branchAge = DateTime.UtcNow - branchFetchedAt;
             return branchAge <= maxAge;
         }
 
-        // Fallback to global FetchedAtUtc for old cache format
-        // But only if this branch actually has data
+        // Old cache snapshots have only a global timestamp
         var hasData = (snapshot.Data.Hytale?.Branches.ContainsKey(branch) == true) ||
                       snapshot.Data.Mirrors.Any(m => m.Branches.ContainsKey(branch));
         if (!hasData) return false;
@@ -90,7 +93,6 @@ public class VersionCache
     {
         try
         {
-            // Check memory cache first
             if (Current != null)
             {
                 if (string.Equals(Current.Os, osName, StringComparison.OrdinalIgnoreCase) &&
@@ -100,7 +102,6 @@ public class VersionCache
                 }
             }
 
-            // Load from disk
             var snapshot = Load();
             if (snapshot == null) return null;
 
@@ -126,7 +127,6 @@ public class VersionCache
     {
         try
         {
-            // Check memory cache first
             if (Current != null)
             {
                 if (!string.Equals(Current.Os, osName, StringComparison.OrdinalIgnoreCase)) return null;
@@ -137,7 +137,6 @@ public class VersionCache
                     return Current;
             }
 
-            // Load from disk
             var snapshot = Load();
             if (snapshot == null) return null;
 
@@ -193,7 +192,7 @@ public class VersionCache
             if (!string.IsNullOrEmpty(directory))
                 Directory.CreateDirectory(directory);
 
-            var json = JsonSerializer.Serialize(snapshot, new JsonSerializerOptions { WriteIndented = true });
+            var json = JsonSerializer.Serialize(snapshot, JsonDefaults.Indented);
             File.WriteAllText(path, json);
 
             Logger.Debug("Version", $"Saved versions cache to {path}");
@@ -211,7 +210,7 @@ public class VersionCache
     public VersionsCacheSnapshot Sanitize(VersionsCacheSnapshot snapshot)
     {
         snapshot.Data ??= new VersionsCacheData();
-        snapshot.Data.Mirrors ??= new List<MirrorSourceCache>();
+        snapshot.Data.Mirrors ??= [];
 
         var allowedMirrorIds = _getAllowedMirrorIds()
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
@@ -247,18 +246,16 @@ public class VersionCache
             var snapshot = JsonSerializer.Deserialize<PatchesCacheSnapshot>(json);
             if (snapshot == null) return null;
 
-            // Sanitize mirrors list: remove mirrors that are no longer registered
             snapshot.Data ??= new PatchesCacheData();
-            snapshot.Data.Mirrors ??= new List<MirrorPatchCache>();
+            snapshot.Data.Mirrors ??= [];
 
             var allowedMirrorIds = _getAllowedMirrorIds()
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-            snapshot.Data.Mirrors = snapshot.Data.Mirrors
+            snapshot.Data.Mirrors = [.. snapshot.Data.Mirrors
                 .Where(m => !string.IsNullOrWhiteSpace(m.MirrorId) && allowedMirrorIds.Contains(m.MirrorId))
                 .GroupBy(m => m.MirrorId, StringComparer.OrdinalIgnoreCase)
-                .Select(g => g.Last())
-                .ToList();
+                .Select(g => g.Last())];
 
             return snapshot;
         }
@@ -279,7 +276,7 @@ public class VersionCache
             if (!string.IsNullOrEmpty(directory))
                 Directory.CreateDirectory(directory);
 
-            var json = JsonSerializer.Serialize(snapshot, new JsonSerializerOptions { WriteIndented = true });
+            var json = JsonSerializer.Serialize(snapshot, JsonDefaults.Indented);
             File.WriteAllText(path, json);
 
             var totalSteps = (snapshot.Data.Hytale?.Values.Sum(v => v.Count) ?? 0)

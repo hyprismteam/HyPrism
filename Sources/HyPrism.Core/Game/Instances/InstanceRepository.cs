@@ -3,9 +3,12 @@
 
 using HyPrism.Core.Infrastructure;
 using System.IO.Compression;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using System.Text.Encodings.Web;
 using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
 using HyPrism.Core.Models;
 
 namespace HyPrism.Core.Game.Instances;
@@ -20,7 +23,7 @@ namespace HyPrism.Core.Game.Instances;
 /// Legacy layouts (branch subdirectories, version-named folders) are migrated on startup.
 /// This service also handles user data directories and cosmetic skins
 /// </remarks>
-public class InstanceRepository : IInstanceRepository
+public partial class InstanceRepository : IInstanceRepository
 {
     private readonly string _appDir;
 
@@ -55,12 +58,6 @@ public class InstanceRepository : IInstanceRepository
     /// <returns>The current configuration object</returns>
     private Config GetConfig() => _configStore.Configuration;
 
-    /// <summary>
-    /// Persists the current configuration to disk
-    /// </summary>
-    /// <param name="config">The configuration object (parameter kept for API compatibility)</param>
-    private void SaveConfig(Config config) => _configStore.SaveConfig();
-
     #region Instance cache (instances.json)
 
     /// <summary>Returns the path to the instance cache file</summary>
@@ -78,7 +75,7 @@ public class InstanceRepository : IInstanceRepository
             try
             {
                 var json = File.ReadAllText(path);
-                return JsonSerializer.Deserialize<List<InstanceInfo>>(json, JsonOptions) ?? new();
+                return JsonSerializer.Deserialize<List<InstanceInfo>>(json, JsonOptions) ?? [];
             }
             catch (Exception ex)
             {
@@ -86,8 +83,7 @@ public class InstanceRepository : IInstanceRepository
             }
         }
 
-        // Migration: seed from deprecated config field if present
-        #pragma warning disable CS0618
+#pragma warning disable CS0618
         var config = GetConfig();
         if (config.Instances?.Count > 0)
         {
@@ -97,9 +93,9 @@ public class InstanceRepository : IInstanceRepository
             _configStore.SaveConfig();
             return LoadInstanceCache();
         }
-        #pragma warning restore CS0618
+#pragma warning restore CS0618
 
-        return new List<InstanceInfo>();
+        return [];
     }
 
     /// <summary>Saves the instance list to instances.json</summary>
@@ -194,14 +190,14 @@ public class InstanceRepository : IInstanceRepository
     {
         var config = GetConfig();
         if (version > 0) return version;
-        #pragma warning disable CS0618 // Backward compatibility: SelectedVersion and VersionType kept for migration
+#pragma warning disable CS0618 // Backward compatibility: SelectedVersion and VersionType kept for migration
         if (config.SelectedVersion > 0) return config.SelectedVersion;
 
         var info = LoadLatestInfo(branch);
         if (info?.Version > 0) return info.Version;
 
         string resolvedBranch = string.IsNullOrWhiteSpace(branch) ? config.VersionType : branch;
-        #pragma warning restore CS0618
+#pragma warning restore CS0618
         string branchDir = GetBranchPath(resolvedBranch);
         if (Directory.Exists(branchDir))
         {
@@ -226,14 +222,12 @@ public class InstanceRepository : IInstanceRepository
         string normalizedBranch = NormalizeVersionType(branch);
         string versionSegment = version == 0 ? "latest" : version.ToString();
 
-        // Primary flat structure: {root}/{guid}/
         var flatRoot = GetInstanceRoot();
         if (Directory.Exists(flatRoot))
         {
             foreach (var instanceDir in Directory.GetDirectories(flatRoot))
             {
                 var dirName = Path.GetFileName(instanceDir);
-                // Skip legacy branch subdirectories
                 if (dirName.Equals("release", StringComparison.OrdinalIgnoreCase) ||
                     dirName.Equals("pre-release", StringComparison.OrdinalIgnoreCase))
                     continue;
@@ -249,7 +243,6 @@ public class InstanceRepository : IInstanceRepository
             }
         }
 
-        // Legacy fallback: branch subdirectories and dash-layout roots
         foreach (var root in GetInstanceRootsIncludingLegacy())
         {
             var branchPath = Path.Combine(root, normalizedBranch);
@@ -315,7 +308,6 @@ public class InstanceRepository : IInstanceRepository
 
         foreach (var legacy in GetLegacyRoots())
         {
-            // Check legacy naming: 'instance' (singular) and 'instances' (plural)
             foreach (var r in YieldIfExists(Path.Combine(legacy, "instance")))
             {
                 yield return r;
@@ -327,7 +319,6 @@ public class InstanceRepository : IInstanceRepository
             }
         }
 
-        // Also check old 'instance' folder in current app dir (singular -> plural migration)
         var oldInstanceDir = Path.Combine(_appDir, "instance");
         foreach (var r in YieldIfExists(oldInstanceDir))
         {
@@ -348,13 +339,13 @@ public class InstanceRepository : IInstanceRepository
     /// </summary>
     public string GetLatestInfoPath(string branch)
     {
-            return Path.Combine(GetBranchPath(branch), "latest.json");
+        return Path.Combine(GetBranchPath(branch), "latest.json");
     }
 
-        private string GetLegacyLatestInfoPath(string branch)
-        {
-            return Path.Combine(GetLatestInstancePath(branch), "latest.json");
-        }
+    private string GetLegacyLatestInfoPath(string branch)
+    {
+        return Path.Combine(GetLatestInstancePath(branch), "latest.json");
+    }
 
     /// <summary>
     /// Load latest instance info.
@@ -367,7 +358,6 @@ public class InstanceRepository : IInstanceRepository
         {
             var normalizedBranch = NormalizeVersionType(branch);
 
-            // Primary: read from the "latest" instance's meta.json
             var latestPath = GetLatestInstancePath(normalizedBranch);
             if (Directory.Exists(latestPath))
             {
@@ -378,7 +368,6 @@ public class InstanceRepository : IInstanceRepository
                 }
             }
 
-            // Fallback: legacy latest.json files (migration path)
             var path = GetLatestInfoPath(normalizedBranch);
             if (!File.Exists(path))
             {
@@ -388,7 +377,6 @@ public class InstanceRepository : IInstanceRepository
             var json = File.ReadAllText(path);
             var info = JsonSerializer.Deserialize<LatestInstanceInfo>(json, JsonOptions);
 
-            // Migrate: write to instance meta so legacy file is no longer needed
             if (info?.Version > 0 && Directory.Exists(latestPath))
             {
                 var meta = GetInstanceMeta(latestPath);
@@ -432,7 +420,6 @@ public class InstanceRepository : IInstanceRepository
                 }
             }
 
-            // Fallback: search flat structure for a latest-type instance for this branch
             var latestFlat = GetInstalledInstances()
                 .FirstOrDefault(i => i.Version == 0 &&
                     i.Branch.Equals(normalizedBranch, StringComparison.OrdinalIgnoreCase));
@@ -462,7 +449,6 @@ public class InstanceRepository : IInstanceRepository
     /// </summary>
     public static void SafeCopyDirectory(string sourceDir, string destDir)
     {
-        // Use LauncherUtilities implementation which now has infinite loop protection
         LauncherUtilities.CopyDirectory(sourceDir, destDir, false);
     }
 
@@ -546,7 +532,6 @@ public class InstanceRepository : IInstanceRepository
         string normalizedBranch = NormalizeVersionType(branch);
         var flatRoot = GetInstanceRoot();
 
-        // Primary flat structure: {root}/{guid}/
         if (Directory.Exists(flatRoot))
         {
             foreach (var instanceDir in Directory.GetDirectories(flatRoot))
@@ -564,7 +549,6 @@ public class InstanceRepository : IInstanceRepository
             }
         }
 
-        // Legacy fallback branch subdirectory: {root}/{branch}/{...}/
         var branchPath = Path.Combine(flatRoot, normalizedBranch);
         if (Directory.Exists(branchPath))
         {
@@ -572,15 +556,12 @@ public class InstanceRepository : IInstanceRepository
             {
                 var folderName = Path.GetFileName(instanceDir);
 
-                // Skip "latest" folder
                 if (folderName.Equals("latest", StringComparison.OrdinalIgnoreCase))
                     continue;
 
-                // Legacy version-named folder
                 if (folderName == version.ToString())
                     return instanceDir;
 
-                // Check meta.json for matching version
                 var meta = GetInstanceMeta(instanceDir);
                 if (meta != null && meta.Version == version &&
                     meta.Branch.Equals(normalizedBranch, StringComparison.OrdinalIgnoreCase))
@@ -588,7 +569,6 @@ public class InstanceRepository : IInstanceRepository
             }
         }
 
-        // Not found - return a placeholder flat path; callers creating instances should use CreateInstanceDirectory
         return Path.Combine(flatRoot, version.ToString());
     }
 
@@ -616,7 +596,7 @@ public class InstanceRepository : IInstanceRepository
     /// <summary>
     /// Gets the list of legacy installation root directories to search for migrations
     /// </summary>
-    private IEnumerable<string> GetLegacyRoots()
+    private static List<string> GetLegacyRoots()
     {
         var roots = new List<string>();
         void Add(string? path)
@@ -632,7 +612,7 @@ public class InstanceRepository : IInstanceRepository
         {
             Add(Path.Combine(appData, "hyprism"));
             Add(Path.Combine(appData, "Hyprism"));
-            Add(Path.Combine(appData, "HyPrism")); // legacy casing
+            Add(Path.Combine(appData, "HyPrism"));
             Add(Path.Combine(appData, "HyPrismLauncher"));
         }
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
@@ -743,8 +723,6 @@ public class InstanceRepository : IInstanceRepository
 
         if (!Directory.Exists(root)) return results;
 
-        // Shared logic for processing a single instance folder.
-        // branchHint is provided when descending into a legacy branch subdirectory.
         void ProcessFolder(string folder, string? branchHint)
         {
             var dirName = Path.GetFileName(folder);
@@ -774,7 +752,6 @@ public class InstanceRepository : IInstanceRepository
                 catch { }
             }
 
-            // If no meta.json, try to parse folder name
             if (version < 0)
             {
                 if (string.Equals(dirName, "latest", StringComparison.OrdinalIgnoreCase))
@@ -793,7 +770,7 @@ public class InstanceRepository : IInstanceRepository
                 }
                 else
                 {
-                    return; // Unknown folder format
+                    return;
                 }
             }
 
@@ -810,7 +787,6 @@ public class InstanceRepository : IInstanceRepository
             try { totalSize = new DirectoryInfo(folder).EnumerateFiles("*", SearchOption.AllDirectories).Sum(fi => fi.Length); }
             catch { }
 
-            // Fallback: legacy metadata.json for custom name
             if (string.IsNullOrEmpty(instanceId))
             {
                 var metadataPath = Path.Combine(folder, "metadata.json");
@@ -826,7 +802,6 @@ public class InstanceRepository : IInstanceRepository
                 }
             }
 
-            // Generate ID if not found and persist it
             if (string.IsNullOrEmpty(instanceId))
             {
                 if (!IsClientPresent(folder))
@@ -857,14 +832,13 @@ public class InstanceRepository : IInstanceRepository
                 }
             }
 
-            // Deduplicate: flat scan takes precedence; skip if already seen from flat scan
             if (!string.IsNullOrEmpty(instanceId) && !seenIds.Add(instanceId))
             {
                 Logger.Debug("InstanceRepository", $"Skipping duplicate instance {instanceId} at {folder}");
                 return;
             }
 
-            var validationResult = ValidateGameIntegrity(folder);
+            var (Status, Details) = ValidateGameIntegrity(folder);
 
             results.Add(new InstalledInstance
             {
@@ -875,28 +849,24 @@ public class InstanceRepository : IInstanceRepository
                 HasUserData = hasUserData,
                 UserDataSize = size,
                 TotalSize = totalSize,
-                IsValid = validationResult.Status == InstanceValidationStatus.Valid,
-                ValidationStatus = validationResult.Status,
-                ValidationDetails = validationResult.Details,
+                IsValid = Status == InstanceValidationStatus.Valid,
+                ValidationStatus = Status,
+                ValidationDetails = Details,
                 CustomName = customName
             });
         }
 
-        // Primary flat structure: {root}/{guid}/
         foreach (var folder in Directory.GetDirectories(root))
         {
             var dirName = Path.GetFileName(folder);
-            // Skip legacy branch subdirectories (handled below)
             if (dirName.Equals("release", StringComparison.OrdinalIgnoreCase) ||
                 dirName.Equals("pre-release", StringComparison.OrdinalIgnoreCase))
                 continue;
-            // Only process GUID-named entries at root level
             if (!Guid.TryParse(dirName, out _))
                 continue;
             ProcessFolder(folder, null);
         }
 
-        // Legacy fallback branch subdirectories: {root}/{branch}/{...}/
         foreach (var branch in new[] { "release", "pre-release" })
         {
             var branchDir = Path.Combine(root, branch);
@@ -912,13 +882,17 @@ public class InstanceRepository : IInstanceRepository
             }
         }
 
-        return results.OrderByDescending(x => x.Version).ToList();
+        return [.. results.OrderByDescending(x => x.Version)];
     }
 
     /// <summary>
     /// Performs deep validation of a game instance, checking all critical components.
     /// Returns detailed information about what's present and what's missing
     /// </summary>
+    [SuppressMessage(
+        "Performance",
+        "CA1822:Mark members as static",
+        Justification = "Public instance API is retained for source compatibility")]
     public (InstanceValidationStatus Status, InstanceValidationDetails Details) ValidateGameIntegrity(string folder)
     {
         var details = new InstanceValidationDetails();
@@ -926,57 +900,47 @@ public class InstanceRepository : IInstanceRepository
 
         try
         {
-            // 1. Check if the folder exists at all
             if (!Directory.Exists(folder))
             {
                 details.ErrorMessage = "Instance directory does not exist";
                 return (InstanceValidationStatus.NotInstalled, details);
             }
 
-            // 2. Check for the executable (most critical)
             details.HasExecutable = CheckExecutablePresent(folder);
             if (!details.HasExecutable)
             {
                 missingComponents.Add("Game executable");
             }
 
-            // 3. Check for assets folder
             details.HasAssets = CheckAssetsPresent(folder);
             if (!details.HasAssets)
             {
                 missingComponents.Add("Game assets");
             }
 
-            // 4. Check for libraries/dependencies
             details.HasLibraries = CheckLibrariesPresent(folder);
             if (!details.HasLibraries)
             {
                 missingComponents.Add("Game libraries");
             }
 
-            // 5. Check for essential config files
             details.HasConfig = CheckConfigPresent(folder);
             if (!details.HasConfig)
             {
-                // Config missing is not critical, just a warning
             }
 
             details.MissingComponents = missingComponents;
 
-            // Determine overall status based on what's present
-            // If we have the executable, consider it valid - we can't reliably verify file integrity
             if (details.HasExecutable)
             {
                 return (InstanceValidationStatus.Valid, details);
             }
             else if (!details.HasExecutable && !details.HasAssets && !details.HasLibraries)
             {
-                // Nothing is there - not installed
                 return (InstanceValidationStatus.NotInstalled, details);
             }
             else
             {
-                // Has some files but no executable - corrupted
                 details.ErrorMessage = "Game executable is missing or corrupted";
                 return (InstanceValidationStatus.Corrupted, details);
             }
@@ -992,7 +956,7 @@ public class InstanceRepository : IInstanceRepository
     /// <summary>
     /// Checks if the game executable is present at the specified path
     /// </summary>
-    private bool CheckExecutablePresent(string folder)
+    private static bool CheckExecutablePresent(string folder)
     {
         string clientPath;
         if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
@@ -1013,7 +977,7 @@ public class InstanceRepository : IInstanceRepository
     /// <summary>
     /// Checks if game assets are present and contain actual files
     /// </summary>
-    private bool CheckAssetsPresent(string folder)
+    private static bool CheckAssetsPresent(string folder)
     {
         string assetsPath;
         if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
@@ -1030,7 +994,6 @@ public class InstanceRepository : IInstanceRepository
             return false;
         }
 
-        // Check that assets folder is not empty and contains expected subfolders
         try
         {
             var entries = Directory.GetFileSystemEntries(assetsPath);
@@ -1039,9 +1002,7 @@ public class InstanceRepository : IInstanceRepository
                 return false;
             }
 
-            // Check for at least some expected asset folders/files
-            // This is a basic sanity check
-            return entries.Length >= 3; // Should have multiple folders
+            return entries.Length >= 3;
         }
         catch
         {
@@ -1052,9 +1013,8 @@ public class InstanceRepository : IInstanceRepository
     /// <summary>
     /// Checks if required libraries/dependencies are present
     /// </summary>
-    private bool CheckLibrariesPresent(string folder)
+    private static bool CheckLibrariesPresent(string folder)
     {
-        // On macOS, libraries are bundled in the app bundle
         if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {
             var frameworksPath = Path.Combine(folder, "Client", "Hytale.app", "Contents", "Frameworks");
@@ -1062,22 +1022,18 @@ public class InstanceRepository : IInstanceRepository
             {
                 return Directory.EnumerateFileSystemEntries(frameworksPath).Any();
             }
-            // Also check MonoBleedingEdge if using Mono runtime
             var monoPath = Path.Combine(folder, "Client", "Hytale.app", "Contents", "MonoBleedingEdge");
             return Directory.Exists(monoPath) && Directory.EnumerateFileSystemEntries(monoPath).Any();
         }
 
-        // On Windows/Linux, check for typical library locations
         var clientFolder = Path.Combine(folder, "Client");
         if (!Directory.Exists(clientFolder))
         {
             return false;
         }
 
-        // Check for DLLs on Windows or .so files on Linux
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-            // Check for any DLL files or Mono runtime
             var monoPath = Path.Combine(clientFolder, "MonoBleedingEdge");
             var hasMono = Directory.Exists(monoPath);
             var hasDlls = Directory.EnumerateFiles(clientFolder, "*.dll", SearchOption.TopDirectoryOnly).Any();
@@ -1085,7 +1041,6 @@ public class InstanceRepository : IInstanceRepository
         }
         else
         {
-            // Linux - check for .so files or Mono
             var monoPath = Path.Combine(clientFolder, "MonoBleedingEdge");
             var hasMono = Directory.Exists(monoPath);
             var hasSo = Directory.EnumerateFiles(clientFolder, "*.so*", SearchOption.TopDirectoryOnly).Any();
@@ -1096,9 +1051,8 @@ public class InstanceRepository : IInstanceRepository
     /// <summary>
     /// Checks if essential config files are present
     /// </summary>
-    private bool CheckConfigPresent(string folder)
+    private static bool CheckConfigPresent(string folder)
     {
-        // Check for common config files
         var configFiles = new[]
         {
             Path.Combine(folder, "Client", "boot.config"),
@@ -1106,19 +1060,17 @@ public class InstanceRepository : IInstanceRepository
             Path.Combine(folder, "Client", "level0"),
         };
 
-        // On macOS, config is inside the app bundle
         if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {
             var dataPath = Path.Combine(folder, "Client", "Hytale.app", "Contents", "Data");
             return Directory.Exists(dataPath);
         }
 
-        // At least one config file should exist
         return configFiles.Any(File.Exists) ||
                Directory.Exists(Path.Combine(folder, "Client", "HytaleClient_Data"));
     }
 
-    private bool CheckInstanceValidity(string folder)
+    private static bool CheckInstanceValidity(string folder)
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {
@@ -1137,7 +1089,6 @@ public class InstanceRepository : IInstanceRepository
     /// <inheritdoc/>
     public void SetInstanceCustomName(string branch, int version, string? customName)
     {
-        // Use GetInstancePath which properly searches GUID-named folders
         var instancePath = GetInstancePath(branch, version);
 
         if (string.IsNullOrEmpty(instancePath) || !Directory.Exists(instancePath))
@@ -1167,7 +1118,6 @@ public class InstanceRepository : IInstanceRepository
     {
         try
         {
-            // Load or create meta.json
             var meta = GetInstanceMeta(instancePath);
             if (meta == null)
             {
@@ -1175,15 +1125,12 @@ public class InstanceRepository : IInstanceRepository
                 return;
             }
 
-            // Update existing meta's Name field
             meta.Name = string.IsNullOrWhiteSpace(customName)
                 ? (meta.IsLatest ? $"{meta.Branch} (Latest)" : $"{meta.Branch} v{meta.Version}")
                 : customName;
 
-            // Save meta.json
             SaveInstanceMeta(instancePath, meta);
 
-            // Also update Config.Instances for quick lookup
             SyncInstancesWithConfig();
 
             Logger.Info("InstanceRepository", $"Updated instance name for {logIdentifier}: {meta.Name}");
@@ -1202,7 +1149,6 @@ public class InstanceRepository : IInstanceRepository
         var metaPath = Path.Combine(instancePath, "meta.json");
         if (!File.Exists(metaPath))
         {
-            // Try legacy metadata.json
             var legacyPath = Path.Combine(instancePath, "metadata.json");
             if (File.Exists(legacyPath))
             {
@@ -1245,7 +1191,6 @@ public class InstanceRepository : IInstanceRepository
     {
         var normalizedBranch = NormalizeVersionType(branch);
 
-        // For "latest" instances, check if one already exists (only one latest per branch)
         if (isLatest)
         {
             var existingLatest = FindInstanceByBranchAndVersion(normalizedBranch, 0);
@@ -1263,15 +1208,11 @@ public class InstanceRepository : IInstanceRepository
                 }
             }
         }
-        // For non-latest instances, we allow multiple instances of the same version
-        // Each will have a unique ID and folder
 
-        // All instances (including latest) use the flat structure: {root}/{instanceId}
         string instancePath;
         string instanceId = Guid.NewGuid().ToString();
         instancePath = CreateInstanceDirectory(normalizedBranch, instanceId);
 
-        // Check if meta already exists at path (edge case)
         var pathMeta = GetInstanceMeta(instancePath);
         if (pathMeta != null)
         {
@@ -1279,7 +1220,6 @@ public class InstanceRepository : IInstanceRepository
             return pathMeta;
         }
 
-        // Create new meta with generated ID
         var meta = new InstanceMeta
         {
             Id = instanceId,
@@ -1290,10 +1230,8 @@ public class InstanceRepository : IInstanceRepository
             IsLatest = isLatest
         };
 
-        // Save to disk
         SaveInstanceMeta(instancePath, meta);
 
-        // Also add to instances.json cache
         var cachedInstances = LoadInstanceCache();
         if (!cachedInstances.Any(i => i.Id == meta.Id))
         {
@@ -1323,8 +1261,6 @@ public class InstanceRepository : IInstanceRepository
         if (info == null)
             return null;
 
-        // Check if the instance is actually installed (game files exist)
-        // Use GetInstancePathById first (GUID-named folders), fall back to legacy search
         var instancePath = GetInstancePathById(info.Id);
         if (string.IsNullOrEmpty(instancePath))
         {
@@ -1360,12 +1296,12 @@ public class InstanceRepository : IInstanceRepository
 
         // Keep legacy launch config in sync with selected instance so launch paths
         // that still read VersionType/SelectedVersion target the same instance.
-        #pragma warning disable CS0618 // Backward compatibility: VersionType and SelectedVersion kept for migration
+#pragma warning disable CS0618 // Backward compatibility: VersionType and SelectedVersion kept for migration
         config.VersionType = NormalizeVersionType(selected.Branch);
         config.SelectedVersion = selected.Version;
-        #pragma warning restore CS0618
+#pragma warning restore CS0618
 
-        SaveConfig(config);
+        _configStore.SaveConfig();
         Logger.Info("InstanceRepository", $"Selected instance: {instanceId} ({selected.Branch} v{selected.Version})");
         RaiseInstancesChanged();
     }
@@ -1373,12 +1309,10 @@ public class InstanceRepository : IInstanceRepository
     /// <inheritdoc/>
     public InstanceInfo? FindInstanceById(string instanceId)
     {
-        // First check cached list
         var info = LoadInstanceCache().FirstOrDefault(i => i.Id == instanceId);
         if (info != null)
             return info;
 
-        // If not in cache, scan disk and rebuild
         SyncInstancesWithConfig();
         return LoadInstanceCache().FirstOrDefault(i => i.Id == instanceId);
     }
@@ -1423,11 +1357,9 @@ public class InstanceRepository : IInstanceRepository
         {
             if (!Directory.Exists(root)) continue;
 
-            // Primary flat structure: {root}/{guid}/
             foreach (var instanceDir in Directory.GetDirectories(root))
             {
                 var dirName = Path.GetFileName(instanceDir);
-                // Skip legacy branch subdirectories because they are handled below
                 if (dirName.Equals("release", StringComparison.OrdinalIgnoreCase) ||
                     dirName.Equals("pre-release", StringComparison.OrdinalIgnoreCase))
                     continue;
@@ -1436,7 +1368,6 @@ public class InstanceRepository : IInstanceRepository
                 ProcessInstanceDir(instanceDir);
             }
 
-            // Legacy fallback branch subdirectories: {root}/{branch}/{guid}/
             foreach (var branchDir in Directory.GetDirectories(root))
             {
                 var branchName = Path.GetFileName(branchDir);
@@ -1469,7 +1400,6 @@ public class InstanceRepository : IInstanceRepository
             var json = File.ReadAllText(legacyPath);
             var legacyData = JsonSerializer.Deserialize<Dictionary<string, string>>(json, JsonOptions);
 
-            // Parse branch and version from path
             var dirName = Path.GetFileName(instancePath);
             var parentName = Path.GetFileName(Path.GetDirectoryName(instancePath) ?? "");
 
@@ -1490,10 +1420,8 @@ public class InstanceRepository : IInstanceRepository
                 IsLatest = isLatest
             };
 
-            // Save new format
             SaveInstanceMeta(instancePath, meta);
 
-            // Delete legacy file
             try { File.Delete(legacyPath); } catch { }
 
             Logger.Info("InstanceRepository", $"Migrated legacy metadata to meta.json: {meta.Id}");
@@ -1516,16 +1444,13 @@ public class InstanceRepository : IInstanceRepository
         if (!Directory.Exists(root))
             return null;
 
-        // Primary flat structure: {root}/{instanceId}
         var flatPath = Path.Combine(root, instanceId);
         if (Directory.Exists(flatPath))
             return flatPath;
 
-        // Legacy fallback branch subdirectories: {root}/{branch}/{instanceId or version-name}
         foreach (var branchDir in Directory.GetDirectories(root))
         {
             var branchName = Path.GetFileName(branchDir);
-            // Only descend into known branch directories to avoid scanning GUID siblings
             if (!branchName.Equals("release", StringComparison.OrdinalIgnoreCase) &&
                 !branchName.Equals("pre-release", StringComparison.OrdinalIgnoreCase))
                 continue;
@@ -1551,7 +1476,6 @@ public class InstanceRepository : IInstanceRepository
         var normalizedBranch = NormalizeVersionType(branch);
         var config = GetConfig();
 
-        // Legacy fallback: some old config.json files still have Instances embedded.
 #pragma warning disable CS0618
         var legacyInfo = config.Instances?.FirstOrDefault(i =>
             i.Branch.Equals(normalizedBranch, StringComparison.OrdinalIgnoreCase) && i.Version == version);
@@ -1559,14 +1483,12 @@ public class InstanceRepository : IInstanceRepository
         if (legacyInfo != null)
             return legacyInfo;
 
-        // Check cache first before scanning disk
         var cached = LoadInstanceCache();
         var cachedMatch = cached.FirstOrDefault(i =>
             i.Branch.Equals(normalizedBranch, StringComparison.OrdinalIgnoreCase) && i.Version == version);
         if (cachedMatch != null)
             return cachedMatch;
 
-        // Scan the primary flat structure {root}/{guid}/ when the instance is not cached
         var root = GetInstanceRoot();
         if (Directory.Exists(root))
         {
@@ -1584,7 +1506,6 @@ public class InstanceRepository : IInstanceRepository
             }
         }
 
-        // Legacy fallback branch subdirectory: {root}/{branch}/{...}/
         var branchPath = GetBranchPath(normalizedBranch);
         if (!Directory.Exists(branchPath))
             return null;
@@ -1602,8 +1523,6 @@ public class InstanceRepository : IInstanceRepository
     /// <inheritdoc/>
     public string CreateInstanceDirectory(string branch, string instanceId)
     {
-        // Branch is retained as a parameter for callers that pass it for metadata purposes,
-        // but the folder is created at {InstanceRoot}/{instanceId} without a branch subdirectory
         var path = Path.Combine(GetInstanceRoot(), instanceId);
         Directory.CreateDirectory(path);
         return path;
@@ -1639,20 +1558,14 @@ public class InstanceRepository : IInstanceRepository
             var currentInstalledVersion = meta.InstalledVersion;
             var hasInstalledGame = currentInstalledVersion > 0 && IsClientPresent(instancePath);
 
-            // Determine if we can use patching:
-            // - Same branch (or compatible branches)
-            // - Upgrade (target version > installed version)
-            // - Game is actually installed
             bool canUsePatch = hasInstalledGame
                 && currentBranch == normalizedBranch
                 && version > currentInstalledVersion;
 
             if (canUsePatch)
             {
-                // PATCH MODE: Keep game files, set up for differential update
                 Logger.Info("InstanceRepository", $"Patch mode: upgrading {instanceId} from v{currentInstalledVersion} to v{version}");
 
-                // Set PendingVersion to trigger patching on next launch
                 meta.Branch = normalizedBranch;
                 meta.Version = version;
                 meta.PendingVersion = version;
@@ -1663,10 +1576,8 @@ public class InstanceRepository : IInstanceRepository
             }
             else
             {
-                // FULL DOWNLOAD MODE: Remove game files for clean install
                 Logger.Info("InstanceRepository", $"Full download mode: {instanceId} from {currentBranch} v{currentInstalledVersion} to {normalizedBranch} v{version}");
 
-                // Remove game client directories while keeping UserData and meta.json
                 var clientDir = Path.Combine(instancePath, "Client");
                 var gameDir = Path.Combine(instancePath, "game");
 
@@ -1682,7 +1593,6 @@ public class InstanceRepository : IInstanceRepository
                     Logger.Info("InstanceRepository", $"Removed game directory for {instanceId}");
                 }
 
-                // Update meta.json with new branch, version, and mark as non-latest
                 meta.Branch = normalizedBranch;
                 meta.Version = version;
                 meta.InstalledVersion = 0;
@@ -1692,7 +1602,6 @@ public class InstanceRepository : IInstanceRepository
                 SaveInstanceMeta(instancePath, meta);
             }
 
-            // Update instances.json cache entry
             var cachedInstances = LoadInstanceCache();
             var cachedEntry = cachedInstances.FirstOrDefault(i => i.Id == instanceId);
             if (cachedEntry != null)
@@ -1721,16 +1630,22 @@ public class InstanceRepository : IInstanceRepository
     private static readonly JsonSerializerOptions ImportJsonOpts = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
     };
 
     /// <inheritdoc/>
-    public async Task ImportFromZipAsync(string zipPath)
+    public async Task ImportFromZipAsync(
+        string zipPath,
+        CancellationToken cancellationToken = default)
     {
         var tempDir = Path.Combine(Path.GetTempPath(), $"hyprism-import-{Guid.NewGuid()}");
         Directory.CreateDirectory(tempDir);
 
-        await Task.Run(() => ZipFile.ExtractToDirectory(zipPath, tempDir, true));
+        await ZipFile.ExtractToDirectoryAsync(
+            zipPath,
+            tempDir,
+            overwriteFiles: true,
+            cancellationToken);
 
         var metaPath = Path.Combine(tempDir, "meta.json");
         var branch = "release";
@@ -1739,7 +1654,8 @@ public class InstanceRepository : IInstanceRepository
 
         if (File.Exists(metaPath))
         {
-            var meta = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(File.ReadAllText(metaPath), ImportJsonOpts);
+            var metaJson = await File.ReadAllTextAsync(metaPath, cancellationToken);
+            var meta = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(metaJson, ImportJsonOpts);
             branch = meta?.TryGetValue("branch", out var b) == true ? b.GetString() ?? "release" : "release";
             if (meta?.TryGetValue("version", out var v) == true) version = v.GetInt32();
             if (meta?.TryGetValue("id", out var idEl) == true) existingId = idEl.GetString();
@@ -1757,11 +1673,15 @@ public class InstanceRepository : IInstanceRepository
 
         if (File.Exists(metaPath) && (idAlreadyExists || string.IsNullOrEmpty(existingId)))
         {
-            var metaContent = JsonSerializer.Deserialize<Dictionary<string, object>>(File.ReadAllText(metaPath), ImportJsonOpts);
+            var metaJson = await File.ReadAllTextAsync(metaPath, cancellationToken);
+            var metaContent = JsonSerializer.Deserialize<Dictionary<string, object>>(metaJson, ImportJsonOpts);
             if (metaContent != null)
             {
                 metaContent["id"] = newInstanceId;
-                File.WriteAllText(metaPath, JsonSerializer.Serialize(metaContent, ImportJsonOpts));
+                await File.WriteAllTextAsync(
+                    metaPath,
+                    JsonSerializer.Serialize(metaContent, ImportJsonOpts),
+                    cancellationToken);
                 Logger.Info("InstanceRepository", $"Updated instance ID from '{existingId}' to '{newInstanceId}'");
             }
         }
@@ -1778,7 +1698,7 @@ public class InstanceRepository : IInstanceRepository
             Directory.Move(dir, destDir);
         }
 
-        try { Directory.Delete(tempDir, true); } catch { /* ignore */ }
+        try { Directory.Delete(tempDir, true); } catch { }
 
         Logger.Success("InstanceRepository", $"Imported ZIP instance to: {targetPath}");
         SyncInstancesWithConfig();
@@ -1792,27 +1712,32 @@ public class InstanceRepository : IInstanceRepository
     /// <returns>The parsed version number, or 0 if parsing fails</returns>
     public static int TryParseVersionFromPwrFilename(string filename)
     {
-        // Pattern: v{version}-{os}-{arch} (e.g., v123-linux-x64)
-        var versionMatch = System.Text.RegularExpressions.Regex.Match(filename, @"^v(\d+)");
+        var versionMatch = PrefixedVersionRegex().Match(filename);
         if (versionMatch.Success && int.TryParse(versionMatch.Groups[1].Value, out var v1))
             return v1;
 
-        // Pattern: 0_to_{version} or {from}_to_{version} (e.g., 0_to_456)
-        var patchMatch = System.Text.RegularExpressions.Regex.Match(filename, @"_to_(\d+)");
+        var patchMatch = PatchTargetVersionRegex().Match(filename);
         if (patchMatch.Success && int.TryParse(patchMatch.Groups[1].Value, out var v2))
             return v2;
 
-        // Pattern: just a number (e.g., 123)
         if (int.TryParse(filename, out var v3))
             return v3;
 
-        // Pattern: number at start (e.g., 123-something)
-        var startMatch = System.Text.RegularExpressions.Regex.Match(filename, @"^(\d+)");
+        var startMatch = LeadingVersionRegex().Match(filename);
         if (startMatch.Success && int.TryParse(startMatch.Groups[1].Value, out var v4))
             return v4;
 
-        return 0; // Unknown version
+        return 0;
     }
+
+    [GeneratedRegex(@"^v(\d+)")]
+    private static partial Regex PrefixedVersionRegex();
+
+    [GeneratedRegex(@"_to_(\d+)")]
+    private static partial Regex PatchTargetVersionRegex();
+
+    [GeneratedRegex(@"^(\d+)")]
+    private static partial Regex LeadingVersionRegex();
 
     #endregion
 }

@@ -18,12 +18,11 @@ namespace HyPrism.Core.Accounts;
 /// </remarks>
 public class SkinRepository : ISkinRepository
 {
-    // Skin protection: Watch for skin file overwrites during gameplay
     private FileSystemWatcher? _skinWatcher;
     private string? _protectedSkinPath;
     private string? _protectedSkinContent;
     private bool _skinProtectionEnabled;
-    private readonly object _skinProtectionLock = new object();
+    private readonly Lock _skinProtectionLock = new();
 
     private readonly IConfigStore _configStore;
     private readonly IInstanceRepository _instances;
@@ -56,7 +55,7 @@ public class SkinRepository : ISkinRepository
     {
         try
         {
-            StopSkinProtection(); // Clean up any existing watcher
+            StopSkinProtection();
 
             if (!File.Exists(skinCachePath))
             {
@@ -64,7 +63,6 @@ public class SkinRepository : ISkinRepository
                 return;
             }
 
-            // Store the original skin content
             lock (_skinProtectionLock)
             {
                 _protectedSkinPath = skinCachePath;
@@ -72,12 +70,13 @@ public class SkinRepository : ISkinRepository
                 _skinProtectionEnabled = true;
             }
 
-            // Set file to READ-ONLY to prevent game from overwriting it
-            // This is more reliable than FileSystemWatcher because the game will fail to write
+            // Read-only protection stops the game before it can overwrite the cached skin
             try
             {
-                var fileInfo = new FileInfo(skinCachePath);
-                fileInfo.IsReadOnly = true;
+                var fileInfo = new FileInfo(skinCachePath)
+                {
+                    IsReadOnly = true
+                };
                 Logger.Success("SkinProtection", $"Set skin file to READ-ONLY to prevent overwrites");
             }
             catch (Exception ex)
@@ -125,24 +124,19 @@ public class SkinRepository : ISkinRepository
 
             try
             {
-                // Small delay to let the file write complete
+                // FileSystemWatcher can fire before the writer releases the file
                 Thread.Sleep(100);
 
-                // Read current content
                 var currentContent = File.ReadAllText(_protectedSkinPath);
 
-                // Compare - if different, the game overwrote our skin
                 if (currentContent != _protectedSkinContent)
                 {
                     Logger.Warning("SkinProtection", "Detected skin overwrite - restoring protected skin!");
 
-                    // Temporarily disable watcher to avoid triggering ourselves
                     _skinProtectionEnabled = false;
 
-                    // Restore the protected content
                     File.WriteAllText(_protectedSkinPath, _protectedSkinContent);
 
-                    // Re-enable protection
                     _skinProtectionEnabled = true;
 
                     Logger.Success("SkinProtection", "Skin restored successfully");
@@ -169,13 +163,14 @@ public class SkinRepository : ISkinRepository
                 _protectedSkinContent = null;
             }
 
-            // Remove READ-ONLY flag so file can be modified again
             if (!string.IsNullOrEmpty(pathToUnprotect) && File.Exists(pathToUnprotect))
             {
                 try
                 {
-                    var fileInfo = new FileInfo(pathToUnprotect);
-                    fileInfo.IsReadOnly = false;
+                    var fileInfo = new FileInfo(pathToUnprotect)
+                    {
+                        IsReadOnly = false
+                    };
                     Logger.Info("SkinProtection", "Removed READ-ONLY flag from skin file");
                 }
                 catch (Exception ex)
@@ -218,7 +213,6 @@ public class SkinRepository : ISkinRepository
             }
             var currentUuid = selectedProfile.UUID;
 
-            // Get the current instance's UserData path
             var versionPath = TryGetCurrentExistingInstancePath();
             if (string.IsNullOrWhiteSpace(versionPath))
             {
@@ -228,28 +222,23 @@ public class SkinRepository : ISkinRepository
             var skinCacheDir = Path.Combine(userDataPath, "CachedPlayerSkins");
             var avatarCacheDir = Path.Combine(userDataPath, "CachedAvatarPreviews");
 
-            // Check if current UUID already has skin data
             var currentSkinPath = Path.Combine(skinCacheDir, $"{currentUuid}.json");
             if (File.Exists(currentSkinPath))
             {
-                // Current UUID has skin - no recovery needed
                 return;
             }
 
-            // No skin for current UUID - look for orphaned skins
             if (!Directory.Exists(skinCacheDir))
             {
                 return;
             }
 
-            // Get all existing UUIDs from Profiles
             var knownUuids = new HashSet<string>(
                 _profiles.GetProfiles().Select(p => p.UUID)
                     .Where(u => !string.IsNullOrEmpty(u)),
                 StringComparer.OrdinalIgnoreCase
             );
 
-            // Scan for orphaned skin files
             var skinFiles = Directory.GetFiles(skinCacheDir, "*.json");
             string? orphanedUuid = null;
             DateTime latestTime = DateTime.MinValue;
@@ -262,7 +251,6 @@ public class SkinRepository : ISkinRepository
                     var uuidStr = uuid.ToString();
                     if (!knownUuids.Contains(uuidStr))
                     {
-                        // This is an orphaned skin
                         var modTime = File.GetLastWriteTime(file);
                         if (modTime > latestTime)
                         {
@@ -275,13 +263,12 @@ public class SkinRepository : ISkinRepository
 
             if (orphanedUuid == null)
             {
-                return; // No orphans found
+                return;
             }
 
             Logger.Info("Startup", $"Found orphaned skin with UUID {orphanedUuid}");
             Logger.Info("Startup", $"Selected profile '{selectedProfile.Name}' has no skin, recovering orphaned skin");
 
-            // Strategy: Update the selected profile UUID to match the orphaned skin
             if (!_profiles.SetUUID(orphanedUuid))
                 return;
 
@@ -298,7 +285,6 @@ public class SkinRepository : ISkinRepository
     {
         try
         {
-            // Get the current instance's UserData path
             var versionPath = TryGetCurrentExistingInstancePath();
             if (string.IsNullOrWhiteSpace(versionPath))
             {
@@ -312,25 +298,21 @@ public class SkinRepository : ISkinRepository
                 return null;
             }
 
-            // Get all existing UUIDs from Profiles
             var knownUuids = new HashSet<string>(
                 _profiles.GetProfiles().Select(p => p.UUID)
                     .Where(u => !string.IsNullOrEmpty(u)),
                 StringComparer.OrdinalIgnoreCase
             );
 
-            // Scan skin files for orphaned UUIDs
             var skinFiles = Directory.GetFiles(skinCacheDir, "*.json");
             var orphanedUuids = new List<string>();
 
             foreach (var file in skinFiles)
             {
                 var fileName = Path.GetFileNameWithoutExtension(file);
-                // Check if it looks like a UUID
                 if (Guid.TryParse(fileName, out var uuid))
                 {
                     var uuidStr = uuid.ToString();
-                    // If this UUID is not in our known UUIDs, it's orphaned
                     if (!knownUuids.Contains(uuidStr))
                     {
                         orphanedUuids.Add(uuidStr);
@@ -339,15 +321,12 @@ public class SkinRepository : ISkinRepository
                 }
             }
 
-            // If exactly one orphaned UUID found, we can safely adopt it
-            // If multiple are found, we can't determine which is correct
             if (orphanedUuids.Count == 1)
             {
                 return orphanedUuids[0];
             }
             else if (orphanedUuids.Count > 1)
             {
-                // Multiple orphans - pick the most recently modified one
                 string? mostRecent = null;
                 DateTime latestTime = DateTime.MinValue;
 
@@ -394,7 +373,6 @@ public class SkinRepository : ISkinRepository
                 return false;
             }
 
-            // If the current UUID already has a skin, don't overwrite
             var versionPath = TryGetCurrentExistingInstancePath();
             if (string.IsNullOrWhiteSpace(versionPath))
             {
@@ -406,14 +384,12 @@ public class SkinRepository : ISkinRepository
 
             var currentSkinPath = Path.Combine(skinCacheDir, $"{currentUuid}.json");
 
-            // If current user already has a skin, ask them to use "switch to orphan" instead
             if (File.Exists(currentSkinPath))
             {
                 Logger.Info("UUID", $"Current user already has skin data. Use SetUuidForUser to switch to the orphaned UUID: {orphanedUuid}");
                 return false;
             }
 
-            // Copy orphaned skin to current UUID
             var orphanSkinPath = Path.Combine(skinCacheDir, $"{orphanedUuid}.json");
             if (File.Exists(orphanSkinPath))
             {
@@ -422,7 +398,6 @@ public class SkinRepository : ISkinRepository
                 Logger.Success("UUID", $"Copied orphaned skin from {orphanedUuid} to {currentUuid}");
             }
 
-            // Copy orphaned avatar to current UUID
             var orphanAvatarPath = Path.Combine(avatarCacheDir, $"{orphanedUuid}.png");
             var currentAvatarPath = Path.Combine(avatarCacheDir, $"{currentUuid}.png");
             if (File.Exists(orphanAvatarPath))
@@ -451,7 +426,6 @@ public class SkinRepository : ISkinRepository
         try
         {
             var config = _configStore.Configuration;
-            // Find the profile by UUID
             var profile = _profiles.GetProfiles().FirstOrDefault(p => p.UUID == uuid);
             if (profile == null)
             {
@@ -461,7 +435,6 @@ public class SkinRepository : ISkinRepository
             var profileDir = LauncherUtilities.GetProfileFolderPath(_appDir, profile);
             Directory.CreateDirectory(profileDir);
 
-            // Get game UserData path
             var versionPath = TryGetCurrentExistingInstancePath();
             if (string.IsNullOrWhiteSpace(versionPath))
             {
@@ -469,13 +442,11 @@ public class SkinRepository : ISkinRepository
             }
             var userDataPath = _instances.GetInstanceUserDataPath(versionPath);
 
-            // Backup skin JSON
             var skinCacheDir = Path.Combine(userDataPath, "CachedPlayerSkins");
             var skinPath = Path.Combine(skinCacheDir, $"{uuid}.json");
             if (File.Exists(skinPath))
             {
                 var destPath = Path.Combine(profileDir, "skin.json");
-                // Remove read-only attribute from destination if it exists
                 if (File.Exists(destPath))
                 {
                     var destInfo = new FileInfo(destPath);
@@ -493,7 +464,6 @@ public class SkinRepository : ISkinRepository
                 Logger.Warning("Profile", $"No skin file found to backup for {profile.Name} at {skinPath}");
             }
 
-            // Backup avatar preview
             var avatarCacheDir = Path.Combine(userDataPath, "CachedAvatarPreviews");
             var avatarPath = Path.Combine(avatarCacheDir, $"{uuid}.png");
             if (File.Exists(avatarPath))
@@ -523,7 +493,6 @@ public class SkinRepository : ISkinRepository
                 return;
             }
 
-            // Get game UserData path
             var versionPath = TryGetCurrentExistingInstancePath();
             if (string.IsNullOrWhiteSpace(versionPath))
             {
@@ -531,7 +500,6 @@ public class SkinRepository : ISkinRepository
             }
             var userDataPath = _instances.GetInstanceUserDataPath(versionPath);
 
-            // Restore skin JSON
             var skinBackupPath = Path.Combine(profileDir, "skin.json");
             if (File.Exists(skinBackupPath))
             {
@@ -542,7 +510,6 @@ public class SkinRepository : ISkinRepository
                 Logger.Info("Profile", $"Restored skin for {profile.Name}");
             }
 
-            // Restore avatar preview
             var avatarBackupPath = Path.Combine(profileDir, "avatar.png");
             if (File.Exists(avatarBackupPath))
             {
@@ -565,7 +532,6 @@ public class SkinRepository : ISkinRepository
         try
         {
             var config = _configStore.Configuration;
-            // Get game UserData path
             var versionPath = TryGetCurrentExistingInstancePath();
             if (string.IsNullOrWhiteSpace(versionPath))
             {
@@ -573,7 +539,6 @@ public class SkinRepository : ISkinRepository
             }
             var userDataPath = _instances.GetInstanceUserDataPath(versionPath);
 
-            // Copy skin JSON
             var skinCacheDir = Path.Combine(userDataPath, "CachedPlayerSkins");
             var skinPath = Path.Combine(skinCacheDir, $"{uuid}.json");
             if (File.Exists(skinPath))
@@ -583,7 +548,6 @@ public class SkinRepository : ISkinRepository
                 Logger.Info("Profile", $"Copied skin for UUID {uuid}");
             }
 
-            // Copy avatar PNG
             var avatarCacheDir = Path.Combine(userDataPath, "CachedAvatarPreviews");
             var avatarPath = Path.Combine(avatarCacheDir, $"{uuid}.png");
             if (File.Exists(avatarPath))
@@ -607,6 +571,7 @@ public class SkinRepository : ISkinRepository
     public void Dispose()
     {
         StopSkinProtection();
+        GC.SuppressFinalize(this);
     }
 
     private string? TryGetCurrentExistingInstancePath()
@@ -619,7 +584,7 @@ public class SkinRepository : ISkinRepository
                 return path;
         }
 
-        // Fall back to any installed instance when nothing is explicitly selected.
+        // Skin caches are instance-scoped even when no instance is selected
         return _instances.GetInstalledInstances().FirstOrDefault()?.Path;
     }
 }

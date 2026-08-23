@@ -2,8 +2,11 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 using System.Diagnostics;
+using System.Globalization;
 using System.IO.Compression;
 using System.Runtime.InteropServices;
+using System.Text;
+using System.Text.RegularExpressions;
 using HyPrism.Core.Infrastructure;
 
 namespace HyPrism.Core.Game.Patching;
@@ -12,7 +15,7 @@ namespace HyPrism.Core.Game.Patching;
 /// Provides functionality for managing the Butler patching tool.
 /// Butler is used for applying differential game updates via PWR patch files
 /// </summary>
-public class ButlerClient : IButlerClient
+public partial class ButlerClient : IButlerClient
 {
     private const string BrothUrlTemplate = "https://broth.itch.zone/butler/{0}-{1}/LATEST/archive/default";
 
@@ -48,8 +51,12 @@ public class ButlerClient : IButlerClient
     }
 
     /// <inheritdoc/>
-    public async Task<string> EnsureButlerInstalledAsync(Action<int, string>? progressCallback = null)
+    public async Task<string> EnsureButlerInstalledAsync(
+        Action<int, string>? progressCallback = null,
+        CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         Directory.CreateDirectory(_butlerDir);
         Directory.CreateDirectory(_cacheDir);
 
@@ -57,7 +64,7 @@ public class ButlerClient : IButlerClient
 
         if (File.Exists(butlerPath))
         {
-            if (await VerifyButlerWorksAsync(butlerPath))
+            if (await VerifyButlerWorksAsync(butlerPath, cancellationToken))
             {
                 progressCallback?.Invoke(100, "launch.detail.butler_ready");
                 return butlerPath;
@@ -93,20 +100,23 @@ public class ButlerClient : IButlerClient
 
         try
         {
-            using var response = await HttpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
+            using var response = await HttpClient.GetAsync(
+                url,
+                HttpCompletionOption.ResponseHeadersRead,
+                cancellationToken);
             response.EnsureSuccessStatusCode();
 
             var totalBytes = response.Content.Headers.ContentLength ?? -1;
-            using var stream = await response.Content.ReadAsStreamAsync();
+            using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
             using var fileStream = new FileStream(archivePath, FileMode.Create, FileAccess.Write, FileShare.None, 8192);
 
             var buffer = new byte[8192];
             long totalRead = 0;
             int bytesRead;
 
-            while ((bytesRead = await stream.ReadAsync(buffer)) > 0)
+            while ((bytesRead = await stream.ReadAsync(buffer, cancellationToken)) > 0)
             {
-                await fileStream.WriteAsync(buffer.AsMemory(0, bytesRead));
+                await fileStream.WriteAsync(buffer.AsMemory(0, bytesRead), cancellationToken);
                 totalRead += bytesRead;
 
                 if (totalBytes > 0)
@@ -115,6 +125,10 @@ public class ButlerClient : IButlerClient
                     progressCallback?.Invoke(progress, "launch.detail.downloading_butler");
                 }
             }
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
         }
         catch (Exception ex)
         {
@@ -126,8 +140,16 @@ public class ButlerClient : IButlerClient
 
         try
         {
-            ZipFile.ExtractToDirectory(archivePath, _butlerDir, overwriteFiles: true);
+            await ZipFile.ExtractToDirectoryAsync(
+                archivePath,
+                _butlerDir,
+                overwriteFiles: true,
+                cancellationToken);
             File.Delete(archivePath);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
         }
         catch (Exception ex)
         {
@@ -139,14 +161,19 @@ public class ButlerClient : IButlerClient
         {
             try
             {
-                var chmod = Process.Start(new ProcessStartInfo
+                using var chmod = Process.Start(new ProcessStartInfo
                 {
                     FileName = "chmod",
                     Arguments = $"+x \"{butlerPath}\"",
                     UseShellExecute = false,
                     CreateNoWindow = true
                 });
-                chmod?.WaitForExit();
+                if (chmod is not null)
+                    await chmod.WaitForExitAsync(cancellationToken);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
             }
             catch { }
         }
@@ -168,10 +195,14 @@ public class ButlerClient : IButlerClient
             using var process = Process.Start(psi);
             if (process != null)
             {
-                string output = await process.StandardOutput.ReadToEndAsync();
-                await process.WaitForExitAsync();
+                string output = await process.StandardOutput.ReadToEndAsync(cancellationToken);
+                await process.WaitForExitAsync(cancellationToken);
                 Logger.Success("Butler", $"Installed: {output.Trim()}");
             }
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
         }
         catch (Exception ex)
         {
@@ -183,7 +214,9 @@ public class ButlerClient : IButlerClient
         return butlerPath;
     }
 
-    private async Task<bool> VerifyButlerWorksAsync(string butlerPath)
+    private static async Task<bool> VerifyButlerWorksAsync(
+        string butlerPath,
+        CancellationToken cancellationToken)
     {
         try
         {
@@ -200,19 +233,31 @@ public class ButlerClient : IButlerClient
             using var process = Process.Start(psi);
             if (process != null)
             {
-                var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+                using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+                using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(
+                    cancellationToken,
+                    timeoutCts.Token);
                 try
                 {
-                    await process.WaitForExitAsync(cts.Token);
+                    await process.WaitForExitAsync(linkedCts.Token);
                     return process.ExitCode == 0;
                 }
-                catch
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                {
+                    process.Kill();
+                    throw;
+                }
+                catch (OperationCanceledException)
                 {
                     process.Kill();
                     return false;
                 }
             }
             return false;
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
         }
         catch
         {
@@ -223,7 +268,9 @@ public class ButlerClient : IButlerClient
     /// <inheritdoc/>
     public async Task ApplyPwrAsync(string pwrFile, string targetDir, Action<int, string>? progressCallback = null, CancellationToken externalCancellationToken = default)
     {
-        string butlerPath = await EnsureButlerInstalledAsync(progressCallback);
+        string butlerPath = await EnsureButlerInstalledAsync(
+            progressCallback,
+            externalCancellationToken);
         string stagingDir = Path.Combine(targetDir, "staging-temp");
 
         progressCallback?.Invoke(5, "Preparing installation...");
@@ -258,13 +305,21 @@ public class ButlerClient : IButlerClient
         var cts = linkedCts;
 
         int lastProgress = 10;
-        var progressTimer = new System.Timers.Timer(2000);
-        progressTimer.Elapsed += (s, e) =>
+        using var progressTimer = new System.Timers.Timer(2000);
+        progressTimer.Elapsed += (_, _) =>
         {
-            if (lastProgress < 90)
+            while (true)
             {
-                lastProgress = Math.Min(lastProgress + 2, 90);
-                progressCallback?.Invoke(lastProgress, "launch.detail.installing_game");
+                var current = Volatile.Read(ref lastProgress);
+                if (current >= 90)
+                    return;
+
+                var next = Math.Min(current + 2, 90);
+                if (Interlocked.CompareExchange(ref lastProgress, next, current) == current)
+                {
+                    progressCallback?.Invoke(next, "launch.detail.installing_game");
+                    return;
+                }
             }
         };
         progressTimer.Start();
@@ -274,35 +329,46 @@ public class ButlerClient : IButlerClient
 
         try
         {
-            var outputBuilder = new System.Text.StringBuilder();
-            var errorBuilder = new System.Text.StringBuilder();
+            var outputBuilder = new StringBuilder();
+            var errorBuilder = new StringBuilder();
 
-            var outputTask = Task.Run(async () =>
+            async Task ReadOutputAsync()
             {
                 try
                 {
-                    char[] buffer = new char[1024];
+                    var buffer = new char[1024];
                     while (true)
                     {
-                        int read = await process.StandardOutput.ReadAsync(buffer, cts.Token);
-                        if (read == 0) break;
+                        var read = await process.StandardOutput.ReadAsync(buffer, cts.Token);
+                        if (read == 0)
+                            break;
 
-                        string chunk = new(buffer, 0, read);
+                        var chunk = new string(buffer, 0, read);
                         outputBuilder.Append(chunk);
 
                         if (chunk.Contains('%'))
                         {
-                            var match = System.Text.RegularExpressions.Regex.Match(chunk, @"(\d+(?:\.\d+)?)%");
+                            var match = ProgressPercentageRegex().Match(chunk);
                             if (match.Success && double.TryParse(match.Groups[1].Value,
-                                System.Globalization.NumberStyles.Any,
-                                System.Globalization.CultureInfo.InvariantCulture,
-                                out double pct))
+                                NumberStyles.Any,
+                                CultureInfo.InvariantCulture,
+                                out var percentage))
                             {
-                                int mappedProgress = 10 + (int)(pct * 0.85);
-                                if (mappedProgress > lastProgress)
+                                var mappedProgress = 10 + (int)(percentage * 0.85);
+                                while (true)
                                 {
-                                    lastProgress = mappedProgress;
-                                    progressCallback?.Invoke(mappedProgress, "launch.detail.installing_game");
+                                    var current = Volatile.Read(ref lastProgress);
+                                    if (mappedProgress <= current)
+                                        break;
+
+                                    if (Interlocked.CompareExchange(
+                                            ref lastProgress,
+                                            mappedProgress,
+                                            current) == current)
+                                    {
+                                        progressCallback?.Invoke(mappedProgress, "launch.detail.installing_game");
+                                        break;
+                                    }
                                 }
                             }
                         }
@@ -313,9 +379,9 @@ public class ButlerClient : IButlerClient
                 {
                     Logger.Warning("Butler", $"Output read error: {ex.Message}");
                 }
-            }, cts.Token);
+            }
 
-            var errorTask = Task.Run(async () =>
+            async Task ReadErrorAsync()
             {
                 try
                 {
@@ -323,7 +389,10 @@ public class ButlerClient : IButlerClient
                 }
                 catch (OperationCanceledException) { }
                 catch { }
-            }, cts.Token);
+            }
+
+            var outputTask = ReadOutputAsync();
+            var errorTask = ReadErrorAsync();
 
             try
             {
@@ -348,7 +417,7 @@ public class ButlerClient : IButlerClient
 
             try
             {
-                await Task.WhenAll(outputTask, errorTask).WaitAsync(TimeSpan.FromSeconds(5));
+                await Task.WhenAll(outputTask, errorTask).WaitAsync(TimeSpan.FromSeconds(5), externalCancellationToken);
             }
             catch (TimeoutException)
             {
@@ -361,7 +430,6 @@ public class ButlerClient : IButlerClient
         finally
         {
             progressTimer.Stop();
-            progressTimer.Dispose();
         }
 
         if (process.ExitCode != 0)
@@ -387,14 +455,15 @@ public class ButlerClient : IButlerClient
             {
                 try
                 {
-                    var chmod = Process.Start(new ProcessStartInfo
+                    using var chmod = Process.Start(new ProcessStartInfo
                     {
                         FileName = "chmod",
                         Arguments = $"+x \"{clientPath}\"",
                         UseShellExecute = false,
                         CreateNoWindow = true
                     });
-                    chmod?.WaitForExit();
+                    if (chmod is not null)
+                        await chmod.WaitForExitAsync(externalCancellationToken);
                 }
                 catch { }
             }
@@ -404,7 +473,7 @@ public class ButlerClient : IButlerClient
         Logger.Success("Butler", "Installation complete");
     }
 
-    private void CleanStagingDirectory(string gameDir)
+    private static void CleanStagingDirectory(string gameDir)
     {
         string stagingDir = Path.Combine(gameDir, "staging-temp");
 
@@ -439,4 +508,7 @@ public class ButlerClient : IButlerClient
             }
         }
     }
+
+    [GeneratedRegex(@"(\d+(?:\.\d+)?)%")]
+    private static partial Regex ProgressPercentageRegex();
 }

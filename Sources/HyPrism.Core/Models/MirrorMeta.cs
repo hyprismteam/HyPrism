@@ -145,7 +145,7 @@ public class MirrorPatternConfig
     /// List of branches that use diff-based patching (e.g. ["pre-release"]).
     /// </summary>
     [JsonPropertyName("diffBasedBranches")]
-    public List<string> DiffBasedBranches { get; set; } = new();
+    public List<string> DiffBasedBranches { get; set; } = [];
 }
 
 /// <summary>
@@ -231,7 +231,7 @@ public class MirrorJsonIndexConfig
     /// List of branches that use diff-based patching.
     /// </summary>
     [JsonPropertyName("diffBasedBranches")]
-    public List<string> DiffBasedBranches { get; set; } = new();
+    public List<string> DiffBasedBranches { get; set; } = [];
 }
 
 /// <summary>

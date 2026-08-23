@@ -55,7 +55,6 @@ public class InstanceMigrator : IInstanceMigrator
                 var legacyConfigPath = Path.Combine(legacyRoot, "config.json");
                 var legacyTomlPath = Path.Combine(legacyRoot, "config.toml");
 
-                // Load both JSON and TOML configs
                 var jsonConfig = LoadConfigFromPath(legacyConfigPath);
                 var tomlConfig = LoadConfigFromToml(legacyTomlPath);
 
@@ -79,7 +78,7 @@ public class InstanceMigrator : IInstanceMigrator
                         updated = true;
                     }
 
-                    #pragma warning disable CS0618 // Legacy migration: reading old config values
+#pragma warning disable CS0618 // Legacy migration: reading old config values
                     if (config.SelectedVersion == 0 && legacyConfig.SelectedVersion > 0)
                     {
                         config.SelectedVersion = legacyConfig.SelectedVersion;
@@ -91,14 +90,13 @@ public class InstanceMigrator : IInstanceMigrator
                         config.VersionType = LauncherUtilities.NormalizeVersionType(legacyConfig.VersionType);
                         updated = true;
                     }
-                    #pragma warning restore CS0618
+#pragma warning restore CS0618
                 }
 
                 if (updated)
                 {
                     _configStore.SaveConfig();
 
-                    // Delete old config.toml after successful migration
                     if (File.Exists(legacyTomlPath))
                     {
                         try
@@ -113,9 +111,8 @@ public class InstanceMigrator : IInstanceMigrator
                     }
                 }
 
-                // Detect legacy instance folders and copy to new structure
                 var legacyInstanceRoot = Path.Combine(legacyRoot, "instance");
-                var legacyInstancesRoot = Path.Combine(legacyRoot, "instances"); // v1 naming
+                var legacyInstancesRoot = Path.Combine(legacyRoot, "instances");
                 if (!Directory.Exists(legacyInstanceRoot) && Directory.Exists(legacyInstancesRoot))
                 {
                     legacyInstanceRoot = legacyInstancesRoot;
@@ -128,7 +125,6 @@ public class InstanceMigrator : IInstanceMigrator
                 }
             }
 
-            // Also migrate old 'instance' folder in current app dir (singular -> plural)
             var oldInstanceDir = Path.Combine(_appDir, "instance");
             if (Directory.Exists(oldInstanceDir))
             {
@@ -149,13 +145,10 @@ public class InstanceMigrator : IInstanceMigrator
         {
             var newInstanceRoot = _instances.GetInstanceRoot();
 
-            // Check if source is the same as destination (case-insensitive for macOS)
             var normalizedSource = Path.GetFullPath(legacyInstanceRoot).TrimEnd(Path.DirectorySeparatorChar);
             var normalizedDest = Path.GetFullPath(newInstanceRoot).TrimEnd(Path.DirectorySeparatorChar);
             var isSameDirectory = normalizedSource.Equals(normalizedDest, StringComparison.OrdinalIgnoreCase);
 
-            // If same directory, we'll restructure in-place (rename release-v5 to release/5)
-            // If different directories, we'll copy as before
             if (isSameDirectory)
             {
                 Logger.Info("Migrate", "Source equals destination - will restructure legacy folders in-place");
@@ -163,7 +156,6 @@ public class InstanceMigrator : IInstanceMigrator
                 return;
             }
 
-            // CRITICAL: Prevent migration if source is inside destination (would cause infinite loop)
             if (normalizedSource.StartsWith(normalizedDest + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
             {
                 Logger.Info("Migrate", "Skipping migration - source is inside destination");
@@ -177,8 +169,6 @@ public class InstanceMigrator : IInstanceMigrator
                 var folderName = Path.GetFileName(legacyDir);
                 if (string.IsNullOrEmpty(folderName)) continue;
 
-                // CRITICAL: Skip folders that are already branch names (new structure)
-                // These indicate we're looking at already-migrated data
                 var normalizedFolderName = folderName.ToLowerInvariant();
                 if (normalizedFolderName == "release" || normalizedFolderName == "pre-release" ||
                     normalizedFolderName == "prerelease" || normalizedFolderName == "latest")
@@ -187,45 +177,37 @@ public class InstanceMigrator : IInstanceMigrator
                     continue;
                 }
 
-                // Parse legacy naming: "release-v5" or "release-5" or "release/5"
                 string branch;
                 string versionSegment;
 
-                if (folderName.Contains("/"))
+                if (folderName.Contains('/'))
                 {
-                    // Already new format: release/5
                     var parts = folderName.Split('/');
                     branch = parts[0];
                     versionSegment = parts.Length > 1 ? parts[1] : "latest";
                 }
-                else if (folderName.Contains("-"))
+                else if (folderName.Contains('-'))
                 {
-                    // Legacy dash format: release-v5 or release-5
                     var parts = folderName.Split('-', 2);
                     branch = parts[0];
                     versionSegment = parts.Length > 1 ? parts[1] : "latest";
 
-                    // Strip 'v' prefix if present
                     if (versionSegment.StartsWith("v", StringComparison.OrdinalIgnoreCase))
                     {
-                        versionSegment = versionSegment.Substring(1);
+                        versionSegment = versionSegment[1..];
                     }
                 }
                 else
                 {
-                    // Unknown format - skip to be safe (could be new structure subfolder)
                     Logger.Info("Migrate", $"Skipping {folderName} - unknown format, may be new structure");
                     continue;
                 }
 
-                // Normalize branch name
                 branch = LauncherUtilities.NormalizeVersionType(branch);
 
-                // Create target path in new structure: instance/release/5
                 var targetBranch = Path.Combine(newInstanceRoot, branch);
                 var targetVersion = Path.Combine(targetBranch, versionSegment);
 
-                // CRITICAL: Ensure we're not copying a folder into itself
                 var normalizedLegacy = Path.GetFullPath(legacyDir).TrimEnd(Path.DirectorySeparatorChar);
                 var normalizedTarget = Path.GetFullPath(targetVersion).TrimEnd(Path.DirectorySeparatorChar);
                 if (normalizedLegacy.Equals(normalizedTarget, StringComparison.OrdinalIgnoreCase) ||
@@ -236,7 +218,6 @@ public class InstanceMigrator : IInstanceMigrator
                     continue;
                 }
 
-                // Skip if already exists in new location
                 if (Directory.Exists(targetVersion) && _instances.IsClientPresent(targetVersion))
                 {
                     Logger.Info("Migrate", $"Skipping {folderName} - already exists at {targetVersion}");
@@ -246,13 +227,11 @@ public class InstanceMigrator : IInstanceMigrator
                 Logger.Info("Migrate", $"Copying {folderName} -> {branch}/{versionSegment}");
                 Directory.CreateDirectory(targetVersion);
 
-                // Check if legacy has game/ subfolder or direct Client/ folder
                 var legacyGameDir = Path.Combine(legacyDir, "game");
                 var legacyClientDir = Path.Combine(legacyDir, "Client");
 
                 if (Directory.Exists(legacyGameDir))
                 {
-                    // Legacy structure: release-v5/game/Client -> release/5/Client
                     foreach (var item in Directory.GetFileSystemEntries(legacyGameDir))
                     {
                         var name = Path.GetFileName(item);
@@ -271,7 +250,6 @@ public class InstanceMigrator : IInstanceMigrator
                 }
                 else if (Directory.Exists(legacyClientDir))
                 {
-                    // Direct Client/ folder structure
                     foreach (var item in Directory.GetFileSystemEntries(legacyDir))
                     {
                         var name = Path.GetFileName(item);
@@ -290,7 +268,6 @@ public class InstanceMigrator : IInstanceMigrator
                 }
                 else
                 {
-                    // Copy everything as-is
                     LauncherUtilities.CopyDirectory(legacyDir, targetVersion, false);
                     Logger.Success("Migrate", $"Migrated {folderName} (full copy)");
                 }
@@ -312,17 +289,14 @@ public class InstanceMigrator : IInstanceMigrator
                 var folderName = Path.GetFileName(legacyDir);
                 if (string.IsNullOrEmpty(folderName)) continue;
 
-                // Skip folders that are already branch names (new structure)
                 var normalizedFolderName = folderName.ToLowerInvariant();
                 if (normalizedFolderName == "release" || normalizedFolderName == "pre-release" ||
                     normalizedFolderName == "prerelease" || normalizedFolderName == "latest")
                 {
-                    // This is already new structure, skip
                     continue;
                 }
 
-                // Only process legacy dash format: release-v5 or release-5
-                if (!folderName.Contains("-"))
+                if (!folderName.Contains('-'))
                 {
                     continue;
                 }
@@ -331,20 +305,16 @@ public class InstanceMigrator : IInstanceMigrator
                 var branch = parts[0];
                 var versionSegment = parts.Length > 1 ? parts[1] : "latest";
 
-                // Strip 'v' prefix if present
                 if (versionSegment.StartsWith("v", StringComparison.OrdinalIgnoreCase))
                 {
-                    versionSegment = versionSegment.Substring(1);
+                    versionSegment = versionSegment[1..];
                 }
 
-                // Normalize branch name
                 branch = LauncherUtilities.NormalizeVersionType(branch);
 
-                // Create target path in new structure: instances/release/5
                 var targetBranch = Path.Combine(instanceRoot, branch);
                 var targetVersion = Path.Combine(targetBranch, versionSegment);
 
-                // Skip if target already exists
                 if (Directory.Exists(targetVersion))
                 {
                     Logger.Info("Migrate", $"Skipping {folderName} - target {branch}/{versionSegment} already exists");
@@ -353,16 +323,12 @@ public class InstanceMigrator : IInstanceMigrator
 
                 Logger.Info("Migrate", $"Restructuring {folderName} -> {branch}/{versionSegment}");
 
-                // Create the branch directory
                 Directory.CreateDirectory(targetBranch);
 
-                // Check if legacy has game/ subfolder - if so, move contents up
                 var legacyGameDir = Path.Combine(legacyDir, "game");
 
                 if (Directory.Exists(legacyGameDir))
                 {
-                    // Legacy structure: release-v5/game/Client -> release/5/Client
-                    // Move the contents of game/ to the new version folder
                     Directory.CreateDirectory(targetVersion);
 
                     foreach (var item in Directory.GetFileSystemEntries(legacyGameDir))
@@ -380,7 +346,6 @@ public class InstanceMigrator : IInstanceMigrator
                         }
                     }
 
-                    // Clean up old structure
                     try
                     {
                         Directory.Delete(legacyDir, recursive: true);
@@ -394,7 +359,6 @@ public class InstanceMigrator : IInstanceMigrator
                 }
                 else
                 {
-                    // Direct structure - just rename the folder
                     try
                     {
                         Directory.Move(legacyDir, targetVersion);
@@ -431,7 +395,6 @@ public class InstanceMigrator : IInstanceMigrator
             foreach (var branchDir in Directory.GetDirectories(root))
             {
                 var branchName = Path.GetFileName(branchDir);
-                // Skip non-branch folders
                 if (!branchName.Equals("release", StringComparison.OrdinalIgnoreCase) &&
                     !branchName.Equals("pre-release", StringComparison.OrdinalIgnoreCase))
                 {
@@ -442,13 +405,11 @@ public class InstanceMigrator : IInstanceMigrator
                 {
                     var folderName = Path.GetFileName(instanceDir);
 
-                    // Skip if folder is already named as GUID (new structure)
                     if (Guid.TryParse(folderName, out _))
                     {
                         continue;
                     }
 
-                    // Handle "latest" folder - also needs to be renamed to ID
                     if (folderName.Equals("latest", StringComparison.OrdinalIgnoreCase))
                     {
                         var latestMeta = _instances.GetInstanceMeta(instanceDir);
@@ -457,7 +418,6 @@ public class InstanceMigrator : IInstanceMigrator
                         if (latestMeta != null && !string.IsNullOrEmpty(latestMeta.Id))
                         {
                             latestId = latestMeta.Id;
-                            // Ensure IsLatest is set correctly
                             if (!latestMeta.IsLatest)
                             {
                                 latestMeta.IsLatest = true;
@@ -469,7 +429,6 @@ public class InstanceMigrator : IInstanceMigrator
                         }
                         else
                         {
-                            // Create meta for latest
                             latestId = Guid.NewGuid().ToString();
                             var newLatestMeta = new InstanceMeta
                             {
@@ -484,7 +443,6 @@ public class InstanceMigrator : IInstanceMigrator
                             Logger.Info("Migrate", $"Created meta.json for latest instance in {branchName}");
                         }
 
-                        // Rename folder from "latest" to ID
                         var newLatestPath = Path.Combine(branchDir, latestId);
                         if (!Directory.Exists(newLatestPath))
                         {
@@ -502,14 +460,11 @@ public class InstanceMigrator : IInstanceMigrator
                         continue;
                     }
 
-                    // Check if this is a version-named folder (numeric)
                     if (!int.TryParse(folderName, out var version))
                     {
-                        // Not a version number, skip
                         continue;
                     }
 
-                    // This is a version-named folder, need to migrate
                     var meta = _instances.GetInstanceMeta(instanceDir);
                     string instanceId;
 
@@ -519,7 +474,6 @@ public class InstanceMigrator : IInstanceMigrator
                     }
                     else
                     {
-                        // Create new meta with ID
                         instanceId = Guid.NewGuid().ToString();
                         meta = new InstanceMeta
                         {
@@ -533,7 +487,6 @@ public class InstanceMigrator : IInstanceMigrator
                         _instances.SaveInstanceMeta(instanceDir, meta);
                     }
 
-                    // Rename folder from version to ID
                     var newPath = Path.Combine(branchDir, instanceId);
                     if (Directory.Exists(newPath))
                     {
@@ -557,7 +510,6 @@ public class InstanceMigrator : IInstanceMigrator
             if (migratedCount > 0)
             {
                 Logger.Success("Migrate", $"Migrated {migratedCount} instance folder(s) to ID-based naming");
-                // Sync config with new folder structure
                 _instances.SyncInstancesWithConfig();
             }
             else
@@ -595,7 +547,6 @@ public class InstanceMigrator : IInstanceMigrator
                 {
                     var folderName = Path.GetFileName(instanceDir);
 
-                    // Only migrate GUID-named folders (version-to-ID migration must run first)
                     if (!Guid.TryParse(folderName, out _))
                     {
                         Logger.Warning("Migrate", $"Skipping non-GUID folder in branch dir: {instanceDir}");
@@ -621,7 +572,6 @@ public class InstanceMigrator : IInstanceMigrator
                     }
                 }
 
-                // Remove the branch directory if it is now empty
                 try
                 {
                     if (Directory.Exists(branchDir) && !Directory.EnumerateFileSystemEntries(branchDir).Any())
@@ -630,7 +580,7 @@ public class InstanceMigrator : IInstanceMigrator
                         Logger.Info("Migrate", $"Removed empty branch directory: {branchDir}");
                     }
                 }
-                catch { /* non-critical */ }
+                catch { }
             }
 
             if (migratedCount > 0)
@@ -654,7 +604,7 @@ public class InstanceMigrator : IInstanceMigrator
     /// <summary>
     /// Gets the list of legacy installation root directories to search for migrations
     /// </summary>
-    private IEnumerable<string> GetLegacyRoots()
+    private static List<string> GetLegacyRoots()
     {
         var roots = new List<string>();
         void Add(string? path)
@@ -670,7 +620,7 @@ public class InstanceMigrator : IInstanceMigrator
         {
             Add(Path.Combine(appData, "hyprism"));
             Add(Path.Combine(appData, "Hyprism"));
-            Add(Path.Combine(appData, "HyPrism")); // legacy casing
+            Add(Path.Combine(appData, "HyPrism"));
             Add(Path.Combine(appData, "HyPrismLauncher"));
         }
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
@@ -703,10 +653,7 @@ public class InstanceMigrator : IInstanceMigrator
         try
         {
             var json = File.ReadAllText(path);
-            return JsonSerializer.Deserialize<Config>(json, new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true
-            });
+            return JsonSerializer.Deserialize<Config>(json, JsonDefaults.CaseInsensitive);
         }
         catch
         {
@@ -727,20 +674,18 @@ public class InstanceMigrator : IInstanceMigrator
             foreach (var line in File.ReadAllLines(path))
             {
                 var trimmed = line.Trim();
-                if (string.IsNullOrWhiteSpace(trimmed) || trimmed.StartsWith("#")) continue;
+                if (string.IsNullOrWhiteSpace(trimmed) || trimmed.StartsWith('#')) continue;
 
                 static string Unquote(string value)
                 {
                     value = value.Trim();
-                    // Handle double quotes
-                    if (value.StartsWith("\"") && value.EndsWith("\"") && value.Length >= 2)
+                    if (value.StartsWith('"') && value.EndsWith('"') && value.Length >= 2)
                     {
-                        return value.Substring(1, value.Length - 2);
+                        return value[1..^1];
                     }
-                    // Handle single quotes (TOML style)
-                    if (value.StartsWith("'") && value.EndsWith("'") && value.Length >= 2)
+                    if (value.StartsWith('\'') && value.EndsWith('\'') && value.Length >= 2)
                     {
-                        return value.Substring(1, value.Length - 2);
+                        return value[1..^1];
                     }
                     return value;
                 }
@@ -762,14 +707,14 @@ public class InstanceMigrator : IInstanceMigrator
                         break;
                     case "versiontype":
                     case "branch":
-                        #pragma warning disable CS0618 // Legacy migration: parsing old config format
+#pragma warning disable CS0618 // Legacy migration: parsing old config format
                         cfg.VersionType = LauncherUtilities.NormalizeVersionType(val);
-                        #pragma warning restore CS0618
+#pragma warning restore CS0618
                         break;
                     case "selectedversion":
-                        #pragma warning disable CS0618 // Legacy migration: parsing old config format
+#pragma warning disable CS0618 // Legacy migration: parsing old config format
                         if (int.TryParse(val, out var sel)) cfg.SelectedVersion = sel;
-                        #pragma warning restore CS0618
+#pragma warning restore CS0618
                         break;
                 }
             }

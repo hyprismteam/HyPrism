@@ -1,6 +1,7 @@
 // Copyright (C) 2026 HyPrism Launcher
 // SPDX-License-Identifier: GPL-3.0-only
 
+using System.Net;
 using System.Net.Http.Headers;
 using System.Text.Json;
 using HyPrism.Core.Models;
@@ -40,8 +41,7 @@ public class HytaleVersionSource : IVersionSource
     private readonly IProfileManager _profiles;
     private readonly SemaphoreSlim _fetchLock = new(1, 1);
 
-    // In-memory cache: cacheKey -> (timestamp, response)
-    private readonly Dictionary<string, (DateTime CachedAt, OfficialPatchesResponse Response)> _cache = new();
+    private readonly Dictionary<string, (DateTime CachedAt, OfficialPatchesResponse Response)> _cache = [];
 
     /// <summary>
     /// Creates an official Hytale version source
@@ -79,16 +79,13 @@ public class HytaleVersionSource : IVersionSource
     /// </summary>
     private bool HasAnyOfficialProfile()
     {
-        // Quick check: if current session exists, we're available
         if (_authService.CurrentSession != null)
             return true;
 
-        // Check config for any official profiles
         var profiles = _profiles.GetProfiles();
         if (!profiles.Any(p => p.IsOfficial))
             return false;
 
-        // Check if any profile is official and has session file
         foreach (var profile in profiles.Where(p => p.IsOfficial))
         {
             var profileDir = LauncherUtilities.GetProfileFolderPath(_appDir, profile, createIfMissing: false, migrateLegacyByName: true);
@@ -101,7 +98,7 @@ public class HytaleVersionSource : IVersionSource
     }
 
     /// <inheritdoc/>
-    public int Priority => 0; // Highest priority
+    public int Priority => 0;
 
     /// <inheritdoc/>
     public VersionSourceLayoutInfo LayoutInfo => new()
@@ -117,33 +114,29 @@ public class HytaleVersionSource : IVersionSource
     /// This means for downloading the latest version, we DON'T need patch chains.
     /// Patches (from_build=1+) are only needed for updating existing installations
     /// </remarks>
-    public bool IsDiffBasedBranch(string branch) => false; // from_build=0 gives full downloads
+    public bool IsDiffBasedBranch(string branch) => false;
 
     /// <inheritdoc/>
     public async Task<List<CachedVersionEntry>> GetVersionsAsync(
         string os, string arch, string branch, CancellationToken ct = default)
     {
-        // from_build=0 returns the LATEST version as a full .pwr (not a patch)
         var response = await GetPatchesAsync(os, arch, branch, 0, ct);
         if (response == null || response.Steps.Count == 0)
         {
-            return new List<CachedVersionEntry>();
+            return [];
         }
 
-        // from_build=0 returns only the latest full version
-        // Take only the first (latest) entry - that's the downloadable full version
         var latestStep = response.Steps.OrderByDescending(s => s.To).FirstOrDefault();
         if (latestStep == null)
         {
-            return new List<CachedVersionEntry>();
+            return [];
         }
 
         var entries = new List<CachedVersionEntry>
         {
-            new CachedVersionEntry
-            {
+            new() {
                 Version = latestStep.To,
-                FromVersion = 0, // Mark as full version for download purposes
+                FromVersion = 0,
                 PwrUrl = latestStep.Pwr,
                 PwrHeadUrl = latestStep.PwrHead,
                 SigUrl = latestStep.Sig
@@ -159,24 +152,23 @@ public class HytaleVersionSource : IVersionSource
     {
         try
         {
-            // from_build=1 returns the patch chain for updating from version 1 onwards
             var patches = await GetPatchesAsync(os, arch, branch, 1, ct);
             if (patches == null || patches.Steps.Count == 0)
-                return new List<CachedPatchStep>();
+                return [];
 
-            return patches.Steps.Select(s => new CachedPatchStep
+            return [.. patches.Steps.Select(s => new CachedPatchStep
             {
                 From = s.From,
                 To = s.To,
                 PwrUrl = s.Pwr,
                 PwrHeadUrl = s.PwrHead,
                 SigUrl = s.Sig
-            }).ToList();
+            })];
         }
         catch (Exception ex)
         {
             Logger.Debug("HytaleSource", $"GetPatchChainAsync failed: {ex.Message}");
-            return new List<CachedPatchStep>();
+            return [];
         }
     }
 
@@ -193,11 +185,9 @@ public class HytaleVersionSource : IVersionSource
     public async Task<string?> GetDiffUrlAsync(
         string os, string arch, string branch, int fromVersion, int toVersion, CancellationToken ct = default)
     {
-        // Use from_build=fromVersion to get patches FROM that version
         var patches = await GetPatchesAsync(os, arch, branch, fromVersion, ct);
         if (patches == null) return null;
 
-        // Find the step that matches this transition
         var step = patches.Steps.FirstOrDefault(s => s.From == fromVersion && s.To == toVersion);
         return step?.Pwr;
     }
@@ -205,7 +195,6 @@ public class HytaleVersionSource : IVersionSource
     /// <inheritdoc/>
     public Task PreloadAsync(CancellationToken ct = default)
     {
-        // No preloading needed - we fetch on demand with caching
         return Task.CompletedTask;
     }
 
@@ -233,7 +222,6 @@ public class HytaleVersionSource : IVersionSource
     {
         string cacheKey = $"{os}:{arch}:{branch}:{fromBuild}";
 
-        // Check cache
         if (_cache.TryGetValue(cacheKey, out var cached) && DateTime.UtcNow - cached.CachedAt < CacheTtl)
         {
             Logger.Debug("HytaleSource", $"Using cached patches for {cacheKey}");
@@ -243,7 +231,6 @@ public class HytaleVersionSource : IVersionSource
         await _fetchLock.WaitAsync(ct);
         try
         {
-            // Double-check cache after acquiring lock
             if (_cache.TryGetValue(cacheKey, out cached) && DateTime.UtcNow - cached.CachedAt < CacheTtl)
             {
                 return cached.Response;
@@ -261,9 +248,8 @@ public class HytaleVersionSource : IVersionSource
 
             var response = await _httpClient.SendAsync(request, cts.Token);
 
-            // Throw specific exception for auth errors so we can retry with refresh
-            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized ||
-                response.StatusCode == System.Net.HttpStatusCode.Forbidden)
+            if (response.StatusCode == HttpStatusCode.Unauthorized ||
+                response.StatusCode == HttpStatusCode.Forbidden)
             {
                 throw new HytaleAuthExpiredException($"Auth error: {response.StatusCode}");
             }
@@ -288,7 +274,7 @@ public class HytaleVersionSource : IVersionSource
         }
         catch (HytaleAuthExpiredException)
         {
-            throw; // Re-throw to trigger refresh
+            throw;
         }
         catch (OperationCanceledException) when (!ct.IsCancellationRequested)
         {
@@ -320,8 +306,9 @@ public class HytaleVersionSource : IVersionSource
     {
         for (int attempt = 0; attempt < MaxAuthRetries; attempt++)
         {
-            // Get valid session from ANY official profile (not just the active one)
-            var session = await _authService.GetValidOfficialSessionAsync();
+            ct.ThrowIfCancellationRequested();
+
+            var session = await _authService.GetValidOfficialSessionAsync(ct);
             if (session == null)
             {
                 Logger.Debug("HytaleSource", "No valid Hytale session available from any official profile");
@@ -338,10 +325,10 @@ public class HytaleVersionSource : IVersionSource
                 {
                     Logger.Warning("HytaleSource", $"Auth error ({ex.Message}), forcing token refresh (attempt {attempt + 1}/{MaxAuthRetries})...");
 
-                    // Force a token refresh on the current session
+                    ct.ThrowIfCancellationRequested();
+
                     await _authService.ForceRefreshAsync();
 
-                    // Clear cache since old URLs may have expired signatures
                     ClearCache();
                 }
                 else
@@ -400,7 +387,6 @@ public class HytaleVersionSource : IVersionSource
     /// </summary>
     public async Task<MirrorSpeedTestResult> TestSpeedAsync(CancellationToken ct = default)
     {
-        // Return cached result if valid
         var cached = GetCachedSpeedTest();
         if (cached != null)
         {
@@ -411,7 +397,6 @@ public class HytaleVersionSource : IVersionSource
         await _speedTestLock.WaitAsync(ct);
         try
         {
-            // Double-check cache
             cached = GetCachedSpeedTest();
             if (cached != null)
                 return cached;
@@ -426,23 +411,20 @@ public class HytaleVersionSource : IVersionSource
 
             try
             {
-                // Test ping to account-data API (HEAD request to patches endpoint)
                 var pingStart = DateTime.UtcNow;
                 using var pingCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
                 pingCts.CancelAfter(TimeSpan.FromSeconds(5));
 
-                // Simple HEAD request to check connectivity
-                var pingResponse = await _httpClient.SendAsync(
-                    new HttpRequestMessage(HttpMethod.Head, "https://account-data.hytale.com/"),
-                    pingCts.Token);
+                using var pingRequest = new HttpRequestMessage(
+                    HttpMethod.Head,
+                    "https://account-data.hytale.com/");
+                using var pingResponse = await _httpClient.SendAsync(pingRequest, pingCts.Token);
 
                 result.PingMs = (long)(DateTime.UtcNow - pingStart).TotalMilliseconds;
 
-                // Use LauncherUtilities for correct OS/arch
                 var os = LauncherUtilities.GetOS();
                 var arch = LauncherUtilities.GetArch();
 
-                // Try to get a patch URL for speed testing
                 var patchesResponse = await GetPatchesAsync(os, arch, "pre-release", 0, ct);
 
                 if (patchesResponse?.Steps == null || patchesResponse.Steps.Count == 0)
@@ -464,8 +446,7 @@ public class HytaleVersionSource : IVersionSource
 
                 result.IsAvailable = true;
 
-                // Download portion of file (up to 10 MB) to measure speed - target ~5-6 seconds
-                const int testSizeBytes = 10 * 1024 * 1024; // 10 MB
+                const int testSizeBytes = 10 * 1024 * 1024;
                 var speedStart = DateTime.UtcNow;
                 using var speedCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
                 speedCts.CancelAfter(TimeSpan.FromSeconds(30));
@@ -475,10 +456,10 @@ public class HytaleVersionSource : IVersionSource
 
                 using var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, speedCts.Token);
 
-                if (response.IsSuccessStatusCode || response.StatusCode == System.Net.HttpStatusCode.PartialContent)
+                if (response.IsSuccessStatusCode || response.StatusCode == HttpStatusCode.PartialContent)
                 {
                     await using var stream = await response.Content.ReadAsStreamAsync(speedCts.Token);
-                    var buffer = new byte[81920]; // 80 KB buffer
+                    var buffer = new byte[81920];
                     long totalRead = 0;
                     int bytesRead;
 
@@ -492,7 +473,6 @@ public class HytaleVersionSource : IVersionSource
 
                     if (elapsed > 0 && totalRead > 0)
                     {
-                        // Speed in MB/s (megabytes per second)
                         result.SpeedMBps = (totalRead / 1_048_576.0) / elapsed;
                     }
 

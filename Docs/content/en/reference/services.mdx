@@ -16,6 +16,7 @@ Desktop reads the launcher version generated from `HyPrism.Desktop.csproj` and c
 | Versions | `IGameVersionCatalog`, `IVersionSource`, `IMirrorCatalog`, `IMirrorDiscovery` | version lists, source selection, mirror persistence and discovery, cache, and patches |
 | Instances | `IInstanceRepository`, `IInstanceMigrator` | paths, metadata, persisted ordering, selection, import, migration, and `InstancesChanged` notifications |
 | Downloads | `IFileDownloader`, `IPatchManager`, `IButlerClient` | transfer, file size checks, patching, and Butler |
+| Runtime | `IRuntimeProvisioner` | cancellable JRE and Visual C++ prerequisite installation, runtime discovery, and compatibility checks |
 | Launch | `IGameInstallationWorkflow`, `IGameLaunchCoordinator`, `IGameLauncher` | orchestration from a selected or explicitly addressed instance to process start; the coordinator raises `LaunchFailed` when an attempt ends without a running process |
 | Process | `IGameProcessTracker` | persistent process tracking, typed lifecycle events, downtime reconciliation, and controlled per-instance exit |
 | Mods | `IModManager` | search, install, import, update checks, and changelog retrieval |
@@ -30,6 +31,8 @@ Contracts live beside their feature implementation. `Application/Ports` is reser
 Prefer the narrowest contract required by a consumer. Avoid resolving dependencies from the container inside domain code
 
 Interactive OAuth does not depend on a browser service in Core. The host passes an asynchronous URI launcher into the launch operation, and Core uses it only when an official account requires authorization. A host may register `IOAuthCallbackPageRenderer` to replace the minimal fallback HTML returned by the local callback listener
+
+Long-running contracts place `CancellationToken` last. Installation forwards cancellation into runtime and Butler downloads, file writes, archive extraction, and process waits. Instance ZIP import and official-session lookup also observe cancellation through their asynchronous file and HTTP operations
 
 Avalonia preferences are exposed by `IDesktopSettingsStore` in `HyPrism.Desktop`. Core components that require launch configuration consume `IConfigStore` directly
 

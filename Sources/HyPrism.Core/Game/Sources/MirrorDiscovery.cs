@@ -13,12 +13,11 @@ namespace HyPrism.Core.Game.Sources;
 /// Service for automatically discovering mirror configuration from a URL.
 /// Attempts to detect the mirror type (pattern/json-index) and build a MirrorMeta schema
 /// </summary>
-public class MirrorDiscovery : IMirrorDiscovery
+public partial class MirrorDiscovery : IMirrorDiscovery
 {
     private readonly HttpClient _httpClient;
     private const int TimeoutSeconds = 10;
 
-    // Custom headers to use for all discovery requests
     private Dictionary<string, string>? _customHeaders;
     private string? _hytaleAgent;
 
@@ -38,7 +37,7 @@ public class MirrorDiscovery : IMirrorDiscovery
     /// </summary>
     private async Task<HttpResponseMessage> GetWithHeadersAsync(string url, CancellationToken ct)
     {
-        var request = new HttpRequestMessage(HttpMethod.Get, url);
+        using var request = new HttpRequestMessage(HttpMethod.Get, url);
 
         if (_customHeaders != null && _customHeaders.Count > 0)
         {
@@ -46,7 +45,6 @@ public class MirrorDiscovery : IMirrorDiscovery
             {
                 var expandedValue = headerValue;
 
-                // Expand {hytaleAgent} variable
                 if (expandedValue.Contains("{hytaleAgent}", StringComparison.OrdinalIgnoreCase))
                 {
                     if (_hytaleAgent == null)
@@ -73,16 +71,14 @@ public class MirrorDiscovery : IMirrorDiscovery
     /// <param name="ct">Cancellation token</param>
     public async Task<DiscoveryResult> DiscoverMirrorAsync(string url, Dictionary<string, string>? headers = null, CancellationToken ct = default)
     {
-        // Store headers for use in all discovery requests
         _customHeaders = headers;
-        _hytaleAgent = null; // Reset cached agent for fresh expansion
+        _hytaleAgent = null;
 
         if (string.IsNullOrWhiteSpace(url))
         {
             return new DiscoveryResult { Success = false, Error = "URL is required" };
         }
 
-        // Normalize URL
         url = url.Trim().TrimEnd('/');
         if (!url.StartsWith("http://", StringComparison.OrdinalIgnoreCase) &&
             !url.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
@@ -97,14 +93,12 @@ public class MirrorDiscovery : IMirrorDiscovery
 
         Logger.Info("MirrorDiscovery", $"Starting discovery for: {url}");
 
-        // Generate possible base URLs to test
         var baseUrls = GeneratePossibleBaseUrls(uri);
 
         foreach (var baseUrl in baseUrls)
         {
             Logger.Debug("MirrorDiscovery", $"Testing base URL: {baseUrl}");
 
-            // Try all strategies for this base URL
             var result = await TryAllStrategiesAsync(new Uri(baseUrl), ct);
             if (result.Success && result.Mirror != null)
             {
@@ -129,14 +123,12 @@ public class MirrorDiscovery : IMirrorDiscovery
     {
         var urls = new List<string> { uri.ToString().TrimEnd('/') };
 
-        // Add authority (root domain) as fallback
         var authority = uri.GetLeftPart(UriPartial.Authority);
         if (!urls.Contains(authority))
         {
             urls.Add(authority);
         }
 
-        // If path has multiple segments, try parent paths
         var pathParts = uri.AbsolutePath.Trim('/').Split('/');
         for (int i = pathParts.Length - 1; i > 0; i--)
         {
@@ -153,9 +145,7 @@ public class MirrorDiscovery : IMirrorDiscovery
 
     private async Task<DiscoveryResult> TryAllStrategiesAsync(Uri baseUri, CancellationToken ct)
     {
-        // Try strategies in order of specificity
-        // HTML autoindex and static files checked FIRST as they look for actual .pwr files
-        // JSON APIs checked after as they may return false positives on error pages
+        // Probe actual PWR files before JSON endpoints, whose error pages can look valid
         var strategies = new (string Name, Func<Uri, CancellationToken, Task<DiscoveryResult>> Strategy)[]
         {
             ("Pattern: Infos API", TryInfosApiPatternAsync),
@@ -196,7 +186,6 @@ public class MirrorDiscovery : IMirrorDiscovery
     /// </summary>
     private async Task<DiscoveryResult> TryInfosApiPatternAsync(Uri baseUri, CancellationToken ct)
     {
-        // Test /infos endpoint - this is the main version discovery endpoint
         var infosUrl = new Uri(baseUri, "/infos").ToString();
         Logger.Debug("MirrorDiscovery", $"Testing /infos endpoint: {infosUrl}");
 
@@ -213,7 +202,6 @@ public class MirrorDiscovery : IMirrorDiscovery
                 return new DiscoveryResult { Success = false };
             }
 
-            // Check Content-Type - must be JSON
             var contentType = response.Content.Headers.ContentType?.MediaType ?? "";
             if (!contentType.Contains("json", StringComparison.OrdinalIgnoreCase))
             {
@@ -228,12 +216,10 @@ public class MirrorDiscovery : IMirrorDiscovery
                 return new DiscoveryResult { Success = false };
             }
 
-            // Try to parse as JSON
             using var doc = JsonDocument.Parse(content);
             var root = doc.RootElement;
 
-            // Infos API format: { "platform": { "branch": { "buildVersion": "...", "newest": N } } }
-            // e.g. { "linux-amd64": { "release": { "buildVersion": "2026.02.17-xxx", "newest": 9 } } }
+            // /infos schema: { "platform": { "branch": { "buildVersion": "...", "newest": N } } }
             var validPlatforms = new[] { "windows-amd64", "linux-amd64", "darwin-arm64" };
             var detectedPlatforms = new List<string>();
 
@@ -242,11 +228,9 @@ public class MirrorDiscovery : IMirrorDiscovery
                 if (root.TryGetProperty(platform, out var platformData) &&
                     platformData.ValueKind == JsonValueKind.Object)
                 {
-                    // Check for release or pre-release branch
                     if (platformData.TryGetProperty("release", out var releaseData) ||
                         platformData.TryGetProperty("pre-release", out _))
                     {
-                        // Verify it has buildVersion and newest fields
                         if (releaseData.TryGetProperty("buildVersion", out _) ||
                             releaseData.TryGetProperty("newest", out _))
                         {
@@ -264,7 +248,6 @@ public class MirrorDiscovery : IMirrorDiscovery
 
             Logger.Debug("MirrorDiscovery", $"Infos API detected! Platforms: {string.Join(", ", detectedPlatforms)}");
 
-            // Optionally verify /latest endpoint exists
             var latestUrl = new Uri(baseUri, "/latest?branch=release&version=0").ToString();
             try
             {
@@ -306,26 +289,19 @@ public class MirrorDiscovery : IMirrorDiscovery
     /// </summary>
     private async Task<DiscoveryResult> TryManifestDiscoveryAsync(Uri baseUri, CancellationToken ct)
     {
-        // Build manifest URLs relative to the provided baseUri
         var inputUrl = baseUri.ToString().TrimEnd('/');
 
-        // Try manifest.json at various locations relative to the provided URL
         var manifestUrls = new List<string>
         {
-            // If URL ends with manifest.json, use it directly
             inputUrl.EndsWith("manifest.json", StringComparison.OrdinalIgnoreCase)
                 ? inputUrl
                 : null!,
-            // Try manifest.json in current directory
             $"{inputUrl}/manifest.json",
-            // Try in patches subdirectory
             $"{inputUrl}/patches/manifest.json",
-            // Try in hytale/patches subdirectory
             $"{inputUrl}/hytale/patches/manifest.json"
         };
 
-        // Remove nulls and duplicates
-        manifestUrls = manifestUrls.Where(u => u != null).Distinct().ToList();
+        manifestUrls = [.. manifestUrls.Where(u => u != null).Distinct()];
 
         foreach (var manifestUrl in manifestUrls)
         {
@@ -344,7 +320,6 @@ public class MirrorDiscovery : IMirrorDiscovery
                     continue;
                 }
 
-                // Check Content-Type
                 var contentType = response.Content.Headers.ContentType?.MediaType ?? "";
                 if (!contentType.Contains("json", StringComparison.OrdinalIgnoreCase))
                 {
@@ -358,7 +333,6 @@ public class MirrorDiscovery : IMirrorDiscovery
                 using var doc = JsonDocument.Parse(content);
                 var root = doc.RootElement;
 
-                // Must have "files" property
                 if (!root.TryGetProperty("files", out var filesNode) ||
                     filesNode.ValueKind != JsonValueKind.Object)
                 {
@@ -366,8 +340,7 @@ public class MirrorDiscovery : IMirrorDiscovery
                     continue;
                 }
 
-                // Parse files to detect structure: {os}/{arch}/{branch}/{from}_to_{to}.pwr
-                var patchPattern = new Regex(@"^([^/]+)/([^/]+)/([^/]+)/(\d+)_to_(\d+)\.pwr$", RegexOptions.Compiled);
+                var patchPattern = ManifestPatchPathRegex();
                 var detectedPlatforms = new HashSet<string>();
                 var detectedBranches = new HashSet<string>();
                 var maxVersions = new Dictionary<string, int>();
@@ -401,8 +374,7 @@ public class MirrorDiscovery : IMirrorDiscovery
 
                 Logger.Debug("MirrorDiscovery", $"Manifest detected! Platforms: {string.Join(", ", detectedPlatforms)}, Branches: {string.Join(", ", detectedBranches)}");
 
-                // Build base URL (directory containing manifest.json)
-                var baseUrl = manifestUrl.Substring(0, manifestUrl.LastIndexOf('/'));
+                var baseUrl = manifestUrl[..manifestUrl.LastIndexOf('/')];
 
                 var mirrorId = MirrorSchemaInferrer.GenerateMirrorId(baseUri);
                 var mirror = MirrorSchemaInferrer.CreateManifestPatternMirror(baseUri, mirrorId, baseUrl, manifestUrl, detectedBranches);
@@ -435,7 +407,6 @@ public class MirrorDiscovery : IMirrorDiscovery
     /// </summary>
     private async Task<DiscoveryResult> TryLauncherApiPatternAsync(Uri baseUri, CancellationToken ct)
     {
-        // First check if /health endpoint works
         var healthUrl = new Uri(baseUri, "/health").ToString();
         bool hasHealthEndpoint = false;
 
@@ -452,8 +423,6 @@ public class MirrorDiscovery : IMirrorDiscovery
             Logger.Debug("MirrorDiscovery", $"/health check failed: {ex.Message}");
         }
 
-        // Test launcher API version endpoints
-        // 422 UnprocessableEntity means the endpoint EXISTS but params are wrong - still a valid detection!
         var versionEndpoints = new[]
         {
             "/launcher/patches/release/versions?os_name=linux&arch=x64",
@@ -475,12 +444,10 @@ public class MirrorDiscovery : IMirrorDiscovery
                 using var response = await GetWithHeadersAsync(testUrl, linkedCts.Token);
                 var statusCode = (int)response.StatusCode;
 
-                // Check Content-Type - must be JSON, not HTML error pages
                 var contentType = response.Content.Headers.ContentType?.MediaType ?? "";
                 var isJsonResponse = contentType.Contains("json", StringComparison.OrdinalIgnoreCase);
 
-                // For 422/400 we need JSON response to confirm it's a real API
-                // For 200 OK we also need JSON to avoid HTML error pages
+                // A JSON 400 or 422 response still identifies the launcher API
                 if (statusCode == 422 || statusCode == 400 || response.IsSuccessStatusCode)
                 {
                     if (!isJsonResponse)
@@ -510,7 +477,6 @@ public class MirrorDiscovery : IMirrorDiscovery
             }
         }
 
-        // Fallback: if /health works, may be a valid launcher API mirror
         if (hasHealthEndpoint)
         {
             Logger.Debug("MirrorDiscovery", "Has /health endpoint but no version API found");
@@ -525,12 +491,11 @@ public class MirrorDiscovery : IMirrorDiscovery
     /// </summary>
     private async Task<DiscoveryResult> TryStaticFilesPatternAsync(Uri baseUri, CancellationToken ct)
     {
-        // Common static file paths
         var pathVariants = new[]
         {
             "/hytale/patches",
             "/patches",
-            ""  // maybe the base URL is already the patches root
+            ""
         };
 
         var osArchBranch = new[]
@@ -559,15 +524,13 @@ public class MirrorDiscovery : IMirrorDiscovery
                     var content = await response.Content.ReadAsStringAsync(linkedCts.Token);
                     if (string.IsNullOrWhiteSpace(content)) continue;
 
-                    // Look for .pwr file links in HTML
-                    var pwrPattern = new Regex(@"href=""(\d+)\.pwr""", RegexOptions.IgnoreCase);
+                    var pwrPattern = PwrLinkRegex();
                     var matches = pwrPattern.Matches(content);
 
                     if (matches.Count > 0)
                     {
                         Logger.Debug("MirrorDiscovery", $"Found {matches.Count} .pwr files in HTML listing");
 
-                        // Detected HTML autoindex with .pwr files
                         var basePath = pathPrefix.TrimEnd('/');
                         var mirrorId = MirrorSchemaInferrer.GenerateMirrorId(baseUri);
 
@@ -597,7 +560,6 @@ public class MirrorDiscovery : IMirrorDiscovery
     /// </summary>
     private async Task<DiscoveryResult> TryJsonIndexDiscoveryAsync(Uri baseUri, CancellationToken ct)
     {
-        // Common API endpoints to try
         var endpoints = new[]
         {
             "/api.php",
@@ -626,10 +588,9 @@ public class MirrorDiscovery : IMirrorDiscovery
                     continue;
                 }
 
-                // Check Content-Type - must be JSON, not HTML error pages
                 var contentType = response.Content.Headers.ContentType?.MediaType ?? "";
                 if (!contentType.Contains("json", StringComparison.OrdinalIgnoreCase) &&
-                    !contentType.Contains("php", StringComparison.OrdinalIgnoreCase))  // Allow PHP for api.php
+                    !contentType.Contains("php", StringComparison.OrdinalIgnoreCase))
                 {
                     Logger.Debug("MirrorDiscovery", $"Endpoint returned non-JSON Content-Type: {contentType}");
                     continue;
@@ -640,16 +601,13 @@ public class MirrorDiscovery : IMirrorDiscovery
 
                 Logger.Debug("MirrorDiscovery", $"Got response, length: {content.Length} chars");
 
-                // Try to parse as JSON
                 using var doc = JsonDocument.Parse(content);
                 var root = doc.RootElement;
 
-                // Look for "hytale" root property (common pattern)
                 if (root.TryGetProperty("hytale", out var hytaleNode))
                 {
                     Logger.Debug("MirrorDiscovery", "Found 'hytale' root property - JSON index format detected");
 
-                    // Detected JSON index format
                     var mirrorId = MirrorSchemaInferrer.GenerateMirrorId(baseUri);
                     var mirror = new MirrorMeta
                     {
@@ -674,7 +632,7 @@ public class MirrorDiscovery : IMirrorDiscovery
                                 Full = "v{version}-{os}-{arch}.pwr",
                                 Diff = "v{from}~{to}-{os}-{arch}.pwr"
                             },
-                            DiffBasedBranches = new List<string> { "pre-release" }
+                            DiffBasedBranches = ["pre-release"]
                         },
                         SpeedTest = new MirrorSpeedTestConfig
                         {
@@ -713,7 +671,6 @@ public class MirrorDiscovery : IMirrorDiscovery
     /// </summary>
     private async Task<DiscoveryResult> TryJsonApiDiscoveryAsync(Uri baseUri, CancellationToken ct)
     {
-        // Common version API endpoints with query parameters
         var versionEndpoints = new[]
         {
             "/launcher/patches/release/versions?os_name=linux&arch=x64",
@@ -742,7 +699,6 @@ public class MirrorDiscovery : IMirrorDiscovery
                     continue;
                 }
 
-                // Check Content-Type - must be JSON, not HTML error pages
                 var contentType = response.Content.Headers.ContentType?.MediaType ?? "";
                 if (!contentType.Contains("json", StringComparison.OrdinalIgnoreCase))
                 {
@@ -758,7 +714,6 @@ public class MirrorDiscovery : IMirrorDiscovery
                 using var doc = JsonDocument.Parse(content);
                 var root = doc.RootElement;
 
-                // Look for items[] or versions[] array
                 string? jsonPath = null;
                 if (root.TryGetProperty("items", out var items) && items.ValueKind == JsonValueKind.Array)
                 {
@@ -803,7 +758,7 @@ public class MirrorDiscovery : IMirrorDiscovery
                             {
                                 ["pre-release"] = "prerelease"
                             },
-                            DiffBasedBranches = new List<string>()
+                            DiffBasedBranches = []
                         },
                         SpeedTest = new MirrorSpeedTestConfig
                         {
@@ -842,7 +797,6 @@ public class MirrorDiscovery : IMirrorDiscovery
     /// </summary>
     private async Task<DiscoveryResult> TryHtmlAutoindexDiscoveryAsync(Uri baseUri, CancellationToken ct)
     {
-        // Common paths for Hytale patches
         var patchPaths = new[]
         {
             "/hytale/patches/linux/x64/release/0/",
@@ -874,16 +828,13 @@ public class MirrorDiscovery : IMirrorDiscovery
                 var content = await response.Content.ReadAsStringAsync(linkedCts.Token);
                 if (string.IsNullOrWhiteSpace(content)) continue;
 
-                // Look for .pwr file links in HTML
-                var pwrPattern = new Regex(@"href=""(\d+)\.pwr""", RegexOptions.IgnoreCase);
+                var pwrPattern = PwrLinkRegex();
                 var matches = pwrPattern.Matches(content);
 
                 if (matches.Count > 0)
                 {
                     Logger.Debug("MirrorDiscovery", $"Found {matches.Count} .pwr files in HTML listing");
 
-                    // Detected HTML autoindex with .pwr files
-                    // Determine which path structure we found
                     var basePath = path.Contains("/x64/")
                         ? path.Replace("/linux/x64/release/0/", "").TrimEnd('/')
                         : path.Replace("/linux/amd64/release/0/", "").TrimEnd('/');
@@ -911,7 +862,7 @@ public class MirrorDiscovery : IMirrorDiscovery
                                 HtmlPattern = @"<a\s+href=""(\d+)\.pwr"">\d+\.pwr</a>\s+\S+\s+\S+\s+(\d+)",
                                 MinFileSizeBytes = 1_048_576
                             },
-                            DiffBasedBranches = new List<string>()
+                            DiffBasedBranches = []
                         },
                         SpeedTest = new MirrorSpeedTestConfig
                         {
@@ -967,10 +918,8 @@ public class MirrorDiscovery : IMirrorDiscovery
 
             Logger.Debug("MirrorDiscovery", $"Content-Type: {contentType}, length: {content.Length}");
 
-            // If it's HTML with directory listing
             if (contentType.Contains("text/html", StringComparison.OrdinalIgnoreCase))
             {
-                // Check for subdirectories like linux/, windows/, darwin/
                 var hasOsDirectories = content.Contains("linux/") || content.Contains("windows/") || content.Contains("darwin/");
 
                 if (hasOsDirectories)
@@ -999,7 +948,7 @@ public class MirrorDiscovery : IMirrorDiscovery
                                 HtmlPattern = @"<a\s+href=""(\d+)\.pwr"">\d+\.pwr</a>\s+\S+\s+\S+\s+(\d+)",
                                 MinFileSizeBytes = 1_048_576
                             },
-                            DiffBasedBranches = new List<string>()
+                            DiffBasedBranches = []
                         },
                         SpeedTest = new MirrorSpeedTestConfig
                         {
@@ -1021,8 +970,14 @@ public class MirrorDiscovery : IMirrorDiscovery
                 }
             }
         }
-        catch { /* Discovery failed */ }
+        catch { }
 
         return new DiscoveryResult { Success = false };
     }
+
+    [GeneratedRegex(@"^([^/]+)/([^/]+)/([^/]+)/(\d+)_to_(\d+)\.pwr$")]
+    private static partial Regex ManifestPatchPathRegex();
+
+    [GeneratedRegex(@"href=""(\d+)\.pwr""", RegexOptions.IgnoreCase)]
+    private static partial Regex PwrLinkRegex();
 }

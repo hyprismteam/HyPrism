@@ -158,7 +158,6 @@ public static class LauncherUtilities
     /// </summary>
     public static string GetEffectiveAppDir()
     {
-        // First check environment variable
         var envDir = Environment.GetEnvironmentVariable("HYPRISM_DATA");
         if (!string.IsNullOrWhiteSpace(envDir) && Directory.Exists(envDir))
         {
@@ -265,10 +264,9 @@ public static class LauncherUtilities
         var dir = new DirectoryInfo(sourceDir);
         if (!dir.Exists) return;
 
-        // Prevent copying into itself
         var normalizedSource = Path.GetFullPath(sourceDir).TrimEnd(Path.DirectorySeparatorChar);
         var normalizedDest = Path.GetFullPath(destinationDir).TrimEnd(Path.DirectorySeparatorChar);
-        
+
         if (normalizedSource.Equals(normalizedDest, StringComparison.OrdinalIgnoreCase)) return;
         if (normalizedDest.StartsWith(normalizedSource + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)) return;
         if (normalizedSource.StartsWith(normalizedDest + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)) return;
@@ -322,7 +320,7 @@ public static class LauncherUtilities
     {
         string backupRoot = Path.Combine(Path.GetTempPath(), "HyPrismBackup", Guid.NewGuid().ToString());
         // Preserve UserData and Client/Assets to avoid re-downloading game
-        string[] preserve = { "UserData", "Client" };
+        string[] preserve = ["UserData", "Client"];
 
         try
         {
@@ -411,7 +409,7 @@ public static class LauncherUtilities
             Logger.Warning("Game", $"Failed to record app sign stamp: {ex.Message}");
         }
     }
-    
+
     /// <summary>
     /// Generates a random username for new users.
     /// Format: Adjective + Noun + 4-digit number (max 16 chars total)
@@ -419,25 +417,23 @@ public static class LauncherUtilities
     public static string GenerateRandomUsername()
     {
         var random = new Random();
-        
-        // Short adjectives (max 5 chars)
-        var adjectives = new[] { 
+
+        var adjectives = new[] {
             "Happy", "Swift", "Brave", "Noble", "Quiet", "Bold", "Lucky", "Epic",
             "Jolly", "Lunar", "Solar", "Azure", "Royal", "Foxy", "Wacky", "Zesty",
             "Fizzy", "Dizzy", "Funky", "Jazzy", "Snowy", "Rainy", "Sunny", "Windy"
         };
-        
-        // Short nouns (max 6 chars)
+
         var nouns = new[] {
             "Panda", "Tiger", "Wolf", "Dragon", "Knight", "Ranger", "Mage", "Fox",
             "Bear", "Eagle", "Hawk", "Lion", "Falcon", "Raven", "Owl", "Shark",
             "Cobra", "Viper", "Lynx", "Badger", "Otter", "Pirate", "Ninja", "Viking"
         };
-        
+
         var adj = adjectives[random.Next(adjectives.Length)];
         var noun = nouns[random.Next(nouns.Length)];
         var num = random.Next(1000, 9999);
-        
+
         return $"{adj}{noun}{num}";
     }
 
@@ -451,24 +447,23 @@ public static class LauncherUtilities
         {
             var envPath = Path.Combine(AppContext.BaseDirectory, ".env");
             if (!File.Exists(envPath)) return;
-            
+
             foreach (var line in File.ReadAllLines(envPath))
             {
                 var trimmed = line.Trim();
-                if (string.IsNullOrWhiteSpace(trimmed) || trimmed.StartsWith("#")) continue;
-                
+                if (string.IsNullOrWhiteSpace(trimmed) || trimmed.StartsWith('#')) continue;
+
                 var parts = trimmed.Split('=', 2);
                 if (parts.Length == 2)
                 {
                     var key = parts[0].Trim();
                     var value = parts[1].Trim();
-                    // Remove quotes if present
                     if (value.StartsWith('"') && value.EndsWith('"'))
-                        value = value.Substring(1, value.Length - 2);
+                        value = value[1..^1];
                     Environment.SetEnvironmentVariable(key, value);
                 }
             }
         }
-        catch { /* Ignore errors loading .env file */ }
+        catch { }
     }
 }

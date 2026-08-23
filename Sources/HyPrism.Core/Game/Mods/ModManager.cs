@@ -16,13 +16,12 @@ namespace HyPrism.Core.Game.Mods;
 /// Manages game modifications including searching, installing, updating, and tracking.
 /// Integrates with CurseForge API for mod discovery and downloading.
 /// </summary>
-public class ModManager : IModManager
+public partial class ModManager : IModManager
 {
     private readonly HttpClient _httpClient;
     private readonly string _appDir;
     private readonly CurseForgeClient _cfClient;
 
-    // Lock for mod manifest operations to prevent concurrent writes
     private static readonly SemaphoreSlim _modManifestLock = new(1, 1);
 
     /// <summary>
@@ -36,7 +35,6 @@ public class ModManager : IModManager
     {
         if (File.Exists(modsPath))
         {
-            // A plain file blocks Directory.CreateDirectory, so remove it
             Logger.Warning("ModManager",
                 $"Found a file where the Mods directory should be ({modsPath}), removing it");
             File.Delete(modsPath);
@@ -81,12 +79,12 @@ public class ModManager : IModManager
         _progressNotificationService = progressNotificationService;
         _cfClient = new CurseForgeClient(httpClient, () => _configStore.Configuration.CurseForgeKey);
     }
-    
+
     /// <inheritdoc/>
     public async Task<ModSearchResult> SearchModsAsync(string query, int page, int pageSize, string[] categories, int sortField, int sortOrder)
     {
         if (!_cfClient.HasApiKey())
-            return new ModSearchResult { Mods = new List<ModInfo>(), TotalCount = 0 };
+            return new ModSearchResult { Mods = [], TotalCount = 0 };
 
         try
         {
@@ -96,31 +94,31 @@ public class ModManager : IModManager
                            $"&searchFilter={Uri.EscapeDataString(query)}" +
                            $"&index={index}&pageSize={pageSize}" +
                            $"&sortField={sortField}&sortOrder={sortOrderStr}";
-            
+
             if (categories is { Length: > 0 })
             {
                 var catId = categories[0];
                 if (int.TryParse(catId, out var categoryId) && categoryId > 0)
                     endpoint += $"&categoryId={categoryId}";
             }
-            
+
             using var request = _cfClient.CreateRequest(HttpMethod.Get, endpoint);
             using var response = await _httpClient.SendAsync(request);
-            
+
             if (!response.IsSuccessStatusCode)
             {
                 Logger.Warning("ModManager", $"CurseForge search returned {response.StatusCode}");
-                return new ModSearchResult { Mods = new List<ModInfo>(), TotalCount = 0 };
+                return new ModSearchResult { Mods = [], TotalCount = 0 };
             }
 
             var json = await response.Content.ReadAsStringAsync();
             var cfResponse = JsonSerializer.Deserialize<CurseForgeSearchResponse>(json, _jsonOptions);
-            
+
             if (cfResponse?.Data == null)
-                return new ModSearchResult { Mods = new List<ModInfo>(), TotalCount = 0 };
+                return new ModSearchResult { Mods = [], TotalCount = 0 };
 
             var mods = cfResponse.Data.Select(MapToModInfo).ToList();
-            
+
             return new ModSearchResult
             {
                 Mods = mods,
@@ -130,7 +128,7 @@ public class ModManager : IModManager
         catch (Exception ex)
         {
             Logger.Error("ModManager", $"Search failed: {ex.Message}");
-            return new ModSearchResult { Mods = new List<ModInfo>(), TotalCount = 0 };
+            return new ModSearchResult { Mods = [], TotalCount = 0 };
         }
     }
 
@@ -139,36 +137,34 @@ public class ModManager : IModManager
     {
         if (!_cfClient.HasApiKey())
             return GetFallbackCategories();
-        
+
         try
         {
             var endpoint = $"/v1/categories?gameId={CurseForgeClient.HytaleGameId}";
             using var request = _cfClient.CreateRequest(HttpMethod.Get, endpoint);
             using var response = await _httpClient.SendAsync(request);
-            
+
             if (!response.IsSuccessStatusCode)
             {
                 Logger.Warning("ModManager", $"Categories request returned {response.StatusCode}");
                 return GetFallbackCategories();
             }
-            
+
             var json = await response.Content.ReadAsStringAsync();
             var cfResponse = JsonSerializer.Deserialize<CurseForgeCategoriesResponse>(json, _jsonOptions);
-            
+
             if (cfResponse?.Data == null || cfResponse.Data.Count == 0)
                 return GetFallbackCategories();
-            
-            // Find the "Mods" class category dynamically (matching original repo)
+
             var modsClass = cfResponse.Data.FirstOrDefault(c => c.IsClass == true &&
                 string.Equals(c.Name, "mods", StringComparison.OrdinalIgnoreCase));
             int modsClassId = modsClass?.Id ?? 0;
-            
+
             var categories = new List<ModCategory>
             {
-                new ModCategory { Id = 0, Name = "All Mods", Slug = "all" }
+                new() { Id = 0, Name = "All Mods", Slug = "all" }
             };
-            
-            // Get subcategories under the Mods class
+
             var modCategories = cfResponse.Data
                 .Where(c => c.ParentCategoryId == modsClassId && c.IsClass != true)
                 .Select(c => new ModCategory
@@ -179,11 +175,10 @@ public class ModManager : IModManager
                 })
                 .OrderBy(c => c.Name)
                 .ToList();
-            
-            // Fallback: if no subcategories found, return all non-class categories
+
             if (modCategories.Count == 0)
             {
-                modCategories = cfResponse.Data
+                modCategories = [.. cfResponse.Data
                     .Where(c => c.IsClass != true)
                     .Select(c => new ModCategory
                     {
@@ -191,12 +186,11 @@ public class ModManager : IModManager
                         Name = c.Name ?? "",
                         Slug = c.Slug ?? ""
                     })
-                    .OrderBy(c => c.Name)
-                    .ToList();
+                    .OrderBy(c => c.Name)];
             }
-            
+
             categories.AddRange(modCategories);
-            
+
             return categories;
         }
         catch (Exception ex)
@@ -205,16 +199,16 @@ public class ModManager : IModManager
             return GetFallbackCategories();
         }
     }
-    
+
     private static List<ModCategory> GetFallbackCategories()
     {
-        return new List<ModCategory>
-        {
-            new ModCategory { Id = 0, Name = "All Mods", Slug = "all" },
-            new ModCategory { Id = 2, Name = "World Gen", Slug = "world-gen" },
-            new ModCategory { Id = 3, Name = "Magic", Slug = "magic" },
-            new ModCategory { Id = 4, Name = "Tech", Slug = "tech" }
-        };
+        return
+        [
+            new() { Id = 0, Name = "All Mods", Slug = "all" },
+            new() { Id = 2, Name = "World Gen", Slug = "world-gen" },
+            new() { Id = 3, Name = "Magic", Slug = "magic" },
+            new() { Id = 4, Name = "Tech", Slug = "tech" }
+        ];
     }
 
     /// <inheritdoc/>
@@ -248,13 +242,12 @@ public class ModManager : IModManager
                 Logger.Warning("ModManager", $"File info missing or no download URL for mod {numericModId} file {resolvedFileId}");
                 return false;
             }
-            
+
             onProgress?.Invoke("downloading", cfFile.FileName ?? "mod file");
-            
-            // Download the file to UserData/Mods folder (correct Hytale mod location)
+
             var modsPath = Path.Combine(instancePath, "UserData", "Mods");
             EnsureModsDirectory(modsPath);
-            
+
             var fallbackName = !string.IsNullOrWhiteSpace(resolvedFileId)
                 ? $"mod_{resolvedFileId}.jar"
                 : $"mod_{cfFile.Id}.jar";
@@ -284,14 +277,12 @@ public class ModManager : IModManager
             {
                 return false;
             }
-            
+
             onProgress?.Invoke("installing", cfFile.FileName ?? "mod file");
-            
-            // Also get mod info for the manifest
+
             CurseForgeMod? modInfo = null;
             try
             {
-                // Use numeric ID for mod info request
                 var modEndpoint = $"/v1/mods/{numericModId}";
                 using var modRequest = _cfClient.CreateRequest(HttpMethod.Get, modEndpoint);
                 using var modResponse = await _httpClient.SendAsync(modRequest);
@@ -302,26 +293,23 @@ public class ModManager : IModManager
                     modInfo = modResp?.Data;
                 }
             }
-            catch { /* Non-critical */ }
-            
-            // Add to manifest
+            catch { }
+
             var mods = GetInstanceInstalledMods(instancePath);
-            
-            // Find and remove old mod files before updating manifest
-            var oldMods = mods.Where(m => 
-                m.CurseForgeId == numericModId || 
-                m.CurseForgeId == slugOrId || 
-                m.Id == $"cf-{numericModId}" || 
+
+            var oldMods = mods.Where(m =>
+                m.CurseForgeId == numericModId ||
+                m.CurseForgeId == slugOrId ||
+                m.Id == $"cf-{numericModId}" ||
                 m.Id == $"cf-{slugOrId}").ToList();
-            
+
             foreach (var oldMod in oldMods)
             {
-                // Delete old mod file if it's different from the new one
                 if (!string.IsNullOrWhiteSpace(oldMod.FileName) && oldMod.FileName != cfFile.FileName)
                 {
                     var oldFilePath = Path.Combine(modsPath, oldMod.FileName);
                     var oldDisabledFilePath = Path.Combine(modsPath, oldMod.FileName + ".disabled");
-                    
+
                     if (File.Exists(oldFilePath))
                     {
                         try
@@ -348,10 +336,9 @@ public class ModManager : IModManager
                     }
                 }
             }
-            
-            // Remove existing entry for this mod if any (check both numeric ID and old slug-based ID)
+
             mods.RemoveAll(m => m.CurseForgeId == numericModId || m.CurseForgeId == slugOrId || m.Id == $"cf-{numericModId}" || m.Id == $"cf-{slugOrId}");
-            
+
             var installedMod = new InstalledMod
             {
                 Id = $"cf-{numericModId}",
@@ -364,7 +351,7 @@ public class ModManager : IModManager
                 Author = modInfo?.Authors?.FirstOrDefault()?.Name ?? "",
                 Description = modInfo?.Summary ?? "",
                 IconUrl = modInfo?.Logo?.ThumbnailUrl ?? "",
-                CurseForgeId = numericModId,  // Always save numeric ID
+                CurseForgeId = numericModId,
                 FileDate = cfFile.FileDate ?? "",
                 ReleaseType = cfFile.ReleaseType,
                 Screenshots = modInfo?.Screenshots?.Select(s => new CurseForgeScreenshot
@@ -373,15 +360,15 @@ public class ModManager : IModManager
                     Title = s.Title,
                     ThumbnailUrl = s.ThumbnailUrl,
                     Url = s.Url
-                }).ToList() ?? new List<CurseForgeScreenshot>()
+                }).ToList() ?? []
             };
-            
+
             mods.Add(installedMod);
             await SaveInstanceModsAsync(instancePath, mods);
-            
+
             onProgress?.Invoke("complete", cfFile.FileName ?? "mod file");
             Logger.Success("ModManager", $"Installed mod {installedMod.Name} (ID: {numericModId}) to {instancePath}");
-            
+
             return true;
         }
         catch (Exception ex)
@@ -401,30 +388,29 @@ public class ModManager : IModManager
         EnsureModsDirectory(modsPath);
 
         List<InstalledMod> mods;
-        
+
         try
         {
             if (File.Exists(manifestPath))
             {
                 var json = File.ReadAllText(manifestPath);
-                mods = JsonSerializer.Deserialize<List<InstalledMod>>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new List<InstalledMod>();
+                mods = JsonSerializer.Deserialize<List<InstalledMod>>(json, JsonDefaults.CaseInsensitive) ?? [];
             }
             else if (File.Exists(legacyManifestPath))
             {
                 var json = File.ReadAllText(legacyManifestPath);
-                mods = JsonSerializer.Deserialize<List<InstalledMod>>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new List<InstalledMod>();
+                mods = JsonSerializer.Deserialize<List<InstalledMod>>(json, JsonDefaults.CaseInsensitive) ?? [];
             }
             else
             {
-                mods = new List<InstalledMod>();
+                mods = [];
             }
         }
         catch
         {
-            mods = new List<InstalledMod>();
+            mods = [];
         }
 
-        // Ensure mods are discoverable even when manifest is missing or stale
         var diskFiles = Directory.EnumerateFiles(modsPath)
             .Select(Path.GetFileName)
             .Where(name => !string.IsNullOrEmpty(name))
@@ -443,7 +429,6 @@ public class ModManager : IModManager
             return new string(chars).ToLowerInvariant();
         }
 
-        // Keep existing metadata in sync with files when names drift (e.g. .jar -> .disabled)
         foreach (var mod in mods)
         {
             if (string.IsNullOrWhiteSpace(mod.FileName))
@@ -476,7 +461,6 @@ public class ModManager : IModManager
             }
         }
 
-        // Second pass: metadata-first matching by mod name/slug to avoid duplicate "local" rows
         foreach (var mod in mods)
         {
             if (!string.IsNullOrWhiteSpace(mod.FileName) &&
@@ -552,9 +536,7 @@ public class ModManager : IModManager
             });
         }
 
-        // Final pass: if a synthetic local entry and a metadata-backed entry represent the same mod,
-        // keep only the metadata-backed entry.
-        bool IsSyntheticLocal(InstalledMod mod)
+        static bool IsSyntheticLocal(InstalledMod mod)
         {
             var isLocalId = mod.Id?.StartsWith("local-", StringComparison.OrdinalIgnoreCase) == true;
             var isLocalVersion = string.Equals(mod.Version, "local", StringComparison.OrdinalIgnoreCase);
@@ -563,7 +545,7 @@ public class ModManager : IModManager
         }
 
         var metadataMods = mods.Where(m => !IsSyntheticLocal(m)).ToList();
-        mods = mods
+        mods = [.. mods
             .Where(local =>
             {
                 if (!IsSyntheticLocal(local)) return true;
@@ -608,12 +590,11 @@ public class ModManager : IModManager
                 });
 
                 return !hasMetadataTwin;
-            })
-            .ToList();
+            })];
 
         return mods;
     }
-    
+
     /// <inheritdoc/>
     public async Task SaveInstanceModsAsync(string instancePath, List<InstalledMod> mods)
     {
@@ -623,8 +604,8 @@ public class ModManager : IModManager
             var modsPath = Path.Combine(instancePath, "UserData", "Mods");
             EnsureModsDirectory(modsPath);
             var manifestPath = Path.Combine(modsPath, "manifest.json");
-            
-            var json = JsonSerializer.Serialize(mods, new JsonSerializerOptions { WriteIndented = true });
+
+            var json = JsonSerializer.Serialize(mods, JsonDefaults.Indented);
             await File.WriteAllTextAsync(manifestPath, json);
         }
         finally
@@ -645,22 +626,22 @@ public class ModManager : IModManager
             var endpoint = $"/v1/mods/{modId}/files?index={index}&pageSize={pageSize}";
             using var request = _cfClient.CreateRequest(HttpMethod.Get, endpoint);
             using var response = await _httpClient.SendAsync(request);
-            
+
             if (!response.IsSuccessStatusCode)
             {
                 Logger.Warning("ModManager", $"Get mod files returned {response.StatusCode}");
                 return new ModFilesResult();
             }
-            
+
             var json = await response.Content.ReadAsStringAsync();
             var cfResponse = JsonSerializer.Deserialize<CurseForgeFilesResponse>(json, _jsonOptions);
-            
+
             if (cfResponse?.Data == null)
                 return new ModFilesResult();
-            
+
             return new ModFilesResult
             {
-                Files = cfResponse.Data.Select(f => new ModFileInfo
+                Files = [.. cfResponse.Data.Select(f => new ModFileInfo
                 {
                     Id = f.Id.ToString(),
                     ModId = f.ModId.ToString(),
@@ -670,9 +651,9 @@ public class ModManager : IModManager
                     FileLength = f.FileLength,
                     FileDate = f.FileDate ?? "",
                     ReleaseType = f.ReleaseType,
-                    GameVersions = f.GameVersions ?? new List<string>(),
+                    GameVersions = f.GameVersions ?? [],
                     DownloadCount = f.DownloadCount
-                }).ToList(),
+                })],
                 TotalCount = cfResponse.Pagination?.TotalCount ?? cfResponse.Data.Count
             };
         }
@@ -795,30 +776,29 @@ public class ModManager : IModManager
     public async Task<List<InstalledMod>> CheckInstanceModUpdatesAsync(string instancePath)
     {
         if (!_cfClient.HasApiKey())
-            return new List<InstalledMod>();
-            
+            return [];
+
         var installedMods = GetInstanceInstalledMods(instancePath);
         var modsWithUpdates = new List<InstalledMod>();
-        
+
         foreach (var mod in installedMods)
         {
             if (string.IsNullOrEmpty(mod.CurseForgeId)) continue;
-            
+
             try
             {
                 var endpoint = $"/v1/mods/{mod.CurseForgeId}/files?pageSize=1";
                 using var request = _cfClient.CreateRequest(HttpMethod.Get, endpoint);
                 using var response = await _httpClient.SendAsync(request);
-                
+
                 if (!response.IsSuccessStatusCode) continue;
-                
+
                 var json = await response.Content.ReadAsStringAsync();
                 var cfResponse = JsonSerializer.Deserialize<CurseForgeFilesResponse>(json, _jsonOptions);
-                
+
                 var latestFile = cfResponse?.Data?.FirstOrDefault();
                 if (latestFile == null) continue;
-                
-                // If we have a newer file than what's installed
+
                 if (!string.IsNullOrEmpty(mod.FileId) && latestFile.Id.ToString() != mod.FileId)
                 {
                     mod.LatestFileId = latestFile.Id.ToString();
@@ -831,7 +811,7 @@ public class ModManager : IModManager
                 Logger.Warning("ModManager", $"Update check failed for {mod.Name}: {ex.Message}");
             }
         }
-        
+
         return modsWithUpdates;
     }
 
@@ -845,21 +825,19 @@ public class ModManager : IModManager
                 Logger.Warning("ModManager", $"Source mod file not found: {sourcePath}");
                 return false;
             }
-            
+
             var modsPath = Path.Combine(instancePath, "UserData", "Mods");
             EnsureModsDirectory(modsPath);
-            
+
             var fileName = Path.GetFileName(sourcePath);
             var destPath = Path.Combine(modsPath, fileName);
-            
+
             File.Copy(sourcePath, destPath, true);
-            
-            // Add to manifest
+
             var mods = GetInstanceInstalledMods(instancePath);
-            
-            // Remove existing entry with same filename
+
             mods.RemoveAll(m => m.FileName == fileName);
-            
+
             mods.Add(new InstalledMod
             {
                 Id = $"local-{Guid.NewGuid():N}",
@@ -869,7 +847,7 @@ public class ModManager : IModManager
                 Version = "local",
                 Author = "Local file"
             });
-            
+
             await SaveInstanceModsAsync(instancePath, mods);
             Logger.Success("ModManager", $"Installed local mod: {fileName}");
             return true;
@@ -880,7 +858,7 @@ public class ModManager : IModManager
             return false;
         }
     }
-    
+
     /// <inheritdoc/>
     public async Task<bool> InstallModFromBase64(string fileName, string base64Content, string instancePath)
     {
@@ -888,15 +866,14 @@ public class ModManager : IModManager
         {
             var modsPath = Path.Combine(instancePath, "UserData", "Mods");
             EnsureModsDirectory(modsPath);
-            
+
             var destPath = Path.Combine(modsPath, fileName);
             var bytes = Convert.FromBase64String(base64Content);
             await File.WriteAllBytesAsync(destPath, bytes);
-            
-            // Add to manifest
+
             var mods = GetInstanceInstalledMods(instancePath);
             mods.RemoveAll(m => m.FileName == fileName);
-            
+
             mods.Add(new InstalledMod
             {
                 Id = $"local-{Guid.NewGuid():N}",
@@ -906,7 +883,7 @@ public class ModManager : IModManager
                 Version = "local",
                 Author = "Imported file"
             });
-            
+
             await SaveInstanceModsAsync(instancePath, mods);
             Logger.Success("ModManager", $"Installed mod from base64: {fileName}");
             return true;
@@ -917,7 +894,7 @@ public class ModManager : IModManager
             return false;
         }
     }
-    
+
     /// <summary>
     /// Tries to extract a semver-like version string from a display name or filename.
     /// Looks for semver-like patterns (e.g., "1.2.7", "0.3.1-beta") and returns the first match.
@@ -925,28 +902,26 @@ public class ModManager : IModManager
     /// </summary>
     private static string ExtractVersion(string? displayName, string? fileName)
     {
-        // Try to extract a semver-like version from displayName first, then fileName
-        var versionRegex = new Regex(@"(\d+\.\d+(?:\.\d+)?(?:[-.]\w+)*)");
-        
+        var versionRegex = SemanticVersionRegex();
+
         if (!string.IsNullOrEmpty(displayName))
         {
             var match = versionRegex.Match(displayName);
             if (match.Success) return match.Groups[1].Value;
         }
-        
+
         if (!string.IsNullOrEmpty(fileName))
         {
-            // Strip extension first
             var name = fileName;
             if (name.EndsWith(".jar", StringComparison.OrdinalIgnoreCase))
                 name = name[..^4];
             else if (name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
                 name = name[..^4];
-                
+
             var match = versionRegex.Match(name);
             if (match.Success) return match.Groups[1].Value;
         }
-        
+
         return displayName ?? fileName ?? "";
     }
 
@@ -965,10 +940,13 @@ public class ModManager : IModManager
             DownloadCount = cfMod.DownloadCount,
             IconUrl = cfMod.Logo?.ThumbnailUrl ?? "",
             ThumbnailUrl = cfMod.Logo?.Url ?? "",
-            Categories = cfMod.Categories?.Select(c => c.Name ?? "").Where(n => !string.IsNullOrEmpty(n)).ToList() ?? new List<string>(),
+            Categories = cfMod.Categories?.Select(c => c.Name ?? "").Where(n => !string.IsNullOrEmpty(n)).ToList() ?? [],
             DateUpdated = cfMod.DateModified ?? "",
             LatestFileId = cfMod.LatestFiles?.FirstOrDefault()?.Id.ToString() ?? "",
-            Screenshots = cfMod.Screenshots ?? new List<CurseForgeScreenshot>()
+            Screenshots = cfMod.Screenshots ?? []
         };
     }
+
+    [GeneratedRegex(@"(\d+\.\d+(?:\.\d+)?(?:[-.]\w+)*)")]
+    private static partial Regex SemanticVersionRegex();
 }

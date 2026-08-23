@@ -9,7 +9,7 @@ namespace HyPrism.Core.Models;
 public class ModSearchResult
 {
     /// <summary>Mods returned in this page of results.</summary>
-    public List<ModInfo> Mods { get; set; } = new();
+    public List<ModInfo> Mods { get; set; } = [];
     /// <summary>Total number of mods matching the search query.</summary>
     public int TotalCount { get; set; }
 }
@@ -36,19 +36,19 @@ public class ModInfo
     /// <summary>URL of the mod thumbnail image.</summary>
     public string ThumbnailUrl { get; set; } = "";
     /// <summary>Category names the mod belongs to.</summary>
-    public List<string> Categories { get; set; } = new();
+    public List<string> Categories { get; set; } = [];
     /// <summary>ISO 8601 timestamp of the last mod file update.</summary>
     public string DateUpdated { get; set; } = "";
     /// <summary>CurseForge file ID of the most recent release.</summary>
     public string LatestFileId { get; set; } = "";
     /// <summary>Screenshots attached to the mod page.</summary>
-    public List<CurseForgeScreenshot> Screenshots { get; set; } = new();
+    public List<CurseForgeScreenshot> Screenshots { get; set; } = [];
 }
 
 /// <summary>Paged file list for a specific mod.</summary>
 public class ModFilesResult
 {
-    public List<ModFileInfo> Files { get; set; } = new();
+    public List<ModFileInfo> Files { get; set; } = [];
     public int TotalCount { get; set; }
 }
 
@@ -72,7 +72,7 @@ public class ModFileInfo
     /// <summary>CurseForge release type: 1 = Release, 2 = Beta, 3 = Alpha.</summary>
     public int ReleaseType { get; set; }
     /// <summary>Game version tags this file is compatible with.</summary>
-    public List<string> GameVersions { get; set; } = new();
+    public List<string> GameVersions { get; set; } = [];
     /// <summary>Download count for this specific file.</summary>
     public int DownloadCount { get; set; }
 }
@@ -112,20 +112,20 @@ public class InstalledMod
     public string CurseForgeId { get; set; } = "";
     /// <summary>ISO 8601 release date of the installed file.</summary>
     public string FileDate { get; set; } = "";
-    
+
     /// <summary>
     /// CurseForge release type: 1 = Release, 2 = Beta, 3 = Alpha
     /// </summary>
     public int ReleaseType { get; set; } = 1;
-    
+
     /// <summary>Screenshots attached to the mod page.</summary>
-    public List<CurseForgeScreenshot> Screenshots { get; set; } = new();
-    
+    public List<CurseForgeScreenshot> Screenshots { get; set; } = [];
+
     /// <summary>
     /// The latest available file ID from CurseForge (for update checking).
     /// </summary>
     public string LatestFileId { get; set; } = "";
-    
+
     /// <summary>
     /// The latest available version string from CurseForge (for update display).
     /// </summary>

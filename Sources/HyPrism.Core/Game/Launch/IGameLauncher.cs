@@ -16,15 +16,16 @@ public interface IGameLauncher
     /// </summary>
     /// <param name="versionPath">The path to the game version directory containing the client</param>
     /// <param name="branch">The game branch ("release" or "pre-release")</param>
-    /// <param name="ct">Token to cancel the launch operation</param>
     /// <param name="authorizationUriPresenter">Optional host callback used when an official account requires interactive authorization</param>
+    /// <param name="instanceId">Optional identifier of the instance being launched</param>
+    /// <param name="ct">Token to cancel the launch operation</param>
     /// <returns>A task that completes after the game process starts</returns>
     /// <exception cref="InvalidOperationException">Thrown if the game is already running</exception>
     /// <exception cref="FileNotFoundException">Thrown if the client executable is not found</exception>
     Task LaunchGameAsync(
         string versionPath,
         string branch,
-        CancellationToken ct = default,
         AuthUriPresenter? authorizationUriPresenter = null,
-        string? instanceId = null);
+        string? instanceId = null,
+        CancellationToken ct = default);
 }

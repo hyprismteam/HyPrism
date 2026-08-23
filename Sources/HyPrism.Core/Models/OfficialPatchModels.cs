@@ -16,7 +16,7 @@ public class OfficialPatchesResponse
     /// Each step represents a transition from one build to another.
     /// </summary>
     [JsonPropertyName("steps")]
-    public List<OfficialPatchStep> Steps { get; set; } = new();
+    public List<OfficialPatchStep> Steps { get; set; } = [];
 }
 
 /// <summary>
@@ -102,7 +102,7 @@ public class VersionListResponse
     /// <summary>
     /// List of available versions with their sources.
     /// </summary>
-    public List<VersionInfo> Versions { get; set; } = new();
+    public List<VersionInfo> Versions { get; set; } = [];
 
     /// <summary>
     /// Whether an official Hytale account is available.
@@ -165,7 +165,7 @@ public class OfficialSourceCache
     /// <summary>
     /// Versions available from official Hytale servers, keyed by branch.
     /// </summary>
-    public Dictionary<string, List<CachedVersionEntry>> Branches { get; set; } = new();
+    public Dictionary<string, List<CachedVersionEntry>> Branches { get; set; } = [];
 }
 
 /// <summary>
@@ -181,7 +181,7 @@ public class MirrorSourceCache
     /// <summary>
     /// Versions available from this mirror, keyed by branch.
     /// </summary>
-    public Dictionary<string, List<CachedVersionEntry>> Branches { get; set; } = new();
+    public Dictionary<string, List<CachedVersionEntry>> Branches { get; set; } = [];
 }
 
 /// <summary>
@@ -197,7 +197,7 @@ public class VersionsCacheSnapshot
     /// <summary>
     /// Per-branch fetch timestamps. Key is normalized branch name (release, pre-release, alpha).
     /// </summary>
-    public Dictionary<string, DateTime> BranchFetchedAt { get; set; } = new();
+    public Dictionary<string, DateTime> BranchFetchedAt { get; set; } = [];
 
     /// <summary>
     /// Operating system this cache is for.
@@ -228,7 +228,7 @@ public class VersionsCacheData
     /// <summary>
     /// Versions from community mirrors.
     /// </summary>
-    public List<MirrorSourceCache> Mirrors { get; set; } = new();
+    public List<MirrorSourceCache> Mirrors { get; set; } = [];
 }
 
 /// <summary>
@@ -272,7 +272,7 @@ public class PatchesCacheData
     /// <summary>
     /// Patch chains from community mirrors.
     /// </summary>
-    public List<MirrorPatchCache> Mirrors { get; set; } = new();
+    public List<MirrorPatchCache> Mirrors { get; set; } = [];
 }
 
 /// <summary>
@@ -288,7 +288,7 @@ public class MirrorPatchCache
     /// <summary>
     /// Patch chains from this mirror, keyed by branch.
     /// </summary>
-    public Dictionary<string, List<CachedPatchStep>> Branches { get; set; } = new();
+    public Dictionary<string, List<CachedPatchStep>> Branches { get; set; } = [];
 }
 
 /// <summary>

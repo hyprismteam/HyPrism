@@ -1,8 +1,10 @@
 // Copyright (C) 2026 HyPrism Launcher
 // SPDX-License-Identifier: GPL-3.0-only
 
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using HyPrism.Core.Infrastructure;
 using HyPrism.Core.Models;
 
 namespace HyPrism.Core.Accounts;
@@ -16,7 +18,7 @@ internal static class LegacyProfileConfigMigration
     {
         PropertyNameCaseInsensitive = true,
         WriteIndented = true,
-        Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
     };
 
     /// <summary>
@@ -92,11 +94,7 @@ internal static class LegacyProfileConfigMigration
             changed = true;
         }
 
-        return root.ToJsonString(new JsonSerializerOptions
-        {
-            WriteIndented = true,
-            Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
-        });
+        return root.ToJsonString(JsonDefaults.IndentedUnsafeRelaxed);
     }
 
     private static List<Profile> ReadProfiles(string path)

@@ -14,6 +14,7 @@ Write for the next person who needs to understand or change the code
 - do not add a period to the final sentence of a paragraph, list item, summary, parameter, return, or exception description
 - prefer concrete behavior over marketing or filler text
 - explain why a constraint exists when the reason is not obvious
+- keep comments that explain intent, compatibility, or a non-obvious constraint; do not narrate the next statement
 
 ## C# API documentation
 
@@ -45,3 +46,7 @@ Use `<inheritdoc/>` on an implementation only when the interface documents the c
 - depend on interfaces at host boundaries
 - use async I/O and pass cancellation tokens through network or long-running work
 - keep presentation-specific dependencies out of Core
+- use `[GeneratedRegex]` for constant patterns and keep only genuinely dynamic regular expressions at runtime
+- cache reusable `JsonSerializerOptions` instead of creating them at each serialization call
+- prefer collection expressions and `System.Threading.Lock` when the target framework supports them
+- add a `using` directive instead of repeating an unambiguous framework namespace in member bodies
