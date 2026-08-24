@@ -12,7 +12,8 @@ namespace HyPrism.Core.Accounts;
 /// </summary>
 internal static class TokenStore
 {
-    private const string SessionFileName = "hytale_session.json";
+    private const string SessionFileName = "HytaleSession.json";
+    private const string LegacySessionFileName = "hytale_session.json";
 
     /// <summary>
     /// Resolves the canonical session file path for the current profile.
@@ -28,7 +29,7 @@ internal static class TokenStore
         if (profileFolder != null)
         {
             Directory.CreateDirectory(profileFolder);
-            return Path.Combine(profileFolder, SessionFileName);
+            return LauncherJsonFile.GetPath(profileFolder, SessionFileName, LegacySessionFileName);
         }
         return GetLegacySessionFilePath(appDir);
     }
@@ -37,7 +38,7 @@ internal static class TokenStore
     /// Gets the legacy (pre-profile) session file path at the app root.
     /// </summary>
     public static string GetLegacySessionFilePath(string appDir) =>
-        Path.Combine(appDir, SessionFileName);
+        LauncherJsonFile.GetPath(appDir, SessionFileName, LegacySessionFileName);
 
     /// <summary>
     /// Loads a <see cref="HytaleAuthSession"/> from the specified file path.
@@ -49,7 +50,7 @@ internal static class TokenStore
         try
         {
             var json = File.ReadAllText(filePath);
-            return JsonSerializer.Deserialize<HytaleAuthSession>(json);
+            return JsonSerializer.Deserialize<HytaleAuthSession>(json, JsonDefaults.CaseInsensitive);
         }
         catch (Exception ex)
         {

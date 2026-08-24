@@ -382,7 +382,7 @@ public partial class ModManager : IModManager
     public List<InstalledMod> GetInstanceInstalledMods(string instancePath)
     {
         var modsPath = Path.Combine(instancePath, "UserData", "Mods");
-        var manifestPath = Path.Combine(modsPath, "manifest.json");
+        var manifestPath = LauncherJsonFile.GetPath(modsPath, "Manifest.json", "manifest.json");
         var legacyManifestPath = Path.Combine(instancePath, "Client", "mods", "manifest.json");
 
         EnsureModsDirectory(modsPath);
@@ -415,7 +415,7 @@ public partial class ModManager : IModManager
             .Select(Path.GetFileName)
             .Where(name => !string.IsNullOrEmpty(name))
             .Select(name => name!)
-            .Where(name => !name.Equals("manifest.json", StringComparison.OrdinalIgnoreCase))
+            .Where(name => !name.Equals("Manifest.json", StringComparison.OrdinalIgnoreCase))
             .Where(name =>
                 name.EndsWith(".jar", StringComparison.OrdinalIgnoreCase) ||
                 name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase) ||
@@ -603,7 +603,7 @@ public partial class ModManager : IModManager
         {
             var modsPath = Path.Combine(instancePath, "UserData", "Mods");
             EnsureModsDirectory(modsPath);
-            var manifestPath = Path.Combine(modsPath, "manifest.json");
+            var manifestPath = LauncherJsonFile.GetPath(modsPath, "Manifest.json", "manifest.json");
 
             var json = JsonSerializer.Serialize(mods, JsonDefaults.Indented);
             await File.WriteAllTextAsync(manifestPath, json);

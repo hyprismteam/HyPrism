@@ -83,7 +83,7 @@ public class JsonProfileRepositoryTests : IDisposable
         Assert.True(profile!.IsOfficial);
         Assert.Contains(_svc.GetProfiles(), p => p.Id == profile.Id && p.IsOfficial);
 
-        var profilesPath = Path.Combine(_svc.GetProfilesFolder(), "profiles.json");
+        var profilesPath = Path.Combine(_svc.GetProfilesFolder(), "Profiles.json");
         var savedProfiles = JsonSerializer.Deserialize<List<Profile>>(File.ReadAllText(profilesPath));
 
         Assert.NotNull(savedProfiles);
@@ -212,7 +212,13 @@ public class JsonProfileRepositoryTests : IDisposable
 
         Assert.Equal(expectedPath, path);
         Assert.True(Directory.Exists(expectedPath));
-        Assert.True(File.Exists(Path.Combine(expectedPath, "profile.json")));
+        Assert.Contains(
+            Directory.EnumerateFiles(expectedPath),
+            path => string.Equals(Path.GetFileName(path), "Profile.json", StringComparison.Ordinal));
+        using var document = JsonDocument.Parse(File.ReadAllText(Path.Combine(expectedPath, "Profile.json")));
+        Assert.Equal("FolderOwner", document.RootElement.GetProperty("Username").GetString());
+        Assert.True(document.RootElement.TryGetProperty("Uuid", out _));
+        Assert.True(document.RootElement.TryGetProperty("CreatedAt", out _));
     }
 
 

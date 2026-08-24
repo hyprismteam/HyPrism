@@ -29,7 +29,10 @@ public sealed class HytaleNewsClient : IHytaleNewsClient
 {
     private readonly HttpClient _httpClient;
     private readonly string? _newsCacheDirectory;
-    private static readonly JsonSerializerOptions CacheJsonOptions = new(JsonSerializerDefaults.Web);
+    private static readonly JsonSerializerOptions CacheJsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true
+    };
 
     /// <summary>
     /// Initializes the Hytale news client
@@ -297,9 +300,10 @@ public sealed class HytaleNewsClient : IHytaleNewsClient
         if (_newsCacheDirectory is null)
             return null;
 
-        var hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(cacheKey)))
-            .ToLowerInvariant();
-        return Path.Combine(_newsCacheDirectory, $"article-{hash}.json");
+        var hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(cacheKey)));
+        return ResolveCacheFilePath(
+            $"Article-{hash}.json",
+            $"article-{hash.ToLowerInvariant()}.json");
     }
 
     private sealed record ArticleDiskCacheEntry(
@@ -363,7 +367,61 @@ public sealed class HytaleNewsClient : IHytaleNewsClient
     private string? GetFeedCachePath()
         => _newsCacheDirectory is null
             ? null
-            : Path.Combine(_newsCacheDirectory, "feed.json");
+            : ResolveCacheFilePath("Feed.json", "feed.json");
+
+    private string ResolveCacheFilePath(string canonicalFileName, string legacyFileName)
+    {
+        var canonicalPath = Path.Combine(_newsCacheDirectory!, canonicalFileName);
+        if (!Directory.Exists(_newsCacheDirectory))
+            return canonicalPath;
+
+        var files = Directory.EnumerateFiles(_newsCacheDirectory).ToArray();
+        var exactCanonicalPath = files.FirstOrDefault(path =>
+            string.Equals(Path.GetFileName(path), canonicalFileName, StringComparison.Ordinal));
+        if (exactCanonicalPath is not null)
+            return exactCanonicalPath;
+
+        var legacyPath = files.FirstOrDefault(path =>
+            string.Equals(Path.GetFileName(path), legacyFileName, StringComparison.Ordinal));
+        legacyPath ??= files.FirstOrDefault(path =>
+            string.Equals(Path.GetFileName(path), canonicalFileName, StringComparison.OrdinalIgnoreCase));
+        if (legacyPath is null)
+            return canonicalPath;
+
+        try
+        {
+            MoveWithCanonicalCasing(legacyPath, canonicalPath);
+            return canonicalPath;
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning("News", $"Could not migrate cache file '{legacyPath}': {ex.Message}");
+            return legacyPath;
+        }
+    }
+
+    private static void MoveWithCanonicalCasing(string sourcePath, string destinationPath)
+    {
+        if (!string.Equals(sourcePath, destinationPath, StringComparison.OrdinalIgnoreCase))
+        {
+            File.Move(sourcePath, destinationPath);
+            return;
+        }
+
+        var temporaryPath = Path.Combine(
+            Path.GetDirectoryName(sourcePath)!,
+            $".{Guid.NewGuid():N}.json-migration");
+        File.Move(sourcePath, temporaryPath);
+        try
+        {
+            File.Move(temporaryPath, destinationPath);
+        }
+        catch
+        {
+            File.Move(temporaryPath, sourcePath);
+            throw;
+        }
+    }
 
     private sealed record FeedDiskCacheEntry(
         int SchemaVersion,

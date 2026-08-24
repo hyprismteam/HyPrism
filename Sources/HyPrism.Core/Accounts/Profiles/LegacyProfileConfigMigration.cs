@@ -10,7 +10,7 @@ using HyPrism.Core.Models;
 namespace HyPrism.Core.Accounts;
 
 /// <summary>
-/// Moves profile identity out of legacy config fields into Profiles/profiles.json
+/// Moves profile identity out of legacy config fields into Profiles/Profiles.json
 /// </summary>
 internal static class LegacyProfileConfigMigration
 {
@@ -36,7 +36,7 @@ internal static class LegacyProfileConfigMigration
         var legacyIndex = GetInt32(Remove(root, "ActiveProfileIndex", ref changed));
 
         var profilesDirectory = Path.Combine(appDataPath, "Profiles");
-        var profilesPath = Path.Combine(profilesDirectory, "profiles.json");
+        var profilesPath = LauncherJsonFile.GetPath(profilesDirectory, "Profiles.json", "profiles.json");
         var profiles = ReadProfiles(profilesPath);
         var profilesChanged = false;
 

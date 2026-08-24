@@ -3,6 +3,7 @@
 
 using System.Net;
 using System.Reflection;
+using System.Text.Json;
 using HyPrism.Core;
 using HyPrism.Desktop.Features.News;
 using HyPrism.Desktop.Platform;
@@ -184,8 +185,20 @@ public sealed class HytaleNewsClientTests
             }
 
             var newsCacheDirectory = Path.Combine(appDirectory, "Cache", "News");
-            Assert.True(File.Exists(Path.Combine(newsCacheDirectory, "feed.json")));
-            Assert.Single(Directory.EnumerateFiles(newsCacheDirectory, "article-*.json"));
+            var feedPath = Assert.Single(
+                Directory.EnumerateFiles(newsCacheDirectory),
+                path => string.Equals(Path.GetFileName(path), "Feed.json", StringComparison.Ordinal));
+            using var feedDocument = JsonDocument.Parse(await File.ReadAllTextAsync(
+                feedPath,
+                TestContext.Current.CancellationToken));
+            AssertPascalCaseProperties(feedDocument.RootElement);
+            var articlePath = Assert.Single(
+                Directory.EnumerateFiles(newsCacheDirectory),
+                path => Path.GetFileName(path).StartsWith("Article-", StringComparison.Ordinal));
+            using var articleDocument = JsonDocument.Parse(await File.ReadAllTextAsync(
+                articlePath,
+                TestContext.Current.CancellationToken));
+            AssertPascalCaseProperties(articleDocument.RootElement);
 
             using var offlineHandler = new FailingHttpHandler();
             using var offlineClient = new HttpClient(offlineHandler);
@@ -201,6 +214,27 @@ public sealed class HytaleNewsClientTests
         {
             if (Directory.Exists(appDirectory))
                 Directory.Delete(appDirectory, recursive: true);
+        }
+    }
+
+    private static void AssertPascalCaseProperties(JsonElement element)
+    {
+        if (element.ValueKind == JsonValueKind.Object)
+        {
+            foreach (var property in element.EnumerateObject())
+            {
+                Assert.True(
+                    property.Name.Length == 0
+                    || !char.IsLetter(property.Name[0])
+                    || char.IsUpper(property.Name[0]),
+                    property.Name);
+                AssertPascalCaseProperties(property.Value);
+            }
+        }
+        else if (element.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var item in element.EnumerateArray())
+                AssertPascalCaseProperties(item);
         }
     }
 

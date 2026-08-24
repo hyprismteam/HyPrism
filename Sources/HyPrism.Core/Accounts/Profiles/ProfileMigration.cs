@@ -55,7 +55,7 @@ public static class ProfileMigration
 
     /// <summary>
     /// Tries to reconstruct a <see cref="Profile"/> from a folder that exists on disk
-    /// but has no corresponding entry in <c>profiles.json</c>.
+    /// but has no corresponding entry in <c>Profiles.json</c>.
     /// </summary>
     private static Profile? TryCreateProfileFromFolder(string folder, string folderName)
     {
@@ -90,7 +90,11 @@ public static class ProfileMigration
             if (string.IsNullOrWhiteSpace(name))
                 name = folderName;
 
-            bool isOfficial = File.Exists(Path.Combine(folder, "hytale_session.json"));
+            var sessionPath = LauncherJsonFile.GetPath(
+                folder,
+                "HytaleSession.json",
+                "hytale_session.json");
+            bool isOfficial = File.Exists(sessionPath);
 
             var createdAt = GetOldestFileTime(folder);
 
@@ -174,7 +178,7 @@ public static class ProfileMigration
 
     /// <summary>
     /// Tries to identify the profile that owns a legacy folder by reading
-    /// embedded metadata from <c>profile.json</c> or the first <c>*.sh</c> launch script.
+    /// embedded metadata from <c>Profile.json</c> or the first <c>*.sh</c> launch script.
     /// </summary>
     /// <param name="folder">The legacy folder path to inspect.</param>
     /// <param name="profiles">The list of registered profiles to search.</param>
@@ -183,7 +187,7 @@ public static class ProfileMigration
     {
         try
         {
-            var profileJsonPath = Path.Combine(folder, "profile.json");
+            var profileJsonPath = LauncherJsonFile.GetPath(folder, "Profile.json", "profile.json");
             if (File.Exists(profileJsonPath))
             {
                 var json = File.ReadAllText(profileJsonPath);

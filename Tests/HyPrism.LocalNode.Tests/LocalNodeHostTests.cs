@@ -34,6 +34,7 @@ public sealed class LocalNodeHostTests
             using var first = Assert.IsType<LocalNodeHost>(factory.Create());
             using var second = Assert.IsType<LocalNodeHost>(factory.Create());
 
+            Assert.True(first.Options.ConfigureSystemTrust);
             Assert.NotEqual(first.EndpointDomain, second.EndpointDomain);
             Assert.NotEqual(first.Issuer, second.Issuer);
             Assert.Equal(
@@ -91,6 +92,40 @@ public sealed class LocalNodeHostTests
     }
 
     [Fact]
+    public void TrustStore_FindsOnlyObsoleteHyPrismRootCertificates()
+    {
+        var rootDirectory = Path.Combine(Path.GetTempPath(), "HyPrismLocalNodeTrustTests_" + Guid.NewGuid());
+        try
+        {
+            var currentOptions = new LocalNodeOptions(
+                Path.Combine(rootDirectory, "Current"),
+                "h.localhost",
+                8443);
+            var obsoleteOptions = new LocalNodeOptions(
+                Path.Combine(rootDirectory, "Obsolete"),
+                "h.localhost",
+                8444);
+            using var currentRoot = LocalNodeCertificateStore.LoadRootCertificate(currentOptions);
+            using var obsoleteRoot = LocalNodeCertificateStore.LoadRootCertificate(obsoleteOptions);
+            using var serverCertificate = LocalNodeCertificateStore.LoadOrCreate(obsoleteOptions);
+            var certificates = new X509Certificate2Collection();
+            certificates.AddRange(new X509Certificate2[] { currentRoot, obsoleteRoot, serverCertificate });
+
+            var obsoleteCertificates = LocalNodeTrustStore.FindObsoleteHyPrismRootCertificates(
+                certificates,
+                currentRoot);
+
+            var obsoleteCertificate = Assert.Single(obsoleteCertificates.Cast<X509Certificate2>());
+            Assert.Equal(obsoleteRoot.Thumbprint, obsoleteCertificate.Thumbprint);
+        }
+        finally
+        {
+            if (Directory.Exists(rootDirectory))
+                Directory.Delete(rootDirectory, recursive: true);
+        }
+    }
+
+    [Fact]
     public async Task AccountStore_PersistsProfilesAcrossIsolatedNodeSessions()
     {
         var rootDirectory = Path.Combine(Path.GetTempPath(), "HyPrismLocalNodeAccountsTests_" + Guid.NewGuid());
@@ -111,6 +146,14 @@ public sealed class LocalNodeHostTests
                     "660e8400-e29b-41d4-a716-446655440000",
                     "SecondPlayer",
                     secondSkin.RootElement));
+
+            var accountPath = Assert.Single(
+                Directory.EnumerateFiles(accountDirectory),
+                path => string.Equals(Path.GetFileName(path), "Accounts.json", StringComparison.Ordinal));
+            using var accountDocument = JsonDocument.Parse(await File.ReadAllTextAsync(accountPath));
+            Assert.All(
+                accountDocument.RootElement.EnumerateObject(),
+                property => Assert.True(char.IsUpper(property.Name[0]), property.Name));
 
             var restoredStore = new LocalAccountStore(accountDirectory);
             var firstProfile = await restoredStore.FindByUuidAsync("550e8400-e29b-41d4-a716-446655440000");
@@ -161,7 +204,10 @@ public sealed class LocalNodeHostTests
             "h.localhost",
             GetAvailablePort(),
             LogFilePath: nodeLogPath,
-            RequestJournalPath: requestJournalPath);
+            RequestJournalPath: requestJournalPath)
+        {
+            ConfigureSystemTrust = false
+        };
         const string playerUuid = "550e8400-e29b-41d4-a716-446655440000";
         using (var initialSkin = JsonDocument.Parse(
                    "{\"bodyCharacteristic\":\"Default.01\",\"haircut\":\"MagicalPigtails.Blond\"}"))
@@ -273,7 +319,10 @@ public sealed class LocalNodeHostTests
             using var skins = JsonDocument.Parse(await skinsResponse.Content.ReadAsStringAsync());
             Assert.Equal(skinId, skins.RootElement.GetProperty("activeSkin").GetString());
 
-            var accountJson = await File.ReadAllTextAsync(Path.Combine(dataDirectory, "accounts.json"));
+            var accountJson = await File.ReadAllTextAsync(Path.Combine(dataDirectory, "Accounts.json"));
+            Assert.Contains(
+                Directory.EnumerateFiles(dataDirectory),
+                path => string.Equals(Path.GetFileName(path), "Accounts.json", StringComparison.Ordinal));
             Assert.Contains("\\\"haircut\\\"", accountJson);
             Assert.DoesNotContain("\\u0022", accountJson, StringComparison.OrdinalIgnoreCase);
 
@@ -323,7 +372,10 @@ public sealed class LocalNodeHostTests
         Directory.CreateDirectory(gameDirectory);
         CreateAssetsArchive(Path.Combine(gameDirectory, "Assets.zip"));
 
-        var options = new LocalNodeOptions(dataDirectory, "h.localhost", GetAvailablePort());
+        var options = new LocalNodeOptions(dataDirectory, "h.localhost", GetAvailablePort())
+        {
+            ConfigureSystemTrust = false
+        };
         await using var host = new LocalNodeHost(options);
 
         try
@@ -366,7 +418,10 @@ public sealed class LocalNodeHostTests
     public async Task Host_TransfersLifetimeToGameAndNodeStopsAfterGameExit()
     {
         var testDirectory = Path.Combine(Path.GetTempPath(), "HyPrismLocalNodeLifetimeTests_" + Guid.NewGuid());
-        var options = new LocalNodeOptions(testDirectory, "h.localhost", GetAvailablePort());
+        var options = new LocalNodeOptions(testDirectory, "h.localhost", GetAvailablePort())
+        {
+            ConfigureSystemTrust = false
+        };
         var host = new LocalNodeHost(options);
         Process? gameProcess = null;
 

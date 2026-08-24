@@ -15,7 +15,7 @@ namespace HyPrism.Core.Game.Launch;
 /// </summary>
 public sealed class GameProcessTracker : IGameProcessTracker, IDisposable
 {
-    private const string RegistryFileName = "game-processes.json";
+    private const string RegistryFileName = "GameProcesses.json";
     private readonly Lock _processLock = new();
     private readonly Dictionary<int, TrackedProcess> _processes = [];
     private readonly List<GameProcessInfo> _processesExitedWhileUnavailable = [];
@@ -35,7 +35,10 @@ public sealed class GameProcessTracker : IGameProcessTracker, IDisposable
     public GameProcessTracker(AppPathConfiguration appPath)
     {
         ArgumentNullException.ThrowIfNull(appPath);
-        _registryPath = Path.Combine(appPath.AppDir, "Runtime", RegistryFileName);
+        _registryPath = LauncherJsonFile.GetPath(
+            Path.Combine(appPath.AppDir, "Runtime"),
+            RegistryFileName,
+            "game-processes.json");
         RestoreTrackedProcesses();
     }
 
@@ -173,7 +176,9 @@ public sealed class GameProcessTracker : IGameProcessTracker, IDisposable
 
         try
         {
-            var records = JsonSerializer.Deserialize<List<GameProcessInfo>>(File.ReadAllText(_registryPath)) ?? [];
+            var records = JsonSerializer.Deserialize<List<GameProcessInfo>>(
+                File.ReadAllText(_registryPath),
+                JsonDefaults.CaseInsensitive) ?? [];
             foreach (var record in records)
             {
                 var process = TryRestoreProcess(record);
@@ -351,7 +356,9 @@ public sealed class GameProcessTracker : IGameProcessTracker, IDisposable
 
         try
         {
-            return JsonSerializer.Deserialize<List<GameProcessInfo>>(File.ReadAllText(_registryPath)) ?? [];
+            return JsonSerializer.Deserialize<List<GameProcessInfo>>(
+                File.ReadAllText(_registryPath),
+                JsonDefaults.CaseInsensitive) ?? [];
         }
         catch (Exception exception)
         {

@@ -446,7 +446,7 @@ public class SkinRepository : ISkinRepository
             var skinPath = Path.Combine(skinCacheDir, $"{uuid}.json");
             if (File.Exists(skinPath))
             {
-                var destPath = Path.Combine(profileDir, "skin.json");
+                var destPath = LauncherJsonFile.GetPath(profileDir, "Skin.json", "skin.json");
                 if (File.Exists(destPath))
                 {
                     var destInfo = new FileInfo(destPath);
@@ -500,7 +500,7 @@ public class SkinRepository : ISkinRepository
             }
             var userDataPath = _instances.GetInstanceUserDataPath(versionPath);
 
-            var skinBackupPath = Path.Combine(profileDir, "skin.json");
+            var skinBackupPath = LauncherJsonFile.GetPath(profileDir, "Skin.json", "skin.json");
             if (File.Exists(skinBackupPath))
             {
                 var skinCacheDir = Path.Combine(userDataPath, "CachedPlayerSkins");
@@ -543,7 +543,7 @@ public class SkinRepository : ISkinRepository
             var skinPath = Path.Combine(skinCacheDir, $"{uuid}.json");
             if (File.Exists(skinPath))
             {
-                var destPath = Path.Combine(profileDir, "skin.json");
+                var destPath = LauncherJsonFile.GetPath(profileDir, "Skin.json", "skin.json");
                 File.Copy(skinPath, destPath, true);
                 Logger.Info("Profile", $"Copied skin for UUID {uuid}");
             }

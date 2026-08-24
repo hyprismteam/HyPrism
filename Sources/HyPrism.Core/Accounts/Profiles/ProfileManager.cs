@@ -200,7 +200,7 @@ public class ProfileManager : IProfileManager
     {
         var root = LauncherUtilities.GetProfilesRoot(_appDataPath);
         Directory.CreateDirectory(root);
-        return Path.Combine(root, "profiles.json");
+        return LauncherJsonFile.GetPath(root, "Profiles.json", "profiles.json");
     }
 
     private List<Profile> ReadProfilesFromCache()

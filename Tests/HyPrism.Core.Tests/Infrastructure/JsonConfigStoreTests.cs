@@ -35,7 +35,7 @@ public class JsonConfigStoreTests : IDisposable
 
         Assert.NotNull(svc.Configuration);
         Assert.Empty(svc.Configuration.SelectedProfileId);
-        Assert.True(File.Exists(Path.Combine(_tempDir, "config.json")));
+        AssertExactFileName(_tempDir, "Config.json");
         AssertConfigContainsNoLegacyProfileFields();
     }
 
@@ -46,8 +46,12 @@ public class JsonConfigStoreTests : IDisposable
         svc.Configuration.SelectedProfileId = "profile-id";
         svc.SaveConfig();
 
-        var json = File.ReadAllText(Path.Combine(_tempDir, "config.json"));
+        var json = File.ReadAllText(Path.Combine(_tempDir, "Config.json"));
         Assert.Contains("profile-id", json);
+        using var document = JsonDocument.Parse(json);
+        Assert.All(
+            document.RootElement.EnumerateObject(),
+            property => Assert.True(char.IsUpper(property.Name[0]), property.Name));
         AssertConfigContainsNoLegacyProfileFields();
     }
 
@@ -74,6 +78,8 @@ public class JsonConfigStoreTests : IDisposable
         var svc = new JsonConfigStore(_tempDir);
         Assert.Equal(profile.Id, svc.Configuration.SelectedProfileId);
         Assert.Equal("en-US", svc.Configuration.Language);
+        AssertExactFileName(_tempDir, "Config.json");
+        AssertExactFileName(profilesDirectory, "Profiles.json");
     }
 
 
@@ -132,7 +138,7 @@ public class JsonConfigStoreTests : IDisposable
 
         var svc = new JsonConfigStore(_tempDir);
 
-        var profilesPath = Path.Combine(_tempDir, "Profiles", "profiles.json");
+        var profilesPath = Path.Combine(_tempDir, "Profiles", "Profiles.json");
         var profiles = JsonSerializer.Deserialize<List<Profile>>(File.ReadAllText(profilesPath));
 
         var profile = Assert.Single(profiles!);
@@ -157,7 +163,7 @@ public class JsonConfigStoreTests : IDisposable
 
         var svc = new JsonConfigStore(_tempDir);
 
-        var profilesPath = Path.Combine(_tempDir, "Profiles", "profiles.json");
+        var profilesPath = Path.Combine(_tempDir, "Profiles", "Profiles.json");
         var profiles = JsonSerializer.Deserialize<List<Profile>>(File.ReadAllText(profilesPath));
         Assert.Equal(2, profiles!.Count);
         Assert.Equal(second.Id, svc.Configuration.SelectedProfileId);
@@ -181,7 +187,7 @@ public class JsonConfigStoreTests : IDisposable
     private void AssertConfigContainsNoLegacyProfileFields()
     {
         using var document = JsonDocument.Parse(
-            File.ReadAllText(Path.Combine(_tempDir, "config.json")));
+            File.ReadAllText(Path.Combine(_tempDir, "Config.json")));
         var propertyNames = document.RootElement.EnumerateObject()
             .Select(property => property.Name)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
@@ -190,5 +196,12 @@ public class JsonConfigStoreTests : IDisposable
         Assert.DoesNotContain("UUID", propertyNames);
         Assert.DoesNotContain("Profiles", propertyNames);
         Assert.DoesNotContain("ActiveProfileIndex", propertyNames);
+    }
+
+    private static void AssertExactFileName(string directory, string expectedFileName)
+    {
+        Assert.Contains(
+            Directory.EnumerateFiles(directory),
+            path => string.Equals(Path.GetFileName(path), expectedFileName, StringComparison.Ordinal));
     }
 }

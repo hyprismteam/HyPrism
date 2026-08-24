@@ -4,6 +4,7 @@
 using HyPrism.Core.Game.Sources;
 using HyPrism.Core.Models;
 using System.Net;
+using System.Text.Json;
 
 namespace HyPrism.Core.Tests.Game.Sources;
 
@@ -19,6 +20,11 @@ public sealed class MirrorCatalogTests
             var mirror = CreateMirror("community-one", enabled: true);
 
             catalog.Save(mirror);
+
+            var mirrorPath = Assert.Single(Directory.EnumerateFiles(Path.Combine(appDir, "Mirrors")));
+            using var document = JsonDocument.Parse(File.ReadAllText(mirrorPath));
+            Assert.Equal("community-one", document.RootElement.GetProperty("Id").GetString());
+            Assert.False(document.RootElement.TryGetProperty("id", out _));
 
             var saved = Assert.Single(catalog.GetAll());
             Assert.Equal("community-one", saved.Id);

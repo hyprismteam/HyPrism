@@ -89,7 +89,7 @@ public class HytaleVersionSource : IVersionSource
         foreach (var profile in profiles.Where(p => p.IsOfficial))
         {
             var profileDir = LauncherUtilities.GetProfileFolderPath(_appDir, profile, createIfMissing: false, migrateLegacyByName: true);
-            var sessionPath = Path.Combine(profileDir, "hytale_session.json");
+            var sessionPath = TokenStore.GetSessionFilePath(profileDir, _appDir);
             if (File.Exists(sessionPath))
                 return true;
         }
@@ -105,7 +105,7 @@ public class HytaleVersionSource : IVersionSource
     {
         FullBuildLocation = "Official API: /patches/{os}/{arch}/{branch}/0 (latest full build)",
         PatchLocation = "Official API: /patches/{os}/{arch}/{branch}/{fromBuild} (signed incremental steps)",
-        CachePolicy = "In-memory TTL 15m by key os:arch:branch:fromBuild; patches cached by GameVersionCatalog in Cache/Game/patches.json"
+        CachePolicy = "In-memory TTL 15m by key os:arch:branch:fromBuild; patches cached by GameVersionCatalog in Cache/Game/Patches.json"
     };
 
     /// <inheritdoc/>

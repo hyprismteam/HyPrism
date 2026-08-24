@@ -598,13 +598,16 @@ public class HytaleAuthenticator : IHytaleAuthenticator
     #region Session Persistence
 
     /// <summary>
-    /// Reads all profiles from the profiles.json cache on disk
+    /// Reads all profiles from the Profiles.json cache on disk
     /// </summary>
     private List<Profile> ReadProfilesCache()
     {
         try
         {
-            var path = Path.Combine(LauncherUtilities.GetProfilesRoot(_appDir), "profiles.json");
+            var path = LauncherJsonFile.GetPath(
+                LauncherUtilities.GetProfilesRoot(_appDir),
+                "Profiles.json",
+                "profiles.json");
             if (!File.Exists(path)) return [];
             return JsonSerializer.Deserialize<List<Profile>>(
                 File.ReadAllText(path),
@@ -617,7 +620,10 @@ public class HytaleAuthenticator : IHytaleAuthenticator
     {
         try
         {
-            var path = Path.Combine(LauncherUtilities.GetProfilesRoot(_appDir), "profiles.json");
+            var path = LauncherJsonFile.GetPath(
+                LauncherUtilities.GetProfilesRoot(_appDir),
+                "Profiles.json",
+                "profiles.json");
             if (!File.Exists(path))
                 return [];
 
@@ -678,7 +684,7 @@ public class HytaleAuthenticator : IHytaleAuthenticator
             if (profileFolder == null || CurrentSession != null || !File.Exists(legacyPath))
                 return;
 
-            var profileSessionPath = Path.Combine(profileFolder, "hytale_session.json");
+            var profileSessionPath = TokenStore.GetSessionFilePath(profileFolder, _appDir);
 
             if (File.Exists(profileSessionPath))
                 return;
@@ -695,7 +701,10 @@ public class HytaleAuthenticator : IHytaleAuthenticator
                 var selectedId = config.SelectedProfileId;
                 if (!string.IsNullOrEmpty(selectedId))
                 {
-                    var profilesPath = Path.Combine(LauncherUtilities.GetProfilesRoot(_appDir), "profiles.json");
+                    var profilesPath = LauncherJsonFile.GetPath(
+                        LauncherUtilities.GetProfilesRoot(_appDir),
+                        "Profiles.json",
+                        "profiles.json");
                     if (File.Exists(profilesPath))
                     {
                         try
@@ -774,7 +783,7 @@ public class HytaleAuthenticator : IHytaleAuthenticator
             cancellationToken.ThrowIfCancellationRequested();
 
             var profileDir = LauncherUtilities.GetProfileFolderPath(_appDir, profile, createIfMissing: false, migrateLegacyByName: true);
-            var sessionPath = Path.Combine(profileDir, "hytale_session.json");
+            var sessionPath = TokenStore.GetSessionFilePath(profileDir, _appDir);
 
             if (!File.Exists(sessionPath))
             {
@@ -784,7 +793,7 @@ public class HytaleAuthenticator : IHytaleAuthenticator
             try
             {
                 var json = await File.ReadAllTextAsync(sessionPath, cancellationToken);
-                var session = JsonSerializer.Deserialize<HytaleAuthSession>(json);
+                var session = JsonSerializer.Deserialize<HytaleAuthSession>(json, JsonDefaults.CaseInsensitive);
                 if (session == null || string.IsNullOrEmpty(session.RefreshToken))
                 {
                     continue;
@@ -909,7 +918,7 @@ public class HytaleAuthenticator : IHytaleAuthenticator
         try
         {
             var profileDir = LauncherUtilities.GetProfileFolderPath(_appDir, profile, createIfMissing: true);
-            var sessionPath = Path.Combine(profileDir, "hytale_session.json");
+            var sessionPath = TokenStore.GetSessionFilePath(profileDir, _appDir);
 
             var json = JsonSerializer.Serialize(CurrentSession, JsonDefaults.Indented);
             File.WriteAllText(sessionPath, json);
@@ -932,34 +941,89 @@ public class HytaleAuthenticator : IHytaleAuthenticator
 /// <summary>
 /// Persisted auth session for Hytale account
 /// </summary>
+[JsonConverter(typeof(HytaleAuthSessionJsonConverter))]
 public class HytaleAuthSession
 {
-    [JsonPropertyName("access_token")]
     public string AccessToken { get; set; } = "";
 
-    [JsonPropertyName("refresh_token")]
     public string RefreshToken { get; set; } = "";
 
-    [JsonPropertyName("expires_at")]
     public DateTime ExpiresAt { get; set; }
 
-    [JsonPropertyName("session_token")]
     public string SessionToken { get; set; } = "";
 
-    [JsonPropertyName("identity_token")]
     public string IdentityToken { get; set; } = "";
 
-    [JsonPropertyName("username")]
     public string Username { get; set; } = "";
 
-    [JsonPropertyName("uuid")]
     public string UUID { get; set; } = "";
 
-    [JsonPropertyName("account_owner_id")]
     public string AccountOwnerId { get; set; } = "";
 
     [JsonIgnore]
     public List<(string Username, string Uuid)> AccountProfiles { get; set; } = [];
+}
+
+internal sealed class HytaleAuthSessionJsonConverter : JsonConverter<HytaleAuthSession>
+{
+    public override HytaleAuthSession Read(
+        ref Utf8JsonReader reader,
+        Type typeToConvert,
+        JsonSerializerOptions options)
+    {
+        using var document = JsonDocument.ParseValue(ref reader);
+        var root = document.RootElement;
+        return new HytaleAuthSession
+        {
+            AccessToken = GetString(root, "AccessToken", "access_token"),
+            RefreshToken = GetString(root, "RefreshToken", "refresh_token"),
+            ExpiresAt = GetDateTime(root, "ExpiresAt", "expires_at"),
+            SessionToken = GetString(root, "SessionToken", "session_token"),
+            IdentityToken = GetString(root, "IdentityToken", "identity_token"),
+            Username = GetString(root, "Username", "username"),
+            UUID = GetString(root, "UUID", "uuid"),
+            AccountOwnerId = GetString(root, "AccountOwnerId", "account_owner_id")
+        };
+    }
+
+    public override void Write(
+        Utf8JsonWriter writer,
+        HytaleAuthSession value,
+        JsonSerializerOptions options)
+    {
+        writer.WriteStartObject();
+        writer.WriteString("AccessToken", value.AccessToken);
+        writer.WriteString("RefreshToken", value.RefreshToken);
+        writer.WriteString("ExpiresAt", value.ExpiresAt);
+        writer.WriteString("SessionToken", value.SessionToken);
+        writer.WriteString("IdentityToken", value.IdentityToken);
+        writer.WriteString("Username", value.Username);
+        writer.WriteString("UUID", value.UUID);
+        writer.WriteString("AccountOwnerId", value.AccountOwnerId);
+        writer.WriteEndObject();
+    }
+
+    private static string GetString(JsonElement root, string canonicalName, string legacyName)
+        => FindProperty(root, canonicalName, legacyName)?.GetString() ?? "";
+
+    private static DateTime GetDateTime(JsonElement root, string canonicalName, string legacyName)
+        => FindProperty(root, canonicalName, legacyName) is { } value && value.TryGetDateTime(out var result)
+            ? result
+            : default;
+
+    private static JsonElement? FindProperty(JsonElement root, string canonicalName, string legacyName)
+    {
+        foreach (var property in root.EnumerateObject())
+        {
+            if (string.Equals(property.Name, canonicalName, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(property.Name, legacyName, StringComparison.OrdinalIgnoreCase))
+            {
+                return property.Value;
+            }
+        }
+
+        return null;
+    }
 }
 
 internal class TokenResponse

@@ -19,7 +19,7 @@ namespace HyPrism.Core.Game.Instances;
 /// </summary>
 /// <remarks>
 /// Instances are organized in a flat layout: {InstanceRoot}/{instanceId}/.
-/// Branch and version information is stored in each instance's meta.json.
+/// Branch and version information is stored in each instance's Meta.json.
 /// Legacy layouts (branch subdirectories, version-named folders) are migrated on startup.
 /// This service also handles user data directories and cosmetic skins
 /// </remarks>
@@ -58,13 +58,14 @@ public partial class InstanceRepository : IInstanceRepository
     /// <returns>The current configuration object</returns>
     private Config GetConfig() => _configStore.Configuration;
 
-    #region Instance cache (instances.json)
+    #region Instance cache (Instances.json)
 
     /// <summary>Returns the path to the instance cache file</summary>
-    private string GetInstanceCachePath() => Path.Combine(GetInstanceRoot(), "instances.json");
+    private string GetInstanceCachePath() =>
+        LauncherJsonFile.GetPath(GetInstanceRoot(), "Instances.json", "instances.json");
 
     /// <summary>
-    /// Loads the instance list from instances.json.
+    /// Loads the instance list from Instances.json.
     /// On first run migrates from the deprecated config.Instances field
     /// </summary>
     private List<InstanceInfo> LoadInstanceCache()
@@ -79,7 +80,7 @@ public partial class InstanceRepository : IInstanceRepository
             }
             catch (Exception ex)
             {
-                Logger.Warning("InstanceRepository", $"Failed to read instances.json, rescanning: {ex.Message}");
+                Logger.Warning("InstanceRepository", $"Failed to read Instances.json, rescanning: {ex.Message}");
             }
         }
 
@@ -87,7 +88,7 @@ public partial class InstanceRepository : IInstanceRepository
         var config = GetConfig();
         if (config.Instances?.Count > 0)
         {
-            Logger.Info("InstanceRepository", $"Migrating {config.Instances.Count} instances from config to instances.json");
+            Logger.Info("InstanceRepository", $"Migrating {config.Instances.Count} instances from config to Instances.json");
             SaveInstanceCache(config.Instances);
             config.Instances = null;
             _configStore.SaveConfig();
@@ -98,7 +99,7 @@ public partial class InstanceRepository : IInstanceRepository
         return [];
     }
 
-    /// <summary>Saves the instance list to instances.json</summary>
+    /// <summary>Saves the instance list to Instances.json</summary>
     private void SaveInstanceCache(IEnumerable<InstanceInfo> instances)
     {
         try
@@ -110,7 +111,7 @@ public partial class InstanceRepository : IInstanceRepository
         }
         catch (Exception ex)
         {
-            Logger.Warning("InstanceRepository", $"Failed to save instances.json: {ex.Message}");
+            Logger.Warning("InstanceRepository", $"Failed to save Instances.json: {ex.Message}");
         }
     }
 
@@ -349,7 +350,7 @@ public partial class InstanceRepository : IInstanceRepository
 
     /// <summary>
     /// Load latest instance info.
-    /// Reads from the "latest" instance's meta.json (InstalledVersion field).
+    /// Reads from the "latest" instance's Meta.json (InstalledVersion field).
     /// Falls back to legacy latest.json for migration
     /// </summary>
     public LatestInstanceInfo? LoadLatestInfo(string branch)
@@ -398,7 +399,7 @@ public partial class InstanceRepository : IInstanceRepository
 
     /// <summary>
     /// Save latest instance info.
-    /// Updates the "latest" instance's meta.json InstalledVersion field.
+    /// Updates the "latest" instance's Meta.json InstalledVersion field.
     /// No longer creates latest.json files
     /// </summary>
     public void SaveLatestInfo(string branch, int version)
@@ -519,7 +520,7 @@ public partial class InstanceRepository : IInstanceRepository
 
     /// <summary>
     /// Gets the path to a specific instance version. Returns latest path if version is 0.
-    /// Searches existing instances by branch/version using meta.json.
+    /// Searches existing instances by branch/version using Meta.json.
     /// If not found, returns a path for a new instance (but does not create it)
     /// </summary>
     public string GetInstancePath(string branch, int version)
@@ -731,7 +732,7 @@ public partial class InstanceRepository : IInstanceRepository
             int version = -1;
             bool isLatest = false;
             string branch = branchHint ?? "";
-            var metaPath = Path.Combine(folder, "meta.json");
+            var metaPath = LauncherJsonFile.GetPath(folder, "Meta.json", "meta.json");
 
             if (File.Exists(metaPath))
             {
@@ -765,7 +766,7 @@ public partial class InstanceRepository : IInstanceRepository
                 }
                 else if (Guid.TryParse(dirName, out _))
                 {
-                    Logger.Warning("InstanceRepository", $"GUID folder without meta.json: {folder}");
+                    Logger.Warning("InstanceRepository", $"GUID folder without Meta.json: {folder}");
                     return;
                 }
                 else
@@ -1121,7 +1122,7 @@ public partial class InstanceRepository : IInstanceRepository
             var meta = GetInstanceMeta(instancePath);
             if (meta == null)
             {
-                Logger.Warning("InstanceRepository", $"No meta.json found for instance: {logIdentifier}");
+                Logger.Warning("InstanceRepository", $"No Meta.json found for instance: {logIdentifier}");
                 return;
             }
 
@@ -1146,7 +1147,7 @@ public partial class InstanceRepository : IInstanceRepository
     /// <inheritdoc/>
     public InstanceMeta? GetInstanceMeta(string instancePath)
     {
-        var metaPath = Path.Combine(instancePath, "meta.json");
+        var metaPath = LauncherJsonFile.GetPath(instancePath, "Meta.json", "meta.json");
         if (!File.Exists(metaPath))
         {
             var legacyPath = Path.Combine(instancePath, "metadata.json");
@@ -1164,7 +1165,7 @@ public partial class InstanceRepository : IInstanceRepository
         }
         catch (Exception ex)
         {
-            Logger.Warning("InstanceRepository", $"Failed to load meta.json: {ex.Message}");
+            Logger.Warning("InstanceRepository", $"Failed to load Meta.json: {ex.Message}");
             return null;
         }
     }
@@ -1175,14 +1176,14 @@ public partial class InstanceRepository : IInstanceRepository
         try
         {
             Directory.CreateDirectory(instancePath);
-            var metaPath = Path.Combine(instancePath, "meta.json");
+            var metaPath = LauncherJsonFile.GetPath(instancePath, "Meta.json", "meta.json");
             var json = JsonSerializer.Serialize(meta, JsonOptions);
             File.WriteAllText(metaPath, json);
-            Logger.Debug("InstanceRepository", $"Saved meta.json for instance {meta.Id}");
+            Logger.Debug("InstanceRepository", $"Saved Meta.json for instance {meta.Id}");
         }
         catch (Exception ex)
         {
-            Logger.Error("InstanceRepository", $"Failed to save meta.json: {ex.Message}");
+            Logger.Error("InstanceRepository", $"Failed to save Meta.json: {ex.Message}");
         }
     }
 
@@ -1391,7 +1392,7 @@ public partial class InstanceRepository : IInstanceRepository
     }
 
     /// <summary>
-    /// Migrates legacy metadata.json to new meta.json format
+    /// Migrates legacy metadata.json to new Meta.json format
     /// </summary>
     private InstanceMeta? MigrateLegacyMetadata(string instancePath, string legacyPath)
     {
@@ -1424,7 +1425,7 @@ public partial class InstanceRepository : IInstanceRepository
 
             try { File.Delete(legacyPath); } catch { }
 
-            Logger.Info("InstanceRepository", $"Migrated legacy metadata to meta.json: {meta.Id}");
+            Logger.Info("InstanceRepository", $"Migrated legacy metadata to Meta.json: {meta.Id}");
             return meta;
         }
         catch (Exception ex)
@@ -1533,7 +1534,7 @@ public partial class InstanceRepository : IInstanceRepository
     /// Changes the version/branch of an existing instance.
     /// For upgrades within the same branch: preserves game files and sets up for patching.
     /// For downgrades or branch changes: removes game client files and prepares for fresh download.
-    /// Always keeps UserData and meta.json, and marks IsLatest = false
+    /// Always keeps UserData and Meta.json, and marks IsLatest = false
     /// </summary>
     public bool ChangeInstanceVersion(string instanceId, string branch, int version)
     {
@@ -1549,7 +1550,7 @@ public partial class InstanceRepository : IInstanceRepository
             var meta = GetInstanceMeta(instancePath);
             if (meta == null)
             {
-                Logger.Warning("InstanceRepository", $"ChangeInstanceVersion: meta.json not found for {instanceId}");
+                Logger.Warning("InstanceRepository", $"ChangeInstanceVersion: Meta.json not found for {instanceId}");
                 return false;
             }
 
@@ -1627,12 +1628,6 @@ public partial class InstanceRepository : IInstanceRepository
 
     #region ZIP Import
 
-    private static readonly JsonSerializerOptions ImportJsonOpts = new()
-    {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-    };
-
     /// <inheritdoc/>
     public async Task ImportFromZipAsync(
         string zipPath,
@@ -1647,18 +1642,19 @@ public partial class InstanceRepository : IInstanceRepository
             overwriteFiles: true,
             cancellationToken);
 
-        var metaPath = Path.Combine(tempDir, "meta.json");
+        var metaPath = LauncherJsonFile.GetPath(tempDir, "Meta.json", "meta.json");
         var branch = "release";
         var version = 0;
         string? existingId = null;
+        InstanceMeta? importedMeta = null;
 
         if (File.Exists(metaPath))
         {
             var metaJson = await File.ReadAllTextAsync(metaPath, cancellationToken);
-            var meta = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(metaJson, ImportJsonOpts);
-            branch = meta?.TryGetValue("branch", out var b) == true ? b.GetString() ?? "release" : "release";
-            if (meta?.TryGetValue("version", out var v) == true) version = v.GetInt32();
-            if (meta?.TryGetValue("id", out var idEl) == true) existingId = idEl.GetString();
+            importedMeta = JsonSerializer.Deserialize<InstanceMeta>(metaJson, JsonOptions);
+            branch = importedMeta?.Branch ?? "release";
+            version = importedMeta?.Version ?? 0;
+            existingId = importedMeta?.Id;
         }
 
         var existingInstances = GetInstalledInstances();
@@ -1671,19 +1667,15 @@ public partial class InstanceRepository : IInstanceRepository
 
         var targetPath = CreateInstanceDirectory(branch, newInstanceId);
 
-        if (File.Exists(metaPath) && (idAlreadyExists || string.IsNullOrEmpty(existingId)))
+        if (importedMeta is not null)
         {
-            var metaJson = await File.ReadAllTextAsync(metaPath, cancellationToken);
-            var metaContent = JsonSerializer.Deserialize<Dictionary<string, object>>(metaJson, ImportJsonOpts);
-            if (metaContent != null)
-            {
-                metaContent["id"] = newInstanceId;
-                await File.WriteAllTextAsync(
-                    metaPath,
-                    JsonSerializer.Serialize(metaContent, ImportJsonOpts),
-                    cancellationToken);
+            importedMeta.Id = newInstanceId;
+            await File.WriteAllTextAsync(
+                metaPath,
+                JsonSerializer.Serialize(importedMeta, JsonOptions),
+                cancellationToken);
+            if (idAlreadyExists || string.IsNullOrEmpty(existingId))
                 Logger.Info("InstanceRepository", $"Updated instance ID from '{existingId}' to '{newInstanceId}'");
-            }
         }
 
         foreach (var file in Directory.GetFiles(tempDir))

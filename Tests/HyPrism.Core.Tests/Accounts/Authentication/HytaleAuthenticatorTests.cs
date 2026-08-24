@@ -11,6 +11,50 @@ namespace HyPrism.Core.Tests.Accounts.Authentication;
 public sealed class HytaleAuthenticatorTests
 {
     [Fact]
+    public void SessionJson_WritesPascalCaseAndReadsLegacySnakeCase()
+    {
+        var session = new HytaleAuthSession
+        {
+            AccessToken = "access",
+            RefreshToken = "refresh",
+            ExpiresAt = new DateTime(2026, 8, 24, 12, 0, 0, DateTimeKind.Utc),
+            SessionToken = "session",
+            IdentityToken = "identity",
+            Username = "Player",
+            UUID = "550e8400-e29b-41d4-a716-446655440000",
+            AccountOwnerId = "owner"
+        };
+
+        var json = JsonSerializer.Serialize(session);
+        using var document = JsonDocument.Parse(json);
+        Assert.All(
+            document.RootElement.EnumerateObject(),
+            property => Assert.True(char.IsUpper(property.Name[0]), property.Name));
+
+        var restored = JsonSerializer.Deserialize<HytaleAuthSession>("""
+            {
+              "access_token": "legacy-access",
+              "refresh_token": "legacy-refresh",
+              "expires_at": "2026-08-24T12:00:00Z",
+              "session_token": "legacy-session",
+              "identity_token": "legacy-identity",
+              "username": "LegacyPlayer",
+              "uuid": "660e8400-e29b-41d4-a716-446655440000",
+              "account_owner_id": "legacy-owner"
+            }
+            """);
+
+        Assert.NotNull(restored);
+        Assert.Equal("legacy-access", restored.AccessToken);
+        Assert.Equal("legacy-refresh", restored.RefreshToken);
+        Assert.Equal("legacy-session", restored.SessionToken);
+        Assert.Equal("legacy-identity", restored.IdentityToken);
+        Assert.Equal("LegacyPlayer", restored.Username);
+        Assert.Equal("660e8400-e29b-41d4-a716-446655440000", restored.UUID);
+        Assert.Equal("legacy-owner", restored.AccountOwnerId);
+    }
+
+    [Fact]
     public async Task LoginAsync_PresentsGeneratedAuthorizationUriThroughHostCallback()
     {
         var appDir = Path.Combine(Path.GetTempPath(), $"hyprism-auth-{Guid.NewGuid():N}");

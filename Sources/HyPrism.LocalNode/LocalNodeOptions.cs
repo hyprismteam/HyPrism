@@ -21,6 +21,11 @@ public sealed record LocalNodeOptions(
     string? RequestJournalPath = null)
 {
     /// <summary>
+    /// Gets whether Local Node may update platform certificate trust settings
+    /// </summary>
+    public bool ConfigureSystemTrust { get; init; } = true;
+
+    /// <summary>
     /// Gets the canonical issuer URI emitted in OmniAuth tokens
     /// </summary>
     public string Issuer => $"https://{Hostname}:{Port}";

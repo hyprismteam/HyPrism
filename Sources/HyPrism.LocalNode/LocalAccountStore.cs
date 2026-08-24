@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 using System.Text.Json;
+using HyPrism.Core.Infrastructure;
 
 namespace HyPrism.LocalNode;
 
@@ -10,8 +11,9 @@ namespace HyPrism.LocalNode;
 /// </summary>
 public sealed class LocalAccountStore
 {
-    private static readonly JsonSerializerOptions SerializerOptions = new(JsonSerializerDefaults.Web)
+    private static readonly JsonSerializerOptions SerializerOptions = new()
     {
+        PropertyNameCaseInsensitive = true,
         WriteIndented = true,
         Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
     };
@@ -26,8 +28,64 @@ public sealed class LocalAccountStore
     public LocalAccountStore(string dataDirectory)
     {
         Directory.CreateDirectory(dataDirectory);
-        _path = Path.Combine(dataDirectory, "accounts.json");
+        _path = ResolveAccountsPath(dataDirectory);
         _lockPath = Path.Combine(dataDirectory, "accounts.lock");
+    }
+
+    private static string ResolveAccountsPath(string dataDirectory)
+    {
+        const string canonicalFileName = "Accounts.json";
+        const string legacyFileName = "accounts.json";
+        var canonicalPath = Path.Combine(dataDirectory, canonicalFileName);
+        var files = Directory.EnumerateFiles(dataDirectory).ToArray();
+        var exactCanonicalPath = files.FirstOrDefault(path =>
+            string.Equals(Path.GetFileName(path), canonicalFileName, StringComparison.Ordinal));
+        if (exactCanonicalPath is not null)
+            return exactCanonicalPath;
+
+        var legacyPath = files.FirstOrDefault(path =>
+            string.Equals(Path.GetFileName(path), legacyFileName, StringComparison.Ordinal));
+        legacyPath ??= files.FirstOrDefault(path =>
+            string.Equals(Path.GetFileName(path), canonicalFileName, StringComparison.OrdinalIgnoreCase));
+        if (legacyPath is null)
+            return canonicalPath;
+
+        var temporaryPath = Path.Combine(dataDirectory, $".{Guid.NewGuid():N}.json-migration");
+        try
+        {
+            if (string.Equals(legacyPath, canonicalPath, StringComparison.OrdinalIgnoreCase))
+            {
+                File.Move(legacyPath, temporaryPath);
+                File.Move(temporaryPath, canonicalPath);
+            }
+            else
+            {
+                File.Move(legacyPath, canonicalPath);
+            }
+
+            return canonicalPath;
+        }
+        catch (Exception ex)
+        {
+            if (File.Exists(temporaryPath) && !File.Exists(legacyPath))
+            {
+                try
+                {
+                    File.Move(temporaryPath, legacyPath);
+                }
+                catch (Exception rollbackException)
+                {
+                    Logger.Warning(
+                        "LocalNode",
+                        $"Could not restore account file '{legacyPath}': {rollbackException.Message}");
+                }
+            }
+
+            Logger.Warning(
+                "LocalNode",
+                $"Could not migrate account file '{legacyPath}' to '{canonicalPath}': {ex.Message}");
+            return legacyPath;
+        }
     }
 
     /// <summary>

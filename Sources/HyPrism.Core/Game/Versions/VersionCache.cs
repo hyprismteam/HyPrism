@@ -51,11 +51,17 @@ public class VersionCache
 
     /// <summary>Returns the path to the on-disk versions cache file.</summary>
     public string GetSnapshotPath()
-        => Path.Combine(_appDir, "Cache", "Game", "versions.json");
+        => LauncherJsonFile.GetPath(
+            Path.Combine(_appDir, "Cache", "Game"),
+            "Versions.json",
+            "versions.json");
 
     /// <summary>Returns the path to the on-disk patches cache file.</summary>
     public string GetPatchSnapshotPath()
-        => Path.Combine(_appDir, "Cache", "Game", "patches.json");
+        => LauncherJsonFile.GetPath(
+            Path.Combine(_appDir, "Cache", "Game"),
+            "Patches.json",
+            "patches.json");
 
     #endregion
 
@@ -168,7 +174,7 @@ public class VersionCache
             var json = File.ReadAllText(path);
             if (string.IsNullOrWhiteSpace(json)) return null;
 
-            var snapshot = JsonSerializer.Deserialize<VersionsCacheSnapshot>(json);
+            var snapshot = JsonSerializer.Deserialize<VersionsCacheSnapshot>(json, JsonDefaults.CaseInsensitive);
             if (snapshot == null) return null;
 
             return Sanitize(snapshot);
@@ -243,7 +249,7 @@ public class VersionCache
             var json = File.ReadAllText(path);
             if (string.IsNullOrWhiteSpace(json)) return null;
 
-            var snapshot = JsonSerializer.Deserialize<PatchesCacheSnapshot>(json);
+            var snapshot = JsonSerializer.Deserialize<PatchesCacheSnapshot>(json, JsonDefaults.CaseInsensitive);
             if (snapshot == null) return null;
 
             snapshot.Data ??= new PatchesCacheData();

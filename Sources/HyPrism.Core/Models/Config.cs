@@ -26,7 +26,7 @@ public class Config
     /// [DEPRECATED] Instance cache moved to Instances/instances.json.
     /// Kept for reading old configs during migration only.
     /// </summary>
-    [Obsolete("Instance cache is now stored in Instances/instances.json")]
+    [Obsolete("Instance cache is now stored in Instances/Instances.json")]
     public List<InstanceInfo>? Instances { get; set; }
 
     /// <summary>

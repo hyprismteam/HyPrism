@@ -6,7 +6,7 @@ using System.Text.Json.Serialization;
 namespace HyPrism.Core.Models;
 
 /// <summary>
-/// Metadata stored in each instance's meta.json file.
+/// Metadata stored in each instance's Meta.json file.
 /// Contains instance-specific configuration and identification.
 /// </summary>
 public class InstanceMeta
@@ -74,7 +74,7 @@ public class InstanceMeta
 
 /// <summary>
 /// Lightweight instance reference stored in Config for fallback and quick lookup.
-/// This is a minimal copy of InstanceMeta to avoid reading meta.json for every operation.
+/// This is a minimal copy of InstanceMeta to avoid reading Meta.json for every operation.
 /// </summary>
 public class InstanceInfo
 {

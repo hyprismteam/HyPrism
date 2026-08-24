@@ -1,11 +1,11 @@
 ---
 title: Configuration reference
-description: Current persistent settings in config.json
+description: Current persistent settings in Config.json
 ---
 
 # Configuration reference
 
-`JsonConfigStore` loads and saves the `Config` model as `config.json`
+`JsonConfigStore` loads and saves the `Config` model as `Config.json`. The file and its JSON property names use PascalCase, while reads remain case-insensitive for compatibility
 
 ## Identity and selection
 
@@ -40,8 +40,8 @@ description: Current persistent settings in config.json
 | `InstanceDirectory` | custom instance root |
 | `ShowAlphaMods` | include alpha mod files in search results |
 
-Profile names, UUIDs, and the profile list are not stored in `config.json`. They live in `Profiles/profiles.json`, while profile-scoped files live in `Profiles/<profile-id>/`
+Profile names, UUIDs, and the profile list are not stored in `Config.json`. They live in `Profiles/Profiles.json`, while profile-scoped files live in `Profiles/<profile-id>/`
 
-On first load of an older configuration, HyPrism moves `Nick`, `UUID`, embedded `Profiles`, and `ActiveProfileIndex` into the profile store and removes those keys from `config.json`. Runtime code only uses `SelectedProfileId`
+On first load of an older configuration, HyPrism moves `Nick`, `UUID`, embedded `Profiles`, and `ActiveProfileIndex` into the profile store and removes those keys from `Config.json`. Runtime code only uses `SelectedProfileId`
 
-The Local Node hostname and port are intentionally fixed at `h.localhost:8443` because the client patch depends on the exact 16-character replacement. They are not stored in `config.json`
+The Local Node hostname and port are intentionally fixed at `h.localhost:8443` because the client patch depends on the exact 16-character replacement. They are not stored in `Config.json`

@@ -33,11 +33,12 @@ public sealed class LocalNodeTrustStore
         var javaTrustStorePath = CreateJavaTrustStore(options, rootCertificate);
         if (OperatingSystem.IsWindows())
         {
-            InstallForCurrentWindowsUser(rootCertificate);
+            if (options.ConfigureSystemTrust)
+                InstallForCurrentWindowsUser(rootCertificate);
             return new LocalNodeTrustStore(null, javaTrustStorePath);
         }
 
-        if (OperatingSystem.IsMacOS())
+        if (OperatingSystem.IsMacOS() && options.ConfigureSystemTrust)
             MacOsCertificateTrust.EnsureTrusted(options, serverCertificate, rootCertificate);
 
         var bundlePath = Path.Combine(options.DataDirectory, "client-ca-bundle.pem");
@@ -91,6 +92,32 @@ public sealed class LocalNodeTrustStore
                 certificate.Export(X509ContentType.Cert));
             store.Add(trustedCertificate);
         }
+
+        var obsoleteCertificates = FindObsoleteHyPrismRootCertificates(store.Certificates, certificate);
+        if (obsoleteCertificates.Count > 0)
+            store.RemoveRange(obsoleteCertificates);
+    }
+
+    internal static X509Certificate2Collection FindObsoleteHyPrismRootCertificates(
+        X509Certificate2Collection certificates,
+        X509Certificate2 currentCertificate)
+    {
+        var obsoleteCertificates = new X509Certificate2Collection();
+        foreach (var certificate in certificates)
+        {
+            if (string.Equals(certificate.Thumbprint, currentCertificate.Thumbprint, StringComparison.OrdinalIgnoreCase)
+                || !certificate.SubjectName.RawData.AsSpan().SequenceEqual(currentCertificate.SubjectName.RawData)
+                || !certificate.IssuerName.RawData.AsSpan().SequenceEqual(certificate.SubjectName.RawData)
+                || certificate.Extensions.OfType<X509BasicConstraintsExtension>()
+                    .All(extension => !extension.CertificateAuthority))
+            {
+                continue;
+            }
+
+            obsoleteCertificates.Add(certificate);
+        }
+
+        return obsoleteCertificates;
     }
 
     private static string CreateJavaTrustStore(LocalNodeOptions options, X509Certificate2 certificate)

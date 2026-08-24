@@ -3,6 +3,7 @@
 
 using HyPrism.Core.Infrastructure;
 using HyPrism.Core.Game.Instances;
+using System.Text.Json;
 
 namespace HyPrism.Core.Tests.Game;
 
@@ -32,10 +33,21 @@ public class InstanceRepositoryTests : IDisposable
         var raised = 0;
         _svc.InstancesChanged += () => raised++;
 
-        _svc.CreateInstanceMeta("release", 42);
+        var meta = _svc.CreateInstanceMeta("release", 42);
 
         Assert.Equal(1, raised);
         Assert.Single(_svc.GetCachedInstances());
+        Assert.Contains(
+            Directory.EnumerateFiles(_svc.GetInstanceRoot()),
+            path => string.Equals(Path.GetFileName(path), "Instances.json", StringComparison.Ordinal));
+        var instancePath = _svc.GetInstancePathById(meta.Id)!;
+        var metaPath = Assert.Single(
+            Directory.EnumerateFiles(instancePath),
+            path => string.Equals(Path.GetFileName(path), "Meta.json", StringComparison.Ordinal));
+        using var document = JsonDocument.Parse(File.ReadAllText(metaPath));
+        Assert.All(
+            document.RootElement.EnumerateObject(),
+            property => Assert.True(char.IsUpper(property.Name[0]), property.Name));
     }
 
     [Fact]

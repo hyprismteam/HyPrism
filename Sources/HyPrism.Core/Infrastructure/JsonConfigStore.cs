@@ -23,11 +23,11 @@ public class JsonConfigStore : IConfigStore
     /// Initializes a new instance of the <see cref="JsonConfigStore"/> class.
     /// Loads existing configuration or creates a new one with default values.
     /// </summary>
-    /// <param name="appDataPath">The application data directory path where config.json is stored.</param>
+    /// <param name="appDataPath">The application data directory path where Config.json is stored.</param>
     public JsonConfigStore(string appDataPath)
     {
         Directory.CreateDirectory(appDataPath);
-        _configPath = Path.Combine(appDataPath, "config.json");
+        _configPath = LauncherJsonFile.GetPath(appDataPath, "Config.json", "config.json");
         _config = LoadConfig();
     }
 
@@ -49,11 +49,11 @@ public class JsonConfigStore : IConfigStore
                   Path.GetDirectoryName(_configPath)!,
                   json,
                   out var profileConfigMigrated);
-                config = JsonSerializer.Deserialize<Config>(json) ?? new Config();
+                config = JsonSerializer.Deserialize<Config>(json, JsonDefaults.CaseInsensitive) ?? new Config();
 
                 Logger.Info("Config", $"Loaded config - Language: '{config.Language}'");
 
-                bool needsSave = profileConfigMigrated;
+                bool needsSave = profileConfigMigrated || !UsesPascalCaseRootProperties(json);
 
 #pragma warning disable CS0618 // Using obsolete fields for migration
                 if (config.VersionType == "latest")
@@ -105,6 +105,16 @@ public class JsonConfigStore : IConfigStore
     {
         _config = new Config();
         SaveConfig();
+    }
+
+    private static bool UsesPascalCaseRootProperties(string json)
+    {
+        using var document = JsonDocument.Parse(json);
+        return document.RootElement.ValueKind == JsonValueKind.Object
+            && document.RootElement.EnumerateObject().All(property =>
+                property.Name.Length == 0
+                || !char.IsLetter(property.Name[0])
+                || char.IsUpper(property.Name[0]));
     }
 
     /// <inheritdoc/>

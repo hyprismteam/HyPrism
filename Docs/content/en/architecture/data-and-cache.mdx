@@ -9,18 +9,23 @@ HyPrism keeps durable state separate from data that can be recreated
 
 | Location | Contents | Safe to remove |
 | --- | --- | --- |
-| `config.json` | launcher preferences and selected identifiers | no, unless resetting settings is intended |
-| `Profiles/profiles.json` | complete profile list and identity metadata | no |
-| `Profiles/<profile-id>/` | profile-scoped skins, avatars, and session data | no |
-| `Instances/` | instance registry and game installations | no |
+| `Config.json` | launcher preferences and selected identifiers | no, unless resetting settings is intended |
+| `Profiles/Profiles.json` | complete profile list and identity metadata | no |
+| `Profiles/<profile-id>/` | profile-scoped `Profile.json`, `HytaleSession.json`, `Skin.json`, avatars, and session data | no |
+| `Instances/Instances.json` | instance registry and display order | no |
+| `Instances/<instance-id>/Meta.json` | instance identity, branch, version, and play-time metadata | no |
 | `Mirrors/` | user-provided mirror metadata | only if custom mirrors are no longer needed |
-| `Cache/News/` | parsed news feed and articles | yes |
+| `Runtime/GameProcesses.json` | live game-process registry used across launcher restarts | yes, when HyPrism and all game sessions are closed |
+| `Cache/News/Feed.json` and `Article-<hash>.json` | parsed news feed and articles | yes |
+| `Cache/Game/Versions.json` and `Patches.json` | version and patch snapshots | yes |
 | `Cache/Game/Downloads/` | resumable game payloads, including incomplete `.part` files | yes, when no download or update is active |
 | `Cache/Images/News/` | encoded news preview and article images | yes |
 | `Cache/Images/Github/` | encoded team and contributor avatars | yes |
 | `Logs/` | launcher, game-instance, and Local Node diagnostics grouped by launch | yes, when HyPrism and related game sessions are closed |
 
-`config.json` stores only `SelectedProfileId` for profile selection. Legacy identity fields are consumed by a one-time load migration and are not represented in the runtime configuration model
+`Config.json` stores only `SelectedProfileId` for profile selection. Legacy identity fields are consumed by a one-time load migration and are not represented in the runtime configuration model
+
+HyPrism-owned JSON file names and object property names use PascalCase. Existing files with legacy lowercase, kebab-case, or snake_case names are moved to their canonical names when first accessed, while deserialization remains case-insensitive. External service payloads, game-owned files, identifier-based cache files, and the `.mirror.json` interchange suffix keep the naming required by their contracts
 
 On startup, HyPrism moves legacy PWR payloads from the `Cache/` root into `Cache/Game/Downloads/` and migrates `Cache/RemoteImages/` into the capitalized `Cache/Images/News/` and `Cache/Images/Github/` directories
 

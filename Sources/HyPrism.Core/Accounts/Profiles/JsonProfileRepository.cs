@@ -53,7 +53,7 @@ public class JsonProfileRepository : IProfileRepository
 
     #endregion
 
-    #region Profile cache (profiles.json)
+    #region Profile cache (Profiles.json)
 
     private static readonly JsonSerializerOptions _profileJsonOpts = new()
     {
@@ -65,10 +65,11 @@ public class JsonProfileRepository : IProfileRepository
     #endregion
 
     /// <summary>Returns the path to the profile cache file inside the profiles folder</summary>
-    private string GetProfileCachePath() => Path.Combine(GetProfilesFolder(), "profiles.json");
+    private string GetProfileCachePath() =>
+        LauncherJsonFile.GetPath(GetProfilesFolder(), "Profiles.json", "profiles.json");
 
     /// <summary>
-    /// Loads the profile list from profiles.json
+    /// Loads the profile list from Profiles.json
     /// </summary>
     private List<Profile> LoadProfilesFromCache()
     {
@@ -81,14 +82,14 @@ public class JsonProfileRepository : IProfileRepository
             }
             catch (Exception ex)
             {
-                Logger.Warning("Profile", $"Failed to read profiles.json: {ex.Message}");
+                Logger.Warning("Profile", $"Failed to read Profiles.json: {ex.Message}");
             }
         }
 
         return [];
     }
 
-    /// <summary>Saves the profile list to profiles.json</summary>
+    /// <summary>Saves the profile list to Profiles.json</summary>
     private void SaveProfilesToCache(IEnumerable<Profile> profiles)
     {
         try
@@ -100,7 +101,7 @@ public class JsonProfileRepository : IProfileRepository
         }
         catch (Exception ex)
         {
-            Logger.Warning("Profile", $"Failed to save profiles.json: {ex.Message}");
+            Logger.Warning("Profile", $"Failed to save Profiles.json: {ex.Message}");
         }
     }
 
@@ -621,11 +622,11 @@ public class JsonProfileRepository : IProfileRepository
                 {
                     var profileInfo = new
                     {
-                        username = profile.Name,
-                        uuid = profile.UUID,
-                        createdAt = DateTime.UtcNow.ToString("o")
+                        Username = profile.Name,
+                        Uuid = profile.UUID,
+                        CreatedAt = DateTime.UtcNow.ToString("o")
                     };
-                    var infoPath = Path.Combine(profileDir, "profile.json");
+                    var infoPath = LauncherJsonFile.GetPath(profileDir, "Profile.json", "profile.json");
                     var json = JsonSerializer.Serialize(profileInfo, JsonDefaults.IndentedUnsafeRelaxed);
                     File.WriteAllText(infoPath, json);
                     Logger.Info("Profile", $"Created profile info file: {infoPath}");
