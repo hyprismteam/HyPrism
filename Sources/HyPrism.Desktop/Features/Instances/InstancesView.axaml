@@ -665,9 +665,11 @@ SPDX-License-Identifier: GPL-3.0-only
                       <TextBlock Text="{Binding InstanceModsEmptyTitle}" FontSize="19" FontWeight="SemiBold" TextAlignment="Center" />
                       <TextBlock Text="{Binding InstanceModsEmptyHint}" Classes="muted" MaxWidth="390" TextAlignment="Center" TextWrapping="Wrap" />
                     </StackPanel>
-                    <ScrollViewer IsVisible="{Binding HasInstalledMods}" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-                      <ItemsControl ItemsSource="{Binding VisibleInstalledMods}" Margin="10">
-                        <ItemsControl.ItemTemplate>
+                    <ListBox IsVisible="{Binding HasInstalledMods}"
+                             ItemsSource="{Binding VisibleInstalledMods}"
+                             Classes="instanceVirtualizedList"
+                             Margin="10">
+                        <ListBox.ItemTemplate>
                           <DataTemplate x:DataType="instances:InstanceModItemViewModel">
                             <Border Classes="instanceModRow">
                               <Grid ColumnDefinitions="44,*,Auto" ColumnSpacing="12">
@@ -685,9 +687,8 @@ SPDX-License-Identifier: GPL-3.0-only
                               </Grid>
                             </Border>
                           </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                      </ItemsControl>
-                    </ScrollViewer>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
                   </Grid>
                 </Border>
               </Grid>
@@ -707,9 +708,11 @@ SPDX-License-Identifier: GPL-3.0-only
                       <TextBlock Text="{Binding InstanceBrowseEmptyTitle}" FontSize="19" FontWeight="SemiBold" />
                       <TextBlock Text="{Binding InstanceBrowseEmptyHint}" Classes="muted" MaxWidth="400" TextAlignment="Center" TextWrapping="Wrap" />
                     </StackPanel>
-                    <ScrollViewer IsVisible="{Binding HasModCatalogItems}" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-                      <ItemsControl ItemsSource="{Binding ModCatalogItems}" Margin="10">
-                        <ItemsControl.ItemTemplate>
+                    <ListBox IsVisible="{Binding HasModCatalogItems}"
+                             ItemsSource="{Binding ModCatalogItems}"
+                             Classes="instanceVirtualizedList"
+                             Margin="10">
+                        <ListBox.ItemTemplate>
                           <DataTemplate x:DataType="instances:ModCatalogItemViewModel">
                             <Border Classes="instanceModRow">
                               <Grid ColumnDefinitions="44,*,Auto" ColumnSpacing="12">
@@ -729,9 +732,8 @@ SPDX-License-Identifier: GPL-3.0-only
                               </Grid>
                             </Border>
                           </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                      </ItemsControl>
-                    </ScrollViewer>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
                   </Grid>
                 </Border>
               </Grid>
@@ -748,9 +750,11 @@ SPDX-License-Identifier: GPL-3.0-only
                       <TextBlock Text="{Binding InstanceWorldsEmptyTitle}" FontSize="19" FontWeight="SemiBold" />
                       <TextBlock Text="{Binding InstanceWorldsEmptyHint}" Classes="muted" MaxWidth="400" TextAlignment="Center" TextWrapping="Wrap" />
                     </StackPanel>
-                    <ScrollViewer IsVisible="{Binding HasInstanceWorlds}" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-                      <ItemsControl ItemsSource="{Binding InstanceWorlds}" Margin="10">
-                        <ItemsControl.ItemTemplate>
+                    <ListBox IsVisible="{Binding HasInstanceWorlds}"
+                             ItemsSource="{Binding InstanceWorlds}"
+                             Classes="instanceVirtualizedList"
+                             Margin="10">
+                        <ListBox.ItemTemplate>
                           <DataTemplate x:DataType="instances:InstanceWorldItemViewModel">
                             <Border Classes="instanceModRow">
                               <Grid ColumnDefinitions="44,*,Auto" ColumnSpacing="12">
@@ -763,9 +767,8 @@ SPDX-License-Identifier: GPL-3.0-only
                               </Grid>
                             </Border>
                           </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                      </ItemsControl>
-                    </ScrollViewer>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
                   </Grid>
                 </Border>
               </Grid>

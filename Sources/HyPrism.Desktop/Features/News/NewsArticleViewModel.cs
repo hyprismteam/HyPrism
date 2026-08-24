@@ -2,13 +2,12 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 using System.Collections.ObjectModel;
-using System.Collections.Specialized;
-using System.ComponentModel;
 using System.Windows.Input;
 using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using HyPrism.Desktop.Controls;
 using HyPrism.Desktop.Platform;
 
 namespace HyPrism.Desktop.Features.News;
@@ -577,26 +576,6 @@ public sealed partial class NewsInlineImageViewModel : ObservableObject, IDispos
 
     public void Dispose()
         => ReleaseImage();
-}
-
-internal sealed class ObservableRangeCollection<T> : ObservableCollection<T>
-{
-    public void AddRange(IReadOnlyList<T> items)
-    {
-        if (items.Count == 0)
-            return;
-
-        var startIndex = Count;
-        foreach (var item in items)
-            Items.Add(item);
-
-        OnPropertyChanged(new PropertyChangedEventArgs(nameof(Count)));
-        OnPropertyChanged(new PropertyChangedEventArgs("Item[]"));
-        OnCollectionChanged(new NotifyCollectionChangedEventArgs(
-            NotifyCollectionChangedAction.Add,
-            items.ToList(),
-            startIndex));
-    }
 }
 
 internal static class RemoteNewsBitmap

@@ -4,6 +4,7 @@
 export default {
   building: 'Сборка',
   testing: 'Тестирование',
+  'avalonia-performance': 'Производительность Avalonia',
   localization: 'Локализация',
   'coding-style': 'Стиль кода',
   contributing: 'Участие в разработке',

@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 using Avalonia;
+using Avalonia.Skia;
 using HyPrism.Desktop.Features.About;
 using HyPrism.Desktop.Features.News;
 using HyPrism.Desktop.Features.Settings;
@@ -55,7 +56,11 @@ internal static class Program
 
     public static AppBuilder BuildAvaloniaApp()
         => AppBuilder.Configure<App>()
-            .UsePlatformDetect();
+            .UsePlatformDetect()
+            .With(new SkiaOptions
+            {
+                MaxGpuResourceSizeBytes = 256 * 1024 * 1024
+            });
 }
 
 internal static class DesktopRuntime

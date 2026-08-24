@@ -3,6 +3,7 @@
 
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Layout;
 using Avalonia.Media;
@@ -107,9 +108,10 @@ public sealed class WizardScreenTransitionTests
         var window = new Window { Content = spinner };
         window.Show();
         Dispatcher.UIThread.RunJobs();
-        await Task.Delay(20);
         var rotation = Assert.IsType<RotateTransform>(spinner.RenderTransform);
-        await Task.Delay(120);
+        AvaloniaHeadlessPlatform.ForceRenderTimerTick(1);
+        await Task.Delay(20);
+        AvaloniaHeadlessPlatform.ForceRenderTimerTick(1);
         Dispatcher.UIThread.RunJobs();
         Assert.InRange(rotation.Angle, 1, 359);
 
@@ -118,7 +120,9 @@ public sealed class WizardScreenTransitionTests
         Assert.Equal(0, rotation.Angle);
 
         RotatingVisual.SetIsActive(spinner, true);
-        await Task.Delay(120);
+        AvaloniaHeadlessPlatform.ForceRenderTimerTick(1);
+        await Task.Delay(20);
+        AvaloniaHeadlessPlatform.ForceRenderTimerTick(1);
         Dispatcher.UIThread.RunJobs();
         Assert.InRange(rotation.Angle, 1, 359);
 

@@ -1051,8 +1051,8 @@ public sealed class MainWindowRenderTests
         await Task.Delay(240);
         Dispatcher.UIThread.RunJobs();
 
-        var compactShell = window.FindControl<Carousel>("CompactNewsShell");
-        var articleHost = window.FindControl<ContentControl>("CompactArticleHost");
+        var compactShell = FindVisualByName<Carousel>(window, "CompactNewsShell");
+        var articleHost = FindVisualByName<ContentControl>(window, "CompactArticleHost");
         Assert.NotNull(compactShell);
         Assert.NotNull(articleHost);
         Assert.Equal(1, compactShell!.SelectedIndex);
@@ -2383,17 +2383,16 @@ public sealed class MainWindowRenderTests
             service => service.GetNewsAsync(12),
             Times.Once);
 
-        var newsLayout = window.FindControl<Grid>("NewsResponsiveLayout");
-        var compactNewsShell = window.FindControl<Carousel>("CompactNewsShell");
-        var wideNewsShell = window.FindControl<Grid>("WideNewsShell");
-        var wideNewsFeedBackground = window.FindControl<Border>("WideNewsFeedBackground");
-        var compactArticleHost = window.FindControl<ContentControl>("CompactArticleHost");
-        var wideArticleHost = window.FindControl<ContentControl>("WideArticleHost");
+        var newsLayout = FindVisualByName<Grid>(window, "NewsResponsiveLayout");
+        var compactNewsShell = FindVisualByName<Carousel>(window, "CompactNewsShell");
+        var wideNewsShell = FindVisualByName<Grid>(window, "WideNewsShell");
+        var wideNewsFeedBackground = FindVisualByName<Border>(window, "WideNewsFeedBackground");
+        var compactArticleHost = FindVisualByName<ContentControl>(window, "CompactArticleHost");
+        var wideArticleHost = FindVisualByName<ContentControl>(window, "WideArticleHost");
         Assert.NotNull(newsLayout);
         Assert.NotNull(compactNewsShell);
         Assert.NotNull(wideNewsShell);
         Assert.NotNull(wideNewsFeedBackground);
-        Assert.NotNull(compactArticleHost);
         Assert.NotNull(wideArticleHost);
         var compactTransition = Assert.IsType<PageSlide>(compactNewsShell!.PageTransition);
         Assert.Equal(PageSlide.SlideAxis.Horizontal, compactTransition.Orientation);
@@ -2482,6 +2481,11 @@ public sealed class MainWindowRenderTests
 
         await viewModel.FeaturedNews!.OpenCommand.ExecuteAsync(null);
         Dispatcher.UIThread.RunJobs();
+        if (!usesWideLayout)
+        {
+            compactArticleHost ??= FindVisualByName<ContentControl>(window, "CompactArticleHost");
+            Assert.NotNull(compactArticleHost);
+        }
 
         Assert.True(viewModel.IsNewsArticleVisible);
         Assert.False(viewModel.IsNewsFeedVisible);
@@ -3634,6 +3638,12 @@ public sealed class MainWindowRenderTests
             Assert.Equal(1, scale.ScaleY);
         }
     }
+
+    private static T? FindVisualByName<T>(Visual root, string name)
+        where T : Control
+        => root.GetVisualDescendants()
+            .OfType<T>()
+            .FirstOrDefault(control => string.Equals(control.Name, name, StringComparison.Ordinal));
 
     private static void AssertUsesApplicationScrollBar(ScrollViewer scrollViewer)
     {

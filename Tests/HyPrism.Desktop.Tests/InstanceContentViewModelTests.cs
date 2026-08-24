@@ -432,6 +432,24 @@ public sealed class InstanceContentViewModelTests
             new StringLocalizer("en-US"));
 
         var installOperation = viewModel.RunManagedInstanceCommand.ExecuteAsync(null);
+        var progressPropertyChanges = 0;
+        viewModel.PropertyChanged += (_, args) =>
+        {
+            if (args.PropertyName == nameof(MainWindowViewModel.ActivityProgress))
+                progressPropertyChanges++;
+        };
+        progress.Raise(service => service.DownloadProgressChanged += null!, new ProgressUpdateMessage
+        {
+            State = "downloading",
+            Progress = 12,
+            MessageKey = "common.loading"
+        });
+        progress.Raise(service => service.DownloadProgressChanged += null!, new ProgressUpdateMessage
+        {
+            State = "downloading",
+            Progress = 24,
+            MessageKey = "common.loading"
+        });
         progress.Raise(service => service.DownloadProgressChanged += null!, new ProgressUpdateMessage
         {
             State = "downloading",
@@ -443,6 +461,7 @@ public sealed class InstanceContentViewModelTests
         Assert.True(viewModel.IsManagedInstanceActionActive);
         Assert.Equal("Loading...", viewModel.ManagedInstanceActionStatusText);
         Assert.Equal("37%", viewModel.ManagedInstanceActionMetricText);
+        Assert.Equal(1, progressPropertyChanges);
 
         await viewModel.RunManagedInstanceCommand.ExecuteAsync(null);
         installationWorkflow.Verify(service => service.CancelDownload(instance.Id), Times.Never);

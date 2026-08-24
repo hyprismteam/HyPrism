@@ -67,15 +67,20 @@ public sealed partial class MainWindow : Window
         if (e.PropertyName == nameof(MainWindowViewModel.SelectedNewsArticle) &&
             DataContext is MainWindowViewModel { SelectedNewsArticle: not null } viewModel)
         {
+            var wideArticleHost = FindVisualByName<ContentControl>("WideArticleHost");
+            var compactArticleHost = FindVisualByName<ContentControl>("CompactArticleHost");
+            if (wideArticleHost is null || compactArticleHost is null)
+                return;
+
             var transitionVersion = ++_wideArticleTransitionVersion;
-            var transitions = WideArticleHost.Transitions;
+            var transitions = wideArticleHost.Transitions;
             if (viewModel.IsWideNewsLayout)
             {
                 // Hide the newly-bound tree without animating the old content out. The
                 // first visible fade therefore starts only after the hero and its mask
                 // have both completed a render pass.
-                WideArticleHost.Transitions = null;
-                WideArticleHost.Opacity = 0;
+                wideArticleHost.Transitions = null;
+                wideArticleHost.Opacity = 0;
             }
 
             Dispatcher.UIThread.Post(() =>
@@ -83,14 +88,14 @@ public sealed partial class MainWindow : Window
                 if (transitionVersion != _wideArticleTransitionVersion)
                     return;
 
-                foreach (var scrollViewer in CompactArticleHost
+                foreach (var scrollViewer in compactArticleHost
                              .GetVisualDescendants()
                              .OfType<ScrollViewer>())
                 {
                     scrollViewer.ScrollToHome();
                 }
 
-                foreach (var scrollViewer in WideArticleHost
+                foreach (var scrollViewer in wideArticleHost
                              .GetVisualDescendants()
                              .OfType<ScrollViewer>())
                 {
@@ -99,8 +104,8 @@ public sealed partial class MainWindow : Window
 
                 if (viewModel.IsWideNewsLayout)
                 {
-                    WideArticleHost.Transitions = transitions;
-                    WideArticleHost.Opacity = 1;
+                    wideArticleHost.Transitions = transitions;
+                    wideArticleHost.Opacity = 1;
                 }
             }, DispatcherPriority.Background);
         }
@@ -241,9 +246,19 @@ public sealed partial class MainWindow : Window
             return;
 
         _usesWideNewsLayout = useWideLayout;
-        CompactNewsShell.IsVisible = !useWideLayout;
-        WideNewsShell.IsVisible = useWideLayout;
+        var compactNewsShell = FindVisualByName<Carousel>("CompactNewsShell");
+        var wideNewsShell = FindVisualByName<Grid>("WideNewsShell");
+        if (compactNewsShell is not null)
+            compactNewsShell.IsVisible = !useWideLayout;
+        if (wideNewsShell is not null)
+            wideNewsShell.IsVisible = useWideLayout;
     }
+
+    private T? FindVisualByName<T>(string name)
+        where T : Control
+        => this.GetVisualDescendants()
+            .OfType<T>()
+            .FirstOrDefault(control => string.Equals(control.Name, name, StringComparison.Ordinal));
 
     protected override void OnKeyDown(KeyEventArgs e)
     {

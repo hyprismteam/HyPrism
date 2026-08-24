@@ -798,12 +798,22 @@ SPDX-License-Identifier: GPL-3.0-only
         <Grid>
           <dashboard:DashboardView IsVisible="{Binding IsDashboard}" />
 
-          <instances:InstancesView IsVisible="{Binding IsInstances}" />
+          <controls:DeferredContentControl IsActive="{Binding IsInstances}"
+                                           DeferredContent="{Binding}">
+            <controls:DeferredContentControl.ContentTemplate>
+              <DataTemplate x:DataType="shell:MainWindowViewModel">
+                <instances:InstancesView />
+              </DataTemplate>
+            </controls:DeferredContentControl.ContentTemplate>
+          </controls:DeferredContentControl>
 
-          <Grid x:Name="NewsResponsiveLayout"
-                IsVisible="{Binding IsNews}"
-                SizeChanged="OnNewsResponsiveSizeChanged"
-                Background="{DynamicResource SurfaceBrush}">
+          <controls:DeferredContentControl IsActive="{Binding IsNews}"
+                                           DeferredContent="{Binding}">
+            <controls:DeferredContentControl.ContentTemplate>
+              <DataTemplate x:DataType="shell:MainWindowViewModel">
+                <Grid x:Name="NewsResponsiveLayout"
+                      SizeChanged="OnNewsResponsiveSizeChanged"
+                      Background="{DynamicResource SurfaceBrush}">
             <Grid IsVisible="{Binding IsCompactNewsLayout}">
               <Carousel x:Name="CompactNewsShell"
                         SelectedIndex="{Binding CompactNewsPageIndex, Mode=OneWay}">
@@ -869,25 +879,28 @@ SPDX-License-Identifier: GPL-3.0-only
                 </ContentControl.Transitions>
               </ContentControl>
             </Grid>
-          </Grid>
+                </Grid>
+              </DataTemplate>
+            </controls:DeferredContentControl.ContentTemplate>
+          </controls:DeferredContentControl>
 
-          <ContentControl IsVisible="{Binding IsSettings}"
-                          Content="{Binding Settings}">
-            <ContentControl.ContentTemplate>
+          <controls:DeferredContentControl IsActive="{Binding IsSettings}"
+                                           DeferredContent="{Binding Settings}">
+            <controls:DeferredContentControl.ContentTemplate>
               <DataTemplate x:DataType="settings:SettingsViewModel">
                 <settings:SettingsView />
               </DataTemplate>
-            </ContentControl.ContentTemplate>
-          </ContentControl>
+            </controls:DeferredContentControl.ContentTemplate>
+          </controls:DeferredContentControl>
 
-          <ContentControl IsVisible="{Binding IsProfiles}"
-                          Content="{Binding Profiles}">
-            <ContentControl.ContentTemplate>
+          <controls:DeferredContentControl IsActive="{Binding IsProfiles}"
+                                           DeferredContent="{Binding Profiles}">
+            <controls:DeferredContentControl.ContentTemplate>
               <DataTemplate x:DataType="profiles:ProfilesViewModel">
                 <profiles:ProfilesView />
               </DataTemplate>
-            </ContentControl.ContentTemplate>
-          </ContentControl>
+            </controls:DeferredContentControl.ContentTemplate>
+          </controls:DeferredContentControl>
 
           <Grid IsVisible="{Binding IsPlaceholderPage}" Margin="28">
             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="10">

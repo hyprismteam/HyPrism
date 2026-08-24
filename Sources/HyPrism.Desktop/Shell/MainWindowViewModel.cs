@@ -13,6 +13,7 @@ using HyPrism.Desktop.Features.Instances;
 using HyPrism.Desktop.Features.News;
 using HyPrism.Desktop.Features.Profiles;
 using HyPrism.Desktop.Features.Settings;
+using HyPrism.Desktop.Controls;
 using HyPrism.Desktop.Localization;
 using HyPrism.Desktop.Platform;
 using HyPrism.Core.Models;
@@ -24,6 +25,7 @@ using HyPrism.Core.Game.Mods;
 using HyPrism.Core.Game.Sources;
 using HyPrism.Core.Game.Versions;
 using HyPrism.Core.Accounts;
+using HyPrism.Core.Infrastructure;
 
 namespace HyPrism.Desktop.Shell;
 
@@ -68,6 +70,17 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, int> _busyInstanceCounts =
         new(StringComparer.OrdinalIgnoreCase);
+    private readonly ObservableRangeCollection<InstanceItemViewModel> _allInstances = [];
+    private readonly ObservableRangeCollection<InstanceVersionItemViewModel> _availableInstanceVersions = [];
+    private readonly ObservableRangeCollection<InstanceModItemViewModel> _installedMods = [];
+    private readonly ObservableRangeCollection<InstanceModItemViewModel> _visibleInstalledMods = [];
+    private readonly ObservableRangeCollection<ModCatalogItemViewModel> _modCatalogItems = [];
+    private readonly ObservableRangeCollection<InstanceWorldItemViewModel> _instanceWorlds = [];
+    private readonly ObservableRangeCollection<NewsItemViewModel> _latestNews = [];
+    private ProgressUpdateMessage? _pendingProgressUpdate;
+    private int _progressUpdateScheduled;
+    private int _backgroundLoadVersion;
+    private bool _isDisposed;
     private CancellationTokenSource _newsImagesCancellation = new();
     private CancellationTokenSource _articleImagesCancellation = new();
     private CancellationTokenSource _articlePresentationCancellation = new();
@@ -364,7 +377,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
             authenticator,
             _instances);
         _profiles.ActiveProfileChanged += OnActiveProfileChanged;
-        DashboardBackground = LoadDashboardBackground(_settingsStore.BackgroundMode);
+        _ = ReplaceDashboardBackgroundAsync(_settingsStore.BackgroundMode);
 
         UserName = profiles.GetNick();
         UserInitial = string.IsNullOrWhiteSpace(UserName)
@@ -396,13 +409,13 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
             _managedInstanceActionTimer.Start();
     }
 
-    public ObservableCollection<InstanceItemViewModel> AllInstances { get; } = [];
-    public ObservableCollection<InstanceVersionItemViewModel> AvailableInstanceVersions { get; } = [];
-    public ObservableCollection<InstanceModItemViewModel> InstalledMods { get; } = [];
-    public ObservableCollection<InstanceModItemViewModel> VisibleInstalledMods { get; } = [];
-    public ObservableCollection<ModCatalogItemViewModel> ModCatalogItems { get; } = [];
-    public ObservableCollection<InstanceWorldItemViewModel> InstanceWorlds { get; } = [];
-    public ObservableCollection<NewsItemViewModel> LatestNews { get; } = [];
+    public ObservableCollection<InstanceItemViewModel> AllInstances => _allInstances;
+    public ObservableCollection<InstanceVersionItemViewModel> AvailableInstanceVersions => _availableInstanceVersions;
+    public ObservableCollection<InstanceModItemViewModel> InstalledMods => _installedMods;
+    public ObservableCollection<InstanceModItemViewModel> VisibleInstalledMods => _visibleInstalledMods;
+    public ObservableCollection<ModCatalogItemViewModel> ModCatalogItems => _modCatalogItems;
+    public ObservableCollection<InstanceWorldItemViewModel> InstanceWorlds => _instanceWorlds;
+    public ObservableCollection<NewsItemViewModel> LatestNews => _latestNews;
     public SettingsViewModel Settings
     {
         get => _settings;
@@ -1088,7 +1101,6 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
             ?? items.FirstOrDefault();
         var managedInstanceId = managedInstance?.Id;
 
-        AllInstances.Clear();
         var presentedInstances = items
             .Select(instance =>
             {
@@ -1104,10 +1116,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
             })
             .ToList();
 
-        foreach (var item in presentedInstances)
-        {
-            AllInstances.Add(item);
-        }
+        _allInstances.ReplaceRange(presentedInstances);
 
         _selectedInstance = items.FirstOrDefault(instance =>
             string.Equals(instance.Id, selectedInstanceId, StringComparison.Ordinal));
@@ -1173,16 +1182,14 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
             if (!string.Equals(_managedInstance?.Id, instanceId, StringComparison.Ordinal))
                 return;
 
-            InstalledMods.Clear();
-            foreach (var mod in mods.OrderBy(mod => mod.Name, StringComparer.CurrentCultureIgnoreCase))
-            {
-                InstalledMods.Add(new InstanceModItemViewModel(
+            _installedMods.ReplaceRange(mods
+                .OrderBy(mod => mod.Name, StringComparer.CurrentCultureIgnoreCase)
+                .Select(mod => new InstanceModItemViewModel(
                     mod.Id,
                     mod.Name,
                     string.IsNullOrWhiteSpace(mod.Version) ? _localizer["common.unknown"] : mod.Version,
                     string.IsNullOrWhiteSpace(mod.Author) ? _localizer["common.unknown"] : mod.Author,
-                    mod.Enabled));
-            }
+                    mod.Enabled)));
 
             FilterInstalledMods();
             RefreshCatalogInstalledState(mods);
@@ -1216,10 +1223,9 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
             var installed = string.IsNullOrWhiteSpace(instancePath)
                 ? []
                 : _modManager.GetInstanceInstalledMods(instancePath);
-            ModCatalogItems.Clear();
-            foreach (var mod in result.Mods)
+            _modCatalogItems.ReplaceRange(result.Mods.Select(mod =>
             {
-                ModCatalogItems.Add(new ModCatalogItemViewModel(
+                return new ModCatalogItemViewModel(
                     mod.Id,
                     mod.Name,
                     string.IsNullOrWhiteSpace(mod.Author) ? _localizer["common.unknown"] : mod.Author,
@@ -1227,8 +1233,8 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
                     mod.LatestFileId)
                 {
                     IsInstalled = IsCatalogModInstalled(mod.Id, installed)
-                });
-            }
+                };
+            }));
 
             NotifyInstanceContentCollectionsChanged();
         }
@@ -1245,14 +1251,10 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     private void FilterInstalledMods()
     {
         var query = InstalledModsSearchQuery.Trim();
-        VisibleInstalledMods.Clear();
-        foreach (var mod in InstalledMods.Where(mod =>
-                     string.IsNullOrWhiteSpace(query) ||
-                     mod.Name.Contains(query, StringComparison.CurrentCultureIgnoreCase) ||
-                     mod.Author.Contains(query, StringComparison.CurrentCultureIgnoreCase)))
-        {
-            VisibleInstalledMods.Add(mod);
-        }
+        _visibleInstalledMods.ReplaceRange(InstalledMods.Where(mod =>
+            string.IsNullOrWhiteSpace(query) ||
+            mod.Name.Contains(query, StringComparison.CurrentCultureIgnoreCase) ||
+            mod.Author.Contains(query, StringComparison.CurrentCultureIgnoreCase)));
 
         NotifyInstanceContentCollectionsChanged();
     }
@@ -1275,9 +1277,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
             if (!string.Equals(_managedInstance?.Id, instanceId, StringComparison.Ordinal))
                 return;
 
-            InstanceWorlds.Clear();
-            foreach (var world in worlds)
-                InstanceWorlds.Add(world);
+            _instanceWorlds.ReplaceRange(worlds);
             _worldsLoadedForInstanceId = instanceId;
             NotifyInstanceContentCollectionsChanged();
         }
@@ -1429,15 +1429,12 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     private void ApplyAvailableInstanceVersions(IReadOnlyList<int> versions)
     {
         SelectedNewInstanceVersion = null;
-        AvailableInstanceVersions.Clear();
-
         var selectedVersion = versions.FirstOrDefault();
-        foreach (var version in versions.Take(12))
-        {
-            AvailableInstanceVersions.Add(new InstanceVersionItemViewModel(
+        _availableInstanceVersions.ReplaceRange(versions
+            .Take(12)
+            .Select(version => new InstanceVersionItemViewModel(
                 version,
-                IsSelected: version == selectedVersion));
-        }
+                IsSelected: version == selectedVersion)));
 
         SelectedNewInstanceVersion = AvailableInstanceVersions.FirstOrDefault();
         OnPropertyChanged(nameof(HasAvailableInstanceVersions));
@@ -1544,9 +1541,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     private void PresentNews()
     {
         FeaturedNews = _allNews.FirstOrDefault();
-        LatestNews.Clear();
-        foreach (var item in _allNews.Skip(1))
-            LatestNews.Add(item);
+        _latestNews.ReplaceRange(_allNews.Skip(1));
 
         NotifyNewsStateChanged();
         OnPropertyChanged(nameof(HasMoreNews));
@@ -2155,23 +2150,40 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
 
     private void OnDownloadProgressChanged(ProgressUpdateMessage update)
     {
-        Dispatcher.UIThread.Post(() =>
+        Interlocked.Exchange(ref _pendingProgressUpdate, update);
+        SchedulePendingProgressUpdate();
+    }
+
+    private void SchedulePendingProgressUpdate()
+    {
+        if (Interlocked.CompareExchange(ref _progressUpdateScheduled, 1, 0) != 0)
+            return;
+
+        Dispatcher.UIThread.Post(ApplyPendingProgressUpdate, DispatcherPriority.Background);
+    }
+
+    private void ApplyPendingProgressUpdate()
+    {
+        var update = Interlocked.Exchange(ref _pendingProgressUpdate, null);
+        if (update is not null)
         {
             var activeInstanceId = _managedInstanceActionInstanceId ?? _selectedInstance?.Id;
-            if (!IsBusy || (update.InstanceId is not null &&
-                            !string.Equals(update.InstanceId, activeInstanceId, StringComparison.OrdinalIgnoreCase)))
-                return;
+            if (IsBusy && (update.InstanceId is null ||
+                           string.Equals(update.InstanceId, activeInstanceId, StringComparison.OrdinalIgnoreCase)))
+            {
+                ActivityProgress = Math.Clamp(update.Progress, 0, 100);
+                ActivityProgressText = $"{ActivityProgress:0}%";
+                ActivityTitle = update.Args is { Length: > 0 }
+                    ? _localizer.Format(update.MessageKey, update.Args)
+                    : _localizer[update.MessageKey];
+                ActivityDetail = update.State;
+                IsActivityVisible = true;
+            }
+        }
 
-            ActivityProgress = Math.Clamp(update.Progress, 0, 100);
-            ActivityProgressText = $"{ActivityProgress:0}%";
-            ActivityTitle = update.Args is { Length: > 0 }
-                ? _localizer.Format(update.MessageKey, update.Args)
-                : _localizer[update.MessageKey];
-            ActivityDetail = update.State;
-            IsActivityVisible = true;
-            UpdateSelectedInstancePresentation();
-            NotifyManagedInstanceActionStateChanged();
-        });
+        Interlocked.Exchange(ref _progressUpdateScheduled, 0);
+        if (Volatile.Read(ref _pendingProgressUpdate) is not null)
+            SchedulePendingProgressUpdate();
     }
 
     private void OnGameProcessStarted(object? sender, GameProcessStartedEventArgs e)
@@ -2260,17 +2272,39 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     }
 
     private void OnBackgroundChanged(string? mode)
-        => Dispatcher.UIThread.Post(() => ReplaceDashboardBackground(mode));
+        => _ = ReplaceDashboardBackgroundAsync(mode);
 
-    private void ReplaceDashboardBackground(string? mode)
+    private async Task ReplaceDashboardBackgroundAsync(string? mode)
     {
-        var replacement = LoadDashboardBackground(mode);
-        var previous = DashboardBackground;
-        DashboardBackground = replacement;
-        previous?.Dispose();
+        var loadVersion = Interlocked.Increment(ref _backgroundLoadVersion);
+        var backgroundUri = ResolveDashboardBackgroundUri(mode);
+        Bitmap replacement;
+        try
+        {
+            replacement = await Task.Run(() => LoadDashboardBackground(backgroundUri))
+                .ConfigureAwait(false);
+        }
+        catch (Exception exception)
+        {
+            Logger.Warning("Background", $"Failed to load dashboard background: {exception.Message}");
+            return;
+        }
+
+        await Dispatcher.UIThread.InvokeAsync(() =>
+        {
+            if (_isDisposed || loadVersion != Volatile.Read(ref _backgroundLoadVersion))
+            {
+                replacement.Dispose();
+                return;
+            }
+
+            var previous = DashboardBackground;
+            DashboardBackground = replacement;
+            previous?.Dispose();
+        }, DispatcherPriority.Background);
     }
 
-    private Bitmap LoadDashboardBackground(string? mode)
+    private Uri ResolveDashboardBackgroundUri(string? mode)
     {
         var available = _settingsStore.AvailableBackgrounds;
         var selected = mode;
@@ -2283,7 +2317,11 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
                 : "bg_26.jpg";
         }
 
-        var uri = new Uri($"avares://HyPrism.Desktop/Assets/Backgrounds/{selected}");
+        return new Uri($"avares://HyPrism.Desktop/Assets/Backgrounds/{selected}");
+    }
+
+    private static Bitmap LoadDashboardBackground(Uri uri)
+    {
         using var stream = AssetLoader.Open(uri);
         return new Bitmap(stream);
     }
@@ -2345,6 +2383,8 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
 
     public void Dispose()
     {
+        _isDisposed = true;
+        Interlocked.Increment(ref _backgroundLoadVersion);
         _managedInstanceActionTimer.Stop();
         _managedInstanceActionTimer.Tick -= OnManagedInstanceActionTimerTick;
         _newsImagesCancellation.Cancel();
@@ -2362,6 +2402,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         _articleViewModelCache.Clear();
         foreach (var item in _allNews)
             item.Dispose();
+        Interlocked.Exchange(ref _pendingProgressUpdate, null);
         _progress.DownloadProgressChanged -= OnDownloadProgressChanged;
         _progress.OperationErrorOccurred -= OnOperationErrorOccurred;
         _gameProcess.GameProcessStarted -= OnGameProcessStarted;

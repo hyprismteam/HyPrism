@@ -1,11 +1,10 @@
 // Copyright (C) 2026 HyPrism Launcher
 // SPDX-License-Identifier: GPL-3.0-only
 
-using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Media;
-using Avalonia.Threading;
 using Avalonia.VisualTree;
 
 namespace HyPrism.Desktop.Controls;
@@ -43,20 +42,11 @@ public sealed class RotatingVisual : AvaloniaObject
 
     private sealed class RotationState
     {
-        private readonly Stopwatch _clock = new();
-        private readonly DispatcherTimer _timer;
         private bool _isActive;
         private bool _eventsAttached;
+        private int _animationVersion;
+        private TimeSpan? _animationStartedAt;
         private Visual? _visual;
-
-        public RotationState()
-        {
-            _timer = new DispatcherTimer
-            {
-                Interval = TimeSpan.FromMilliseconds(16)
-            };
-            _timer.Tick += OnTick;
-        }
 
         public void SetActive(Visual visual, bool isActive)
         {
@@ -99,35 +89,51 @@ public sealed class RotatingVisual : AvaloniaObject
                 return;
 
             _visual = visual;
-            _clock.Restart();
-            _timer.Start();
+            _animationStartedAt = null;
+            var animationVersion = ++_animationVersion;
+            TopLevel.GetTopLevel(visual)?.RequestAnimationFrame(
+                timestamp => OnAnimationFrame(timestamp, animationVersion));
         }
 
         private void Stop(Visual visual)
         {
-            _timer.Stop();
-            _clock.Reset();
+            _animationVersion++;
+            _animationStartedAt = null;
             _visual = null;
             if (visual.RenderTransform is RotateTransform rotation)
                 rotation.Angle = 0;
         }
 
-        private void OnTick(object? sender, EventArgs args)
+        private void OnAnimationFrame(TimeSpan timestamp, int animationVersion)
         {
             var visual = _visual;
-            if (!_isActive || visual is null || !visual.IsAttachedToVisualTree())
+            if (animationVersion != _animationVersion)
+                return;
+
+            if (!_isActive ||
+                visual is null ||
+                !visual.IsAttachedToVisualTree())
             {
                 if (visual is not null)
                     Stop(visual);
                 return;
             }
 
-            if (visual.RenderTransform is not RotateTransform rotation)
-                return;
+            if (visual.IsEffectivelyVisible && visual.RenderTransform is RotateTransform rotation)
+            {
+                _animationStartedAt ??= timestamp;
+                var elapsed = timestamp - _animationStartedAt.Value;
+                rotation.Angle = elapsed.TotalMilliseconds %
+                                 MotionDurations.SpinnerRotation.TotalMilliseconds /
+                                 MotionDurations.SpinnerRotation.TotalMilliseconds * 360;
+            }
+            else
+            {
+                _animationStartedAt = null;
+            }
 
-            rotation.Angle = _clock.Elapsed.TotalMilliseconds %
-                             MotionDurations.SpinnerRotation.TotalMilliseconds /
-                             MotionDurations.SpinnerRotation.TotalMilliseconds * 360;
+            TopLevel.GetTopLevel(visual)?.RequestAnimationFrame(
+                nextTimestamp => OnAnimationFrame(nextTimestamp, animationVersion));
         }
     }
 }

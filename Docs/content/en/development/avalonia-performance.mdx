@@ -1,0 +1,61 @@
+---
+title: Avalonia performance
+description: Profile and protect the HyPrism desktop UI performance budget
+---
+
+# Avalonia performance
+
+HyPrism targets Avalonia 12.1.1 and enables compiled bindings for the whole Desktop project. Performance work must be based on a reproducible trace, render test, or measured visual tree change
+
+## Current runtime choices
+
+- inactive Instances, News, Settings, and Profiles pages are created on first navigation and retained for later visits
+- the initial headless visual tree budget is 160 descendants, down from the measured baseline of 410 to 144 after deferred page realization
+- large mod and world collections use a constrained `ListBox` with `VirtualizingStackPanel` and a cache length of 1
+- collection replacements publish one reset notification instead of one notification per item
+- download progress updates are coalesced to the latest pending value before the UI dispatcher processes them
+- continuous custom rotation uses `TopLevel.RequestAnimationFrame` and does not mutate the transform while the visual is effectively hidden
+- dashboard bitmap decoding runs outside the UI thread
+- the Skia GPU resource cache is capped at 256 MiB to retain the active 1920x1080 background and decoded news images without frequent eviction
+- region dirty rectangle clipping keeps the Avalonia 12.1 default because its CPU cost can reduce frame rate on GPU accelerated desktops
+
+## Collection and layout rules
+
+Use a constrained `Grid` row for a long scrolling collection. Prefer the built-in virtualized `ListBox` when selection or a supported Avalonia 12.1 control is appropriate. Keep `ItemsControl` for small bounded groups such as navigation categories, article blocks, and contributor rows
+
+Do not place a virtualized list in a `StackPanel` along its scrolling axis. An infinite layout constraint disables virtualization. Keep item heights stable where practical because variable estimates cause additional layout work while scrolling
+
+Use `IsVisible="False"` for inactive content. An element with zero opacity still participates in layout, rendering, and hit testing. Mark decorative overlays as not hit testable and use clipping, shadows, and overlapping transparency only when the design needs them
+
+## Update and animation rules
+
+Build or transform data away from the UI thread, then publish a complete batch on the dispatcher. High frequency producers such as download progress must keep at most one pending dispatcher callback and apply the latest value
+
+Use Avalonia transitions or `TopLevel.RequestAnimationFrame` for frame driven UI. The timestamp supplied to the callback is synchronized with Avalonia's animation and render tick. Do not create a permanent 16 ms `DispatcherTimer` for each animated visual
+
+## Profiling workflow
+
+1. Reproduce the same window size, navigation path, data volume, and renderer on every run
+2. Use Avalonia DevTools to inspect the visual tree, layout, redraws, and renderer diagnostics
+3. Capture CPU and allocation traces for startup, navigation, scrolling, and download progress separately
+4. Compare visual count, UI thread time, allocations, frame stability, and working set before and after the change
+5. Add a focused headless or render regression test for every retained optimization
+
+Run the Desktop regression suite after UI performance changes
+
+```bash
+dotnet test Tests/HyPrism.Desktop.Tests/HyPrism.Desktop.Tests.csproj
+```
+
+The startup budget is enforced by `AvaloniaPerformanceTests.MainWindowInitialVisualTreeStaysWithinBudget`
+
+## Reference material
+
+- [Avalonia performance optimization](https://docs.avaloniaui.net/docs/app-development/performance)
+- [Avalonia ItemsRepeater guidance](https://docs.avaloniaui.net/controls/data-display/collections/itemsrepeater)
+- [Avalonia 12 release notes](https://avaloniaui.net/blog/avalonia-12/)
+- [Avalonia 12.1 rendering changes](https://avaloniaui.net/blog/release-12-1)
+- [Avalonia 12.1.1 release](https://github.com/AvaloniaUI/Avalonia/releases/tag/12.1.1)
+- [RequestAnimationFrame timing explanation](https://github.com/AvaloniaUI/Avalonia/discussions/19276)
+- [Rendering latency investigation](https://github.com/AvaloniaUI/Avalonia/discussions/20562)
+- [ItemsRepeater package lifecycle](https://github.com/AvaloniaUI/Avalonia.Controls.ItemsRepeater)
