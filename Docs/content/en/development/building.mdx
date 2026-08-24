@@ -47,7 +47,7 @@ The `Version` property in `Sources/HyPrism.Desktop/HyPrism.Desktop.csproj` is th
 
 The current CI artifacts are Linux x64 `deb`, `rpm`, AppImage, Flatpak bundle, and `tar.xz`, Windows x64 portable ZIP, MSI, and EXE installer, and a macOS ARM64 DMG. Release builds reuse the same platform workflows and pass the release version into artifact names
 
-The Linux workflow retries the Flathub runtime installation when remote metadata or package downloads fail temporarily. The final failed attempt still stops the build before packaging starts
+The Linux workflow retries the Flathub runtime installation when remote metadata or package downloads fail temporarily. The final failed attempt still stops the build before packaging starts. Flatpak export and bundle creation use the same `stable` branch selected by the Linux publisher
 
 ## macOS package
 

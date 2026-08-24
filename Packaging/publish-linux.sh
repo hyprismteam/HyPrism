@@ -15,6 +15,7 @@ ASSETS_DIR="$PACKAGING_DIR/linux"
 APP_ID="io.github.hyprismteam.HyPrism"
 APP_NAME="HyPrism"
 RUNTIME="linux-x64"
+FLATPAK_BRANCH="stable"
 TARGETS=()
 OUTPUT_DIR="$PROJECT_ROOT/dist"
 APPIMAGETOOL_BIN="${APPIMAGETOOL:-}"
@@ -258,11 +259,14 @@ build_flatpak() {
     cp "$manifest" "$root/source/manifest.yml"
     (
         cd "$root/source"
-        flatpak-builder --force-clean --repo="$root/repo" build manifest.yml
+        flatpak-builder --force-clean \
+            --default-branch="$FLATPAK_BRANCH" \
+            --repo="$root/repo" \
+            build manifest.yml
     )
     flatpak build-bundle "$root/repo" \
         "$OUTPUT_DIR/HyPrism-linux-x64-$VERSION.flatpak" \
-        "$APP_ID" stable
+        "$APP_ID" "$FLATPAK_BRANCH"
 }
 
 for target in "${TARGETS[@]}"; do

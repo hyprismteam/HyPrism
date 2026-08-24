@@ -47,7 +47,7 @@ Windows publisher проверяет наличие `HyPrism.Desktop.exe` и `Hy
 
 Сейчас CI создает `deb`, `rpm`, AppImage, Flatpak bundle и `tar.xz` для Linux x64, портативный ZIP, MSI и EXE-инсталлятор для Windows x64 и DMG для macOS ARM64. Release-сборки повторно используют те же platform-workflow и передают версию релиза в имена артефактов
 
-Linux workflow повторяет установку runtime из Flathub при временной ошибке загрузки metadata или пакетов. Последняя неудачная попытка по-прежнему останавливает сборку до начала упаковки
+Linux workflow повторяет установку runtime из Flathub при временной ошибке загрузки metadata или пакетов. Последняя неудачная попытка по-прежнему останавливает сборку до начала упаковки. Экспорт Flatpak и создание bundle используют одну ветку `stable`, заданную Linux publisher
 
 ## macOS-пакет
 
