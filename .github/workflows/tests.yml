@@ -129,13 +129,16 @@ jobs:
             -p ssl \
             -s h.localhost
 
+          HEALTH_RESPONSE="$RUNNER_TEMP/local-node-health.json"
           for attempt in {1..60}; do
-            if curl --fail --silent --show-error "https://h.localhost:$PORT/.well-known/openid-configuration" \
-              --output "$RUNNER_TEMP/openid-configuration.json"; then
+            if curl --fail --silent --show-error "https://h.localhost:$PORT/health" \
+              --output "$HEALTH_RESPONSE"; then
               break
             fi
             sleep 0.5
           done
 
-          test -s "$RUNNER_TEMP/openid-configuration.json"
-          grep -q 'h.localhost' "$RUNNER_TEMP/openid-configuration.json"
+          test -s "$HEALTH_RESPONSE"
+          grep -Fq '"status":"ready"' "$HEALTH_RESPONSE"
+          grep -Fq '"server":"hyprism-local-node"' "$HEALTH_RESPONSE"
+          grep -Fq "\"issuer\":\"https://h.localhost:$PORT\"" "$HEALTH_RESPONSE"
