@@ -59,7 +59,7 @@ internal static class Program
             .UsePlatformDetect()
             .With(new SkiaOptions
             {
-                MaxGpuResourceSizeBytes = 256 * 1024 * 1024
+                MaxGpuResourceSizeBytes = 512 * 1024 * 1024
             });
 }
 
