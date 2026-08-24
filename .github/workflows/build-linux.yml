@@ -30,10 +30,26 @@ jobs:
 
       - name: Install Linux packaging tools
         run: |
+          retry() {
+            local attempt=1
+            local maximum_attempts=3
+
+            until "$@"; do
+              if [ "$attempt" -ge "$maximum_attempts" ]; then
+                echo "Command failed after $maximum_attempts attempts: $*" >&2
+                return 1
+              fi
+
+              echo "::warning::Command failed on attempt $attempt, retrying: $*"
+              sleep $((attempt * 15))
+              attempt=$((attempt + 1))
+            done
+          }
+
           sudo apt-get update
           sudo apt-get install -y flatpak flatpak-builder rpm
           flatpak remote-add --if-not-exists --user flathub https://flathub.org/repo/flathub.flatpakrepo
-          flatpak install -y --user flathub \
+          retry flatpak install -y --user flathub \
             org.freedesktop.Platform//24.08 \
             org.freedesktop.Sdk//24.08
           mkdir -p "$RUNNER_TEMP/hyprism-tools"

@@ -37,6 +37,8 @@ Release entry points and their platform assets are centralized under `Packaging/
 
 Use a specific Linux target such as `deb`, `rpm`, `appimage`, `flatpak`, or `tar` to build only that package. On macOS, `./Packaging/publish-macos.sh dmg` creates the DMG. On Windows, `pwsh Packaging/publish-windows.ps1 all` creates ZIP, MSI, and EXE installer. Each platform workflow directly calls its corresponding entry point
 
+The Windows publisher verifies that both `HyPrism.Desktop.exe` and `HyPrism.LocalNode.exe` exist before creating portable and installer artifacts. It installs the pinned WiX 6 tool in an isolated temporary directory and uses the matching bootstrapper extension version
+
 The `Version` property in `Sources/HyPrism.Desktop/HyPrism.Desktop.csproj` is the only release version source. Packaging scripts evaluate it through MSBuild for assembly metadata, package metadata, and artifact names. A release tag must match `v<Version>` or the release workflow fails
 
 ## GitHub Actions
@@ -44,6 +46,8 @@ The `Version` property in `Sources/HyPrism.Desktop/HyPrism.Desktop.csproj` is th
 `.github/workflows/ci.yml` is the push and pull request entry point. It calls the independent test workflow and the build dispatcher. `.github/workflows/build.yml` only selects platforms, while `build-linux.yml`, `build-windows.yml`, and `build-macos.yml` own their platform packaging
 
 The current CI artifacts are Linux x64 `deb`, `rpm`, AppImage, Flatpak bundle, and `tar.xz`, Windows x64 portable ZIP, MSI, and EXE installer, and a macOS ARM64 DMG. Release builds reuse the same platform workflows and pass the release version into artifact names
+
+The Linux workflow retries the Flathub runtime installation when remote metadata or package downloads fail temporarily. The final failed attempt still stops the build before packaging starts
 
 ## macOS package
 

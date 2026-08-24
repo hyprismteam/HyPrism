@@ -108,21 +108,26 @@ jobs:
           NODE_PID=$!
           trap 'kill "$NODE_PID" 2>/dev/null || true; cat "$LOG_FILE"' EXIT
 
+          ROOT_CERTIFICATE="$DATA_DIR/hyprism-local-ca.crt"
+          SERVER_CERTIFICATE="$DATA_DIR/h.localhost.crt"
           for attempt in {1..60}; do
-            if [ -f "$DATA_DIR/h.localhost.crt" ]; then
+            if [ -f "$ROOT_CERTIFICATE" ] && [ -f "$SERVER_CERTIFICATE" ]; then
               break
             fi
             sleep 0.5
           done
 
-          test -f "$DATA_DIR/h.localhost.crt"
+          test -f "$ROOT_CERTIFICATE"
+          test -f "$SERVER_CERTIFICATE"
           sudo security add-trusted-cert \
             -d \
             -r trustRoot \
-            -p ssl \
-            -s h.localhost \
             -k /Library/Keychains/System.keychain \
-            "$DATA_DIR/h.localhost.crt"
+            "$ROOT_CERTIFICATE"
+          security verify-cert \
+            -c "$SERVER_CERTIFICATE" \
+            -p ssl \
+            -s h.localhost
 
           for attempt in {1..60}; do
             if curl --fail --silent --show-error "https://h.localhost:$PORT/.well-known/openid-configuration" \

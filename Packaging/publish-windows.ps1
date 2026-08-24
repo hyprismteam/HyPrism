@@ -12,6 +12,7 @@ $packagingDirectory = Split-Path -Parent $PSCommandPath
 $projectRoot = Split-Path -Parent $packagingDirectory
 $projectFile = Join-Path $projectRoot 'Sources/HyPrism.Desktop/HyPrism.Desktop.csproj'
 $wixSource = Join-Path $packagingDirectory 'windows'
+$wixVersion = '6.0.2'
 $targets = [System.Collections.Generic.List[string]]::new()
 $outputDirectory = Join-Path $projectRoot 'dist'
 
@@ -79,9 +80,9 @@ try {
         --self-contained true `
         --output $publishDirectory
 
-    foreach ($host in 'HyPrism.Desktop.exe', 'HyPrism.LocalNode.exe') {
-        if (-not (Test-Path (Join-Path $publishDirectory $host))) {
-            throw "Expected Windows apphost was not published: $host"
+    foreach ($appHost in 'HyPrism.Desktop.exe', 'HyPrism.LocalNode.exe') {
+        if (-not (Test-Path (Join-Path $publishDirectory $appHost))) {
+            throw "Expected Windows apphost was not published: $appHost"
         }
     }
 
@@ -93,9 +94,9 @@ try {
     }
 
     if ($targets.Contains('msi') -or $targets.Contains('exe')) {
-        dotnet tool install --tool-path $wixToolDirectory wix
+        dotnet tool install --tool-path $wixToolDirectory wix --version $wixVersion
         $wix = Join-Path $wixToolDirectory 'wix.exe'
-        & $wix extension add -g WixToolset.BootstrapperApplications.wixext
+        & $wix extension add -g "WixToolset.BootstrapperApplications.wixext/$wixVersion"
         if ($LASTEXITCODE -ne 0) { throw 'Could not install the WiX bootstrapper extension' }
 
         $msiPath = if ($targets.Contains('msi')) {
