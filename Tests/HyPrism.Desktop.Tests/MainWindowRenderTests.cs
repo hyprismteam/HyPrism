@@ -1271,7 +1271,7 @@ public sealed class MainWindowRenderTests
         var languagePopupBorder = Assert.IsType<Border>(languagePopup.Child);
         Assert.Equal(8, languagePopup.VerticalOffset);
         Assert.False(languagePopup.IsLightDismissEnabled);
-        Assert.True(languagePopup.WindowManagerAddShadowHint);
+        Assert.False(languagePopup.WindowManagerAddShadowHint);
         Assert.Equal(new CornerRadius(18), languagePopupBorder.CornerRadius);
         Assert.Equal(
             Color.Parse("#1D1E21"),
@@ -2092,7 +2092,7 @@ public sealed class MainWindowRenderTests
         Assert.NotNull(compactInstancePrimaryAction);
         Assert.NotNull(compactInstanceMoreButton);
         Assert.NotNull(compactInstanceMenuPopup);
-        Assert.True(compactInstanceMenuPopup!.WindowManagerAddShadowHint);
+        Assert.False(compactInstanceMenuPopup!.WindowManagerAddShadowHint);
         Assert.False(compactInstanceMenuPopup.IsLightDismissEnabled);
         Assert.NotNull(wideInstanceActions);
         Assert.Equal(Avalonia.Layout.HorizontalAlignment.Center, wideInstanceActions!.HorizontalAlignment);

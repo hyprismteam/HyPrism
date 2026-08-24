@@ -25,7 +25,7 @@ public sealed class FadingPopup : Popup
     public FadingPopup()
     {
         IsLightDismissEnabled = false;
-        WindowManagerAddShadowHint = true;
+        WindowManagerAddShadowHint = false;
     }
 
     public bool IsRequestedOpen
