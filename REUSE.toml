@@ -58,7 +58,7 @@ SPDX-FileCopyrightText = "Lordicon"
 SPDX-License-Identifier = "LicenseRef-Lordicon"
 
 [[annotations]]
-path = "Sources/HyPrism.Desktop/Assets/Brands/curseforge*"
+path = "Sources/HyPrism.Desktop/Assets/Brands/CurseForge*"
 precedence = "override"
 SPDX-FileCopyrightText = "Overwolf Ltd."
 SPDX-License-Identifier = "LicenseRef-CurseForge"

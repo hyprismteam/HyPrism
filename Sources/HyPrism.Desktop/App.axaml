@@ -11,7 +11,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <ResourceDictionary>
       <ResourceDictionary.MergedDictionaries>
         <ResourceInclude Source="avares://HyPrism.Desktop/Assets/Icons/MaterialSymbols.axaml" />
-        <ResourceInclude Source="avares://HyPrism.Desktop/Assets/Brands/Brands.axaml" />
+        <ResourceInclude Source="avares://HyPrism.Desktop/Assets/Brands/CurseForge.axaml" />
         <ResourceInclude Source="avares://HyPrism.Desktop/Styles/Tokens.axaml" />
       </ResourceDictionary.MergedDictionaries>
 
