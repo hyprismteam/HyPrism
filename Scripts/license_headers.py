@@ -28,6 +28,10 @@ THIRD_PARTY_HEADERS = {
     "Sources/HyPrism.Desktop/Assets/Icons/MaterialSymbols.axaml": (
         "Copyright (C) 2026 Google LLC",
         "SPDX-License-" "Identifier: Apache-2.0",
+    ),
+    "Sources/HyPrism.Desktop/Assets/Brands/CurseForge.axaml": (
+        "CurseForge and the CurseForge logo are trademarks of Overwolf Ltd.",
+        "SPDX-License-" "Identifier: LicenseRef-CurseForge",
     )
 }
 
