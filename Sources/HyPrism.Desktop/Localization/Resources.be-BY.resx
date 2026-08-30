@@ -1608,6 +1608,9 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="settings.aboutSettings.disclaimer" xml:space="preserve">
     <value>HyPrism — неафіцыйны лаўнчар Hytale. Гэты праект не звязаны з Hypixel Studios.</value>
   </data>
+  <data name="settings.aboutSettings.builtWith" xml:space="preserve">
+    <value>Створана з дапамогай</value>
+  </data>
   <data name="settings.aboutSettings.installerRole" xml:space="preserve">
     <value>Стваральнік інсталятара</value>
   </data>

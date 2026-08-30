@@ -1499,6 +1499,95 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="LineHeight" Value="16" />
   </Style>
 
+  <Style Selector="StackPanel.aboutTechnologyAttribution">
+    <Setter Property="Spacing" Value="8" />
+    <Setter Property="Margin" Value="0,6,0,12" />
+  </Style>
+
+  <Style Selector="TextBlock.aboutTechnologyCaption">
+    <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
+    <Setter Property="FontSize" Value="11" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+
+  <Style Selector="Button.aboutTechnologyLogo">
+    <Setter Property="Width" Value="52" />
+    <Setter Property="Height" Value="48" />
+    <Setter Property="Padding" Value="5" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="FocusAdorner" Value="{x:Null}" />
+    <Setter Property="Cursor" Value="Hand" />
+    <Setter Property="RenderTransformOrigin" Value="50%,50%" />
+    <Setter Property="RenderTransform" Value="scale(1)" />
+    <Setter Property="Transitions">
+      <Transitions>
+        <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.2">
+          <TransformOperationsTransition.Easing><easing:CubicEaseOut /></TransformOperationsTransition.Easing>
+        </TransformOperationsTransition>
+      </Transitions>
+    </Setter>
+  </Style>
+
+  <Style Selector="Button.aboutTechnologyLogo /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+  </Style>
+
+  <Style Selector="Button.aboutTechnologyLogo:pointerover, Button.aboutTechnologyLogo:pressed">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="RenderTransform" Value="scale(1.07)" />
+  </Style>
+
+  <Style Selector="Path.aboutTechnologyAvaloniaMark">
+    <Setter Property="Width" Value="35" />
+    <Setter Property="Height" Value="36" />
+    <Setter Property="Stretch" Value="Uniform" />
+    <Setter Property="Fill" Value="#797A80" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="Transitions">
+      <Transitions>
+        <BrushTransition Property="Fill" Duration="0:0:0.2" />
+      </Transitions>
+    </Setter>
+  </Style>
+
+  <Style Selector="Button.aboutTechnologyLogo.avalonia:pointerover Path.aboutTechnologyAvaloniaMark">
+    <Setter Property="Fill" Value="#007DF9" />
+  </Style>
+
+  <Style Selector="Path.aboutTechnologyDotNetBackground, Path.aboutTechnologyDotNetWordmark">
+    <Setter Property="Transitions">
+      <Transitions>
+        <BrushTransition Property="Fill" Duration="0:0:0.2" />
+      </Transitions>
+    </Setter>
+  </Style>
+
+  <Style Selector="Path.aboutTechnologyDotNetBackground">
+    <Setter Property="Fill" Value="#797A80" />
+  </Style>
+
+  <Style Selector="Path.aboutTechnologyDotNetWordmark">
+    <Setter Property="Fill" Value="#191A1D" />
+  </Style>
+
+  <Style Selector="Button.aboutTechnologyLogo.dotnet:pointerover Path.aboutTechnologyDotNetBackground">
+    <Setter Property="Fill" Value="#512BD4" />
+  </Style>
+
+  <Style Selector="Button.aboutTechnologyLogo.dotnet:pointerover Path.aboutTechnologyDotNetWordmark">
+    <Setter Property="Fill" Value="#FFFFFF" />
+  </Style>
+
+  <Style Selector="TextBlock.aboutTechnologyDisclaimer">
+    <Setter Property="MaxWidth" Value="620" />
+    <Setter Property="Margin" Value="12,2,12,0" />
+    <Setter Property="TextAlignment" Value="Center" />
+  </Style>
+
   <Style Selector="TextBlock.settingsError">
     <Setter Property="Foreground" Value="#FF9B9B" />
     <Setter Property="FontSize" Value="12" />
@@ -2569,6 +2658,36 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="Foreground" Value="#111111" />
   </Style>
 
+  <Style Selector="instances|InstancesView Border.catalogInstallTopBar">
+    <Setter Property="Opacity" Value="0" />
+    <Setter Property="RenderTransformOrigin" Value="100%,50%" />
+    <Setter Property="RenderTransform" Value="scale(0.94) translateX(10px)" />
+    <Setter Property="Transitions">
+      <Transitions>
+        <DoubleTransition Property="Opacity" Duration="0:0:0.18">
+          <DoubleTransition.Easing><easing:CubicEaseOut /></DoubleTransition.Easing>
+        </DoubleTransition>
+        <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.18">
+          <TransformOperationsTransition.Easing><easing:CubicEaseOut /></TransformOperationsTransition.Easing>
+        </TransformOperationsTransition>
+      </Transitions>
+    </Setter>
+  </Style>
+
+  <Style Selector="instances|InstancesView Border.catalogInstallTopBar.visible">
+    <Setter Property="Opacity" Value="1" />
+    <Setter Property="RenderTransform" Value="scale(1) translateX(0px)" />
+  </Style>
+
+  <Style Selector="instances|InstancesView Border.catalogInstallTopBar.hidden">
+    <Setter Property="Opacity" Value="0" />
+    <Setter Property="RenderTransform" Value="scale(0.94) translateX(10px)" />
+  </Style>
+
+  <Style Selector="instances|InstancesView Button.catalogInstallTopBarAction">
+    <Setter Property="Width" Value="126" />
+  </Style>
+
   <Style Selector="instances|InstancesView Border.instanceModRow">
     <Setter Property="Padding" Value="12" />
     <Setter Property="Margin" Value="0,0,0,4" />
@@ -2956,6 +3075,17 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="Height" Value="22" />
   </Style>
 
+  <Style Selector="instances|InstancesView Border.instanceCatalogAuthorAvatar.modalAuthorAvatar">
+    <Setter Property="Width" Value="24" />
+    <Setter Property="Height" Value="24" />
+    <Setter Property="CornerRadius" Value="12" />
+  </Style>
+
+  <Style Selector="instances|InstancesView Border.instanceCatalogAuthorAvatar.modalAuthorAvatar Image">
+    <Setter Property="Width" Value="24" />
+    <Setter Property="Height" Value="24" />
+  </Style>
+
   <Style Selector="instances|InstancesView TextBlock.instanceCatalogAuthorName">
     <Setter Property="VerticalAlignment" Value="Center" />
     <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
@@ -3097,16 +3227,9 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="Margin" Value="20,0,20,0" />
   </Style>
 
-  <Style Selector="instances|InstancesView Border.instanceModPreviewSceneEdgeMask">
+  <Style Selector="instances|InstancesView Border.instanceModPreviewShoulderMask">
     <Setter Property="Height" Value="2" />
-    <Setter Property="MaxWidth" Value="780" />
-    <Setter Property="Margin" Value="20,0,20,0" />
     <Setter Property="Background" Value="{DynamicResource AppBackgroundBrush}" />
-  </Style>
-
-  <Style Selector="instances|InstancesView.compact Border.instanceModPreviewSceneEdgeMask">
-    <Setter Property="MaxWidth" Value="608" />
-    <Setter Property="Margin" Value="12,0,12,0" />
   </Style>
 
   <Style Selector="instances|InstancesView.compact Grid.instanceModPreviewShoulders">
@@ -3310,6 +3433,8 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="Background" Value="Transparent" />
     <Setter Property="BorderThickness" Value="0" />
     <Setter Property="CornerRadius" Value="9" />
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
     <Setter Property="RenderTransform" Value="{x:Null}" />
     <Setter Property="Transitions">
       <Transitions>
@@ -3335,14 +3460,17 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="Background" Value="#20FFFFFF" />
   </Style>
 
-  <Style Selector="instances|InstancesView Button.instancePreviewImageButton Path">
-    <Setter Property="Width" Value="15" />
-    <Setter Property="Height" Value="15" />
+  <Style Selector="instances|InstancesView Viewbox.instancePreviewImageSymbol">
+    <Setter Property="Width" Value="28" />
+    <Setter Property="Height" Value="28" />
     <Setter Property="Stretch" Value="Uniform" />
-    <Setter Property="Fill" Value="{DynamicResource TextPrimaryBrush}" />
-    <Setter Property="Opacity" Value="1" />
     <Setter Property="HorizontalAlignment" Value="Center" />
     <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+
+  <Style Selector="instances|InstancesView Path.instancePreviewImageGlyph">
+    <Setter Property="Fill" Value="{DynamicResource TextPrimaryBrush}" />
+    <Setter Property="Opacity" Value="1" />
     <Setter Property="Transitions">
       <Transitions>
         <BrushTransition Property="Fill" Duration="0:0:0.16">
@@ -3355,7 +3483,7 @@ SPDX-License-Identifier: GPL-3.0-only
     </Setter>
   </Style>
 
-  <Style Selector="instances|InstancesView Button.instancePreviewImageButton:disabled Path">
+  <Style Selector="instances|InstancesView Button.instancePreviewImageButton:disabled Path.instancePreviewImageGlyph">
     <Setter Property="Fill" Value="{DynamicResource TextMutedBrush}" />
     <Setter Property="Opacity" Value="0.45" />
   </Style>
@@ -3482,21 +3610,35 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="HorizontalAlignment" Value="Stretch" />
     <Setter Property="HorizontalContentAlignment" Value="Center" />
     <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="RenderTransform" Value="{x:Null}" />
     <Setter Property="Transitions">
       <Transitions>
-        <BrushTransition Property="Background" Duration="0:0:0.16">
+        <BrushTransition Property="Background" Duration="0:0:0.18">
           <BrushTransition.Easing><easing:CubicEaseOut /></BrushTransition.Easing>
         </BrushTransition>
       </Transitions>
     </Setter>
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Background="{TemplateBinding Background}"
+                CornerRadius="{TemplateBinding CornerRadius}"
+                Padding="{TemplateBinding Padding}">
+          <ContentPresenter Content="{TemplateBinding Content}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}"
+                            Foreground="{TemplateBinding Foreground}"
+                            HorizontalContentAlignment="Center"
+                            VerticalContentAlignment="Center" />
+        </Border>
+      </ControlTemplate>
+    </Setter>
   </Style>
 
   <Style Selector="instances|InstancesView Button.instanceInstall.preview.splitMain:pointerover">
-    <Setter Property="Background" Value="#DADADC" />
+    <Setter Property="Background" Value="#E7E7E9" />
   </Style>
 
   <Style Selector="instances|InstancesView Button.instanceInstall.preview.splitMain:pressed">
-    <Setter Property="Background" Value="#C8C8CB" />
+    <Setter Property="Background" Value="#DEDEE1" />
   </Style>
 
   <Style Selector="instances|InstancesView Border.modPreviewSplitDivider">
@@ -3518,19 +3660,32 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="RenderTransform" Value="{x:Null}" />
     <Setter Property="Transitions">
       <Transitions>
-        <BrushTransition Property="Background" Duration="0:0:0.16">
+        <BrushTransition Property="Background" Duration="0:0:0.18">
           <BrushTransition.Easing><easing:CubicEaseOut /></BrushTransition.Easing>
         </BrushTransition>
       </Transitions>
     </Setter>
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Background="{TemplateBinding Background}"
+                CornerRadius="{TemplateBinding CornerRadius}"
+                Padding="{TemplateBinding Padding}">
+          <ContentPresenter Content="{TemplateBinding Content}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}"
+                            Foreground="{TemplateBinding Foreground}"
+                            HorizontalContentAlignment="Center"
+                            VerticalContentAlignment="Center" />
+        </Border>
+      </ControlTemplate>
+    </Setter>
   </Style>
 
   <Style Selector="instances|InstancesView Button.modPreviewCurseForgeAction:pointerover">
-    <Setter Property="Background" Value="#D9572F" />
+    <Setter Property="Background" Value="#E85E34" />
   </Style>
 
   <Style Selector="instances|InstancesView Button.modPreviewCurseForgeAction:pressed">
-    <Setter Property="Background" Value="#C74B26" />
+    <Setter Property="Background" Value="#DD572F" />
   </Style>
 
   <Style Selector="instances|InstancesView Path.modPreviewCurseForgeIcon">

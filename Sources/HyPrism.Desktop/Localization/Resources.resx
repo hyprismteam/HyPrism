@@ -1731,6 +1731,9 @@ You may need to reinstall the game if switching drives.</value>
   <data name="settings.aboutSettings.disclaimer" xml:space="preserve">
     <value>HyPrism is an unofficial launcher for Hytale. This project is not affiliated with Hypixel Studios.</value>
   </data>
+  <data name="settings.aboutSettings.builtWith" xml:space="preserve">
+    <value>Built with</value>
+  </data>
   <data name="settings.aboutSettings.installerRole" xml:space="preserve">
     <value>Installer Creator</value>
   </data>

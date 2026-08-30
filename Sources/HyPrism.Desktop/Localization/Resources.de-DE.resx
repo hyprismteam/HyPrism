@@ -1608,6 +1608,9 @@ Bei Laufwerkswechsel muss das Spiel möglicherweise neu installiert werden.</val
   <data name="settings.aboutSettings.disclaimer" xml:space="preserve">
     <value>HyPrism ist ein inoffizieller Launcher für Hytale. Dieses Projekt ist nicht mit Hypixel Studios verbunden.</value>
   </data>
+  <data name="settings.aboutSettings.builtWith" xml:space="preserve">
+    <value>Erstellt mit</value>
+  </data>
   <data name="settings.aboutSettings.installerRole" xml:space="preserve">
     <value>Installer-Ersteller</value>
   </data>

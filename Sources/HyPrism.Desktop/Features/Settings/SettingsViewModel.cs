@@ -328,6 +328,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     public string InstanceFolderLabel { get; private set; } = string.Empty;
     public string InstanceFolder { get; private set; } = string.Empty;
     public string AboutDisclaimer { get; private set; } = string.Empty;
+    public string AboutBuiltWithLabel { get; private set; } = string.Empty;
     public string BugReportLabel { get; private set; } = string.Empty;
     public string AboutProjectTitle { get; private set; } = string.Empty;
     public string AboutGitHubHint { get; private set; } = string.Empty;
@@ -448,6 +449,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
             ? _localizer["desktopSettings.defaultLocation"]
             : _settings.InstanceDirectory;
         AboutDisclaimer = _localizer["settings.aboutSettings.disclaimer"];
+        AboutBuiltWithLabel = _localizer["settings.aboutSettings.builtWith"];
         BugReportLabel = _localizer["settings.aboutSettings.bugReport"];
         AboutProjectTitle = _localizer["settings.aboutSettings.project"];
         AboutGitHubHint = _localizer["settings.aboutSettings.githubHint"];
@@ -885,6 +887,8 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     [RelayCommand] private Task OpenHytaleEula() => LaunchExternalAsync("https://hytale.com/eula");
     [RelayCommand] private Task OpenIcons8() => LaunchExternalAsync("https://icons8.com");
     [RelayCommand] private Task OpenLordicon() => LaunchExternalAsync("https://lordicon.com/");
+    [RelayCommand] private Task OpenAvalonia() => LaunchExternalAsync("https://avaloniaui.net/");
+    [RelayCommand] private Task OpenDotNet() => LaunchExternalAsync("https://dotnet.microsoft.com/");
     [RelayCommand]
     private Task OpenLatestCommit()
         => LaunchExternalAsync(_latestMainCommit?.HtmlUrl);

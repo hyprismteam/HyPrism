@@ -1608,6 +1608,9 @@ Vous devrez peut-être réinstaller le jeu si vous changez de lecteur.</value>
   <data name="settings.aboutSettings.disclaimer" xml:space="preserve">
     <value>HyPrism est un lanceur non officiel pour Hytale. Ce projet n'est pas affilié à Hypixel Studios.</value>
   </data>
+  <data name="settings.aboutSettings.builtWith" xml:space="preserve">
+    <value>Créé avec</value>
+  </data>
   <data name="settings.aboutSettings.installerRole" xml:space="preserve">
     <value>Créateur de l'Installateur</value>
   </data>

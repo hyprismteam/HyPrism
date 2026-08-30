@@ -136,6 +136,17 @@ public sealed class StringLocalizerTests
         Assert.Equal(expectedHint, localizer["settings.aboutSettings.lordiconHint"]);
     }
 
+    [Theory]
+    [InlineData("en-US", "Built with")]
+    [InlineData("ru-RU", "Создано с помощью")]
+    public void AboutPage_LocalizesBuiltWithLabel(string language, string expected)
+    {
+        using var culture = new CultureScope();
+        var localizer = new StringLocalizer(language);
+
+        Assert.Equal(expected, localizer["settings.aboutSettings.builtWith"]);
+    }
+
     private sealed class CultureScope : IDisposable
     {
         private readonly CultureInfo _culture = CultureInfo.CurrentCulture;

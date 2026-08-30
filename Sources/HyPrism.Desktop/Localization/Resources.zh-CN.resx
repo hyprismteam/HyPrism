@@ -1608,6 +1608,9 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="settings.aboutSettings.disclaimer" xml:space="preserve">
     <value>HyPrism 是非官方 Hytale 启动器。本项目与 Hypixel Studios 无关。</value>
   </data>
+  <data name="settings.aboutSettings.builtWith" xml:space="preserve">
+    <value>构建工具</value>
+  </data>
   <data name="settings.aboutSettings.installerRole" xml:space="preserve">
     <value>安装程序创建者</value>
   </data>

@@ -665,6 +665,33 @@ SPDX-License-Identifier: GPL-3.0-only
                            HorizontalAlignment="Center"
                            VerticalAlignment="Center"
                            IsHitTestVisible="False" />
+                <Border Grid.Column="2"
+                        Classes="compactInstanceSplitAction catalogInstallTopBar"
+                        Classes.visible="{Binding HasSelectedCatalogMods}"
+                        Classes.hidden="{Binding !HasSelectedCatalogMods}"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Center"
+                        IsVisible="{Binding IsInstanceBrowseSection}"
+                        IsHitTestVisible="{Binding HasSelectedCatalogMods}">
+                  <Button Classes="compactInstanceActionPart main catalogInstallTopBarAction"
+                          IsEnabled="{Binding CanInstallSelectedCatalogMods}"
+                          Command="{Binding InstallSelectedCatalogModsCommand}">
+                    <Grid>
+                      <StackPanel Orientation="Horizontal"
+                                  Spacing="8"
+                                  HorizontalAlignment="Center"
+                                  IsVisible="{Binding !IsInstallingSelectedCatalogMods}">
+                        <Path Classes="compactInstanceActionIcon"
+                              Data="{StaticResource DownloadIcon}" />
+                        <TextBlock Text="{Binding ModCatalogInstallSelectedLabel}"
+                                   VerticalAlignment="Center" />
+                      </StackPanel>
+                      <ProgressBar Width="38"
+                                   IsIndeterminate="True"
+                                   IsVisible="{Binding IsInstallingSelectedCatalogMods}" />
+                    </Grid>
+                  </Button>
+                </Border>
               </Grid>
             </Border>
 
@@ -913,7 +940,7 @@ SPDX-License-Identifier: GPL-3.0-only
                     HorizontalAlignment="Stretch"
                     RowDefinitions="Auto,*"
                     RowSpacing="10">
-                <Grid ColumnDefinitions="2*,*,*,Auto"
+                <Grid ColumnDefinitions="2*,*,*"
                       ColumnSpacing="8">
                   <TextBox Classes="instanceSearch"
                            PlaceholderText="{Binding InstanceBrowseSearchHint}"
@@ -935,26 +962,6 @@ SPDX-License-Identifier: GPL-3.0-only
                                            SelectedItem="{Binding SelectedModCatalogSort, Mode=TwoWay}"
                                            PlaceholderText="{Binding InstanceBrowseSortLabel}"
                                            MaxDropDownHeight="220" />
-                  <Button Grid.Column="3"
-                          Classes="instanceToolbarAction primarySmall"
-                          IsVisible="{Binding !HasSelectedCatalogMods}"
-                          Command="{Binding SearchModCatalogCommand}"
-                          IsEnabled="{Binding !IsModCatalogLoading}">
-                    <TextBlock Text="{Binding InstanceBrowseLabel}" />
-                  </Button>
-                  <Button Grid.Column="3"
-                          Classes="instanceToolbarAction primarySmall"
-                          IsVisible="{Binding HasSelectedCatalogMods}"
-                          IsEnabled="{Binding CanInstallSelectedCatalogMods}"
-                          Command="{Binding InstallSelectedCatalogModsCommand}">
-                    <Grid>
-                      <TextBlock Text="{Binding ModCatalogInstallSelectedLabel}"
-                                 IsVisible="{Binding !IsInstallingSelectedCatalogMods}" />
-                      <ProgressBar Width="38"
-                                   IsIndeterminate="True"
-                                   IsVisible="{Binding IsInstallingSelectedCatalogMods}" />
-                    </Grid>
-                  </Button>
                 </Grid>
                 <Border Grid.Row="1" Classes="instanceContentPanel catalog">
                   <Grid>
@@ -1445,11 +1452,6 @@ SPDX-License-Identifier: GPL-3.0-only
               VerticalAlignment="Bottom"
               IsHitTestVisible="False" />
 
-      <Border Classes="instanceModPreviewSceneEdgeMask"
-              HorizontalAlignment="Stretch"
-              VerticalAlignment="Bottom"
-              IsHitTestVisible="False" />
-
       <Grid x:Name="ModCatalogModalSheet"
             Classes="instanceModPreview modalSheet"
             HorizontalAlignment="Stretch"
@@ -1511,22 +1513,34 @@ SPDX-License-Identifier: GPL-3.0-only
                       <Button Classes="instancePreviewImageButton"
                               IsEnabled="{Binding CanShowPreviousModCatalogScreenshot}"
                               Command="{Binding ShowPreviousModCatalogScreenshotCommand}">
-                        <Path Data="{StaticResource NextIcon}"
-                              RenderTransformOrigin="50%,50%">
-                          <Path.RenderTransform>
-                            <TransformGroup>
-                              <RotateTransform Angle="180" />
-                              <TranslateTransform X="-1" />
-                            </TransformGroup>
-                          </Path.RenderTransform>
-                        </Path>
+                        <Viewbox Classes="instancePreviewImageSymbol"
+                                 RenderTransformOrigin="50%,50%">
+                          <Viewbox.RenderTransform>
+                            <RotateTransform Angle="180" />
+                          </Viewbox.RenderTransform>
+                          <Canvas Width="960" Height="960">
+                            <Path Classes="instancePreviewImageGlyph"
+                                  Data="{StaticResource NextIcon}">
+                              <Path.RenderTransform>
+                                <TranslateTransform Y="960" />
+                              </Path.RenderTransform>
+                            </Path>
+                          </Canvas>
+                        </Viewbox>
                       </Button>
                       <Button Classes="instancePreviewImageButton"
                               IsEnabled="{Binding CanShowNextModCatalogScreenshot}"
                               Command="{Binding ShowNextModCatalogScreenshotCommand}">
-                        <Path Data="{StaticResource NextIcon}">
-                          <Path.RenderTransform><TranslateTransform X="1" /></Path.RenderTransform>
-                        </Path>
+                        <Viewbox Classes="instancePreviewImageSymbol">
+                          <Canvas Width="960" Height="960">
+                            <Path Classes="instancePreviewImageGlyph"
+                                  Data="{StaticResource NextIcon}">
+                              <Path.RenderTransform>
+                                <TranslateTransform Y="960" />
+                              </Path.RenderTransform>
+                            </Path>
+                          </Canvas>
+                        </Viewbox>
                       </Button>
                     </StackPanel>
                   </Border>
@@ -1542,8 +1556,20 @@ SPDX-License-Identifier: GPL-3.0-only
                   <Border Classes="instanceInfoCell">
                     <StackPanel Spacing="3">
                       <TextBlock Text="{Binding ModCatalogPreviewAuthorLabel}" Classes="instanceInfoLabel" />
-                      <TextBlock Text="{Binding SelectedModCatalogPreview.Author}"
-                                 Classes="instanceInfoValue" />
+                      <StackPanel Orientation="Horizontal" Spacing="7">
+                        <Border Classes="instanceCatalogAuthorAvatar modalAuthorAvatar">
+                          <Grid>
+                            <TextBlock Text="{Binding SelectedModCatalogPreview.AuthorInitial}"
+                                       IsVisible="{Binding !SelectedModCatalogPreview.ShowsAuthorAvatar}" />
+                            <Image Source="{Binding SelectedModCatalogPreview.AuthorAvatar}"
+                                   IsVisible="{Binding SelectedModCatalogPreview.ShowsAuthorAvatar}"
+                                   Stretch="UniformToFill" />
+                          </Grid>
+                        </Border>
+                        <TextBlock Text="{Binding SelectedModCatalogPreview.Author}"
+                                   Classes="instanceInfoValue"
+                                   VerticalAlignment="Center" />
+                      </StackPanel>
                     </StackPanel>
                   </Border>
                   <Border Grid.Column="1" Background="{DynamicResource AppBackgroundBrush}" />
@@ -1712,7 +1738,7 @@ SPDX-License-Identifier: GPL-3.0-only
           <ScaleTransform ScaleY="0">
             <ScaleTransform.Transitions>
               <Transitions>
-                <DoubleTransition Property="ScaleY" Duration="0:0:0.26">
+                <DoubleTransition Property="ScaleY" Duration="0:0:0.32">
                   <DoubleTransition.Easing><easing:CubicEaseInOut /></DoubleTransition.Easing>
                 </DoubleTransition>
               </Transitions>
@@ -1726,6 +1752,10 @@ SPDX-License-Identifier: GPL-3.0-only
               Data="M 0,100 C 2.4,100 4,70 4,0 M 96,0 C 96,70 97.6,100 100,100"
               Stretch="Fill"
               StrokeJoin="Round" />
+        <Border Classes="instanceModPreviewShoulderMask"
+                ZIndex="2"
+                HorizontalAlignment="Stretch"
+                VerticalAlignment="Bottom" />
       </Grid>
     </Grid>
   </Grid>

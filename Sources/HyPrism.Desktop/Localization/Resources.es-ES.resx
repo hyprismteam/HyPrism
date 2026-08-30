@@ -1608,6 +1608,9 @@ Es posible que necesites reinstalar el juego si cambias de unidad.</value>
   <data name="settings.aboutSettings.disclaimer" xml:space="preserve">
     <value>HyPrism no es un lanzador oficial de Hytale ni un producto desarrollado por Hypixel Studios.</value>
   </data>
+  <data name="settings.aboutSettings.builtWith" xml:space="preserve">
+    <value>Creado con</value>
+  </data>
   <data name="settings.aboutSettings.installerRole" xml:space="preserve">
     <value>Creador del Instalador</value>
   </data>

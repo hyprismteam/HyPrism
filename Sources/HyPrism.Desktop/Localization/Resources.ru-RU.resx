@@ -1728,6 +1728,9 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="settings.aboutSettings.disclaimer" xml:space="preserve">
     <value>HyPrism — неофициальный лаунчер Hytale и не имеет отношения к Hypixel Studios</value>
   </data>
+  <data name="settings.aboutSettings.builtWith" xml:space="preserve">
+    <value>Создано с помощью</value>
+  </data>
   <data name="settings.aboutSettings.installerRole" xml:space="preserve">
     <value>Создатель установщика</value>
   </data>

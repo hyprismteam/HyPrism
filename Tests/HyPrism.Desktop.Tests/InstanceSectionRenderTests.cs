@@ -89,7 +89,6 @@ public sealed class InstanceSectionRenderTests
                         Id = "10",
                         Name = "Catalog Mod",
                         Author = "Creator",
-                        AuthorUrl = "https://www.curseforge.com/members/creator",
                         AuthorAvatarUrl = "https://media.forgecdn.net/avatars/1/2/avatar.png",
                         Summary = "Summary",
                         LatestFileId = "900"
@@ -263,9 +262,34 @@ public sealed class InstanceSectionRenderTests
 
         viewModel.ToggleModCatalogSelectionCommand.Execute(viewModel.ModCatalogItems[0]);
         Assert.True(viewModel.HasSelectedCatalogMods);
-        Assert.Contains(view.GetVisualDescendants().OfType<Button>(), button =>
-            button.IsEffectivelyVisible &&
-            ReferenceEquals(button.Command, viewModel.InstallSelectedCatalogModsCommand));
+        var catalogTopInstall = Assert.Single(
+            view.GetVisualDescendants().OfType<Border>(),
+            border => border.Classes.Contains("catalogInstallTopBar"));
+        var catalogTopInstallAction = Assert.Single(
+            catalogTopInstall.GetVisualDescendants().OfType<Button>(),
+            button => button.Classes.Contains("catalogInstallTopBarAction"));
+        Assert.Contains("visible", catalogTopInstall.Classes);
+        Assert.Contains("compactInstanceSplitAction", catalogTopInstall.Classes);
+        Assert.True(catalogTopInstall.IsHitTestVisible);
+        Assert.Contains("compactInstanceActionPart", catalogTopInstallAction.Classes);
+        Assert.Contains("main", catalogTopInstallAction.Classes);
+        Assert.Equal(36, catalogTopInstallAction.Height);
+        Assert.Same(viewModel.InstallSelectedCatalogModsCommand, catalogTopInstallAction.Command);
+        Assert.Contains(
+            Assert.IsAssignableFrom<IEnumerable<ITransition>>(catalogTopInstall.Transitions),
+            transition => transition is DoubleTransition);
+        Assert.Contains(
+            Assert.IsAssignableFrom<IEnumerable<ITransition>>(catalogTopInstall.Transitions),
+            transition => transition is TransformOperationsTransition);
+        Assert.DoesNotContain(
+            view.GetVisualDescendants().OfType<Button>(),
+            button => button.IsEffectivelyVisible &&
+                      ReferenceEquals(button.Command, viewModel.SearchModCatalogCommand));
+        viewModel.ToggleModCatalogSelectionCommand.Execute(viewModel.ModCatalogItems[0]);
+        Assert.Contains("hidden", catalogTopInstall.Classes);
+        Assert.False(catalogTopInstall.IsHitTestVisible);
+        viewModel.ToggleModCatalogSelectionCommand.Execute(viewModel.ModCatalogItems[0]);
+        Assert.Contains("visible", catalogTopInstall.Classes);
 
         var listPreviewPath = Environment.GetEnvironmentVariable("HYPRISM_MOD_CATALOG_LIST_RENDER_OUTPUT");
         if (!string.IsNullOrWhiteSpace(listPreviewPath))
@@ -300,6 +324,11 @@ public sealed class InstanceSectionRenderTests
         Assert.DoesNotContain(
             preview.GetVisualDescendants().OfType<Border>(),
             border => border.Classes.Contains("instanceCompatibilitySummary"));
+        var modalAuthorAvatar = Assert.Single(
+            preview.GetVisualDescendants().OfType<Border>(),
+            border => border.Classes.Contains("modalAuthorAvatar"));
+        Assert.Equal(24, modalAuthorAvatar.Width);
+        Assert.Contains(modalAuthorAvatar.GetVisualDescendants(), descendant => descendant is Image);
         var releaseBadges = preview.GetVisualDescendants().OfType<Border>()
             .Where(border => border.Classes.Contains("modPreviewReleaseBadge"))
             .ToList();
@@ -325,12 +354,38 @@ public sealed class InstanceSectionRenderTests
         Assert.Equal(HorizontalAlignment.Center, curseForgeAction.HorizontalContentAlignment);
         Assert.Equal(HorizontalAlignment.Stretch, curseForgeAction.HorizontalAlignment);
         Assert.Equal(VerticalAlignment.Stretch, curseForgeAction.VerticalContentAlignment);
+        Assert.NotNull(curseForgeAction.Template);
         var installAction = Assert.Single(
             preview.GetVisualDescendants().OfType<Button>(),
             button => button.Classes.Contains("splitMain"));
         Assert.Equal(HorizontalAlignment.Stretch, installAction.HorizontalAlignment);
         Assert.Equal(HorizontalAlignment.Center, installAction.HorizontalContentAlignment);
         Assert.Equal(VerticalAlignment.Center, installAction.VerticalContentAlignment);
+        Assert.NotNull(installAction.Template);
+        var imageSwitchButtons = preview.GetVisualDescendants().OfType<Button>()
+            .Where(button => button.Classes.Contains("instancePreviewImageButton"))
+            .ToList();
+        Assert.Equal(2, imageSwitchButtons.Count);
+        Assert.All(imageSwitchButtons, button =>
+        {
+            Assert.Equal(HorizontalAlignment.Center, button.HorizontalContentAlignment);
+            Assert.Equal(VerticalAlignment.Center, button.VerticalContentAlignment);
+        });
+        var imageSwitchSymbols = imageSwitchButtons
+            .Select(button => Assert.IsType<Viewbox>(button.Content))
+            .ToList();
+        Assert.All(imageSwitchSymbols, symbol =>
+        {
+            Assert.Equal(28, symbol.Width);
+            Assert.Equal(HorizontalAlignment.Center, symbol.HorizontalAlignment);
+            var canvas = Assert.IsType<Canvas>(symbol.Child);
+            Assert.Equal(960, canvas.Width);
+            var glyph = Assert.IsType<Avalonia.Controls.Shapes.Path>(canvas.Children.Single());
+            Assert.NotNull(glyph.Data);
+            Assert.Equal(960, Assert.IsType<TranslateTransform>(glyph.RenderTransform).Y);
+        });
+        Assert.Equal(180, Assert.IsType<RotateTransform>(imageSwitchSymbols[0].RenderTransform).Angle);
+        Assert.Null(imageSwitchSymbols[1].RenderTransform);
         var splitActionGrid = Assert.IsType<Grid>(curseForgeAction.Parent);
         Assert.True(splitActionGrid.ColumnDefinitions[2].Width.Value >
                     splitActionGrid.ColumnDefinitions[0].Width.Value);
@@ -348,6 +403,12 @@ public sealed class InstanceSectionRenderTests
         var shoulderScale = Assert.IsType<ScaleTransform>(
             view.FindControl<Grid>("ModCatalogModalShoulders")?.RenderTransform);
         Assert.NotEmpty(Assert.IsAssignableFrom<IEnumerable<ITransition>>(shoulderScale.Transitions));
+        var shoulderMask = Assert.Single(
+            view.FindControl<Grid>("ModCatalogModalShoulders")!
+                .GetVisualDescendants()
+                .OfType<Border>(),
+            border => border.Classes.Contains("instanceModPreviewShoulderMask"));
+        Assert.Equal(2, shoulderMask.Height);
 
         var previewPath = Environment.GetEnvironmentVariable("HYPRISM_MOD_CATALOG_RENDER_OUTPUT");
         if (!string.IsNullOrWhiteSpace(previewPath))

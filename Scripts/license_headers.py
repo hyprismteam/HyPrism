@@ -32,7 +32,15 @@ THIRD_PARTY_HEADERS = {
     "Sources/HyPrism.Desktop/Assets/Brands/CurseForge.axaml": (
         "CurseForge and the CurseForge logo are trademarks of Overwolf Ltd.",
         "SPDX-License-" "Identifier: LicenseRef-CurseForge",
-    )
+    ),
+    "Sources/HyPrism.Desktop/Assets/Brands/Avalonia.axaml": (
+        "Avalonia and the Avalonia logo are registered trademarks of AvaloniaUI OÜ",
+        "SPDX-License-" "Identifier: LicenseRef-Avalonia",
+    ),
+    "Sources/HyPrism.Desktop/Assets/Brands/DotNet.axaml": (
+        "Copyright (C) .NET authors",
+        "SPDX-License-" "Identifier: CC0-1.0",
+    ),
 }
 
 

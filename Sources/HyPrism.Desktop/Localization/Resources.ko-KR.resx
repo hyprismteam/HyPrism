@@ -1608,6 +1608,9 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="settings.aboutSettings.disclaimer" xml:space="preserve">
     <value>HyPrism은 Hytale의 비공식 런처입니다. 이 프로젝트는 Hypixel Studios와 관련이 없습니다.</value>
   </data>
+  <data name="settings.aboutSettings.builtWith" xml:space="preserve">
+    <value>사용 기술</value>
+  </data>
   <data name="settings.aboutSettings.installerRole" xml:space="preserve">
     <value>설치 프로그램 제작자</value>
   </data>

@@ -1608,6 +1608,9 @@ Você pode precisar reinstalar o jogo se trocar de unidade.</value>
   <data name="settings.aboutSettings.disclaimer" xml:space="preserve">
     <value>HyPrism é um launcher não oficial para Hytale. Este projeto não é afiliado à Hypixel Studios.</value>
   </data>
+  <data name="settings.aboutSettings.builtWith" xml:space="preserve">
+    <value>Criado com</value>
+  </data>
   <data name="settings.aboutSettings.installerRole" xml:space="preserve">
     <value>Criador do Instalador</value>
   </data>

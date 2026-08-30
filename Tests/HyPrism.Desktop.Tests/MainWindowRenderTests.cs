@@ -2095,7 +2095,9 @@ public sealed class MainWindowRenderTests
         var compactInstanceToolbar = instancesView.FindControl<Border>("CompactInstanceToolbar");
         var compactInstanceSplitAction = instancesView.GetVisualDescendants()
             .OfType<Border>()
-            .Single(border => border.Classes.Contains("compactInstanceSplitAction"));
+            .Single(border => border.Classes.Contains("compactInstanceSplitAction") &&
+                              border.GetVisualDescendants().OfType<Button>()
+                                  .Any(button => button.Name == "CompactInstancePrimaryAction"));
         var compactInstancePrimaryAction = instancesView.FindControl<Button>("CompactInstancePrimaryAction");
         var compactInstanceMoreButton = instancesView.FindControl<Button>("CompactInstanceMoreButton");
         var compactInstanceMenuPopup = instancesView.FindControl<FadingPopup>("CompactInstanceMenuPopup");
@@ -3577,6 +3579,41 @@ public sealed class MainWindowRenderTests
             .Single(textBlock => textBlock.IsEffectivelyVisible &&
                                  textBlock.Text == viewModel.Settings.AboutDisclaimer);
         Assert.IsType<StackPanel>(aboutDisclaimer.Parent);
+        var technologyAttribution = settingsView.FindControl<StackPanel>("AboutTechnologyAttribution");
+        var avaloniaButton = settingsView.FindControl<Button>("AboutAvaloniaButton");
+        var dotNetButton = settingsView.FindControl<Button>("AboutDotNetButton");
+        var avaloniaMark = settingsView.FindControl<Avalonia.Controls.Shapes.Path>("AboutAvaloniaMark");
+        var dotNetBackground = settingsView.FindControl<Avalonia.Controls.Shapes.Path>("AboutDotNetBackground");
+        var dotNetWordmark = settingsView.FindControl<Avalonia.Controls.Shapes.Path>("AboutDotNetWordmark");
+        Assert.NotNull(technologyAttribution);
+        Assert.True(technologyAttribution.IsEffectivelyVisible);
+        Assert.NotNull(avaloniaButton);
+        Assert.NotNull(dotNetButton);
+        Assert.NotNull(avaloniaMark);
+        Assert.NotNull(dotNetBackground);
+        Assert.NotNull(dotNetWordmark);
+        Assert.NotNull(avaloniaMark.Data);
+        Assert.NotNull(dotNetBackground.Data);
+        Assert.NotNull(dotNetWordmark.Data);
+        Assert.True(avaloniaMark.Height >= 24);
+        Assert.Contains(
+            technologyAttribution.GetVisualDescendants().OfType<TextBlock>(),
+            textBlock => textBlock.Text == viewModel.Settings.AboutBuiltWithLabel);
+        Assert.DoesNotContain(
+            technologyAttribution.GetVisualDescendants().OfType<TextBlock>(),
+            textBlock => textBlock.Text?.Contains("registered trademark", StringComparison.OrdinalIgnoreCase) == true);
+        Assert.Same(technologyAttribution, aboutDisclaimer.Parent);
+        Assert.All(
+            new[] { avaloniaButton, dotNetButton },
+            button => Assert.Contains(
+                button.Transitions!,
+                transition => transition is TransformOperationsTransition));
+        Assert.All(
+            new[] { avaloniaMark, dotNetBackground, dotNetWordmark },
+            path => Assert.Contains(
+                path.Transitions!,
+                transition => transition is BrushTransition { Property: { } property } &&
+                              property == Avalonia.Controls.Shapes.Shape.FillProperty));
 
         viewModel.Settings.OpenDocumentationCommand.Execute(null);
         uriLauncher.Verify(
@@ -3600,6 +3637,18 @@ public sealed class MainWindowRenderTests
         uriLauncher.Verify(
             service => service.LaunchAsync(
                 new Uri("https://hytale.com/eula"),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+        viewModel.Settings.OpenAvaloniaCommand.Execute(null);
+        uriLauncher.Verify(
+            service => service.LaunchAsync(
+                new Uri("https://avaloniaui.net/"),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+        viewModel.Settings.OpenDotNetCommand.Execute(null);
+        uriLauncher.Verify(
+            service => service.LaunchAsync(
+                new Uri("https://dotnet.microsoft.com/"),
                 It.IsAny<CancellationToken>()),
             Times.Once);
 

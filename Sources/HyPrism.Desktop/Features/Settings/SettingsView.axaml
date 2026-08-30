@@ -1030,9 +1030,44 @@ SPDX-License-Identifier: GPL-3.0-only
                   </Border>
                 </StackPanel>
               </Border>
+            </StackPanel>
+
+            <StackPanel x:Name="AboutTechnologyAttribution"
+                        Classes="aboutTechnologyAttribution"
+                        HorizontalAlignment="Center">
+              <TextBlock Text="{Binding AboutBuiltWithLabel}"
+                         Classes="aboutTechnologyCaption"
+                         HorizontalAlignment="Center" />
+              <StackPanel Orientation="Horizontal"
+                          Spacing="8"
+                          HorizontalAlignment="Center">
+                <Button x:Name="AboutAvaloniaButton"
+                        Classes="aboutTechnologyLogo avalonia"
+                        Command="{Binding OpenAvaloniaCommand}"
+                        ToolTip.Tip="Avalonia UI">
+                  <Path x:Name="AboutAvaloniaMark"
+                        Classes="aboutTechnologyAvaloniaMark"
+                        Data="{StaticResource AvaloniaBrandIcon}" />
+                </Button>
+                <Button x:Name="AboutDotNetButton"
+                        Classes="aboutTechnologyLogo dotnet"
+                        Command="{Binding OpenDotNetCommand}"
+                        ToolTip.Tip=".NET">
+                  <Viewbox Width="38" Height="38" Stretch="Uniform">
+                    <Canvas Width="456" Height="456">
+                      <Path x:Name="AboutDotNetBackground"
+                            Classes="aboutTechnologyDotNetBackground"
+                            Data="{StaticResource DotNetBrandBackground}" />
+                      <Path x:Name="AboutDotNetWordmark"
+                            Classes="aboutTechnologyDotNetWordmark"
+                            Data="{StaticResource DotNetBrandWordmark}" />
+                    </Canvas>
+                  </Viewbox>
+                </Button>
+              </StackPanel>
               <TextBlock Text="{Binding AboutDisclaimer}"
-                         Classes="aboutDisclaimer"
-                         Margin="4,2,4,0"
+                         Classes="aboutDisclaimer aboutTechnologyDisclaimer"
+                         HorizontalAlignment="Center"
                          TextWrapping="Wrap" />
             </StackPanel>
           </StackPanel>

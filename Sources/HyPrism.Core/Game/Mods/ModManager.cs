@@ -1095,7 +1095,6 @@ public partial class ModManager : IModManager
             Slug = cfMod.Slug ?? "",
             Summary = cfMod.Summary ?? "",
             Author = author?.Name ?? "",
-            AuthorUrl = author?.Url ?? "",
             AuthorAvatarUrl = author?.AvatarUrl ?? "",
             DownloadCount = cfMod.DownloadCount,
             IconUrl = cfMod.Logo?.ThumbnailUrl ?? "",

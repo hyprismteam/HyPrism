@@ -1608,6 +1608,9 @@ Sürücü değiştirirseniz oyunu yeniden yüklemeniz gerekebilir.</value>
   <data name="settings.aboutSettings.disclaimer" xml:space="preserve">
     <value>HyPrism, Hytale için resmi olmayan bir başlatıcıdır. Bu proje Hypixel Studios ile bağlantılı değildir.</value>
   </data>
+  <data name="settings.aboutSettings.builtWith" xml:space="preserve">
+    <value>Şununla oluşturuldu</value>
+  </data>
   <data name="settings.aboutSettings.installerRole" xml:space="preserve">
     <value>Yükleyici Oluşturucusu</value>
   </data>

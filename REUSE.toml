@@ -62,3 +62,15 @@ path = "Sources/HyPrism.Desktop/Assets/Brands/CurseForge*"
 precedence = "override"
 SPDX-FileCopyrightText = "Overwolf Ltd."
 SPDX-License-Identifier = "LicenseRef-CurseForge"
+
+[[annotations]]
+path = "Sources/HyPrism.Desktop/Assets/Brands/Avalonia*"
+precedence = "override"
+SPDX-FileCopyrightText = "AvaloniaUI OÜ"
+SPDX-License-Identifier = "LicenseRef-Avalonia"
+
+[[annotations]]
+path = "Sources/HyPrism.Desktop/Assets/Brands/DotNet*"
+precedence = "override"
+SPDX-FileCopyrightText = ".NET authors"
+SPDX-License-Identifier = "CC0-1.0"
