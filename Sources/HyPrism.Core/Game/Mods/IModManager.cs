@@ -108,4 +108,21 @@ public interface IModManager
     /// <param name="instancePath">The path to the game instance</param>
     /// <returns><c>true</c> if installation succeeded; otherwise, <c>false</c></returns>
     Task<bool> InstallModFromBase64(string fileName, string base64Content, string instancePath);
+
+    /// <summary>
+    /// Enables or disables an installed mod by renaming its file with or without the .disabled suffix
+    /// </summary>
+    /// <param name="instancePath">The path to the game instance</param>
+    /// <param name="modId">The installed mod identifier</param>
+    /// <param name="enabled">The desired enabled state</param>
+    /// <returns><c>true</c> if the state changed; otherwise, <c>false</c></returns>
+    Task<bool> SetModEnabledAsync(string instancePath, string modId, bool enabled);
+
+    /// <summary>
+    /// Removes an installed mod entry and its file from disk
+    /// </summary>
+    /// <param name="instancePath">The path to the game instance</param>
+    /// <param name="modId">The installed mod identifier</param>
+    /// <returns><c>true</c> if the mod was removed; otherwise, <c>false</c></returns>
+    Task<bool> RemoveInstalledModAsync(string instancePath, string modId);
 }

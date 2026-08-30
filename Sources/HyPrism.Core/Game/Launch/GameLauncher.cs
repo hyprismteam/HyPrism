@@ -47,6 +47,7 @@ public partial class GameLauncher : IGameLauncher
     private readonly IProfileRepository _profileRepository;
     private readonly ILocalNodeServiceFactory _localNodeFactory;
     private readonly LogSessionPaths _logSession;
+    private readonly IGameConsoleService? _console;
     private readonly string _appDir;
 
     private Config CurrentConfig => _configStore.Configuration;
@@ -74,6 +75,7 @@ public partial class GameLauncher : IGameLauncher
     /// <param name="profiles">Service for the active launcher profile</param>
     /// <param name="localNodeFactory">Factory for launch-scoped loopback authentication services</param>
     /// <param name="logSession">Central log paths for the current launcher process</param>
+    /// <param name="console">Optional live console buffer for game process output</param>
     public GameLauncher(
         IConfigStore configStore,
         IRuntimeProvisioner runtime,
@@ -90,7 +92,8 @@ public partial class GameLauncher : IGameLauncher
         IProfileManager profiles,
         IProfileRepository profileRepository,
         ILocalNodeServiceFactory localNodeFactory,
-        LogSessionPaths? logSession = null)
+        LogSessionPaths? logSession = null,
+        IGameConsoleService? console = null)
     {
         _configStore = configStore;
         _runtime = runtime;
@@ -108,6 +111,7 @@ public partial class GameLauncher : IGameLauncher
         _profileRepository = profileRepository;
         _localNodeFactory = localNodeFactory;
         _logSession = logSession ?? new LogSessionPaths(appPath);
+        _console = console;
         _gameProcess.GameProcessExited += OnGameProcessExited;
 
         foreach (var process in _gameProcess.TakeProcessesExitedWhileUnavailable())
@@ -1394,6 +1398,26 @@ DUALAUTH_TRUST_OFFICIAL=""true""
     private static string EscapeForBashDoubleQuoted(string value)
         => JvmArgumentBuilder.EscapeForBash(value);
 
+    /// <summary>
+    /// Classifies a raw game output line into a console severity tag
+    /// </summary>
+    private static string ClassifyGameLine(string line)
+    {
+        if (line.Contains("|ERROR|", StringComparison.OrdinalIgnoreCase) ||
+            line.Contains("/ERROR", StringComparison.OrdinalIgnoreCase) ||
+            line.Contains("SEVERE", StringComparison.OrdinalIgnoreCase) ||
+            line.Contains("Exception in thread", StringComparison.Ordinal) ||
+            line.Contains("Caused by:", StringComparison.Ordinal))
+            return "ERR";
+
+        if (line.Contains("|WARN", StringComparison.OrdinalIgnoreCase) ||
+            line.Contains("/WARN", StringComparison.OrdinalIgnoreCase) ||
+            line.Contains("WARNING", StringComparison.OrdinalIgnoreCase))
+            return "WRN";
+
+        return "OUT";
+    }
+
     private async Task StartAndMonitorProcessAsync(
         ProcessStartInfo startInfo,
         string profileName,
@@ -1411,6 +1435,7 @@ DUALAUTH_TRUST_OFFICIAL=""true""
         try
         {
             instanceLog.Write("INF", "HyPrism", $"Starting instance '{instanceId}' for profile '{profileName}'");
+            _console?.Append(instanceId, "INF", $"Starting instance '{instanceId}' for profile '{profileName}'");
             Logger.Info("Game", $"Instance output log: {instanceLog.FilePath}");
             _progress.ReportDownloadProgress("launching", 80, "launch.detail.starting_process", null, 0, 0);
 
@@ -1423,6 +1448,7 @@ DUALAUTH_TRUST_OFFICIAL=""true""
             process.Exited += (_, _) =>
             {
                 instanceLog.Write("INF", "HyPrism", "Game process exited");
+                _console?.Append(instanceId, "INF", "Game process exited");
                 processExitedTcs.TrySetResult(true);
             };
 
@@ -1435,6 +1461,7 @@ DUALAUTH_TRUST_OFFICIAL=""true""
                 if (string.IsNullOrEmpty(e.Data)) return;
                 string line = e.Data;
                 instanceLog.Write("OUT", "Game", line);
+                _console?.Append(instanceId, ClassifyGameLine(line), line);
                 bool isNewLogEntry = LogTimestampRegex().IsMatch(line);
 
                 if (line.StartsWith("Set log path to")) { Logger.Info("Game", line); return; }
@@ -1486,6 +1513,7 @@ DUALAUTH_TRUST_OFFICIAL=""true""
             {
                 if (string.IsNullOrWhiteSpace(e.Data)) return;
                 instanceLog.Write("ERR", "Game", e.Data);
+                _console?.Append(instanceId, "ERR", e.Data);
                 Logger.Warning("Game", $"stderr: {e.Data}");
             };
 

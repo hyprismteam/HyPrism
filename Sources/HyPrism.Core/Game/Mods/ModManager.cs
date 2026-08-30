@@ -895,6 +895,175 @@ public partial class ModManager : IModManager
         }
     }
 
+    /// <inheritdoc/>
+    public async Task<bool> SetModEnabledAsync(string instancePath, string modId, bool enabled)
+    {
+        var modsPath = Path.Combine(instancePath, "UserData", "Mods");
+        var mods = GetInstanceInstalledMods(instancePath);
+        var mod = mods.FirstOrDefault(m =>
+            string.Equals(m.Id, modId, StringComparison.Ordinal) ||
+            string.Equals(m.Name, modId, StringComparison.Ordinal));
+        if (mod is null || string.IsNullOrEmpty(mod.FileName))
+            return false;
+
+        if (mod.Enabled == enabled)
+            return true;
+
+        var currentPath = Path.Combine(modsPath, mod.FileName);
+        if (!File.Exists(currentPath))
+        {
+            var stem = Path.GetFileNameWithoutExtension(mod.FileName);
+            var probes = new[]
+            {
+                currentPath,
+                Path.Combine(modsPath, $"{stem}.jar"),
+                Path.Combine(modsPath, $"{stem}.zip"),
+                Path.Combine(modsPath, $"{stem}.disabled"),
+                Path.Combine(modsPath, $"{stem}.jar.disabled"),
+                Path.Combine(modsPath, $"{stem}.zip.disabled"),
+            };
+            var found = probes.FirstOrDefault(File.Exists);
+            if (found is null)
+                return false;
+            currentPath = found;
+            mod.FileName = Path.GetFileName(found);
+            mod.Enabled = !found.EndsWith(".disabled", StringComparison.OrdinalIgnoreCase);
+            if (mod.Enabled == enabled)
+                return true;
+        }
+
+        try
+        {
+            if (!enabled)
+            {
+                var fileName = Path.GetFileName(currentPath);
+                var extension = Path.GetExtension(fileName).ToLowerInvariant();
+                if (extension is ".jar" or ".zip")
+                    mod.DisabledOriginalExtension = extension;
+                var disabledName = $"{Path.GetFileNameWithoutExtension(fileName)}.disabled";
+                File.Move(currentPath, Path.Combine(modsPath, disabledName), true);
+                mod.FileName = disabledName;
+                mod.Enabled = false;
+            }
+            else
+            {
+                var fileName = Path.GetFileName(currentPath);
+                var stem = fileName.EndsWith(".disabled", StringComparison.OrdinalIgnoreCase)
+                    ? fileName[..^".disabled".Length]
+                    : Path.GetFileNameWithoutExtension(fileName);
+                var restoreExtension = !string.IsNullOrWhiteSpace(mod.DisabledOriginalExtension)
+                    ? (mod.DisabledOriginalExtension.StartsWith('.')
+                        ? mod.DisabledOriginalExtension
+                        : $".{mod.DisabledOriginalExtension}")
+                    : (stem.EndsWith(".jar", StringComparison.OrdinalIgnoreCase) ||
+                       stem.EndsWith(".zip", StringComparison.OrdinalIgnoreCase)
+                        ? ""
+                        : ".jar");
+                var enabledName = string.IsNullOrEmpty(restoreExtension) ? stem : $"{stem}{restoreExtension}";
+                File.Move(currentPath, Path.Combine(modsPath, enabledName), true);
+                mod.FileName = enabledName;
+                mod.Enabled = true;
+                mod.DisabledOriginalExtension = "";
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.Error("ModManager", $"Toggle mod '{modId}' failed: {ex.Message}");
+            return false;
+        }
+
+        await SaveInstanceModsAsync(instancePath, mods);
+        Logger.Info("ModManager", $"Mod '{mod.Name}' {(enabled ? "enabled" : "disabled")}");
+        return true;
+    }
+
+    /// <inheritdoc/>
+    public async Task<bool> RemoveInstalledModAsync(string instancePath, string modId)
+    {
+        var mods = GetInstanceInstalledMods(instancePath);
+        var mod = mods.FirstOrDefault(m =>
+            string.Equals(m.Id, modId, StringComparison.Ordinal) ||
+            string.Equals(m.Name, modId, StringComparison.Ordinal));
+        if (mod is null)
+            return false;
+
+        mods.Remove(mod);
+
+        if (!string.IsNullOrEmpty(mod.FileName))
+        {
+            var modsPath = Path.Combine(instancePath, "UserData", "Mods");
+            if (!TryDeleteModFile(modsPath, mod.FileName))
+                Logger.Warning("ModManager", $"Could not find mod file to delete: {mod.FileName}");
+        }
+
+        await SaveInstanceModsAsync(instancePath, mods);
+        Logger.Info("ModManager", $"Removed mod '{mod.Name}'");
+        return true;
+    }
+
+    private static bool TryDeleteModFile(string modsDir, string fileName)
+    {
+        var candidates = new[]
+        {
+            Path.Combine(modsDir, fileName),
+            Path.Combine(modsDir, fileName + ".disabled"),
+        };
+
+        foreach (var candidate in candidates)
+        {
+            if (!File.Exists(candidate))
+                continue;
+            try
+            {
+                File.Delete(candidate);
+                return true;
+            }
+            catch
+            {
+                // A missing file is acceptable; the manifest entry is still removed
+            }
+        }
+
+        var stem = Path.GetFileNameWithoutExtension(fileName);
+        if (stem.EndsWith(".jar", StringComparison.OrdinalIgnoreCase) ||
+            stem.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
+            stem = Path.GetFileNameWithoutExtension(stem);
+
+        if (!Directory.Exists(modsDir))
+            return false;
+
+        try
+        {
+            foreach (var path in Directory.GetFiles(modsDir))
+            {
+                var name = Path.GetFileName(path).ToLowerInvariant();
+                var normalizedStem = stem.ToLowerInvariant();
+                if (name == $"{normalizedStem}.jar" ||
+                    name == $"{normalizedStem}.jar.disabled" ||
+                    name == $"{normalizedStem}.zip" ||
+                    name == $"{normalizedStem}.zip.disabled" ||
+                    name == $"{normalizedStem}.disabled")
+                {
+                    try
+                    {
+                        File.Delete(path);
+                        return true;
+                    }
+                    catch
+                    {
+                        // Keep probing other candidates
+                    }
+                }
+            }
+        }
+        catch
+        {
+            return false;
+        }
+
+        return false;
+    }
+
     /// <summary>
     /// Tries to extract a semver-like version string from a display name or filename.
     /// Looks for semver-like patterns (e.g., "1.2.7", "0.3.1-beta") and returns the first match.

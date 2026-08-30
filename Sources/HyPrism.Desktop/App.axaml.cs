@@ -70,7 +70,8 @@ public sealed partial class App : Application
                 services.GetRequiredService<IGameVersionCatalog>(),
                 services.GetRequiredService<IModManager>(),
                 services.GetRequiredService<IHytaleAuthenticator>(),
-                services.GetRequiredService<RemoteImageCache>());
+                services.GetRequiredService<RemoteImageCache>(),
+                services.GetRequiredService<IGameConsoleService>());
 
             _mainWindowViewModel.BeginStartupLoading();
             mainWindow.DataContext = _mainWindowViewModel;

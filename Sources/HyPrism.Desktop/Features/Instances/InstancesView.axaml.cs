@@ -2,13 +2,18 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 using System.ComponentModel;
+using System.Linq;
 using Avalonia;
 using Avalonia.Animation;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.LogicalTree;
 using Avalonia.Media;
+using Avalonia.Platform.Storage;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using HyPrism.Desktop.Controls;
 using HyPrism.Desktop.Features.Dashboard;
 using HyPrism.Desktop.Shell;
@@ -29,6 +34,7 @@ public sealed partial class InstancesView : UserControl
     private int _creatorNavigationRevision;
     private CancellationTokenSource? _sectionAnimationCancellation;
     private CancellationTokenSource? _versionLoadingCancellation;
+    private bool _modDropActive;
 
     public InstancesView()
     {
@@ -56,6 +62,10 @@ public sealed partial class InstancesView : UserControl
             InstancesLayout,
             InstanceDragPreview,
             InstancesListPane);
+        DragDrop.SetAllowDrop(ModsDropZone, true);
+        ModsDropZone.AddHandler(DragDrop.DragEnterEvent, OnModFilesDragEntered);
+        ModsDropZone.AddHandler(DragDrop.DragLeaveEvent, OnModFilesDragLeft);
+        ModsDropZone.AddHandler(DragDrop.DropEvent, OnModFilesDropped);
         SizeChanged += (_, args) => UpdateLayout(args.NewSize.Width);
         DataContextChanged += OnDataContextChanged;
     }
@@ -103,6 +113,9 @@ public sealed partial class InstancesView : UserControl
             else
                 _ = HideVersionLoadingAsync();
         }
+
+        if (args.PropertyName is nameof(MainWindowViewModel.ConsoleRevision))
+            ScrollConsoleToBottom();
 
         if (args.PropertyName is nameof(MainWindowViewModel.IsInstanceCreatorOpen))
         {
@@ -661,6 +674,158 @@ public sealed partial class InstancesView : UserControl
         _versionLoadingCancellation?.Cancel();
         _versionLoadingCancellation?.Dispose();
         _versionLoadingCancellation = null;
+    }
+
+    private static bool IsModArchiveName(string? fileName)
+        => !string.IsNullOrWhiteSpace(fileName) &&
+           (fileName.EndsWith(".jar", StringComparison.OrdinalIgnoreCase) ||
+            fileName.EndsWith(".zip", StringComparison.OrdinalIgnoreCase) ||
+            fileName.EndsWith(".jar.disabled", StringComparison.OrdinalIgnoreCase) ||
+            fileName.EndsWith(".zip.disabled", StringComparison.OrdinalIgnoreCase));
+
+    private void OnModFilesDragEntered(object? sender, DragEventArgs args)
+    {
+        args.Handled = true;
+        if (DataContext is not MainWindowViewModel { IsManagedInstanceInstalled: true } ||
+            !ContainsFiles(args.DataTransfer))
+        {
+            args.DragEffects = DragDropEffects.None;
+            ShowModDropOverlay(false);
+            return;
+        }
+
+        args.DragEffects = DragDropEffects.Copy;
+        ShowModDropOverlay(true);
+    }
+
+    private void OnModFilesDragLeft(object? sender, DragEventArgs args)
+    {
+        args.Handled = true;
+        ShowModDropOverlay(false);
+    }
+
+    private async void OnModFilesDropped(object? sender, DragEventArgs args)
+    {
+        args.Handled = true;
+        ShowModDropOverlay(false);
+        if (DataContext is not MainWindowViewModel viewModel ||
+            args.DataTransfer is not IAsyncDataTransfer data ||
+            !ContainsFiles(args.DataTransfer))
+        {
+            return;
+        }
+
+        try
+        {
+            var files = await data.TryGetFilesAsync() ?? [];
+            var paths = files
+                .Select(file => file.TryGetLocalPath())
+                .OfType<string>()
+                .Where(IsModArchiveName)
+                .ToList();
+            await viewModel.ImportModFilesAsync(paths);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            // A failed drop keeps the mod list untouched
+        }
+    }
+
+    private static bool ContainsFiles(IDataTransfer data)
+        => data.Formats is { } formats && formats.Contains(DataFormat.File);
+
+    private void ShowModDropOverlay(bool visible)
+    {
+        if (_modDropActive == visible)
+            return;
+
+        _modDropActive = visible;
+        ModDropOverlay.IsVisible = visible;
+    }
+
+    private void OnCatalogSearchKeyDown(object? sender, KeyEventArgs args)
+    {
+        if (args.Key is not (Key.Enter or Key.Return) ||
+            DataContext is not MainWindowViewModel viewModel)
+        {
+            return;
+        }
+
+        args.Handled = true;
+        viewModel.SearchModCatalogCommand.Execute(null);
+    }
+
+    private void OnCatalogModPreviewRequested(object? sender, TappedEventArgs args)
+    {
+        if (sender is not Border { DataContext: ModCatalogItemViewModel item } ||
+            DataContext is not MainWindowViewModel viewModel)
+        {
+            return;
+        }
+
+        if (args.Source is Button ||
+            args.Source is Visual visual && visual.FindAncestorOfType<Button>() is not null)
+        {
+            return;
+        }
+
+        viewModel.SelectModCatalogPreviewCommand.Execute(item);
+    }
+
+    private void OnModCatalogScrollChanged(object? sender, ScrollChangedEventArgs args)
+    {
+        if (args.OffsetDelta.Y == 0 ||
+            sender is not ScrollViewer scrollViewer ||
+            DataContext is not MainWindowViewModel viewModel ||
+            !viewModel.CanLoadMoreModCatalog)
+        {
+            return;
+        }
+
+        if (scrollViewer.Offset.Y + scrollViewer.Viewport.Height >=
+            scrollViewer.Extent.Height - 220)
+        {
+            viewModel.LoadMoreModCatalogCommand.Execute(null);
+        }
+    }
+
+    private void OnConsoleScrollChanged(object? sender, ScrollChangedEventArgs args)
+    {
+        if (args.OffsetDelta.Y == 0 ||
+            sender is not ScrollViewer scrollViewer ||
+            DataContext is not MainWindowViewModel viewModel ||
+            !viewModel.IsConsoleAutoScroll)
+        {
+            return;
+        }
+
+        var distanceFromBottom = scrollViewer.Extent.Height -
+                                 scrollViewer.Offset.Y -
+                                 scrollViewer.Viewport.Height;
+        if (distanceFromBottom > 24)
+            viewModel.IsConsoleAutoScroll = false;
+    }
+
+    private void ScrollConsoleToBottom()
+    {
+        if (DataContext is not MainWindowViewModel { IsConsoleAutoScroll: true } viewModel ||
+            viewModel.ConsoleLines.Count == 0)
+        {
+            return;
+        }
+
+        ConsoleList.ScrollIntoView(viewModel.ConsoleLines[viewModel.ConsoleLines.Count - 1]);
+    }
+
+    private void OnCloseModDeleteFlyoutClicked(object? sender, RoutedEventArgs args)
+    {
+        if (sender is not Control control)
+            return;
+
+        var popup = control.FindAncestorOfType<Popup>() ??
+            control.GetLogicalAncestors().OfType<Popup>().FirstOrDefault();
+        if (popup is not null)
+            popup.IsOpen = false;
     }
 
 }

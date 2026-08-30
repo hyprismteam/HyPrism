@@ -126,6 +126,8 @@ public static partial class Bootstrapper
                 sp.GetRequiredService<AppPathConfiguration>()));
             services.AddSingleton<IGameProcessTracker>(sp => sp.GetRequiredService<GameProcessTracker>());
 
+            services.AddSingleton<IGameConsoleService, GameConsoleService>();
+
             services.AddSingleton(sp =>
                 new ModManager(
                     sp.GetRequiredService<HttpClient>(),
@@ -163,7 +165,8 @@ public static partial class Bootstrapper
                     sp.GetRequiredService<IProfileManager>(),
                     sp.GetRequiredService<IProfileRepository>(),
                     sp.GetRequiredService<ILocalNodeServiceFactory>(),
-                    sp.GetRequiredService<LogSessionPaths>()));
+                    sp.GetRequiredService<LogSessionPaths>(),
+                    sp.GetRequiredService<IGameConsoleService>()));
             services.AddSingleton<IGameLauncher>(sp => sp.GetRequiredService<GameLauncher>());
 
             services.AddSingleton(sp =>

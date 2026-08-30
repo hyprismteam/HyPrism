@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using Avalonia.Threading;
@@ -59,6 +60,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     private readonly IMirrorDiscovery? _mirrorDiscovery;
     private readonly IGameVersionCatalog? _versionCatalog;
     private readonly IModManager? _modManager;
+    private readonly IGameConsoleService? _gameConsole;
     private readonly HttpClient _httpClient;
     private readonly RemoteImageCache? _remoteImageCache;
     private readonly StringLocalizer _localizer;
@@ -75,6 +77,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     private readonly ObservableRangeCollection<InstanceModItemViewModel> _installedMods = [];
     private readonly ObservableRangeCollection<InstanceModItemViewModel> _visibleInstalledMods = [];
     private readonly ObservableRangeCollection<ModCatalogItemViewModel> _modCatalogItems = [];
+    private readonly ObservableRangeCollection<ModCatalogFileItemViewModel> _modCatalogPreviewFiles = [];
     private readonly ObservableRangeCollection<InstanceWorldItemViewModel> _instanceWorlds = [];
     private readonly ObservableRangeCollection<NewsItemViewModel> _latestNews = [];
     private ProgressUpdateMessage? _pendingProgressUpdate;
@@ -96,6 +99,21 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     private bool _isManagedInstanceCancellationArmed;
     private string? _modsLoadedForInstanceId;
     private string? _worldsLoadedForInstanceId;
+    private readonly DispatcherTimer _consoleFlushTimer;
+    private readonly object _pendingConsoleLock = new();
+    private readonly List<GameConsoleLine> _pendingConsoleLines = [];
+    private readonly ObservableRangeCollection<ConsoleLineViewModel> _consoleLines = [];
+    private readonly Dictionary<string, InstalledMod> _modUpdatesById = new(StringComparer.Ordinal);
+    private string? _consoleLoadedForInstanceId;
+    private bool _modCatalogFiltersLoaded;
+    private bool _suppressCatalogReload;
+    private List<ModCategory> _loadedModCategories = [];
+    private int _modCatalogPage;
+    private CancellationTokenSource _modIconsCancellation = new();
+    private CancellationTokenSource _modPreviewImageCancellation = new();
+    private int _modCatalogPreviewVersion;
+    private const int ModCatalogPageSize = 24;
+    private const int MaxConsoleLines = 3000;
     private bool _hasLoadedNews;
     private bool _canLoadMoreNews = true;
     private bool _isOfficialProfile;
@@ -327,6 +345,77 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     private string _modCatalogSearchQuery = string.Empty;
 
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasModSelection))]
+    [NotifyPropertyChangedFor(nameof(SelectedModCountText))]
+    private int _selectedModCount;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasModUpdates))]
+    [NotifyPropertyChangedFor(nameof(ModUpdateCountText))]
+    [NotifyPropertyChangedFor(nameof(InstanceModsUpdatesAvailableText))]
+    private int _modUpdateCount;
+
+    [ObservableProperty]
+    private bool _isCheckingModUpdates;
+
+    [ObservableProperty]
+    private bool _isApplyingModUpdates;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsConsoleEmpty))]
+    [NotifyPropertyChangedFor(nameof(HasConsoleLines))]
+    [NotifyPropertyChangedFor(nameof(ConsoleLineCountText))]
+    private string _consoleSearchQuery = string.Empty;
+
+    [ObservableProperty]
+    private bool _isConsoleAutoScroll = true;
+
+    [ObservableProperty]
+    private bool _isConsoleWrap;
+
+    [ObservableProperty]
+    private int _consoleRevision;
+
+    [ObservableProperty]
+    private InstanceListOptionViewModel? _selectedModCatalogCategory;
+
+    [ObservableProperty]
+    private InstanceListOptionViewModel? _selectedModCatalogSort;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanLoadMoreModCatalog))]
+    private bool _isLoadingMoreModCatalog;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanLoadMoreModCatalog))]
+    private bool _hasMoreModCatalog;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasModCatalogPreview))]
+    [NotifyPropertyChangedFor(nameof(CanInstallModCatalogPreview))]
+    [NotifyPropertyChangedFor(nameof(HasMultipleModCatalogPreviewScreenshots))]
+    [NotifyPropertyChangedFor(nameof(ModCatalogPreviewScreenshotPosition))]
+    private ModCatalogItemViewModel? _selectedModCatalogPreview;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanInstallModCatalogPreview))]
+    private ModCatalogFileItemViewModel? _selectedModCatalogPreviewFile;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasModCatalogPreviewImage))]
+    private Bitmap? _modCatalogPreviewImage;
+
+    [ObservableProperty]
+    private bool _isModCatalogPreviewLoading;
+
+    [ObservableProperty]
+    private bool _isModCatalogPreviewImageLoading;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ModCatalogPreviewScreenshotPosition))]
+    private int _modCatalogPreviewScreenshotIndex;
+
     public MainWindowViewModel(
         IInstanceRepository instances,
         IProfileManager profiles,
@@ -347,7 +436,8 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         IGameVersionCatalog? versionCatalog = null,
         IModManager? modManager = null,
         IHytaleAuthenticator? authenticator = null,
-        RemoteImageCache? remoteImageCache = null)
+        RemoteImageCache? remoteImageCache = null,
+        IGameConsoleService? gameConsole = null)
     {
         _instances = instances;
         _gameLaunchCoordinator = gameLaunchCoordinator;
@@ -363,6 +453,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         _mirrorDiscovery = mirrorDiscovery;
         _versionCatalog = versionCatalog;
         _modManager = modManager;
+        _gameConsole = gameConsole;
         _httpClient = httpClient;
         _remoteImageCache = remoteImageCache;
         _localizer = localizer;
@@ -402,6 +493,15 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         };
         _managedInstanceActionTimer.Tick += OnManagedInstanceActionTimerTick;
 
+        _consoleFlushTimer = new DispatcherTimer
+        {
+            Interval = TimeSpan.FromMilliseconds(120)
+        };
+        _consoleFlushTimer.Tick += OnConsoleFlushTimerTick;
+        if (_gameConsole is not null)
+            _gameConsole.LineReceived += OnConsoleLineReceived;
+        BuildModCatalogSortOptions();
+
         CurrentPageTitle = DashboardLabel;
         RefreshInstances();
         RefreshManagedInstanceContent();
@@ -414,7 +514,11 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     public ObservableCollection<InstanceModItemViewModel> InstalledMods => _installedMods;
     public ObservableCollection<InstanceModItemViewModel> VisibleInstalledMods => _visibleInstalledMods;
     public ObservableCollection<ModCatalogItemViewModel> ModCatalogItems => _modCatalogItems;
+    public ObservableCollection<ModCatalogFileItemViewModel> ModCatalogPreviewFiles => _modCatalogPreviewFiles;
     public ObservableCollection<InstanceWorldItemViewModel> InstanceWorlds => _instanceWorlds;
+    public ObservableCollection<ConsoleLineViewModel> ConsoleLines => _consoleLines;
+    public ObservableCollection<InstanceListOptionViewModel> ModCatalogCategories { get; } = [];
+    public ObservableCollection<InstanceListOptionViewModel> ModCatalogSortOptions { get; } = [];
     public ObservableCollection<NewsItemViewModel> LatestNews => _latestNews;
     public SettingsViewModel Settings
     {
@@ -480,6 +584,64 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     public string InstanceLogsHint => _localizer["instances.logs.hint"];
     public string InstanceLogsEmptyTitle => _localizer["instances.logs.emptyTitle"];
     public string InstanceLogsEmptyHint => _localizer["instances.logs.emptyHint"];
+    public string InstanceModsCheckUpdatesLabel => _localizer["instances.mods.checkUpdates"];
+    public string InstanceModsUpdateAllLabel => _localizer["instances.mods.updateAll"];
+    public string InstanceModsAddLabel => _localizer["instances.mods.add"];
+    public string InstanceModsDropImportLabel => _localizer["instances.mods.dropToImport"];
+    public string InstanceModsSelectAllLabel => _localizer["instances.mods.selectAll"];
+    public string InstanceModsClearSelectionLabel => _localizer["common.clear"];
+    public string InstanceModsEnableSelectedLabel => _localizer["instances.mods.enableSelected"];
+    public string InstanceModsDisableSelectedLabel => _localizer["instances.mods.disableSelected"];
+    public string InstanceModsDeleteSelectedLabel => _localizer["instances.mods.deleteSelected"];
+    public string InstanceModsDeleteTooltip => _localizer["common.delete"];
+    public string InstanceModsDeleteLabel => _localizer["common.delete"];
+    public string InstanceModsDeleteTitle => _localizer["instances.mods.deleteTitle"];
+    public string InstanceModsDeleteHint => _localizer["instances.mods.deleteHint"];
+    public string InstanceModsOpenPageTooltip => _localizer["instances.mods.openPage"];
+    public string InstanceModsToggleTooltip => _localizer["instances.mods.toggle"];
+    public string InstanceBrowseCategoryLabel => _localizer["instances.browse.category"];
+    public string InstanceBrowseSortLabel => _localizer["instances.browse.sort"];
+    public string InstanceBrowseLoadingMoreLabel => _localizer["instances.browse.loadingMore"];
+    public string ModCatalogPreviewAuthorLabel => _localizer["modManager.author"];
+    public string ModCatalogPreviewDownloadsLabel => _localizer["modManager.downloads"];
+    public string ModCatalogPreviewSelectVersionLabel => _localizer["modManager.selectVersion"];
+    public string ModCatalogPreviewNoFilesLabel => _localizer["modManager.noFilesAvailable"];
+    public string ModCatalogPreviewCloseLabel => _localizer["common.close"];
+    public string ConsoleAutoScrollLabel => _localizer["instances.console.autoScroll"];
+    public string ConsoleClearLabel => _localizer["instances.console.clear"];
+    public string ConsoleSearchHint => _localizer["instances.console.search"];
+    public string ConsoleWrapLabel => _localizer["instances.console.wrap"];
+    public bool HasModSelection => SelectedModCount > 0;
+    public bool HasModUpdates => ModUpdateCount > 0;
+    public bool IsConsoleRunning => IsManagedInstanceRunning;
+    public bool HasConsoleLines => ConsoleLines.Count > 0;
+    public bool IsConsoleEmpty => ConsoleLines.Count == 0;
+    public bool CanLoadMoreModCatalog => HasMoreModCatalog && !IsLoadingMoreModCatalog && !IsModCatalogLoading;
+    public bool HasModCatalogPreview => SelectedModCatalogPreview is not null;
+    public bool HasModCatalogPreviewImage => ModCatalogPreviewImage is not null;
+    public bool HasModCatalogPreviewFiles => ModCatalogPreviewFiles.Count > 0;
+    public bool HasMultipleModCatalogPreviewScreenshots =>
+        SelectedModCatalogPreview is { ScreenshotUrls.Count: > 1 };
+    public bool CanInstallModCatalogPreview =>
+        SelectedModCatalogPreview is { IsInstalling: false } &&
+        SelectedModCatalogPreviewFile is { IsInstalled: false };
+    public string ModCatalogPreviewScreenshotPosition => SelectedModCatalogPreview is { ScreenshotUrls.Count: > 0 } item
+        ? $"{ModCatalogPreviewScreenshotIndex + 1} / {item.ScreenshotUrls.Count}"
+        : string.Empty;
+    public string SelectedModCountText =>
+        _localizer.Format("instances.mods.selectedCount", SelectedModCount);
+    public string ModUpdateCountText =>
+        ModUpdateCount.ToString(System.Globalization.CultureInfo.CurrentCulture);
+    public string InstanceModsUpdatesAvailableText =>
+        _localizer.Format("instances.mods.updatesAvailable", ModUpdateCount);
+    public string InstanceModsFooterText =>
+        _localizer.Format("instances.mods.countInstalled", InstalledMods.Count);
+    public string ConsoleStatusText =>
+        IsConsoleRunning
+            ? _localizer["instances.console.running"]
+            : _localizer["instances.console.offline"];
+    public string ConsoleLineCountText =>
+        _localizer.Format("instances.console.lineCount", ConsoleLines.Count);
     public string InstanceNotInstalledTitle => _localizer["instances.content.notInstalledTitle"];
     public string InstanceNotInstalledHint => _localizer["instances.content.notInstalledHint"];
     public string RefreshLabel => _localizer["common.refresh"];
@@ -786,11 +948,20 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         if (section == "mods" && !IsInstanceModsLoading &&
             !string.Equals(_modsLoadedForInstanceId, _managedInstance?.Id, StringComparison.Ordinal))
             _ = LoadInstalledModsAsync();
-        else if (section == "browse" && ModCatalogItems.Count == 0)
-            _ = SearchModCatalogAsync();
+        else if (section == "browse")
+        {
+            _ = EnsureModCatalogFiltersAsync();
+            if (ModCatalogItems.Count == 0)
+                _ = SearchModCatalogAsync();
+        }
         else if (section == "worlds" && !IsInstanceWorldsLoading &&
                  !string.Equals(_worldsLoadedForInstanceId, _managedInstance?.Id, StringComparison.Ordinal))
             _ = LoadInstanceWorldsAsync();
+        else if (section == "console")
+        {
+            PrepareConsoleForCurrentInstance();
+            _consoleFlushTimer.Start();
+        }
     }
 
     [RelayCommand]
@@ -798,6 +969,8 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     {
         InstanceSection = string.Empty;
         InstanceContentError = string.Empty;
+        ResetModCatalogPreview();
+        _consoleFlushTimer.Stop();
     }
 
     [RelayCommand]
@@ -806,7 +979,120 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
 
     [RelayCommand]
     private Task SearchModCatalogAsync()
-        => LoadModCatalogAsync(ModCatalogSearchQuery);
+        => LoadModCatalogAsync(ModCatalogSearchQuery, false);
+
+    [RelayCommand]
+    private Task LoadMoreModCatalogAsync()
+        => CanLoadMoreModCatalog
+            ? LoadModCatalogAsync(ModCatalogSearchQuery, true)
+            : Task.CompletedTask;
+
+    [RelayCommand]
+    private async Task SelectModCatalogPreviewAsync(ModCatalogItemViewModel? item)
+    {
+        if (item is null || _modManager is null)
+            return;
+
+        if (ReferenceEquals(SelectedModCatalogPreview, item))
+            return;
+
+        var previewVersion = ++_modCatalogPreviewVersion;
+        SelectedModCatalogPreview = item;
+        SelectedModCatalogPreviewFile = null;
+        _modCatalogPreviewFiles.Clear();
+        OnPropertyChanged(nameof(HasModCatalogPreviewFiles));
+        OnPropertyChanged(nameof(HasMultipleModCatalogPreviewScreenshots));
+        ModCatalogPreviewScreenshotIndex = 0;
+        IsModCatalogPreviewLoading = true;
+        ReplaceModCatalogPreviewImage(null);
+        _ = LoadModCatalogPreviewImageAsync(item, previewVersion);
+
+        try
+        {
+            var result = await _modManager.GetModFilesAsync(item.Id, 0, 10);
+            if (previewVersion != _modCatalogPreviewVersion ||
+                !ReferenceEquals(SelectedModCatalogPreview, item))
+            {
+                return;
+            }
+
+            var files = result.Files.Select(file => new ModCatalogFileItemViewModel(
+                file,
+                GetModReleaseLabel(file.ReleaseType),
+                string.Equals(file.Id, item.InstalledFileId, StringComparison.Ordinal)));
+            _modCatalogPreviewFiles.ReplaceRange(files);
+            SelectedModCatalogPreviewFile = _modCatalogPreviewFiles.FirstOrDefault(file =>
+                string.Equals(file.Id, item.LatestFileId, StringComparison.Ordinal)) ??
+                _modCatalogPreviewFiles.FirstOrDefault();
+            OnPropertyChanged(nameof(HasModCatalogPreviewFiles));
+            OnPropertyChanged(nameof(CanInstallModCatalogPreview));
+        }
+        catch (Exception ex)
+        {
+            if (previewVersion == _modCatalogPreviewVersion)
+                InstanceContentError = ex.Message;
+        }
+        finally
+        {
+            if (previewVersion == _modCatalogPreviewVersion)
+                IsModCatalogPreviewLoading = false;
+        }
+    }
+
+    [RelayCommand]
+    private void CloseModCatalogPreview()
+        => ResetModCatalogPreview();
+
+    [RelayCommand]
+    private void ShowPreviousModCatalogScreenshot()
+        => MoveModCatalogPreviewScreenshot(-1);
+
+    [RelayCommand]
+    private void ShowNextModCatalogScreenshot()
+        => MoveModCatalogPreviewScreenshot(1);
+
+    [RelayCommand]
+    private async Task InstallModCatalogPreviewAsync()
+    {
+        var item = SelectedModCatalogPreview;
+        var file = SelectedModCatalogPreviewFile;
+        if (item is null || file is null || item.IsInstalling || file.IsInstalled ||
+            _modManager is null || _managedInstance?.IsInstalled != true)
+        {
+            return;
+        }
+
+        var instancePath = _instances.GetInstancePathById(_managedInstance.Id);
+        if (string.IsNullOrWhiteSpace(instancePath))
+            return;
+
+        item.IsInstalling = true;
+        OnPropertyChanged(nameof(CanInstallModCatalogPreview));
+        InstanceContentError = string.Empty;
+        try
+        {
+            if (!await _modManager.InstallModFileToInstanceAsync(item.Id, file.Id, instancePath))
+            {
+                InstanceContentError = _localizer["instances.mods.installFailed"];
+                return;
+            }
+
+            item.IsInstalled = true;
+            item.InstalledFileId = file.Id;
+            foreach (var previewFile in ModCatalogPreviewFiles)
+                previewFile.IsInstalled = ReferenceEquals(previewFile, file);
+            await LoadInstalledModsAsync();
+        }
+        catch (Exception ex)
+        {
+            InstanceContentError = ex.Message;
+        }
+        finally
+        {
+            item.IsInstalling = false;
+            OnPropertyChanged(nameof(CanInstallModCatalogPreview));
+        }
+    }
 
     [RelayCommand]
     private Task RefreshInstanceWorldsAsync()
@@ -851,6 +1137,706 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
             item.IsInstalling = false;
         }
     }
+
+    #region Installed mod management
+
+    [RelayCommand]
+    private async Task ToggleModAsync(InstanceModItemViewModel? item)
+    {
+        if (item is null || item.IsBusy ||
+            _modManager is null || _managedInstance?.IsInstalled != true)
+        {
+            return;
+        }
+
+        var instancePath = _instances.GetInstancePathById(_managedInstance.Id);
+        if (string.IsNullOrWhiteSpace(instancePath))
+            return;
+
+        item.IsBusy = true;
+        InstanceContentError = string.Empty;
+        try
+        {
+            var target = !item.IsEnabled;
+            var changed = await Task.Run(
+                () => _modManager.SetModEnabledAsync(instancePath, item.Id, target));
+            if (!changed)
+            {
+                InstanceContentError = _localizer["instances.mods.toggleFailed"];
+                return;
+            }
+
+            item.IsEnabled = target;
+        }
+        finally
+        {
+            item.IsBusy = false;
+        }
+    }
+
+    [RelayCommand]
+    private async Task DeleteModAsync(InstanceModItemViewModel? item)
+    {
+        if (item is null || item.IsBusy ||
+            _modManager is null || _managedInstance?.IsInstalled != true)
+        {
+            return;
+        }
+
+        var instancePath = _instances.GetInstancePathById(_managedInstance.Id);
+        if (string.IsNullOrWhiteSpace(instancePath))
+            return;
+
+        item.IsBusy = true;
+        InstanceContentError = string.Empty;
+        try
+        {
+            var removed = await Task.Run(
+                () => _modManager.RemoveInstalledModAsync(instancePath, item.Id));
+            if (!removed)
+                InstanceContentError = _localizer["instances.mods.deleteFailed"];
+        }
+        finally
+        {
+            item.IsBusy = false;
+        }
+
+        await LoadInstalledModsAsync();
+    }
+
+    [RelayCommand]
+    private void SelectAllInstalledMods()
+    {
+        foreach (var mod in VisibleInstalledMods)
+            mod.IsSelected = true;
+    }
+
+    [RelayCommand]
+    private void ClearInstalledModsSelection()
+    {
+        foreach (var mod in InstalledMods)
+            mod.IsSelected = false;
+    }
+
+    [RelayCommand]
+    private Task EnableSelectedModsAsync()
+        => SetModsEnabledForSelectionAsync(true);
+
+    [RelayCommand]
+    private Task DisableSelectedModsAsync()
+        => SetModsEnabledForSelectionAsync(false);
+
+    private async Task SetModsEnabledForSelectionAsync(bool enabled)
+    {
+        var selected = InstalledMods.Where(mod => mod.IsSelected).ToList();
+        if (selected.Count == 0 ||
+            _modManager is null || _managedInstance?.IsInstalled != true)
+        {
+            return;
+        }
+
+        var instancePath = _instances.GetInstancePathById(_managedInstance.Id);
+        if (string.IsNullOrWhiteSpace(instancePath))
+            return;
+
+        InstanceContentError = string.Empty;
+        foreach (var item in selected)
+        {
+            if (item.IsBusy)
+                continue;
+
+            item.IsBusy = true;
+            try
+            {
+                var changed = await Task.Run(
+                    () => _modManager.SetModEnabledAsync(instancePath, item.Id, enabled));
+                if (changed)
+                    item.IsEnabled = enabled;
+                else
+                    InstanceContentError = _localizer["instances.mods.toggleFailed"];
+            }
+            finally
+            {
+                item.IsBusy = false;
+            }
+        }
+    }
+
+    [RelayCommand]
+    private async Task DeleteSelectedModsAsync()
+    {
+        var selected = InstalledMods.Where(mod => mod.IsSelected).ToList();
+        if (selected.Count == 0 ||
+            _modManager is null || _managedInstance?.IsInstalled != true)
+        {
+            return;
+        }
+
+        var instancePath = _instances.GetInstancePathById(_managedInstance.Id);
+        if (string.IsNullOrWhiteSpace(instancePath))
+            return;
+
+        InstanceContentError = string.Empty;
+        foreach (var item in selected)
+        {
+            item.IsBusy = true;
+            var removed = await Task.Run(
+                () => _modManager.RemoveInstalledModAsync(instancePath, item.Id));
+            if (!removed)
+                InstanceContentError = _localizer["instances.mods.deleteFailed"];
+        }
+
+        await LoadInstalledModsAsync();
+    }
+
+    [RelayCommand]
+    private async Task CheckModUpdatesAsync()
+    {
+        if (_modManager is null || IsCheckingModUpdates ||
+            _managedInstance?.IsInstalled != true)
+        {
+            return;
+        }
+
+        var instancePath = _instances.GetInstancePathById(_managedInstance.Id);
+        if (string.IsNullOrWhiteSpace(instancePath))
+            return;
+
+        IsCheckingModUpdates = true;
+        InstanceContentError = string.Empty;
+        try
+        {
+            var updates = await Task.Run(
+                () => _modManager.CheckInstanceModUpdatesAsync(instancePath));
+            _modUpdatesById.Clear();
+            foreach (var update in updates)
+                _modUpdatesById[update.Id] = update;
+
+            foreach (var item in InstalledMods)
+            {
+                item.UpdateVersion =
+                    _modUpdatesById.TryGetValue(item.Id, out var update) &&
+                    !string.IsNullOrWhiteSpace(update.LatestVersion)
+                        ? update.LatestVersion
+                        : _localizer["instances.mods.updateAvailableShort"];
+            }
+
+            ModUpdateCount = _modUpdatesById.Count;
+        }
+        finally
+        {
+            IsCheckingModUpdates = false;
+        }
+    }
+
+    [RelayCommand]
+    private async Task UpdateAllModsWithUpdatesAsync()
+    {
+        if (_modManager is null || IsApplyingModUpdates || !HasModUpdates ||
+            _managedInstance?.IsInstalled != true)
+        {
+            return;
+        }
+
+        var instancePath = _instances.GetInstancePathById(_managedInstance.Id);
+        if (string.IsNullOrWhiteSpace(instancePath))
+            return;
+
+        IsApplyingModUpdates = true;
+        InstanceContentError = string.Empty;
+        try
+        {
+            foreach (var (modId, update) in _modUpdatesById.ToList())
+            {
+                var installed = await _modManager.InstallModFileToInstanceAsync(
+                    update.CurseForgeId,
+                    update.LatestFileId,
+                    instancePath);
+                if (installed)
+                    _modUpdatesById.Remove(modId);
+                else
+                    InstanceContentError = _localizer["instances.mods.installFailed"];
+            }
+
+            ModUpdateCount = _modUpdatesById.Count;
+        }
+        finally
+        {
+            IsApplyingModUpdates = false;
+        }
+
+        await LoadInstalledModsAsync();
+    }
+
+    [RelayCommand]
+    private async Task ImportModsAsync()
+    {
+        if (_filePicker is null)
+            return;
+
+        var files = await _filePicker.BrowseModFilesAsync();
+        await ImportModFilesAsync(files);
+    }
+
+    public async Task ImportModFilesAsync(IReadOnlyList<string>? filePaths)
+    {
+        if (_modManager is null || _managedInstance?.IsInstalled != true)
+            return;
+
+        var paths = (filePaths ?? [])
+            .Where(path => !string.IsNullOrWhiteSpace(path) &&
+                           (path.EndsWith(".jar", StringComparison.OrdinalIgnoreCase) ||
+                            path.EndsWith(".zip", StringComparison.OrdinalIgnoreCase) ||
+                            path.EndsWith(".jar.disabled", StringComparison.OrdinalIgnoreCase) ||
+                            path.EndsWith(".zip.disabled", StringComparison.OrdinalIgnoreCase)))
+            .ToList();
+        if (paths.Count == 0)
+            return;
+
+        var instancePath = _instances.GetInstancePathById(_managedInstance.Id);
+        if (string.IsNullOrWhiteSpace(instancePath))
+            return;
+
+        InstanceContentError = string.Empty;
+        var imported = false;
+        foreach (var sourcePath in paths)
+        {
+            try
+            {
+                if (await Task.Run(() => _modManager.InstallLocalModFile(sourcePath, instancePath)))
+                    imported = true;
+            }
+            catch (Exception ex)
+            {
+                InstanceContentError = ex.Message;
+            }
+        }
+
+        if (imported)
+            await LoadInstalledModsAsync();
+    }
+
+    [RelayCommand]
+    private Task OpenInstalledModPageAsync(InstanceModItemViewModel? item)
+        => item is null
+            ? Task.CompletedTask
+            : OpenExternalAsync(item.CurseForgeUrl);
+
+    [RelayCommand]
+    private Task OpenCatalogModPageAsync(ModCatalogItemViewModel? item)
+        => item is null
+            ? Task.CompletedTask
+            : OpenExternalAsync(item.CurseForgeUrl);
+
+    private async Task OpenExternalAsync(string url)
+    {
+        if (Uri.TryCreate(url, UriKind.Absolute, out var uri) &&
+            uri.Scheme is "http" or "https")
+        {
+            await _uriLauncher.LaunchAsync(uri);
+        }
+    }
+
+    private void UnsubscribeInstalledModItems()
+    {
+        foreach (var item in InstalledMods)
+            item.PropertyChanged -= OnInstalledModItemPropertyChanged;
+    }
+
+    private void OnInstalledModItemPropertyChanged(object? sender, PropertyChangedEventArgs args)
+    {
+        if (sender is InstanceModItemViewModel &&
+            args.PropertyName == nameof(InstanceModItemViewModel.IsSelected))
+        {
+            RecalculateInstalledModsSelection();
+        }
+    }
+
+    private void RecalculateInstalledModsSelection()
+    {
+        SelectedModCount = InstalledMods.Count(mod => mod.IsSelected);
+    }
+
+    private void RestartModIconFetch()
+    {
+        _modIconsCancellation.Cancel();
+        _modIconsCancellation.Dispose();
+        _modIconsCancellation = new CancellationTokenSource();
+    }
+
+    private void FetchInstalledModIcons(IEnumerable<InstanceModItemViewModel> items)
+    {
+        if (_remoteImageCache is null)
+            return;
+
+        var token = _modIconsCancellation.Token;
+        var targets = items
+            .Where(item => !string.IsNullOrWhiteSpace(item.IconUrl) && item.Icon is null)
+            .ToList();
+        if (targets.Count == 0)
+            return;
+
+        _ = Task.Run(async () =>
+        {
+            foreach (var item in targets)
+            {
+                if (token.IsCancellationRequested)
+                    return;
+
+                try
+                {
+                    var bitmap = await RemoteNewsBitmap.LoadAsync(
+                        item.IconUrl,
+                        96,
+                        _httpClient,
+                        token,
+                        _remoteImageCache);
+                    if (bitmap is not null && !token.IsCancellationRequested)
+                        Dispatcher.UIThread.Post(() => item.Icon = bitmap);
+                }
+                catch (OperationCanceledException)
+                {
+                    return;
+                }
+                catch
+                {
+                    // Icon loading is decorative and never blocks the row
+                }
+            }
+        }, token);
+    }
+
+    private void FetchCatalogModIcons(IEnumerable<ModCatalogItemViewModel> items)
+    {
+        if (_remoteImageCache is null)
+            return;
+
+        var token = _modIconsCancellation.Token;
+        var targets = items
+            .Where(item => !string.IsNullOrWhiteSpace(item.IconUrl) && item.Icon is null)
+            .ToList();
+        if (targets.Count == 0)
+            return;
+
+        _ = Task.Run(async () =>
+        {
+            foreach (var item in targets)
+            {
+                if (token.IsCancellationRequested)
+                    return;
+
+                try
+                {
+                    var bitmap = await RemoteNewsBitmap.LoadAsync(
+                        item.IconUrl,
+                        96,
+                        _httpClient,
+                        token,
+                        _remoteImageCache);
+                    if (bitmap is not null && !token.IsCancellationRequested)
+                        Dispatcher.UIThread.Post(() => item.Icon = bitmap);
+                }
+                catch (OperationCanceledException)
+                {
+                    return;
+                }
+                catch
+                {
+                    // Icon loading is decorative and never blocks the row
+                }
+            }
+        }, token);
+    }
+
+    private void MoveModCatalogPreviewScreenshot(int offset)
+    {
+        if (SelectedModCatalogPreview is not { ScreenshotUrls.Count: > 1 } item)
+            return;
+
+        ModCatalogPreviewScreenshotIndex =
+            (ModCatalogPreviewScreenshotIndex + offset + item.ScreenshotUrls.Count) %
+            item.ScreenshotUrls.Count;
+        _ = LoadModCatalogPreviewImageAsync(item, _modCatalogPreviewVersion);
+    }
+
+    private async Task LoadModCatalogPreviewImageAsync(
+        ModCatalogItemViewModel item,
+        int previewVersion)
+    {
+        _modPreviewImageCancellation.Cancel();
+        _modPreviewImageCancellation.Dispose();
+        _modPreviewImageCancellation = new CancellationTokenSource();
+        var imageCancellation = _modPreviewImageCancellation;
+        var token = imageCancellation.Token;
+
+        var url = item.ScreenshotUrls.Count > ModCatalogPreviewScreenshotIndex
+            ? item.ScreenshotUrls[ModCatalogPreviewScreenshotIndex]
+            : item.IconUrl;
+        IsModCatalogPreviewImageLoading = true;
+        try
+        {
+            var bitmap = await RemoteNewsBitmap.LoadAsync(
+                url,
+                720,
+                _httpClient,
+                token,
+                _remoteImageCache);
+            if (token.IsCancellationRequested || previewVersion != _modCatalogPreviewVersion ||
+                !ReferenceEquals(SelectedModCatalogPreview, item))
+            {
+                bitmap?.Dispose();
+                return;
+            }
+
+            await Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                if (token.IsCancellationRequested || previewVersion != _modCatalogPreviewVersion ||
+                    !ReferenceEquals(SelectedModCatalogPreview, item))
+                {
+                    bitmap?.Dispose();
+                    return;
+                }
+
+                ReplaceModCatalogPreviewImage(bitmap);
+            });
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        finally
+        {
+            await Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                if (ReferenceEquals(_modPreviewImageCancellation, imageCancellation))
+                    IsModCatalogPreviewImageLoading = false;
+            });
+        }
+    }
+
+    private void ResetModCatalogPreview()
+    {
+        _modCatalogPreviewVersion++;
+        _modPreviewImageCancellation.Cancel();
+        SelectedModCatalogPreview = null;
+        SelectedModCatalogPreviewFile = null;
+        _modCatalogPreviewFiles.Clear();
+        IsModCatalogPreviewLoading = false;
+        IsModCatalogPreviewImageLoading = false;
+        ModCatalogPreviewScreenshotIndex = 0;
+        ReplaceModCatalogPreviewImage(null);
+        OnPropertyChanged(nameof(HasModCatalogPreviewFiles));
+        OnPropertyChanged(nameof(HasMultipleModCatalogPreviewScreenshots));
+        OnPropertyChanged(nameof(CanInstallModCatalogPreview));
+    }
+
+    private void ReplaceModCatalogPreviewImage(Bitmap? image)
+    {
+        var previous = ModCatalogPreviewImage;
+        ModCatalogPreviewImage = image;
+        if (!ReferenceEquals(previous, image))
+            previous?.Dispose();
+    }
+
+    private string GetModReleaseLabel(int releaseType) => releaseType switch
+    {
+        2 => _localizer["modManager.releaseType.beta"],
+        3 => _localizer["modManager.releaseType.alpha"],
+        _ => _localizer["modManager.releaseType.release"]
+    };
+
+    #endregion
+
+    #region Mod catalog filters
+
+    private async Task EnsureModCatalogFiltersAsync()
+    {
+        if (_modManager is null || _modCatalogFiltersLoaded ||
+            ModCatalogCategories.Count > 0)
+        {
+            return;
+        }
+
+        _modCatalogFiltersLoaded = true;
+        try
+        {
+            var categories = await _modManager.GetModCategoriesAsync();
+            if (categories.Count == 0)
+            {
+                _modCatalogFiltersLoaded = false;
+                return;
+            }
+
+            _loadedModCategories = categories;
+            RebuildModCatalogCategories();
+        }
+        catch
+        {
+            _modCatalogFiltersLoaded = false;
+        }
+    }
+
+    private void RebuildModCatalogCategories()
+    {
+        var selectedValue = SelectedModCatalogCategory?.Value;
+        _suppressCatalogReload = true;
+        ModCatalogCategories.Clear();
+        ModCatalogCategories.Add(
+            new InstanceListOptionViewModel("all", _localizer["instances.browse.categoryAll"]));
+        foreach (var category in _loadedModCategories)
+        {
+            ModCatalogCategories.Add(new InstanceListOptionViewModel(
+                category.Id.ToString(System.Globalization.CultureInfo.CurrentCulture),
+                category.Name));
+        }
+
+        SelectedModCatalogCategory =
+            ModCatalogCategories.FirstOrDefault(option =>
+                string.Equals(option.Value, selectedValue, StringComparison.Ordinal)) ??
+            ModCatalogCategories[0];
+        _suppressCatalogReload = false;
+    }
+
+    private void BuildModCatalogSortOptions()
+    {
+        var selectedValue = SelectedModCatalogSort?.Value ?? "2";
+        _suppressCatalogReload = true;
+        ModCatalogSortOptions.Clear();
+        ModCatalogSortOptions.Add(new InstanceListOptionViewModel("1", _localizer["instances.browse.sortRelevancy"]));
+        ModCatalogSortOptions.Add(new InstanceListOptionViewModel("2", _localizer["instances.browse.sortPopularity"]));
+        ModCatalogSortOptions.Add(new InstanceListOptionViewModel("3", _localizer["instances.browse.sortLatestUpdate"]));
+        ModCatalogSortOptions.Add(new InstanceListOptionViewModel("11", _localizer["instances.browse.sortCreationDate"]));
+        ModCatalogSortOptions.Add(new InstanceListOptionViewModel("6", _localizer["instances.browse.sortTotalDownloads"]));
+        SelectedModCatalogSort =
+            ModCatalogSortOptions.FirstOrDefault(option => option.Value == selectedValue) ??
+            ModCatalogSortOptions[1];
+        _suppressCatalogReload = false;
+    }
+
+    partial void OnSelectedModCatalogCategoryChanged(InstanceListOptionViewModel? value)
+    {
+        if (!_suppressCatalogReload)
+            _ = SearchModCatalogAsync();
+    }
+
+    partial void OnSelectedModCatalogSortChanged(InstanceListOptionViewModel? value)
+    {
+        if (!_suppressCatalogReload)
+            _ = SearchModCatalogAsync();
+    }
+
+    #endregion
+
+    #region Game console
+
+    partial void OnConsoleSearchQueryChanged(string value)
+        => RebuildConsoleLines();
+
+    private void OnConsoleLineReceived(object? sender, GameConsoleLineEventArgs e)
+    {
+        lock (_pendingConsoleLock)
+        {
+            _pendingConsoleLines.Add(e.Line);
+            if (_pendingConsoleLines.Count > MaxConsoleLines * 2)
+            {
+                _pendingConsoleLines.RemoveRange(0, _pendingConsoleLines.Count - MaxConsoleLines);
+            }
+        }
+    }
+
+    private void OnConsoleFlushTimerTick(object? sender, EventArgs args)
+        => FlushConsoleLines();
+
+    private void FlushConsoleLines()
+    {
+        List<GameConsoleLine> pending;
+        lock (_pendingConsoleLock)
+        {
+            if (_pendingConsoleLines.Count == 0)
+                return;
+
+            pending = [.. _pendingConsoleLines];
+            _pendingConsoleLines.Clear();
+        }
+
+        var instanceId = _managedInstance?.Id;
+        if (string.IsNullOrWhiteSpace(instanceId))
+            return;
+
+        var filter = ConsoleSearchQuery.Trim();
+        foreach (var line in pending.Where(line =>
+                     string.Equals(line.InstanceId, instanceId, StringComparison.Ordinal) &&
+                     MatchesConsoleFilter(line, filter)))
+        {
+            _consoleLines.Add(ToConsoleLineViewModel(line));
+        }
+
+        while (_consoleLines.Count > MaxConsoleLines)
+            _consoleLines.RemoveAt(0);
+
+        ConsoleRevision++;
+        NotifyConsoleStateChanged();
+    }
+
+    private void RebuildConsoleLines()
+    {
+        lock (_pendingConsoleLock)
+            _pendingConsoleLines.Clear();
+
+        var instanceId = _managedInstance?.Id;
+        if (string.IsNullOrWhiteSpace(instanceId) || _gameConsole is null)
+        {
+            _consoleLines.ReplaceRange([]);
+            ConsoleRevision++;
+            NotifyConsoleStateChanged();
+            return;
+        }
+
+        var filter = ConsoleSearchQuery.Trim();
+        var lines = _gameConsole
+            .GetLines(instanceId)
+            .Where(line => MatchesConsoleFilter(line, filter))
+            .ToList();
+        var skip = Math.Max(0, lines.Count - MaxConsoleLines);
+        _consoleLines.ReplaceRange(lines.Skip(skip).Select(ToConsoleLineViewModel));
+        ConsoleRevision++;
+        NotifyConsoleStateChanged();
+    }
+
+    private void PrepareConsoleForCurrentInstance()
+    {
+        _consoleLoadedForInstanceId = _managedInstance?.Id;
+        RebuildConsoleLines();
+    }
+
+    [RelayCommand]
+    private void ClearConsole()
+    {
+        if (_managedInstance is { } instance)
+            _gameConsole?.Clear(instance.Id);
+
+        RebuildConsoleLines();
+    }
+
+    private static bool MatchesConsoleFilter(GameConsoleLine line, string filter)
+        => string.IsNullOrEmpty(filter) ||
+           line.Text.Contains(filter, StringComparison.CurrentCultureIgnoreCase);
+
+    private static ConsoleLineViewModel ToConsoleLineViewModel(GameConsoleLine line)
+        => new(
+            line.Level,
+            line.Timestamp.ToLocalTime().ToString("HH:mm:ss"),
+            line.Text);
+
+    private void NotifyConsoleStateChanged()
+    {
+        OnPropertyChanged(nameof(HasConsoleLines));
+        OnPropertyChanged(nameof(IsConsoleEmpty));
+        OnPropertyChanged(nameof(ConsoleLineCountText));
+        OnPropertyChanged(nameof(ConsoleStatusText));
+        OnPropertyChanged(nameof(IsConsoleRunning));
+    }
+
+    #endregion
 
     [RelayCommand(AllowConcurrentExecutions = true)]
     private async Task RunManagedInstanceAsync()
@@ -1148,10 +2134,16 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         InstalledMods.Clear();
         VisibleInstalledMods.Clear();
         ModCatalogItems.Clear();
+        ResetModCatalogPreview();
         InstanceWorlds.Clear();
         _modsLoadedForInstanceId = null;
         _worldsLoadedForInstanceId = null;
+        _modUpdatesById.Clear();
+        ModUpdateCount = 0;
+        SelectedModCount = 0;
         InstanceContentError = string.Empty;
+        RestartModIconFetch();
+        RebuildConsoleLines();
         NotifyInstanceContentCollectionsChanged();
 
         if (_managedInstance?.IsInstalled != true)
@@ -1182,17 +2174,30 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
             if (!string.Equals(_managedInstance?.Id, instanceId, StringComparison.Ordinal))
                 return;
 
+            UnsubscribeInstalledModItems();
             _installedMods.ReplaceRange(mods
                 .OrderBy(mod => mod.Name, StringComparer.CurrentCultureIgnoreCase)
-                .Select(mod => new InstanceModItemViewModel(
-                    mod.Id,
-                    mod.Name,
-                    string.IsNullOrWhiteSpace(mod.Version) ? _localizer["common.unknown"] : mod.Version,
-                    string.IsNullOrWhiteSpace(mod.Author) ? _localizer["common.unknown"] : mod.Author,
-                    mod.Enabled)));
+                .Select(mod =>
+                {
+                    var item = new InstanceModItemViewModel(
+                        mod.Id,
+                        mod.Name,
+                        string.IsNullOrWhiteSpace(mod.Version) ? _localizer["common.unknown"] : mod.Version,
+                        string.IsNullOrWhiteSpace(mod.Author) ? _localizer["common.unknown"] : mod.Author,
+                        mod.Enabled,
+                        mod.IconUrl,
+                        mod.CurseForgeId,
+                        mod.ReleaseType);
+                    if (_modUpdatesById.TryGetValue(mod.Id, out var update))
+                        item.UpdateVersion = update.LatestVersion;
+                    item.PropertyChanged += OnInstalledModItemPropertyChanged;
+                    return item;
+                }));
 
             FilterInstalledMods();
             RefreshCatalogInstalledState(mods);
+            FetchInstalledModIcons(_installedMods);
+            RecalculateInstalledModsSelection();
             _modsLoadedForInstanceId = instanceId;
         }
         catch (Exception ex)
@@ -1205,17 +2210,38 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         }
     }
 
-    private async Task LoadModCatalogAsync(string query)
+    private async Task LoadModCatalogAsync(string query, bool append)
     {
         if (_modManager is null || _managedInstance?.IsInstalled != true)
             return;
 
         var instanceId = _managedInstance.Id;
-        IsModCatalogLoading = true;
+        if (append)
+            IsLoadingMoreModCatalog = true;
+        else
+        {
+            IsModCatalogLoading = true;
+            ResetModCatalogPreview();
+        }
         InstanceContentError = string.Empty;
         try
         {
-            var result = await _modManager.SearchModsAsync(query.Trim(), 0, 24, [], 2, 1);
+            var page = append ? _modCatalogPage + 1 : 0;
+            var categories = SelectedModCatalogCategory is { Value: var categoryValue } &&
+                             !string.IsNullOrWhiteSpace(categoryValue) &&
+                             categoryValue != "all"
+                ? new[] { categoryValue }
+                : [];
+            var sortField = int.TryParse(SelectedModCatalogSort?.Value, out var parsedSort)
+                ? parsedSort
+                : 2;
+            var result = await _modManager.SearchModsAsync(
+                query.Trim(),
+                page,
+                ModCatalogPageSize,
+                categories,
+                sortField,
+                1);
             if (!string.Equals(_managedInstance?.Id, instanceId, StringComparison.Ordinal))
                 return;
 
@@ -1223,19 +2249,36 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
             var installed = string.IsNullOrWhiteSpace(instancePath)
                 ? []
                 : _modManager.GetInstanceInstalledMods(instancePath);
-            _modCatalogItems.ReplaceRange(result.Mods.Select(mod =>
+            var items = result.Mods.Select(mod =>
             {
+                var installedMod = FindInstalledCatalogMod(mod.Id, installed);
                 return new ModCatalogItemViewModel(
                     mod.Id,
                     mod.Name,
                     string.IsNullOrWhiteSpace(mod.Author) ? _localizer["common.unknown"] : mod.Author,
                     mod.Summary,
-                    mod.LatestFileId)
+                    mod.LatestFileId,
+                    mod.Slug,
+                    mod.IconUrl,
+                    mod.DownloadCount,
+                    screenshotUrls: mod.Screenshots
+                        .Select(screenshot => screenshot.Url ?? screenshot.ThumbnailUrl ?? string.Empty)
+                        .Where(url => !string.IsNullOrWhiteSpace(url))
+                        .ToList(),
+                    installedFileId: installedMod?.FileId ?? string.Empty)
                 {
-                    IsInstalled = IsCatalogModInstalled(mod.Id, installed)
+                    IsInstalled = installedMod is not null
                 };
-            }));
+            }).ToList();
 
+            if (append)
+                _modCatalogItems.AddRange(items);
+            else
+                _modCatalogItems.ReplaceRange(items);
+
+            _modCatalogPage = page;
+            HasMoreModCatalog = _modCatalogItems.Count < result.TotalCount && items.Count > 0;
+            FetchCatalogModIcons(items);
             NotifyInstanceContentCollectionsChanged();
         }
         catch (Exception ex)
@@ -1245,6 +2288,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         finally
         {
             IsModCatalogLoading = false;
+            IsLoadingMoreModCatalog = false;
         }
     }
 
@@ -1337,11 +2381,17 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     private void RefreshCatalogInstalledState(IReadOnlyCollection<InstalledMod> installedMods)
     {
         foreach (var item in ModCatalogItems)
-            item.IsInstalled = IsCatalogModInstalled(item.Id, installedMods);
+        {
+            var installedMod = FindInstalledCatalogMod(item.Id, installedMods);
+            item.IsInstalled = installedMod is not null;
+            item.InstalledFileId = installedMod?.FileId ?? string.Empty;
+        }
     }
 
-    private static bool IsCatalogModInstalled(string catalogId, IEnumerable<InstalledMod> installedMods)
-        => installedMods.Any(mod =>
+    private static InstalledMod? FindInstalledCatalogMod(
+        string catalogId,
+        IEnumerable<InstalledMod> installedMods)
+        => installedMods.FirstOrDefault(mod =>
             string.Equals(mod.CurseForgeId, catalogId, StringComparison.OrdinalIgnoreCase) ||
             string.Equals(mod.Id, catalogId, StringComparison.OrdinalIgnoreCase) ||
             string.Equals(mod.Id, $"cf-{catalogId}", StringComparison.OrdinalIgnoreCase));
@@ -1356,6 +2406,9 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(IsInstalledModsEmpty));
         OnPropertyChanged(nameof(IsModCatalogEmpty));
         OnPropertyChanged(nameof(IsInstanceWorldsEmpty));
+        OnPropertyChanged(nameof(InstanceModsFooterText));
+        OnPropertyChanged(nameof(HasModSelection));
+        OnPropertyChanged(nameof(SelectedModCountText));
     }
 
     private async Task LoadInstanceVersionsAsync(string branch)
@@ -2039,6 +3092,11 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         foreach (var article in _articleViewModelCache.Values)
             article.RefreshCulture();
 
+        if (_loadedModCategories.Count > 0)
+            RebuildModCatalogCategories();
+        BuildModCatalogSortOptions();
+        NotifyConsoleStateChanged();
+
         CurrentPageTitle = CurrentPage switch
         {
             InstancesPage => InstancesLabel,
@@ -2204,6 +3262,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
 
             UpdateSelectedInstancePresentation();
             NotifyManagedInstanceActionStateChanged();
+            NotifyConsoleStateChanged();
         });
     }
 
@@ -2230,6 +3289,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
                 EndManagedInstanceAction();
             else
                 NotifyManagedInstanceActionStateChanged();
+            NotifyConsoleStateChanged();
         });
     }
 
@@ -2387,6 +3447,16 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         Interlocked.Increment(ref _backgroundLoadVersion);
         _managedInstanceActionTimer.Stop();
         _managedInstanceActionTimer.Tick -= OnManagedInstanceActionTimerTick;
+        _consoleFlushTimer.Stop();
+        _consoleFlushTimer.Tick -= OnConsoleFlushTimerTick;
+        if (_gameConsole is not null)
+            _gameConsole.LineReceived -= OnConsoleLineReceived;
+        UnsubscribeInstalledModItems();
+        RestartModIconFetch();
+        _modIconsCancellation.Dispose();
+        _modPreviewImageCancellation.Cancel();
+        _modPreviewImageCancellation.Dispose();
+        ReplaceModCatalogPreviewImage(null);
         _newsImagesCancellation.Cancel();
         _newsImagesCancellation.Dispose();
         _articleImagesCancellation.Cancel();

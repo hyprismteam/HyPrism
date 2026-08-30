@@ -19,7 +19,8 @@ Desktop читает версию лаунчера, сгенерированну
 | Runtime | `IRuntimeProvisioner` | отменяемая установка JRE и Visual C++, поиск runtime и проверка совместимости |
 | Запуск | `IGameInstallationWorkflow`, `IGameLaunchCoordinator`, `IGameLauncher` | путь от выбранного или явно указанного экземпляра до процесса игры; координатор поднимает `LaunchFailed`, когда попытка завершилась без запущенного процесса |
 | Процесс | `IGameProcessTracker` | постоянное отслеживание процессов, типизированные события, сверка после простоя и корректное завершение конкретного экземпляра |
-| Моды | `IModManager` | поиск, установка, импорт, обновления и changelog |
+| Консоль | `IGameConsoleService` | живой буфер вывода по экземплярам с типизированными событиями строк для консоли экземпляра |
+| Моды | `IModManager` | поиск, установка, импорт, включение, отключение, удаление, обновления и changelog |
 | Авторизация | `IHytaleAuthenticator`, `IOAuthCallbackPageRenderer`, `GameSessionAuthenticator` | официальные сессии, OAuth-запросы, страницы callback от хоста и игровые токены |
 | Профили | `IProfileManager`, `IProfileRepository`, `IUserIdentityProvider` | личность, сохраняемый порядок, жизненный цикл профиля и уведомления `ProfilesChanged` |
 | Ресурсы | `IAvatarCache`, `ISkinRepository` | данные аватаров и скинов для профилей и запуска игры |

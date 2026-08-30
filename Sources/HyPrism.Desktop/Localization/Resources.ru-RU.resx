@@ -2841,4 +2841,106 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="settings.downloads.manualSourceJsonPlaceholder" xml:space="preserve">
     <value>{"schemaVersion":1,"id":"my-mirror","name":"My mirror","sourceType":"pattern","pattern":{"baseUrl":"https://mirror.example.com"}}</value>
   </data>
+  <data name="instances.mods.checkUpdates" xml:space="preserve">
+    <value>Проверить обновления</value>
+  </data>
+  <data name="instances.mods.updateAll" xml:space="preserve">
+    <value>Обновить все</value>
+  </data>
+  <data name="instances.mods.add" xml:space="preserve">
+    <value>Добавить мод</value>
+  </data>
+  <data name="instances.mods.dropToImport" xml:space="preserve">
+    <value>Перетащите файлы модов для импорта</value>
+  </data>
+  <data name="instances.mods.selectAll" xml:space="preserve">
+    <value>Выбрать все</value>
+  </data>
+  <data name="instances.mods.enableSelected" xml:space="preserve">
+    <value>Включить</value>
+  </data>
+  <data name="instances.mods.disableSelected" xml:space="preserve">
+    <value>Отключить</value>
+  </data>
+  <data name="instances.mods.deleteSelected" xml:space="preserve">
+    <value>Удалить выбранные</value>
+  </data>
+  <data name="instances.mods.openPage" xml:space="preserve">
+    <value>Открыть страницу на CurseForge</value>
+  </data>
+  <data name="instances.mods.toggle" xml:space="preserve">
+    <value>Переключить мод</value>
+  </data>
+  <data name="instances.mods.deleteTitle" xml:space="preserve">
+    <value>Удалить мод</value>
+  </data>
+  <data name="instances.mods.deleteHint" xml:space="preserve">
+    <value>Файл мода будет удален из этого экземпляра</value>
+  </data>
+  <data name="instances.mods.toggleFailed" xml:space="preserve">
+    <value>Не удалось изменить состояние мода</value>
+  </data>
+  <data name="instances.mods.deleteFailed" xml:space="preserve">
+    <value>Не удалось удалить мод</value>
+  </data>
+  <data name="instances.mods.selectedCount" xml:space="preserve">
+    <value>Выбрано: {0}</value>
+  </data>
+  <data name="instances.mods.countInstalled" xml:space="preserve">
+    <value>Установлено модов: {0}</value>
+  </data>
+  <data name="instances.mods.updatesAvailable" xml:space="preserve">
+    <value>Доступно обновлений: {0}</value>
+  </data>
+  <data name="instances.mods.updateAvailableShort" xml:space="preserve">
+    <value>Обновление</value>
+  </data>
+  <data name="instances.browse.categoryAll" xml:space="preserve">
+    <value>Все категории</value>
+  </data>
+  <data name="instances.browse.category" xml:space="preserve">
+    <value>Категория</value>
+  </data>
+  <data name="instances.browse.sort" xml:space="preserve">
+    <value>Сортировка</value>
+  </data>
+  <data name="instances.browse.sortRelevancy" xml:space="preserve">
+    <value>Релевантность</value>
+  </data>
+  <data name="instances.browse.sortPopularity" xml:space="preserve">
+    <value>Популярность</value>
+  </data>
+  <data name="instances.browse.sortLatestUpdate" xml:space="preserve">
+    <value>Дата обновления</value>
+  </data>
+  <data name="instances.browse.sortCreationDate" xml:space="preserve">
+    <value>Дата создания</value>
+  </data>
+  <data name="instances.browse.sortTotalDownloads" xml:space="preserve">
+    <value>Число загрузок</value>
+  </data>
+  <data name="instances.browse.loadingMore" xml:space="preserve">
+    <value>Загружается еще...</value>
+  </data>
+  <data name="instances.console.running" xml:space="preserve">
+    <value>Игра запущена</value>
+  </data>
+  <data name="instances.console.offline" xml:space="preserve">
+    <value>Не запущена</value>
+  </data>
+  <data name="instances.console.autoScroll" xml:space="preserve">
+    <value>Автопрокрутка</value>
+  </data>
+  <data name="instances.console.wrap" xml:space="preserve">
+    <value>Перенос</value>
+  </data>
+  <data name="instances.console.clear" xml:space="preserve">
+    <value>Очистить</value>
+  </data>
+  <data name="instances.console.search" xml:space="preserve">
+    <value>Фильтр вывода консоли</value>
+  </data>
+  <data name="instances.console.lineCount" xml:space="preserve">
+    <value>Строк: {0}</value>
+  </data>
 </root>
