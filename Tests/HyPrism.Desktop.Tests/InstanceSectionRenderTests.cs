@@ -108,9 +108,27 @@ public sealed class InstanceSectionRenderTests
                         FileName = "catalog-mod.jar",
                         ReleaseType = 1,
                         GameVersions = ["release"]
+                    },
+                    new ModFileInfo
+                    {
+                        Id = "899",
+                        ModId = "10",
+                        DisplayName = "Catalog Mod alpha",
+                        FileName = "catalog-mod-alpha.jar",
+                        ReleaseType = 3,
+                        GameVersions = ["release"]
+                    },
+                    new ModFileInfo
+                    {
+                        Id = "898",
+                        ModId = "10",
+                        DisplayName = "Catalog Mod beta",
+                        FileName = "catalog-mod-beta.jar",
+                        ReleaseType = 2,
+                        GameVersions = ["release"]
                     }
                 ],
-                TotalCount = 1
+                TotalCount = 3
             });
         console.Append(instance.Id, "ERR", "rendered error line");
 
@@ -192,7 +210,7 @@ public sealed class InstanceSectionRenderTests
         }
 
         await viewModel.SelectModCatalogPreviewCommand.ExecuteAsync(viewModel.ModCatalogItems[0]);
-        await WaitUntilAsync(() => viewModel.ModCatalogPreviewFiles.Count == 1);
+        await WaitUntilAsync(() => viewModel.ModCatalogPreviewFiles.Count == 3);
         window.UpdateLayout();
         Dispatcher.UIThread.RunJobs();
         await WaitUntilAsync(() => view.GetVisualDescendants()
@@ -214,6 +232,23 @@ public sealed class InstanceSectionRenderTests
         Assert.Contains(
             preview.GetVisualDescendants(),
             element => element is Border border && border.Classes.Contains("sourceTableHeader"));
+        Assert.DoesNotContain(
+            preview.GetVisualDescendants().OfType<Border>(),
+            border => border.Classes.Contains("instanceCompatibilitySummary"));
+        var releaseBadges = preview.GetVisualDescendants().OfType<Border>()
+            .Where(border => border.Classes.Contains("modPreviewReleaseBadge"))
+            .ToList();
+        var releaseBadge = Assert.Single(releaseBadges, border => border.Classes.Contains("release"));
+        var betaBadge = Assert.Single(releaseBadges, border => border.Classes.Contains("beta"));
+        var alphaBadge = Assert.Single(releaseBadges, border => border.Classes.Contains("alpha"));
+        Assert.Contains("release", releaseBadge.Classes);
+        Assert.Equal(new Thickness(0), releaseBadge.BorderThickness);
+        Assert.Equal(new Thickness(0), betaBadge.BorderThickness);
+        Assert.Equal(new Thickness(0), alphaBadge.BorderThickness);
+        Assert.All(
+            preview.GetVisualDescendants().OfType<Button>()
+                .Where(button => button.Classes.Contains("instancePreviewFile")),
+            button => Assert.Null(ToolTip.GetTip(button)));
         var curseForgeAction = Assert.Single(
             preview.GetVisualDescendants().OfType<Button>(),
             button => button.Classes.Contains("modPreviewCurseForgeAction"));
@@ -223,17 +258,28 @@ public sealed class InstanceSectionRenderTests
             element => element is Avalonia.Controls.Shapes.Path path &&
                 path.Classes.Contains("modPreviewCurseForgeIcon"));
         Assert.Equal(HorizontalAlignment.Center, curseForgeAction.HorizontalContentAlignment);
-        Assert.Equal(VerticalAlignment.Center, curseForgeAction.VerticalContentAlignment);
+        Assert.Equal(HorizontalAlignment.Stretch, curseForgeAction.HorizontalAlignment);
+        Assert.Equal(VerticalAlignment.Stretch, curseForgeAction.VerticalContentAlignment);
         var installAction = Assert.Single(
             preview.GetVisualDescendants().OfType<Button>(),
             button => button.Classes.Contains("splitMain"));
         Assert.Equal(HorizontalAlignment.Stretch, installAction.HorizontalAlignment);
         Assert.Equal(HorizontalAlignment.Center, installAction.HorizontalContentAlignment);
         Assert.Equal(VerticalAlignment.Center, installAction.VerticalContentAlignment);
+        var splitActionGrid = Assert.IsType<Grid>(curseForgeAction.Parent);
+        Assert.True(splitActionGrid.ColumnDefinitions[2].Width.Value >
+                    splitActionGrid.ColumnDefinitions[0].Width.Value);
+        Assert.Contains(
+            Assert.IsAssignableFrom<IEnumerable<ITransition>>(curseForgeAction.Transitions),
+            transition => transition is BrushTransition);
+        Assert.Contains(
+            Assert.IsAssignableFrom<IEnumerable<ITransition>>(installAction.Transitions),
+            transition => transition is BrushTransition);
         var curseForgeIcon = Assert.Single(
             curseForgeAction.GetVisualDescendants().OfType<Avalonia.Controls.Shapes.Path>(),
             path => path.Classes.Contains("modPreviewCurseForgeIcon"));
         Assert.Equal(23, curseForgeIcon.Width);
+        Assert.Equal(3, Assert.IsType<TranslateTransform>(curseForgeIcon.RenderTransform).Y);
         var shoulderScale = Assert.IsType<ScaleTransform>(
             view.FindControl<Grid>("ModCatalogModalShoulders")?.RenderTransform);
         Assert.NotEmpty(Assert.IsAssignableFrom<IEnumerable<ITransition>>(shoulderScale.Transitions));
@@ -263,7 +309,9 @@ public sealed class InstanceSectionRenderTests
         Dispatcher.UIThread.RunJobs();
         await WaitUntilAsync(() => view.Classes.Contains("wide"));
 
-        viewModel.CloseModCatalogPreviewCommand.Execute(null);
+        Assert.True(view.TryNavigateBack());
+        Assert.False(viewModel.HasModCatalogPreview);
+        Assert.True(viewModel.IsInstanceBrowseSection);
         await WaitUntilAsync(() => !modal.IsVisible);
         Assert.Equal(0, Assert.IsType<BlurEffect>(instancesLayout?.Effect).Radius);
 

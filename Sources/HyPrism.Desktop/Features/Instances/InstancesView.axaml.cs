@@ -229,14 +229,19 @@ public sealed partial class InstancesView : UserControl
 
     private void OnInstancesKeyDown(object? sender, KeyEventArgs args)
     {
-        if (args.Key is not Key.Escape ||
-            DataContext is not MainWindowViewModel { HasModCatalogPreview: true } viewModel)
-        {
+        if (args.Key is not Key.Escape || !TryCloseModCatalogPreview())
             return;
-        }
 
         args.Handled = true;
+    }
+
+    public bool TryCloseModCatalogPreview()
+    {
+        if (DataContext is not MainWindowViewModel { HasModCatalogPreview: true } viewModel)
+            return false;
+
         viewModel.CloseModCatalogPreviewCommand.Execute(null);
+        return true;
     }
 
     private void UpdateLayout(double width)
@@ -389,6 +394,9 @@ public sealed partial class InstancesView : UserControl
 
     public bool TryNavigateBack()
     {
+        if (TryCloseModCatalogPreview())
+            return true;
+
         if (DataContext is MainWindowViewModel { IsInstanceOverviewSection: false } viewModel)
         {
             viewModel.CloseInstanceSectionCommand.Execute(null);

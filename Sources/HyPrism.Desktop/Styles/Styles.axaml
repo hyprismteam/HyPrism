@@ -3338,6 +3338,38 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
   </Style>
 
+  <Style Selector="instances|InstancesView Border.modPreviewReleaseBadge">
+    <Setter Property="HorizontalAlignment" Value="Left" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="Padding" Value="8,4" />
+    <Setter Property="Background" Value="#24FFC54D" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="CornerRadius" Value="7" />
+  </Style>
+
+  <Style Selector="instances|InstancesView Border.modPreviewReleaseBadge TextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource WarningBrush}" />
+    <Setter Property="FontSize" Value="11" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="TextWrapping" Value="NoWrap" />
+  </Style>
+
+  <Style Selector="instances|InstancesView Border.modPreviewReleaseBadge.release">
+    <Setter Property="Background" Value="#2435A85B" />
+  </Style>
+
+  <Style Selector="instances|InstancesView Border.modPreviewReleaseBadge.release TextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource SuccessSoftBrush}" />
+  </Style>
+
+  <Style Selector="instances|InstancesView Border.modPreviewReleaseBadge.beta">
+    <Setter Property="Background" Value="#266F56D9" />
+  </Style>
+
+  <Style Selector="instances|InstancesView Border.modPreviewReleaseBadge.beta TextBlock">
+    <Setter Property="Foreground" Value="#C4B5FD" />
+  </Style>
+
   <Style Selector="instances|InstancesView Button.instanceInstall.preview">
     <Setter Property="HorizontalContentAlignment" Value="Center" />
   </Style>
@@ -3354,6 +3386,21 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="HorizontalAlignment" Value="Stretch" />
     <Setter Property="HorizontalContentAlignment" Value="Center" />
     <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="Transitions">
+      <Transitions>
+        <BrushTransition Property="Background" Duration="0:0:0.16">
+          <BrushTransition.Easing><easing:CubicEaseOut /></BrushTransition.Easing>
+        </BrushTransition>
+      </Transitions>
+    </Setter>
+  </Style>
+
+  <Style Selector="instances|InstancesView Button.instanceInstall.preview.splitMain:pointerover">
+    <Setter Property="Background" Value="#DADADC" />
+  </Style>
+
+  <Style Selector="instances|InstancesView Button.instanceInstall.preview.splitMain:pressed">
+    <Setter Property="Background" Value="#C8C8CB" />
   </Style>
 
   <Style Selector="instances|InstancesView Border.modPreviewSplitDivider">
@@ -3369,8 +3416,9 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="CornerRadius" Value="0" />
     <Setter Property="Foreground" Value="#FFFFFFFF" />
     <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
     <Setter Property="HorizontalContentAlignment" Value="Center" />
-    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="VerticalContentAlignment" Value="Stretch" />
     <Setter Property="RenderTransform" Value="{x:Null}" />
     <Setter Property="Transitions">
       <Transitions>
@@ -3382,11 +3430,11 @@ SPDX-License-Identifier: GPL-3.0-only
   </Style>
 
   <Style Selector="instances|InstancesView Button.modPreviewCurseForgeAction:pointerover">
-    <Setter Property="Background" Value="#FF7548" />
+    <Setter Property="Background" Value="#D9572F" />
   </Style>
 
   <Style Selector="instances|InstancesView Button.modPreviewCurseForgeAction:pressed">
-    <Setter Property="Background" Value="#D95028" />
+    <Setter Property="Background" Value="#C74B26" />
   </Style>
 
   <Style Selector="instances|InstancesView Path.modPreviewCurseForgeIcon">

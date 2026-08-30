@@ -1550,9 +1550,6 @@ SPDX-License-Identifier: GPL-3.0-only
                 </Grid>
               </Border>
 
-              <Border Classes="instanceCompatibilitySummary">
-                <TextBlock Text="{Binding ModCatalogGameVersionLabel}" />
-              </Border>
               <Grid>
                 <StackPanel Classes="modPreviewContent"
                             Classes.revealed="{Binding IsModCatalogPreviewFilesContentVisible}"
@@ -1579,12 +1576,15 @@ SPDX-License-Identifier: GPL-3.0-only
                                     Classes.selected="{Binding IsSelected}"
                                     Classes.incompatible="{Binding IsIncompatible}"
                                     IsEnabled="{Binding CanSelect}"
-                                    ToolTip.Tip="{Binding CompatibilityLabel}"
                                     Command="{Binding DataContext.SelectModCatalogPreviewFileCommand, ElementName=InstancesRoot}"
                                     CommandParameter="{Binding}">
                               <Grid ColumnDefinitions="1*,2.2*,1.5*" ColumnSpacing="16">
-                                <TextBlock Text="{Binding ReleaseLabel}"
-                                           Classes="sourceTableValue" />
+                                <Border Classes="modPreviewReleaseBadge"
+                                        Classes.release="{Binding IsRelease}"
+                                        Classes.beta="{Binding IsBeta}"
+                                        Classes.alpha="{Binding IsAlpha}">
+                                  <TextBlock Text="{Binding ReleaseLabel}" />
+                                </Border>
                                 <TextBlock Grid.Column="1"
                                            Text="{Binding DisplayName}"
                                            Classes="sourceTableValue link"
@@ -1642,7 +1642,7 @@ SPDX-License-Identifier: GPL-3.0-only
               </Grid>
 
               <Border Classes="modPreviewSplitAction">
-                <Grid ColumnDefinitions="*,Auto,Auto">
+                <Grid ColumnDefinitions="1*,2,1.25*">
                   <Button Classes="instanceInstall preview splitMain"
                           IsEnabled="{Binding CanInstallModCatalogPreview}"
                           Command="{Binding InstallModCatalogPreviewCommand}">
@@ -1668,15 +1668,22 @@ SPDX-License-Identifier: GPL-3.0-only
                           Classes="modPreviewCurseForgeAction"
                           Command="{Binding OpenCatalogModPageCommand}"
                           CommandParameter="{Binding SelectedModCatalogPreview}">
-                    <StackPanel Orientation="Horizontal"
-                                Spacing="8"
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center">
-                      <Path Classes="modPreviewCurseForgeIcon"
-                            Data="{StaticResource CurseForgeBrandIcon}" />
-                      <TextBlock Text="{Binding ModCatalogOpenCurseForgeLabel}"
-                                 TextWrapping="NoWrap" />
-                    </StackPanel>
+                    <Grid Height="42" HorizontalAlignment="Stretch">
+                      <StackPanel Orientation="Horizontal"
+                                  Spacing="8"
+                                  HorizontalAlignment="Center"
+                                  VerticalAlignment="Center">
+                        <Path Classes="modPreviewCurseForgeIcon"
+                              Data="{StaticResource CurseForgeBrandIcon}">
+                          <Path.RenderTransform>
+                            <TranslateTransform Y="5" />
+                          </Path.RenderTransform>
+                        </Path>
+                        <TextBlock Text="{Binding ModCatalogOpenCurseForgeLabel}"
+                                   VerticalAlignment="Center"
+                                   TextWrapping="NoWrap" />
+                      </StackPanel>
+                    </Grid>
                   </Button>
                 </Grid>
               </Border>

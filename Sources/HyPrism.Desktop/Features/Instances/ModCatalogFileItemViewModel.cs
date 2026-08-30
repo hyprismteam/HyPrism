@@ -22,6 +22,10 @@ public sealed partial class ModCatalogFileItemViewModel(
         ? string.Join(", ", file.GameVersions)
         : CompatibilityLabel;
     public string ReleaseLabel { get; } = releaseLabel;
+    public int ReleaseType => file.ReleaseType;
+    public bool IsRelease => ReleaseType == 1;
+    public bool IsBeta => ReleaseType == 2;
+    public bool IsAlpha => ReleaseType == 3;
     public ModCompatibilityStatus Compatibility { get; } = compatibility;
     public string CompatibilityLabel { get; } = compatibilityLabel;
     public bool IsCompatible => Compatibility is ModCompatibilityStatus.Compatible;
