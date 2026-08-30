@@ -1012,7 +1012,7 @@ Vous devrez peut-être réinstaller le jeu si vous changez de lecteur.</value>
     <value>sur</value>
   </data>
   <data name="modManager.openCurseforge" xml:space="preserve">
-    <value>Ouvrir la page CurseForge</value>
+    <value>Ouvrir le mod sur CurseForge</value>
   </data>
   <data name="modManager.openModsFolder" xml:space="preserve">
     <value>Ouvrir le Dossier des Mods</value>
@@ -1151,6 +1151,9 @@ Vous devrez peut-être réinstaller le jeu si vous changez de lecteur.</value>
   </data>
   <data name="modManager.updating" xml:space="preserve">
     <value>Mise à jour...</value>
+  </data>
+  <data name="modManager.gameVersions" xml:space="preserve">
+    <value>Pour les versions du jeu</value>
   </data>
   <data name="modManager.version" xml:space="preserve">
     <value>Version</value>
@@ -2885,6 +2888,21 @@ Vous devrez peut-être réinstaller le jeu si vous changez de lecteur.</value>
   </data>
   <data name="instances.mods.selectedCount" xml:space="preserve">
     <value>{0} selected</value>
+  </data>
+  <data name="instances.mods.compatibility.compatible" xml:space="preserve">
+    <value>Compatible</value>
+  </data>
+  <data name="instances.mods.compatibility.incompatible" xml:space="preserve">
+    <value>Incompatible</value>
+  </data>
+  <data name="instances.mods.compatibility.unknown" xml:space="preserve">
+    <value>Compatibilité inconnue</value>
+  </data>
+  <data name="instances.mods.compatibility.gameVersion" xml:space="preserve">
+    <value>Hytale {0}</value>
+  </data>
+  <data name="instances.mods.compatibility.versionUnknown" xml:space="preserve">
+    <value>Impossible de détecter la version de Hytale</value>
   </data>
   <data name="instances.mods.countInstalled" xml:space="preserve">
     <value>{0} mods installed</value>

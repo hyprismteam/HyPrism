@@ -641,19 +641,7 @@ public partial class ModManager : IModManager
 
             return new ModFilesResult
             {
-                Files = [.. cfResponse.Data.Select(f => new ModFileInfo
-                {
-                    Id = f.Id.ToString(),
-                    ModId = f.ModId.ToString(),
-                    FileName = f.FileName ?? "",
-                    DisplayName = f.DisplayName ?? "",
-                    DownloadUrl = f.DownloadUrl ?? "",
-                    FileLength = f.FileLength,
-                    FileDate = f.FileDate ?? "",
-                    ReleaseType = f.ReleaseType,
-                    GameVersions = f.GameVersions ?? [],
-                    DownloadCount = f.DownloadCount
-                })],
+                Files = [.. cfResponse.Data.Select(MapToModFileInfo)],
                 TotalCount = cfResponse.Pagination?.TotalCount ?? cfResponse.Data.Count
             };
         }
@@ -1112,9 +1100,24 @@ public partial class ModManager : IModManager
             Categories = cfMod.Categories?.Select(c => c.Name ?? "").Where(n => !string.IsNullOrEmpty(n)).ToList() ?? [],
             DateUpdated = cfMod.DateModified ?? "",
             LatestFileId = cfMod.LatestFiles?.FirstOrDefault()?.Id.ToString() ?? "",
+            LatestFiles = cfMod.LatestFiles?.Select(MapToModFileInfo).ToList() ?? [],
             Screenshots = cfMod.Screenshots ?? []
         };
     }
+
+    private static ModFileInfo MapToModFileInfo(CurseForgeFile file) => new()
+    {
+        Id = file.Id.ToString(),
+        ModId = file.ModId.ToString(),
+        FileName = file.FileName ?? "",
+        DisplayName = file.DisplayName ?? "",
+        DownloadUrl = file.DownloadUrl ?? "",
+        FileLength = file.FileLength,
+        FileDate = file.FileDate ?? "",
+        ReleaseType = file.ReleaseType,
+        GameVersions = file.GameVersions ?? [],
+        DownloadCount = file.DownloadCount
+    };
 
     [GeneratedRegex(@"(\d+\.\d+(?:\.\d+)?(?:[-.]\w+)*)")]
     private static partial Regex SemanticVersionRegex();

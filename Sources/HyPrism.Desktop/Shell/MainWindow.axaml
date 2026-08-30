@@ -789,12 +789,17 @@ SPDX-License-Identifier: GPL-3.0-only
         </Grid>
       </Grid>
 
-      <Border Grid.Column="1"
+      <Border x:Name="MainSceneFrame"
+              Grid.Column="1"
+              Classes="mainSceneFrame"
+              Classes.modPreviewOpen="{Binding IsModCatalogPreviewMounted}"
               Background="{DynamicResource SurfaceBrush}"
-              BorderBrush="{DynamicResource MainCardStrokeBrush}"
-              BorderThickness="1"
               CornerRadius="24"
-              ClipToBounds="True">
+              ClipToBounds="False">
+        <Border x:Name="MainSceneSurface"
+                Background="{DynamicResource SurfaceBrush}"
+                CornerRadius="23"
+                ClipToBounds="True">
         <Grid>
           <dashboard:DashboardView IsVisible="{Binding IsDashboard}" />
 
@@ -912,6 +917,7 @@ SPDX-License-Identifier: GPL-3.0-only
           </Grid>
 
         </Grid>
+        </Border>
       </Border>
     </Grid>
 

@@ -3,6 +3,7 @@
 
 using Avalonia.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
+using HyPrism.Core.Game.Mods;
 
 namespace HyPrism.Desktop.Features.Instances;
 
@@ -17,7 +18,10 @@ public sealed partial class ModCatalogItemViewModel(
     int downloadCount = 0,
     int releaseType = 1,
     IReadOnlyList<string>? screenshotUrls = null,
-    string installedFileId = "") : ObservableObject
+    string installedFileId = "",
+    string recommendedFileId = "",
+    ModCompatibilityStatus compatibility = ModCompatibilityStatus.Unknown,
+    string compatibilityLabel = "") : ObservableObject
 {
     public string Id { get; } = id;
     public string Name { get; } = name;
@@ -28,6 +32,12 @@ public sealed partial class ModCatalogItemViewModel(
     public string IconUrl { get; } = iconUrl;
     public int DownloadCount { get; } = downloadCount;
     public IReadOnlyList<string> ScreenshotUrls { get; } = screenshotUrls ?? [];
+    public string RecommendedFileId { get; } = recommendedFileId;
+    public ModCompatibilityStatus Compatibility { get; } = compatibility;
+    public string CompatibilityLabel { get; } = compatibilityLabel;
+    public bool IsCompatible => Compatibility is ModCompatibilityStatus.Compatible;
+    public bool IsIncompatible => Compatibility is ModCompatibilityStatus.Incompatible;
+    public bool IsCompatibilityUnknown => Compatibility is ModCompatibilityStatus.Unknown;
 
     [ObservableProperty]
     private string _installedFileId = installedFileId;
@@ -55,16 +65,22 @@ public sealed partial class ModCatalogItemViewModel(
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CanInstall))]
+    [NotifyPropertyChangedFor(nameof(CanSelect))]
     private bool _isInstalling;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CanInstall))]
+    [NotifyPropertyChangedFor(nameof(CanSelect))]
     private bool _isInstalled;
+
+    [ObservableProperty]
+    private bool _isSelected;
 
     [ObservableProperty]
     private Bitmap? _icon;
 
     public bool CanInstall => !IsInstalling && !IsInstalled;
+    public bool CanSelect => CanInstall && !IsIncompatible && !string.IsNullOrWhiteSpace(RecommendedFileId);
 
     public bool ShowsIcon => Icon is not null;
 

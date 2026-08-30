@@ -13,6 +13,7 @@ public static class MotionDurations
     public static readonly TimeSpan ContentFade = TimeSpan.FromMilliseconds(180);
     public static readonly TimeSpan WizardPhase = TimeSpan.FromMilliseconds(190);
     public static readonly TimeSpan PopupCloseRetention = TimeSpan.FromMilliseconds(210);
+    public static readonly TimeSpan ModalCloseRetention = TimeSpan.FromMilliseconds(360);
     public static readonly TimeSpan TextReplacement = TimeSpan.FromMilliseconds(250);
     public static readonly TimeSpan CompactSectionSlide = TimeSpan.FromMilliseconds(300);
     public static readonly TimeSpan CompactPageSlide = TimeSpan.FromMilliseconds(320);

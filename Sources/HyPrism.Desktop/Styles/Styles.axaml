@@ -433,6 +433,20 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="CornerRadius" Value="18" />
   </Style>
 
+  <Style Selector="Border.mainSceneFrame">
+    <Setter Property="BorderBrush" Value="{DynamicResource MainCardStrokeBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="Transitions">
+      <Transitions>
+        <BrushTransition Property="BorderBrush" Duration="0:0:0.18" />
+      </Transitions>
+    </Setter>
+  </Style>
+
+  <Style Selector="Border.mainSceneFrame.modPreviewOpen">
+    <Setter Property="BorderThickness" Value="1,1,1,0" />
+  </Style>
+
   <Style Selector="Border.skeleton">
     <Setter Property="Background" Value="#18FFFFFF" />
     <Setter Property="CornerRadius" Value="7" />
@@ -2500,6 +2514,10 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="ClipToBounds" Value="True" />
   </Style>
 
+  <Style Selector="instances|InstancesView Border.instanceContentPanel.catalog">
+    <Setter Property="BorderThickness" Value="0" />
+  </Style>
+
   <Style Selector="instances|InstancesView TextBox.instanceSearch">
     <Setter Property="Height" Value="40" />
     <Setter Property="Padding" Value="12,0" />
@@ -2937,22 +2955,220 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="Height" Value="40" />
   </Style>
 
-  <Style Selector="instances|InstancesView Border.instanceModPreview">
+  <Style Selector="instances|InstancesView Grid.instanceModPreview">
+    <Setter Property="MaxWidth" Value="720" />
+    <Setter Property="MaxHeight" Value="680" />
+    <Setter Property="Margin" Value="20,20,20,0" />
+  </Style>
+
+  <Style Selector="instances|InstancesView.compact Grid.instanceModPreview.modalSheet">
+    <Setter Property="MaxWidth" Value="560" />
+    <Setter Property="MaxHeight" Value="520" />
+    <Setter Property="Margin" Value="12,36,12,0" />
+  </Style>
+
+  <Style Selector="instances|InstancesView Grid.instanceModPreviewShoulders">
+    <Setter Property="Height" Value="42" />
+    <Setter Property="MaxWidth" Value="780" />
+    <Setter Property="Margin" Value="20,0,20,0" />
+  </Style>
+
+  <Style Selector="instances|InstancesView Border.instanceModPreviewSceneEdgeMask">
+    <Setter Property="Height" Value="2" />
+    <Setter Property="MaxWidth" Value="780" />
+    <Setter Property="Margin" Value="20,0,20,0" />
+    <Setter Property="Background" Value="{DynamicResource AppBackgroundBrush}" />
+  </Style>
+
+  <Style Selector="instances|InstancesView.compact Border.instanceModPreviewSceneEdgeMask">
+    <Setter Property="MaxWidth" Value="608" />
+    <Setter Property="Margin" Value="12,0,12,0" />
+  </Style>
+
+  <Style Selector="instances|InstancesView.compact Grid.instanceModPreviewShoulders">
+    <Setter Property="MaxWidth" Value="608" />
+    <Setter Property="Margin" Value="12,0,12,0" />
+  </Style>
+
+  <Style Selector="instances|InstancesView Path.instanceModPreviewShoulderFill">
+    <Setter Property="Fill" Value="{DynamicResource AppBackgroundBrush}" />
+  </Style>
+
+  <Style Selector="instances|InstancesView Path.instanceModPreviewShoulderStroke">
+    <Setter Property="Fill" Value="Transparent" />
+    <Setter Property="Stroke" Value="{DynamicResource MainCardStrokeBrush}" />
+    <Setter Property="StrokeThickness" Value="1" />
+  </Style>
+
+  <Style Selector="instances|InstancesView Border.instanceModPreviewContent">
+    <Setter Property="Padding" Value="20" />
+    <Setter Property="Background" Value="{DynamicResource AppBackgroundBrush}" />
+    <Setter Property="CornerRadius" Value="18,18,0,0" />
+    <Setter Property="ClipToBounds" Value="True" />
+  </Style>
+
+  <Style Selector="instances|InstancesView.compact Border.instanceModPreviewContent">
     <Setter Property="Padding" Value="16" />
-    <Setter Property="Background" Value="{DynamicResource ControlGroupBrush}" />
-    <Setter Property="BorderBrush" Value="{DynamicResource StrokeBrush}" />
-    <Setter Property="BorderThickness" Value="1,0,0,0" />
+    <Setter Property="CornerRadius" Value="16,16,0,0" />
+  </Style>
+
+  <Style Selector="instances|InstancesView Border.instanceModPreviewBodyOutline">
+    <Setter Property="Margin" Value="0,0,0,42" />
+    <Setter Property="BorderBrush" Value="{DynamicResource MainCardStrokeBrush}" />
+    <Setter Property="BorderThickness" Value="1,1,1,0" />
+    <Setter Property="CornerRadius" Value="18,18,0,0" />
+    <Setter Property="IsHitTestVisible" Value="False" />
+  </Style>
+
+  <Style Selector="instances|InstancesView.compact Border.instanceModPreviewBodyOutline">
+    <Setter Property="CornerRadius" Value="16,16,0,0" />
+  </Style>
+
+  <Style Selector="instances|InstancesView Border.instanceModalBackdrop">
+    <Setter Property="Background" Value="#B8000000" />
+  </Style>
+
+  <Style Selector="instances|InstancesView Border.instancePreviewHero.modalHero">
+    <Setter Property="Height" Value="260" />
+  </Style>
+
+  <Style Selector="instances|InstancesView.compact Border.instancePreviewHero.modalHero">
+    <Setter Property="Height" Value="180" />
   </Style>
 
   <Style Selector="instances|InstancesView Border.instancePreviewHero">
-    <Setter Property="Height" Value="152" />
+    <Setter Property="Height" Value="320" />
     <Setter Property="Background" Value="#0A0B0D" />
     <Setter Property="CornerRadius" Value="12" />
     <Setter Property="ClipToBounds" Value="True" />
   </Style>
 
-  <Style Selector="instances|InstancesView Button.instancePreviewClose,
-                   instances|InstancesView Button.instancePreviewImageButton">
+  <Style Selector="instances|InstancesView Image.instancePreviewHeroImage">
+    <Setter Property="Opacity" Value="0" />
+    <Setter Property="IsHitTestVisible" Value="False" />
+    <Setter Property="Transitions">
+      <Transitions>
+        <DoubleTransition Property="Opacity" Duration="0:0:0.22">
+          <DoubleTransition.Easing><easing:CubicEaseOut /></DoubleTransition.Easing>
+        </DoubleTransition>
+      </Transitions>
+    </Setter>
+  </Style>
+
+  <Style Selector="instances|InstancesView Image.instancePreviewHeroImage.loaded">
+    <Setter Property="Opacity" Value="1" />
+  </Style>
+
+  <Style Selector="instances|InstancesView TextBlock.instancePreviewSummary">
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+    <Setter Property="FontSize" Value="14" />
+    <Setter Property="LineHeight" Value="20" />
+  </Style>
+
+  <Style Selector="instances|InstancesView Border.modPreviewInfoGroup Border.instanceInfoCell">
+    <Setter Property="MinHeight" Value="60" />
+  </Style>
+
+  <Style Selector="instances|InstancesView Border.modPreviewHeroSkeleton">
+    <Setter Property="IsHitTestVisible" Value="False" />
+    <Setter Property="Background">
+      <LinearGradientBrush StartPoint="0%,50%" EndPoint="100%,50%">
+        <GradientStop Color="#14FFFFFF" Offset="0" />
+        <GradientStop Color="#2AFFFFFF" Offset="0.5" />
+        <GradientStop Color="#14FFFFFF" Offset="1" />
+      </LinearGradientBrush>
+    </Setter>
+    <Style.Animations>
+      <Animation Duration="0:0:1.35" IterationCount="Infinite">
+        <KeyFrame Cue="0%">
+          <Setter Property="Opacity" Value="0.42" />
+        </KeyFrame>
+        <KeyFrame Cue="50%">
+          <Setter Property="Opacity" Value="0.9" />
+        </KeyFrame>
+        <KeyFrame Cue="100%">
+          <Setter Property="Opacity" Value="0.42" />
+        </KeyFrame>
+      </Animation>
+    </Style.Animations>
+  </Style>
+
+  <Style Selector="instances|InstancesView StackPanel.modPreviewContent">
+    <Setter Property="MinHeight" Value="140" />
+    <Setter Property="Opacity" Value="0" />
+    <Setter Property="IsHitTestVisible" Value="False" />
+    <Setter Property="Transitions">
+      <Transitions>
+        <DoubleTransition Property="Opacity" Duration="0:0:0.24">
+          <DoubleTransition.Easing><easing:CubicEaseOut /></DoubleTransition.Easing>
+        </DoubleTransition>
+      </Transitions>
+    </Setter>
+  </Style>
+
+  <Style Selector="instances|InstancesView StackPanel.modPreviewContent.revealed">
+    <Setter Property="Opacity" Value="1" />
+    <Setter Property="IsHitTestVisible" Value="True" />
+  </Style>
+
+  <Style Selector="instances|InstancesView StackPanel.modPreviewFilesSkeleton">
+    <Setter Property="IsHitTestVisible" Value="False" />
+    <Setter Property="Opacity" Value="1" />
+    <Setter Property="Transitions">
+      <Transitions>
+        <DoubleTransition Property="Opacity" Duration="0:0:0.18">
+          <DoubleTransition.Easing><easing:CubicEaseOut /></DoubleTransition.Easing>
+        </DoubleTransition>
+      </Transitions>
+    </Setter>
+  </Style>
+
+  <Style Selector="instances|InstancesView StackPanel.modPreviewFilesSkeleton.fading">
+    <Setter Property="Opacity" Value="0" />
+  </Style>
+
+
+  <Style Selector="instances|InstancesView Border.instanceCompatibilityBadge">
+    <Setter Property="Padding" Value="7,3" />
+    <Setter Property="Background" Value="{DynamicResource ControlSurfaceBrush}" />
+    <Setter Property="CornerRadius" Value="7" />
+  </Style>
+
+  <Style Selector="instances|InstancesView Border.instanceCompatibilityBadge TextBlock">
+    <Setter Property="FontSize" Value="10" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
+  </Style>
+
+  <Style Selector="instances|InstancesView Border.instanceCompatibilityBadge.compatible">
+    <Setter Property="Background" Value="#1735A85B" />
+  </Style>
+
+  <Style Selector="instances|InstancesView Border.instanceCompatibilityBadge.compatible TextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource SuccessSoftBrush}" />
+  </Style>
+
+  <Style Selector="instances|InstancesView Border.instanceCompatibilityBadge.incompatible">
+    <Setter Property="Background" Value="#1AD83B45" />
+  </Style>
+
+  <Style Selector="instances|InstancesView Border.instanceCompatibilityBadge.incompatible TextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource DangerSoftBrush}" />
+  </Style>
+
+  <Style Selector="instances|InstancesView Border.instanceCompatibilitySummary">
+    <Setter Property="Padding" Value="11,8" />
+    <Setter Property="Background" Value="{DynamicResource ControlSurfaceBrush}" />
+    <Setter Property="CornerRadius" Value="10" />
+    <Setter Property="HorizontalAlignment" Value="Left" />
+  </Style>
+
+  <Style Selector="instances|InstancesView Border.instanceCompatibilitySummary TextBlock">
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+  </Style>
+
+  <Style Selector="instances|InstancesView Button.instancePreviewClose">
     <Setter Property="Width" Value="32" />
     <Setter Property="Height" Value="32" />
     <Setter Property="Padding" Value="0" />
@@ -2973,29 +3189,79 @@ SPDX-License-Identifier: GPL-3.0-only
     </Setter>
   </Style>
 
-  <Style Selector="instances|InstancesView Button.instancePreviewClose:pointerover,
-                   instances|InstancesView Button.instancePreviewImageButton:pointerover">
+  <Style Selector="instances|InstancesView Button.instancePreviewClose:pointerover">
     <Setter Property="Background" Value="#D626292E" />
   </Style>
 
-  <Style Selector="instances|InstancesView Button.instancePreviewClose Path,
-                   instances|InstancesView Button.instancePreviewImageButton Path">
+  <Style Selector="instances|InstancesView Button.instancePreviewClose Path">
     <Setter Property="Width" Value="14" />
     <Setter Property="Height" Value="14" />
     <Setter Property="Stretch" Value="Uniform" />
     <Setter Property="Fill" Value="{DynamicResource TextSecondaryBrush}" />
   </Style>
 
-  <Style Selector="instances|InstancesView Border.instancePreviewImageCount">
-    <Setter Property="Padding" Value="8,4" />
-    <Setter Property="Background" Value="#C20A0B0D" />
-    <Setter Property="CornerRadius" Value="8" />
+  <Style Selector="instances|InstancesView Border.instancePreviewImageSwitch">
+    <Setter Property="Padding" Value="4" />
+    <Setter Property="Background" Value="#D90A0B0D" />
+    <Setter Property="CornerRadius" Value="13" />
+    <Setter Property="BoxShadow" Value="0 6 18 0 #66000000" />
   </Style>
 
-  <Style Selector="instances|InstancesView Border.instancePreviewImageCount TextBlock">
-    <Setter Property="FontSize" Value="10" />
-    <Setter Property="FontWeight" Value="SemiBold" />
-    <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+  <Style Selector="instances|InstancesView Button.instancePreviewImageButton">
+    <Setter Property="Width" Value="38" />
+    <Setter Property="Height" Value="36" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="CornerRadius" Value="9" />
+    <Setter Property="RenderTransform" Value="{x:Null}" />
+    <Setter Property="Transitions">
+      <Transitions>
+        <BrushTransition Property="Background" Duration="0:0:0.16">
+          <BrushTransition.Easing><easing:CubicEaseOut /></BrushTransition.Easing>
+        </BrushTransition>
+      </Transitions>
+    </Setter>
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Background="{TemplateBinding Background}"
+                CornerRadius="{TemplateBinding CornerRadius}">
+          <ContentPresenter Content="{TemplateBinding Content}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}"
+                            HorizontalContentAlignment="Center"
+                            VerticalContentAlignment="Center" />
+        </Border>
+      </ControlTemplate>
+    </Setter>
+  </Style>
+
+  <Style Selector="instances|InstancesView Button.instancePreviewImageButton:pointerover">
+    <Setter Property="Background" Value="#20FFFFFF" />
+  </Style>
+
+  <Style Selector="instances|InstancesView Button.instancePreviewImageButton Path">
+    <Setter Property="Width" Value="15" />
+    <Setter Property="Height" Value="15" />
+    <Setter Property="Stretch" Value="Uniform" />
+    <Setter Property="Fill" Value="{DynamicResource TextPrimaryBrush}" />
+    <Setter Property="Opacity" Value="1" />
+    <Setter Property="HorizontalAlignment" Value="Center" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="Transitions">
+      <Transitions>
+        <BrushTransition Property="Fill" Duration="0:0:0.16">
+          <BrushTransition.Easing><easing:CubicEaseOut /></BrushTransition.Easing>
+        </BrushTransition>
+        <DoubleTransition Property="Opacity" Duration="0:0:0.16">
+          <DoubleTransition.Easing><easing:CubicEaseOut /></DoubleTransition.Easing>
+        </DoubleTransition>
+      </Transitions>
+    </Setter>
+  </Style>
+
+  <Style Selector="instances|InstancesView Button.instancePreviewImageButton:disabled Path">
+    <Setter Property="Fill" Value="{DynamicResource TextMutedBrush}" />
+    <Setter Property="Opacity" Value="0.45" />
   </Style>
 
   <Style Selector="instances|InstancesView TextBlock.instancePreviewLabel">
@@ -3004,32 +3270,43 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
   </Style>
 
-  <Style Selector="instances|InstancesView Path.instancePreviewFileCheck">
-    <Setter Property="Width" Value="11" />
-    <Setter Property="Height" Value="11" />
-    <Setter Property="Stretch" Value="Uniform" />
-    <Setter Property="Fill" Value="{DynamicResource SuccessSoftBrush}" />
+
+  <Style Selector="instances|InstancesView ItemsControl.instancePreviewFiles > ContentPresenter">
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
   </Style>
 
-  <Style Selector="instances|InstancesView ListBox.instancePreviewFiles">
-    <Setter Property="Background" Value="Transparent" />
+  <Style Selector="instances|InstancesView Border.instancePreviewVersionTable">
     <Setter Property="BorderThickness" Value="0" />
-    <Setter Property="Padding" Value="0" />
-    <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
+    <Setter Property="CornerRadius" Value="12" />
+    <Setter Property="ClipToBounds" Value="True" />
   </Style>
 
-  <Style Selector="instances|InstancesView ListBox.instancePreviewFiles > ListBoxItem">
-    <Setter Property="Padding" Value="9" />
-    <Setter Property="Margin" Value="0,0,0,3" />
+  <Style Selector="instances|InstancesView Button.instancePreviewFile">
+    <Setter Property="Padding" Value="18,12" />
+    <Setter Property="Margin" Value="0" />
     <Setter Property="Background" Value="Transparent" />
-    <Setter Property="BorderThickness" Value="0" />
-    <Setter Property="CornerRadius" Value="9" />
+    <Setter Property="BorderBrush" Value="{DynamicResource SurfaceBrush}" />
+    <Setter Property="BorderThickness" Value="0,0,0,3" />
+    <Setter Property="CornerRadius" Value="0" />
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
     <Setter Property="HorizontalContentAlignment" Value="Stretch" />
     <Setter Property="FocusAdorner" Value="{x:Null}" />
     <Setter Property="RenderTransform" Value="{x:Null}" />
+    <Setter Property="Transitions">
+      <Transitions>
+        <BrushTransition Property="Background" Duration="0:0:0.17">
+          <BrushTransition.Easing><easing:CubicEaseOut /></BrushTransition.Easing>
+        </BrushTransition>
+        <BrushTransition Property="BorderBrush" Duration="0:0:0.17">
+          <BrushTransition.Easing><easing:CubicEaseOut /></BrushTransition.Easing>
+        </BrushTransition>
+      </Transitions>
+    </Setter>
     <Setter Property="Template">
       <ControlTemplate>
         <Border Background="{TemplateBinding Background}"
+                BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="{TemplateBinding BorderThickness}"
                 CornerRadius="{TemplateBinding CornerRadius}"
                 Padding="{TemplateBinding Padding}">
           <ContentPresenter Content="{TemplateBinding Content}"
@@ -3041,16 +3318,83 @@ SPDX-License-Identifier: GPL-3.0-only
     </Setter>
   </Style>
 
-  <Style Selector="instances|InstancesView ListBox.instancePreviewFiles > ListBoxItem:pointerover">
+  <Style Selector="instances|InstancesView Button.instancePreviewFile:pointerover">
     <Setter Property="Background" Value="{DynamicResource ItemHoverBrush}" />
   </Style>
 
-  <Style Selector="instances|InstancesView ListBox.instancePreviewFiles > ListBoxItem:selected">
+  <Style Selector="instances|InstancesView Button.instancePreviewFile.selected">
     <Setter Property="Background" Value="{DynamicResource ItemSelectedBrush}" />
+  </Style>
+
+  <Style Selector="instances|InstancesView Button.instancePreviewFile.selected:pointerover">
+    <Setter Property="Background" Value="{DynamicResource ItemSelectedHoverBrush}" />
+  </Style>
+
+  <Style Selector="instances|InstancesView Button.instancePreviewFile.incompatible">
+    <Setter Property="Opacity" Value="0.58" />
+  </Style>
+
+  <Style Selector="instances|InstancesView Button.instancePreviewFile TextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
   </Style>
 
   <Style Selector="instances|InstancesView Button.instanceInstall.preview">
     <Setter Property="HorizontalContentAlignment" Value="Center" />
+  </Style>
+
+  <Style Selector="instances|InstancesView Border.modPreviewSplitAction">
+    <Setter Property="Background" Value="{DynamicResource ControlGroupBrush}" />
+    <Setter Property="CornerRadius" Value="10" />
+    <Setter Property="ClipToBounds" Value="True" />
+  </Style>
+
+  <Style Selector="instances|InstancesView Button.instanceInstall.preview.splitMain">
+    <Setter Property="Height" Value="42" />
+    <Setter Property="CornerRadius" Value="0" />
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+  </Style>
+
+  <Style Selector="instances|InstancesView Border.modPreviewSplitDivider">
+    <Setter Property="Width" Value="2" />
+    <Setter Property="Background" Value="{DynamicResource AppBackgroundBrush}" />
+  </Style>
+
+  <Style Selector="instances|InstancesView Button.modPreviewCurseForgeAction">
+    <Setter Property="Height" Value="42" />
+    <Setter Property="Padding" Value="16,0" />
+    <Setter Property="Background" Value="#F16436" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="CornerRadius" Value="0" />
+    <Setter Property="Foreground" Value="#FFFFFFFF" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="RenderTransform" Value="{x:Null}" />
+    <Setter Property="Transitions">
+      <Transitions>
+        <BrushTransition Property="Background" Duration="0:0:0.16">
+          <BrushTransition.Easing><easing:CubicEaseOut /></BrushTransition.Easing>
+        </BrushTransition>
+      </Transitions>
+    </Setter>
+  </Style>
+
+  <Style Selector="instances|InstancesView Button.modPreviewCurseForgeAction:pointerover">
+    <Setter Property="Background" Value="#FF7548" />
+  </Style>
+
+  <Style Selector="instances|InstancesView Button.modPreviewCurseForgeAction:pressed">
+    <Setter Property="Background" Value="#D95028" />
+  </Style>
+
+  <Style Selector="instances|InstancesView Path.modPreviewCurseForgeIcon">
+    <Setter Property="Width" Value="23" />
+    <Setter Property="Height" Value="23" />
+    <Setter Property="Stretch" Value="Uniform" />
+    <Setter Property="Fill" Value="#FFFFFFFF" />
+    <Setter Property="VerticalAlignment" Value="Center" />
   </Style>
 
   <Style Selector="instances|InstancesView Path.instanceInstalledCheck">

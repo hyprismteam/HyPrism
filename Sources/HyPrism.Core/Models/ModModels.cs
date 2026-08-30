@@ -41,6 +41,8 @@ public class ModInfo
     public string DateUpdated { get; set; } = "";
     /// <summary>CurseForge file ID of the most recent release.</summary>
     public string LatestFileId { get; set; } = "";
+    /// <summary>Latest files returned with the search result.</summary>
+    public List<ModFileInfo> LatestFiles { get; set; } = [];
     /// <summary>Screenshots attached to the mod page.</summary>
     public List<CurseForgeScreenshot> Screenshots { get; set; } = [];
 }

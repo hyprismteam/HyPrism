@@ -152,7 +152,8 @@ public sealed class InstanceContentViewModelTests
         Assert.Equal("Logs", viewModel.DisplayedInstanceSectionTitle);
         viewModel.SelectInstanceSectionCommand.Execute("browse");
         await WaitUntilAsync(() => viewModel.ModCatalogItems.Count == 1);
-        await viewModel.InstallModCommand.ExecuteAsync(viewModel.ModCatalogItems[0]);
+        viewModel.ToggleModCatalogSelectionCommand.Execute(viewModel.ModCatalogItems[0]);
+        await viewModel.InstallSelectedCatalogModsCommand.ExecuteAsync(null);
 
         modManager.Verify(service => service.GetInstanceInstalledMods(instancePath), Times.AtLeastOnce);
         modManager.Verify(service => service.InstallModFileToInstanceAsync(

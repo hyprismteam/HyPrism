@@ -1012,7 +1012,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>/</value>
   </data>
   <data name="modManager.openCurseforge" xml:space="preserve">
-    <value>打开 CurseForge 页面</value>
+    <value>在 CurseForge 上打开模组</value>
   </data>
   <data name="modManager.openModsFolder" xml:space="preserve">
     <value>打开模组文件夹</value>
@@ -1151,6 +1151,9 @@ SPDX-License-Identifier: GPL-3.0-only
   </data>
   <data name="modManager.updating" xml:space="preserve">
     <value>更新中...</value>
+  </data>
+  <data name="modManager.gameVersions" xml:space="preserve">
+    <value>适用游戏版本</value>
   </data>
   <data name="modManager.version" xml:space="preserve">
     <value>版本</value>
@@ -2885,6 +2888,21 @@ SPDX-License-Identifier: GPL-3.0-only
   </data>
   <data name="instances.mods.selectedCount" xml:space="preserve">
     <value>{0} selected</value>
+  </data>
+  <data name="instances.mods.compatibility.compatible" xml:space="preserve">
+    <value>兼容</value>
+  </data>
+  <data name="instances.mods.compatibility.incompatible" xml:space="preserve">
+    <value>不兼容</value>
+  </data>
+  <data name="instances.mods.compatibility.unknown" xml:space="preserve">
+    <value>兼容性未知</value>
+  </data>
+  <data name="instances.mods.compatibility.gameVersion" xml:space="preserve">
+    <value>Hytale {0}</value>
+  </data>
+  <data name="instances.mods.compatibility.versionUnknown" xml:space="preserve">
+    <value>无法检测 Hytale 版本</value>
   </data>
   <data name="instances.mods.countInstalled" xml:space="preserve">
     <value>{0} mods installed</value>

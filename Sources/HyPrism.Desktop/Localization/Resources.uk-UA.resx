@@ -1012,7 +1012,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>з</value>
   </data>
   <data name="modManager.openCurseforge" xml:space="preserve">
-    <value>Відкрити сторінку CurseForge</value>
+    <value>Відкрити мод на CurseForge</value>
   </data>
   <data name="modManager.openModsFolder" xml:space="preserve">
     <value>Папка модів</value>
@@ -1151,6 +1151,9 @@ SPDX-License-Identifier: GPL-3.0-only
   </data>
   <data name="modManager.updating" xml:space="preserve">
     <value>Оновлення...</value>
+  </data>
+  <data name="modManager.gameVersions" xml:space="preserve">
+    <value>Для версій гри</value>
   </data>
   <data name="modManager.version" xml:space="preserve">
     <value>Версія</value>
@@ -2885,6 +2888,21 @@ SPDX-License-Identifier: GPL-3.0-only
   </data>
   <data name="instances.mods.selectedCount" xml:space="preserve">
     <value>{0} selected</value>
+  </data>
+  <data name="instances.mods.compatibility.compatible" xml:space="preserve">
+    <value>Сумісний</value>
+  </data>
+  <data name="instances.mods.compatibility.incompatible" xml:space="preserve">
+    <value>Несумісний</value>
+  </data>
+  <data name="instances.mods.compatibility.unknown" xml:space="preserve">
+    <value>Сумісність невідома</value>
+  </data>
+  <data name="instances.mods.compatibility.gameVersion" xml:space="preserve">
+    <value>Hytale {0}</value>
+  </data>
+  <data name="instances.mods.compatibility.versionUnknown" xml:space="preserve">
+    <value>Не вдалося визначити версію Hytale</value>
   </data>
   <data name="instances.mods.countInstalled" xml:space="preserve">
     <value>{0} mods installed</value>

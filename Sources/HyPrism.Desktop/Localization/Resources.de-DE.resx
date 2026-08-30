@@ -1012,7 +1012,7 @@ Bei Laufwerkswechsel muss das Spiel möglicherweise neu installiert werden.</val
     <value>von</value>
   </data>
   <data name="modManager.openCurseforge" xml:space="preserve">
-    <value>CurseForge-Seite öffnen</value>
+    <value>Mod auf CurseForge öffnen</value>
   </data>
   <data name="modManager.openModsFolder" xml:space="preserve">
     <value>Mod-Ordner öffnen</value>
@@ -1151,6 +1151,9 @@ Bei Laufwerkswechsel muss das Spiel möglicherweise neu installiert werden.</val
   </data>
   <data name="modManager.updating" xml:space="preserve">
     <value>Aktualisiere...</value>
+  </data>
+  <data name="modManager.gameVersions" xml:space="preserve">
+    <value>Für Spielversionen</value>
   </data>
   <data name="modManager.version" xml:space="preserve">
     <value>Version</value>
@@ -2885,6 +2888,21 @@ Bei Laufwerkswechsel muss das Spiel möglicherweise neu installiert werden.</val
   </data>
   <data name="instances.mods.selectedCount" xml:space="preserve">
     <value>{0} selected</value>
+  </data>
+  <data name="instances.mods.compatibility.compatible" xml:space="preserve">
+    <value>Kompatibel</value>
+  </data>
+  <data name="instances.mods.compatibility.incompatible" xml:space="preserve">
+    <value>Nicht kompatibel</value>
+  </data>
+  <data name="instances.mods.compatibility.unknown" xml:space="preserve">
+    <value>Kompatibilität unbekannt</value>
+  </data>
+  <data name="instances.mods.compatibility.gameVersion" xml:space="preserve">
+    <value>Hytale {0}</value>
+  </data>
+  <data name="instances.mods.compatibility.versionUnknown" xml:space="preserve">
+    <value>Hytale-Version konnte nicht ermittelt werden</value>
   </data>
   <data name="instances.mods.countInstalled" xml:space="preserve">
     <value>{0} mods installed</value>

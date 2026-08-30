@@ -1765,6 +1765,22 @@ public sealed class MainWindowRenderTests
             window.GetVisualDescendants().OfType<ComboBox>().Where(comboBox => comboBox.IsEnabled),
             comboBox => Assert.Equal(handCursor, comboBox.Cursor?.ToString()));
 
+        var mainSceneFrame = window.FindControl<Border>("MainSceneFrame");
+        var mainSceneSurface = window.FindControl<Border>("MainSceneSurface");
+        Assert.NotNull(mainSceneFrame);
+        Assert.False(mainSceneFrame!.ClipToBounds);
+        Assert.Equal(new CornerRadius(24), mainSceneFrame.CornerRadius);
+        Assert.Equal(new Thickness(1), mainSceneFrame.BorderThickness);
+        viewModel.SelectedModCatalogPreview = new ModCatalogItemViewModel(
+            "frame-preview", "Frame Preview", "HyPrism", "", "1");
+        Dispatcher.UIThread.RunJobs();
+        Assert.Equal(new Thickness(1, 1, 1, 0), mainSceneFrame.BorderThickness);
+        viewModel.SelectedModCatalogPreview = null;
+        Dispatcher.UIThread.RunJobs();
+        Assert.NotNull(mainSceneSurface);
+        Assert.True(mainSceneSurface!.ClipToBounds);
+        Assert.Equal(new CornerRadius(23), mainSceneSurface.CornerRadius);
+
         var dashboard = Assert.Single(
             window.GetVisualDescendants().OfType<DashboardView>());
         Assert.True(dashboard.IsEffectivelyVisible);

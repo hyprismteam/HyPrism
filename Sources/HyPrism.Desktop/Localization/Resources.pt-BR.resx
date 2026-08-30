@@ -1012,7 +1012,7 @@ Você pode precisar reinstalar o jogo se trocar de unidade.</value>
     <value>de</value>
   </data>
   <data name="modManager.openCurseforge" xml:space="preserve">
-    <value>Abrir página do CurseForge</value>
+    <value>Abrir mod no CurseForge</value>
   </data>
   <data name="modManager.openModsFolder" xml:space="preserve">
     <value>Abrir Pasta de Mods</value>
@@ -1151,6 +1151,9 @@ Você pode precisar reinstalar o jogo se trocar de unidade.</value>
   </data>
   <data name="modManager.updating" xml:space="preserve">
     <value>Atualizando...</value>
+  </data>
+  <data name="modManager.gameVersions" xml:space="preserve">
+    <value>Para versões do jogo</value>
   </data>
   <data name="modManager.version" xml:space="preserve">
     <value>Versão</value>
@@ -2885,6 +2888,21 @@ Você pode precisar reinstalar o jogo se trocar de unidade.</value>
   </data>
   <data name="instances.mods.selectedCount" xml:space="preserve">
     <value>{0} selected</value>
+  </data>
+  <data name="instances.mods.compatibility.compatible" xml:space="preserve">
+    <value>Compatível</value>
+  </data>
+  <data name="instances.mods.compatibility.incompatible" xml:space="preserve">
+    <value>Incompatível</value>
+  </data>
+  <data name="instances.mods.compatibility.unknown" xml:space="preserve">
+    <value>Compatibilidade desconhecida</value>
+  </data>
+  <data name="instances.mods.compatibility.gameVersion" xml:space="preserve">
+    <value>Hytale {0}</value>
+  </data>
+  <data name="instances.mods.compatibility.versionUnknown" xml:space="preserve">
+    <value>Não foi possível detectar a versão do Hytale</value>
   </data>
   <data name="instances.mods.countInstalled" xml:space="preserve">
     <value>{0} mods installed</value>

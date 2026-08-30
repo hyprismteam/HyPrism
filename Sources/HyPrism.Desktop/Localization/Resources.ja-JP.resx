@@ -1012,7 +1012,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>/</value>
   </data>
   <data name="modManager.openCurseforge" xml:space="preserve">
-    <value>CurseForgeページを開く</value>
+    <value>CurseForgeでMODを開く</value>
   </data>
   <data name="modManager.openModsFolder" xml:space="preserve">
     <value>Modフォルダ</value>
@@ -1151,6 +1151,9 @@ SPDX-License-Identifier: GPL-3.0-only
   </data>
   <data name="modManager.updating" xml:space="preserve">
     <value>更新中...</value>
+  </data>
+  <data name="modManager.gameVersions" xml:space="preserve">
+    <value>対応ゲームバージョン</value>
   </data>
   <data name="modManager.version" xml:space="preserve">
     <value>バージョン</value>
@@ -2885,6 +2888,21 @@ SPDX-License-Identifier: GPL-3.0-only
   </data>
   <data name="instances.mods.selectedCount" xml:space="preserve">
     <value>{0} selected</value>
+  </data>
+  <data name="instances.mods.compatibility.compatible" xml:space="preserve">
+    <value>互換性あり</value>
+  </data>
+  <data name="instances.mods.compatibility.incompatible" xml:space="preserve">
+    <value>互換性なし</value>
+  </data>
+  <data name="instances.mods.compatibility.unknown" xml:space="preserve">
+    <value>互換性不明</value>
+  </data>
+  <data name="instances.mods.compatibility.gameVersion" xml:space="preserve">
+    <value>Hytale {0}</value>
+  </data>
+  <data name="instances.mods.compatibility.versionUnknown" xml:space="preserve">
+    <value>Hytale のバージョンを検出できませんでした</value>
   </data>
   <data name="instances.mods.countInstalled" xml:space="preserve">
     <value>{0} mods installed</value>

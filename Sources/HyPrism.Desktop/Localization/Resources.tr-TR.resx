@@ -1012,7 +1012,7 @@ Sürücü değiştirirseniz oyunu yeniden yüklemeniz gerekebilir.</value>
     <value>/</value>
   </data>
   <data name="modManager.openCurseforge" xml:space="preserve">
-    <value>CurseForge sayfasını aç</value>
+    <value>Modu CurseForge'da aç</value>
   </data>
   <data name="modManager.openModsFolder" xml:space="preserve">
     <value>Mod Klasörünü Aç</value>
@@ -1151,6 +1151,9 @@ Sürücü değiştirirseniz oyunu yeniden yüklemeniz gerekebilir.</value>
   </data>
   <data name="modManager.updating" xml:space="preserve">
     <value>Güncelleniyor...</value>
+  </data>
+  <data name="modManager.gameVersions" xml:space="preserve">
+    <value>Oyun sürümleri için</value>
   </data>
   <data name="modManager.version" xml:space="preserve">
     <value>Sürüm</value>
@@ -2885,6 +2888,21 @@ Sürücü değiştirirseniz oyunu yeniden yüklemeniz gerekebilir.</value>
   </data>
   <data name="instances.mods.selectedCount" xml:space="preserve">
     <value>{0} selected</value>
+  </data>
+  <data name="instances.mods.compatibility.compatible" xml:space="preserve">
+    <value>Uyumlu</value>
+  </data>
+  <data name="instances.mods.compatibility.incompatible" xml:space="preserve">
+    <value>Uyumsuz</value>
+  </data>
+  <data name="instances.mods.compatibility.unknown" xml:space="preserve">
+    <value>Uyumluluk bilinmiyor</value>
+  </data>
+  <data name="instances.mods.compatibility.gameVersion" xml:space="preserve">
+    <value>Hytale {0}</value>
+  </data>
+  <data name="instances.mods.compatibility.versionUnknown" xml:space="preserve">
+    <value>Hytale sürümü algılanamadı</value>
   </data>
   <data name="instances.mods.countInstalled" xml:space="preserve">
     <value>{0} mods installed</value>

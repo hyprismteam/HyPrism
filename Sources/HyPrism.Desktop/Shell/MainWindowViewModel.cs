@@ -44,6 +44,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     private const int CompactTransitionMilliseconds = 320;
     private const int ArticleSkeletonDelayMilliseconds = 180;
     private const int ArticleBodySkeletonFadeMilliseconds = 180;
+    private const int ModCatalogPreviewFilesSkeletonMinMilliseconds = 220;
     private static readonly TimeSpan InstanceVersionCacheMaxAge = TimeSpan.FromMinutes(15);
 
     private readonly IInstanceRepository _instances;
@@ -111,7 +112,14 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     private int _modCatalogPage;
     private CancellationTokenSource _modIconsCancellation = new();
     private CancellationTokenSource _modPreviewImageCancellation = new();
+    private CancellationTokenSource _modPreviewImageTransitionCancellation = new();
+    private CancellationTokenSource _modPreviewRevealCancellation = new();
     private int _modCatalogPreviewVersion;
+    private readonly List<Bitmap?> _modCatalogPreviewBitmaps = [];
+    private readonly List<bool> _modCatalogPreviewBitmapSlotsResolved = [];
+    private readonly object _modCatalogPreviewBitmapsLock = new();
+    private bool _isModCatalogPreviewImageFadingOut;
+    private string? _modCatalogGameVersion;
     private const int ModCatalogPageSize = 24;
     private const int MaxConsoleLines = 3000;
     private bool _hasLoadedNews;
@@ -392,11 +400,16 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     private bool _hasMoreModCatalog;
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HasModCatalogPreview))]
     [NotifyPropertyChangedFor(nameof(CanInstallModCatalogPreview))]
     [NotifyPropertyChangedFor(nameof(HasMultipleModCatalogPreviewScreenshots))]
-    [NotifyPropertyChangedFor(nameof(ModCatalogPreviewScreenshotPosition))]
+    [NotifyPropertyChangedFor(nameof(CanShowPreviousModCatalogScreenshot))]
+    [NotifyPropertyChangedFor(nameof(CanShowNextModCatalogScreenshot))]
+    [NotifyPropertyChangedFor(nameof(IsModCatalogPreviewMounted))]
     private ModCatalogItemViewModel? _selectedModCatalogPreview;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasModCatalogPreview))]
+    private bool _isModCatalogPreviewOpen;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CanInstallModCatalogPreview))]
@@ -410,10 +423,30 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     private bool _isModCatalogPreviewLoading;
 
     [ObservableProperty]
+    private bool _isModCatalogPreviewFilesSkeletonVisible;
+
+    [ObservableProperty]
+    private bool _isModCatalogPreviewFilesSkeletonFadingOut;
+
+    [ObservableProperty]
+    private bool _isModCatalogPreviewFilesContentVisible;
+
+    [ObservableProperty]
     private bool _isModCatalogPreviewImageLoading;
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(ModCatalogPreviewScreenshotPosition))]
+    private bool _isModCatalogPreviewImageVisible;
+
+    [ObservableProperty]
+    private bool _isModCatalogPreviewImageTransitioning;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanInstallSelectedCatalogMods))]
+    private bool _isInstallingSelectedCatalogMods;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanShowPreviousModCatalogScreenshot))]
+    [NotifyPropertyChangedFor(nameof(CanShowNextModCatalogScreenshot))]
     private int _modCatalogPreviewScreenshotIndex;
 
     public MainWindowViewModel(
@@ -604,9 +637,17 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     public string InstanceBrowseLoadingMoreLabel => _localizer["instances.browse.loadingMore"];
     public string ModCatalogPreviewAuthorLabel => _localizer["modManager.author"];
     public string ModCatalogPreviewDownloadsLabel => _localizer["modManager.downloads"];
-    public string ModCatalogPreviewSelectVersionLabel => _localizer["modManager.selectVersion"];
     public string ModCatalogPreviewNoFilesLabel => _localizer["modManager.noFilesAvailable"];
     public string ModCatalogPreviewCloseLabel => _localizer["common.close"];
+    public string ModCatalogOpenCurseForgeLabel => _localizer["modManager.openCurseforge"];
+    public string ModCatalogFileTypeColumn => _localizer["settings.downloads.columnType"];
+    public string ModCatalogFileNameColumn => _localizer["modManager.name"];
+    public string ModCatalogFileGameVersionsColumn => _localizer["modManager.gameVersions"];
+    public string ModCatalogInstallSelectedLabel =>
+        $"{_localizer["modManager.installSelected"]} ({SelectedCatalogModCount})";
+    public string ModCatalogGameVersionLabel => string.IsNullOrWhiteSpace(_modCatalogGameVersion)
+        ? _localizer["instances.mods.compatibility.versionUnknown"]
+        : _localizer.Format("instances.mods.compatibility.gameVersion", _modCatalogGameVersion);
     public string ConsoleAutoScrollLabel => _localizer["instances.console.autoScroll"];
     public string ConsoleClearLabel => _localizer["instances.console.clear"];
     public string ConsoleSearchHint => _localizer["instances.console.search"];
@@ -617,17 +658,23 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     public bool HasConsoleLines => ConsoleLines.Count > 0;
     public bool IsConsoleEmpty => ConsoleLines.Count == 0;
     public bool CanLoadMoreModCatalog => HasMoreModCatalog && !IsLoadingMoreModCatalog && !IsModCatalogLoading;
-    public bool HasModCatalogPreview => SelectedModCatalogPreview is not null;
+    public bool HasModCatalogPreview => IsModCatalogPreviewOpen;
+    public bool IsModCatalogPreviewMounted => SelectedModCatalogPreview is not null;
     public bool HasModCatalogPreviewImage => ModCatalogPreviewImage is not null;
     public bool HasModCatalogPreviewFiles => ModCatalogPreviewFiles.Count > 0;
     public bool HasMultipleModCatalogPreviewScreenshots =>
         SelectedModCatalogPreview is { ScreenshotUrls.Count: > 1 };
+    public bool CanShowPreviousModCatalogScreenshot =>
+        ModCatalogPreviewScreenshotIndex > 0;
+    public bool CanShowNextModCatalogScreenshot =>
+        SelectedModCatalogPreview is { } item &&
+        ModCatalogPreviewScreenshotIndex < item.ScreenshotUrls.Count - 1;
     public bool CanInstallModCatalogPreview =>
         SelectedModCatalogPreview is { IsInstalling: false } &&
-        SelectedModCatalogPreviewFile is { IsInstalled: false };
-    public string ModCatalogPreviewScreenshotPosition => SelectedModCatalogPreview is { ScreenshotUrls.Count: > 0 } item
-        ? $"{ModCatalogPreviewScreenshotIndex + 1} / {item.ScreenshotUrls.Count}"
-        : string.Empty;
+        SelectedModCatalogPreviewFile is { CanInstall: true };
+    public int SelectedCatalogModCount => ModCatalogItems.Count(item => item.IsSelected);
+    public bool HasSelectedCatalogMods => SelectedCatalogModCount > 0;
+    public bool CanInstallSelectedCatalogMods => HasSelectedCatalogMods && !IsInstallingSelectedCatalogMods;
     public string SelectedModCountText =>
         _localizer.Format("instances.mods.selectedCount", SelectedModCount);
     public string ModUpdateCountText =>
@@ -988,24 +1035,98 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
             : Task.CompletedTask;
 
     [RelayCommand]
+    private void ToggleModCatalogSelection(ModCatalogItemViewModel? item)
+    {
+        if (item is null || !item.CanSelect)
+            return;
+
+        item.IsSelected = !item.IsSelected;
+        NotifyCatalogSelectionChanged();
+    }
+
+    [RelayCommand]
+    private async Task InstallSelectedCatalogModsAsync()
+    {
+        if (!CanInstallSelectedCatalogMods || _modManager is null ||
+            _managedInstance?.IsInstalled != true)
+        {
+            return;
+        }
+
+        var instancePath = _instances.GetInstancePathById(_managedInstance.Id);
+        if (string.IsNullOrWhiteSpace(instancePath))
+            return;
+
+        var selected = ModCatalogItems.Where(item => item.IsSelected && item.CanSelect).ToArray();
+        IsInstallingSelectedCatalogMods = true;
+        InstanceContentError = string.Empty;
+        var failed = false;
+        try
+        {
+            foreach (var item in selected)
+            {
+                item.IsInstalling = true;
+                try
+                {
+                    if (!await _modManager.InstallModFileToInstanceAsync(
+                            item.Id,
+                            item.RecommendedFileId,
+                            instancePath))
+                    {
+                        failed = true;
+                        continue;
+                    }
+
+                    item.IsInstalled = true;
+                    item.InstalledFileId = item.RecommendedFileId;
+                    item.IsSelected = false;
+                }
+                catch
+                {
+                    failed = true;
+                }
+                finally
+                {
+                    item.IsInstalling = false;
+                }
+            }
+
+            await LoadInstalledModsAsync();
+            if (failed)
+                InstanceContentError = _localizer["modManager.installFailed"];
+        }
+        finally
+        {
+            IsInstallingSelectedCatalogMods = false;
+            NotifyCatalogSelectionChanged();
+        }
+    }
+
+    [RelayCommand]
     private async Task SelectModCatalogPreviewAsync(ModCatalogItemViewModel? item)
     {
         if (item is null || _modManager is null)
             return;
 
         if (ReferenceEquals(SelectedModCatalogPreview, item))
+        {
+            IsModCatalogPreviewOpen = true;
             return;
+        }
 
         var previewVersion = ++_modCatalogPreviewVersion;
         SelectedModCatalogPreview = item;
+        IsModCatalogPreviewOpen = true;
         SelectedModCatalogPreviewFile = null;
         _modCatalogPreviewFiles.Clear();
         OnPropertyChanged(nameof(HasModCatalogPreviewFiles));
         OnPropertyChanged(nameof(HasMultipleModCatalogPreviewScreenshots));
         ModCatalogPreviewScreenshotIndex = 0;
         IsModCatalogPreviewLoading = true;
-        ReplaceModCatalogPreviewImage(null);
-        _ = LoadModCatalogPreviewImageAsync(item, previewVersion);
+        IsModCatalogPreviewFilesSkeletonVisible = true;
+        IsModCatalogPreviewFilesSkeletonFadingOut = false;
+        IsModCatalogPreviewFilesContentVisible = false;
+        BeginModCatalogPreviewImagePreload(item, previewVersion);
 
         try
         {
@@ -1016,14 +1137,27 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
                 return;
             }
 
-            var files = result.Files.Select(file => new ModCatalogFileItemViewModel(
-                file,
-                GetModReleaseLabel(file.ReleaseType),
-                string.Equals(file.Id, item.InstalledFileId, StringComparison.Ordinal)));
+            var files = result.Files.Select(file =>
+            {
+                var compatibility = ModCompatibilityEvaluator.Evaluate(
+                    _modCatalogGameVersion,
+                    file.GameVersions);
+                return new ModCatalogFileItemViewModel(
+                    file,
+                    GetModReleaseLabel(file.ReleaseType),
+                    string.Equals(file.Id, item.InstalledFileId, StringComparison.Ordinal),
+                    compatibility,
+                    GetModCompatibilityLabel(compatibility));
+            });
             _modCatalogPreviewFiles.ReplaceRange(files);
             SelectedModCatalogPreviewFile = _modCatalogPreviewFiles.FirstOrDefault(file =>
-                string.Equals(file.Id, item.LatestFileId, StringComparison.Ordinal)) ??
+                file.IsInstalled) ??
+                _modCatalogPreviewFiles.FirstOrDefault(file =>
+                    string.Equals(file.Id, item.RecommendedFileId, StringComparison.Ordinal)) ??
+                _modCatalogPreviewFiles.FirstOrDefault(file => file.CanInstall) ??
                 _modCatalogPreviewFiles.FirstOrDefault();
+            if (SelectedModCatalogPreviewFile is not null)
+                SelectedModCatalogPreviewFile.IsSelected = true;
             OnPropertyChanged(nameof(HasModCatalogPreviewFiles));
             OnPropertyChanged(nameof(CanInstallModCatalogPreview));
         }
@@ -1035,28 +1169,48 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         finally
         {
             if (previewVersion == _modCatalogPreviewVersion)
+            {
                 IsModCatalogPreviewLoading = false;
+                _ = RevealModCatalogPreviewFilesAsync(previewVersion);
+            }
         }
     }
 
     [RelayCommand]
     private void CloseModCatalogPreview()
-        => ResetModCatalogPreview();
+        => IsModCatalogPreviewOpen = false;
+
+    internal void CompleteModCatalogPreviewClose()
+    {
+        if (!IsModCatalogPreviewOpen)
+            ResetModCatalogPreview();
+    }
 
     [RelayCommand]
-    private void ShowPreviousModCatalogScreenshot()
-        => MoveModCatalogPreviewScreenshot(-1);
+    private void SelectModCatalogPreviewFile(ModCatalogFileItemViewModel? file)
+    {
+        if (file is not { CanSelect: true })
+            return;
 
-    [RelayCommand]
-    private void ShowNextModCatalogScreenshot()
-        => MoveModCatalogPreviewScreenshot(1);
+        foreach (var previewFile in ModCatalogPreviewFiles)
+            previewFile.IsSelected = ReferenceEquals(previewFile, file);
+        SelectedModCatalogPreviewFile = file;
+    }
+
+    [RelayCommand(AllowConcurrentExecutions = true)]
+    private Task ShowPreviousModCatalogScreenshotAsync()
+        => MoveModCatalogPreviewScreenshotAsync(-1);
+
+    [RelayCommand(AllowConcurrentExecutions = true)]
+    private Task ShowNextModCatalogScreenshotAsync()
+        => MoveModCatalogPreviewScreenshotAsync(1);
 
     [RelayCommand]
     private async Task InstallModCatalogPreviewAsync()
     {
         var item = SelectedModCatalogPreview;
         var file = SelectedModCatalogPreviewFile;
-        if (item is null || file is null || item.IsInstalling || file.IsInstalled ||
+        if (item is null || file is null || item.IsInstalling || !file.CanInstall ||
             _modManager is null || _managedInstance?.IsInstalled != true)
         {
             return;
@@ -1097,46 +1251,6 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private Task RefreshInstanceWorldsAsync()
         => LoadInstanceWorldsAsync();
-
-    [RelayCommand]
-    private async Task InstallModAsync(ModCatalogItemViewModel? item)
-    {
-        if (item is null || item.IsInstalling || item.IsInstalled ||
-            _modManager is null || _managedInstance?.IsInstalled != true)
-        {
-            return;
-        }
-
-        var instancePath = _instances.GetInstancePathById(_managedInstance.Id);
-        if (string.IsNullOrWhiteSpace(instancePath))
-            return;
-
-        item.IsInstalling = true;
-        InstanceContentError = string.Empty;
-        try
-        {
-            var installed = await _modManager.InstallModFileToInstanceAsync(
-                item.Id,
-                item.LatestFileId,
-                instancePath);
-            if (!installed)
-            {
-                InstanceContentError = _localizer["instances.mods.installFailed"];
-                return;
-            }
-
-            item.IsInstalled = true;
-            await LoadInstalledModsAsync();
-        }
-        catch (Exception ex)
-        {
-            InstanceContentError = ex.Message;
-        }
-        finally
-        {
-            item.IsInstalling = false;
-        }
-    }
 
     #region Installed mod management
 
@@ -1500,7 +1614,6 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
                 }
                 catch
                 {
-                    // Icon loading is decorative and never blocks the row
                 }
             }
         }, token);
@@ -1542,99 +1655,269 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
                 }
                 catch
                 {
-                    // Icon loading is decorative and never blocks the row
                 }
             }
         }, token);
     }
 
-    private void MoveModCatalogPreviewScreenshot(int offset)
+    private async Task MoveModCatalogPreviewScreenshotAsync(int offset)
     {
-        if (SelectedModCatalogPreview is not { ScreenshotUrls.Count: > 1 } item)
+        if (IsModCatalogPreviewImageTransitioning ||
+            SelectedModCatalogPreview is not { ScreenshotUrls.Count: > 1 } item)
+        {
+            return;
+        }
+
+        var targetIndex = Math.Clamp(
+            ModCatalogPreviewScreenshotIndex + offset,
+            0,
+            item.ScreenshotUrls.Count - 1);
+        if (targetIndex == ModCatalogPreviewScreenshotIndex)
             return;
 
-        ModCatalogPreviewScreenshotIndex =
-            (ModCatalogPreviewScreenshotIndex + offset + item.ScreenshotUrls.Count) %
-            item.ScreenshotUrls.Count;
-        _ = LoadModCatalogPreviewImageAsync(item, _modCatalogPreviewVersion);
+        _modPreviewImageTransitionCancellation.Cancel();
+        _modPreviewImageTransitionCancellation.Dispose();
+        _modPreviewImageTransitionCancellation = new CancellationTokenSource();
+        var cancellationToken = _modPreviewImageTransitionCancellation.Token;
+        IsModCatalogPreviewImageTransitioning = true;
+        _isModCatalogPreviewImageFadingOut = true;
+        IsModCatalogPreviewImageVisible = false;
+
+        try
+        {
+            await Task.Delay(120, cancellationToken).ConfigureAwait(false);
+            await Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                _isModCatalogPreviewImageFadingOut = false;
+                ModCatalogPreviewScreenshotIndex = targetIndex;
+                ApplyModCatalogPreviewScreenshot(_modCatalogPreviewVersion);
+            }, DispatcherPriority.Render, cancellationToken);
+            await Task.Delay(180, cancellationToken).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+        }
+        finally
+        {
+            if (!cancellationToken.IsCancellationRequested)
+            {
+                await Dispatcher.UIThread.InvokeAsync(
+                    () => IsModCatalogPreviewImageTransitioning = false,
+                    DispatcherPriority.Render);
+            }
+        }
     }
 
-    private async Task LoadModCatalogPreviewImageAsync(
+    private async Task RevealModCatalogPreviewFilesAsync(int previewVersion)
+    {
+        _modPreviewRevealCancellation.Cancel();
+        _modPreviewRevealCancellation.Dispose();
+        _modPreviewRevealCancellation = new CancellationTokenSource();
+        var token = _modPreviewRevealCancellation.Token;
+        try
+        {
+            await Task.Delay(ModCatalogPreviewFilesSkeletonMinMilliseconds, token)
+                .ConfigureAwait(false);
+            if (previewVersion != _modCatalogPreviewVersion)
+                return;
+
+            await Dispatcher.UIThread.InvokeAsync(
+                () => IsModCatalogPreviewFilesSkeletonFadingOut = true,
+                DispatcherPriority.Render);
+            await Task.Delay(ArticleBodySkeletonFadeMilliseconds, token)
+                .ConfigureAwait(false);
+            await Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                if (previewVersion != _modCatalogPreviewVersion)
+                    return;
+
+                IsModCatalogPreviewFilesSkeletonVisible = false;
+                IsModCatalogPreviewFilesSkeletonFadingOut = false;
+            }, DispatcherPriority.Render);
+
+            await Task.Delay(16, token).ConfigureAwait(false);
+            await Dispatcher.UIThread.InvokeAsync(
+                () => IsModCatalogPreviewFilesContentVisible = true,
+                DispatcherPriority.Render);
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+        }
+    }
+
+    private void BeginModCatalogPreviewImagePreload(
         ModCatalogItemViewModel item,
         int previewVersion)
     {
         _modPreviewImageCancellation.Cancel();
         _modPreviewImageCancellation.Dispose();
         _modPreviewImageCancellation = new CancellationTokenSource();
-        var imageCancellation = _modPreviewImageCancellation;
-        var token = imageCancellation.Token;
+        var token = _modPreviewImageCancellation.Token;
 
-        var url = item.ScreenshotUrls.Count > ModCatalogPreviewScreenshotIndex
-            ? item.ScreenshotUrls[ModCatalogPreviewScreenshotIndex]
-            : item.IconUrl;
-        IsModCatalogPreviewImageLoading = true;
-        try
+        DisposeModCatalogPreviewBitmaps();
+
+        IReadOnlyList<string> urls = item.ScreenshotUrls.Count > 0
+            ? item.ScreenshotUrls
+            : string.IsNullOrWhiteSpace(item.IconUrl)
+                ? []
+                : [item.IconUrl];
+
+        if (urls.Count == 0)
         {
-            var bitmap = await RemoteNewsBitmap.LoadAsync(
-                url,
-                720,
-                _httpClient,
-                token,
-                _remoteImageCache);
-            if (token.IsCancellationRequested || previewVersion != _modCatalogPreviewVersion ||
-                !ReferenceEquals(SelectedModCatalogPreview, item))
+            ModCatalogPreviewImage = null;
+            IsModCatalogPreviewImageVisible = false;
+            IsModCatalogPreviewImageLoading = false;
+            return;
+        }
+
+        lock (_modCatalogPreviewBitmapsLock)
+        {
+            for (var index = 0; index < urls.Count; index++)
             {
-                bitmap?.Dispose();
-                return;
+                _modCatalogPreviewBitmaps.Add(null);
+                _modCatalogPreviewBitmapSlotsResolved.Add(false);
             }
+        }
 
-            await Dispatcher.UIThread.InvokeAsync(() =>
+        IsModCatalogPreviewImageLoading = true;
+        _ = Task.Run(async () =>
+        {
+            using var gate = new SemaphoreSlim(3, 3);
+            var loads = urls.Select(async (url, index) =>
             {
-                if (token.IsCancellationRequested || previewVersion != _modCatalogPreviewVersion ||
-                    !ReferenceEquals(SelectedModCatalogPreview, item))
+                await gate.WaitAsync(token);
+                try
                 {
-                    bitmap?.Dispose();
-                    return;
-                }
+                    var bitmap = await RemoteNewsBitmap.LoadAsync(
+                        url,
+                        720,
+                        _httpClient,
+                        token,
+                        _remoteImageCache);
+                    var stored = false;
+                    lock (_modCatalogPreviewBitmapsLock)
+                    {
+                        if (!token.IsCancellationRequested &&
+                            previewVersion == _modCatalogPreviewVersion &&
+                            index < _modCatalogPreviewBitmaps.Count &&
+                            !_modCatalogPreviewBitmapSlotsResolved[index])
+                        {
+                            _modCatalogPreviewBitmaps[index] = bitmap;
+                            _modCatalogPreviewBitmapSlotsResolved[index] = true;
+                            stored = true;
+                        }
+                    }
 
-                ReplaceModCatalogPreviewImage(bitmap);
+                    if (!stored)
+                    {
+                        bitmap?.Dispose();
+                        return;
+                    }
+
+                    Dispatcher.UIThread.Post(
+                        () => ApplyModCatalogPreviewScreenshot(previewVersion),
+                        DispatcherPriority.Background);
+                }
+                catch (OperationCanceledException)
+                {
+                }
+                finally
+                {
+                    gate.Release();
+                }
             });
-        }
-        catch (OperationCanceledException)
-        {
-        }
-        finally
-        {
-            await Dispatcher.UIThread.InvokeAsync(() =>
+
+            try
             {
-                if (ReferenceEquals(_modPreviewImageCancellation, imageCancellation))
-                    IsModCatalogPreviewImageLoading = false;
-            });
+                await Task.WhenAll(loads);
+            }
+            catch (OperationCanceledException)
+            {
+            }
+        }, token);
+    }
+
+    private void ApplyModCatalogPreviewScreenshot(int previewVersion)
+    {
+        if (previewVersion != _modCatalogPreviewVersion ||
+            SelectedModCatalogPreview is null)
+        {
+            return;
         }
+
+        Bitmap? bitmap = null;
+        var resolved = false;
+        lock (_modCatalogPreviewBitmapsLock)
+        {
+            if (ModCatalogPreviewScreenshotIndex < _modCatalogPreviewBitmaps.Count)
+            {
+                bitmap = _modCatalogPreviewBitmaps[ModCatalogPreviewScreenshotIndex];
+                resolved = _modCatalogPreviewBitmapSlotsResolved[ModCatalogPreviewScreenshotIndex];
+            }
+        }
+
+        IsModCatalogPreviewImageLoading = !resolved;
+        ModCatalogPreviewImage = resolved
+            ? bitmap ?? GetModCatalogPreviewFallbackBitmap()
+            : null;
+        IsModCatalogPreviewImageVisible = !_isModCatalogPreviewImageFadingOut &&
+                                          ModCatalogPreviewImage is not null;
+    }
+
+    private Bitmap? GetModCatalogPreviewFallbackBitmap()
+    {
+        lock (_modCatalogPreviewBitmapsLock)
+        {
+            for (var offset = 1; offset < _modCatalogPreviewBitmaps.Count; offset++)
+            {
+                var candidate =
+                    _modCatalogPreviewBitmaps[
+                        (ModCatalogPreviewScreenshotIndex + offset) % _modCatalogPreviewBitmaps.Count];
+                if (candidate is not null)
+                    return candidate;
+            }
+        }
+
+        return SelectedModCatalogPreview?.Icon;
+    }
+
+    private void DisposeModCatalogPreviewBitmaps()
+    {
+        lock (_modCatalogPreviewBitmapsLock)
+        {
+            foreach (var bitmap in _modCatalogPreviewBitmaps)
+                bitmap?.Dispose();
+            _modCatalogPreviewBitmaps.Clear();
+            _modCatalogPreviewBitmapSlotsResolved.Clear();
+        }
+
+        ModCatalogPreviewImage = null;
+        IsModCatalogPreviewImageVisible = false;
     }
 
     private void ResetModCatalogPreview()
     {
         _modCatalogPreviewVersion++;
         _modPreviewImageCancellation.Cancel();
+        _modPreviewImageTransitionCancellation.Cancel();
+        _modPreviewRevealCancellation.Cancel();
+        IsModCatalogPreviewOpen = false;
         SelectedModCatalogPreview = null;
         SelectedModCatalogPreviewFile = null;
         _modCatalogPreviewFiles.Clear();
         IsModCatalogPreviewLoading = false;
         IsModCatalogPreviewImageLoading = false;
+        _isModCatalogPreviewImageFadingOut = false;
+        IsModCatalogPreviewImageVisible = false;
+        IsModCatalogPreviewImageTransitioning = false;
+        IsModCatalogPreviewFilesSkeletonVisible = false;
+        IsModCatalogPreviewFilesSkeletonFadingOut = false;
+        IsModCatalogPreviewFilesContentVisible = false;
         ModCatalogPreviewScreenshotIndex = 0;
-        ReplaceModCatalogPreviewImage(null);
+        DisposeModCatalogPreviewBitmaps();
         OnPropertyChanged(nameof(HasModCatalogPreviewFiles));
         OnPropertyChanged(nameof(HasMultipleModCatalogPreviewScreenshots));
         OnPropertyChanged(nameof(CanInstallModCatalogPreview));
-    }
-
-    private void ReplaceModCatalogPreviewImage(Bitmap? image)
-    {
-        var previous = ModCatalogPreviewImage;
-        ModCatalogPreviewImage = image;
-        if (!ReferenceEquals(previous, image))
-            previous?.Dispose();
     }
 
     private string GetModReleaseLabel(int releaseType) => releaseType switch
@@ -1643,6 +1926,21 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         3 => _localizer["modManager.releaseType.alpha"],
         _ => _localizer["modManager.releaseType.release"]
     };
+
+    private string GetModCompatibilityLabel(ModCompatibilityStatus compatibility) => compatibility switch
+    {
+        ModCompatibilityStatus.Compatible => _localizer["instances.mods.compatibility.compatible"],
+        ModCompatibilityStatus.Incompatible => _localizer["instances.mods.compatibility.incompatible"],
+        _ => _localizer["instances.mods.compatibility.unknown"]
+    };
+
+    private void NotifyCatalogSelectionChanged()
+    {
+        OnPropertyChanged(nameof(SelectedCatalogModCount));
+        OnPropertyChanged(nameof(HasSelectedCatalogMods));
+        OnPropertyChanged(nameof(CanInstallSelectedCatalogMods));
+        OnPropertyChanged(nameof(ModCatalogInstallSelectedLabel));
+    }
 
     #endregion
 
@@ -2249,9 +2547,23 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
             var installed = string.IsNullOrWhiteSpace(instancePath)
                 ? []
                 : _modManager.GetInstanceInstalledMods(instancePath);
+            _modCatalogGameVersion = string.IsNullOrWhiteSpace(instancePath)
+                ? null
+                : ModCompatibilityEvaluator.DetectInstanceGameVersion(instancePath);
+            OnPropertyChanged(nameof(ModCatalogGameVersionLabel));
             var items = result.Mods.Select(mod =>
             {
                 var installedMod = FindInstalledCatalogMod(mod.Id, installed);
+                var recommendedFile = ModCompatibilityEvaluator.SelectRecommendedFile(
+                    mod.LatestFiles,
+                    _modCatalogGameVersion);
+                var compatibility = recommendedFile is not null
+                    ? ModCompatibilityEvaluator.Evaluate(
+                        _modCatalogGameVersion,
+                        recommendedFile.GameVersions)
+                    : mod.LatestFiles.Count > 0
+                        ? ModCompatibilityStatus.Incompatible
+                        : ModCompatibilityStatus.Unknown;
                 return new ModCatalogItemViewModel(
                     mod.Id,
                     mod.Name,
@@ -2261,11 +2573,16 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
                     mod.Slug,
                     mod.IconUrl,
                     mod.DownloadCount,
+                    recommendedFile?.ReleaseType ?? 1,
                     screenshotUrls: mod.Screenshots
                         .Select(screenshot => screenshot.Url ?? screenshot.ThumbnailUrl ?? string.Empty)
                         .Where(url => !string.IsNullOrWhiteSpace(url))
                         .ToList(),
-                    installedFileId: installedMod?.FileId ?? string.Empty)
+                    installedFileId: installedMod?.FileId ?? string.Empty,
+                    recommendedFileId: recommendedFile?.Id ??
+                        (mod.LatestFiles.Count == 0 ? mod.LatestFileId : string.Empty),
+                    compatibility: compatibility,
+                    compatibilityLabel: GetModCompatibilityLabel(compatibility))
                 {
                     IsInstalled = installedMod is not null
                 };
@@ -2280,6 +2597,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
             HasMoreModCatalog = _modCatalogItems.Count < result.TotalCount && items.Count > 0;
             FetchCatalogModIcons(items);
             NotifyInstanceContentCollectionsChanged();
+            NotifyCatalogSelectionChanged();
         }
         catch (Exception ex)
         {
@@ -2385,7 +2703,11 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
             var installedMod = FindInstalledCatalogMod(item.Id, installedMods);
             item.IsInstalled = installedMod is not null;
             item.InstalledFileId = installedMod?.FileId ?? string.Empty;
+            if (item.IsInstalled)
+                item.IsSelected = false;
         }
+
+        NotifyCatalogSelectionChanged();
     }
 
     private static InstalledMod? FindInstalledCatalogMod(
@@ -2929,7 +3251,6 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
             IsNewsArticleBodySkeletonFadingOut = false;
         }, DispatcherPriority.Render, cancellationToken);
 
-        // Restore the body transition for one frame before starting its reveal
         await Task.Delay(16, cancellationToken).ConfigureAwait(false);
         await Dispatcher.UIThread.InvokeAsync(
             () => IsNewsArticleBodyVisible = true,
@@ -3456,7 +3777,11 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         _modIconsCancellation.Dispose();
         _modPreviewImageCancellation.Cancel();
         _modPreviewImageCancellation.Dispose();
-        ReplaceModCatalogPreviewImage(null);
+        _modPreviewImageTransitionCancellation.Cancel();
+        _modPreviewImageTransitionCancellation.Dispose();
+        _modPreviewRevealCancellation.Cancel();
+        _modPreviewRevealCancellation.Dispose();
+        DisposeModCatalogPreviewBitmaps();
         _newsImagesCancellation.Cancel();
         _newsImagesCancellation.Dispose();
         _articleImagesCancellation.Cancel();
