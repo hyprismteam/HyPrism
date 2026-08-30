@@ -1087,13 +1087,16 @@ public partial class ModManager : IModManager
     /// </summary>
     private static ModInfo MapToModInfo(CurseForgeMod cfMod)
     {
+        var author = cfMod.Authors?.FirstOrDefault();
         return new ModInfo
         {
             Id = cfMod.Id.ToString(),
             Name = cfMod.Name ?? "",
             Slug = cfMod.Slug ?? "",
             Summary = cfMod.Summary ?? "",
-            Author = cfMod.Authors?.FirstOrDefault()?.Name ?? "",
+            Author = author?.Name ?? "",
+            AuthorUrl = author?.Url ?? "",
+            AuthorAvatarUrl = author?.AvatarUrl ?? "",
             DownloadCount = cfMod.DownloadCount,
             IconUrl = cfMod.Logo?.ThumbnailUrl ?? "",
             ThumbnailUrl = cfMod.Logo?.Url ?? "",

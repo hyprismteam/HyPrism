@@ -89,6 +89,8 @@ public sealed class InstanceSectionRenderTests
                         Id = "10",
                         Name = "Catalog Mod",
                         Author = "Creator",
+                        AuthorUrl = "https://www.curseforge.com/members/creator",
+                        AuthorAvatarUrl = "https://media.forgecdn.net/avatars/1/2/avatar.png",
                         Summary = "Summary",
                         LatestFileId = "900"
                     }
@@ -173,10 +175,73 @@ public sealed class InstanceSectionRenderTests
 
         viewModel.SelectInstanceSectionCommand.Execute("browse");
         await WaitUntilAsync(() => viewModel.ModCatalogItems.Count == 1);
+        viewModel.ModCatalogItems.Add(new ModCatalogItemViewModel(
+            "11",
+            "Incompatible Mod",
+            "Other creator",
+            "Incompatible summary",
+            "901",
+            recommendedFileId: "901",
+            compatibility: ModCompatibilityStatus.Incompatible,
+            compatibilityLabel: "Incompatible"));
+        window.UpdateLayout();
+        Dispatcher.UIThread.RunJobs();
         await WaitUntilAsync(() =>
-            FindRows(view, "instanceModRow").Any(border =>
+            FindRows(view, "instanceModRow").Count(border =>
                 border.IsEffectivelyVisible &&
-                border.GetVisualDescendants().OfType<CheckBox>().Any()));
+                border.Classes.Contains("catalog") &&
+                border.GetVisualDescendants().OfType<CheckBox>().Any()) == 2);
+        var catalogRows = FindRows(view, "instanceModRow")
+            .Where(border => border.IsEffectivelyVisible && border.Classes.Contains("catalog"))
+            .ToList();
+        Assert.Equal(2, catalogRows.Count);
+        Assert.All(catalogRows, row => Assert.Equal(80, row.MinHeight));
+        Assert.All(catalogRows, row => Assert.Contains(
+            row.GetVisualDescendants().OfType<Border>(),
+            border => border.Classes.Contains("instanceCatalogAuthorBadge")));
+        Assert.All(catalogRows, row =>
+        {
+            var modIcon = Assert.Single(
+                row.GetVisualDescendants().OfType<Border>(),
+                border => border.Classes.Contains("instanceModIcon"));
+            Assert.Equal(56, modIcon.Width);
+            var authorAvatar = Assert.Single(
+                row.GetVisualDescendants().OfType<Border>(),
+                border => border.Classes.Contains("instanceCatalogAuthorAvatar"));
+            Assert.Equal(22, authorAvatar.Width);
+            Assert.Contains(authorAvatar.GetVisualDescendants(), descendant => descendant is Image);
+        });
+        Assert.DoesNotContain(
+            catalogRows.SelectMany(row => row.GetVisualDescendants()).OfType<Avalonia.Controls.Shapes.Path>(),
+            path => path.Classes.Contains("instanceCatalogAuthorBrand"));
+        Assert.Equal(
+            "https://media.forgecdn.net/avatars/1/2/avatar.png",
+            viewModel.ModCatalogItems[0].AuthorAvatarUrl);
+        Assert.DoesNotContain(
+            catalogRows.SelectMany(row => row.GetVisualDescendants()).OfType<Border>(),
+            border => border.Classes.Contains("instanceCompatibilityBadge") ||
+                      border.Classes.Contains("instanceBadge") &&
+                      !border.Classes.Contains("update"));
+        var incompatibleRow = Assert.Single(catalogRows, row => row.Classes.Contains("incompatible"));
+        Assert.Equal(0.48, incompatibleRow.Opacity);
+        var catalogCheck = Assert.Single(
+            catalogRows[0].GetVisualDescendants().OfType<CheckBox>());
+        Assert.Equal(new Thickness(0), catalogCheck.BorderThickness);
+        var checkBackground = Assert.Single(
+            catalogCheck.GetVisualDescendants().OfType<Border>(),
+            border => border.Name == "SelectionIndicator");
+        Assert.Contains(
+            Assert.IsAssignableFrom<IEnumerable<ITransition>>(checkBackground.Transitions),
+            transition => transition is BrushTransition);
+        var checkGlyph = Assert.Single(
+            catalogCheck.GetVisualDescendants().OfType<PathIcon>(),
+            icon => icon.Name == "CheckGlyph");
+        Assert.Contains(
+            Assert.IsAssignableFrom<IEnumerable<ITransition>>(checkGlyph.Transitions),
+            transition => transition is DoubleTransition);
+        Assert.Contains(
+            Assert.IsAssignableFrom<IEnumerable<ITransition>>(checkGlyph.Transitions),
+            transition => transition is TransformOperationsTransition);
         Assert.DoesNotContain(
             FindRows(view, "instanceModRow")
                 .Where(border => border.IsEffectivelyVisible)
@@ -279,7 +344,7 @@ public sealed class InstanceSectionRenderTests
             curseForgeAction.GetVisualDescendants().OfType<Avalonia.Controls.Shapes.Path>(),
             path => path.Classes.Contains("modPreviewCurseForgeIcon"));
         Assert.Equal(23, curseForgeIcon.Width);
-        Assert.Equal(3, Assert.IsType<TranslateTransform>(curseForgeIcon.RenderTransform).Y);
+        Assert.Equal(5, Assert.IsType<TranslateTransform>(curseForgeIcon.RenderTransform).Y);
         var shoulderScale = Assert.IsType<ScaleTransform>(
             view.FindControl<Grid>("ModCatalogModalShoulders")?.RenderTransform);
         Assert.NotEmpty(Assert.IsAssignableFrom<IEnumerable<ITransition>>(shoulderScale.Transitions));

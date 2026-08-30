@@ -7,6 +7,7 @@ using HyPrism.Core.Game.Mods;
 using HyPrism.Core.Infrastructure;
 using HyPrism.Core.Models;
 using Moq;
+using System.Net;
 
 namespace HyPrism.Core.Tests.Game.Mods;
 
@@ -66,6 +67,46 @@ public class ModManagerFileOperationsTests : IDisposable
     }
 
     [Fact]
+    public async Task SearchModsAsync_MapsAuthorAvatarFromCurseForgeResponse()
+    {
+        const string avatarUrl =
+            "https://media.forgecdn.net/avatars/1625/902/639044029153803750.jpeg";
+        var configStore = new JsonConfigStore(_tempDir);
+        configStore.Configuration.CurseForgeKey = "test-key";
+        using var httpClient = new HttpClient(new StaticJsonHandler($$"""
+            {
+              "data": [
+                {
+                  "id": 1430352,
+                  "name": "BetterMap",
+                  "authors": [
+                    {
+                      "id": 136575006,
+                      "name": "Paralaxe",
+                      "url": "https://www.curseforge.com/members/paralaxe",
+                      "avatarUrl": "{{avatarUrl}}"
+                    }
+                  ]
+                }
+              ],
+              "pagination": { "totalCount": 1 }
+            }
+            """));
+        var manager = new ModManager(
+            httpClient,
+            _tempDir,
+            configStore,
+            new Mock<IInstanceRepository>().Object,
+            new Mock<IProgressReporter>().Object);
+
+        var result = await manager.SearchModsAsync("BetterMap", 0, 1, [], 2, 1);
+
+        var mod = Assert.Single(result.Mods);
+        Assert.Equal("Paralaxe", mod.Author);
+        Assert.Equal(avatarUrl, mod.AuthorAvatarUrl);
+    }
+
+    [Fact]
     public async Task RemoveInstalledModAsync_DeletesFileAndManifestEntry()
     {
         await WriteInstalledModAsync("doomed-mod", "doomed-mod-1.0.jar");
@@ -101,5 +142,17 @@ public class ModManagerFileOperationsTests : IDisposable
                 Author = "Test Author"
             }
         ]);
+    }
+
+    private sealed class StaticJsonHandler(string json) : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken)
+            => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(json),
+                RequestMessage = request
+            });
     }
 }

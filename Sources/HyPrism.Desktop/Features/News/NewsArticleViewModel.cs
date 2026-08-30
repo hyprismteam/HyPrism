@@ -585,7 +585,8 @@ internal static class RemoteNewsBitmap
         int decodeWidth,
         HttpClient httpClient,
         CancellationToken cancellationToken,
-        RemoteImageCache? imageCache = null)
+        RemoteImageCache? imageCache = null,
+        string imageCacheCategory = "news")
     {
         if (string.IsNullOrWhiteSpace(url) ||
             !Uri.TryCreate(url, UriKind.Absolute, out var imageUri) ||
@@ -600,7 +601,7 @@ internal static class RemoteNewsBitmap
             if (imageCache is not null)
             {
                 imageBytes = await imageCache
-                    .GetBytesAsync(imageUri.AbsoluteUri, "news", cancellationToken)
+                    .GetBytesAsync(imageUri.AbsoluteUri, imageCacheCategory, cancellationToken)
                     .ConfigureAwait(false) ?? [];
             }
             else

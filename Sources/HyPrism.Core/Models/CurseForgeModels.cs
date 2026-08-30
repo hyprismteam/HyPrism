@@ -77,6 +77,7 @@ public class CurseForgeAuthor
     public int Id { get; set; }
     public string? Name { get; set; }
     public string? Url { get; set; }
+    public string? AvatarUrl { get; set; }
 }
 
 /// <summary>A specific file/release attached to a CurseForge mod.</summary>

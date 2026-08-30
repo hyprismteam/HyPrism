@@ -1626,38 +1626,85 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
 
         var token = _modIconsCancellation.Token;
         var targets = items
-            .Where(item => !string.IsNullOrWhiteSpace(item.IconUrl) && item.Icon is null)
+            .Where(item =>
+                (!string.IsNullOrWhiteSpace(item.IconUrl) && item.Icon is null) ||
+                (!string.IsNullOrWhiteSpace(item.AuthorAvatarUrl) && item.AuthorAvatar is null))
             .ToList();
         if (targets.Count == 0)
             return;
 
-        _ = Task.Run(async () =>
-        {
-            foreach (var item in targets)
+        _ = Parallel.ForEachAsync(
+            targets,
+            new ParallelOptions
             {
-                if (token.IsCancellationRequested)
-                    return;
-
+                CancellationToken = token,
+                MaxDegreeOfParallelism = 4
+            },
+            async (item, cancellationToken) =>
+            {
                 try
                 {
-                    var bitmap = await RemoteNewsBitmap.LoadAsync(
-                        item.IconUrl,
-                        96,
-                        _httpClient,
-                        token,
-                        _remoteImageCache);
-                    if (bitmap is not null && !token.IsCancellationRequested)
-                        Dispatcher.UIThread.Post(() => item.Icon = bitmap);
+                    var iconTask = item.Icon is null
+                        ? RemoteNewsBitmap.LoadAsync(
+                            item.IconUrl,
+                            112,
+                            _httpClient,
+                            cancellationToken,
+                            _remoteImageCache,
+                            "mods")
+                        : Task.FromResult<Bitmap?>(null);
+                    var avatarTask = LoadCatalogAuthorAvatarAsync(item, cancellationToken);
+                    await Task.WhenAll(iconTask, avatarTask).ConfigureAwait(false);
+
+                    var icon = await iconTask.ConfigureAwait(false);
+                    var authorAvatar = await avatarTask.ConfigureAwait(false);
+                    if (cancellationToken.IsCancellationRequested)
+                    {
+                        icon?.Dispose();
+                        authorAvatar?.Dispose();
+                        return;
+                    }
+
+                    Dispatcher.UIThread.Post(() =>
+                    {
+                        if (cancellationToken.IsCancellationRequested ||
+                            !ModCatalogItems.Contains(item))
+                        {
+                            icon?.Dispose();
+                            authorAvatar?.Dispose();
+                            return;
+                        }
+
+                        if (icon is not null)
+                            item.Icon = icon;
+                        if (authorAvatar is not null)
+                            item.AuthorAvatar = authorAvatar;
+                    });
                 }
-                catch (OperationCanceledException)
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
                 {
-                    return;
                 }
                 catch
                 {
                 }
-            }
-        }, token);
+            });
+    }
+
+    private async Task<Bitmap?> LoadCatalogAuthorAvatarAsync(
+        ModCatalogItemViewModel item,
+        CancellationToken cancellationToken)
+    {
+        if (item.AuthorAvatar is not null)
+            return null;
+
+        return await RemoteNewsBitmap.LoadAsync(
+                item.AuthorAvatarUrl,
+                48,
+                _httpClient,
+                cancellationToken,
+                _remoteImageCache,
+                "mod-authors")
+            .ConfigureAwait(false);
     }
 
     private async Task MoveModCatalogPreviewScreenshotAsync(int offset)
@@ -2431,6 +2478,8 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     {
         InstalledMods.Clear();
         VisibleInstalledMods.Clear();
+        foreach (var item in ModCatalogItems)
+            item.Dispose();
         ModCatalogItems.Clear();
         ResetModCatalogPreview();
         InstanceWorlds.Clear();
@@ -2573,7 +2622,6 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
                     mod.Slug,
                     mod.IconUrl,
                     mod.DownloadCount,
-                    recommendedFile?.ReleaseType ?? 1,
                     screenshotUrls: mod.Screenshots
                         .Select(screenshot => screenshot.Url ?? screenshot.ThumbnailUrl ?? string.Empty)
                         .Where(url => !string.IsNullOrWhiteSpace(url))
@@ -2582,7 +2630,8 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
                     recommendedFileId: recommendedFile?.Id ??
                         (mod.LatestFiles.Count == 0 ? mod.LatestFileId : string.Empty),
                     compatibility: compatibility,
-                    compatibilityLabel: GetModCompatibilityLabel(compatibility))
+                    compatibilityLabel: GetModCompatibilityLabel(compatibility),
+                    authorAvatarUrl: mod.AuthorAvatarUrl)
                 {
                     IsInstalled = installedMod is not null
                 };
@@ -2591,7 +2640,12 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
             if (append)
                 _modCatalogItems.AddRange(items);
             else
+            {
+                RestartModIconFetch();
+                foreach (var existingItem in _modCatalogItems)
+                    existingItem.Dispose();
                 _modCatalogItems.ReplaceRange(items);
+            }
 
             _modCatalogPage = page;
             HasMoreModCatalog = _modCatalogItems.Count < result.TotalCount && items.Count > 0;
@@ -3796,6 +3850,8 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
             article.Dispose();
         _articleViewModelCache.Clear();
         foreach (var item in _allNews)
+            item.Dispose();
+        foreach (var item in ModCatalogItems)
             item.Dispose();
         Interlocked.Exchange(ref _pendingProgressUpdate, null);
         _progress.DownloadProgressChanged -= OnDownloadProgressChanged;

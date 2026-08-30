@@ -29,6 +29,10 @@ public class ModInfo
     public string Description { get; set; } = "";
     /// <summary>Primary author display name.</summary>
     public string Author { get; set; } = "";
+    /// <summary>CurseForge profile URL of the primary author.</summary>
+    public string AuthorUrl { get; set; } = "";
+    /// <summary>URL of the primary author's CurseForge avatar.</summary>
+    public string AuthorAvatarUrl { get; set; } = "";
     /// <summary>Total download count on CurseForge.</summary>
     public int DownloadCount { get; set; }
     /// <summary>URL of the mod icon image.</summary>

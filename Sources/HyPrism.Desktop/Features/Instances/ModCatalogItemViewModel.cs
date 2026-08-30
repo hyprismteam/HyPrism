@@ -16,16 +16,17 @@ public sealed partial class ModCatalogItemViewModel(
     string slug = "",
     string iconUrl = "",
     int downloadCount = 0,
-    int releaseType = 1,
     IReadOnlyList<string>? screenshotUrls = null,
     string installedFileId = "",
     string recommendedFileId = "",
     ModCompatibilityStatus compatibility = ModCompatibilityStatus.Unknown,
-    string compatibilityLabel = "") : ObservableObject
+    string compatibilityLabel = "",
+    string authorAvatarUrl = "") : ObservableObject, IDisposable
 {
     public string Id { get; } = id;
     public string Name { get; } = name;
     public string Author { get; } = author;
+    public string AuthorAvatarUrl { get; } = authorAvatarUrl;
     public string Summary { get; } = summary;
     public string LatestFileId { get; } = latestFileId;
     public string Slug { get; } = slug;
@@ -46,22 +47,15 @@ public sealed partial class ModCatalogItemViewModel(
         ? "M"
         : Name[..1].ToUpperInvariant();
 
+    public string AuthorInitial => string.IsNullOrWhiteSpace(Author)
+        ? "?"
+        : Author[..1].ToUpperInvariant();
+
     public string CurseForgeUrl => string.IsNullOrWhiteSpace(Slug)
         ? $"https://www.curseforge.com/hytale/mods/{Id}"
         : $"https://www.curseforge.com/hytale/mods/{Slug}";
 
     public string DownloadCountLabel => FormatDownloads(DownloadCount);
-
-    public int ReleaseType { get; } = releaseType;
-
-    public string ReleaseBadge => ReleaseType switch
-    {
-        2 => "beta",
-        3 => "alpha",
-        _ => string.Empty
-    };
-
-    public bool ShowsReleaseBadge => ReleaseType is 2 or 3;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CanInstall))]
@@ -79,13 +73,30 @@ public sealed partial class ModCatalogItemViewModel(
     [ObservableProperty]
     private Bitmap? _icon;
 
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowsAuthorAvatar))]
+    private Bitmap? _authorAvatar;
+
     public bool CanInstall => !IsInstalling && !IsInstalled;
     public bool CanSelect => CanInstall && !IsIncompatible && !string.IsNullOrWhiteSpace(RecommendedFileId);
 
     public bool ShowsIcon => Icon is not null;
+    public bool ShowsAuthorAvatar => AuthorAvatar is not null;
 
     partial void OnIconChanged(Bitmap? value)
         => OnPropertyChanged(nameof(ShowsIcon));
+
+    partial void OnIconChanging(Bitmap? value)
+        => Icon?.Dispose();
+
+    partial void OnAuthorAvatarChanging(Bitmap? value)
+        => AuthorAvatar?.Dispose();
+
+    public void Dispose()
+    {
+        Icon = null;
+        AuthorAvatar = null;
+    }
 
     private static string FormatDownloads(int downloads)
         => downloads switch
