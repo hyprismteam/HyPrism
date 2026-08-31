@@ -23,6 +23,16 @@ Settings use the same adaptive master-detail layout as the news reader. Wide win
 
 Java heap arguments such as `-Xms` and `-Xmx` are managed by the memory controls and are rejected in the free-form arguments field
 
+## Data storage
+
+The Data page combines game instance storage and launcher data in one **Launcher Files** group. Each location is shown as a readable local path with an action that opens it in the system file manager
+
+A donut chart above the file locations shows total disk usage and groups occupied space into system files, images, mods, news articles, logs, and other files. Encoded files in the persistent image cache are counted as images, while parsed feed and article data under `Cache/News` is counted as news. Storage is measured in the background when the page is opened
+
+Use **Select** to choose a new instance folder or **Reset to Default** to return to `Instances` inside the launcher data directory. HyPrism copies the existing instance files before saving the new location and removes the previous folder only after the copy succeeds
+
+Instance storage cannot be changed while a game is running. The current paths can still be opened during an active game session
+
 ## Local profile authentication
 
 Connected mode requests a session from the configured authentication service and keeps its account-data integration available. Autonomous mode starts a dedicated Local Node process on `https://h.localhost:8443`, creates an ephemeral OmniAuth identity, and redirects the client service endpoints to that node

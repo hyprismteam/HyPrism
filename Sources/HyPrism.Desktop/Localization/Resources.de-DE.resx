@@ -1695,6 +1695,10 @@ Bei Laufwerkswechsel muss das Spiel möglicherweise neu installiert werden.</val
   <data name="settings.dataSettings.launcherDataHint" xml:space="preserve">
     <value>Speicherort der Launcher-Konfiguration und Ressourcen.</value>
   </data>
+  <data name="settings.dataSettings.launcherFiles" xml:space="preserve"><value>Launcher-Dateien</value></data>
+  <data name="settings.dataSettings.storageUsed" xml:space="preserve"><value>Belegter Speicher</value></data>
+  <data name="settings.dataSettings.systemFiles" xml:space="preserve"><value>Systemdateien</value></data>
+  <data name="settings.dataSettings.otherFiles" xml:space="preserve"><value>Andere Dateien</value></data>
   <data name="settings.dataSettings.movingData" xml:space="preserve">
     <value>Verschiebe Daten...</value>
   </data>

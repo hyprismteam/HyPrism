@@ -3452,7 +3452,8 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
             _gitHubClient,
             _mirrorCatalog,
             _mirrorDiscovery,
-            _versionCatalog);
+            _versionCatalog,
+            _gameProcess);
 
     private void ApplyLanguage(string language)
     {

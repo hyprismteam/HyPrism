@@ -1695,6 +1695,10 @@ Potrebbe essere necessario reinstallare il gioco se si cambia drive.</value>
   <data name="settings.dataSettings.launcherDataHint" xml:space="preserve">
     <value>Posizione in cui sono memorizzati la configurazione e le risorse del launcher.</value>
   </data>
+  <data name="settings.dataSettings.launcherFiles" xml:space="preserve"><value>File del launcher</value></data>
+  <data name="settings.dataSettings.storageUsed" xml:space="preserve"><value>Spazio utilizzato</value></data>
+  <data name="settings.dataSettings.systemFiles" xml:space="preserve"><value>File di sistema</value></data>
+  <data name="settings.dataSettings.otherFiles" xml:space="preserve"><value>Altri file</value></data>
   <data name="settings.dataSettings.movingData" xml:space="preserve">
     <value>Spostamento dei dati...</value>
   </data>

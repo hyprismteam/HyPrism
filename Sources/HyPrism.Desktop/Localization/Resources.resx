@@ -1884,6 +1884,18 @@ You may need to reinstall the game if switching drives.</value>
   <data name="settings.dataSettings.launcherDataHint" xml:space="preserve">
     <value>Location where launcher configuration and assets are stored.</value>
   </data>
+  <data name="settings.dataSettings.launcherFiles" xml:space="preserve">
+    <value>Launcher Files</value>
+  </data>
+  <data name="settings.dataSettings.storageUsed" xml:space="preserve">
+    <value>Used space</value>
+  </data>
+  <data name="settings.dataSettings.systemFiles" xml:space="preserve">
+    <value>System files</value>
+  </data>
+  <data name="settings.dataSettings.otherFiles" xml:space="preserve">
+    <value>Other files</value>
+  </data>
   <data name="settings.dataSettings.movingData" xml:space="preserve">
     <value>Moving data...</value>
   </data>

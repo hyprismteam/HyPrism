@@ -1695,6 +1695,10 @@ Vous devrez peut-être réinstaller le jeu si vous changez de lecteur.</value>
   <data name="settings.dataSettings.launcherDataHint" xml:space="preserve">
     <value>Emplacement où sont stockés la configuration et les ressources du lanceur.</value>
   </data>
+  <data name="settings.dataSettings.launcherFiles" xml:space="preserve"><value>Fichiers du lanceur</value></data>
+  <data name="settings.dataSettings.storageUsed" xml:space="preserve"><value>Espace utilisé</value></data>
+  <data name="settings.dataSettings.systemFiles" xml:space="preserve"><value>Fichiers système</value></data>
+  <data name="settings.dataSettings.otherFiles" xml:space="preserve"><value>Autres fichiers</value></data>
   <data name="settings.dataSettings.movingData" xml:space="preserve">
     <value>Déplacement des données...</value>
   </data>

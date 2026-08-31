@@ -1695,6 +1695,10 @@ Sürücü değiştirirseniz oyunu yeniden yüklemeniz gerekebilir.</value>
   <data name="settings.dataSettings.launcherDataHint" xml:space="preserve">
     <value>Başlatıcı yapılandırması ve varlıklarının saklandığı konum.</value>
   </data>
+  <data name="settings.dataSettings.launcherFiles" xml:space="preserve"><value>Başlatıcı dosyaları</value></data>
+  <data name="settings.dataSettings.storageUsed" xml:space="preserve"><value>Kullanılan alan</value></data>
+  <data name="settings.dataSettings.systemFiles" xml:space="preserve"><value>Sistem dosyaları</value></data>
+  <data name="settings.dataSettings.otherFiles" xml:space="preserve"><value>Diğer dosyalar</value></data>
   <data name="settings.dataSettings.movingData" xml:space="preserve">
     <value>Veriler taşınıyor...</value>
   </data>

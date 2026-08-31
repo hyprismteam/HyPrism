@@ -1,8 +1,9 @@
 // Copyright (C) 2026 HyPrism Launcher
 // SPDX-License-Identifier: GPL-3.0-only
 
-using HyPrism.Desktop.Features.Settings;
+using HyPrism.Core;
 using HyPrism.Core.Infrastructure;
+using HyPrism.Desktop.Features.Settings;
 using Xunit;
 
 namespace HyPrism.Desktop.Tests;
@@ -18,7 +19,7 @@ public sealed class DesktopSettingsStoreTests : IDisposable
     public DesktopSettingsStoreTests()
     {
         _config = new JsonConfigStore(_directory);
-        _settings = new DesktopSettingsStore(_config);
+        _settings = new DesktopSettingsStore(_config, new AppPathConfiguration(_directory));
     }
 
     [Fact]
@@ -54,6 +55,111 @@ public sealed class DesktopSettingsStoreTests : IDisposable
     {
         Assert.Contains("bg_1.jpg", _settings.AvailableBackgrounds);
         Assert.Contains("bg_4.png", _settings.AvailableBackgrounds);
+    }
+
+    [Fact]
+    public void DataDirectories_ExposeEffectiveStorageLocations()
+    {
+        Assert.Equal(Path.Combine(_directory, "Instances"), _settings.DefaultInstanceDirectory);
+        Assert.Equal(Path.GetFullPath(_directory), _settings.LauncherDataDirectory);
+    }
+
+    [Fact]
+    public async Task SetInstanceDirectoryAsync_MovesExistingDataAndPersistsTheNewRoot()
+    {
+        var originalDirectory = _settings.DefaultInstanceDirectory;
+        var targetDirectory = Path.Combine(Path.GetTempPath(), $"HyPrismInstances_{Guid.NewGuid():N}");
+        var originalFile = Path.Combine(originalDirectory, "release", "instance.json");
+        Directory.CreateDirectory(Path.GetDirectoryName(originalFile)!);
+        await File.WriteAllTextAsync(
+            originalFile,
+            "instance metadata",
+            TestContext.Current.CancellationToken);
+
+        try
+        {
+            var changed = await _settings.SetInstanceDirectoryAsync(targetDirectory);
+
+            Assert.True(changed);
+            Assert.Equal(Path.GetFullPath(targetDirectory), _config.Configuration.InstanceDirectory);
+            Assert.Equal(
+                "instance metadata",
+                await File.ReadAllTextAsync(
+                    Path.Combine(targetDirectory, "release", "instance.json"),
+                    TestContext.Current.CancellationToken));
+            Assert.False(Directory.Exists(originalDirectory));
+        }
+        finally
+        {
+            if (Directory.Exists(targetDirectory))
+                Directory.Delete(targetDirectory, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task SetInstanceDirectoryAsync_ResetMovesDataBackToDefaultRoot()
+    {
+        var customDirectory = Path.Combine(Path.GetTempPath(), $"HyPrismInstances_{Guid.NewGuid():N}");
+        var customFile = Path.Combine(customDirectory, "pre-release", "instance.json");
+        Directory.CreateDirectory(Path.GetDirectoryName(customFile)!);
+        await File.WriteAllTextAsync(
+            customFile,
+            "preview metadata",
+            TestContext.Current.CancellationToken);
+        await _config.SetInstanceDirectoryAsync(customDirectory);
+
+        try
+        {
+            var changed = await _settings.SetInstanceDirectoryAsync(string.Empty);
+
+            Assert.True(changed);
+            Assert.True(string.IsNullOrWhiteSpace(_config.Configuration.InstanceDirectory));
+            Assert.Equal(
+                "preview metadata",
+                await File.ReadAllTextAsync(
+                    Path.Combine(
+                        _settings.DefaultInstanceDirectory,
+                        "pre-release",
+                        "instance.json"),
+                    TestContext.Current.CancellationToken));
+            Assert.False(Directory.Exists(customDirectory));
+        }
+        finally
+        {
+            if (Directory.Exists(customDirectory))
+                Directory.Delete(customDirectory, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task GetLauncherStorageUsageAsync_GroupsFilesByPurposeWithoutDoubleCountingInstances()
+    {
+        await WriteSizedFileAsync(Path.Combine(_directory, "config.json"), 11);
+        await WriteSizedFileAsync(Path.Combine(_directory, "Cache", "Images", "News", "cover.bin"), 13);
+        await WriteSizedFileAsync(Path.Combine(_directory, "Cache", "News", "Article-test.json"), 19);
+        await WriteSizedFileAsync(Path.Combine(_settings.DefaultInstanceDirectory, "release", "Mods", "mod.jar"), 17);
+        await WriteSizedFileAsync(Path.Combine(_directory, "Cache", "archive.zip"), 7);
+        await WriteSizedFileAsync(Path.Combine(_directory, "Logs", "latest.log"), 23);
+        await WriteSizedFileAsync(Path.Combine(_directory, "Profiles", "avatar.skin"), 29);
+
+        var usage = await _settings.GetLauncherStorageUsageAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal(11, usage.SystemFilesBytes);
+        Assert.Equal(13, usage.ImageBytes);
+        Assert.Equal(17, usage.ModBytes);
+        Assert.Equal(19, usage.NewsBytes);
+        Assert.Equal(23, usage.LogBytes);
+        Assert.Equal(36, usage.OtherBytes);
+        Assert.Equal(119, usage.TotalBytes);
+    }
+
+    private static async Task WriteSizedFileAsync(string path, int size)
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        await File.WriteAllBytesAsync(
+            path,
+            new byte[size],
+            TestContext.Current.CancellationToken);
     }
 
     public void Dispose()

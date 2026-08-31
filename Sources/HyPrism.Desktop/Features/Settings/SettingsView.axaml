@@ -829,15 +829,169 @@ SPDX-License-Identifier: GPL-3.0-only
             </StackPanel>
           </StackPanel>
 
-          <StackPanel Spacing="10" IsVisible="{Binding IsData}">
-            <TextBlock Text="{Binding InstanceFolderLabel}" Classes="settingsCategoryHeading" />
-            <Border Classes="uiSettingsGroup settingsGroup">
-              <Border Classes="uiSettingsRow settingsRow last">
-                <StackPanel Spacing="5">
-                  <TextBlock Text="{Binding InstanceFolder}" Classes="uiSettingsHint settingsHint" TextWrapping="Wrap" />
+          <StackPanel Spacing="22" IsVisible="{Binding IsData}">
+            <Border x:Name="DataGameRunningWarning"
+                    Classes="dataWarning"
+                    IsVisible="{Binding IsGameRunning}">
+              <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+                <Path Classes="dataWarningIcon" Data="{StaticResource WarningIcon}" />
+                <TextBlock Grid.Column="1"
+                           Text="{Binding GameRunningWarning}"
+                           Classes="dataWarningText" />
+              </Grid>
+            </Border>
+
+            <StackPanel x:Name="StorageUsageOverview"
+                        MaxWidth="700"
+                        HorizontalAlignment="Center"
+                        Spacing="12">
+              <Grid Width="260" Height="260" HorizontalAlignment="Center">
+                <controls:StorageDonutChart x:Name="StorageDonut"
+                                            Width="246"
+                                            Height="246"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            Items="{Binding StorageUsageItems}"
+                                            TrackBrush="{DynamicResource ControlTrackBrush}"
+                                            HoleBrush="{DynamicResource SurfaceBrush}"
+                                            SeparatorBrush="{DynamicResource SurfaceBrush}"
+                                            SeparatorThickness="2.5"
+                                            InnerRadiusRatio="0.5" />
+                <StackPanel HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Spacing="3"
+                            IsVisible="{Binding !IsStorageUsageLoading}">
+                  <TextBlock Text="{Binding TotalStorageUsage}"
+                             Classes="storageTotalValue" />
+                </StackPanel>
+                <StackPanel HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Spacing="8"
+                            IsVisible="{Binding IsStorageUsageLoading}">
+                  <ProgressBar Classes="storageLoadingProgress" IsIndeterminate="True" />
+                  <TextBlock Text="{Binding StorageLoadingLabel}"
+                             Classes="storageTotalLabel" />
+                </StackPanel>
+              </Grid>
+              <Border x:Name="StorageLegendCard"
+                      Classes="uiSettingsGroup storageLegendCard"
+                      HorizontalAlignment="Center">
+                <ItemsControl ItemsSource="{Binding StorageUsageItems}">
+                  <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                      <WrapPanel Width="620" ItemWidth="310" />
+                    </ItemsPanelTemplate>
+                  </ItemsControl.ItemsPanel>
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="controls:StorageDonutSegment">
+                      <Grid MinHeight="30"
+                            Margin="6,0"
+                            ColumnDefinitions="Auto,*,Auto"
+                            ColumnSpacing="10">
+                        <Border Width="9"
+                                Height="9"
+                                CornerRadius="999"
+                                Background="{Binding Brush}"
+                                VerticalAlignment="Center" />
+                        <TextBlock Grid.Column="1"
+                                   Text="{Binding Label}"
+                                   Classes="storageLegendLabel"
+                                   VerticalAlignment="Center" />
+                        <StackPanel Grid.Column="2"
+                                    Orientation="Horizontal"
+                                    Spacing="8"
+                                    VerticalAlignment="Center">
+                          <TextBlock Text="{Binding Percentage}" Classes="storageLegendPercent" />
+                          <TextBlock Text="{Binding DisplaySize}" Classes="storageLegendSize" />
+                        </StackPanel>
+                      </Grid>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </Border>
+            </StackPanel>
+
+            <StackPanel Spacing="10">
+              <TextBlock Text="{Binding LauncherFilesLabel}" Classes="settingsCategoryHeading" />
+              <Border x:Name="LauncherFilesCard" Classes="uiSettingsGroup settingsGroup">
+                <StackPanel>
+                  <Border x:Name="InstanceFolderCard" Classes="uiSettingsRow settingsRow dataFileRow">
+                    <StackPanel Spacing="12">
+                      <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">
+                        <StackPanel Spacing="3" VerticalAlignment="Center">
+                          <TextBlock Text="{Binding GameDirectoryLabel}" Classes="uiSettingsLabel settingsLabel" />
+                          <TextBlock Text="{Binding GameDirectoryHint}" Classes="uiSettingsHint settingsHint" />
+                        </StackPanel>
+                        <Button Grid.Column="1"
+                                Classes="javaInlineAction"
+                                Command="{Binding ResetInstanceFolderCommand}"
+                                IsEnabled="{Binding CanResetInstanceFolder}">
+                          <StackPanel Orientation="Horizontal" Spacing="7">
+                            <Path Classes="dataActionIcon" Data="{StaticResource RefreshIcon}" />
+                            <TextBlock Text="{Binding ResetInstanceFolderLabel}" />
+                          </StackPanel>
+                        </Button>
+                        <Button x:Name="SelectInstanceFolderButton"
+                                Grid.Column="2"
+                                Classes="settingsAction"
+                                Command="{Binding BrowseInstanceFolderCommand}"
+                                IsEnabled="{Binding CanChangeInstanceFolder}">
+                          <TextBlock Text="{Binding SelectLabel}" />
+                        </Button>
+                      </Grid>
+                      <Border Classes="dataPathSurface">
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                          <TextBlock x:Name="InstanceFolderPath"
+                                     Text="{Binding InstanceFolder}"
+                                     Classes="dataPathText"
+                                     TextTrimming="CharacterEllipsis"
+                                     ToolTip.Tip="{Binding InstanceFolder}" />
+                          <Button Grid.Column="1"
+                                  Classes="dataPathOpen"
+                                  Command="{Binding OpenInstanceFolderCommand}"
+                                  ToolTip.Tip="{Binding OpenFolderLabel}">
+                            <Path Classes="dataPathOpenIcon" Data="{StaticResource OpenIcon}" />
+                          </Button>
+                        </Grid>
+                      </Border>
+                      <StackPanel Orientation="Horizontal"
+                                  Spacing="9"
+                                  VerticalAlignment="Center"
+                                  IsVisible="{Binding IsChangingInstanceFolder}">
+                        <ProgressBar Classes="dataMoveProgress" IsIndeterminate="True" />
+                        <TextBlock Text="{Binding MovingDataLabel}" Classes="dataMoveText" />
+                      </StackPanel>
+                    </StackPanel>
+                  </Border>
+                  <Border x:Name="LauncherDataCard" Classes="uiSettingsRow settingsRow last dataFileRow">
+                    <StackPanel Spacing="12">
+                      <StackPanel Spacing="3">
+                        <TextBlock Text="{Binding LauncherDataFolderLabel}" Classes="uiSettingsLabel settingsLabel" />
+                        <TextBlock Text="{Binding LauncherDataHint}" Classes="uiSettingsHint settingsHint" />
+                      </StackPanel>
+                      <Border Classes="dataPathSurface">
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                          <TextBlock x:Name="LauncherDataPath"
+                                     Text="{Binding LauncherDataFolder}"
+                                     Classes="dataPathText"
+                                     TextTrimming="CharacterEllipsis"
+                                     ToolTip.Tip="{Binding LauncherDataFolder}" />
+                          <Button Grid.Column="1"
+                                  Classes="dataPathOpen"
+                                  Command="{Binding OpenLauncherDataFolderCommand}"
+                                  ToolTip.Tip="{Binding OpenFolderLabel}">
+                            <StackPanel Orientation="Horizontal" Spacing="7">
+                              <TextBlock Text="{Binding OpenFolderLabel}" />
+                              <Path Classes="dataPathOpenIcon" Data="{StaticResource OpenIcon}" />
+                            </StackPanel>
+                          </Button>
+                        </Grid>
+                      </Border>
+                    </StackPanel>
+                  </Border>
                 </StackPanel>
               </Border>
-            </Border>
+            </StackPanel>
           </StackPanel>
 
           <StackPanel Spacing="22" IsVisible="{Binding IsAbout}">

@@ -56,6 +56,26 @@ public interface IDesktopSettingsStore
     /// <summary>Gets the configured game instance root</summary>
     string InstanceDirectory { get; }
 
+    /// <summary>Gets the default game instance root</summary>
+    string DefaultInstanceDirectory { get; }
+
+    /// <summary>Gets the launcher data root</summary>
+    string LauncherDataDirectory { get; }
+
+    /// <summary>
+    /// Changes the game instance root and moves existing instance data
+    /// </summary>
+    /// <param name="path">New root, or an empty value to restore the default root</param>
+    /// <returns><see langword="true"/> when the root was changed successfully</returns>
+    Task<bool> SetInstanceDirectoryAsync(string path);
+
+    /// <summary>
+    /// Measures launcher and instance storage grouped by file purpose
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation requested when the view is closed</param>
+    /// <returns>Current storage usage</returns>
+    Task<LauncherStorageUsage> GetLauncherStorageUsageAsync(CancellationToken cancellationToken = default);
+
     /// <summary>Gets or sets whether alpha mod releases are visible</summary>
     bool ShowAlphaMods { get; set; }
 }

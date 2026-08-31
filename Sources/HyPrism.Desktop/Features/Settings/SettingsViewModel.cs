@@ -3,11 +3,13 @@
 
 using System.Collections.ObjectModel;
 using System.Text.Json;
+using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using HyPrism.Desktop.Controls;
 using HyPrism.Desktop.Localization;
 using HyPrism.Desktop.Features.About;
 using HyPrism.Desktop.Platform;
@@ -46,15 +48,19 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     private readonly IMirrorCatalog? _mirrorCatalog;
     private readonly IMirrorDiscovery? _mirrorDiscovery;
     private readonly IGameVersionCatalog? _versionCatalog;
+    private readonly IGameProcessTracker? _gameProcess;
     private bool _updatingJavaMemory;
     private bool _updatingJavaArguments;
     private bool _aboutDataLoadStarted;
     private bool _aboutDataLoaded;
     private bool _downloadSourcesProbeStarted;
+    private bool _storageUsageLoadStarted;
     private bool _disposed;
     private CancellationTokenSource? _sourceProbeCancellation;
+    private CancellationTokenSource? _storageUsageCancellation;
     private int _aboutContributorSlotCapacity = 9;
     private GitHubCommit? _latestMainCommit;
+    private LauncherStorageUsage? _latestStorageUsage;
     private readonly List<AboutContributorViewModel> _aboutContributorPool = [];
 
     [ObservableProperty]
@@ -102,6 +108,21 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     [ObservableProperty] private string _statusMessage = string.Empty;
     [ObservableProperty] private bool _isCompactLayout;
     [ObservableProperty] private bool _isAboutDataLoading;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanChangeInstanceFolder))]
+    [NotifyPropertyChangedFor(nameof(CanResetInstanceFolder))]
+    private bool _isGameRunning;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanChangeInstanceFolder))]
+    [NotifyPropertyChangedFor(nameof(CanResetInstanceFolder))]
+    private bool _isChangingInstanceFolder;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsDefaultInstanceFolder))]
+    [NotifyPropertyChangedFor(nameof(CanResetInstanceFolder))]
+    private string _instanceFolder = string.Empty;
+    [ObservableProperty] private bool _isStorageUsageLoading;
+    [ObservableProperty] private string _totalStorageUsage = "0 B";
+    [ObservableProperty] private IReadOnlyList<StorageDonutSegment> _storageUsageItems = [];
     [ObservableProperty] private bool _hasAboutLatestCommit;
     [ObservableProperty] private bool _hasMoreAboutContributors;
     [ObservableProperty] private string _aboutLatestCommitSha = string.Empty;
@@ -134,7 +155,8 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         IGitHubClient? gitHubClient = null,
         IMirrorCatalog? mirrorCatalog = null,
         IMirrorDiscovery? mirrorDiscovery = null,
-        IGameVersionCatalog? versionCatalog = null)
+        IGameVersionCatalog? versionCatalog = null,
+        IGameProcessTracker? gameProcess = null)
     {
         _settings = settings;
         _uriLauncher = uriLauncher;
@@ -144,6 +166,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         _mirrorCatalog = mirrorCatalog;
         _mirrorDiscovery = mirrorDiscovery;
         _versionCatalog = versionCatalog;
+        _gameProcess = gameProcess;
 
         Categories = new ObservableCollection<SettingCategoryViewModel>(
         [
@@ -211,6 +234,12 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
             JvmArgumentBuilder.ParseInitialHeapMb(persistedJavaArguments) ?? (int)defaultInitialMemory,
             _javaMaximumRamMb);
         _gameEnvironmentVariables = settings.GameEnvironmentVariables;
+        _isGameRunning = gameProcess?.IsGameRunning() == true;
+        if (gameProcess is not null)
+        {
+            gameProcess.GameProcessStarted += OnGameProcessStateChanged;
+            gameProcess.GameProcessExited += OnGameProcessStateChanged;
+        }
 
         RefreshLocalization();
         ReloadMirrorItems();
@@ -242,6 +271,9 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     public bool IsAddSourceChoiceVisible => MirrorAdditionStep == DownloadSourceAdditionStep.ChooseMethod;
     public bool IsAutomaticSourceVisible => MirrorAdditionStep == DownloadSourceAdditionStep.Automatic;
     public bool IsManualSourceVisible => MirrorAdditionStep == DownloadSourceAdditionStep.Manual;
+    public bool CanChangeInstanceFolder => !IsGameRunning && !IsChangingInstanceFolder;
+    public bool IsDefaultInstanceFolder => DirectoriesEqual(InstanceFolder, _settings.DefaultInstanceDirectory);
+    public bool CanResetInstanceFolder => CanChangeInstanceFolder && !IsDefaultInstanceFolder;
 
     public string PageTitle { get; private set; } = string.Empty;
     public string PageDescription { get; private set; } = string.Empty;
@@ -326,7 +358,24 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     public string EnvLabel { get; private set; } = string.Empty;
     public string EnvHint { get; private set; } = string.Empty;
     public string InstanceFolderLabel { get; private set; } = string.Empty;
-    public string InstanceFolder { get; private set; } = string.Empty;
+    public string LauncherFilesLabel { get; private set; } = string.Empty;
+    public string StorageLoadingLabel { get; private set; } = string.Empty;
+    public string SystemFilesLabel { get; private set; } = string.Empty;
+    public string ImagesLabel { get; private set; } = string.Empty;
+    public string ModsLabel { get; private set; } = string.Empty;
+    public string NewsLabel { get; private set; } = string.Empty;
+    public string LogsLabel { get; private set; } = string.Empty;
+    public string OtherFilesLabel { get; private set; } = string.Empty;
+    public string GameDirectoryLabel { get; private set; } = string.Empty;
+    public string GameDirectoryHint { get; private set; } = string.Empty;
+    public string LauncherDataLabel { get; private set; } = string.Empty;
+    public string LauncherDataFolderLabel { get; private set; } = string.Empty;
+    public string LauncherDataHint { get; private set; } = string.Empty;
+    public string LauncherDataFolder { get; private set; } = string.Empty;
+    public string OpenFolderLabel { get; private set; } = string.Empty;
+    public string ResetInstanceFolderLabel { get; private set; } = string.Empty;
+    public string GameRunningWarning { get; private set; } = string.Empty;
+    public string MovingDataLabel { get; private set; } = string.Empty;
     public string AboutDisclaimer { get; private set; } = string.Empty;
     public string AboutBuiltWithLabel { get; private set; } = string.Empty;
     public string BugReportLabel { get; private set; } = string.Empty;
@@ -445,9 +494,29 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         EnvLabel = _localizer["settings.variablesSettings.customEnvVars"];
         EnvHint = _localizer["settings.variablesSettings.customEnvVarsHint"];
         InstanceFolderLabel = _localizer["settings.dataSettings.instanceFolder"];
+        LauncherFilesLabel = _localizer["settings.dataSettings.launcherFiles"];
+        StorageLoadingLabel = _localizer["common.loading"];
+        SystemFilesLabel = _localizer["settings.dataSettings.systemFiles"];
+        ImagesLabel = _localizer["settings.visualSettings.images"];
+        ModsLabel = _localizer["instances.tab.mods"];
+        NewsLabel = _localizer["dock.news"];
+        LogsLabel = _localizer["dock.logs"];
+        OtherFilesLabel = _localizer["settings.dataSettings.otherFiles"];
+        GameDirectoryLabel = _localizer["settings.dataSettings.gameDirectory"];
+        GameDirectoryHint = _localizer["settings.dataSettings.gameDirectoryHint"];
+        LauncherDataLabel = _localizer["settings.dataSettings.launcherData"];
+        LauncherDataFolderLabel = _localizer["settings.dataSettings.launcherDataFolder"];
+        LauncherDataHint = _localizer["settings.dataSettings.launcherDataHint"];
+        LauncherDataFolder = _settings.LauncherDataDirectory;
+        OpenFolderLabel = _localizer["settings.dataSettings.open"];
+        ResetInstanceFolderLabel = _localizer["settings.dataSettings.resetToDefault"];
+        GameRunningWarning = _localizer["settings.dataSettings.gameRunningWarning"];
+        MovingDataLabel = _localizer["settings.dataSettings.movingData"];
         InstanceFolder = string.IsNullOrWhiteSpace(_settings.InstanceDirectory)
-            ? _localizer["desktopSettings.defaultLocation"]
+            ? _settings.DefaultInstanceDirectory
             : _settings.InstanceDirectory;
+        if (_latestStorageUsage is not null)
+            ApplyStorageUsage(_latestStorageUsage);
         AboutDisclaimer = _localizer["settings.aboutSettings.disclaimer"];
         AboutBuiltWithLabel = _localizer["settings.aboutSettings.builtWith"];
         BugReportLabel = _localizer["settings.aboutSettings.bugReport"];
@@ -594,6 +663,8 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
             _ = LoadAboutDataAsync();
         else if (string.Equals(category.Id, "downloads", StringComparison.Ordinal))
             EnsureDownloadSourcesProbed();
+        else if (string.Equals(category.Id, "data", StringComparison.Ordinal))
+            EnsureStorageUsageLoaded();
     }
 
     [RelayCommand]
@@ -879,6 +950,31 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         ShowSaved();
     }
 
+    [RelayCommand]
+    private async Task BrowseInstanceFolder()
+    {
+        if (!CanChangeInstanceFolder || _filePicker is null)
+            return;
+
+        var selectedPath = await _filePicker.BrowseFolderAsync(InstanceFolder);
+        if (!string.IsNullOrWhiteSpace(selectedPath))
+            await ChangeInstanceFolderAsync(selectedPath);
+    }
+
+    [RelayCommand]
+    private Task ResetInstanceFolder()
+        => CanChangeInstanceFolder && !IsDefaultInstanceFolder
+            ? ChangeInstanceFolderAsync(string.Empty)
+            : Task.CompletedTask;
+
+    [RelayCommand]
+    private Task OpenInstanceFolder()
+        => _uriLauncher.LaunchDirectoryAsync(InstanceFolder);
+
+    [RelayCommand]
+    private Task OpenLauncherDataFolder()
+        => _uriLauncher.LaunchDirectoryAsync(LauncherDataFolder);
+
     [RelayCommand] private Task OpenGitHub() => LaunchExternalAsync("https://github.com/hyprismteam/HyPrism");
     [RelayCommand] private Task OpenDocumentation() => LaunchExternalAsync("https://hyprismteam.github.io/HyPrism/docs/");
     [RelayCommand] private Task OpenDiscord() => LaunchExternalAsync("https://discord.gg/hyprism");
@@ -912,6 +1008,134 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
            (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps)
             ? _uriLauncher.LaunchAsync(uri)
             : Task.FromResult(false);
+
+    private async Task ChangeInstanceFolderAsync(string path)
+    {
+        IsChangingInstanceFolder = true;
+        try
+        {
+            if (!await _settings.SetInstanceDirectoryAsync(path))
+                return;
+
+            InstanceFolder = string.IsNullOrWhiteSpace(_settings.InstanceDirectory)
+                ? _settings.DefaultInstanceDirectory
+                : _settings.InstanceDirectory;
+            RefreshStorageUsage();
+        }
+        finally
+        {
+            IsChangingInstanceFolder = false;
+        }
+    }
+
+    private void OnGameProcessStateChanged(object? sender, EventArgs args)
+    {
+        if (_gameProcess is null)
+            return;
+
+        Dispatcher.UIThread.Post(() => IsGameRunning = _gameProcess.IsGameRunning());
+    }
+
+    private void EnsureStorageUsageLoaded()
+    {
+        if (_storageUsageLoadStarted || _disposed)
+            return;
+
+        _storageUsageLoadStarted = true;
+        _storageUsageCancellation = new CancellationTokenSource();
+        _ = LoadStorageUsageAsync(_storageUsageCancellation.Token);
+    }
+
+    private void RefreshStorageUsage()
+    {
+        _storageUsageCancellation?.Cancel();
+        _storageUsageCancellation?.Dispose();
+        _storageUsageCancellation = null;
+        _storageUsageLoadStarted = false;
+        EnsureStorageUsageLoaded();
+    }
+
+    private async Task LoadStorageUsageAsync(CancellationToken cancellationToken)
+    {
+        IsStorageUsageLoading = true;
+        try
+        {
+            var usage = await _settings.GetLauncherStorageUsageAsync(cancellationToken).ConfigureAwait(false);
+            if (_disposed || cancellationToken.IsCancellationRequested || usage is null)
+                return;
+
+            await Dispatcher.UIThread.InvokeAsync(() => ApplyStorageUsage(usage));
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            Logger.Debug("Settings", "Storage usage calculation was cancelled");
+        }
+        catch (Exception exception)
+        {
+            Logger.Warning("Settings", $"Failed to calculate storage usage: {exception.Message}");
+        }
+        finally
+        {
+            if (!_disposed && _storageUsageCancellation?.Token == cancellationToken)
+                await Dispatcher.UIThread.InvokeAsync(() => IsStorageUsageLoading = false);
+        }
+    }
+
+    private void ApplyStorageUsage(LauncherStorageUsage usage)
+    {
+        _latestStorageUsage = usage;
+        TotalStorageUsage = FormatStorageSize(usage.TotalBytes);
+        var total = Math.Max(1, usage.TotalBytes);
+        StorageUsageItems =
+        [
+            CreateStorageSegment(SystemFilesLabel, usage.SystemFilesBytes, total, "#1677FF"),
+            CreateStorageSegment(ImagesLabel, usage.ImageBytes, total, "#1CC8F2"),
+            CreateStorageSegment(ModsLabel, usage.ModBytes, total, "#8957F6"),
+            CreateStorageSegment(NewsLabel, usage.NewsBytes, total, "#FF9500"),
+            CreateStorageSegment(LogsLabel, usage.LogBytes, total, "#FF375F"),
+            CreateStorageSegment(OtherFilesLabel, usage.OtherBytes, total, "#10BFA3")
+        ];
+    }
+
+    private static StorageDonutSegment CreateStorageSegment(
+        string label,
+        long bytes,
+        long total,
+        string color)
+        => new(
+            label,
+            bytes,
+            FormatStorageSize(bytes),
+            $"{bytes * 100d / total:0.#}%",
+            new SolidColorBrush(Color.Parse(color)));
+
+    private static string FormatStorageSize(long bytes)
+    {
+        string[] units = ["B", "KB", "MB", "GB", "TB"];
+        var value = (double)Math.Max(0, bytes);
+        var unitIndex = 0;
+        while (value >= 1024 && unitIndex < units.Length - 1)
+        {
+            value /= 1024;
+            unitIndex++;
+        }
+
+        return $"{value:0.#} {units[unitIndex]}";
+    }
+
+    private static bool DirectoriesEqual(string first, string second)
+    {
+        if (string.IsNullOrWhiteSpace(first) || string.IsNullOrWhiteSpace(second))
+            return false;
+
+        var comparison = OperatingSystem.IsWindows()
+            ? StringComparison.OrdinalIgnoreCase
+            : StringComparison.Ordinal;
+        return string.Equals(
+            Path.TrimEndingDirectorySeparator(Path.GetFullPath(first)),
+            Path.TrimEndingDirectorySeparator(Path.GetFullPath(second)),
+            comparison);
+    }
 
     /// <summary>
     /// Warms repository metadata and avatar caches during launcher startup
@@ -1485,6 +1709,13 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         _disposed = true;
         _sourceProbeCancellation?.Cancel();
         _sourceProbeCancellation?.Dispose();
+        _storageUsageCancellation?.Cancel();
+        _storageUsageCancellation?.Dispose();
+        if (_gameProcess is not null)
+        {
+            _gameProcess.GameProcessStarted -= OnGameProcessStateChanged;
+            _gameProcess.GameProcessExited -= OnGameProcessStateChanged;
+        }
         foreach (var member in AboutTeamMembers)
             member.Dispose();
         foreach (var contributor in _aboutContributorPool)

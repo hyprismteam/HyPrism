@@ -1695,6 +1695,10 @@ Você pode precisar reinstalar o jogo se trocar de unidade.</value>
   <data name="settings.dataSettings.launcherDataHint" xml:space="preserve">
     <value>Local onde a configuração e arquivos do launcher são armazenados.</value>
   </data>
+  <data name="settings.dataSettings.launcherFiles" xml:space="preserve"><value>Arquivos do launcher</value></data>
+  <data name="settings.dataSettings.storageUsed" xml:space="preserve"><value>Espaço utilizado</value></data>
+  <data name="settings.dataSettings.systemFiles" xml:space="preserve"><value>Arquivos do sistema</value></data>
+  <data name="settings.dataSettings.otherFiles" xml:space="preserve"><value>Outros arquivos</value></data>
   <data name="settings.dataSettings.movingData" xml:space="preserve">
     <value>Movendo dados...</value>
   </data>

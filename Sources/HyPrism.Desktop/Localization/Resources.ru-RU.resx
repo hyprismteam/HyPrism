@@ -1881,6 +1881,18 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="settings.dataSettings.launcherDataHint" xml:space="preserve">
     <value>Где хранятся конфиги и ассеты</value>
   </data>
+  <data name="settings.dataSettings.launcherFiles" xml:space="preserve">
+    <value>Файлы лаунчера</value>
+  </data>
+  <data name="settings.dataSettings.storageUsed" xml:space="preserve">
+    <value>Занято</value>
+  </data>
+  <data name="settings.dataSettings.systemFiles" xml:space="preserve">
+    <value>Системные файлы</value>
+  </data>
+  <data name="settings.dataSettings.otherFiles" xml:space="preserve">
+    <value>Другие файлы</value>
+  </data>
   <data name="settings.dataSettings.movingData" xml:space="preserve">
     <value>Перемещение данных...</value>
   </data>
