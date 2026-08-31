@@ -99,18 +99,19 @@ public class ClientPatcher
         {
             string oldFlagFile = clientPath + PatchedFlag;
             string oldBackupFile = clientPath + ".original";
+            string currentFlagFile = GetFlagFilePath(clientPath);
+            string currentBackupFile = GetBackupFilePath(clientPath);
 
-            if (File.Exists(oldFlagFile))
+            if (oldFlagFile != currentFlagFile && File.Exists(oldFlagFile))
             {
                 File.Delete(oldFlagFile);
                 Logger.Info("Patcher", "Removed legacy flag file from inside app bundle");
             }
-            if (File.Exists(oldBackupFile))
+            if (oldBackupFile != currentBackupFile && File.Exists(oldBackupFile))
             {
-                string newBackupPath = GetBackupFilePath(clientPath);
-                if (!File.Exists(newBackupPath))
+                if (!File.Exists(currentBackupFile))
                 {
-                    File.Move(oldBackupFile, newBackupPath);
+                    File.Move(oldBackupFile, currentBackupFile);
                     Logger.Info("Patcher", "Moved legacy backup file outside app bundle");
                 }
                 else

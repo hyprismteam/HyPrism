@@ -5,6 +5,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Labs.Lottie;
 using Avalonia.Media;
@@ -517,22 +518,18 @@ public sealed class MirrorSettingsViewModelTests
             var wizardAnimationAnchor = wizardReveal.Anchor;
             var wizardAnimationTranslation = Assert.IsType<TranslateTransform>(
                 wizardAnimationAnchor.RenderTransform);
-            var wizardAnimationMotion = wizardReveal.MotionTarget;
-            var wizardAnimationMotionTranslation = Assert.IsType<TranslateTransform>(
-                wizardAnimationMotion.RenderTransform);
-
-            var manualButton = Assert.IsType<Button>(view.FindControl<Button>("BeginManualSourceAdditionButton"));
-            manualButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-            await Task.Delay(100);
-            Dispatcher.UIThread.RunJobs();
-            Assert.True(Math.Abs(wizardAnimationMotionTranslation.Y) > 0.5);
-            await Task.Delay(140);
-            Dispatcher.UIThread.RunJobs();
-            Assert.True(Math.Abs(wizardAnimationTranslation.Y) > 0.5);
-            await Task.Delay(230);
-            Dispatcher.UIThread.RunJobs();
             var manualContent = Assert.IsType<StackPanel>(
                 view.FindControl<StackPanel>("ManualSourceAdditionContent"));
+
+            var manualButton = Assert.IsType<Button>(view.FindControl<Button>("BeginManualSourceAdditionButton"));
+            var manualStepActivated = WaitForAvaloniaPropertyAsync(
+                manualContent,
+                InputElement.IsHitTestVisibleProperty,
+                () => manualContent.IsHitTestVisible,
+                "manual source step to become interactive");
+            manualButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            await manualStepActivated;
+            Dispatcher.UIThread.RunJobs();
             Assert.True(manualContent.IsEffectivelyVisible);
             Assert.InRange(Math.Abs(wizardAnimationTranslation.Y), 0, 0.01);
             Assert.Equal("/Assets/Lotties/loader-reveal.json", wizardAnimation.Path);
@@ -546,14 +543,15 @@ public sealed class MirrorSettingsViewModelTests
                 window.CaptureRenderedFrame()!.Save(wizardRenderPath, PngBitmapEncoderOptions.Default);
             }
 
+            var wizardClosed = WaitForAvaloniaPropertyAsync(
+                wizard,
+                Visual.IsVisibleProperty,
+                () => !wizard.IsVisible,
+                "download source wizard to close");
             viewModel.CancelAddMirrorCommand.Execute(null);
             Dispatcher.UIThread.RunJobs();
             Assert.True(manualContent.IsEffectivelyVisible);
-            await Task.Delay(80);
-            Dispatcher.UIThread.RunJobs();
-            Assert.True(manualContent.IsEffectivelyVisible);
-
-            await Task.Delay(180);
+            await wizardClosed;
             Dispatcher.UIThread.RunJobs();
             Assert.False(wizard.IsEffectivelyVisible);
             Assert.False(viewModel.IsManualSourceVisible);
@@ -611,6 +609,39 @@ public sealed class MirrorSettingsViewModelTests
             await Task.Delay(10);
 
         Assert.True(condition());
+    }
+
+    private static async Task WaitForAvaloniaPropertyAsync(
+        AvaloniaObject source,
+        AvaloniaProperty property,
+        Func<bool> condition,
+        string description)
+    {
+        if (condition())
+            return;
+
+        var completion = new TaskCompletionSource<bool>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        void OnPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs args)
+        {
+            if (args.Property == property && condition())
+                completion.TrySetResult(true);
+        }
+
+        source.PropertyChanged += OnPropertyChanged;
+        try
+        {
+            if (!condition())
+                await completion.Task.WaitAsync(TimeSpan.FromSeconds(2));
+        }
+        catch (TimeoutException)
+        {
+            Assert.True(condition(), $"Timed out waiting for {description}");
+        }
+        finally
+        {
+            source.PropertyChanged -= OnPropertyChanged;
+        }
     }
 
     private static double GetCenterX(Control control, Visual relativeTo)

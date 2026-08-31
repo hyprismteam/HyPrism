@@ -2147,8 +2147,18 @@ public sealed class MainWindowRenderTests
                     PngBitmapEncoderOptions.Default);
             }
 
+            var instancesListWidthRestored = WaitForAvaloniaPropertyAsync(
+                instancesListPane,
+                Visual.BoundsProperty,
+                () => Math.Abs(instancesListPane.Bounds.Width - 276) < 0.5,
+                "instances list width to be restored");
             viewModel.CloseInstanceCreatorCommand.Execute(null);
-            await Task.Delay(420);
+            await instancesListWidthRestored;
+            await WaitForAvaloniaPropertyAsync(
+                instancesListPane,
+                Visual.OpacityProperty,
+                () => Math.Abs(instancesListPane.Opacity - 1) < 0.01,
+                "instances list opacity to be restored");
             Dispatcher.UIThread.RunJobs();
             Assert.Equal(276, instancesListPane.Bounds.Width);
             Assert.Equal(1, instancesListPane.Opacity);

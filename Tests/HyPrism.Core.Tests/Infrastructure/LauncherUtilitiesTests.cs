@@ -155,7 +155,7 @@ public class LauncherUtilitiesTests
 
 
     [Fact]
-    public void MacSignature_RoundTrip_IsConsistent()
+    public void SignatureStamp_RoundTrip_IsConsistentAcrossFilesystems()
     {
         var tempFile = System.IO.Path.GetTempFileName();
         var stampFile = tempFile + ".stamp";
@@ -167,8 +167,9 @@ public class LauncherUtilitiesTests
             LauncherUtilities.MarkMacAppSigned(tempFile, stampFile);
             Assert.True(LauncherUtilities.IsMacAppSignatureCurrent(tempFile, stampFile));
 
-            // Touching the file changes the timestamp → stamp becomes stale
+            var signedWriteTime = System.IO.File.GetLastWriteTimeUtc(tempFile);
             System.IO.File.AppendAllText(tempFile, "changed");
+            System.IO.File.SetLastWriteTimeUtc(tempFile, signedWriteTime.AddSeconds(1));
             Assert.False(LauncherUtilities.IsMacAppSignatureCurrent(tempFile, stampFile));
         }
         finally

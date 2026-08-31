@@ -18,7 +18,7 @@ Autonomous mode runs `HyPrism.LocalNode` as a dedicated companion process on a l
 7. After the game starts, the launcher transfers Local Node lifetime ownership to the game PID
 8. The node remains available if the launcher closes and stops itself when the game process exits
 
-The client patch supports both regular length-prefixed strings and Linux NativeAOT frozen strings where the final character borders runtime metadata. Frozen replacements preserve that metadata byte. The patch can switch between connected and autonomous targets, and HyPrism restores the stable original backup before applying a different target. On macOS, backup and patch state files are stored outside a recognized app bundle to preserve its code signature. Binaries outside an app bundle keep these files beside the binary
+The client patch supports both regular length-prefixed strings and Linux NativeAOT frozen strings where the final character borders runtime metadata. Frozen replacements preserve that metadata byte. The patch can switch between connected and autonomous targets, and HyPrism restores the stable original backup before applying a different target. On macOS, backup and patch state files are stored outside a recognized app bundle to preserve its code signature. Binaries outside an app bundle keep these files beside the binary, and legacy bundle cleanup does not remove active adjacent state files
 
 ## Endpoint groups
 
