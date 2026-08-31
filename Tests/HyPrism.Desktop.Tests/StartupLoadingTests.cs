@@ -50,6 +50,15 @@ public sealed class StartupLoadingTests
         profiles.Setup(service => service.GetNick()).Returns("Startup Test");
         profileRepository.Setup(service => service.GetProfiles()).Returns([]);
         settings.SetupGet(service => service.AvailableBackgrounds).Returns([]);
+        settings
+            .Setup(service => service.GetLauncherStorageUsageAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new LauncherStorageUsage(
+                72 * 1024 * 1024,
+                18 * 1024 * 1024,
+                42 * 1024 * 1024,
+                12 * 1024 * 1024,
+                3 * 1024 * 1024,
+                4 * 1024 * 1024));
         news.Setup(service => service.GetNewsAsync(It.IsAny<int>())).ReturnsAsync(
         [
             new NewsItemResponse
@@ -125,7 +134,19 @@ public sealed class StartupLoadingTests
 
         Assert.NotNull(viewModel.FeaturedNews?.Image);
         Assert.Equal(1, imageHandler.Requests);
+        Assert.Equal("151 MB", viewModel.Settings.TotalStorageUsage);
+        Assert.Equal(6, viewModel.Settings.StorageUsageItems.Count);
         news.Verify(service => service.GetNewsAsync(It.IsAny<int>()), Times.Once);
+        settings.Verify(
+            service => service.GetLauncherStorageUsageAsync(It.IsAny<CancellationToken>()),
+            Times.Once);
+
+        viewModel.Settings.SelectCategoryCommand.Execute(
+            viewModel.Settings.Categories.Single(category => category.Id == "data"));
+        await Task.Delay(40, TestContext.Current.CancellationToken);
+        settings.Verify(
+            service => service.GetLauncherStorageUsageAsync(It.IsAny<CancellationToken>()),
+            Times.Once);
 
         viewModel.NavigateCommand.Execute("news");
         await Task.Delay(80);

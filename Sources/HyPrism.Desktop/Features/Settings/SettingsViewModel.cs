@@ -60,6 +60,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     private bool _disposed;
     private CancellationTokenSource? _sourceProbeCancellation;
     private CancellationTokenSource? _storageUsageCancellation;
+    private Task _storageUsageLoadTask = Task.CompletedTask;
     private int _aboutContributorSlotCapacity = 9;
     private GitHubCommit? _latestMainCommit;
     private LauncherStorageUsage? _latestStorageUsage;
@@ -1043,13 +1044,17 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     }
 
     private void EnsureStorageUsageLoaded()
+        => _ = EnsureStorageUsageLoadedAsync();
+
+    private Task EnsureStorageUsageLoadedAsync(CancellationToken cancellationToken = default)
     {
         if (_storageUsageLoadStarted || _disposed)
-            return;
+            return _storageUsageLoadTask;
 
         _storageUsageLoadStarted = true;
-        _storageUsageCancellation = new CancellationTokenSource();
-        _ = LoadStorageUsageAsync(_storageUsageCancellation.Token);
+        _storageUsageCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        _storageUsageLoadTask = LoadStorageUsageAsync(_storageUsageCancellation.Token);
+        return _storageUsageLoadTask;
     }
 
     private void RefreshStorageUsage()
@@ -1058,11 +1063,13 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         _storageUsageCancellation?.Dispose();
         _storageUsageCancellation = null;
         _storageUsageLoadStarted = false;
+        _storageUsageLoadTask = Task.CompletedTask;
         EnsureStorageUsageLoaded();
     }
 
     private async Task LoadStorageUsageAsync(CancellationToken cancellationToken)
     {
+        var loaded = false;
         IsStorageUsageLoading = true;
         try
         {
@@ -1071,6 +1078,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
                 return;
 
             await Dispatcher.UIThread.InvokeAsync(() => ApplyStorageUsage(usage));
+            loaded = true;
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -1083,7 +1091,19 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         finally
         {
             if (!_disposed && _storageUsageCancellation?.Token == cancellationToken)
-                await Dispatcher.UIThread.InvokeAsync(() => IsStorageUsageLoading = false);
+            {
+                await Dispatcher.UIThread.InvokeAsync(() =>
+                {
+                    IsStorageUsageLoading = false;
+                    _storageUsageCancellation?.Dispose();
+                    _storageUsageCancellation = null;
+                    if (!loaded)
+                    {
+                        _storageUsageLoadStarted = false;
+                        _storageUsageLoadTask = Task.CompletedTask;
+                    }
+                });
+            }
         }
     }
 
@@ -1167,6 +1187,13 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     /// <param name="cancellationToken">Cancellation requested when the desktop exits</param>
     public Task PreloadAboutDataAsync(CancellationToken cancellationToken)
         => LoadAboutDataAsync().WaitAsync(cancellationToken);
+
+    /// <summary>
+    /// Calculates storage usage while the launcher startup screen is visible
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation requested when startup ends or the desktop exits</param>
+    public Task PreloadStorageUsageAsync(CancellationToken cancellationToken)
+        => EnsureStorageUsageLoadedAsync(cancellationToken);
 
     private async Task LoadAboutDataAsync()
     {

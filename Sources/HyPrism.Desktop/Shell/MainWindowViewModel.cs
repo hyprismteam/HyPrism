@@ -2899,7 +2899,8 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         StartupLoadingStatus = _localizer["startup.loading.content"];
         await Task.WhenAll(
             LoadNewsAsync(waitForImages: true, cancellationToken: cancellationToken),
-            Settings.PreloadAboutDataAsync(cancellationToken));
+            Settings.PreloadAboutDataAsync(cancellationToken),
+            Settings.PreloadStorageUsageAsync(cancellationToken));
         cancellationToken.ThrowIfCancellationRequested();
         StartupLoadingStatus = _localizer["startup.loading.ready"];
         await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
