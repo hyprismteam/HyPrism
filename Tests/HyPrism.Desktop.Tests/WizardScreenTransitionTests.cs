@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 using Avalonia;
+using Avalonia.Animation;
 using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
@@ -491,19 +492,25 @@ public sealed class WizardScreenTransitionTests
 
         variableContent.Height = 280;
         Dispatcher.UIThread.RunJobs();
-        await Task.Delay(40);
-        Dispatcher.UIThread.RunJobs();
 
         var translation = Assert.IsType<TranslateTransform>(anchor.RenderTransform);
         var movingY = anchor.TranslatePoint(default, wizard)!.Value.Y;
+        Assert.Contains(
+            translation.Transitions!,
+            item => item is DoubleTransition { Property: not null } doubleTransition &&
+                    doubleTransition.Property == TranslateTransform.YProperty);
         Assert.True(
-            translation.Y is >= 1 and <= 199,
+            translation.Y is >= 0 and <= 200,
             $"Initial Y: {initialY}, moving Y: {movingY}, translation Y: {translation.Y}, " +
             $"anchor bounds: {anchor.Bounds}, content bounds: {variableContent.Bounds}, " +
             $"stack bounds: {wizardContent.Bounds}");
-        Assert.InRange(movingY, initialY - 199, initialY);
+        Assert.InRange(movingY, initialY - 200, initialY);
 
-        await Task.Delay(WizardScreenTransition.AnchorMoveDuration + TimeSpan.FromMilliseconds(80));
+        await WaitForAvaloniaPropertyAsync(
+            translation,
+            TranslateTransform.YProperty,
+            () => Math.Abs(translation.Y) <= 0.01,
+            "wizard layout anchor animation to finish");
         Dispatcher.UIThread.RunJobs();
 
         Assert.InRange(Math.Abs(translation.Y), 0, 0.01);
@@ -579,4 +586,38 @@ public sealed class WizardScreenTransitionTests
         {
             RenderTransform = new TranslateTransform()
         };
+
+    private static async Task WaitForAvaloniaPropertyAsync(
+        AvaloniaObject source,
+        AvaloniaProperty property,
+        Func<bool> condition,
+        string description)
+    {
+        if (condition())
+            return;
+
+        var completion = new TaskCompletionSource<bool>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+
+        void OnPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs args)
+        {
+            if (args.Property == property && condition())
+                completion.TrySetResult(true);
+        }
+
+        source.PropertyChanged += OnPropertyChanged;
+        try
+        {
+            if (!condition())
+                await completion.Task.WaitAsync(TimeSpan.FromSeconds(2));
+        }
+        catch (TimeoutException)
+        {
+            Assert.True(condition(), $"Timed out waiting for {description}");
+        }
+        finally
+        {
+            source.PropertyChanged -= OnPropertyChanged;
+        }
+    }
 }

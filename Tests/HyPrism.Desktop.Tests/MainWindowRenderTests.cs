@@ -2178,12 +2178,17 @@ public sealed class MainWindowRenderTests
                 Assert.True(File.Exists(compactListPreviewPath));
             }
 
+            var instanceCreatorOpened = WaitForAvaloniaPropertyAsync(
+                instanceContentTranslation,
+                TranslateTransform.XProperty,
+                () => instanceContentTranslation.X == 0,
+                "compact instance creator to finish opening");
             addInstanceRow.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             var instanceCreatorScreen = instancesView.FindControl<Border>("InstanceCreatorScreen");
             var instancesOverview = instancesView.FindControl<Grid>("InstancesOverview");
             Assert.True(instanceCreatorScreen!.IsVisible);
             Assert.False(instancesOverview!.IsVisible);
-            await Task.Delay(340);
+            await instanceCreatorOpened;
             Dispatcher.UIThread.RunJobs();
             Assert.True(viewModel.IsInstanceCreatorOpen);
             Assert.Equal(0, instanceContentTranslation.X);
@@ -2191,10 +2196,15 @@ public sealed class MainWindowRenderTests
             Assert.True(instanceWizardAnimation.IsEffectivelyVisible);
             Assert.False(instancesOverview!.IsVisible);
 
+            var instanceCreatorClosed = WaitForAvaloniaPropertyAsync(
+                instanceCreatorScreen,
+                Visual.IsVisibleProperty,
+                () => !instanceCreatorScreen.IsVisible,
+                "compact instance creator to finish closing");
             viewModel.CloseInstanceCreatorCommand.Execute(null);
             Dispatcher.UIThread.RunJobs();
             Assert.True(instanceCreatorScreen.IsVisible);
-            await Task.Delay(340);
+            await instanceCreatorClosed;
             Dispatcher.UIThread.RunJobs();
             Assert.True(instanceContentTranslation.X > 0);
             Assert.False(instanceCreatorScreen.IsVisible);
@@ -2203,8 +2213,13 @@ public sealed class MainWindowRenderTests
             var instanceButton = instancesListPane!.GetVisualDescendants()
                 .OfType<Button>()
                 .Single(button => button.Classes.Contains("instancesListItem"));
+            var instanceContentOpened = WaitForAvaloniaPropertyAsync(
+                instanceContentTranslation,
+                TranslateTransform.XProperty,
+                () => instanceContentTranslation.X == 0,
+                "compact instance content to finish opening");
             instanceButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-            await Task.Delay(360);
+            await instanceContentOpened;
             Dispatcher.UIThread.RunJobs();
             Assert.Equal(0, instanceContentTranslation.X);
             Assert.False(wideInstanceActions.IsVisible);
