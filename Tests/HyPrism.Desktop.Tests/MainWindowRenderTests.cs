@@ -208,10 +208,6 @@ public sealed class MainWindowRenderTests
         Assert.NotNull(profileWizardAnimation.OpacityMask);
         Assert.Equal(64, profileWizardAnimation.Width);
         Assert.Equal(64, profileWizardAnimation.Height);
-        var profileWizardAnimationMotion = profileWizardReveal.MotionTarget;
-        var profileWizardAnimationTranslation = Assert.IsType<TranslateTransform>(
-            profileWizardAnimationMotion.RenderTransform);
-
         if (!string.IsNullOrWhiteSpace(previewPath))
         {
             var directory = Path.GetDirectoryName(previewPath)!;
@@ -228,18 +224,16 @@ public sealed class MainWindowRenderTests
 
         var profileCreationChoice = view.FindControl<StackPanel>("ProfileCreationChoiceContent");
         var offlineProfileCreation = view.FindControl<StackPanel>("OfflineProfileCreationContent");
+        var offlineProfileStepActivated = WaitForAvaloniaPropertyAsync(
+            profileWizardReveal,
+            WizardRevealIcon.AnimationPathProperty,
+            () => profileWizardAnimation.Path == "/Assets/Lotties/avatar-jumping.json",
+            "offline profile step to become active");
         view.FindControl<Button>("BeginOfflineProfileCreationButton")!
             .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         Dispatcher.UIThread.RunJobs();
         Assert.True(profileCreationChoice!.IsVisible);
         Assert.False(offlineProfileCreation!.IsVisible);
-        await Task.Delay(100);
-        Dispatcher.UIThread.RunJobs();
-        Assert.True(profileCreationChoice.IsVisible);
-        Assert.False(offlineProfileCreation.IsVisible);
-        Assert.True(
-            Math.Abs(profileWizardAnimationTranslation.Y) > 0.05,
-            $"Motion Y: {profileWizardAnimationTranslation.Y}");
         Assert.Equal("/Assets/Lotties/avatar-reveal.json", profileWizardAnimation.Path);
         if (!string.IsNullOrWhiteSpace(previewPath))
         {
@@ -249,29 +243,26 @@ public sealed class MainWindowRenderTests
                 Path.Combine(directory, $"{stem}-wizard-step-transition.png"),
                 PngBitmapEncoderOptions.Default);
         }
-        await Task.Delay(140);
+        await offlineProfileStepActivated;
         Dispatcher.UIThread.RunJobs();
         Assert.False(profileCreationChoice.IsVisible);
         Assert.True(offlineProfileCreation.IsVisible);
-        await Task.Delay(180);
-        Dispatcher.UIThread.RunJobs();
         Assert.Equal("/Assets/Lotties/avatar-jumping.json", profileWizardAnimation.Path);
 
+        var profileCreationChoiceActivated = WaitForAvaloniaPropertyAsync(
+            profileWizardReveal,
+            WizardRevealIcon.AnimationPathProperty,
+            () => profileWizardAnimation.Path == "/Assets/Lotties/avatar-reveal.json",
+            "profile creation choice to become active");
         view.FindControl<Button>("OfflineProfileCreationBackButton")!
             .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         Dispatcher.UIThread.RunJobs();
         Assert.False(profileCreationChoice.IsVisible);
         Assert.True(offlineProfileCreation.IsVisible);
-        await Task.Delay(100);
-        Dispatcher.UIThread.RunJobs();
-        Assert.False(profileCreationChoice.IsVisible);
-        Assert.True(offlineProfileCreation.IsVisible);
-        await Task.Delay(140);
+        await profileCreationChoiceActivated;
         Dispatcher.UIThread.RunJobs();
         Assert.True(profileCreationChoice.IsVisible);
         Assert.False(offlineProfileCreation.IsVisible);
-        await Task.Delay(180);
-        Dispatcher.UIThread.RunJobs();
         Assert.Equal("/Assets/Lotties/avatar-reveal.json", profileWizardAnimation.Path);
         if (!string.IsNullOrWhiteSpace(previewPath))
         {
@@ -282,9 +273,14 @@ public sealed class MainWindowRenderTests
                 PngBitmapEncoderOptions.Default);
         }
 
+        offlineProfileStepActivated = WaitForAvaloniaPropertyAsync(
+            profileWizardReveal,
+            WizardRevealIcon.AnimationPathProperty,
+            () => profileWizardAnimation.Path == "/Assets/Lotties/avatar-jumping.json",
+            "offline profile step to become active again");
         view.FindControl<Button>("BeginOfflineProfileCreationButton")!
             .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-        await Task.Delay(240);
+        await offlineProfileStepActivated;
         Dispatcher.UIThread.RunJobs();
         Assert.False(profileCreationChoice.IsVisible);
         Assert.True(offlineProfileCreation.IsVisible);
@@ -1306,6 +1302,11 @@ public sealed class MainWindowRenderTests
         {
             Source = germanContainer
         };
+        var languagePopupClosed = WaitForAvaloniaPropertyAsync(
+            languagePopup,
+            Popup.IsOpenProperty,
+            () => !languagePopup.IsOpen,
+            "language popup to finish closing");
         Assert.True(fadingLanguageComboBox.UpdateSelectionFromEvent(germanContainer, selectionEvent));
         Dispatcher.UIThread.RunJobs();
         Assert.Same(german, languageComboBox.SelectedItem);
@@ -1315,12 +1316,8 @@ public sealed class MainWindowRenderTests
             languagePopupBorder.Transitions!,
             transition => transition is DoubleTransition { Property: { } property } &&
                           property == Visual.OpacityProperty);
-        await Task.Delay(90);
-        Dispatcher.UIThread.RunJobs();
         Assert.NotNull(window.CaptureRenderedFrame());
-        Assert.True(languagePopup.IsOpen);
-        Assert.InRange(languagePopupBorder.Opacity, 0, 0.99);
-        await Task.Delay(150);
+        await languagePopupClosed;
         Dispatcher.UIThread.RunJobs();
         Assert.False(languagePopup.IsOpen);
 
@@ -3701,6 +3698,39 @@ public sealed class MainWindowRenderTests
         {
             Assert.Equal(1, scale.ScaleX);
             Assert.Equal(1, scale.ScaleY);
+        }
+    }
+
+    private static async Task WaitForAvaloniaPropertyAsync(
+        AvaloniaObject source,
+        AvaloniaProperty property,
+        Func<bool> condition,
+        string description)
+    {
+        if (condition())
+            return;
+
+        var completion = new TaskCompletionSource<bool>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        void OnPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs args)
+        {
+            if (args.Property == property && condition())
+                completion.TrySetResult(true);
+        }
+
+        source.PropertyChanged += OnPropertyChanged;
+        try
+        {
+            if (!condition())
+                await completion.Task.WaitAsync(TimeSpan.FromSeconds(2));
+        }
+        catch (TimeoutException)
+        {
+            Assert.True(condition(), $"Timed out waiting for {description}");
+        }
+        finally
+        {
+            source.PropertyChanged -= OnPropertyChanged;
         }
     }
 

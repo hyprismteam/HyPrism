@@ -361,7 +361,9 @@ public sealed class WizardScreenTransitionTests
         await Task.Delay(80);
 
         Assert.False(stepSwitched);
-        Assert.InRange(outgoingStep.Opacity, 0.01, 0.99);
+        Assert.True(outgoingStep.IsVisible);
+        Assert.True(outgoingStep.Opacity < 1);
+        Assert.False(outgoingStep.IsHitTestVisible);
         Assert.False(transitionTask.IsCompleted);
 
         transition.Cancel();

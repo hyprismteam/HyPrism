@@ -105,6 +105,18 @@ public class ClientPatcherTests : IDisposable
     }
 
     [Fact]
+    public void PatchClient_FlatTemporaryPath_KeepsStateFilesNextToBinary()
+    {
+        var clientPath = CreateFakeBinary(_gameDir, "HytaleClient");
+
+        var result = new ClientPatcher("sanasol.ws").PatchClient(clientPath);
+
+        Assert.True(result.Success, result.Error);
+        Assert.True(File.Exists(clientPath + ".original"));
+        Assert.True(File.Exists(clientPath + ".patched_custom"));
+    }
+
+    [Fact]
     public void PatchClient_AlreadyPatched_ReturnsAlreadyPatched()
     {
         var clientPath = CreateFakeBinary(_gameDir, "HytaleClient");

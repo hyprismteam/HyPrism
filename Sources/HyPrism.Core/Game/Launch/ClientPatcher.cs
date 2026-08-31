@@ -43,32 +43,48 @@ public class ClientPatcher
 
     /// <summary>
     /// Get the flag file path for tracking patch status.
-    /// On macOS, stores outside the app bundle to avoid breaking code signature
+    /// For a macOS app bundle, stores outside the bundle to preserve its code signature
     /// </summary>
     private static string GetFlagFilePath(string clientPath)
-    {
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-        {
-            string fileName = Path.GetFileName(clientPath);
-            string clientDir = Path.GetDirectoryName(Path.GetDirectoryName(Path.GetDirectoryName(Path.GetDirectoryName(clientPath)!)!)!)!;
-            return Path.Combine(clientDir, fileName + PatchedFlag);
-        }
-        return clientPath + PatchedFlag;
-    }
+        => GetStateFilePath(clientPath, PatchedFlag);
 
     /// <summary>
     /// Get the backup file path for the original binary.
-    /// On macOS, stores outside the app bundle to avoid breaking code signature
+    /// For a macOS app bundle, stores outside the bundle to preserve its code signature
     /// </summary>
     private static string GetBackupFilePath(string clientPath)
+        => GetStateFilePath(clientPath, ".original");
+
+    private static string GetStateFilePath(string clientPath, string suffix)
     {
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-        {
-            string fileName = Path.GetFileName(clientPath);
-            string clientDir = Path.GetDirectoryName(Path.GetDirectoryName(Path.GetDirectoryName(Path.GetDirectoryName(clientPath)!)!)!)!;
-            return Path.Combine(clientDir, fileName + ".original");
-        }
-        return clientPath + ".original";
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX) &&
+            TryGetMacOSStateDirectory(clientPath, out var stateDirectory))
+            return Path.Combine(stateDirectory, Path.GetFileName(clientPath) + suffix);
+
+        return clientPath + suffix;
+    }
+
+    private static bool TryGetMacOSStateDirectory(string clientPath, out string stateDirectory)
+    {
+        stateDirectory = string.Empty;
+        var macOSDirectory = Path.GetDirectoryName(clientPath);
+        if (!string.Equals(Path.GetFileName(macOSDirectory), "MacOS", StringComparison.Ordinal))
+            return false;
+
+        var contentsDirectory = Path.GetDirectoryName(macOSDirectory);
+        if (!string.Equals(Path.GetFileName(contentsDirectory), "Contents", StringComparison.Ordinal))
+            return false;
+
+        var appBundleDirectory = Path.GetDirectoryName(contentsDirectory);
+        if (!string.Equals(Path.GetExtension(appBundleDirectory), ".app", StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        var externalDirectory = Path.GetDirectoryName(appBundleDirectory);
+        if (string.IsNullOrEmpty(externalDirectory))
+            return false;
+
+        stateDirectory = externalDirectory;
+        return true;
     }
 
     /// <summary>
