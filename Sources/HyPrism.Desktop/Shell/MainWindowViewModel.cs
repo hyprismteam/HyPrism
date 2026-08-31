@@ -3453,7 +3453,8 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
             _mirrorCatalog,
             _mirrorDiscovery,
             _versionCatalog,
-            _gameProcess);
+            _gameProcess,
+            _instances);
 
     private void ApplyLanguage(string language)
     {

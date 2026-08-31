@@ -134,23 +134,25 @@ public sealed class DesktopSettingsStoreTests : IDisposable
     [Fact]
     public async Task GetLauncherStorageUsageAsync_GroupsFilesByPurposeWithoutDoubleCountingInstances()
     {
+        var baseline = await _settings.GetLauncherStorageUsageAsync(TestContext.Current.CancellationToken);
         await WriteSizedFileAsync(Path.Combine(_directory, "config.json"), 11);
         await WriteSizedFileAsync(Path.Combine(_directory, "Cache", "Images", "News", "cover.bin"), 13);
         await WriteSizedFileAsync(Path.Combine(_directory, "Cache", "News", "Article-test.json"), 19);
         await WriteSizedFileAsync(Path.Combine(_settings.DefaultInstanceDirectory, "release", "Mods", "mod.jar"), 17);
+        await WriteSizedFileAsync(Path.Combine(_settings.DefaultInstanceDirectory, "release", "client.pak"), 31);
         await WriteSizedFileAsync(Path.Combine(_directory, "Cache", "archive.zip"), 7);
         await WriteSizedFileAsync(Path.Combine(_directory, "Logs", "latest.log"), 23);
         await WriteSizedFileAsync(Path.Combine(_directory, "Profiles", "avatar.skin"), 29);
 
         var usage = await _settings.GetLauncherStorageUsageAsync(TestContext.Current.CancellationToken);
 
-        Assert.Equal(11, usage.SystemFilesBytes);
-        Assert.Equal(13, usage.ImageBytes);
-        Assert.Equal(17, usage.ModBytes);
-        Assert.Equal(19, usage.NewsBytes);
-        Assert.Equal(23, usage.LogBytes);
-        Assert.Equal(36, usage.OtherBytes);
-        Assert.Equal(119, usage.TotalBytes);
+        Assert.Equal(baseline.InstanceBytes + 31, usage.InstanceBytes);
+        Assert.Equal(baseline.ImageBytes + 13, usage.ImageBytes);
+        Assert.Equal(baseline.ModBytes + 17, usage.ModBytes);
+        Assert.Equal(baseline.NewsBytes + 19, usage.NewsBytes);
+        Assert.Equal(baseline.LogBytes + 23, usage.LogBytes);
+        Assert.Equal(baseline.OtherBytes + 47, usage.OtherBytes);
+        Assert.Equal(baseline.TotalBytes + 150, usage.TotalBytes);
     }
 
     private static async Task WriteSizedFileAsync(string path, int size)

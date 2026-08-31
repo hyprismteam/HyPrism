@@ -1697,7 +1697,6 @@ SPDX-License-Identifier: GPL-3.0-only
   </data>
   <data name="settings.dataSettings.launcherFiles" xml:space="preserve"><value>ランチャーファイル</value></data>
   <data name="settings.dataSettings.storageUsed" xml:space="preserve"><value>使用容量</value></data>
-  <data name="settings.dataSettings.systemFiles" xml:space="preserve"><value>システムファイル</value></data>
   <data name="settings.dataSettings.otherFiles" xml:space="preserve"><value>その他のファイル</value></data>
   <data name="settings.dataSettings.movingData" xml:space="preserve">
     <value>データを移動中...</value>

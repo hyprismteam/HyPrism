@@ -15,6 +15,7 @@ using HyPrism.Desktop.Features.About;
 using HyPrism.Desktop.Platform;
 using HyPrism.Core.Infrastructure;
 using HyPrism.Core.Game.Launch;
+using HyPrism.Core.Game.Instances;
 using HyPrism.Core.Game.Sources;
 using HyPrism.Core.Game.Versions;
 using HyPrism.Core.Models;
@@ -49,6 +50,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     private readonly IMirrorDiscovery? _mirrorDiscovery;
     private readonly IGameVersionCatalog? _versionCatalog;
     private readonly IGameProcessTracker? _gameProcess;
+    private readonly IInstanceRepository? _instanceRepository;
     private bool _updatingJavaMemory;
     private bool _updatingJavaArguments;
     private bool _aboutDataLoadStarted;
@@ -156,7 +158,8 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         IMirrorCatalog? mirrorCatalog = null,
         IMirrorDiscovery? mirrorDiscovery = null,
         IGameVersionCatalog? versionCatalog = null,
-        IGameProcessTracker? gameProcess = null)
+        IGameProcessTracker? gameProcess = null,
+        IInstanceRepository? instanceRepository = null)
     {
         _settings = settings;
         _uriLauncher = uriLauncher;
@@ -167,6 +170,9 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         _mirrorDiscovery = mirrorDiscovery;
         _versionCatalog = versionCatalog;
         _gameProcess = gameProcess;
+        _instanceRepository = instanceRepository;
+        if (_instanceRepository is not null)
+            _instanceRepository.InstancesChanged += OnInstancesChanged;
 
         Categories = new ObservableCollection<SettingCategoryViewModel>(
         [
@@ -360,7 +366,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     public string InstanceFolderLabel { get; private set; } = string.Empty;
     public string LauncherFilesLabel { get; private set; } = string.Empty;
     public string StorageLoadingLabel { get; private set; } = string.Empty;
-    public string SystemFilesLabel { get; private set; } = string.Empty;
+    public string InstancesLabel { get; private set; } = string.Empty;
     public string ImagesLabel { get; private set; } = string.Empty;
     public string ModsLabel { get; private set; } = string.Empty;
     public string NewsLabel { get; private set; } = string.Empty;
@@ -496,7 +502,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         InstanceFolderLabel = _localizer["settings.dataSettings.instanceFolder"];
         LauncherFilesLabel = _localizer["settings.dataSettings.launcherFiles"];
         StorageLoadingLabel = _localizer["common.loading"];
-        SystemFilesLabel = _localizer["settings.dataSettings.systemFiles"];
+        InstancesLabel = _localizer["dock.instances"];
         ImagesLabel = _localizer["settings.visualSettings.images"];
         ModsLabel = _localizer["instances.tab.mods"];
         NewsLabel = _localizer["dock.news"];
@@ -1088,12 +1094,18 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         var total = Math.Max(1, usage.TotalBytes);
         StorageUsageItems =
         [
-            CreateStorageSegment(SystemFilesLabel, usage.SystemFilesBytes, total, "#1677FF"),
-            CreateStorageSegment(ImagesLabel, usage.ImageBytes, total, "#1CC8F2"),
-            CreateStorageSegment(ModsLabel, usage.ModBytes, total, "#8957F6"),
-            CreateStorageSegment(NewsLabel, usage.NewsBytes, total, "#FF9500"),
-            CreateStorageSegment(LogsLabel, usage.LogBytes, total, "#FF375F"),
-            CreateStorageSegment(OtherFilesLabel, usage.OtherBytes, total, "#10BFA3")
+            CreateStorageSegment(
+                InstancesLabel,
+                usage.InstanceBytes,
+                total,
+                "#245EA8",
+                StorageDonutIconKind.Instances,
+                (_instanceRepository?.GetCachedInstances().Count ?? 0).ToString()),
+            CreateStorageSegment(ImagesLabel, usage.ImageBytes, total, "#227F96", StorageDonutIconKind.Images),
+            CreateStorageSegment(ModsLabel, usage.ModBytes, total, "#60469B", StorageDonutIconKind.Mods),
+            CreateStorageSegment(NewsLabel, usage.NewsBytes, total, "#A86416", StorageDonutIconKind.News),
+            CreateStorageSegment(LogsLabel, usage.LogBytes, total, "#9C3A50", StorageDonutIconKind.Logs),
+            CreateStorageSegment(OtherFilesLabel, usage.OtherBytes, total, "#197765", StorageDonutIconKind.Other)
         ];
     }
 
@@ -1101,13 +1113,25 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         string label,
         long bytes,
         long total,
-        string color)
+        string color,
+        StorageDonutIconKind iconKind,
+        string? count = null)
         => new(
             label,
             bytes,
             FormatStorageSize(bytes),
             $"{bytes * 100d / total:0.#}%",
-            new SolidColorBrush(Color.Parse(color)));
+            new SolidColorBrush(Color.Parse(color)),
+            iconKind,
+            count);
+
+    private void OnInstancesChanged()
+    {
+        if (_latestStorageUsage is null || _disposed)
+            return;
+
+        Dispatcher.UIThread.Post(() => ApplyStorageUsage(_latestStorageUsage));
+    }
 
     private static string FormatStorageSize(long bytes)
     {
@@ -1716,6 +1740,8 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
             _gameProcess.GameProcessStarted -= OnGameProcessStateChanged;
             _gameProcess.GameProcessExited -= OnGameProcessStateChanged;
         }
+        if (_instanceRepository is not null)
+            _instanceRepository.InstancesChanged -= OnInstancesChanged;
         foreach (var member in AboutTeamMembers)
             member.Dispose();
         foreach (var contributor in _aboutContributorPool)

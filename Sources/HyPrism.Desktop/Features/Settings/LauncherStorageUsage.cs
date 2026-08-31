@@ -9,14 +9,14 @@ namespace HyPrism.Desktop.Features.Settings;
 /// Describes disk space used by launcher and instance files
 /// </summary>
 public sealed record LauncherStorageUsage(
-    long SystemFilesBytes,
+    long InstanceBytes,
     long ImageBytes,
     long ModBytes,
     long NewsBytes,
     long LogBytes,
     long OtherBytes)
 {
-    public long TotalBytes => SystemFilesBytes + ImageBytes + ModBytes + NewsBytes + LogBytes + OtherBytes;
+    public long TotalBytes => InstanceBytes + ImageBytes + ModBytes + NewsBytes + LogBytes + OtherBytes;
 }
 
 internal static class LauncherStorageUsageAnalyzer
@@ -24,11 +24,6 @@ internal static class LauncherStorageUsageAnalyzer
     private static readonly HashSet<string> ImageExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
         ".avif", ".bmp", ".gif", ".ico", ".jpeg", ".jpg", ".png", ".svg", ".webp"
-    };
-
-    private static readonly HashSet<string> SystemExtensions = new(StringComparer.OrdinalIgnoreCase)
-    {
-        ".bin", ".cfg", ".dat", ".db", ".dll", ".dylib", ".exe", ".json", ".so", ".toml", ".xml", ".yaml", ".yml"
     };
 
     public static Task<LauncherStorageUsage> MeasureAsync(
@@ -45,9 +40,10 @@ internal static class LauncherStorageUsageAnalyzer
         CancellationToken cancellationToken)
     {
         var totals = new long[6];
+        var instanceRoot = Path.GetFullPath(instanceDirectory);
         var roots = GetDistinctRoots(launcherDirectory, instanceDirectory);
         foreach (var root in roots)
-            MeasureRoot(root, totals, cancellationToken);
+            MeasureRoot(root, instanceRoot, totals, cancellationToken);
 
         return new LauncherStorageUsage(
             totals[0],
@@ -69,7 +65,11 @@ internal static class LauncherStorageUsageAnalyzer
         return [launcherRoot, instanceRoot];
     }
 
-    private static void MeasureRoot(string root, long[] totals, CancellationToken cancellationToken)
+    private static void MeasureRoot(
+        string root,
+        string instanceRoot,
+        long[] totals,
+        CancellationToken cancellationToken)
     {
         if (!Directory.Exists(root))
             return;
@@ -82,7 +82,7 @@ internal static class LauncherStorageUsageAnalyzer
             foreach (var file in EnumerateFiles(directory))
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                totals[(int)Classify(file)] += GetFileLength(file);
+                totals[(int)Classify(file, instanceRoot)] += GetFileLength(file);
             }
 
             foreach (var child in EnumerateDirectories(directory))
@@ -132,7 +132,7 @@ internal static class LauncherStorageUsageAnalyzer
         }
     }
 
-    private static StorageFileCategory Classify(string file)
+    private static StorageFileCategory Classify(string file, string instanceRoot)
     {
         var segments = file.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
         if (segments.Any(segment => segment.Equals("Mods", StringComparison.OrdinalIgnoreCase)))
@@ -146,11 +146,8 @@ internal static class LauncherStorageUsageAnalyzer
         {
             return StorageFileCategory.Logs;
         }
-        if (segments.Any(segment => segment.Equals("Runtime", StringComparison.OrdinalIgnoreCase)) ||
-            SystemExtensions.Contains(Path.GetExtension(file)))
-        {
-            return StorageFileCategory.SystemFiles;
-        }
+        if (IsNestedDirectory(instanceRoot, Path.GetFullPath(file)))
+            return StorageFileCategory.Instances;
         return StorageFileCategory.Other;
     }
 
@@ -199,7 +196,7 @@ internal static class LauncherStorageUsageAnalyzer
 
     private enum StorageFileCategory
     {
-        SystemFiles,
+        Instances,
         Images,
         Mods,
         News,

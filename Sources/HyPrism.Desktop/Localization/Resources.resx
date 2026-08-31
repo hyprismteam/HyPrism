@@ -1890,9 +1890,6 @@ You may need to reinstall the game if switching drives.</value>
   <data name="settings.dataSettings.storageUsed" xml:space="preserve">
     <value>Used space</value>
   </data>
-  <data name="settings.dataSettings.systemFiles" xml:space="preserve">
-    <value>System files</value>
-  </data>
   <data name="settings.dataSettings.otherFiles" xml:space="preserve">
     <value>Other files</value>
   </data>

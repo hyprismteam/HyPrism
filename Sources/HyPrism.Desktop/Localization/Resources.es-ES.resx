@@ -1697,7 +1697,6 @@ Es posible que necesites reinstalar el juego si cambias de unidad.</value>
   </data>
   <data name="settings.dataSettings.launcherFiles" xml:space="preserve"><value>Archivos del launcher</value></data>
   <data name="settings.dataSettings.storageUsed" xml:space="preserve"><value>Espacio utilizado</value></data>
-  <data name="settings.dataSettings.systemFiles" xml:space="preserve"><value>Archivos del sistema</value></data>
   <data name="settings.dataSettings.otherFiles" xml:space="preserve"><value>Otros archivos</value></data>
   <data name="settings.dataSettings.movingData" xml:space="preserve">
     <value>Moviendo datos...</value>

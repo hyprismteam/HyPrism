@@ -1,12 +1,19 @@
 // Copyright (C) 2026 HyPrism Launcher
 // SPDX-License-Identifier: GPL-3.0-only
 
+using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
+using Avalonia.Media;
 using Avalonia.Media.Imaging;
+using Avalonia.Interactivity;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
+using HyPrism.Core.Game.Instances;
 using HyPrism.Core.Game.Launch;
+using HyPrism.Core.Models;
 using HyPrism.Desktop.Controls;
 using HyPrism.Desktop.Features.Settings;
 using HyPrism.Desktop.Localization;
@@ -27,6 +34,67 @@ public sealed class DataSettingsViewModelTests
 
         Assert.True(tiny < medium);
         Assert.True(medium < large);
+    }
+
+    [Fact]
+    public void StorageDonutParticlePhases_AreDistributedAcrossTheAnimationCycle()
+    {
+        var phases = Enumerable.Range(0, 14)
+            .Select(index => StorageDonutChart.GetParticlePhase(
+                StorageDonutIconKind.Instances,
+                index))
+            .ToArray();
+
+        Assert.True(phases.Min() < 0.15);
+        Assert.True(phases.Max() > 0.85);
+        Assert.Equal(phases.Length, phases.Distinct().Count());
+    }
+
+    [AvaloniaFact]
+    public async Task StorageDonutParticles_UseRoundedIconsAndAnimate()
+    {
+        var chart = new StorageDonutChart
+        {
+            Width = 300,
+            Height = 300,
+            TrackBrush = Brushes.Black,
+            HoleBrush = Brushes.Black,
+            Items =
+            [
+                new("Instances", 40, "40 MB", "40%", Brushes.Blue, StorageDonutIconKind.Instances),
+                new("Images", 20, "20 MB", "20%", Brushes.Teal, StorageDonutIconKind.Images),
+                new("Mods", 15, "15 MB", "15%", Brushes.Purple, StorageDonutIconKind.Mods),
+                new("News", 10, "10 MB", "10%", Brushes.Orange, StorageDonutIconKind.News),
+                new("Logs", 8, "8 MB", "8%", Brushes.Crimson, StorageDonutIconKind.Logs),
+                new("Other", 7, "7 MB", "7%", Brushes.DarkSlateGray, StorageDonutIconKind.Other)
+            ]
+        };
+        var window = new Window
+        {
+            Width = 320,
+            Height = 320,
+            Content = chart
+        };
+
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        Assert.Equal(6, chart.LoadedParticleIconCount);
+        await Task.Delay(120, TestContext.Current.CancellationToken);
+        Dispatcher.UIThread.RunJobs();
+        using var firstFrame = window.CaptureRenderedFrame();
+        await Task.Delay(360, TestContext.Current.CancellationToken);
+        Dispatcher.UIThread.RunJobs();
+        using var secondFrame = window.CaptureRenderedFrame();
+
+        Assert.NotNull(firstFrame);
+        Assert.NotNull(secondFrame);
+        using var firstBytes = new MemoryStream();
+        using var secondBytes = new MemoryStream();
+        firstFrame.Save(firstBytes, PngBitmapEncoderOptions.Default);
+        secondFrame.Save(secondBytes, PngBitmapEncoderOptions.Default);
+        Assert.False(firstBytes.ToArray().SequenceEqual(secondBytes.ToArray()));
+
+        window.Close();
     }
 
     [AvaloniaFact]
@@ -97,6 +165,14 @@ public sealed class DataSettingsViewModelTests
         var running = true;
         var gameProcess = new Mock<IGameProcessTracker>();
         gameProcess.Setup(service => service.IsGameRunning()).Returns(() => running);
+        var instances = new Mock<IInstanceRepository>();
+        var cachedInstances = new List<InstanceInfo>
+        {
+            new InstanceInfo { Id = "one" },
+            new InstanceInfo { Id = "two" },
+            new InstanceInfo { Id = "three" }
+        };
+        instances.Setup(service => service.GetCachedInstances()).Returns(cachedInstances);
         using var viewModel = new SettingsViewModel(
             CreateSettingsStore(
                 () => "/home/user/Games/HyPrism",
@@ -104,7 +180,8 @@ public sealed class DataSettingsViewModelTests
                 "/home/user/.local/share/HyPrism").Object,
             new Mock<IExternalUriLauncher>().Object,
             new StringLocalizer("en-US"),
-            gameProcess: gameProcess.Object);
+            gameProcess: gameProcess.Object,
+            instanceRepository: instances.Object);
         var storageLoaded = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         viewModel.PropertyChanged += (_, args) =>
         {
@@ -143,10 +220,38 @@ public sealed class DataSettingsViewModelTests
         Assert.True(storageLegendCard.IsEffectivelyVisible);
         Assert.True(storageDonut.IsEffectivelyVisible);
         Assert.Equal(6, storageDonut.Items.Count);
+        Assert.Equal("Instances", storageDonut.Items[0].Label);
+        Assert.Equal("3", storageDonut.Items[0].Count);
+        Assert.Equal(StorageDonutIconKind.Instances, storageDonut.Items[0].IconKind);
         Assert.Equal("News", storageDonut.Items[3].Label);
         Assert.Equal("151 MB", viewModel.TotalStorageUsage);
         Assert.True(warning.IsEffectivelyVisible);
         Assert.False(selectButton.IsEnabled);
+        Assert.InRange(
+            Math.Abs(storageLegendCard.Bounds.Width - launcherFilesCard.Bounds.Width),
+            0,
+            1);
+        var legendItems = storageLegendCard.GetVisualDescendants()
+            .OfType<Border>()
+            .Where(border => border.Classes.Contains("storageLegendItem"))
+            .ToArray();
+        var legendGrid = Assert.Single(
+            storageLegendCard.GetVisualDescendants().OfType<UniformGrid>());
+        Assert.Equal(6, legendItems.Length);
+        Assert.All(legendItems, item => Assert.True(item.Bounds.Width > 250));
+        Assert.True(storageLegendCard.ClipToBounds);
+        Assert.Equal(new CornerRadius(14), storageLegendCard.CornerRadius);
+        Assert.Equal(2, legendGrid.ColumnSpacing);
+        Assert.Equal(2, legendGrid.RowSpacing);
+        Assert.All(legendItems, item =>
+        {
+            Assert.Equal(default, item.Margin);
+            Assert.Equal(64, item.MinHeight);
+        });
+        cachedInstances.Add(new InstanceInfo { Id = "four" });
+        instances.Raise(service => service.InstancesChanged += null);
+        Dispatcher.UIThread.RunJobs();
+        Assert.Equal("4", viewModel.StorageUsageItems[0].Count);
         Assert.Equal(
             "/home/user/Games/HyPrism",
             view.FindControl<TextBlock>("InstanceFolderPath")?.Text);
@@ -168,6 +273,26 @@ public sealed class DataSettingsViewModelTests
         var renderPath = Environment.GetEnvironmentVariable("HYPRISM_DATA_SETTINGS_RENDER_OUTPUT");
         if (!string.IsNullOrWhiteSpace(renderPath))
             window.CaptureRenderedFrame()!.Save(renderPath, PngBitmapEncoderOptions.Default);
+
+        window.Width = 760;
+        Dispatcher.UIThread.RunJobs();
+        var dataCategoryButton = view.GetVisualDescendants()
+            .OfType<Button>()
+            .Single(button => button.DataContext is SettingCategoryViewModel { Id: "data" });
+        dataCategoryButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        await Task.Delay(420, TestContext.Current.CancellationToken);
+        Dispatcher.UIThread.RunJobs();
+        Assert.True(storageLegendCard.IsEffectivelyVisible);
+        Assert.InRange(
+            Math.Abs(storageLegendCard.Bounds.Width - launcherFilesCard.Bounds.Width),
+            0,
+            1);
+        Assert.All(legendItems, item => Assert.True(item.Bounds.Width > 250));
+
+        var compactRenderPath = Environment.GetEnvironmentVariable(
+            "HYPRISM_DATA_SETTINGS_COMPACT_RENDER_OUTPUT");
+        if (!string.IsNullOrWhiteSpace(compactRenderPath))
+            window.CaptureRenderedFrame()!.Save(compactRenderPath, PngBitmapEncoderOptions.Default);
 
         window.Close();
     }

@@ -842,8 +842,8 @@ SPDX-License-Identifier: GPL-3.0-only
             </Border>
 
             <StackPanel x:Name="StorageUsageOverview"
-                        MaxWidth="700"
-                        HorizontalAlignment="Center"
+                        MaxWidth="720"
+                        HorizontalAlignment="Stretch"
                         Spacing="12">
               <Grid Width="260" Height="260" HorizontalAlignment="Center">
                 <controls:StorageDonutChart x:Name="StorageDonut"
@@ -874,37 +874,45 @@ SPDX-License-Identifier: GPL-3.0-only
                 </StackPanel>
               </Grid>
               <Border x:Name="StorageLegendCard"
-                      Classes="uiSettingsGroup storageLegendCard"
-                      HorizontalAlignment="Center">
+                      Classes="storageLegendCard"
+                      HorizontalAlignment="Stretch">
                 <ItemsControl ItemsSource="{Binding StorageUsageItems}">
                   <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
-                      <WrapPanel Width="620" ItemWidth="310" />
+                      <UniformGrid Columns="2"
+                                   ColumnSpacing="2"
+                                   RowSpacing="2" />
                     </ItemsPanelTemplate>
                   </ItemsControl.ItemsPanel>
                   <ItemsControl.ItemTemplate>
                     <DataTemplate x:DataType="controls:StorageDonutSegment">
-                      <Grid MinHeight="30"
-                            Margin="6,0"
-                            ColumnDefinitions="Auto,*,Auto"
-                            ColumnSpacing="10">
-                        <Border Width="9"
-                                Height="9"
-                                CornerRadius="999"
-                                Background="{Binding Brush}"
-                                VerticalAlignment="Center" />
-                        <TextBlock Grid.Column="1"
-                                   Text="{Binding Label}"
-                                   Classes="storageLegendLabel"
-                                   VerticalAlignment="Center" />
-                        <StackPanel Grid.Column="2"
-                                    Orientation="Horizontal"
-                                    Spacing="8"
-                                    VerticalAlignment="Center">
-                          <TextBlock Text="{Binding Percentage}" Classes="storageLegendPercent" />
-                          <TextBlock Text="{Binding DisplaySize}" Classes="storageLegendSize" />
-                        </StackPanel>
-                      </Grid>
+                      <Border Classes="storageLegendItem">
+                        <Grid RowDefinitions="Auto,Auto" RowSpacing="3">
+                          <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="7">
+                            <Border Width="8"
+                                    Height="8"
+                                    CornerRadius="999"
+                                    Background="{Binding Brush}"
+                                    VerticalAlignment="Center" />
+                            <TextBlock Text="{Binding Label}"
+                                       Grid.Column="1"
+                                       Classes="storageLegendLabel"
+                                       VerticalAlignment="Center" />
+                            <Border Grid.Column="2"
+                                    Classes="storageLegendCount"
+                                    IsVisible="{Binding HasCount}">
+                              <TextBlock Text="{Binding Count}" />
+                            </Border>
+                          </Grid>
+                          <Grid Grid.Row="1" ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                            <TextBlock Text="{Binding DisplaySize}"
+                                       Classes="storageLegendSize" />
+                            <TextBlock Grid.Column="1"
+                                       Text="{Binding Percentage}"
+                                       Classes="storageLegendPercent" />
+                          </Grid>
+                        </Grid>
+                      </Border>
                     </DataTemplate>
                   </ItemsControl.ItemTemplate>
                 </ItemsControl>

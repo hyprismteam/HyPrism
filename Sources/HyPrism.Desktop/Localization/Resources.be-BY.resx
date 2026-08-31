@@ -1697,7 +1697,6 @@ SPDX-License-Identifier: GPL-3.0-only
   </data>
   <data name="settings.dataSettings.launcherFiles" xml:space="preserve"><value>Файлы праграмы запуску</value></data>
   <data name="settings.dataSettings.storageUsed" xml:space="preserve"><value>Занята</value></data>
-  <data name="settings.dataSettings.systemFiles" xml:space="preserve"><value>Сістэмныя файлы</value></data>
   <data name="settings.dataSettings.otherFiles" xml:space="preserve"><value>Іншыя файлы</value></data>
   <data name="settings.dataSettings.movingData" xml:space="preserve">
     <value>Перамяшчэнне дадзеных...</value>
