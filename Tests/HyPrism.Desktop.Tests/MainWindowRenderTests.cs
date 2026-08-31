@@ -237,16 +237,25 @@ public sealed class MainWindowRenderTests
         var profileEditorContent = view.FindControl<Grid>("ProfileEditorContent");
         var profileMain = view.FindControl<Grid>("ProfileMain");
         var profileMainWidthWithList = profileMain!.Bounds.Width;
+        var wizard = Assert.IsType<Border>(view.FindControl<Border>("ProfileCreatorScreen"));
+        var profileListHidden = WaitForAvaloniaPropertyAsync(
+            profilesListPane!,
+            Visual.BoundsProperty,
+            () => profilesListPane.Bounds.Width <= 0.5,
+            "profiles list width to collapse");
+        var wizardOpened = WaitForAvaloniaPropertyAsync(
+            wizard,
+            Visual.OpacityProperty,
+            () => wizard.IsEffectivelyVisible && wizard.Opacity >= 0.99,
+            "profile creator to finish opening");
         viewModel.ShowCreateChoiceCommand.Execute(null);
         Assert.True(profileOverview!.IsVisible);
         Assert.True(profileEditorContent!.IsVisible);
         Assert.True(viewModel.IsProfileEditorVisible);
-        await Task.Delay(420);
+        await Task.WhenAll(profileListHidden, wizardOpened);
         Dispatcher.UIThread.RunJobs();
-        var wizard = view.FindControl<Border>("ProfileCreatorScreen");
-        Assert.NotNull(wizard);
-        Assert.True(wizard!.IsEffectivelyVisible);
-        Assert.Equal(0, profilesListPane!.Bounds.Width);
+        Assert.True(wizard.IsEffectivelyVisible);
+        Assert.InRange(profilesListPane.Bounds.Width, 0, 0.5);
         Assert.Equal(0, profilesListPane.Opacity);
         Assert.False(profilesListPane.IsHitTestVisible);
         Assert.True(profileMain.Bounds.Width > profileMainWidthWithList + 275);
@@ -338,14 +347,35 @@ public sealed class MainWindowRenderTests
         Assert.False(profileCreationChoice.IsVisible);
         Assert.True(offlineProfileCreation.IsVisible);
 
+        var profileListWidthRestored = WaitForAvaloniaPropertyAsync(
+            profilesListPane,
+            Visual.BoundsProperty,
+            () => profilesListPane.Bounds.Width >= 275.5,
+            "profiles list width to be restored");
+        var profileListOpacityRestored = WaitForAvaloniaPropertyAsync(
+            profilesListPane,
+            Visual.OpacityProperty,
+            () => profilesListPane.Opacity >= 0.99,
+            "profiles list opacity to be restored");
         viewModel.CancelCreationCommand.Execute(null);
-        await Task.Delay(420);
+        await Task.WhenAll(profileListWidthRestored, profileListOpacityRestored);
         Dispatcher.UIThread.RunJobs();
-        Assert.Equal(276, profilesListPane.Bounds.Width);
-        Assert.Equal(1, profilesListPane.Opacity);
+        Assert.InRange(profilesListPane.Bounds.Width, 275.5, 276.5);
+        Assert.InRange(profilesListPane.Opacity, 0.99, 1);
         Assert.True(profilesListPane.IsHitTestVisible);
+        var wizardTranslation = Assert.IsType<TranslateTransform>(wizard.RenderTransform);
+        var wizardReopened = WaitForAvaloniaPropertyAsync(
+            wizard,
+            Visual.OpacityProperty,
+            () => wizard.IsEffectivelyVisible && wizard.Opacity >= 0.99,
+            "profile creator to finish reopening");
+        var wizardTranslationReset = WaitForAvaloniaPropertyAsync(
+            wizardTranslation,
+            TranslateTransform.XProperty,
+            () => Math.Abs(wizardTranslation.X) < 0.01,
+            "profile creator translation to reset");
         viewModel.ShowCreateChoiceCommand.Execute(null);
-        await Task.Delay(420);
+        await Task.WhenAll(wizardReopened, wizardTranslationReset);
         Dispatcher.UIThread.RunJobs();
 
         Assert.True(profileCreationChoice.IsEffectivelyVisible);
@@ -354,8 +384,13 @@ public sealed class MainWindowRenderTests
             0,
             Assert.IsType<TranslateTransform>(profileCreationChoice.RenderTransform).X);
 
+        var wizardClosed = WaitForAvaloniaPropertyAsync(
+            wizard,
+            Visual.IsVisibleProperty,
+            () => !wizard.IsVisible,
+            "profile creator to finish closing");
         viewModel.CancelCreationCommand.Execute(null);
-        await Task.Delay(220);
+        await wizardClosed;
         window.Width = 760;
         Dispatcher.UIThread.RunJobs();
         var activeCard = view.GetVisualDescendants()
