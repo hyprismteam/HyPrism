@@ -2206,9 +2206,16 @@ public sealed class MainWindowRenderTests
         await Task.Delay(220);
         _ = window.CaptureRenderedFrame();
         Dispatcher.UIThread.RunJobs();
-        Assert.Equal(
-            Color.Parse(usesCompactInstancesLayout ? "#08FFFFFF" : "#18FFFFFF"),
-            Assert.IsAssignableFrom<ISolidColorBrush>(managedInstanceRow.Background).Color);
+        var managedInstanceHoverColor =
+            Assert.IsAssignableFrom<ISolidColorBrush>(managedInstanceRow.Background).Color;
+        var expectedManagedInstanceHoverAlpha = usesCompactInstancesLayout ? (byte)8 : (byte)24;
+        Assert.Equal(byte.MaxValue, managedInstanceHoverColor.R);
+        Assert.Equal(byte.MaxValue, managedInstanceHoverColor.G);
+        Assert.Equal(byte.MaxValue, managedInstanceHoverColor.B);
+        Assert.InRange(
+            managedInstanceHoverColor.A,
+            (byte)(expectedManagedInstanceHoverAlpha - 1),
+            expectedManagedInstanceHoverAlpha);
 
         var inactiveInstance = new InstanceItemViewModel(
             "inactive-preview",

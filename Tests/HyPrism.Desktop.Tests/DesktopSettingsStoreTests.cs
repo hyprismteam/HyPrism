@@ -135,7 +135,7 @@ public sealed class DesktopSettingsStoreTests : IDisposable
     public async Task GetLauncherStorageUsageAsync_GroupsFilesByPurposeWithoutDoubleCountingInstances()
     {
         var baseline = await _settings.GetLauncherStorageUsageAsync(TestContext.Current.CancellationToken);
-        await WriteSizedFileAsync(Path.Combine(_directory, "config.json"), 11);
+        await WriteSizedFileAsync(Path.Combine(_directory, "Preferences", "custom.bin"), 11);
         await WriteSizedFileAsync(Path.Combine(_directory, "Cache", "Images", "News", "cover.bin"), 13);
         await WriteSizedFileAsync(Path.Combine(_directory, "Cache", "News", "Article-test.json"), 19);
         await WriteSizedFileAsync(Path.Combine(_settings.DefaultInstanceDirectory, "release", "Mods", "mod.jar"), 17);
