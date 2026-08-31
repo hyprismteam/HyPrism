@@ -43,7 +43,7 @@ The `Version` property in `Sources/HyPrism.Desktop/HyPrism.Desktop.csproj` is th
 
 ## GitHub Actions
 
-`.github/workflows/ci.yml` is the push and pull request entry point. It calls the independent test workflow and the build dispatcher. `.github/workflows/build.yml` only selects platforms, while `build-linux.yml`, `build-windows.yml`, and `build-macos.yml` own their platform packaging
+`.github/workflows/ci.yml` is the push and pull request entry point. It exposes separate Core, Desktop, Local Node, and Packaging check groups. Each test group calls its own reusable matrix workflow, while Packaging uses the build dispatcher. `.github/workflows/build.yml` only selects platforms, while `build-linux.yml`, `build-windows.yml`, and `build-macos.yml` own their platform packaging
 
 The current CI artifacts are Linux x64 `deb`, `rpm`, AppImage, Flatpak bundle, and `tar.xz`, Windows x64 portable ZIP, MSI, and EXE installer, and a macOS ARM64 DMG. Release builds reuse the same platform workflows and pass the release version into artifact names
 

@@ -224,9 +224,13 @@ public partial class RuntimeProvisioner : IRuntimeProvisioner
 
         if (!string.IsNullOrWhiteSpace(expectedSha256))
         {
-            await using var archiveStream = File.OpenRead(archivePath);
-            var actualSha256 = Convert.ToHexString(
-                await SHA256.HashDataAsync(archiveStream, cancellationToken));
+            string actualSha256;
+            await using (var archiveStream = File.OpenRead(archivePath))
+            {
+                actualSha256 = Convert.ToHexString(
+                    await SHA256.HashDataAsync(archiveStream, cancellationToken));
+            }
+
             if (!actualSha256.Equals(expectedSha256, StringComparison.OrdinalIgnoreCase))
             {
                 File.Delete(archivePath);

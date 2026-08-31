@@ -43,7 +43,7 @@ Windows publisher проверяет наличие `HyPrism.Desktop.exe` и `Hy
 
 ## GitHub Actions
 
-`.github/workflows/ci.yml` является точкой входа для push и pull request. Он вызывает независимый workflow тестов и диспетчер сборки. `.github/workflows/build.yml` только выбирает платформы, а `build-linux.yml`, `build-windows.yml` и `build-macos.yml` отвечают за упаковку своих платформ
+`.github/workflows/ci.yml` является точкой входа для push и pull request. Он показывает отдельные группы checks для Core, Desktop, Local Node и Packaging. Каждая тестовая группа вызывает свой reusable matrix workflow, а Packaging использует диспетчер сборки. `.github/workflows/build.yml` только выбирает платформы, а `build-linux.yml`, `build-windows.yml` и `build-macos.yml` отвечают за упаковку своих платформ
 
 Сейчас CI создает `deb`, `rpm`, AppImage, Flatpak bundle и `tar.xz` для Linux x64, портативный ZIP, MSI и EXE-инсталлятор для Windows x64 и DMG для macOS ARM64. Release-сборки повторно используют те же platform-workflow и передают версию релиза в имена артефактов
 

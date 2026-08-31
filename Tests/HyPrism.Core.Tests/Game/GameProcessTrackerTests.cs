@@ -235,9 +235,10 @@ public sealed class GameProcessTrackerTests
 
         if (OperatingSystem.IsWindows())
         {
-            startInfo.FileName = "cmd.exe";
-            startInfo.ArgumentList.Add("/c");
-            startInfo.ArgumentList.Add($"ping -n 2 127.0.0.1 > nul & exit {exitCode}");
+            var systemDirectory = Environment.GetFolderPath(Environment.SpecialFolder.System);
+            var pingPath = Path.Combine(systemDirectory, "PING.EXE");
+            startInfo.FileName = Path.Combine(systemDirectory, "cmd.exe");
+            startInfo.Arguments = $"/d /c \"{pingPath} -n 2 127.0.0.1 > nul & exit {exitCode}\"";
         }
         else
         {
@@ -260,9 +261,12 @@ public sealed class GameProcessTrackerTests
 
         if (OperatingSystem.IsWindows())
         {
-            startInfo.FileName = "cmd.exe";
-            startInfo.ArgumentList.Add("/c");
-            startInfo.ArgumentList.Add("ping -n 30 127.0.0.1 > nul");
+            startInfo.FileName = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.System),
+                "PING.EXE");
+            startInfo.ArgumentList.Add("-n");
+            startInfo.ArgumentList.Add("30");
+            startInfo.ArgumentList.Add("127.0.0.1");
         }
         else
         {

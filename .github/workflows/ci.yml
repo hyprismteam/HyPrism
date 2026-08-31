@@ -29,10 +29,20 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  tests:
-    uses: ./.github/workflows/tests.yml
+  core:
+    name: Core
+    uses: ./.github/workflows/test-core.yml
 
-  builds:
+  desktop:
+    name: Desktop
+    uses: ./.github/workflows/test-desktop.yml
+
+  local-node:
+    name: Local Node
+    uses: ./.github/workflows/test-local-node.yml
+
+  packaging:
+    name: Packaging
     uses: ./.github/workflows/build.yml
     with:
       platforms: all

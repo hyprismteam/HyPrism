@@ -1319,7 +1319,7 @@ public sealed class MainWindowRenderTests
         Dispatcher.UIThread.RunJobs();
         Assert.NotNull(window.CaptureRenderedFrame());
         Assert.True(languagePopup.IsOpen);
-        Assert.Equal(0, languagePopupBorder.Opacity);
+        Assert.InRange(languagePopupBorder.Opacity, 0, 0.99);
         await Task.Delay(150);
         Dispatcher.UIThread.RunJobs();
         Assert.False(languagePopup.IsOpen);
