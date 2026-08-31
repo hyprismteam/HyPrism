@@ -1528,7 +1528,7 @@ Bei Laufwerkswechsel muss das Spiel möglicherweise neu installiert werden.</val
     <value>Profil konnte nicht erstellt werden. Bitte versuche es erneut.</value>
   </data>
   <data name="profiles.wizard.loginHytale" xml:space="preserve">
-    <value>Mit Hytale anmelden</value>
+    <value>Anmelden</value>
   </data>
   <data name="profiles.wizard.nameDesc" xml:space="preserve">
     <value>Wähle einen Namen für dein Offline-Profil (3-16 Zeichen, englische Buchstaben, Ziffern, - und _)</value>

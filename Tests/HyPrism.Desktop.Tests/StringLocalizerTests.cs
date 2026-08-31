@@ -118,6 +118,30 @@ public sealed class StringLocalizerTests
     }
 
     [Theory]
+    [InlineData("be-BY", "Увайсці")]
+    [InlineData("de-DE", "Anmelden")]
+    [InlineData("en-US", "Sign in")]
+    [InlineData("es-ES", "Iniciar sesión")]
+    [InlineData("fr-FR", "Se connecter")]
+    [InlineData("it-IT", "Accedi")]
+    [InlineData("ja-JP", "サインイン")]
+    [InlineData("ko-KR", "로그인")]
+    [InlineData("pt-BR", "Entrar")]
+    [InlineData("ru-RU", "Войти")]
+    [InlineData("tr-TR", "Giriş yap")]
+    [InlineData("uk-UA", "Увійти")]
+    [InlineData("zh-CN", "登录")]
+    public void ProfileWizardSignInActionUsesConciseLocalizedLabel(
+        string language,
+        string expected)
+    {
+        using var culture = new CultureScope();
+        var localizer = new StringLocalizer(language);
+
+        Assert.Equal(expected, localizer["profiles.wizard.loginHytale"]);
+    }
+
+    [Theory]
     [InlineData("en-US", "Illustrations provided by Icons8", "Animated materials", "Animated icons provided by Lordicon")]
     [InlineData("ru-RU", "Иллюстрации предоставлены Icons8", "Анимированные материалы", "Анимированные иконки предоставлены Lordicon")]
     public void AboutPage_ProvidesVisualAttribution(

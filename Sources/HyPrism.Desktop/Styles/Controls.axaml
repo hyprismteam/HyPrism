@@ -429,19 +429,25 @@ SPDX-License-Identifier: GPL-3.0-only
   </Style>
 
   <Style Selector="Button.wizardAction">
-    <Setter Property="Height" Value="36" />
-    <Setter Property="MinWidth" Value="88" />
-    <Setter Property="Padding" Value="14,0" />
-    <Setter Property="Background" Value="#343539" />
+    <Setter Property="MinWidth" Value="112" />
+    <Setter Property="Height" Value="50" />
+    <Setter Property="Padding" Value="20,0" />
+    <Setter Property="Background" Value="Transparent" />
     <Setter Property="BorderThickness" Value="0" />
-    <Setter Property="CornerRadius" Value="10" />
-    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+    <Setter Property="CornerRadius" Value="14" />
+    <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
     <Setter Property="FontWeight" Value="SemiBold" />
     <Setter Property="HorizontalContentAlignment" Value="Center" />
     <Setter Property="VerticalContentAlignment" Value="Center" />
     <Setter Property="RenderTransform" Value="{x:Null}" />
     <Setter Property="Transitions">
       <Transitions>
+        <DoubleTransition Property="Width" Duration="0:0:0.34">
+          <DoubleTransition.Easing><easing:CubicEaseInOut /></DoubleTransition.Easing>
+        </DoubleTransition>
+        <DoubleTransition Property="Opacity" Duration="0:0:0.24">
+          <DoubleTransition.Easing><easing:CubicEaseOut /></DoubleTransition.Easing>
+        </DoubleTransition>
         <BrushTransition Property="Background" Duration="0:0:0.16" />
         <BrushTransition Property="Foreground" Duration="0:0:0.16" />
       </Transitions>
@@ -449,25 +455,33 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="Template">
       <ControlTemplate>
         <Border Background="{TemplateBinding Background}"
-                CornerRadius="{TemplateBinding CornerRadius}">
+                CornerRadius="{TemplateBinding CornerRadius}"
+                Padding="{TemplateBinding Padding}">
           <ContentPresenter Content="{TemplateBinding Content}"
                             ContentTemplate="{TemplateBinding ContentTemplate}"
                             Foreground="{TemplateBinding Foreground}"
-                            HorizontalAlignment="Center"
+                            HorizontalAlignment="Stretch"
                             VerticalAlignment="Center"
-                            HorizontalContentAlignment="Center"
-                            VerticalContentAlignment="Center" />
+                            HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                            VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
         </Border>
       </ControlTemplate>
     </Setter>
   </Style>
 
   <Style Selector="Button.wizardAction:pointerover">
-    <Setter Property="Background" Value="#414247" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
   </Style>
 
   <Style Selector="Button.wizardAction.create">
+    <Setter Property="MinWidth" Value="150" />
     <Setter Property="Background" Value="{DynamicResource TextPrimaryBrush}" />
+    <Setter Property="Foreground" Value="#111111" />
+  </Style>
+
+  <Style Selector="Button.wizardAction.create:pointerover">
+    <Setter Property="Background" Value="White" />
     <Setter Property="Foreground" Value="#111111" />
   </Style>
 

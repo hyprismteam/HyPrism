@@ -1528,7 +1528,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>프로필 생성에 실패했습니다. 다시 시도하세요.</value>
   </data>
   <data name="profiles.wizard.loginHytale" xml:space="preserve">
-    <value>Hytale로 로그인</value>
+    <value>로그인</value>
   </data>
   <data name="profiles.wizard.nameDesc" xml:space="preserve">
     <value>오프라인 프로필의 이름을 선택하세요 (3-16자, 영문, 숫자, -와 _)</value>

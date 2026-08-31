@@ -1528,7 +1528,7 @@ Você pode precisar reinstalar o jogo se trocar de unidade.</value>
     <value>Falha ao criar o perfil. Por favor, tente novamente.</value>
   </data>
   <data name="profiles.wizard.loginHytale" xml:space="preserve">
-    <value>Entrar com Hytale</value>
+    <value>Entrar</value>
   </data>
   <data name="profiles.wizard.nameDesc" xml:space="preserve">
     <value>Escolha um nome para seu perfil offline (3-16 caracteres, letras inglesas, dígitos, - e _)</value>

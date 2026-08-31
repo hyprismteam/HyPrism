@@ -1528,7 +1528,7 @@ Sürücü değiştirirseniz oyunu yeniden yüklemeniz gerekebilir.</value>
     <value>Profil oluşturulamadı. Lütfen tekrar deneyin.</value>
   </data>
   <data name="profiles.wizard.loginHytale" xml:space="preserve">
-    <value>Hytale ile Giriş Yap</value>
+    <value>Giriş yap</value>
   </data>
   <data name="profiles.wizard.nameDesc" xml:space="preserve">
     <value>Çevrimdışı profiliniz için bir ad seçin (3-16 karakter, İngilizce harfler, rakamlar, - ve _)</value>

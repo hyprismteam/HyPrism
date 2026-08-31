@@ -30,6 +30,8 @@ public sealed partial class ProfilesViewModel : ObservableObject, IDisposable
     private readonly IHytaleAuthenticator? _authenticator;
     private readonly IExternalUriLauncher _uriLauncher;
     private readonly StringLocalizer _localizer;
+    private CancellationTokenSource? _authenticationCancellation;
+    private bool _isAuthenticationCancellationArmed;
     private bool _disposed;
 
     [ObservableProperty]
@@ -45,6 +47,7 @@ public sealed partial class ProfilesViewModel : ObservableObject, IDisposable
     private bool _isCreationVisible;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsAuthenticationCancellationArmed))]
     private bool _isAuthenticating;
 
     [ObservableProperty]
@@ -107,6 +110,8 @@ public sealed partial class ProfilesViewModel : ObservableObject, IDisposable
     public bool IsCreateChoiceVisible => _creationStep is ProfileCreationStep.ChooseType;
     public bool IsOfflineCreationVisible => _creationStep is ProfileCreationStep.Offline;
     public bool IsOfficialCreationVisible => _creationStep is ProfileCreationStep.Official;
+    public bool IsAuthenticationCancellationArmed =>
+        IsAuthenticating && _isAuthenticationCancellationArmed;
 
     public string SavedProfilesLabel => _localizer["profiles.savedProfiles"];
     public string EditorLabel => _localizer["profiles.editor"];
@@ -129,7 +134,6 @@ public sealed partial class ProfilesViewModel : ObservableObject, IDisposable
     public string AuthenticationHint => _localizer["profiles.wizard.authDesc"];
     public string BrowserHint => _localizer["profiles.wizard.browserHint"];
     public string SignInLabel => _localizer["profiles.wizard.loginHytale"];
-    public string WaitingForSignInLabel => _localizer["profiles.wizard.waitingAuth"];
     public string CreateLabel => _localizer["profiles.wizard.create"];
     public string AddLabel => _localizer["profiles.createNew"];
     public string CancelLabel => _localizer["common.cancel"];
@@ -234,7 +238,7 @@ public sealed partial class ProfilesViewModel : ObservableObject, IDisposable
                      nameof(ProfileNameHint), nameof(UuidLabel), nameof(UuidHint), nameof(NamePlaceholder),
                      nameof(CreateOfflineTitle), nameof(CreateOfflineHint), nameof(AuthenticationTitle),
                      nameof(AuthenticationHint), nameof(BrowserHint), nameof(SignInLabel),
-                     nameof(WaitingForSignInLabel), nameof(CreateLabel), nameof(AddLabel),
+                     nameof(CreateLabel), nameof(AddLabel),
                      nameof(CancelLabel), nameof(BackLabel), nameof(SaveLabel), nameof(EditLabel),
                      nameof(CopyLabel), nameof(FolderLabel), nameof(DeleteActionLabel), nameof(ActivationLabel), nameof(ActiveLabel), nameof(DeleteLabel), nameof(DuplicateLabel),
                      nameof(RandomizeNameLabel), nameof(RandomizeUuidLabel), nameof(OfficialLockedLabel),
@@ -316,6 +320,7 @@ public sealed partial class ProfilesViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private void CancelCreation()
     {
+        _authenticationCancellation?.Cancel();
         ClearStatus();
         IsCreationVisible = false;
     }
@@ -331,6 +336,7 @@ public sealed partial class ProfilesViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private void ReturnToCreationChoice()
     {
+        _authenticationCancellation?.Cancel();
         ClearStatus();
         SetCreationStep(ProfileCreationStep.ChooseType);
     }
@@ -366,20 +372,36 @@ public sealed partial class ProfilesViewModel : ObservableObject, IDisposable
         SetStatus(_localizer["profiles.saved"], isError: false);
     }
 
-    [RelayCommand(AllowConcurrentExecutions = false)]
+    [RelayCommand(AllowConcurrentExecutions = true)]
     private async Task SignInWithHytaleAsync()
     {
-        if (_authenticator is null || IsAuthenticating)
+        if (IsAuthenticating)
+        {
+            if (IsAuthenticationCancellationArmed)
+                _authenticationCancellation?.Cancel();
+
+            return;
+        }
+
+        if (_authenticator is null)
         {
             SetStatus(_localizer["profiles.wizard.authFailed"], isError: true);
             return;
         }
 
+        using var authenticationCancellation = new CancellationTokenSource();
+        _authenticationCancellation = authenticationCancellation;
+        _isAuthenticationCancellationArmed = false;
         IsAuthenticating = true;
         ClearStatus();
         try
         {
-            var session = await _authenticator.LoginAsync(_uriLauncher.LaunchAsync);
+            var session = await _authenticator.LoginAsync(
+                _uriLauncher.LaunchAsync,
+                authenticationCancellation.Token);
+            if (authenticationCancellation.IsCancellationRequested)
+                return;
+
             if (session is null)
             {
                 SetStatus(_localizer["profiles.wizard.authFailed"], isError: true);
@@ -424,14 +446,31 @@ public sealed partial class ProfilesViewModel : ObservableObject, IDisposable
                 new ActiveProfileChangedEventArgs(firstProfile.Name, firstProfile.IsOfficial));
             SetStatus(_localizer["profiles.saved"], isError: false);
         }
+        catch (OperationCanceledException) when (authenticationCancellation.IsCancellationRequested)
+        {
+            ClearStatus();
+        }
         catch
         {
             SetStatus(_localizer["profiles.wizard.authError"], isError: true);
         }
         finally
         {
+            if (ReferenceEquals(_authenticationCancellation, authenticationCancellation))
+                _authenticationCancellation = null;
+
+            _isAuthenticationCancellationArmed = false;
             IsAuthenticating = false;
         }
+    }
+
+    public void ArmAuthenticationCancellation()
+    {
+        if (!IsAuthenticating || _isAuthenticationCancellationArmed)
+            return;
+
+        _isAuthenticationCancellationArmed = true;
+        OnPropertyChanged(nameof(IsAuthenticationCancellationArmed));
     }
 
     [RelayCommand]
@@ -656,6 +695,7 @@ public sealed partial class ProfilesViewModel : ObservableObject, IDisposable
             return;
 
         _disposed = true;
+        _authenticationCancellation?.Cancel();
         _profileRepository.ProfilesChanged -= OnProfilesChanged;
         _profileManager.ProfilesChanged -= OnProfilesChanged;
         foreach (var profile in Profiles)

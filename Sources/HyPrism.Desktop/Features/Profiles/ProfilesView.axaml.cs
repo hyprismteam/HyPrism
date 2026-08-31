@@ -192,6 +192,12 @@ public sealed partial class ProfilesView : UserControl
             () => viewModel.IsCreationVisible);
     }
 
+    private void OnAuthenticationActionPointerExited(object? sender, PointerEventArgs args)
+    {
+        if (DataContext is ProfilesViewModel viewModel)
+            viewModel.ArmAuthenticationCancellation();
+    }
+
     private void OnCompactProfilesBackClicked(object? sender, RoutedEventArgs args)
         => TryCloseCompactContent();
 

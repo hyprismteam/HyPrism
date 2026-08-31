@@ -1528,7 +1528,7 @@ Vous devrez peut-être réinstaller le jeu si vous changez de lecteur.</value>
     <value>Échec de la création du profil. Réessaie.</value>
   </data>
   <data name="profiles.wizard.loginHytale" xml:space="preserve">
-    <value>Se Connecter avec Hytale</value>
+    <value>Se connecter</value>
   </data>
   <data name="profiles.wizard.nameDesc" xml:space="preserve">
     <value>Choisis un nom pour ton profil hors ligne (3-16 caractères, lettres anglaises, chiffres, - et _)</value>

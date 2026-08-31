@@ -75,6 +75,61 @@ public sealed class ProfilesViewModelTests
     }
 
     [AvaloniaFact]
+    public async Task OfficialSignInRequiresPointerReentryBeforeItCanBeCancelled()
+    {
+        var profileManager = new Mock<IProfileManager>();
+        var profileRepository = new Mock<IProfileRepository>();
+        var uriLauncher = new Mock<IExternalUriLauncher>();
+        var authenticator = new Mock<IHytaleAuthenticator>();
+        var authenticationStarted = new TaskCompletionSource<CancellationToken>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        profileRepository.Setup(repository => repository.GetProfiles()).Returns([]);
+        authenticator.Setup(service => service.LoginAsync(
+                It.IsAny<AuthUriPresenter>(),
+                It.IsAny<CancellationToken>()))
+            .Returns<AuthUriPresenter, CancellationToken>(async (_, cancellationToken) =>
+            {
+                authenticationStarted.TrySetResult(cancellationToken);
+                var authenticationCompletion = new TaskCompletionSource<HytaleAuthSession?>(
+                    TaskCreationOptions.RunContinuationsAsynchronously);
+                using var registration = cancellationToken.Register(
+                    () => authenticationCompletion.TrySetCanceled(cancellationToken));
+                return await authenticationCompletion.Task;
+            });
+
+        using var viewModel = new ProfilesViewModel(
+            profileManager.Object,
+            profileRepository.Object,
+            uriLauncher.Object,
+            new StringLocalizer("en-US"),
+            authenticator.Object);
+        viewModel.ShowCreateChoiceCommand.Execute(null);
+        viewModel.BeginOfficialCreationCommand.Execute(null);
+
+        var authentication = viewModel.SignInWithHytaleCommand.ExecuteAsync(null);
+        var cancellationToken = await authenticationStarted.Task.WaitAsync(TimeSpan.FromSeconds(2));
+
+        Assert.True(viewModel.IsAuthenticating);
+        Assert.False(viewModel.IsAuthenticationCancellationArmed);
+        Assert.False(cancellationToken.IsCancellationRequested);
+
+        viewModel.SignInWithHytaleCommand.Execute(null);
+
+        Assert.False(cancellationToken.IsCancellationRequested);
+
+        viewModel.ArmAuthenticationCancellation();
+        Assert.True(viewModel.IsAuthenticationCancellationArmed);
+
+        viewModel.SignInWithHytaleCommand.Execute(null);
+        await authentication.WaitAsync(TimeSpan.FromSeconds(2));
+
+        Assert.True(cancellationToken.IsCancellationRequested);
+        Assert.False(viewModel.IsAuthenticating);
+        Assert.False(viewModel.IsAuthenticationCancellationArmed);
+        Assert.False(viewModel.HasStatusMessage);
+    }
+
+    [AvaloniaFact]
     public void CreateOfflineProfile_ActivatesAndSelectsNewProfile()
     {
         var profiles = new List<Profile>

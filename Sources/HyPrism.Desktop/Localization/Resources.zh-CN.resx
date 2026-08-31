@@ -1528,7 +1528,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>创建配置文件失败。请重试。</value>
   </data>
   <data name="profiles.wizard.loginHytale" xml:space="preserve">
-    <value>使用 Hytale 登录</value>
+    <value>登录</value>
   </data>
   <data name="profiles.wizard.nameDesc" xml:space="preserve">
     <value>为您的离线配置文件选择名称（3-16 个字符，英文字母、数字、- 和 _）</value>

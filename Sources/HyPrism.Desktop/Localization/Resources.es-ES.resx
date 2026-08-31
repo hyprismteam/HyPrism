@@ -1528,7 +1528,7 @@ Es posible que necesites reinstalar el juego si cambias de unidad.</value>
     <value>Error al crear el perfil. Por favor, inténtalo de nuevo.</value>
   </data>
   <data name="profiles.wizard.loginHytale" xml:space="preserve">
-    <value>Iniciar sesión con Hytale</value>
+    <value>Iniciar sesión</value>
   </data>
   <data name="profiles.wizard.nameDesc" xml:space="preserve">
     <value>Elige un nombre para tu perfil sin conexión (3-16 caracteres, letras inglesas, dígitos, - y _)</value>

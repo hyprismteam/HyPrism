@@ -1651,7 +1651,7 @@ You may need to reinstall the game if switching drives.</value>
     <value>Failed to create profile. Please try again.</value>
   </data>
   <data name="profiles.wizard.loginHytale" xml:space="preserve">
-    <value>Sign in with Hytale</value>
+    <value>Sign in</value>
   </data>
   <data name="profiles.wizard.nameDesc" xml:space="preserve">
     <value>Pick a name for your offline profile (3-16 characters, English letters, digits, - and _)</value>

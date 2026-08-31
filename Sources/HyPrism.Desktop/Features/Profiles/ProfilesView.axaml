@@ -33,6 +33,30 @@ SPDX-License-Identifier: GPL-3.0-only
                    VerticalAlignment="Center" />
       </Grid>
     </DataTemplate>
+
+    <DataTemplate x:Key="OfficialSignInActionTemplate" x:DataType="profiles:ProfilesViewModel">
+      <Grid Classes="managedActionContent">
+        <StackPanel Classes="managedActionIdle"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center">
+          <TextBlock Text="{Binding SignInLabel}"
+                     VerticalAlignment="Center" />
+        </StackPanel>
+
+        <Grid Classes="managedActionProgress"
+              VerticalAlignment="Center">
+          <Path Classes="managedActionSpinner"
+                controls:RotatingVisual.IsActive="{Binding IsAuthenticating}"
+                HorizontalAlignment="Center"
+                Data="M10,2 A8,8 0 1 1 2,10" />
+        </Grid>
+
+        <TextBlock Classes="managedActionCancel"
+                   Text="{Binding CancelLabel}"
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Center" />
+      </Grid>
+    </DataTemplate>
   </UserControl.Resources>
 
   <UserControl.Styles>
@@ -165,6 +189,29 @@ SPDX-License-Identifier: GPL-3.0-only
 
     <Style Selector="TextBlock.profileStatusText.error">
       <Setter Property="Foreground" Value="{DynamicResource DangerSoftBrush}" />
+    </Style>
+
+    <Style Selector="Button.officialSignInAction">
+      <Setter Property="Width" Value="150" />
+      <Setter Property="CornerRadius" Value="14" />
+      <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    </Style>
+
+    <Style Selector="Button.officialSignInAction.active, Button.officialSignInAction.active:pointerover">
+      <Setter Property="Width" Value="272" />
+      <Setter Property="Background" Value="{DynamicResource TextPrimaryBrush}" />
+      <Setter Property="Foreground" Value="#111111" />
+    </Style>
+
+    <Style Selector="Button.officialSignInAction.active.cancelArmed:pointerover">
+      <Setter Property="Background" Value="{DynamicResource DangerActionBrush}" />
+      <Setter Property="Foreground" Value="White" />
+    </Style>
+
+    <Style Selector="Button.officialSignInAction.active Grid.managedActionContent">
+      <Setter Property="Width" Value="232" />
+      <Setter Property="MinWidth" Value="232" />
+      <Setter Property="MaxWidth" Value="232" />
     </Style>
 
   </UserControl.Styles>
@@ -791,7 +838,8 @@ SPDX-License-Identifier: GPL-3.0-only
                 </StackPanel>
               </Border>
 
-              <Button Classes="wizardAction"
+              <Button x:Name="ProfileCreationCancelButton"
+                      Classes="wizardAction"
                       HorizontalAlignment="Center"
                       Margin="0,10,0,0"
                       Command="{Binding CancelCreationCommand}">
@@ -899,24 +947,31 @@ SPDX-License-Identifier: GPL-3.0-only
                            TextAlignment="Center" />
               </Border>
 
-              <StackPanel Orientation="Horizontal"
-                          HorizontalAlignment="Center"
-                          Margin="0,10,0,0"
-                          Spacing="10">
-                <Button Classes="wizardAction"
-                        IsEnabled="{Binding !IsAuthenticating}"
+              <Grid x:Name="OfficialProfileSignInActions"
+                    Width="272"
+                    Height="50"
+                    ColumnDefinitions="112,10,150"
+                    HorizontalAlignment="Center"
+                    Margin="0,10,0,0">
+                <Button x:Name="OfficialProfileCreationBackButton"
+                        Classes="wizardAction"
                         Click="OnReturnToProfileCreationChoiceClicked">
                   <TextBlock Text="{Binding BackLabel}" />
                 </Button>
-                <Button Classes="wizardAction create"
-                        IsEnabled="{Binding !IsAuthenticating}"
+
+                <Button x:Name="OfficialProfileSignInButton"
+                        Grid.Column="2"
+                        ZIndex="1"
+                        HorizontalAlignment="Right"
+                        Classes="wizardAction create officialSignInAction"
+                        Classes.active="{Binding IsAuthenticating}"
+                        Classes.cancelArmed="{Binding IsAuthenticationCancellationArmed}"
+                        PointerExited="OnAuthenticationActionPointerExited"
                         Command="{Binding SignInWithHytaleCommand}">
-                  <Grid>
-                    <TextBlock IsVisible="{Binding !IsAuthenticating}" Text="{Binding SignInLabel}" />
-                    <TextBlock IsVisible="{Binding IsAuthenticating}" Text="{Binding WaitingForSignInLabel}" />
-                  </Grid>
+                  <ContentControl Content="{Binding}"
+                                  ContentTemplate="{StaticResource OfficialSignInActionTemplate}" />
                 </Button>
-              </StackPanel>
+              </Grid>
             </StackPanel>
           </StackPanel>
         </ScrollViewer>

@@ -47,6 +47,59 @@ namespace HyPrism.Desktop.Tests;
 public sealed class MainWindowRenderTests
 {
     [AvaloniaFact]
+    public void WizardActionsUseSharedSeparatedAppearance()
+    {
+        var secondaryAction = new Button { Content = "Back" };
+        secondaryAction.Classes.Add("wizardAction");
+        var primaryAction = new Button { Content = "Continue" };
+        primaryAction.Classes.Add("wizardAction");
+        primaryAction.Classes.Add("create");
+        var actions = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 10,
+            Children =
+            {
+                secondaryAction,
+                primaryAction
+            }
+        };
+        var window = new Window
+        {
+            Width = 400,
+            Height = 200,
+            Content = actions
+        };
+
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.InRange(secondaryAction.Bounds.Width, 111.5, 112.5);
+        Assert.InRange(primaryAction.Bounds.Width, 149.5, 150.5);
+        Assert.InRange(secondaryAction.Bounds.Height, 49.5, 50.5);
+        Assert.InRange(primaryAction.Bounds.Height, 49.5, 50.5);
+        Assert.InRange(primaryAction.Bounds.X - secondaryAction.Bounds.Right, 9.5, 10.5);
+        Assert.Equal(
+            0,
+            Assert.IsAssignableFrom<ISolidColorBrush>(secondaryAction.Background).Color.A);
+        Assert.True(
+            Assert.IsAssignableFrom<ISolidColorBrush>(primaryAction.Background).Color.A > 0);
+
+        var secondaryPoint = secondaryAction.TranslatePoint(
+            new Point(secondaryAction.Bounds.Width / 2, secondaryAction.Bounds.Height / 2),
+            window);
+        Assert.NotNull(secondaryPoint);
+        window.MouseMove(secondaryPoint!.Value);
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.True(secondaryAction.IsPointerOver);
+        Assert.Equal(
+            0,
+            Assert.IsAssignableFrom<ISolidColorBrush>(secondaryAction.Background).Color.A);
+        window.Close();
+    }
+
+    [AvaloniaFact]
     public async Task ProfilesViewUsesInstanceStyleCardsMenusAndWizardScreen()
     {
         var profiles = new List<Profile>
@@ -367,6 +420,202 @@ public sealed class MainWindowRenderTests
                 PngBitmapEncoderOptions.Default);
         }
 
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public async Task OfficialProfileWizardUsesSeparateOverlappingSignInAction()
+    {
+        var profileManager = new Mock<IProfileManager>();
+        var profileRepository = new Mock<IProfileRepository>();
+        var uriLauncher = new Mock<IExternalUriLauncher>();
+        var authenticator = new Mock<IHytaleAuthenticator>();
+        var authenticationStarted = new TaskCompletionSource<CancellationToken>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        profileRepository.Setup(repository => repository.GetProfiles()).Returns([]);
+        authenticator.Setup(service => service.LoginAsync(
+                It.IsAny<AuthUriPresenter>(),
+                It.IsAny<CancellationToken>()))
+            .Returns<AuthUriPresenter, CancellationToken>(async (_, cancellationToken) =>
+            {
+                authenticationStarted.TrySetResult(cancellationToken);
+                var authenticationCompletion = new TaskCompletionSource<HytaleAuthSession?>(
+                    TaskCreationOptions.RunContinuationsAsynchronously);
+                using var registration = cancellationToken.Register(
+                    () => authenticationCompletion.TrySetCanceled(cancellationToken));
+                return await authenticationCompletion.Task;
+            });
+
+        using var viewModel = new ProfilesViewModel(
+            profileManager.Object,
+            profileRepository.Object,
+            uriLauncher.Object,
+            new StringLocalizer("en-US"),
+            authenticator.Object);
+        var view = new ProfilesView { DataContext = viewModel };
+        var window = new Window
+        {
+            Width = 900,
+            Height = 700,
+            Content = view
+        };
+
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        var creator = view.FindControl<Border>("ProfileCreatorScreen")!;
+        var creatorOpened = WaitForAvaloniaPropertyAsync(
+            creator,
+            Visual.OpacityProperty,
+            () => creator.IsEffectivelyVisible && creator.Opacity >= 0.99,
+            "official profile wizard to finish opening");
+        viewModel.ShowCreateChoiceCommand.Execute(null);
+        await creatorOpened;
+        Dispatcher.UIThread.RunJobs();
+
+        var initialCancelButton = view.FindControl<Button>("ProfileCreationCancelButton")!;
+        Assert.Contains("wizardAction", initialCancelButton.Classes);
+        Assert.InRange(initialCancelButton.Bounds.Width, 111.5, 112.5);
+        Assert.Equal(
+            0,
+            Assert.IsAssignableFrom<ISolidColorBrush>(initialCancelButton.Background).Color.A);
+
+        var profileWizardReveal = view.FindControl<WizardRevealIcon>("ProfileWizardReveal")!;
+        var officialContentActivated = WaitForAvaloniaPropertyAsync(
+            profileWizardReveal,
+            WizardRevealIcon.AnimationPathProperty,
+            () => profileWizardReveal.Animation.Path == "/Assets/Lotties/avatar-looking.json",
+            "official profile sign-in step to become active");
+        view.FindControl<Button>("BeginOfficialProfileCreationButton")!
+            .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        await officialContentActivated;
+        Dispatcher.UIThread.RunJobs();
+
+        var signInButton = view.FindControl<Button>("OfficialProfileSignInButton")!;
+        var backButton = view.FindControl<Button>("OfficialProfileCreationBackButton")!;
+        var actions = view.FindControl<Grid>("OfficialProfileSignInActions")!;
+        await WaitForAvaloniaPropertyAsync(
+            signInButton,
+            Visual.BoundsProperty,
+            () => signInButton.IsEffectivelyVisible && signInButton.Bounds.Width > 0,
+            "official profile sign-in action to finish layout");
+        Dispatcher.UIThread.RunJobs();
+        var progress = Assert.Single(
+            signInButton.GetVisualDescendants().OfType<Grid>(),
+            grid => grid.Classes.Contains("managedActionProgress"));
+        var spinner = Assert.Single(
+            progress.Children.OfType<Avalonia.Controls.Shapes.Path>(),
+            path => path.Classes.Contains("managedActionSpinner"));
+        var cancelLabel = Assert.Single(
+            signInButton.GetVisualDescendants().OfType<TextBlock>(),
+            text => text.Classes.Contains("managedActionCancel"));
+        var idleLabel = Assert.Single(
+            signInButton.GetVisualDescendants().OfType<TextBlock>(),
+            text => text.Text == "Sign in");
+
+        Assert.True(signInButton.IsEffectivelyVisible);
+        Assert.True(backButton.IsEffectivelyVisible);
+        Assert.Equal("Sign in", idleLabel.Text);
+        Assert.InRange(signInButton.Bounds.Width, 149.5, 150.5);
+        Assert.InRange(backButton.Bounds.Width, 111.5, 112.5);
+        Assert.InRange(backButton.Bounds.X, 0, 0.5);
+        Assert.InRange(signInButton.Bounds.X, 121.5, 122.5);
+        Assert.InRange(signInButton.Bounds.X - backButton.Bounds.Right, 9.5, 10.5);
+        Assert.Equal(
+            0,
+            Assert.IsAssignableFrom<ISolidColorBrush>(backButton.Background).Color.A);
+
+        var backActionPoint = backButton.TranslatePoint(
+            new Point(backButton.Bounds.Width / 2, backButton.Bounds.Height / 2),
+            window);
+        Assert.NotNull(backActionPoint);
+        window.MouseMove(backActionPoint!.Value);
+        Dispatcher.UIThread.RunJobs();
+        Assert.True(backButton.IsPointerOver);
+        Assert.Equal(
+            0,
+            Assert.IsAssignableFrom<ISolidColorBrush>(backButton.Background).Color.A);
+
+        var initialActionPoint = signInButton.TranslatePoint(
+            new Point(signInButton.Bounds.Width / 2, signInButton.Bounds.Height / 2),
+            window);
+        Assert.NotNull(initialActionPoint);
+        window.MouseMove(initialActionPoint!.Value);
+        Dispatcher.UIThread.RunJobs();
+        Assert.True(signInButton.IsPointerOver);
+
+        var actionExpanded = WaitForAvaloniaPropertyAsync(
+            signInButton,
+            Visual.BoundsProperty,
+            () => signInButton.Bounds.Width >= 271.5,
+            "official sign-in action to finish expanding");
+        var progressVisible = WaitForAvaloniaPropertyAsync(
+            progress,
+            Visual.OpacityProperty,
+            () => progress.Opacity >= 0.99,
+            "official sign-in spinner to finish appearing");
+        var authentication = viewModel.SignInWithHytaleCommand.ExecuteAsync(null);
+        var cancellationToken = await authenticationStarted.Task.WaitAsync(TimeSpan.FromSeconds(2));
+        await Task.WhenAll(actionExpanded, progressVisible);
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.Contains("active", signInButton.Classes);
+        Assert.DoesNotContain("cancelArmed", signInButton.Classes);
+        Assert.True(spinner.IsEffectivelyVisible);
+        Assert.InRange(progress.Opacity, 0.99, 1);
+        Assert.Equal(0, cancelLabel.Opacity);
+        Assert.InRange(signInButton.Bounds.Width, 271.5, 272.5);
+        Assert.InRange(signInButton.Bounds.X, 0, 0.5);
+        Assert.InRange(backButton.Bounds.Width, 111.5, 112.5);
+        Assert.True(backButton.IsEffectivelyVisible);
+        Assert.True(signInButton.Bounds.Contains(backButton.Bounds));
+        Assert.Equal(actions.Bounds.Width, signInButton.Bounds.Width, 0.5);
+
+        window.MouseDown(initialActionPoint.Value, MouseButton.Left);
+        window.MouseUp(initialActionPoint.Value, MouseButton.Left);
+        Dispatcher.UIThread.RunJobs();
+        Assert.False(cancellationToken.IsCancellationRequested);
+
+        window.MouseMove(new Point(window.Bounds.Width / 2, window.Bounds.Height - 8));
+        Dispatcher.UIThread.RunJobs();
+        Assert.Contains("cancelArmed", signInButton.Classes);
+
+        var cancelVisible = WaitForAvaloniaPropertyAsync(
+            cancelLabel,
+            Visual.OpacityProperty,
+            () => cancelLabel.Opacity >= 0.99,
+            "official sign-in cancel action to finish appearing");
+        var expandedActionPoint = signInButton.TranslatePoint(
+            new Point(signInButton.Bounds.Width / 2, signInButton.Bounds.Height / 2),
+            window);
+        Assert.NotNull(expandedActionPoint);
+        window.MouseMove(expandedActionPoint!.Value);
+        await cancelVisible;
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.True(signInButton.IsPointerOver);
+        Assert.Equal(
+            Color.Parse("#D83B45"),
+            Assert.IsAssignableFrom<ISolidColorBrush>(signInButton.Background).Color);
+        Assert.InRange(cancelLabel.Opacity, 0.99, 1);
+
+        var previewPath = Environment.GetEnvironmentVariable("HYPRISM_PROFILE_SIGN_IN_RENDER_OUTPUT");
+        if (!string.IsNullOrWhiteSpace(previewPath))
+        {
+            var previewDirectory = Path.GetDirectoryName(previewPath);
+            if (!string.IsNullOrWhiteSpace(previewDirectory))
+                Directory.CreateDirectory(previewDirectory);
+
+            window.CaptureRenderedFrame()!.Save(previewPath, PngBitmapEncoderOptions.Default);
+        }
+
+        window.MouseDown(expandedActionPoint.Value, MouseButton.Left);
+        window.MouseUp(expandedActionPoint.Value, MouseButton.Left);
+        await authentication.WaitAsync(TimeSpan.FromSeconds(2));
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.True(cancellationToken.IsCancellationRequested);
+        Assert.False(viewModel.IsAuthenticating);
+        Assert.False(viewModel.IsAuthenticationCancellationArmed);
         window.Close();
     }
 

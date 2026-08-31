@@ -1528,7 +1528,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>プロファイルの作成に失敗しました。もう一度お試しください。</value>
   </data>
   <data name="profiles.wizard.loginHytale" xml:space="preserve">
-    <value>Hytaleでサインイン</value>
+    <value>サインイン</value>
   </data>
   <data name="profiles.wizard.nameDesc" xml:space="preserve">
     <value>オフラインプロファイルの名前を選択（3-16文字、英字、数字、-と_）</value>

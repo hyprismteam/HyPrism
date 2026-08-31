@@ -1648,7 +1648,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>Не удалось создать профиль. Попробуйте ещё раз.</value>
   </data>
   <data name="profiles.wizard.loginHytale" xml:space="preserve">
-    <value>Войти через Hytale</value>
+    <value>Войти</value>
   </data>
   <data name="profiles.wizard.nameDesc" xml:space="preserve">
     <value>Придумайте имя для оффлайн-профиля (3-16 символов, английские буквы, цифры, - и _)</value>
