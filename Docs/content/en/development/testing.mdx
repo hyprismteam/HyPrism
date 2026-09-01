@@ -17,6 +17,8 @@ Core tests cover launch coordination and profile behavior. Local Node protocol, 
 
 CI presents Core, Desktop, Local Node, and Packaging as separate top-level check groups. Core, Desktop, and Local Node suites each run on Ubuntu, Windows, and macOS through their own reusable workflows. Matrix jobs use `fail-fast: false`, so one platform failure does not hide results from the other systems. Desktop coverage is headless and validates the Avalonia application on each operating system without opening a native compositor window. Platform package workflows separately publish the native target artifacts
 
+Desktop tests run sequentially because the Avalonia application, dispatcher, and compositor are shared process state. Render tests must wait for an observable final property or view-model state instead of treating a fixed delay as proof that an animation completed. A fixed delay is only appropriate when the test intentionally samples an intermediate animation frame
+
 The Local Node macOS group also publishes the `osx-arm64` Desktop and Local Node apphosts and requests the Local Node `/health` endpoint after registering the generated `hyprism-local-ca.crt` root certificate in the runner's disposable System Keychain. The smoke test verifies the `h.localhost` server certificate issued by that root and checks that Local Node reports the `ready` status, expected server name, and HTTPS issuer. Deterministic tests verify the production user-Keychain command sequence, including hostname verification and certificate rotation. CI cannot approve the interactive user security dialog or replace a final launch with an installed Hytale client on a physical Mac
 
 ## Test boundaries
@@ -26,5 +28,6 @@ The Local Node macOS group also publishes the `osx-arm64` Desktop and Local Node
 - do not call live authentication, game, or third-party endpoints in unit tests
 - add a regression test when fixing a reproducible bug
 - keep render tests deterministic and independent of the machine theme
+- wait for final UI state instead of assuming an animation duration
 
 Run the documentation build after changing any page, navigation metadata, or Docusaurus configuration

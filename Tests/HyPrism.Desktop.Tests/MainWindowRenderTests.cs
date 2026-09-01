@@ -5,6 +5,7 @@ using System.Net;
 using System.Globalization;
 using System.Collections.Specialized;
 using System.ComponentModel;
+using System.Diagnostics;
 using Avalonia;
 using Avalonia.Animation;
 using Avalonia.Animation.Easings;
@@ -177,8 +178,6 @@ public sealed class MainWindowRenderTests
         viewModel.Profiles[0].IsMenuOpen = false;
         Dispatcher.UIThread.RunJobs();
         Assert.False(viewModel.Profiles[0].IsMenuOpen);
-        await Task.Delay(420);
-        Dispatcher.UIThread.RunJobs();
 
         Assert.All(
             view.GetVisualDescendants()
@@ -397,7 +396,10 @@ public sealed class MainWindowRenderTests
             .OfType<Button>()
             .First(button => button.Classes.Contains("instancesListItem"));
         activeCard.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-        await Task.Delay(340);
+        await WaitForConditionAsync(
+            () => view.Classes.Contains("compact") &&
+                  view.FindControl<Border>("CompactProfilesToolbar")!.IsEffectivelyVisible,
+            "compact profiles detail to open");
         Dispatcher.UIThread.RunJobs();
         Assert.Contains("compact", view.Classes);
         Assert.True(view.FindControl<Border>("CompactProfilesToolbar")!.IsEffectivelyVisible);
@@ -416,11 +418,13 @@ public sealed class MainWindowRenderTests
             .Single(text => text.Classes.Contains("profileActivationActive"))
             .Opacity);
 
-        Assert.True(view.TryCloseCompactContent());
-        await Task.Delay(340);
-        Dispatcher.UIThread.RunJobs();
         var compactProfileTranslation = Assert.IsType<TranslateTransform>(
             view.FindControl<Grid>("ProfileMain")!.RenderTransform);
+        Assert.True(view.TryCloseCompactContent());
+        await WaitForConditionAsync(
+            () => compactProfileTranslation.X > 0,
+            "compact profiles detail to close");
+        Dispatcher.UIThread.RunJobs();
         Assert.True(compactProfileTranslation.X > 0);
         var addProfileRow = view.GetVisualDescendants()
             .OfType<Button>()
@@ -428,10 +432,12 @@ public sealed class MainWindowRenderTests
         addProfileRow.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         Assert.True(wizard.IsVisible);
         Assert.False(view.FindControl<Grid>("ProfileOverview")!.IsVisible);
-        await Task.Delay(340);
+        await WaitForConditionAsync(
+            () => Math.Abs(compactProfileTranslation.X) < 0.01 && wizard.IsEffectivelyVisible,
+            "compact profile creator to open");
         Dispatcher.UIThread.RunJobs();
         Assert.True(viewModel.IsCreationVisible);
-        Assert.Equal(0, compactProfileTranslation.X);
+        Assert.InRange(Math.Abs(compactProfileTranslation.X), 0, 0.01);
         Assert.True(wizard.IsEffectivelyVisible);
         Assert.False(view.FindControl<Grid>("ProfileOverview")!.IsVisible);
 
@@ -439,7 +445,11 @@ public sealed class MainWindowRenderTests
         Dispatcher.UIThread.RunJobs();
         Assert.True(wizard.IsVisible);
         Assert.True(view.FindControl<StackPanel>("ProfileCreationChoiceContent")!.IsVisible);
-        await Task.Delay(340);
+        await WaitForConditionAsync(
+            () => compactProfileTranslation.X > 0 &&
+                  !wizard.IsVisible &&
+                  view.FindControl<Grid>("ProfileOverview")!.IsVisible,
+            "compact profile creator to close");
         Dispatcher.UIThread.RunJobs();
         Assert.True(compactProfileTranslation.X > 0);
         Assert.False(wizard.IsVisible);
@@ -888,15 +898,6 @@ public sealed class MainWindowRenderTests
         Dispatcher.UIThread.RunJobs();
         var instancesView = Assert.Single(window.GetVisualDescendants().OfType<InstancesView>());
         var compact = instancesView.Bounds.Width < 940;
-        if (compact)
-        {
-            var instanceRow = instancesView.GetVisualDescendants().OfType<Button>()
-                .Single(button => button.Classes.Contains("instancesListItem"));
-            instanceRow.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-            await Task.Delay(360);
-            Dispatcher.UIThread.RunJobs();
-        }
-
         var primaryAction = compact
             ? instancesView.FindControl<Button>("CompactInstancePrimaryAction")!
             : instancesView.GetVisualDescendants().OfType<Button>()
@@ -906,6 +907,25 @@ public sealed class MainWindowRenderTests
             ? instancesView.FindControl<Button>("CompactInstanceMoreButton")!
             : instancesView.GetVisualDescendants().OfType<Button>()
                 .Single(button => button.Classes.Contains("deleteAction"));
+        if (compact)
+        {
+            var instanceRow = instancesView.GetVisualDescendants().OfType<Button>()
+                .Single(button => button.Classes.Contains("instancesListItem"));
+            instanceRow.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            await WaitForConditionAsync(
+                () => primaryAction.IsEffectivelyVisible && primaryAction.Bounds.Width > 0,
+                "compact managed instance action to become visible");
+            Dispatcher.UIThread.RunJobs();
+        }
+
+        var expectedPrimaryActionWidth = compact ? 126 : 150;
+        var instancesContentTranslation = Assert.IsType<TranslateTransform>(
+            instancesView.FindControl<Grid>("InstancesContent")!.RenderTransform);
+        await WaitForConditionAsync(
+            () => primaryAction.IsEffectivelyVisible &&
+                  Math.Abs(primaryAction.Bounds.Width - expectedPrimaryActionWidth) <= 0.5 &&
+                  Math.Abs(instancesContentTranslation.X) <= 0.01,
+            "managed instance action layout to settle");
 
         var initialActionPoint = primaryAction.TranslatePoint(
             new Point(primaryAction.Bounds.Width / 2, primaryAction.Bounds.Height / 2),
@@ -916,7 +936,10 @@ public sealed class MainWindowRenderTests
         Assert.True(primaryAction.IsPointerOver);
 
         var launchOperation = viewModel.RunManagedInstanceCommand.ExecuteAsync(null);
-        await Task.Delay(400);
+        await WaitForConditionAsync(
+            () => primaryAction.Classes.Contains("active") &&
+                  collapsingAction.Bounds.Width <= 0.5,
+            "managed instance action to enter progress state");
         Dispatcher.UIThread.RunJobs();
         Assert.Contains("active", primaryAction.Classes);
         Assert.DoesNotContain("cancelArmed", primaryAction.Classes);
@@ -983,7 +1006,11 @@ public sealed class MainWindowRenderTests
         Assert.NotNull(actionPoint);
         window.MouseMove(actionPoint!.Value);
         Dispatcher.UIThread.RunJobs();
-        await Task.Delay(300);
+        await WaitForConditionAsync(
+            () => primaryAction.Background is ISolidColorBrush { Color: var color } &&
+                  color == Color.Parse("#D83B45") &&
+                  cancelLabel.Opacity >= 0.99,
+            "managed instance cancellation action to appear");
         Dispatcher.UIThread.RunJobs();
         Assert.True(primaryAction.IsPointerOver);
         Assert.Equal(
@@ -992,7 +1019,7 @@ public sealed class MainWindowRenderTests
         Assert.Equal(
             Colors.White,
             Assert.IsAssignableFrom<ISolidColorBrush>(primaryAction.Foreground).Color);
-        Assert.Equal(1, cancelLabel.Opacity);
+        Assert.InRange(cancelLabel.Opacity, 0.99, 1);
 
         window.MouseDown(actionPoint.Value, MouseButton.Left);
         window.MouseUp(actionPoint.Value, MouseButton.Left);
@@ -1328,7 +1355,17 @@ public sealed class MainWindowRenderTests
         viewModel.NavigateCommand.Execute("news");
         Dispatcher.UIThread.RunJobs();
         var openTask = viewModel.FeaturedNews!.OpenCommand.ExecuteAsync(null);
-        await Task.Delay(240);
+        await WaitForConditionAsync(
+            () => viewModel.IsCompactNewsTransitionActive &&
+                  window.GetVisualDescendants()
+                      .OfType<Border>()
+                      .Count(border => border.IsEffectivelyVisible &&
+                                       border.Classes.Contains("newsTransitionEdgeFade")) == 2 &&
+                  window.GetVisualDescendants()
+                      .OfType<Border>()
+                      .Any(border => border.IsEffectivelyVisible &&
+                                     border.Classes.Contains("skeleton")),
+            "compact news loading transition to become active");
         Dispatcher.UIThread.RunJobs();
 
         var compactShell = FindVisualByName<Carousel>(window, "CompactNewsShell");
@@ -1375,7 +1412,9 @@ public sealed class MainWindowRenderTests
             loadingFrame!.Save(loadingPreviewPath, PngBitmapEncoderOptions.Default);
         }
 
-        await Task.Delay(200);
+        await WaitForConditionAsync(
+            () => !viewModel.IsCompactNewsTransitionActive,
+            "compact news page transition to complete");
         Dispatcher.UIThread.RunJobs();
 
         var articleSelected = new TaskCompletionSource(
@@ -1559,12 +1598,12 @@ public sealed class MainWindowRenderTests
         Assert.Equal(
             byte.MaxValue,
             Assert.IsAssignableFrom<ISolidColorBrush>(languagePopupBorder.Background).Color.A);
-        await Task.Delay(220);
-        Dispatcher.UIThread.RunJobs();
         var settingsComboPreviewPath = Environment.GetEnvironmentVariable(
             "HYPRISM_SETTINGS_COMBO_RENDER_OUTPUT");
         if (!string.IsNullOrWhiteSpace(settingsComboPreviewPath))
         {
+            await Task.Delay(220);
+            Dispatcher.UIThread.RunJobs();
             window.CaptureRenderedFrame()!.Save(settingsComboPreviewPath, PngBitmapEncoderOptions.Default);
             Assert.True(File.Exists(settingsComboPreviewPath));
         }
@@ -1609,9 +1648,12 @@ public sealed class MainWindowRenderTests
         Dispatcher.UIThread.RunJobs();
         Assert.True(fadingLanguageComboBox.IsDropDownOpen);
         Assert.True(languagePopup.IsOpen);
-        await Task.Delay(220);
-        Dispatcher.UIThread.RunJobs();
         var languageDismissPoint = new Point(20, 20);
+        var dismissedLanguagePopupClosed = WaitForAvaloniaPropertyAsync(
+            languagePopup,
+            Popup.IsOpenProperty,
+            () => !languagePopup.IsOpen,
+            "dismissed language popup to finish closing");
         window.MouseMove(languageDismissPoint);
         window.MouseDown(languageDismissPoint, MouseButton.Left);
         window.MouseUp(languageDismissPoint, MouseButton.Left);
@@ -1619,7 +1661,7 @@ public sealed class MainWindowRenderTests
         Assert.False(fadingLanguageComboBox.IsDropDownOpen);
         Assert.False(languagePopup.IsRequestedOpen);
         Assert.True(languagePopup.IsOpen);
-        await Task.Delay(230);
+        await dismissedLanguagePopupClosed;
         Dispatcher.UIThread.RunJobs();
         Assert.False(languagePopup.IsOpen);
 
@@ -1677,7 +1719,9 @@ public sealed class MainWindowRenderTests
         Assert.NotNull(center);
 
         window.MouseWheel(center!.Value, new Vector(0, -1), RawInputModifiers.None);
-        await Task.Delay(120);
+        await WaitForConditionAsync(
+            () => viewer.Offset.Y > 0,
+            "smooth scrolling after a wheel event");
         Dispatcher.UIThread.RunJobs();
         Assert.True(viewer.Offset.Y > 0);
 
@@ -1686,7 +1730,9 @@ public sealed class MainWindowRenderTests
         Assert.Equal(new Cursor(StandardCursorType.SizeAll).ToString(), viewer.Cursor?.ToString());
         var beforeAutoScroll = viewer.Offset.Y;
         window.MouseMove(center.Value + new Vector(0, 80));
-        await Task.Delay(120);
+        await WaitForConditionAsync(
+            () => viewer.Offset.Y > beforeAutoScroll,
+            "middle-click auto-scroll movement");
         Dispatcher.UIThread.RunJobs();
         Assert.True(viewer.Offset.Y > beforeAutoScroll);
         Assert.Equal(
@@ -2209,8 +2255,10 @@ public sealed class MainWindowRenderTests
         Assert.Equal(new CornerRadius(11), managedInstanceRow.CornerRadius);
         if (!usesCompactInstancesLayout)
         {
-            await Task.Delay(220);
-            _ = window.CaptureRenderedFrame();
+            await WaitForConditionAsync(
+                () => managedInstanceRow.Background is ISolidColorBrush { Color: var color } &&
+                      color == Color.Parse("#12FFFFFF"),
+                "selected instance row background");
             Dispatcher.UIThread.RunJobs();
         }
         Assert.Equal(
@@ -2238,12 +2286,14 @@ public sealed class MainWindowRenderTests
         window.MouseMove(managedInstanceRowPoint!.Value);
         Dispatcher.UIThread.RunJobs();
         Assert.True(managedInstanceRow.IsPointerOver);
-        await Task.Delay(220);
-        _ = window.CaptureRenderedFrame();
+        var expectedManagedInstanceHoverAlpha = usesCompactInstancesLayout ? (byte)8 : (byte)24;
+        await WaitForConditionAsync(
+            () => managedInstanceRow.Background is ISolidColorBrush { Color.A: var alpha } &&
+                  alpha >= expectedManagedInstanceHoverAlpha - 1,
+            "managed instance row hover background");
         Dispatcher.UIThread.RunJobs();
         var managedInstanceHoverColor =
             Assert.IsAssignableFrom<ISolidColorBrush>(managedInstanceRow.Background).Color;
-        var expectedManagedInstanceHoverAlpha = usesCompactInstancesLayout ? (byte)8 : (byte)24;
         Assert.Equal(byte.MaxValue, managedInstanceHoverColor.R);
         Assert.Equal(byte.MaxValue, managedInstanceHoverColor.G);
         Assert.Equal(byte.MaxValue, managedInstanceHoverColor.B);
@@ -2274,12 +2324,16 @@ public sealed class MainWindowRenderTests
         window.MouseMove(inactiveInstanceRowPoint!.Value);
         Dispatcher.UIThread.RunJobs();
         Assert.True(inactiveInstanceRow.IsPointerOver);
-        await Task.Delay(220);
-        _ = window.CaptureRenderedFrame();
+        await WaitForConditionAsync(
+            () => inactiveInstanceRow.Background is ISolidColorBrush { Color.A: >= 7 },
+            "inactive instance row hover background");
         Dispatcher.UIThread.RunJobs();
-        Assert.Equal(
-            Color.Parse("#08FFFFFF"),
-            Assert.IsAssignableFrom<ISolidColorBrush>(inactiveInstanceRow.Background).Color);
+        var inactiveInstanceHoverColor =
+            Assert.IsAssignableFrom<ISolidColorBrush>(inactiveInstanceRow.Background).Color;
+        Assert.Equal(byte.MaxValue, inactiveInstanceHoverColor.R);
+        Assert.Equal(byte.MaxValue, inactiveInstanceHoverColor.G);
+        Assert.Equal(byte.MaxValue, inactiveInstanceHoverColor.B);
+        Assert.InRange(inactiveInstanceHoverColor.A, (byte)7, (byte)8);
         window.MouseMove(new Point(0, 0));
         Dispatcher.UIThread.RunJobs();
         viewModel.AllInstances.Remove(inactiveInstance);
@@ -2419,10 +2473,14 @@ public sealed class MainWindowRenderTests
         {
             var contentWidthWithList = instancesContent.Bounds.Width;
             addInstanceRow.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-            await Task.Delay(420);
+            await WaitForConditionAsync(
+                () => instancesListPane!.Bounds.Width <= 0.5 &&
+                      instancesListPane.Opacity <= 0.01 &&
+                      instanceWizardAnimation.IsEffectivelyVisible,
+                "wide instance creator to open");
             Dispatcher.UIThread.RunJobs();
-            Assert.Equal(0, instancesListPane!.Bounds.Width);
-            Assert.Equal(0, instancesListPane.Opacity);
+            Assert.InRange(instancesListPane!.Bounds.Width, 0, 0.5);
+            Assert.InRange(instancesListPane.Opacity, 0, 0.01);
             Assert.False(instancesListPane.IsHitTestVisible);
             Assert.True(instancesContent.Bounds.Width > contentWidthWithList + 275);
             Assert.True(instanceWizardAnimation.IsEffectivelyVisible);
@@ -2541,7 +2599,9 @@ public sealed class MainWindowRenderTests
             Dispatcher.UIThread.RunJobs();
             Assert.True(compactInstanceMenuPopup!.IsRequestedOpen);
             Assert.True(compactInstanceMenuPopup.IsOpen);
-            await Task.Delay(220);
+            await WaitForConditionAsync(
+                () => compactInstanceMenuPopup.Child?.Opacity >= 0.99,
+                "compact instance menu to finish opening");
             Dispatcher.UIThread.RunJobs();
 
             var compactMenuPreviewPath = Environment.GetEnvironmentVariable(
@@ -2558,18 +2618,20 @@ public sealed class MainWindowRenderTests
             Dispatcher.UIThread.RunJobs();
             Assert.False(compactInstanceMenuPopup.IsRequestedOpen);
             Assert.True(compactInstanceMenuPopup.IsOpen);
-            await Task.Delay(90);
-            Dispatcher.UIThread.RunJobs();
 
             var compactMenuClosingPreviewPath = Environment.GetEnvironmentVariable(
                 "HYPRISM_INSTANCES_COMPACT_MENU_CLOSING_RENDER_OUTPUT");
             if (!string.IsNullOrWhiteSpace(compactMenuClosingPreviewPath))
             {
+                await Task.Delay(90);
+                Dispatcher.UIThread.RunJobs();
                 window.CaptureRenderedFrame()!.Save(compactMenuClosingPreviewPath, PngBitmapEncoderOptions.Default);
                 Assert.True(File.Exists(compactMenuClosingPreviewPath));
             }
 
-            await Task.Delay(140);
+            await WaitForConditionAsync(
+                () => !compactInstanceMenuPopup.IsOpen,
+                "compact instance menu to close");
             Dispatcher.UIThread.RunJobs();
             Assert.False(compactInstanceMenuPopup.IsOpen);
 
@@ -2579,7 +2641,9 @@ public sealed class MainWindowRenderTests
             Dispatcher.UIThread.RunJobs();
             Assert.True(compactInstanceMenuPopup.IsRequestedOpen);
             Assert.True(compactInstanceMenuPopup.IsOpen);
-            await Task.Delay(220);
+            await WaitForConditionAsync(
+                () => compactInstanceMenuPopup.Child?.Opacity >= 0.99,
+                "compact instance menu to finish reopening");
             Dispatcher.UIThread.RunJobs();
 
             var compactMenuDismissPoint = instanceHubContent!.TranslatePoint(new Point(40, 110), window);
@@ -2590,7 +2654,9 @@ public sealed class MainWindowRenderTests
             Dispatcher.UIThread.RunJobs();
             Assert.False(compactInstanceMenuPopup.IsRequestedOpen);
             Assert.True(compactInstanceMenuPopup.IsOpen);
-            await Task.Delay(230);
+            await WaitForConditionAsync(
+                () => !compactInstanceMenuPopup.IsOpen,
+                "compact instance menu light dismiss to complete");
             Dispatcher.UIThread.RunJobs();
             Assert.False(compactInstanceMenuPopup.IsOpen);
 
@@ -2633,7 +2699,11 @@ public sealed class MainWindowRenderTests
         viewModel.SelectInstanceSectionCommand.Execute("mods");
         Assert.True(instanceHub!.IsVisible);
         Assert.Equal(usesCompactInstancesLayout, instanceSection!.IsVisible);
-        await Task.Delay(usesCompactInstancesLayout ? 360 : 240);
+        await WaitForConditionAsync(
+            () => instanceSection!.IsVisible &&
+                  instanceSection.Opacity >= 0.99 &&
+                  instanceSection.IsHitTestVisible,
+            "instance section to open");
         Dispatcher.UIThread.RunJobs();
         Assert.Equal(usesCompactInstancesLayout, instanceHub!.IsVisible);
         Assert.True(instanceSection!.IsVisible);
@@ -2657,7 +2727,9 @@ public sealed class MainWindowRenderTests
         Assert.Equal(usesCompactInstancesLayout, instanceHub.IsVisible);
         Assert.True(instanceSection.IsVisible);
         Assert.Equal("Installed mods", instanceSectionTitle.Text);
-        await Task.Delay(usesCompactInstancesLayout ? 360 : 240);
+        await WaitForConditionAsync(
+            () => !instanceSection.IsVisible && instanceHub.IsVisible,
+            "instance section to close");
         Dispatcher.UIThread.RunJobs();
         Assert.True(instanceHub.IsVisible);
         Assert.False(instanceSection.IsVisible);
@@ -2770,11 +2842,15 @@ public sealed class MainWindowRenderTests
                 window);
             Assert.NotNull(hoverPoint);
             window.MouseMove(hoverPoint!.Value);
-            await Task.Delay(220);
+            await WaitForConditionAsync(
+                () => hoverTarget.Background is ISolidColorBrush { Color.A: >= 7 },
+                "news list item hover background");
             Dispatcher.UIThread.RunJobs();
-            Assert.Equal(
-                Color.Parse("#08FFFFFF"),
-                Assert.IsAssignableFrom<ISolidColorBrush>(hoverTarget.Background).Color);
+            var newsHoverColor = Assert.IsAssignableFrom<ISolidColorBrush>(hoverTarget.Background).Color;
+            Assert.Equal(byte.MaxValue, newsHoverColor.R);
+            Assert.Equal(byte.MaxValue, newsHoverColor.G);
+            Assert.Equal(byte.MaxValue, newsHoverColor.B);
+            Assert.InRange(newsHoverColor.A, (byte)7, (byte)8);
             Assert.NotNull(hoverTarget.Transitions);
         }
         Assert.DoesNotContain(
@@ -2841,10 +2917,13 @@ public sealed class MainWindowRenderTests
             service => service.GetNewsArticleAsync(viewModel.FeaturedNews.Url),
             Times.Once);
 
-        await Task.Delay(220);
-        Dispatcher.UIThread.RunJobs();
         var selectedNewsButton = newsListItems.Single(button =>
             ReferenceEquals(button.DataContext, viewModel.FeaturedNews));
+        await WaitForConditionAsync(
+            () => selectedNewsButton.Background is ISolidColorBrush { Color: var color } &&
+                  color == Color.Parse("#12FFFFFF"),
+            "selected news item background");
+        Dispatcher.UIThread.RunJobs();
         Assert.Equal(
             Color.Parse("#12FFFFFF"),
             Assert.IsAssignableFrom<ISolidColorBrush>(selectedNewsButton.Background).Color);
@@ -2860,6 +2939,9 @@ public sealed class MainWindowRenderTests
         var articleBody = activeArticleHost.GetVisualDescendants()
             .OfType<StackPanel>()
             .Single(panel => panel.Classes.Contains("articleBody"));
+        await WaitForConditionAsync(
+            () => articleBody.Opacity >= 0.99,
+            "news article reveal animation");
         Assert.Contains("revealed", articleBody.Classes);
         Assert.NotNull(articleBody.Transitions);
         Assert.InRange(articleBody.Opacity, 0.99, 1);
@@ -2950,7 +3032,9 @@ public sealed class MainWindowRenderTests
 
             articleScrollViewer.Offset = new Vector(0, 54);
             Dispatcher.UIThread.RunJobs();
-            await Task.Delay(280);
+            await WaitForConditionAsync(
+                () => viewModel.IsNewsArticleScrolled && toolbarTitle.Opacity >= 0.99,
+                "compact news toolbar to reveal its title");
             Dispatcher.UIThread.RunJobs();
 
             Assert.True(viewModel.IsNewsArticleScrolled);
@@ -2980,7 +3064,6 @@ public sealed class MainWindowRenderTests
             window);
         Assert.NotNull(articleActionHoverPoint);
         window.MouseMove(articleActionHoverPoint!.Value);
-        await Task.Delay(220);
         Dispatcher.UIThread.RunJobs();
         Assert.Equal(
             0,
@@ -3151,10 +3234,13 @@ public sealed class MainWindowRenderTests
             window);
         Assert.NotNull(linkPoint);
         window.MouseMove(linkPoint!.Value);
-        await Task.Delay(200);
+        await WaitForConditionAsync(
+            () => articleLinkUnderline.Opacity >= 0.99 &&
+                  articleLinkForeground.Color == Color.Parse("#E0D8FF"),
+            "article link hover style");
         Dispatcher.UIThread.RunJobs();
         Assert.Equal(new Cursor(StandardCursorType.Hand).ToString(), articleText.Cursor?.ToString());
-        Assert.Equal(1, articleLinkUnderline.Opacity);
+        Assert.InRange(articleLinkUnderline.Opacity, 0.99, 1);
         Assert.Equal(Color.Parse("#E0D8FF"), articleLinkForeground.Color);
 
         window.MouseDown(linkPoint.Value, MouseButton.Left);
@@ -3180,10 +3266,12 @@ public sealed class MainWindowRenderTests
             window);
         Assert.NotNull(nestedLinkPoint);
         window.MouseMove(nestedLinkPoint!.Value);
-        await Task.Delay(200);
+        await WaitForConditionAsync(
+            () => nestedUnderline.Opacity >= 0.99,
+            "nested article link hover style");
         Dispatcher.UIThread.RunJobs();
         Assert.Equal(new Cursor(StandardCursorType.Hand).ToString(), linkedListText.Cursor?.ToString());
-        Assert.Equal(1, nestedUnderline.Opacity);
+        Assert.InRange(nestedUnderline.Opacity, 0.99, 1);
         window.MouseDown(nestedLinkPoint.Value, MouseButton.Left);
         window.MouseUp(nestedLinkPoint.Value, MouseButton.Left);
         Dispatcher.UIThread.RunJobs();
@@ -3210,9 +3298,11 @@ public sealed class MainWindowRenderTests
             window);
         Assert.NotNull(policyLinkPoint);
         window.MouseMove(policyLinkPoint!.Value);
-        await Task.Delay(200);
+        await WaitForConditionAsync(
+            () => policyUnderline.Opacity >= 0.99,
+            "policy article link hover style");
         Dispatcher.UIThread.RunJobs();
-        Assert.Equal(1, policyUnderline.Opacity);
+        Assert.InRange(policyUnderline.Opacity, 0.99, 1);
         window.MouseDown(policyLinkPoint.Value, MouseButton.Left);
         window.MouseUp(policyLinkPoint.Value, MouseButton.Left);
         Dispatcher.UIThread.RunJobs();
@@ -3400,7 +3490,10 @@ public sealed class MainWindowRenderTests
                 Color.Parse("#303237"),
                 Assert.IsAssignableFrom<ISolidColorBrush>(track.Background).Color);
             toggle.IsChecked = true;
-            await Task.Delay(240);
+            await WaitForConditionAsync(
+                () => track.Background is ISolidColorBrush { Color: var color } &&
+                      color == Color.Parse("#35A85B"),
+                "settings toggle track color");
             Dispatcher.UIThread.RunJobs();
             Assert.Equal(
                 Color.Parse("#35A85B"),
@@ -3465,7 +3558,10 @@ public sealed class MainWindowRenderTests
         if (compactSettingsLayout)
         {
             window.MouseMove(new Point(0, 0));
-            await Task.Delay(220);
+            await WaitForConditionAsync(
+                () => settingsRail.Background is ISolidColorBrush { Color: var color } &&
+                      color == Color.Parse("#0D0E10"),
+                "compact settings rail background");
             Dispatcher.UIThread.RunJobs();
             Assert.Equal(
                 Color.Parse("#0D0E10"),
@@ -3474,9 +3570,10 @@ public sealed class MainWindowRenderTests
                 .OfType<Button>()
                 .Single(button => button.Classes.Contains("settingsRailCategory") &&
                                   button.Classes.Contains("selected"));
-            Assert.Equal(
-                0,
-                Assert.IsAssignableFrom<ISolidColorBrush>(selectedCategoryButton.Background).Color.A);
+            Assert.InRange(
+                Assert.IsAssignableFrom<ISolidColorBrush>(selectedCategoryButton.Background).Color.A,
+                (byte)0,
+                (byte)1);
             var selectedCategoryPoint = selectedCategoryButton.TranslatePoint(
                 new Point(
                     selectedCategoryButton.Bounds.Width / 2,
@@ -3484,18 +3581,24 @@ public sealed class MainWindowRenderTests
                 window);
             Assert.NotNull(selectedCategoryPoint);
             window.MouseMove(selectedCategoryPoint!.Value);
-            await Task.Delay(220);
+            await WaitForConditionAsync(
+                () => selectedCategoryButton.Background is ISolidColorBrush { Color.A: >= 7 },
+                "selected settings category hover color");
             Dispatcher.UIThread.RunJobs();
-            Assert.Equal(
-                8,
-                Assert.IsAssignableFrom<ISolidColorBrush>(selectedCategoryButton.Background).Color.A);
+            Assert.InRange(
+                Assert.IsAssignableFrom<ISolidColorBrush>(selectedCategoryButton.Background).Color.A,
+                (byte)7,
+                (byte)8);
             AssertNoPressScale(selectedCategoryButton);
             window.MouseMove(new Point(0, 0));
-            await Task.Delay(220);
+            await WaitForConditionAsync(
+                () => selectedCategoryButton.Background is ISolidColorBrush { Color.A: <= 1 },
+                "selected settings category hover color to clear");
             Dispatcher.UIThread.RunJobs();
-            Assert.Equal(
-                0,
-                Assert.IsAssignableFrom<ISolidColorBrush>(selectedCategoryButton.Background).Color.A);
+            Assert.InRange(
+                Assert.IsAssignableFrom<ISolidColorBrush>(selectedCategoryButton.Background).Color.A,
+                (byte)0,
+                (byte)1);
 
             var categoryScrollBar = categoryScroll.GetVisualDescendants()
                 .OfType<ScrollBar>()
@@ -3507,11 +3610,13 @@ public sealed class MainWindowRenderTests
                 window);
             Assert.NotNull(scrollBarPoint);
             window.MouseMove(scrollBarPoint!.Value);
-            await Task.Delay(700);
+            await WaitForConditionAsync(
+                () => categoryScrollBar.IsExpanded && categoryScrollThumb.Width >= 5.99,
+                "settings category scroll bar to expand");
             Dispatcher.UIThread.RunJobs();
             Assert.True(categoryScrollBar.IsExpanded);
             var expandedThumb = categoryScrollBar.GetVisualDescendants().OfType<Thumb>().Single();
-            Assert.Equal(6, expandedThumb.Width);
+            Assert.InRange(expandedThumb.Width, 5.99, 6.01);
             Assert.InRange(expandedThumb.Bounds.Width, 5.5, 6.5);
             var expandedThumbCenter = expandedThumb.TranslatePoint(
                 new Point(expandedThumb.Bounds.Width / 2, expandedThumb.Bounds.Height / 2),
@@ -3738,6 +3843,7 @@ public sealed class MainWindowRenderTests
 
         if (compactSettingsLayout)
         {
+            var settingsMainTranslation = Assert.IsType<TranslateTransform>(settingsMain.RenderTransform);
             var downloadsCategory = settingsView.GetVisualDescendants()
                 .OfType<Button>()
                 .Single(button => button.Classes.Contains("settingsRailCategory") &&
@@ -3748,10 +3854,14 @@ public sealed class MainWindowRenderTests
             Assert.NotNull(categoryPoint);
             window.MouseDown(categoryPoint!.Value, MouseButton.Left);
             window.MouseUp(categoryPoint.Value, MouseButton.Left);
-            await Task.Delay(340);
+            await WaitForConditionAsync(
+                () => settingsMain.IsHitTestVisible &&
+                      Math.Abs(settingsMainTranslation.X) < 0.01 &&
+                      compactSettingsTitle!.IsEffectivelyVisible,
+                "compact settings content to open");
             Dispatcher.UIThread.RunJobs();
             Assert.True(settingsMain.IsHitTestVisible);
-            Assert.Equal(0, Assert.IsType<TranslateTransform>(settingsMain.RenderTransform).X);
+            Assert.InRange(Math.Abs(settingsMainTranslation.X), 0, 0.01);
             Assert.True(compactSettingsTitle!.IsEffectivelyVisible);
             Assert.Equal(viewModel.Settings.DownloadsTitle, compactSettingsTitle.Text);
             var compactTitleCenter = compactSettingsTitle.TranslatePoint(
@@ -3764,17 +3874,21 @@ public sealed class MainWindowRenderTests
                 1);
 
             window.KeyPress(Key.Escape, RawInputModifiers.None, PhysicalKey.Escape, null);
-            await Task.Delay(340);
+            await WaitForConditionAsync(
+                () => !settingsMain.IsHitTestVisible && settingsMainTranslation.X > 0,
+                "compact settings content to close with Escape");
             Dispatcher.UIThread.RunJobs();
             Assert.False(settingsMain.IsHitTestVisible);
-            Assert.True(Assert.IsType<TranslateTransform>(settingsMain.RenderTransform).X > 0);
+            Assert.True(settingsMainTranslation.X > 0);
 
             window.MouseDown(categoryPoint.Value, MouseButton.Left);
             window.MouseUp(categoryPoint.Value, MouseButton.Left);
-            await Task.Delay(340);
+            await WaitForConditionAsync(
+                () => settingsMain.IsHitTestVisible && Math.Abs(settingsMainTranslation.X) < 0.01,
+                "compact settings content to reopen");
             Dispatcher.UIThread.RunJobs();
             Assert.True(settingsMain.IsHitTestVisible);
-            Assert.Equal(0, Assert.IsType<TranslateTransform>(settingsMain.RenderTransform).X);
+            Assert.InRange(Math.Abs(settingsMainTranslation.X), 0, 0.01);
 
             var compactSettingsContentPreviewPath = Environment.GetEnvironmentVariable(
                 "HYPRISM_SETTINGS_COMPACT_CONTENT_RENDER_OUTPUT");
@@ -3797,10 +3911,12 @@ public sealed class MainWindowRenderTests
             Assert.NotNull(backPoint);
             window.MouseDown(backPoint!.Value, MouseButton.Left);
             window.MouseUp(backPoint.Value, MouseButton.Left);
-            await Task.Delay(340);
+            await WaitForConditionAsync(
+                () => !settingsMain.IsHitTestVisible && settingsMainTranslation.X > 0,
+                "compact settings content to close with the back button");
             Dispatcher.UIThread.RunJobs();
             Assert.False(settingsMain.IsHitTestVisible);
-            Assert.True(Assert.IsType<TranslateTransform>(settingsMain.RenderTransform).X > 0);
+            Assert.True(settingsMainTranslation.X > 0);
         }
 
         foreach (var category in viewModel.Settings.Categories)
@@ -3816,11 +3932,9 @@ public sealed class MainWindowRenderTests
 
         var aboutCategory = viewModel.Settings.Categories.Single(category => category.Id == "about");
         viewModel.Settings.SelectCategoryCommand.Execute(aboutCategory);
-        for (var attempt = 0; attempt < 50 && viewModel.Settings.IsAboutDataLoading; attempt++)
-        {
-            await Task.Delay(20);
-            Dispatcher.UIThread.RunJobs();
-        }
+        await WaitForConditionAsync(
+            () => !viewModel.Settings.IsAboutDataLoading,
+            "About data to finish loading");
         Dispatcher.UIThread.RunJobs();
         Assert.False(string.IsNullOrWhiteSpace(viewModel.Settings.AboutCurrentVersion));
         Assert.Equal(6, viewModel.Settings.AboutTeamMembers.Count);
@@ -3996,7 +4110,10 @@ public sealed class MainWindowRenderTests
                 .OfType<Button>()
                 .Single(button => button.IsEffectivelyVisible && ReferenceEquals(button.DataContext, aboutCategory));
             aboutCategoryButton.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
-            await Task.Delay(340);
+            var compactAboutTranslation = Assert.IsType<TranslateTransform>(settingsMain.RenderTransform);
+            await WaitForConditionAsync(
+                () => settingsMain.IsHitTestVisible && Math.Abs(compactAboutTranslation.X) < 0.01,
+                "compact About settings content to open");
             settingsScroll.ScrollToHome();
             Dispatcher.UIThread.RunJobs();
             var compactAboutFrame = window.CaptureRenderedFrame();
@@ -4038,7 +4155,7 @@ public sealed class MainWindowRenderTests
         try
         {
             if (!condition())
-                await completion.Task.WaitAsync(TimeSpan.FromSeconds(2));
+                await completion.Task.WaitAsync(TimeSpan.FromSeconds(5));
         }
         catch (TimeoutException)
         {
@@ -4048,6 +4165,19 @@ public sealed class MainWindowRenderTests
         {
             source.PropertyChanged -= OnPropertyChanged;
         }
+    }
+
+    private static async Task WaitForConditionAsync(Func<bool> condition, string description)
+    {
+        var startedAt = Stopwatch.GetTimestamp();
+        while (!condition() && Stopwatch.GetElapsedTime(startedAt) < TimeSpan.FromSeconds(5))
+        {
+            Dispatcher.UIThread.RunJobs();
+            await Task.Delay(16, TestContext.Current.CancellationToken);
+        }
+
+        Dispatcher.UIThread.RunJobs();
+        Assert.True(condition(), $"Timed out waiting for {description}");
     }
 
     private static T? FindVisualByName<T>(Visual root, string name)
