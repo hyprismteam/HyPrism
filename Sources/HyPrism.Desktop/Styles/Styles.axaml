@@ -1204,20 +1204,6 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="VerticalAlignment" Value="Center" />
   </Style>
 
-  <Style Selector="ProgressBar.dataMoveProgress">
-    <Setter Property="Width" Value="56" />
-    <Setter Property="Height" Value="3" />
-    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
-    <Setter Property="Background" Value="#24FFFFFF" />
-    <Setter Property="VerticalAlignment" Value="Center" />
-  </Style>
-
-  <Style Selector="TextBlock.dataMoveText">
-    <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
-    <Setter Property="FontSize" Value="12" />
-    <Setter Property="VerticalAlignment" Value="Center" />
-  </Style>
-
   <Style Selector="Border.uiSettingsRow.runtime">
     <Setter Property="MinHeight" Value="0" />
     <Setter Property="Padding" Value="0" />
@@ -1958,6 +1944,56 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="RenderTransform" Value="{x:Null}" />
   </Style>
 
+  <Style Selector="settings|SettingsView Button.instanceFolderChangeAction">
+    <Setter Property="Width" Value="110" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Setter Property="Transitions">
+      <Transitions>
+        <DoubleTransition Property="Width" Duration="0:0:0.32">
+          <DoubleTransition.Easing><easing:CubicEaseInOut /></DoubleTransition.Easing>
+        </DoubleTransition>
+        <BrushTransition Property="Background" Duration="0:0:0.16" />
+        <BrushTransition Property="Foreground" Duration="0:0:0.16" />
+      </Transitions>
+    </Setter>
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Background="{TemplateBinding Background}"
+                CornerRadius="{TemplateBinding CornerRadius}"
+                Padding="{TemplateBinding Padding}">
+          <ContentPresenter Content="{TemplateBinding Content}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}"
+                            Foreground="{TemplateBinding Foreground}"
+                            HorizontalAlignment="Stretch"
+                            VerticalAlignment="Center"
+                            HorizontalContentAlignment="Stretch"
+                            VerticalContentAlignment="Center" />
+        </Border>
+      </ControlTemplate>
+    </Setter>
+  </Style>
+
+  <Style Selector="settings|SettingsView Button.instanceFolderChangeAction.active, settings|SettingsView Button.instanceFolderChangeAction.active:pointerover">
+    <Setter Property="Width" Value="220" />
+    <Setter Property="Background" Value="{DynamicResource TextPrimaryBrush}" />
+    <Setter Property="Foreground" Value="#111214" />
+  </Style>
+
+  <Style Selector="settings|SettingsView Button.instanceFolderChangeAction.active.cancelArmed:pointerover">
+    <Setter Property="Background" Value="{DynamicResource DangerActionBrush}" />
+    <Setter Property="Foreground" Value="White" />
+  </Style>
+
+  <Style Selector="settings|SettingsView Button.instanceFolderChangeAction.active Grid.managedActionContent">
+    <Setter Property="Width" Value="188" />
+    <Setter Property="MinWidth" Value="188" />
+    <Setter Property="MaxWidth" Value="188" />
+  </Style>
+
+  <Style Selector="settings|SettingsView TextBlock.managedActionMetric">
+    <Setter Property="FontFeatures" Value="tnum" />
+  </Style>
+
   <Style Selector="Button.settingsLink">
     <Setter Property="HorizontalAlignment" Value="Stretch" />
     <Setter Property="HorizontalContentAlignment" Value="Left" />
@@ -2540,12 +2576,12 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="Opacity" Value="0" />
   </Style>
 
-  <Style Selector="instances|InstancesView Button.compactInstanceActionPart.main ContentControl, instances|InstancesView Button.instanceAction.primary ContentControl, profiles|ProfilesView Button.compactInstanceActionPart.main ContentControl, profiles|ProfilesView Button.instanceAction.primary ContentControl, profiles|ProfilesView Button.officialSignInAction ContentControl">
+  <Style Selector="instances|InstancesView Button.compactInstanceActionPart.main ContentControl, instances|InstancesView Button.instanceAction.primary ContentControl, profiles|ProfilesView Button.compactInstanceActionPart.main ContentControl, profiles|ProfilesView Button.instanceAction.primary ContentControl, profiles|ProfilesView Button.officialSignInAction ContentControl, settings|SettingsView Button.instanceFolderChangeAction ContentControl">
     <Setter Property="HorizontalContentAlignment" Value="Stretch" />
     <Setter Property="HorizontalAlignment" Value="Stretch" />
   </Style>
 
-  <Style Selector="instances|InstancesView Grid.managedActionContent, profiles|ProfilesView Grid.managedActionContent">
+  <Style Selector="instances|InstancesView Grid.managedActionContent, profiles|ProfilesView Grid.managedActionContent, settings|SettingsView Grid.managedActionContent">
     <Setter Property="HorizontalAlignment" Value="Stretch" />
   </Style>
 
@@ -2561,7 +2597,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="MaxWidth" Value="225" />
   </Style>
 
-  <Style Selector="instances|InstancesView StackPanel.managedActionIdle, instances|InstancesView Grid.managedActionProgress, instances|InstancesView TextBlock.managedActionCancel, profiles|ProfilesView StackPanel.managedActionIdle, profiles|ProfilesView Grid.managedActionProgress, profiles|ProfilesView TextBlock.managedActionCancel">
+  <Style Selector="instances|InstancesView StackPanel.managedActionIdle, instances|InstancesView Grid.managedActionProgress, instances|InstancesView TextBlock.managedActionCancel, profiles|ProfilesView StackPanel.managedActionIdle, profiles|ProfilesView Grid.managedActionProgress, profiles|ProfilesView TextBlock.managedActionCancel, settings|SettingsView StackPanel.managedActionIdle, settings|SettingsView Grid.managedActionProgress, settings|SettingsView TextBlock.managedActionCancel">
     <Setter Property="Transitions">
       <Transitions>
         <DoubleTransition Property="Opacity" Duration="0:0:0.22">
@@ -2574,32 +2610,32 @@ SPDX-License-Identifier: GPL-3.0-only
     </Setter>
   </Style>
 
-  <Style Selector="instances|InstancesView StackPanel.managedActionIdle, profiles|ProfilesView StackPanel.managedActionIdle">
+  <Style Selector="instances|InstancesView StackPanel.managedActionIdle, profiles|ProfilesView StackPanel.managedActionIdle, settings|SettingsView StackPanel.managedActionIdle">
     <Setter Property="Opacity" Value="1" />
     <Setter Property="RenderTransform" Value="translate(0px, 0px)" />
   </Style>
 
-  <Style Selector="instances|InstancesView Grid.managedActionProgress, instances|InstancesView TextBlock.managedActionCancel, profiles|ProfilesView Grid.managedActionProgress, profiles|ProfilesView TextBlock.managedActionCancel">
+  <Style Selector="instances|InstancesView Grid.managedActionProgress, instances|InstancesView TextBlock.managedActionCancel, profiles|ProfilesView Grid.managedActionProgress, profiles|ProfilesView TextBlock.managedActionCancel, settings|SettingsView Grid.managedActionProgress, settings|SettingsView TextBlock.managedActionCancel">
     <Setter Property="Opacity" Value="0" />
     <Setter Property="RenderTransform" Value="translate(0px, 8px)" />
   </Style>
 
-  <Style Selector="instances|InstancesView Button.active StackPanel.managedActionIdle, profiles|ProfilesView Button.active StackPanel.managedActionIdle">
+  <Style Selector="instances|InstancesView Button.active StackPanel.managedActionIdle, profiles|ProfilesView Button.active StackPanel.managedActionIdle, settings|SettingsView Button.active StackPanel.managedActionIdle">
     <Setter Property="Opacity" Value="0" />
     <Setter Property="RenderTransform" Value="translate(0px, -8px)" />
   </Style>
 
-  <Style Selector="instances|InstancesView Button.active Grid.managedActionProgress, profiles|ProfilesView Button.active Grid.managedActionProgress">
+  <Style Selector="instances|InstancesView Button.active Grid.managedActionProgress, profiles|ProfilesView Button.active Grid.managedActionProgress, settings|SettingsView Button.active Grid.managedActionProgress">
     <Setter Property="Opacity" Value="1" />
     <Setter Property="RenderTransform" Value="translate(0px, 0px)" />
   </Style>
 
-  <Style Selector="instances|InstancesView Button.active.cancelArmed:pointerover Grid.managedActionProgress, profiles|ProfilesView Button.active.cancelArmed:pointerover Grid.managedActionProgress">
+  <Style Selector="instances|InstancesView Button.active.cancelArmed:pointerover Grid.managedActionProgress, profiles|ProfilesView Button.active.cancelArmed:pointerover Grid.managedActionProgress, settings|SettingsView Button.active.cancelArmed:pointerover Grid.managedActionProgress">
     <Setter Property="Opacity" Value="0" />
     <Setter Property="RenderTransform" Value="translate(0px, -8px)" />
   </Style>
 
-  <Style Selector="instances|InstancesView Button.active.cancelArmed:pointerover TextBlock.managedActionCancel, profiles|ProfilesView Button.active.cancelArmed:pointerover TextBlock.managedActionCancel">
+  <Style Selector="instances|InstancesView Button.active.cancelArmed:pointerover TextBlock.managedActionCancel, profiles|ProfilesView Button.active.cancelArmed:pointerover TextBlock.managedActionCancel, settings|SettingsView Button.active.cancelArmed:pointerover TextBlock.managedActionCancel">
     <Setter Property="Opacity" Value="1" />
     <Setter Property="RenderTransform" Value="translate(0px, 0px)" />
   </Style>
@@ -2612,7 +2648,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="VerticalAlignment" Value="Center" />
   </Style>
 
-  <Style Selector="instances|InstancesView Path.managedActionSpinner, profiles|ProfilesView Path.managedActionSpinner">
+  <Style Selector="instances|InstancesView Path.managedActionSpinner, profiles|ProfilesView Path.managedActionSpinner, settings|SettingsView Path.managedActionSpinner">
     <Setter Property="Width" Value="20" />
     <Setter Property="Height" Value="20" />
     <Setter Property="Stretch" Value="None" />

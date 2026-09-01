@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Text.Json;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
@@ -26,6 +27,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
 {
     private const int MinimumJavaMemoryMb = 1024;
     private const int JavaMemoryStepMb = 256;
+    private static readonly TimeSpan MinimumInstanceFolderActionDuration = TimeSpan.FromMilliseconds(450);
     private static readonly HashSet<string> BotLogins = new(StringComparer.OrdinalIgnoreCase)
     {
         "copilot",
@@ -60,6 +62,9 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     private bool _disposed;
     private CancellationTokenSource? _sourceProbeCancellation;
     private CancellationTokenSource? _storageUsageCancellation;
+    private CancellationTokenSource? _instanceFolderChangeCancellation;
+    private bool _isInstanceFolderChangeCancellationArmed;
+    private bool _canCancelInstanceFolderChange;
     private Task _storageUsageLoadTask = Task.CompletedTask;
     private int _aboutContributorSlotCapacity = 9;
     private GitHubCommit? _latestMainCommit;
@@ -114,11 +119,17 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CanChangeInstanceFolder))]
     [NotifyPropertyChangedFor(nameof(CanResetInstanceFolder))]
+    [NotifyPropertyChangedFor(nameof(CanUseInstanceFolderChangeAction))]
     private bool _isGameRunning;
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CanChangeInstanceFolder))]
     [NotifyPropertyChangedFor(nameof(CanResetInstanceFolder))]
+    [NotifyPropertyChangedFor(nameof(IsInstanceFolderChangeCancellationArmed))]
     private bool _isChangingInstanceFolder;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsInstanceFolderChangeCancellationArmed))]
+    private bool _isMovingInstanceFolder;
+    [ObservableProperty] private string _instanceFolderChangeMetricText = string.Empty;
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsDefaultInstanceFolder))]
     [NotifyPropertyChangedFor(nameof(CanResetInstanceFolder))]
@@ -279,8 +290,14 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     public bool IsAutomaticSourceVisible => MirrorAdditionStep == DownloadSourceAdditionStep.Automatic;
     public bool IsManualSourceVisible => MirrorAdditionStep == DownloadSourceAdditionStep.Manual;
     public bool CanChangeInstanceFolder => !IsGameRunning && !IsChangingInstanceFolder;
+    public bool CanUseInstanceFolderChangeAction => !IsGameRunning;
     public bool IsDefaultInstanceFolder => DirectoriesEqual(InstanceFolder, _settings.DefaultInstanceDirectory);
     public bool CanResetInstanceFolder => CanChangeInstanceFolder && !IsDefaultInstanceFolder;
+    public bool IsInstanceFolderChangeCancellationArmed =>
+        IsChangingInstanceFolder &&
+        IsMovingInstanceFolder &&
+        _canCancelInstanceFolderChange &&
+        _isInstanceFolderChangeCancellationArmed;
 
     public string PageTitle { get; private set; } = string.Empty;
     public string PageDescription { get; private set; } = string.Empty;
@@ -959,21 +976,33 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         ShowSaved();
     }
 
-    [RelayCommand]
+    [RelayCommand(AllowConcurrentExecutions = true)]
     private async Task BrowseInstanceFolder()
     {
+        if (IsChangingInstanceFolder)
+        {
+            if (IsInstanceFolderChangeCancellationArmed)
+                _instanceFolderChangeCancellation?.Cancel();
+
+            return;
+        }
+
         if (!CanChangeInstanceFolder || _filePicker is null)
             return;
 
-        var selectedPath = await _filePicker.BrowseFolderAsync(InstanceFolder);
-        if (!string.IsNullOrWhiteSpace(selectedPath))
-            await ChangeInstanceFolderAsync(selectedPath);
+        await RunInstanceFolderActionAsync(async cancellationToken =>
+        {
+            var selectedPath = await _filePicker.BrowseFolderAsync(InstanceFolder);
+            if (!string.IsNullOrWhiteSpace(selectedPath))
+                await MoveInstanceFolderAsync(selectedPath, cancellationToken);
+        });
     }
 
     [RelayCommand]
     private Task ResetInstanceFolder()
         => CanChangeInstanceFolder && !IsDefaultInstanceFolder
-            ? ChangeInstanceFolderAsync(string.Empty)
+            ? RunInstanceFolderActionAsync(
+                cancellationToken => MoveInstanceFolderAsync(string.Empty, cancellationToken))
             : Task.CompletedTask;
 
     [RelayCommand]
@@ -1018,23 +1047,79 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
             ? _uriLauncher.LaunchAsync(uri)
             : Task.FromResult(false);
 
-    private async Task ChangeInstanceFolderAsync(string path)
+    private async Task RunInstanceFolderActionAsync(Func<CancellationToken, Task> action)
     {
+        using var cancellation = new CancellationTokenSource();
+        var actionStartedAt = Stopwatch.GetTimestamp();
+        var completedNormally = false;
+        _instanceFolderChangeCancellation = cancellation;
+        _isInstanceFolderChangeCancellationArmed = false;
+        _canCancelInstanceFolderChange = false;
+        IsMovingInstanceFolder = false;
+        InstanceFolderChangeMetricText = string.Empty;
         IsChangingInstanceFolder = true;
         try
         {
-            if (!await _settings.SetInstanceDirectoryAsync(path))
-                return;
-
-            InstanceFolder = string.IsNullOrWhiteSpace(_settings.InstanceDirectory)
-                ? _settings.DefaultInstanceDirectory
-                : _settings.InstanceDirectory;
-            RefreshStorageUsage();
+            await action(cancellation.Token);
+            completedNormally = true;
+        }
+        catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
+        {
+            Logger.Info("Settings", "Instance folder change was cancelled");
         }
         finally
         {
+            _canCancelInstanceFolderChange = false;
+            _isInstanceFolderChangeCancellationArmed = false;
+            OnPropertyChanged(nameof(IsInstanceFolderChangeCancellationArmed));
+            if (completedNormally)
+            {
+                var remainingDuration = MinimumInstanceFolderActionDuration -
+                    Stopwatch.GetElapsedTime(actionStartedAt);
+                if (remainingDuration > TimeSpan.Zero)
+                    await Task.Delay(remainingDuration);
+            }
+
+            if (ReferenceEquals(_instanceFolderChangeCancellation, cancellation))
+                _instanceFolderChangeCancellation = null;
+
+            IsMovingInstanceFolder = false;
+            InstanceFolderChangeMetricText = string.Empty;
             IsChangingInstanceFolder = false;
         }
+    }
+
+    private async Task MoveInstanceFolderAsync(string path, CancellationToken cancellationToken)
+    {
+        _canCancelInstanceFolderChange = true;
+        IsMovingInstanceFolder = true;
+        var progress = new Progress<InstanceDirectoryMoveProgress>(moveProgress =>
+        {
+            if (!IsMovingInstanceFolder || cancellationToken.IsCancellationRequested)
+                return;
+
+            InstanceFolderChangeMetricText = moveProgress.TotalBytes > 0
+                ? $"{moveProgress.Percentage}%"
+                : string.Empty;
+        });
+        if (!await _settings.SetInstanceDirectoryAsync(path, cancellationToken, progress))
+            return;
+
+        InstanceFolder = string.IsNullOrWhiteSpace(_settings.InstanceDirectory)
+            ? _settings.DefaultInstanceDirectory
+            : _settings.InstanceDirectory;
+        RefreshStorageUsage();
+    }
+
+    public void ArmInstanceFolderChangeCancellation()
+    {
+        if (!_canCancelInstanceFolderChange ||
+            !IsMovingInstanceFolder ||
+            _isInstanceFolderChangeCancellationArmed)
+            return;
+
+        _isInstanceFolderChangeCancellationArmed = true;
+        OnPropertyChanged(nameof(IsInstanceFolderChangeCancellationArmed));
     }
 
     private void OnGameProcessStateChanged(object? sender, EventArgs args)
@@ -1520,6 +1605,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         }
         catch (OperationCanceledException)
         {
+            Logger.Debug("Settings", "Download source probes were canceled");
         }
     }
 
@@ -1546,6 +1632,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
+            Logger.Debug("Settings", "Official download source probe was canceled");
         }
         catch (Exception ex)
         {
@@ -1579,6 +1666,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
+            Logger.Debug("Settings", $"Download source probe was canceled for {source.Id}");
         }
         catch (Exception ex)
         {
@@ -1764,6 +1852,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         _sourceProbeCancellation?.Dispose();
         _storageUsageCancellation?.Cancel();
         _storageUsageCancellation?.Dispose();
+        _instanceFolderChangeCancellation?.Cancel();
         if (_gameProcess is not null)
         {
             _gameProcess.GameProcessStarted -= OnGameProcessStateChanged;

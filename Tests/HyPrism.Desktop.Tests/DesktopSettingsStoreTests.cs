@@ -4,6 +4,7 @@
 using HyPrism.Core;
 using HyPrism.Core.Infrastructure;
 using HyPrism.Desktop.Features.Settings;
+using Moq;
 using Xunit;
 
 namespace HyPrism.Desktop.Tests;
@@ -75,10 +76,18 @@ public sealed class DesktopSettingsStoreTests : IDisposable
             originalFile,
             "instance metadata",
             TestContext.Current.CancellationToken);
+        var progressReports = new List<InstanceDirectoryMoveProgress>();
+        var progress = new Mock<IProgress<InstanceDirectoryMoveProgress>>();
+        progress
+            .Setup(service => service.Report(It.IsAny<InstanceDirectoryMoveProgress>()))
+            .Callback<InstanceDirectoryMoveProgress>(progressReports.Add);
 
         try
         {
-            var changed = await _settings.SetInstanceDirectoryAsync(targetDirectory);
+            var changed = await _settings.SetInstanceDirectoryAsync(
+                targetDirectory,
+                TestContext.Current.CancellationToken,
+                progress.Object);
 
             Assert.True(changed);
             Assert.Equal(Path.GetFullPath(targetDirectory), _config.Configuration.InstanceDirectory);
@@ -88,6 +97,9 @@ public sealed class DesktopSettingsStoreTests : IDisposable
                     Path.Combine(targetDirectory, "release", "instance.json"),
                     TestContext.Current.CancellationToken));
             Assert.False(Directory.Exists(originalDirectory));
+            Assert.Equal(0, progressReports[0].BytesCopied);
+            Assert.Equal("instance metadata".Length, progressReports[0].TotalBytes);
+            Assert.Equal(100, progressReports[^1].Percentage);
         }
         finally
         {
@@ -110,7 +122,9 @@ public sealed class DesktopSettingsStoreTests : IDisposable
 
         try
         {
-            var changed = await _settings.SetInstanceDirectoryAsync(string.Empty);
+            var changed = await _settings.SetInstanceDirectoryAsync(
+                string.Empty,
+                TestContext.Current.CancellationToken);
 
             Assert.True(changed);
             Assert.True(string.IsNullOrWhiteSpace(_config.Configuration.InstanceDirectory));
@@ -129,6 +143,22 @@ public sealed class DesktopSettingsStoreTests : IDisposable
             if (Directory.Exists(customDirectory))
                 Directory.Delete(customDirectory, recursive: true);
         }
+    }
+
+    [Fact]
+    public async Task SetInstanceDirectoryAsync_DoesNotChangeTheConfiguredRootWhenCanceled()
+    {
+        var targetDirectory = Path.Combine(
+            Path.GetTempPath(),
+            $"HyPrismInstances_{Guid.NewGuid():N}");
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
+
+        await Assert.ThrowsAsync<OperationCanceledException>(
+            () => _settings.SetInstanceDirectoryAsync(targetDirectory, cancellation.Token));
+
+        Assert.True(string.IsNullOrWhiteSpace(_config.Configuration.InstanceDirectory));
+        Assert.False(Directory.Exists(targetDirectory));
     }
 
     [Fact]

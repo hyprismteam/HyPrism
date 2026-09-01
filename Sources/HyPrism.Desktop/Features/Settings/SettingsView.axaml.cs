@@ -111,6 +111,12 @@ public sealed partial class SettingsView : UserControl
     private static void OnMirrorMenuPointerPressed(object? sender, PointerPressedEventArgs args)
         => args.Handled = true;
 
+    private void OnInstanceFolderChangeActionPointerExited(object? sender, PointerEventArgs args)
+    {
+        if (DataContext is SettingsViewModel viewModel)
+            viewModel.ArmInstanceFolderChangeCancellation();
+    }
+
     private void OnToggleMirrorMenuPointerReleased(object? sender, PointerReleasedEventArgs args)
     {
         if (sender is Border { DataContext: MirrorSourceViewModel mirror })

@@ -66,8 +66,13 @@ public interface IDesktopSettingsStore
     /// Changes the game instance root and moves existing instance data
     /// </summary>
     /// <param name="path">New root, or an empty value to restore the default root</param>
+    /// <param name="cancellationToken">Cancellation requested by the active folder action</param>
+    /// <param name="progress">Optional byte progress for files copied to the new root</param>
     /// <returns><see langword="true"/> when the root was changed successfully</returns>
-    Task<bool> SetInstanceDirectoryAsync(string path);
+    Task<bool> SetInstanceDirectoryAsync(
+        string path,
+        CancellationToken cancellationToken = default,
+        IProgress<InstanceDirectoryMoveProgress>? progress = null);
 
     /// <summary>
     /// Measures launcher and instance storage grouped by file purpose
@@ -78,4 +83,17 @@ public interface IDesktopSettingsStore
 
     /// <summary>Gets or sets whether alpha mod releases are visible</summary>
     bool ShowAlphaMods { get; set; }
+}
+
+/// <summary>
+/// Reports byte progress while instance data is copied to a new root
+/// </summary>
+/// <param name="BytesCopied">Bytes copied so far</param>
+/// <param name="TotalBytes">Total bytes scheduled for copying</param>
+public readonly record struct InstanceDirectoryMoveProgress(long BytesCopied, long TotalBytes)
+{
+    /// <summary>Gets the completed percentage clamped to the supported display range</summary>
+    public int Percentage => TotalBytes <= 0
+        ? 0
+        : Math.Clamp((int)Math.Round(BytesCopied * 100d / TotalBytes), 0, 100);
 }

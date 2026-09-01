@@ -64,6 +64,53 @@ SPDX-License-Identifier: GPL-3.0-only
       </Grid>
     </DataTemplate>
 
+    <DataTemplate x:Key="InstanceFolderChangeActionTemplate" x:DataType="vm:SettingsViewModel">
+      <Grid Classes="managedActionContent">
+        <StackPanel Classes="managedActionIdle"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center">
+          <TextBlock Text="{Binding ChangeInstanceFolderLabel}"
+                     VerticalAlignment="Center" />
+        </StackPanel>
+        <Grid Classes="managedActionProgress" VerticalAlignment="Center">
+          <Path x:Name="InstanceFolderPickerSpinner"
+                Classes="managedActionSpinner"
+                IsVisible="{Binding !IsMovingInstanceFolder}"
+                controls:RotatingVisual.IsActive="{Binding IsChangingInstanceFolder}"
+                HorizontalAlignment="Center"
+                Data="M10,2 A8,8 0 1 1 2,10" />
+          <Grid x:Name="InstanceFolderMoveProgress"
+                Classes="instanceFolderMoveProgress"
+                ColumnDefinitions="48,*,48"
+                IsVisible="{Binding IsMovingInstanceFolder}"
+                VerticalAlignment="Center">
+            <Path Classes="managedActionSpinner"
+                  controls:RotatingVisual.IsActive="{Binding IsMovingInstanceFolder}"
+                  HorizontalAlignment="Center"
+                  Data="M10,2 A8,8 0 1 1 2,10" />
+            <controls:FadingTextBlock Grid.Column="1"
+                                      Classes="managedActionStatus"
+                                      Text="{Binding MovingDataLabel}"
+                                      Foreground="{Binding $parent[Button].Foreground}"
+                                      HorizontalAlignment="Stretch"
+                                      VerticalAlignment="Center" />
+            <TextBlock Grid.Column="2"
+                       Classes="managedActionMetric"
+                       Text="{Binding InstanceFolderChangeMetricText}"
+                       Width="48"
+                       FontFeatures="tnum"
+                       TextAlignment="Right"
+                       HorizontalAlignment="Right"
+                       VerticalAlignment="Center" />
+          </Grid>
+        </Grid>
+        <TextBlock Classes="managedActionCancel"
+                   Text="{Binding CancelLabel}"
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Center" />
+      </Grid>
+    </DataTemplate>
+
 
     <ControlTheme x:Key="JavaSliderTrackButtonTheme" TargetType="RepeatButton">
       <Setter Property="Template">
@@ -927,37 +974,47 @@ SPDX-License-Identifier: GPL-3.0-only
                 <StackPanel>
                   <Border x:Name="InstanceFolderCard" Classes="uiSettingsRow settingsRow dataFileRow">
                     <StackPanel Spacing="12">
-                      <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">
+                      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
                         <StackPanel Spacing="3" VerticalAlignment="Center">
                           <TextBlock Text="{Binding GameDirectoryLabel}" Classes="uiSettingsLabel settingsLabel" />
                           <TextBlock Text="{Binding GameDirectoryHint}" Classes="uiSettingsHint settingsHint" />
                         </StackPanel>
-                        <Button x:Name="ResetInstanceFolderButton"
-                                Grid.Column="1"
-                                Classes="sourceAdd"
-                                Theme="{StaticResource SourceAddButtonTheme}"
-                                Command="{Binding ResetInstanceFolderCommand}"
-                                IsVisible="{Binding !IsDefaultInstanceFolder}"
-                                IsEnabled="{Binding CanResetInstanceFolder}">
-                          <StackPanel Orientation="Horizontal"
-                                      Spacing="7"
-                                      VerticalAlignment="Center">
-                            <Path Classes="dataActionIcon"
-                                  Data="{StaticResource RefreshIcon}"
-                                  VerticalAlignment="Center" />
-                            <TextBlock Text="{Binding ResetInstanceFolderLabel}"
-                                       VerticalAlignment="Center" />
-                          </StackPanel>
-                        </Button>
-                        <Button x:Name="SelectInstanceFolderButton"
-                                Grid.Column="2"
-                                Classes="settingsAction"
-                                Command="{Binding BrowseInstanceFolderCommand}"
-                                IsEnabled="{Binding CanChangeInstanceFolder}"
-                                VerticalContentAlignment="Center">
-                          <TextBlock Text="{Binding ChangeInstanceFolderLabel}"
-                                     VerticalAlignment="Center" />
-                        </Button>
+                        <Grid Grid.Column="1"
+                              Width="220"
+                              Height="36"
+                              ColumnDefinitions="100,10,110">
+                          <Button x:Name="ResetInstanceFolderButton"
+                                  Grid.Column="0"
+                                  Classes="sourceAdd"
+                                  Theme="{StaticResource SourceAddButtonTheme}"
+                                  Command="{Binding ResetInstanceFolderCommand}"
+                                  IsVisible="{Binding !IsDefaultInstanceFolder}"
+                                  IsEnabled="{Binding CanResetInstanceFolder}">
+                            <StackPanel Orientation="Horizontal"
+                                        Spacing="7"
+                                        VerticalAlignment="Center">
+                              <Path Classes="dataActionIcon"
+                                    Data="{StaticResource RefreshIcon}"
+                                    VerticalAlignment="Center" />
+                              <TextBlock Text="{Binding ResetInstanceFolderLabel}"
+                                         VerticalAlignment="Center" />
+                            </StackPanel>
+                          </Button>
+                          <Button x:Name="SelectInstanceFolderButton"
+                                  Grid.Column="2"
+                                  ZIndex="1"
+                                  Classes="settingsAction instanceFolderChangeAction"
+                                  Classes.active="{Binding IsChangingInstanceFolder}"
+                                  Classes.cancelArmed="{Binding IsInstanceFolderChangeCancellationArmed}"
+                                  Command="{Binding BrowseInstanceFolderCommand}"
+                                  IsEnabled="{Binding CanUseInstanceFolderChangeAction}"
+                                  PointerExited="OnInstanceFolderChangeActionPointerExited"
+                                  HorizontalAlignment="Right"
+                                  VerticalContentAlignment="Center">
+                            <ContentControl Content="{Binding}"
+                                            ContentTemplate="{StaticResource InstanceFolderChangeActionTemplate}" />
+                          </Button>
+                        </Grid>
                       </Grid>
                       <Border x:Name="InstanceFolderPathSurface" Classes="dataPathSurface">
                         <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
@@ -974,13 +1031,6 @@ SPDX-License-Identifier: GPL-3.0-only
                           </Button>
                         </Grid>
                       </Border>
-                      <StackPanel Orientation="Horizontal"
-                                  Spacing="9"
-                                  VerticalAlignment="Center"
-                                  IsVisible="{Binding IsChangingInstanceFolder}">
-                        <ProgressBar Classes="dataMoveProgress" IsIndeterminate="True" />
-                        <TextBlock Text="{Binding MovingDataLabel}" Classes="dataMoveText" />
-                      </StackPanel>
                     </StackPanel>
                   </Border>
                   <Border x:Name="LauncherDataCard" Classes="uiSettingsRow settingsRow last dataFileRow">

@@ -1,6 +1,7 @@
 // Copyright (C) 2026 HyPrism Launcher
 // SPDX-License-Identifier: GPL-3.0-only
 
+using System.Buffers;
 using HyPrism.Core;
 using HyPrism.Core.Infrastructure;
 
@@ -151,8 +152,12 @@ public sealed class DesktopSettingsStore : IDesktopSettingsStore
     public string LauncherDataDirectory => _appDirectory;
 
     /// <inheritdoc/>
-    public async Task<bool> SetInstanceDirectoryAsync(string path)
+    public async Task<bool> SetInstanceDirectoryAsync(
+        string path,
+        CancellationToken cancellationToken = default,
+        IProgress<InstanceDirectoryMoveProgress>? progress = null)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         var resetToDefault = string.IsNullOrWhiteSpace(path);
         var targetDirectory = resetToDefault
             ? DefaultInstanceDirectory
@@ -177,7 +182,14 @@ public sealed class DesktopSettingsStore : IDesktopSettingsStore
 
         try
         {
-            await Task.Run(() => CopyDirectory(currentDirectory, targetDirectory));
+            await Task.Run(
+                () => CopyDirectoryAsync(
+                    currentDirectory,
+                    targetDirectory,
+                    cancellationToken,
+                    progress),
+                cancellationToken);
+            cancellationToken.ThrowIfCancellationRequested();
             var saved = resetToDefault
                 ? await SaveDefaultInstanceDirectoryAsync()
                 : await _configStore.SetInstanceDirectoryAsync(targetDirectory) is not null;
@@ -187,7 +199,8 @@ public sealed class DesktopSettingsStore : IDesktopSettingsStore
             TryRemovePreviousDirectory(currentDirectory);
             return true;
         }
-        catch (Exception exception)
+        catch (Exception exception) when (
+            exception is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
         {
             Logger.Error("Settings", $"Failed to move instance storage: {exception.Message}");
             return false;
@@ -230,29 +243,138 @@ public sealed class DesktopSettingsStore : IDesktopSettingsStore
             : Path.Combine(_appDirectory, expanded));
     }
 
-    private static void CopyDirectory(string sourceDirectory, string targetDirectory)
+    private static async Task CopyDirectoryAsync(
+        string sourceDirectory,
+        string targetDirectory,
+        CancellationToken cancellationToken,
+        IProgress<InstanceDirectoryMoveProgress>? progress)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         Directory.CreateDirectory(targetDirectory);
         if (!Directory.Exists(sourceDirectory))
             return;
+
+        var files = Directory.EnumerateFiles(sourceDirectory, "*", SearchOption.AllDirectories)
+            .Select(path => new FileInfo(path))
+            .ToArray();
+        var totalBytes = files.Sum(file => file.Length);
+        var copiedBytes = 0L;
+        var lastReportedPercentage = -1;
+        ReportProgress();
 
         foreach (var directory in Directory.EnumerateDirectories(
                      sourceDirectory,
                      "*",
                      SearchOption.AllDirectories))
         {
+            cancellationToken.ThrowIfCancellationRequested();
             Directory.CreateDirectory(Path.Combine(
                 targetDirectory,
                 Path.GetRelativePath(sourceDirectory, directory)));
         }
 
-        foreach (var file in Directory.EnumerateFiles(sourceDirectory, "*", SearchOption.AllDirectories))
+        foreach (var file in files)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             var destination = Path.Combine(
                 targetDirectory,
-                Path.GetRelativePath(sourceDirectory, file));
+                Path.GetRelativePath(sourceDirectory, file.FullName));
             Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
-            File.Copy(file, destination, overwrite: true);
+            await CopyFileAsync(
+                file.FullName,
+                destination,
+                cancellationToken,
+                copiedChunkBytes =>
+                {
+                    copiedBytes += copiedChunkBytes;
+                    ReportProgress();
+                });
+        }
+
+        copiedBytes = totalBytes;
+        ReportProgress();
+
+        void ReportProgress()
+        {
+            if (progress is null)
+                return;
+
+            var moveProgress = new InstanceDirectoryMoveProgress(copiedBytes, totalBytes);
+            if (moveProgress.Percentage == lastReportedPercentage)
+                return;
+
+            lastReportedPercentage = moveProgress.Percentage;
+            progress.Report(moveProgress);
+        }
+    }
+
+    private static async Task CopyFileAsync(
+        string source,
+        string destination,
+        CancellationToken cancellationToken,
+        Action<int> reportBytesCopied)
+    {
+        var destinationDirectory = Path.GetDirectoryName(destination)!;
+        var temporaryFile = Path.Combine(
+            destinationDirectory,
+            $".{Path.GetFileName(destination)}.{Guid.NewGuid():N}.hyprism-copy");
+
+        try
+        {
+            await using (var sourceStream = new FileStream(
+                             source,
+                             FileMode.Open,
+                             FileAccess.Read,
+                             FileShare.Read,
+                             bufferSize: 81920,
+                             FileOptions.Asynchronous | FileOptions.SequentialScan))
+            await using (var destinationStream = new FileStream(
+                             temporaryFile,
+                             FileMode.CreateNew,
+                             FileAccess.Write,
+                             FileShare.None,
+                             bufferSize: 81920,
+                             FileOptions.Asynchronous | FileOptions.SequentialScan))
+            {
+                var buffer = ArrayPool<byte>.Shared.Rent(81920);
+                try
+                {
+                    while (true)
+                    {
+                        var bytesRead = await sourceStream.ReadAsync(buffer, cancellationToken);
+                        if (bytesRead == 0)
+                            break;
+
+                        await destinationStream.WriteAsync(buffer.AsMemory(0, bytesRead), cancellationToken);
+                        reportBytesCopied(bytesRead);
+                    }
+
+                    await destinationStream.FlushAsync(cancellationToken);
+                }
+                finally
+                {
+                    ArrayPool<byte>.Shared.Return(buffer);
+                }
+            }
+
+            cancellationToken.ThrowIfCancellationRequested();
+            File.Move(temporaryFile, destination, overwrite: true);
+        }
+        finally
+        {
+            if (File.Exists(temporaryFile))
+            {
+                try
+                {
+                    File.Delete(temporaryFile);
+                }
+                catch (Exception exception)
+                {
+                    Logger.Warning(
+                        "Settings",
+                        $"Temporary instance copy could not be removed: {exception.Message}");
+                }
+            }
         }
     }
 

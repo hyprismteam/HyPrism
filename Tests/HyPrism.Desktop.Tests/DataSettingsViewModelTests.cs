@@ -117,7 +117,10 @@ public sealed class DataSettingsViewModelTests
             "C:\\HyPrism\\Instances",
             "C:\\HyPrism");
         settings
-            .Setup(service => service.SetInstanceDirectoryAsync(selectedDirectory))
+            .Setup(service => service.SetInstanceDirectoryAsync(
+                selectedDirectory,
+                It.IsAny<CancellationToken>(),
+                It.IsAny<IProgress<InstanceDirectoryMoveProgress>?>()))
             .Callback(() => configuredDirectory = selectedDirectory)
             .ReturnsAsync(true);
         var picker = new Mock<IFilePicker>();
@@ -142,8 +145,179 @@ public sealed class DataSettingsViewModelTests
         Assert.False(viewModel.IsDefaultInstanceFolder);
         Assert.True(viewModel.CanResetInstanceFolder);
         settings.Verify(
-            service => service.SetInstanceDirectoryAsync(selectedDirectory),
+            service => service.SetInstanceDirectoryAsync(
+                selectedDirectory,
+                It.IsAny<CancellationToken>(),
+                It.IsAny<IProgress<InstanceDirectoryMoveProgress>?>()),
             Times.Once);
+    }
+
+    [AvaloniaFact]
+    public async Task BrowseInstanceFolder_ExpandsWhileTheFolderPickerIsOpenAndCollapsesWhenClosed()
+    {
+        const string configuredDirectory = "/home/user/Games/HyPrism";
+        var pickerOpened = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var pickerResult = new TaskCompletionSource<string?>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var picker = new Mock<IFilePicker>();
+        picker
+            .Setup(service => service.BrowseFolderAsync(configuredDirectory))
+            .Returns(() =>
+            {
+                pickerOpened.TrySetResult();
+                return pickerResult.Task;
+            });
+        using var viewModel = new SettingsViewModel(
+            CreateSettingsStore(
+                () => configuredDirectory,
+                configuredDirectory,
+                "/home/user/.local/share/HyPrism").Object,
+            new Mock<IExternalUriLauncher>().Object,
+            new StringLocalizer("en-US"),
+            picker.Object);
+        viewModel.SelectCategoryCommand.Execute(
+            viewModel.Categories.Single(category => category.Id == "data"));
+        var view = new SettingsView
+        {
+            Width = 1180,
+            Height = 760,
+            DataContext = viewModel
+        };
+        var window = new Window
+        {
+            Width = 1180,
+            Height = 760,
+            Content = view
+        };
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+
+        var browseTask = viewModel.BrowseInstanceFolderCommand.ExecuteAsync(null);
+        await pickerOpened.Task.WaitAsync(TestContext.Current.CancellationToken);
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.True(viewModel.IsChangingInstanceFolder);
+        Assert.False(viewModel.IsMovingInstanceFolder);
+        Assert.Empty(viewModel.InstanceFolderChangeMetricText);
+        Assert.False(viewModel.IsInstanceFolderChangeCancellationArmed);
+        var action = Assert.IsType<Button>(view.FindControl<Button>("SelectInstanceFolderButton"));
+        Assert.Contains("active", action.Classes);
+        Assert.Contains(
+            action.GetVisualDescendants().OfType<Avalonia.Controls.Shapes.Path>(),
+            path => path.Classes.Contains("managedActionSpinner") && path.IsEffectivelyVisible);
+        Assert.Contains(
+            action.GetVisualDescendants().OfType<Grid>(),
+            grid => grid.Classes.Contains("instanceFolderMoveProgress") && !grid.IsEffectivelyVisible);
+
+        pickerResult.TrySetResult(null);
+        await browseTask;
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.False(viewModel.IsChangingInstanceFolder);
+        Assert.False(viewModel.IsMovingInstanceFolder);
+        Assert.DoesNotContain("active", action.Classes);
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public async Task BrowseInstanceFolder_RequiresPointerExitBeforeItCancelsTheMove()
+    {
+        const string configuredDirectory = "/home/user/Games/HyPrism";
+        const string selectedDirectory = "/mnt/games/HyPrism";
+        var moveStarted = new TaskCompletionSource<(
+            CancellationToken CancellationToken,
+            IProgress<InstanceDirectoryMoveProgress>? Progress)>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var settings = CreateSettingsStore(
+            () => configuredDirectory,
+            configuredDirectory,
+            "/home/user/.local/share/HyPrism");
+        settings
+            .Setup(service => service.SetInstanceDirectoryAsync(
+                selectedDirectory,
+                It.IsAny<CancellationToken>(),
+                It.IsAny<IProgress<InstanceDirectoryMoveProgress>?>()))
+            .Returns<string, CancellationToken, IProgress<InstanceDirectoryMoveProgress>?>(
+                async (_, cancellationToken, progress) =>
+            {
+                moveStarted.TrySetResult((cancellationToken, progress));
+                var moveCancelled = new TaskCompletionSource(
+                    TaskCreationOptions.RunContinuationsAsynchronously);
+                using var registration = cancellationToken.Register(
+                    () => moveCancelled.TrySetCanceled(cancellationToken));
+                await moveCancelled.Task;
+                return true;
+            });
+        var picker = new Mock<IFilePicker>();
+        picker
+            .Setup(service => service.BrowseFolderAsync(configuredDirectory))
+            .ReturnsAsync(selectedDirectory);
+        using var viewModel = new SettingsViewModel(
+            settings.Object,
+            new Mock<IExternalUriLauncher>().Object,
+            new StringLocalizer("en-US"),
+            picker.Object);
+
+        var moveTask = viewModel.BrowseInstanceFolderCommand.ExecuteAsync(null);
+        var move = await moveStarted.Task.WaitAsync(TestContext.Current.CancellationToken);
+
+        Assert.True(viewModel.IsChangingInstanceFolder);
+        Assert.True(viewModel.IsMovingInstanceFolder);
+        Assert.False(viewModel.IsInstanceFolderChangeCancellationArmed);
+        Assert.False(move.CancellationToken.IsCancellationRequested);
+        move.Progress?.Report(new InstanceDirectoryMoveProgress(42, 100));
+        Dispatcher.UIThread.RunJobs();
+        Assert.Equal("42%", viewModel.InstanceFolderChangeMetricText);
+
+        await viewModel.BrowseInstanceFolderCommand.ExecuteAsync(null);
+        Assert.False(move.CancellationToken.IsCancellationRequested);
+
+        viewModel.ArmInstanceFolderChangeCancellation();
+        Assert.True(viewModel.IsInstanceFolderChangeCancellationArmed);
+
+        await viewModel.BrowseInstanceFolderCommand.ExecuteAsync(null);
+        await moveTask;
+
+        Assert.True(move.CancellationToken.IsCancellationRequested);
+        Assert.False(viewModel.IsChangingInstanceFolder);
+        Assert.False(viewModel.IsMovingInstanceFolder);
+        Assert.False(viewModel.IsInstanceFolderChangeCancellationArmed);
+        Assert.Equal(configuredDirectory, viewModel.InstanceFolder);
+    }
+
+    [AvaloniaFact]
+    public async Task ResetInstanceFolder_KeepsTheActionExpandedLongEnoughToCompleteItsTransition()
+    {
+        var configuredDirectory = "/mnt/games/HyPrism";
+        const string defaultDirectory = "/home/user/Games/HyPrism";
+        var settings = CreateSettingsStore(
+            () => configuredDirectory,
+            defaultDirectory,
+            "/home/user/.local/share/HyPrism");
+        settings
+            .Setup(service => service.SetInstanceDirectoryAsync(
+                string.Empty,
+                It.IsAny<CancellationToken>(),
+                It.IsAny<IProgress<InstanceDirectoryMoveProgress>?>()))
+            .Callback(() => configuredDirectory = string.Empty)
+            .ReturnsAsync(true);
+        using var viewModel = new SettingsViewModel(
+            settings.Object,
+            new Mock<IExternalUriLauncher>().Object,
+            new StringLocalizer("en-US"));
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+
+        var resetTask = viewModel.ResetInstanceFolderCommand.ExecuteAsync(null);
+
+        Assert.True(viewModel.IsChangingInstanceFolder);
+        Assert.False(resetTask.IsCompleted);
+        await resetTask;
+        stopwatch.Stop();
+
+        Assert.True(stopwatch.Elapsed >= TimeSpan.FromMilliseconds(350));
+        Assert.False(viewModel.IsChangingInstanceFolder);
+        Assert.Equal(defaultDirectory, viewModel.InstanceFolder);
     }
 
     [AvaloniaFact]
@@ -253,9 +427,11 @@ public sealed class DataSettingsViewModelTests
         Assert.False(resetButton.IsEnabled);
         Assert.True(resetButton.IsEffectivelyVisible);
         Assert.Equal(VerticalAlignment.Center, selectButton.VerticalContentAlignment);
-        var selectLabel = Assert.IsType<TextBlock>(selectButton.Content);
-        Assert.Equal("Edit", selectLabel.Text);
-        Assert.Equal(VerticalAlignment.Center, selectLabel.VerticalAlignment);
+        Assert.Contains("instanceFolderChangeAction", selectButton.Classes);
+        Assert.DoesNotContain("active", selectButton.Classes);
+        Assert.Contains(
+            selectButton.GetVisualDescendants().OfType<TextBlock>(),
+            label => label.Text == "Edit" && label.VerticalAlignment == VerticalAlignment.Center);
         Assert.Equal(default, instancePathSurface.BorderThickness);
         Assert.Equal(default, launcherPathSurface.BorderThickness);
         Assert.Same(storageDonut.TrackBrush, instancePathSurface.Background);
