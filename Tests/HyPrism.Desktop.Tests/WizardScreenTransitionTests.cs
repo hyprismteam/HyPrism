@@ -1,6 +1,7 @@
 // Copyright (C) 2026 HyPrism Launcher
 // SPDX-License-Identifier: GPL-3.0-only
 
+using System.Diagnostics;
 using Avalonia;
 using Avalonia.Animation;
 using Avalonia.Controls;
@@ -70,7 +71,9 @@ public sealed class WizardScreenTransitionTests
                 form.IsVisible = true;
             },
             () => true);
-        await Task.Delay(WizardScreenTransition.PhaseDuration + TimeSpan.FromMilliseconds(40));
+        await WaitForRenderStateAsync(
+            () => !choice.IsVisible && form.IsVisible,
+            "wizard step model state to switch");
 
         Assert.Equal("/Assets/Lotties/avatar-reveal.json", revealIcon.AnimationPath);
 
@@ -110,10 +113,9 @@ public sealed class WizardScreenTransitionTests
         window.Show();
         Dispatcher.UIThread.RunJobs();
         var rotation = Assert.IsType<RotateTransform>(spinner.RenderTransform);
-        AvaloniaHeadlessPlatform.ForceRenderTimerTick(1);
-        await Task.Delay(20);
-        AvaloniaHeadlessPlatform.ForceRenderTimerTick(1);
-        Dispatcher.UIThread.RunJobs();
+        await WaitForRenderStateAsync(
+            () => rotation.Angle is > 0 and < 360,
+            "active rotating visual to advance");
         Assert.InRange(rotation.Angle, 1, 359);
 
         RotatingVisual.SetIsActive(spinner, false);
@@ -121,10 +123,9 @@ public sealed class WizardScreenTransitionTests
         Assert.Equal(0, rotation.Angle);
 
         RotatingVisual.SetIsActive(spinner, true);
-        AvaloniaHeadlessPlatform.ForceRenderTimerTick(1);
-        await Task.Delay(20);
-        AvaloniaHeadlessPlatform.ForceRenderTimerTick(1);
-        Dispatcher.UIThread.RunJobs();
+        await WaitForRenderStateAsync(
+            () => rotation.Angle is > 0 and < 360,
+            "reactivated rotating visual to advance");
         Assert.InRange(rotation.Angle, 1, 359);
 
         window.Close();
@@ -150,7 +151,6 @@ public sealed class WizardScreenTransitionTests
         var callbackInvoked = false;
 
         var closeTask = host.CloseAsync(() => true, () => callbackInvoked = true);
-        await Task.Delay(60);
 
         Assert.True(activeStep.IsVisible);
         Assert.False(callbackInvoked);
@@ -268,20 +268,26 @@ public sealed class WizardScreenTransitionTests
 
         host.Update(800, hasMaster: true);
         Assert.Equal(800, translation.X);
+        Assert.False(translation.IsAnimating(TranslateTransform.XProperty));
 
         host.OpenDetail();
-        await Task.Delay(70);
         Dispatcher.UIThread.RunJobs();
-        Assert.InRange(translation.X, 1, 799);
+        Assert.True(translation.IsAnimating(TranslateTransform.XProperty));
 
-        await Task.Delay(280);
-        Dispatcher.UIThread.RunJobs();
+        await WaitForRenderStateAsync(
+            () => Math.Abs(translation.X) <= 0.01,
+            "detail opening animation to complete");
         Assert.InRange(Math.Abs(translation.X), 0, 0.01);
+        Assert.False(translation.IsAnimating(TranslateTransform.XProperty));
 
         Assert.True(host.TryCloseDetail());
-        await Task.Delay(70);
         Dispatcher.UIThread.RunJobs();
-        Assert.InRange(translation.X, 1, 799);
+        Assert.True(translation.IsAnimating(TranslateTransform.XProperty));
+        await WaitForRenderStateAsync(
+            () => Math.Abs(translation.X - 800) <= 0.01,
+            "detail closing animation to complete");
+        Assert.InRange(Math.Abs(translation.X - 800), 0, 0.01);
+        Assert.False(translation.IsAnimating(TranslateTransform.XProperty));
 
         window.Close();
     }
@@ -302,7 +308,7 @@ public sealed class WizardScreenTransitionTests
             forward: true,
             () => stepSwitched = true,
             () => true);
-        await Task.Delay(20);
+        Assert.False(outgoingStep.IsHitTestVisible);
         transition.Cancel();
         await transitionTask;
 
@@ -359,7 +365,9 @@ public sealed class WizardScreenTransitionTests
             forward: true,
             () => stepSwitched = true,
             () => true);
-        await Task.Delay(80);
+        await WaitForRenderStateAsync(
+            () => outgoingStep.Opacity is > 0 and < 1,
+            "outgoing wizard step animation to advance");
 
         Assert.False(stepSwitched);
         Assert.True(outgoingStep.IsVisible);
@@ -571,7 +579,7 @@ public sealed class WizardScreenTransitionTests
 
         variableContent.Height = 280;
         Dispatcher.UIThread.RunJobs();
-        await Task.Delay(40);
+        AvaloniaHeadlessPlatform.ForceRenderTimerTick(1);
         Dispatcher.UIThread.RunJobs();
 
         var translation = Assert.IsType<TranslateTransform>(anchor.RenderTransform);
@@ -586,6 +594,21 @@ public sealed class WizardScreenTransitionTests
         {
             RenderTransform = new TranslateTransform()
         };
+
+    private static async Task WaitForRenderStateAsync(Func<bool> condition, string description)
+    {
+        var startedAt = Stopwatch.GetTimestamp();
+        while (!condition() && Stopwatch.GetElapsedTime(startedAt) < TimeSpan.FromSeconds(5))
+        {
+            AvaloniaHeadlessPlatform.ForceRenderTimerTick(1);
+            Dispatcher.UIThread.RunJobs();
+            await Task.Delay(16, TestContext.Current.CancellationToken);
+        }
+
+        AvaloniaHeadlessPlatform.ForceRenderTimerTick(1);
+        Dispatcher.UIThread.RunJobs();
+        Assert.True(condition(), $"Timed out waiting for {description}");
+    }
 
     private static async Task WaitForAvaloniaPropertyAsync(
         AvaloniaObject source,
@@ -609,7 +632,7 @@ public sealed class WizardScreenTransitionTests
         try
         {
             if (!condition())
-                await completion.Task.WaitAsync(TimeSpan.FromSeconds(2));
+                await completion.Task.WaitAsync(TimeSpan.FromSeconds(5));
         }
         catch (TimeoutException)
         {

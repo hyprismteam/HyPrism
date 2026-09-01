@@ -3126,6 +3126,21 @@ public sealed class MainWindowRenderTests
             .Single(image => image.Width == 24 && image.Height == 24);
         var detailsLabelPosition = detailsLabel.TranslatePoint(default, detailsButton);
         var detailsEmotePosition = detailsEmote.TranslatePoint(default, detailsButton);
+        await WaitForConditionAsync(
+            () =>
+            {
+                var currentLabelPosition = detailsLabel.TranslatePoint(default, detailsButton);
+                var currentEmotePosition = detailsEmote.TranslatePoint(default, detailsButton);
+                if (currentLabelPosition is null || currentEmotePosition is null)
+                    return false;
+
+                var gap = currentEmotePosition.Value.X -
+                    (currentLabelPosition.Value.X + detailsLabel.Bounds.Width);
+                return gap is >= 6.5 and <= 7.5;
+            },
+            "article details summary layout to settle");
+        detailsLabelPosition = detailsLabel.TranslatePoint(default, detailsButton);
+        detailsEmotePosition = detailsEmote.TranslatePoint(default, detailsButton);
         Assert.NotNull(detailsLabelPosition);
         Assert.NotNull(detailsEmotePosition);
         var detailsLabelCenter = detailsLabelPosition!.Value.Y + detailsLabel.Bounds.Height / 2;
