@@ -406,6 +406,8 @@ public sealed class DataSettingsViewModelTests
         var warning = Assert.IsType<Border>(view.FindControl<Border>("DataGameRunningWarning"));
         var selectButton = Assert.IsType<Button>(view.FindControl<Button>("SelectInstanceFolderButton"));
         var resetButton = Assert.IsType<Button>(view.FindControl<Button>("ResetInstanceFolderButton"));
+        var openLauncherDataButton = Assert.IsType<Button>(
+            view.FindControl<Button>("OpenLauncherDataFolderButton"));
         var instancePathSurface = Assert.IsType<Border>(
             view.FindControl<Border>("InstanceFolderPathSurface"));
         var launcherPathSurface = Assert.IsType<Border>(
@@ -432,6 +434,10 @@ public sealed class DataSettingsViewModelTests
         Assert.Contains(
             selectButton.GetVisualDescendants().OfType<TextBlock>(),
             label => label.Text == "Edit" && label.VerticalAlignment == VerticalAlignment.Center);
+        Assert.Empty(openLauncherDataButton.GetVisualDescendants().OfType<TextBlock>());
+        Assert.Contains(
+            openLauncherDataButton.GetVisualDescendants().OfType<Avalonia.Controls.Shapes.Path>(),
+            icon => icon.Classes.Contains("dataPathOpenIcon"));
         Assert.Equal(default, instancePathSurface.BorderThickness);
         Assert.Equal(default, launcherPathSurface.BorderThickness);
         Assert.Same(storageDonut.TrackBrush, instancePathSurface.Background);

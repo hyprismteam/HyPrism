@@ -27,7 +27,7 @@ Java heap arguments such as `-Xms` and `-Xmx` are managed by the memory controls
 
 ## Data storage
 
-The Data page combines game instance storage and launcher data in one **Launcher Files** group. Each location is shown as a readable local path with an action that opens it in the system file manager
+The Data page combines game instance storage and launcher data in one **Launcher Files** group. Each location is shown as a readable local path with an icon action that opens it in the system file manager
 
 A donut chart above the file locations shows total disk usage and groups occupied space into instance files, images, mods, news articles, logs, and other files. Its darker segments contain multiple filled Material Symbols Rounded icons that drift, appear, and dissolve independently across each storage category, while the responsive legend uses the same grouped statistic cells and internal dividers as instance and profile information. The percentage labels use Google Sans. Static chart layers are cached, particle paths are recalculated only for a new animation cycle, updates are limited to 60 frames per second, and animation pauses while the chart is hidden. The legend keeps size and percentage values aligned and shows the current instance count. Encoded files in the persistent image cache are counted as images, while parsed feed and article data under `Cache/News` is counted as news. Storage is measured in the background during launcher startup and the cached result is reused when the page is opened
 

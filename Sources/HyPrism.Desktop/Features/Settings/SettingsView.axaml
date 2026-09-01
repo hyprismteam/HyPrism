@@ -1046,14 +1046,12 @@ SPDX-License-Identifier: GPL-3.0-only
                                      Classes="dataPathText"
                                      TextTrimming="CharacterEllipsis"
                                      ToolTip.Tip="{Binding LauncherDataFolder}" />
-                          <Button Grid.Column="1"
+                          <Button x:Name="OpenLauncherDataFolderButton"
+                                  Grid.Column="1"
                                   Classes="dataPathOpen"
                                   Command="{Binding OpenLauncherDataFolderCommand}"
                                   ToolTip.Tip="{Binding OpenFolderLabel}">
-                            <StackPanel Orientation="Horizontal" Spacing="7">
-                              <TextBlock Text="{Binding OpenFolderLabel}" />
-                              <Path Classes="dataPathOpenIcon" Data="{StaticResource OpenIcon}" />
-                            </StackPanel>
+                            <Path Classes="dataPathOpenIcon" Data="{StaticResource OpenIcon}" />
                           </Button>
                         </Grid>
                       </Border>
