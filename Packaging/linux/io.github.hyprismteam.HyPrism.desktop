@@ -10,3 +10,4 @@ Icon=io.github.hyprismteam.HyPrism
 Categories=Game;Utility;
 Terminal=false
 StartupNotify=true
+PrefersNonDefaultGPU=true

@@ -21,6 +21,8 @@ Settings use the same adaptive master-detail layout as the news reader. Wide win
 | Data | application and instance storage locations |
 | About | project and license information |
 
+The GPU selected on the **Graphics** page applies to launched games. The HyPrism interface separately requests the system high-performance GPU when hybrid graphics are available. Windows uses the DXGI high-performance adapter order, while Linux uses the desktop GPU preference and PRIME offload variables. Existing Linux PRIME variables are preserved, and Avalonia can still use software rendering if hardware initialization fails
+
 Java heap arguments such as `-Xms` and `-Xmx` are managed by the memory controls and are rejected in the free-form arguments field
 
 ## Data storage

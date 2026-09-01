@@ -18,6 +18,8 @@ HyPrism targets Avalonia 12.1.1 and enables compiled bindings for the whole Desk
 - dashboard bitmap decoding runs outside the UI thread
 - the Skia GPU resource cache is capped at 256 MiB to retain the active 1920x1080 background and decoded news images without frequent eviction
 - region dirty rectangle clipping keeps the Avalonia 12.1 default because its CPU cost can reduce frame rate on GPU accelerated desktops
+- Windows ANGLE rendering asks DXGI for its high-performance adapter and matches that adapter to Avalonia by LUID, with software rendering retained as the fallback
+- Linux packaging declares `PrefersNonDefaultGPU=true`; direct startup adds Mesa and NVIDIA PRIME variables only when DRM exposes multiple adapters and does not replace values inherited from the user or desktop environment
 
 ## Collection and layout rules
 
