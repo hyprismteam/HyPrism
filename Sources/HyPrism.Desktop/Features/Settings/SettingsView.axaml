@@ -937,7 +937,7 @@ SPDX-License-Identifier: GPL-3.0-only
                     <DataTemplate x:DataType="controls:StorageDonutSegment">
                       <Border Classes="storageLegendItem">
                         <Grid RowDefinitions="Auto,Auto" RowSpacing="3">
-                          <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="7">
+                          <Grid ColumnDefinitions="Auto,*" ColumnSpacing="7">
                             <Border Width="8"
                                     Height="8"
                                     CornerRadius="999"
@@ -947,11 +947,6 @@ SPDX-License-Identifier: GPL-3.0-only
                                        Grid.Column="1"
                                        Classes="storageLegendLabel"
                                        VerticalAlignment="Center" />
-                            <Border Grid.Column="2"
-                                    Classes="storageLegendCount"
-                                    IsVisible="{Binding HasCount}">
-                              <TextBlock Text="{Binding Count}" />
-                            </Border>
                           </Grid>
                           <Grid Grid.Row="1" ColumnDefinitions="*,Auto" ColumnSpacing="12">
                             <TextBlock Text="{Binding DisplaySize}"

@@ -453,6 +453,9 @@ public sealed class DataSettingsViewModelTests
         var legendGrid = Assert.Single(
             storageLegendCard.GetVisualDescendants().OfType<UniformGrid>());
         Assert.Equal(6, legendItems.Length);
+        Assert.DoesNotContain(
+            storageLegendCard.GetVisualDescendants().OfType<Border>(),
+            border => border.Classes.Contains("storageLegendCount"));
         Assert.All(legendItems, item => Assert.True(item.Bounds.Width > 250));
         Assert.True(storageLegendCard.ClipToBounds);
         Assert.Equal(new CornerRadius(14), storageLegendCard.CornerRadius);
