@@ -1153,9 +1153,9 @@ SPDX-License-Identifier: GPL-3.0-only
   <Style Selector="Border.dataPathSurface">
     <Setter Property="MinHeight" Value="44" />
     <Setter Property="Padding" Value="14,4,5,4" />
-    <Setter Property="Background" Value="#121315" />
-    <Setter Property="BorderBrush" Value="{DynamicResource StrokeBrush}" />
-    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="Background" Value="{DynamicResource ControlTrackBrush}" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
     <Setter Property="CornerRadius" Value="10" />
   </Style>
 

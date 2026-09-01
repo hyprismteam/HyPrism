@@ -856,7 +856,9 @@ SPDX-License-Identifier: GPL-3.0-only
                                             HoleBrush="{DynamicResource SurfaceBrush}"
                                             SeparatorBrush="{DynamicResource SurfaceBrush}"
                                             SeparatorThickness="2.5"
-                                            InnerRadiusRatio="0.5" />
+                                            InnerRadiusRatio="0.5"
+                                            IsAnimationEnabled="{Binding IsData}"
+                                            LabelFontFamily="{DynamicResource GoogleSansFont}" />
                 <StackPanel HorizontalAlignment="Center"
                             VerticalAlignment="Center"
                             Spacing="3"
@@ -930,24 +932,34 @@ SPDX-License-Identifier: GPL-3.0-only
                           <TextBlock Text="{Binding GameDirectoryLabel}" Classes="uiSettingsLabel settingsLabel" />
                           <TextBlock Text="{Binding GameDirectoryHint}" Classes="uiSettingsHint settingsHint" />
                         </StackPanel>
-                        <Button Grid.Column="1"
-                                Classes="javaInlineAction"
+                        <Button x:Name="ResetInstanceFolderButton"
+                                Grid.Column="1"
+                                Classes="sourceAdd"
+                                Theme="{StaticResource SourceAddButtonTheme}"
                                 Command="{Binding ResetInstanceFolderCommand}"
+                                IsVisible="{Binding !IsDefaultInstanceFolder}"
                                 IsEnabled="{Binding CanResetInstanceFolder}">
-                          <StackPanel Orientation="Horizontal" Spacing="7">
-                            <Path Classes="dataActionIcon" Data="{StaticResource RefreshIcon}" />
-                            <TextBlock Text="{Binding ResetInstanceFolderLabel}" />
+                          <StackPanel Orientation="Horizontal"
+                                      Spacing="7"
+                                      VerticalAlignment="Center">
+                            <Path Classes="dataActionIcon"
+                                  Data="{StaticResource RefreshIcon}"
+                                  VerticalAlignment="Center" />
+                            <TextBlock Text="{Binding ResetInstanceFolderLabel}"
+                                       VerticalAlignment="Center" />
                           </StackPanel>
                         </Button>
                         <Button x:Name="SelectInstanceFolderButton"
                                 Grid.Column="2"
                                 Classes="settingsAction"
                                 Command="{Binding BrowseInstanceFolderCommand}"
-                                IsEnabled="{Binding CanChangeInstanceFolder}">
-                          <TextBlock Text="{Binding SelectLabel}" />
+                                IsEnabled="{Binding CanChangeInstanceFolder}"
+                                VerticalContentAlignment="Center">
+                          <TextBlock Text="{Binding ChangeInstanceFolderLabel}"
+                                     VerticalAlignment="Center" />
                         </Button>
                       </Grid>
-                      <Border Classes="dataPathSurface">
+                      <Border x:Name="InstanceFolderPathSurface" Classes="dataPathSurface">
                         <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
                           <TextBlock x:Name="InstanceFolderPath"
                                      Text="{Binding InstanceFolder}"
@@ -977,7 +989,7 @@ SPDX-License-Identifier: GPL-3.0-only
                         <TextBlock Text="{Binding LauncherDataFolderLabel}" Classes="uiSettingsLabel settingsLabel" />
                         <TextBlock Text="{Binding LauncherDataHint}" Classes="uiSettingsHint settingsHint" />
                       </StackPanel>
-                      <Border Classes="dataPathSurface">
+                      <Border x:Name="LauncherDataPathSurface" Classes="dataPathSurface">
                         <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
                           <TextBlock x:Name="LauncherDataPath"
                                      Text="{Binding LauncherDataFolder}"

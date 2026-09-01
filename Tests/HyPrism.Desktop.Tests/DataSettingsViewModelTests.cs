@@ -9,6 +9,7 @@ using Avalonia.Headless.XUnit;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Interactivity;
+using Avalonia.Layout;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using HyPrism.Core.Game.Instances;
@@ -79,9 +80,12 @@ public sealed class DataSettingsViewModelTests
         window.Show();
         Dispatcher.UIThread.RunJobs();
         Assert.Equal(6, chart.LoadedParticleIconCount);
+        Assert.True(chart.IsParticleAnimationRunning);
         await Task.Delay(120, TestContext.Current.CancellationToken);
         Dispatcher.UIThread.RunJobs();
         using var firstFrame = window.CaptureRenderedFrame();
+        var sceneBuildCount = chart.StaticSceneBuildCount;
+        Assert.Equal(20, chart.CachedParticleCount);
         await Task.Delay(360, TestContext.Current.CancellationToken);
         Dispatcher.UIThread.RunJobs();
         using var secondFrame = window.CaptureRenderedFrame();
@@ -93,6 +97,12 @@ public sealed class DataSettingsViewModelTests
         firstFrame.Save(firstBytes, PngBitmapEncoderOptions.Default);
         secondFrame.Save(secondBytes, PngBitmapEncoderOptions.Default);
         Assert.False(firstBytes.ToArray().SequenceEqual(secondBytes.ToArray()));
+        Assert.Equal(sceneBuildCount, chart.StaticSceneBuildCount);
+
+        chart.IsAnimationEnabled = false;
+        Assert.False(chart.IsParticleAnimationRunning);
+        chart.IsAnimationEnabled = true;
+        Assert.True(chart.IsParticleAnimationRunning);
 
         window.Close();
     }
@@ -120,10 +130,17 @@ public sealed class DataSettingsViewModelTests
             new StringLocalizer("en-US"),
             picker.Object);
 
+        Assert.Equal("Edit", viewModel.ChangeInstanceFolderLabel);
+        Assert.Equal("Reset", viewModel.ResetInstanceFolderLabel);
+        Assert.True(viewModel.IsDefaultInstanceFolder);
+        Assert.False(viewModel.CanResetInstanceFolder);
+
         await viewModel.BrowseInstanceFolderCommand.ExecuteAsync(null);
 
         Assert.Equal(selectedDirectory, viewModel.InstanceFolder);
         Assert.False(viewModel.IsChangingInstanceFolder);
+        Assert.False(viewModel.IsDefaultInstanceFolder);
+        Assert.True(viewModel.CanResetInstanceFolder);
         settings.Verify(
             service => service.SetInstanceDirectoryAsync(selectedDirectory),
             Times.Once);
@@ -214,6 +231,11 @@ public sealed class DataSettingsViewModelTests
         var storageDonut = Assert.IsType<StorageDonutChart>(view.FindControl<StorageDonutChart>("StorageDonut"));
         var warning = Assert.IsType<Border>(view.FindControl<Border>("DataGameRunningWarning"));
         var selectButton = Assert.IsType<Button>(view.FindControl<Button>("SelectInstanceFolderButton"));
+        var resetButton = Assert.IsType<Button>(view.FindControl<Button>("ResetInstanceFolderButton"));
+        var instancePathSurface = Assert.IsType<Border>(
+            view.FindControl<Border>("InstanceFolderPathSurface"));
+        var launcherPathSurface = Assert.IsType<Border>(
+            view.FindControl<Border>("LauncherDataPathSurface"));
         Assert.True(instanceCard.IsEffectivelyVisible);
         Assert.True(launcherCard.IsEffectivelyVisible);
         Assert.True(launcherFilesCard.IsEffectivelyVisible);
@@ -225,8 +247,19 @@ public sealed class DataSettingsViewModelTests
         Assert.Equal(StorageDonutIconKind.Instances, storageDonut.Items[0].IconKind);
         Assert.Equal("News", storageDonut.Items[3].Label);
         Assert.Equal("151 MB", viewModel.TotalStorageUsage);
+        Assert.Contains("Google Sans", storageDonut.LabelFontFamily.ToString());
         Assert.True(warning.IsEffectivelyVisible);
         Assert.False(selectButton.IsEnabled);
+        Assert.False(resetButton.IsEnabled);
+        Assert.True(resetButton.IsEffectivelyVisible);
+        Assert.Equal(VerticalAlignment.Center, selectButton.VerticalContentAlignment);
+        var selectLabel = Assert.IsType<TextBlock>(selectButton.Content);
+        Assert.Equal("Edit", selectLabel.Text);
+        Assert.Equal(VerticalAlignment.Center, selectLabel.VerticalAlignment);
+        Assert.Equal(default, instancePathSurface.BorderThickness);
+        Assert.Equal(default, launcherPathSurface.BorderThickness);
+        Assert.Same(storageDonut.TrackBrush, instancePathSurface.Background);
+        Assert.Same(storageDonut.TrackBrush, launcherPathSurface.Background);
         Assert.InRange(
             Math.Abs(storageLegendCard.Bounds.Width - launcherFilesCard.Bounds.Width),
             0,
@@ -269,6 +302,7 @@ public sealed class DataSettingsViewModelTests
 
         Assert.False(warning.IsEffectivelyVisible);
         Assert.True(selectButton.IsEnabled);
+        Assert.True(resetButton.IsEnabled);
 
         var renderPath = Environment.GetEnvironmentVariable("HYPRISM_DATA_SETTINGS_RENDER_OUTPUT");
         if (!string.IsNullOrWhiteSpace(renderPath))

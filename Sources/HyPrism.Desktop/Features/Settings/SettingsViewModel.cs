@@ -380,6 +380,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     public string LauncherDataHint { get; private set; } = string.Empty;
     public string LauncherDataFolder { get; private set; } = string.Empty;
     public string OpenFolderLabel { get; private set; } = string.Empty;
+    public string ChangeInstanceFolderLabel { get; private set; } = string.Empty;
     public string ResetInstanceFolderLabel { get; private set; } = string.Empty;
     public string GameRunningWarning { get; private set; } = string.Empty;
     public string MovingDataLabel { get; private set; } = string.Empty;
@@ -516,7 +517,8 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         LauncherDataHint = _localizer["settings.dataSettings.launcherDataHint"];
         LauncherDataFolder = _settings.LauncherDataDirectory;
         OpenFolderLabel = _localizer["settings.dataSettings.open"];
-        ResetInstanceFolderLabel = _localizer["settings.dataSettings.resetToDefault"];
+        ChangeInstanceFolderLabel = _localizer["common.edit"];
+        ResetInstanceFolderLabel = _localizer["common.reset"];
         GameRunningWarning = _localizer["settings.dataSettings.gameRunningWarning"];
         MovingDataLabel = _localizer["settings.dataSettings.movingData"];
         InstanceFolder = string.IsNullOrWhiteSpace(_settings.InstanceDirectory)
