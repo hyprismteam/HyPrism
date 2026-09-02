@@ -1,6 +1,8 @@
 // Copyright (C) 2026 HyPrism Launcher
 // SPDX-License-Identifier: GPL-3.0-only
 
+using System.Net;
+using System.Text.Json;
 using HyPrism.Core.Game.Launch;
 
 namespace HyPrism.LocalNode;
@@ -90,6 +92,9 @@ public sealed record LocalNodeOptions(
         var requestJournalPath = values.TryGetValue("request-journal", out var configuredRequestJournalPath)
             ? Path.GetFullPath(configuredRequestJournalPath)
             : null;
+        var meshTransport = values.TryGetValue("mesh-options", out var configuredMeshOptions)
+            ? DecodeMeshTransport(configuredMeshOptions)
+            : new MeshTransportOptions();
         var unknownArgument = values.Keys.FirstOrDefault(name =>
             !string.Equals(name, "data-directory", StringComparison.OrdinalIgnoreCase) &&
             !string.Equals(name, "hostname", StringComparison.OrdinalIgnoreCase) &&
@@ -100,7 +105,8 @@ public sealed record LocalNodeOptions(
             !string.Equals(name, "certificate-directory", StringComparison.OrdinalIgnoreCase) &&
             !string.Equals(name, "account-data-directory", StringComparison.OrdinalIgnoreCase) &&
             !string.Equals(name, "log-file", StringComparison.OrdinalIgnoreCase) &&
-            !string.Equals(name, "request-journal", StringComparison.OrdinalIgnoreCase));
+            !string.Equals(name, "request-journal", StringComparison.OrdinalIgnoreCase) &&
+            !string.Equals(name, "mesh-options", StringComparison.OrdinalIgnoreCase));
         if (unknownArgument is not null)
         {
             throw new ArgumentException($"Argument '--{unknownArgument}' is not supported", nameof(args));
@@ -138,6 +144,82 @@ public sealed record LocalNodeOptions(
             certificateDirectory,
             accountDataDirectory,
             logFilePath,
-            requestJournalPath);
+            requestJournalPath)
+        {
+            MeshTransport = meshTransport
+        };
     }
+
+    internal static string EncodeMeshTransport(MeshTransportOptions options)
+    {
+        ArgumentNullException.ThrowIfNull(options);
+        options.Validate();
+        var wireOptions = new MeshTransportWireOptions(
+            options.DiscoveryPort,
+            options.TransportPort,
+            options.EnableMulticast,
+            options.EnableInternetDiscovery,
+            options.DiscoveryTargets
+                .Select(endpoint => new MeshEndpointWireOptions(endpoint.Address.ToString(), endpoint.Port))
+                .ToArray(),
+            options.DhtBootstrapHosts.ToArray(),
+            options.DhtBootstrapPort,
+            options.AnnouncementInterval.Ticks,
+            options.DhtRefreshInterval.Ticks,
+            options.PresenceTimeout.Ticks,
+            options.EndpointLifetime.Ticks);
+        return Convert.ToBase64String(JsonSerializer.SerializeToUtf8Bytes(wireOptions));
+    }
+
+    private static MeshTransportOptions DecodeMeshTransport(string encoded)
+    {
+        try
+        {
+            var wireOptions = JsonSerializer.Deserialize<MeshTransportWireOptions>(
+                                  Convert.FromBase64String(encoded))
+                              ?? throw new FormatException("Mesh options are empty");
+            if (wireOptions.DiscoveryTargets is null || wireOptions.DhtBootstrapHosts is null)
+                throw new FormatException("Mesh option collections are missing");
+            var options = new MeshTransportOptions
+            {
+                DiscoveryPort = wireOptions.DiscoveryPort,
+                TransportPort = wireOptions.TransportPort,
+                EnableMulticast = wireOptions.EnableMulticast,
+                EnableInternetDiscovery = wireOptions.EnableInternetDiscovery,
+                DiscoveryTargets = wireOptions.DiscoveryTargets
+                    .Select(endpoint => new IPEndPoint(IPAddress.Parse(endpoint.Address), endpoint.Port))
+                    .ToArray(),
+                DhtBootstrapHosts = wireOptions.DhtBootstrapHosts,
+                DhtBootstrapPort = wireOptions.DhtBootstrapPort,
+                AnnouncementInterval = TimeSpan.FromTicks(wireOptions.AnnouncementIntervalTicks),
+                DhtRefreshInterval = TimeSpan.FromTicks(wireOptions.DhtRefreshIntervalTicks),
+                PresenceTimeout = TimeSpan.FromTicks(wireOptions.PresenceTimeoutTicks),
+                EndpointLifetime = TimeSpan.FromTicks(wireOptions.EndpointLifetimeTicks)
+            };
+            options.Validate();
+            return options;
+        }
+        catch (Exception exception) when (exception is FormatException
+                                          or JsonException
+                                          or ArgumentException
+                                          or OverflowException)
+        {
+            throw new ArgumentException("The encoded Mesh transport options are invalid", nameof(encoded), exception);
+        }
+    }
+
+    private sealed record MeshEndpointWireOptions(string Address, int Port);
+
+    private sealed record MeshTransportWireOptions(
+        int DiscoveryPort,
+        int TransportPort,
+        bool EnableMulticast,
+        bool EnableInternetDiscovery,
+        MeshEndpointWireOptions[] DiscoveryTargets,
+        string[] DhtBootstrapHosts,
+        int DhtBootstrapPort,
+        long AnnouncementIntervalTicks,
+        long DhtRefreshIntervalTicks,
+        long PresenceTimeoutTicks,
+        long EndpointLifetimeTicks);
 }

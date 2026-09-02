@@ -233,6 +233,7 @@ public sealed class MeshNetworkHostTests
                     new IPEndPoint(IPAddress.Loopback, bobDiscoveryPort));
             }
             await Task.Delay(TimeSpan.FromSeconds(2));
+            time.Advance(TimeSpan.FromSeconds(2));
 
             await bobHost.ActivateProfileAsync("bob-profile", "Bob");
             await aliceHost.ActivateProfileAsync("alice-profile", "Alice");

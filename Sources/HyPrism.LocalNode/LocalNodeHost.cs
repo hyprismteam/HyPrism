@@ -254,6 +254,7 @@ public sealed class LocalNodeHost : ILocalNodeService, IAsyncDisposable
             AddArgument(startInfo, "--log-file", _options.LogFilePath);
         if (!string.IsNullOrWhiteSpace(_options.RequestJournalPath))
             AddArgument(startInfo, "--request-journal", _options.RequestJournalPath);
+        AddArgument(startInfo, "--mesh-options", LocalNodeOptions.EncodeMeshTransport(_options.MeshTransport));
         AddArgument(startInfo, "--owner-pid", Environment.ProcessId.ToString());
         AddArgument(startInfo, "--control-secret", _controlSecret);
         if (!string.IsNullOrWhiteSpace(assetsPath))

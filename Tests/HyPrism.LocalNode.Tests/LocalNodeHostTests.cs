@@ -262,6 +262,43 @@ public sealed class LocalNodeHostTests
     }
 
     [Fact]
+    public void Options_Parse_RestoresEncodedMeshTransport()
+    {
+        var expected = new MeshTransportOptions
+        {
+            DiscoveryPort = 41001,
+            TransportPort = 41002,
+            EnableMulticast = false,
+            EnableInternetDiscovery = false,
+            DiscoveryTargets = [new IPEndPoint(IPAddress.Loopback, 41003)],
+            DhtBootstrapHosts = ["dht.example.test"],
+            DhtBootstrapPort = 41004,
+            AnnouncementInterval = TimeSpan.FromSeconds(1),
+            DhtRefreshInterval = TimeSpan.FromSeconds(15),
+            PresenceTimeout = TimeSpan.FromSeconds(5),
+            EndpointLifetime = TimeSpan.FromSeconds(6)
+        };
+
+        var options = LocalNodeOptions.Parse(
+        [
+            "--mesh-options", LocalNodeOptions.EncodeMeshTransport(expected)
+        ]);
+
+        var actual = options.MeshTransport;
+        Assert.Equal(expected.DiscoveryPort, actual.DiscoveryPort);
+        Assert.Equal(expected.TransportPort, actual.TransportPort);
+        Assert.Equal(expected.EnableMulticast, actual.EnableMulticast);
+        Assert.Equal(expected.EnableInternetDiscovery, actual.EnableInternetDiscovery);
+        Assert.Equal(expected.DiscoveryTargets, actual.DiscoveryTargets);
+        Assert.Equal(expected.DhtBootstrapHosts, actual.DhtBootstrapHosts);
+        Assert.Equal(expected.DhtBootstrapPort, actual.DhtBootstrapPort);
+        Assert.Equal(expected.AnnouncementInterval, actual.AnnouncementInterval);
+        Assert.Equal(expected.DhtRefreshInterval, actual.DhtRefreshInterval);
+        Assert.Equal(expected.PresenceTimeout, actual.PresenceTimeout);
+        Assert.Equal(expected.EndpointLifetime, actual.EndpointLifetime);
+    }
+
+    [Fact]
     public async Task LiveConfig_ReturnsProductionClientDescriptorAndManifest()
     {
         var dataDirectory = Path.Combine(Path.GetTempPath(), "HyPrismLiveConfigTests_" + Guid.NewGuid());
