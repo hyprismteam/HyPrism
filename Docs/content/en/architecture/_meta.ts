@@ -4,6 +4,7 @@
 export default {
   overview: 'Overview',
   core: 'Core',
+  mesh: 'Mesh',
   desktop: 'Desktop',
   'data-and-cache': 'Data and cache'
 }

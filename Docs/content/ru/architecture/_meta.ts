@@ -4,6 +4,7 @@
 export default {
   overview: 'Обзор',
   core: 'Core',
+  mesh: 'Mesh',
   desktop: 'Desktop',
   'data-and-cache': 'Данные и кеш'
 }

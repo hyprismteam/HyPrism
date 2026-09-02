@@ -1,0 +1,40 @@
+---
+title: HyPrism.Mesh
+description: Граница identity, дружбы, криптографии и протокола peer-коммуникации
+---
+
+# HyPrism.Mesh
+
+`HyPrism.Mesh` является самостоятельной библиотекой безопасности и протокола. Она не ссылается на `HyPrism.Core`, `HyPrism.LocalNode`, ASP.NET и сетевые API операционной системы
+
+## Области ответственности
+
+- `Identity` хранит стабильные ключи подписи Ed25519 и agreement-ключи X25519 автономных профилей
+- `Friends` проверяет подписанные capabilities приглашения и подтверждения, переданные вне сети
+- `Security` владеет derivation ключей, подписями, кодированием и очисткой чувствительной памяти
+- `Protocol` владеет вращающимся friend-specific discovery, зашифрованными pairwise envelopes, bounded inbound delivery и replay protection
+- `Persistence` хранит ограниченный локальный граф друзей и состояние одноразовых capabilities
+
+Библиотека принимает пути хранения, time providers, ограничивающие политики и byte payloads через собственный API. Она не запускает процессы, не открывает сокеты, не предоставляет HTTP endpoints и не зависит от профилей лаунчера
+
+## Runtime-граница
+
+`HyPrism.LocalNode` ссылается на `HyPrism.Mesh` и является ее runtime-хостом. Local Node владеет UDP-сокетами, multicast membership, rate limiting по исходному IP, lifetime активных профилей, расписанием presence и защищенным HTTP control plane
+
+`HyPrism.Core` сохраняет обязанности оркестрации лаунчера и OmniAuth. Desktop обращается к mesh-функциям через control API Local Node вместо прямой ссылки на implementation-классы протокола
+
+```text
+HyPrism.Desktop ------> HyPrism.Core
+       |
+       +--------------> HyPrism.LocalNode ------> HyPrism.Mesh
+                              |
+                              +-----------------> HyPrism.Core
+```
+
+Такое направление зависимостей оставляет сетевой хостинг вне Core, а переиспользуемый криптографический протокол вне ASP.NET executable
+
+## Граница discovery
+
+`HyPrism.Mesh` создает отдельное объявление `HPD2` для каждого подтвержденного друга. Пакет открывает только вращающийся 128-битный routing tag и ограниченные метаданные framing. Identity, направление, timestamp и transport port остаются зашифрованы ключом направления, производным от X25519-секрета дружбы
+
+Библиотека возвращает ограниченный индекс маршрутов для активного временного окна. `HyPrism.LocalNode` определяет место рассылки пакетов, применяет лимиты по исходному IP, выполняет первичный opaque lookup и передает protocol-библиотеке только распознанные маршруты для аутентификации. Такое разделение позволит будущему internet rendezvous маршрутизировать те же opaque tags без знания графа друзей

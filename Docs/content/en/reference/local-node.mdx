@@ -26,7 +26,8 @@ The client patch supports both regular length-prefixed strings and Linux NativeA
 | --- | --- |
 | Readiness and keys | `/health`, `/.well-known/jwks.json`, `/jwks.json` |
 | Sessions | `/v1/sessions`, `/game-session`, `/game-session/new`, `/game-session/child`, `/game-session/refresh`, `/game-session/authorize`, `/server-join/auth-grant`, `/server-join/auth-token`, `/game-session/exchange`, `/validate`, `/server/auto-auth` |
-| Lifecycle control | `/v1/lifecycle/attach`, `/v1/lifecycle/stop` with the per-process launcher secret |
+| Lifecycle control | `/_hyprism/v1/lifecycle/attach`, `/_hyprism/v1/lifecycle/stop` with the per-process launcher secret |
+| Mesh friendship control | `/_hyprism/v1/mesh/profiles/{profileId}/identity`, `/friends`, `/invites`, `/accept`, `/complete`, `/presence` with the per-process launcher secret |
 | Account data | `/my-account/game-profile`, `/my-account/get-profiles`, `/my-account/get-launcher-data`, `/profile/uuid/{uuid}`, `/profile/username/{username}` |
 | Avatars and cosmetics | `/my-account/skin`, `/my-account/cosmetics`, `/account-data/skin/{uuid}`, `/player-skins`, `/player-skins/active`, `/player-skins/{skinId}` |
 | Compatibility | configs, live config, telemetry, empty-state social routes, presence settings, and empty server listings |
@@ -49,6 +50,9 @@ The TLS certificate authority is intentionally shared at `LocalNode/Certificate`
 | --- | --- |
 | `Accounts.json` | shared local profiles, saved skins, active skin, and presence preferences keyed by launcher-profile UUID |
 | `accounts.lock` | short-lived cross-process lock that serializes changes to shared local profiles |
+| `Mesh/Identities/<profile-hash>.json` | stable Ed25519 signing and X25519 agreement identity for one autonomous profile |
+| `Mesh/Friends.json` | bounded local friend graph, issued invitation hashes, and replay protection state |
+| `Mesh/*.lock` | short-lived cross-process locks that serialize shared mesh state changes |
 | `hyprism-local-ca.pfx` | shared local certificate authority and private key in `LocalNode/Certificate` |
 | `hyprism-local-ca.crt` | shared PEM public certificate authority in `LocalNode/Certificate` |
 | `h.localhost.pfx` | shared server TLS certificate and private key signed by the local authority |
@@ -62,11 +66,33 @@ On macOS, the first autonomous launch registers the HyPrism local certificate au
 
 ASP.NET logging providers are disabled for the companion process, so server request diagnostics do not share the static HyPrism logger or its console stream. The launcher reports only process startup, readiness, attachment, and exceptional control failures. Detailed node events stay in `Logs/<launch-time>/local-node-<port>.log`, and the previous file after size-based rotation is named `local-node-<port>.previous.log`. Unknown request metadata uses `local-node-requests-<port>.ndjson` in the same directory. Authentication routes record only method, path, response status, and duration without headers, tokens, or request bodies
 
-The embedded host receives the active game directory plus shared certificate, account, and session-log paths automatically. When running `HyPrism.LocalNode` as a standalone process, pass `--assets-path /absolute/path/to/Assets.zip` to expose the complete installed cosmetics catalog, `--certificate-directory /absolute/path/to/Certificate` to reuse an existing trusted local certificate authority, and `--account-data-directory /absolute/path/to/LocalNode` to reuse local profiles and skins. Use `--log-file /absolute/path/to/local-node.log` and `--request-journal /absolute/path/to/requests.ndjson` to override the two diagnostic destinations. Without these overrides, standalone mode keeps both files below its data directory
+The embedded host receives the active game directory plus shared certificate, account, mesh, and session-log paths automatically. When running `HyPrism.LocalNode` as a standalone process, pass `--assets-path /absolute/path/to/Assets.zip` to expose the complete installed cosmetics catalog, `--certificate-directory /absolute/path/to/Certificate` to reuse an existing trusted local certificate authority, and `--account-data-directory /absolute/path/to/LocalNode` to reuse local profiles, skins, mesh identities, and friendships. Use `--log-file /absolute/path/to/local-node.log` and `--request-journal /absolute/path/to/requests.ndjson` to override the two diagnostic destinations. Without these overrides, standalone mode keeps both files below its data directory
+
+## Mesh friendship foundation
+
+Each autonomous profile receives a persistent mesh Peer ID derived from a dedicated Ed25519 signing key plus a separate X25519 agreement key. This identity is separate from the ephemeral OmniAuth key used for one game process, so friendships survive game and launcher restarts. Version 1 identity files keep their existing Peer ID while receiving an agreement key through an atomic version 2 migration. Private identity files and friend state use owner-only permissions on Unix and inherited current-user application-data permissions on Windows
+
+Pairing is an out-of-band, two-step exchange. The inviter creates a signed `hyprism://friend/v2/invite/` capability with 256 bits of randomness and a lifetime of at most 24 hours. The recipient validates the signature, both public keys, Peer ID, timestamps, size, and one-time capability before returning a signed `hyprism://friend/v2/accept/` response. The inviter completes the exchange only when that response matches an active locally issued capability. Friendship records created by version 1 pairing have no authenticated agreement key and must be paired again before encrypted transport is allowed
+
+The local state bounds friends, active invitations, consumed invitation hashes, display names, and token sizes. Expired replay entries are pruned during mutations, while unexpired entries are never evicted to make room for attacker-controlled input. Friendship control routes remain loopback-only and require the per-process launcher control secret. They never return the private signing key
+
+Confirmed friends derive the same 256-bit pairwise key through X25519 and a context-bound HKDF construction. Mesh envelopes bind sender and recipient Peer IDs, a random message ID, message kind, timestamp, and bounded payload. AES-GCM protects confidentiality and integrity, while Ed25519 adds sender authentication. The inbound pipeline uses a bounded channel with one reader, rejects work before allocation when the queue is full, and maintains a bounded replay window per friend without evicting unexpired entries
+
+Creating an autonomous session activates its mesh profile in the Local Node process. The node sends one personalized encrypted announcement per confirmed friend through IPv4 LAN multicast on `239.255.72.80:47831` and listens for pairwise traffic on an ephemeral UDP port. The public `HPD2` header contains only a one-minute epoch, a 128-bit friend-specific routing tag, a random nonce, and the encrypted payload length. The sender and recipient Peer IDs, timestamp, and transport port stay inside AES-GCM ciphertext authenticated by the sender's Ed25519 signature
+
+Routing tags are derived from the pairwise friendship key, direction, and epoch. Local Node precomputes a bounded lookup index for the current timing window, so an unknown packet is discarded by an opaque tag lookup before signature verification or decryption. Discovery encryption, routing, and regular message envelopes use separate derived keys. Replacing a discovery cycle clears the previous derived key material from memory
+
+Only the intended confirmed friend can recognize and validate an announcement. The advertised endpoint remains a candidate until a correctly signed and encrypted envelope is received from that address, and a fresh replay from another address cannot replace a live authenticated endpoint
+
+Discovery and transport datagrams pass fixed size limits and a bounded token bucket per source IP before signature verification or decryption. Unknown peers, stale announcements, mismatched source endpoints, malformed frames, duplicate message IDs, and full queues are discarded. A valid presence envelope updates the local friend snapshot returned by the protected `/presence` control route. Online state expires when signed heartbeats stop, and shutdown sends a best-effort offline presence before closing the sockets
+
+The rotating tags prevent passive LAN observers from reading stable Peer IDs or correlating one tag across epochs. Observers can still estimate the number and timing of active personalized announcements, so this is discovery privacy rather than traffic-flow anonymity
+
+This LAN transport does not yet provide DHT discovery, internet rendezvous, mailbox storage, relay traffic, ICE signaling, NAT traversal, or Hytale `socket-gateway` events. The existing Hytale social compatibility routes continue to return empty states until their proprietary REST and WebSocket message shapes are verified
 
 ## Limits
 
-Local Node is a single-device compatibility backend, not a decentralized social network. It cannot provide globally unique names, a shared friends graph, cross-device presence, invitations, cloud synchronization of cosmetics, public discovery, or NAT traversal without another coordination layer
+Local Node now provides private authenticated discovery and presence between confirmed players on the same reachable IPv4 LAN. Cross-network presence, invitation delivery, internet rendezvous, NAT traversal, relay fallback, durable state synchronization, and the in-game social bridge still require later mesh layers
 
 The endpoint shapes are based on the open `sanasol/hytale-auth-server` compatibility surface. Automated tests cover the local HTTPS session, account, JWKS, grant exchange, certificate binding, avatar persistence, and client patch transitions. End-to-end verification against every future proprietary Hytale client build still requires a compatible installed client
 

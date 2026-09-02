@@ -1,0 +1,40 @@
+---
+title: HyPrism.Mesh
+description: Identity, friendship, cryptography, and protocol boundary for peer communication
+---
+
+# HyPrism.Mesh
+
+`HyPrism.Mesh` is a standalone security and protocol library. It does not reference `HyPrism.Core`, `HyPrism.LocalNode`, ASP.NET, or operating-system networking APIs
+
+## Ownership
+
+- `Identity` persists stable Ed25519 signing and X25519 agreement keys for autonomous profiles
+- `Friends` validates signed out-of-band invitation and acceptance capabilities
+- `Security` owns key derivation, signatures, encoding, and sensitive-memory cleanup
+- `Protocol` owns rotating friend-specific discovery, encrypted pairwise envelopes, bounded inbound delivery, and replay protection
+- `Persistence` stores the bounded local friend graph and one-time capability state
+
+The library accepts storage paths, time providers, bounded policies, and byte payloads through its own API. It does not start processes, open sockets, expose HTTP endpoints, or depend on launcher profiles
+
+## Runtime boundary
+
+`HyPrism.LocalNode` references `HyPrism.Mesh` and acts as its runtime host. Local Node owns UDP sockets, multicast membership, source-IP rate limiting, active profile lifetime, presence scheduling, and the protected HTTP control plane
+
+`HyPrism.Core` retains launcher orchestration and OmniAuth responsibilities. Desktop reaches mesh features through the Local Node control API instead of referencing protocol implementation classes directly
+
+```text
+HyPrism.Desktop ------> HyPrism.Core
+       |
+       +--------------> HyPrism.LocalNode ------> HyPrism.Mesh
+                              |
+                              +-----------------> HyPrism.Core
+```
+
+This direction keeps network hosting outside Core and keeps reusable cryptographic protocol code outside the ASP.NET executable
+
+## Discovery boundary
+
+`HyPrism.Mesh` creates one `HPD2` announcement per confirmed friend. A packet exposes only a rotating 128-bit routing tag and bounded framing metadata. Identity, direction, timestamp, and transport port remain encrypted with a direction-specific key derived from the X25519 friendship secret
+
+The library returns a bounded route index for the active timing window. `HyPrism.LocalNode` owns where packets are broadcast, applies source-IP limits, performs the initial opaque lookup, and asks the protocol library to authenticate only recognized routes. This split lets a later internet rendezvous service route the same opaque tags without learning the friend graph

@@ -22,7 +22,7 @@ description: Domain features, contracts, and orchestration owned by the launcher
 - `Game/Instances` owns instance metadata, paths, selection, import, deletion, and migrations, and raises `InstancesChanged` whenever the instance collection changes so hosts can subscribe instead of polling
 - `Game/Launch` prepares Java, client endpoint redirection, the DualAuth Agent, environment variables, and the game process. Runtime downloads and installer waits observe operation cancellation, and official JRE archives with a published SHA-256 value are verified before extraction. Failed verification removes the downloaded archive on every supported platform. The process tracker raises typed started and exited lifecycle events carrying the instance identifier and exit code, reconciles processes that ended while the launcher was closed, and the launch coordinator raises `LaunchFailed` when an attempt ends without a running process
 - `Game/Authentication` obtains connected game sessions or issues self-contained OmniAuth tokens through the Local Node
-- `HyPrism.LocalNode` hosts the autonomous session, account, installed cosmetics catalog, configuration, and empty-state social compatibility surface
+- `HyPrism.LocalNode` hosts the autonomous session, account, installed cosmetics catalog, configuration, signed LAN discovery, encrypted UDP presence, and empty-state Hytale social compatibility surface
 - `Game/Assets` manages avatar data required by profiles and game launch
 - `Game/Mods` searches and installs CurseForge or local mods
 - `Game/Patching` owns the Butler client used for differential updates
@@ -53,5 +53,11 @@ News parsing, GitHub metadata, and the Discord Rich Presence adapter belong to `
 The host listens only on `https://h.localhost:8443`. The 16-character endpoint lets `ClientPatcher` redirect session, account-data, telemetry, live-config, social, server-discovery, and socket-gateway prefixes to one loopback authority without changing the length of the embedded domain segment
 
 OmniAuth signing keys live only for the dedicated node process attached to the active game. The identity handoff includes the private Ed25519 JWK required by DualAuth, while JWKS, authorization grants, and access tokens expose only public key material. Account, skin, and presence preferences persist below the application data directory
+
+The node activates a persistent mesh profile when it creates an autonomous session. `MeshNetworkHost` owns signed multicast discovery and encrypted UDP delivery, while the separate `HyPrism.Mesh` assembly owns identities, pairwise cryptography, bounded queues, and replay protection without referencing Core, networking, or ASP.NET types. Per-IP token buckets and endpoint candidates reject excess or unauthenticated traffic before it can become trusted presence state
+
+## Mesh boundary
+
+Mesh protocol and security implementation lives in the standalone [HyPrism.Mesh](../mesh) assembly. Core does not reference that assembly. `HyPrism.LocalNode` acts as its runtime host, while Desktop reaches mesh behavior through the Local Node control plane
 
 The companion clears ASP.NET logging providers and writes its own bounded file log into the launcher's current `Logs/<launch-time>/` directory. Closing Desktop releases only launcher-side process handles, while the node continues monitoring the game and writing to that session directory until the game process exits

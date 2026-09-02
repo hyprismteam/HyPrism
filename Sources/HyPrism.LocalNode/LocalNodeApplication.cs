@@ -3,11 +3,13 @@
 
 using System.Diagnostics;
 using System.Net;
+using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.Json;
 using HyPrism.Core.Game.Authentication;
+using HyPrism.Mesh;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Http.Json;
 
@@ -38,11 +40,19 @@ public static class LocalNodeApplication
         LocalAccountStore? accounts = null,
         LocalCosmeticsCatalog? cosmetics = null,
         LocalNodeLog? log = null,
-        LocalNodeProcessLifetime? processLifetime = null)
+        LocalNodeProcessLifetime? processLifetime = null,
+        MeshFriendService? meshFriends = null,
+        MeshNetworkHost? meshNetwork = null)
     {
         sessions ??= new LocalSessionRegistry(options.Issuer);
         accounts ??= new LocalAccountStore(options.AccountDataDirectory ?? options.DataDirectory);
         cosmetics ??= new LocalCosmeticsCatalog(options.AssetsPath, log);
+        meshFriends ??= new MeshFriendService(options.AccountDataDirectory ?? options.DataDirectory);
+        meshNetwork ??= new MeshNetworkHost(
+            options.AccountDataDirectory ?? options.DataDirectory,
+            options.MeshTransport,
+            log,
+            friends: meshFriends);
 
         var builder = WebApplication.CreateSlimBuilder(new WebApplicationOptions
         {
@@ -51,6 +61,8 @@ public static class LocalNodeApplication
             ContentRootPath = AppContext.BaseDirectory
         });
         builder.Logging.ClearProviders();
+        builder.Services.AddSingleton(meshNetwork);
+        builder.Services.AddHostedService(provider => provider.GetRequiredService<MeshNetworkHost>());
         builder.Services.Configure<JsonOptions>(json =>
         {
             json.SerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
@@ -119,9 +131,10 @@ public static class LocalNodeApplication
             }
         });
 
-        MapHealthAndSessionRoutes(app, options, sessions, accounts, processLifetime);
+        MapHealthAndSessionRoutes(app, options, sessions, accounts, processLifetime, meshNetwork, log);
         MapAccountRoutes(app, sessions, accounts, cosmetics);
         MapCompatibilityRoutes(app, sessions, accounts);
+        MapMeshControlRoutes(app, options, meshFriends, meshNetwork);
 
         app.MapFallback(async context =>
         {
@@ -137,12 +150,134 @@ public static class LocalNodeApplication
         return app;
     }
 
+    private static void MapMeshControlRoutes(
+        WebApplication app,
+        LocalNodeOptions options,
+        MeshFriendService meshFriends,
+        MeshNetworkHost meshNetwork)
+    {
+        static IResult Unauthorized() => Results.Unauthorized();
+
+        app.MapGet("/_hyprism/v1/mesh/profiles/{profileId}/identity", async (
+            HttpContext context,
+            string profileId,
+            CancellationToken cancellationToken) =>
+        {
+            if (!IsMeshControlAuthorized(context.Request, options.ControlSecret))
+                return Unauthorized();
+
+            try
+            {
+                return Results.Ok(await meshFriends.GetIdentityAsync(profileId, cancellationToken));
+            }
+            catch (ArgumentException exception)
+            {
+                return Results.BadRequest(new { error = "invalid_profile", message = exception.Message });
+            }
+        });
+
+        app.MapGet("/_hyprism/v1/mesh/profiles/{profileId}/friends", async (
+            HttpContext context,
+            string profileId,
+            CancellationToken cancellationToken) =>
+        {
+            if (!IsMeshControlAuthorized(context.Request, options.ControlSecret))
+                return Unauthorized();
+
+            try
+            {
+                var friends = await meshFriends.GetFriendsAsync(profileId, cancellationToken);
+                return Results.Ok(new { friends });
+            }
+            catch (ArgumentException exception)
+            {
+                return Results.BadRequest(new { error = "invalid_profile", message = exception.Message });
+            }
+        });
+
+        app.MapPost("/_hyprism/v1/mesh/profiles/{profileId}/invites", async (
+            HttpContext context,
+            string profileId,
+            MeshCreateInviteRequest body,
+            CancellationToken cancellationToken) =>
+        {
+            if (!IsMeshControlAuthorized(context.Request, options.ControlSecret))
+                return Unauthorized();
+
+            var lifetimeMinutes = body.LifetimeMinutes ?? 10;
+            if (!double.IsFinite(lifetimeMinutes) || lifetimeMinutes <= 0 || lifetimeMinutes > 24 * 60)
+            {
+                return Results.BadRequest(new
+                {
+                    error = "invalid_lifetime",
+                    message = "Invite lifetime must be between 0 and 1440 minutes"
+                });
+            }
+
+            var lifetime = TimeSpan.FromMinutes(lifetimeMinutes);
+            var result = await meshFriends.CreateInviteAsync(
+                profileId,
+                body.DisplayName,
+                lifetime,
+                cancellationToken);
+            return MapMeshResult(result);
+        });
+
+        app.MapPost("/_hyprism/v1/mesh/profiles/{profileId}/accept", async (
+            HttpContext context,
+            string profileId,
+            MeshAcceptInviteRequest body,
+            CancellationToken cancellationToken) =>
+        {
+            if (!IsMeshControlAuthorized(context.Request, options.ControlSecret))
+                return Unauthorized();
+
+            var result = await meshFriends.AcceptInviteAsync(
+                profileId,
+                body.DisplayName,
+                body.InviteToken,
+                cancellationToken);
+            if (result.IsSuccess)
+                await meshNetwork.RefreshProfileAsync(profileId, cancellationToken);
+            return MapMeshResult(result);
+        });
+
+        app.MapPost("/_hyprism/v1/mesh/profiles/{profileId}/complete", async (
+            HttpContext context,
+            string profileId,
+            MeshCompleteInviteRequest body,
+            CancellationToken cancellationToken) =>
+        {
+            if (!IsMeshControlAuthorized(context.Request, options.ControlSecret))
+                return Unauthorized();
+
+            var result = await meshFriends.CompleteInviteAsync(
+                profileId,
+                body.AcceptanceToken,
+                cancellationToken);
+            if (result.IsSuccess)
+                await meshNetwork.RefreshProfileAsync(profileId, cancellationToken);
+            return MapMeshResult(result);
+        });
+
+        app.MapGet("/_hyprism/v1/mesh/profiles/{profileId}/presence", (
+            HttpContext context,
+            string profileId) =>
+        {
+            if (!IsMeshControlAuthorized(context.Request, options.ControlSecret))
+                return Unauthorized();
+            return Results.Ok(new { friends = meshNetwork.GetPresence(profileId) });
+        });
+    }
+
     private static void MapHealthAndSessionRoutes(
         WebApplication app,
         LocalNodeOptions options,
         LocalSessionRegistry sessions,
         LocalAccountStore accounts,
-        LocalNodeProcessLifetime? processLifetime)
+        LocalNodeProcessLifetime? processLifetime,
+        MeshNetworkHost meshNetwork,
+        LocalNodeLog? log)
     {
         app.MapGet("/health", () => Results.Ok(new
         {
@@ -153,12 +288,13 @@ public static class LocalNodeApplication
             hostname = options.Hostname,
             port = options.Port,
             processId = Environment.ProcessId,
-            gameProcessId = processLifetime?.GameProcessId
+            gameProcessId = processLifetime?.GameProcessId,
+            meshTransportPort = meshNetwork.TransportPort
         }));
 
         if (processLifetime is not null && !string.IsNullOrWhiteSpace(options.ControlSecret))
         {
-            app.MapPost("/v1/lifecycle/attach", (HttpContext context, JsonElement body) =>
+            app.MapPost("/_hyprism/v1/lifecycle/attach", (HttpContext context, JsonElement body) =>
             {
                 if (!IsControlAuthorized(context.Request, options.ControlSecret))
                     return Results.Unauthorized();
@@ -173,7 +309,7 @@ public static class LocalNodeApplication
                     : Results.Conflict(new { error });
             });
 
-            app.MapPost("/v1/lifecycle/stop", (HttpContext context) =>
+            app.MapPost("/_hyprism/v1/lifecycle/stop", (HttpContext context) =>
             {
                 if (!IsControlAuthorized(context.Request, options.ControlSecret))
                     return Results.Unauthorized();
@@ -193,6 +329,7 @@ public static class LocalNodeApplication
                 return MissingIdentity();
 
             var profile = await accounts.GetOrCreateAsync(uuid, name, cancellationToken);
+            await TryActivateMeshAsync(meshNetwork, uuid, name, log, cancellationToken);
             return SessionResult(sessions.Renew(uuid, name, skin: profile.SkinJson));
         });
 
@@ -225,6 +362,7 @@ public static class LocalNodeApplication
                 return MissingIdentity();
 
             var profile = await accounts.GetOrCreateAsync(uuid, name, cancellationToken);
+            await TryActivateMeshAsync(meshNetwork, uuid, name, log, cancellationToken);
             return SessionResult(sessions.Renew(uuid, name, skin: profile.SkinJson));
         }
 
@@ -671,6 +809,25 @@ public static class LocalNodeApplication
             tokenType = "Bearer"
         });
 
+    private static async Task TryActivateMeshAsync(
+        MeshNetworkHost meshNetwork,
+        string profileId,
+        string displayName,
+        LocalNodeLog? log,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            await meshNetwork.ActivateProfileAsync(profileId, displayName, cancellationToken);
+        }
+        catch (Exception exception) when (exception is InvalidOperationException
+                                          or ArgumentException
+                                          or SocketException)
+        {
+            log?.Warning($"Mesh profile activation failed: {exception.Message}");
+        }
+    }
+
     private static IResult MissingIdentity()
         => Results.ValidationProblem(new Dictionary<string, string[]>
         {
@@ -683,7 +840,7 @@ public static class LocalNodeApplication
            || path.StartsWithSegments("/game-session")
            || path.StartsWithSegments("/server-join")
            || path.StartsWithSegments("/v1/sessions")
-           || path.StartsWithSegments("/v1/lifecycle");
+           || path.StartsWithSegments("/_hyprism/v1");
 
     private static string? GetString(JsonElement body, params string[] names)
     {
@@ -732,6 +889,28 @@ public static class LocalNodeApplication
             Encoding.UTF8.GetBytes(expectedSecret));
     }
 
+    private static bool IsMeshControlAuthorized(HttpRequest request, string? expectedSecret)
+        => !string.IsNullOrWhiteSpace(expectedSecret)
+           && IsControlAuthorized(request, expectedSecret);
+
+    private static IResult MapMeshResult<T>(MeshResult<T> result)
+    {
+        if (result.IsSuccess)
+            return Results.Ok(result.Value);
+
+        var statusCode = result.Failure.Code switch
+        {
+            "expired" => StatusCodes.Status410Gone,
+            "replayed_invite" or "replayed_acceptance" or "unknown_invite" => StatusCodes.Status409Conflict,
+            "invite_limit_reached" or "friend_limit_reached" or "replay_cache_full" =>
+                StatusCodes.Status429TooManyRequests,
+            _ => StatusCodes.Status400BadRequest
+        };
+        return Results.Json(
+            new { error = result.Failure.Code, message = result.Failure.Message },
+            statusCode: statusCode);
+    }
+
     private static bool TryGetBearerIdentity(
         HttpRequest request,
         LocalSessionRegistry sessions,
@@ -751,4 +930,8 @@ public static class LocalNodeApplication
             name = displayName.GetString() ?? string.Empty;
         return uuid.Length > 0 && name.Length > 0;
     }
+
+    private sealed record MeshCreateInviteRequest(string DisplayName, double? LifetimeMinutes);
+    private sealed record MeshAcceptInviteRequest(string DisplayName, string InviteToken);
+    private sealed record MeshCompleteInviteRequest(string AcceptanceToken);
 }

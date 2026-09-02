@@ -133,7 +133,7 @@ public sealed class LocalNodeHost : ILocalNodeService, IAsyncDisposable
         if (_nodeProcess is null || _nodeProcess.HasExited || _controlClient is null)
             throw new InvalidOperationException("The Local Node is not running");
 
-        using var response = await _controlClient.PostAsJsonAsync("/v1/lifecycle/attach", new
+        using var response = await _controlClient.PostAsJsonAsync("/_hyprism/v1/lifecycle/attach", new
         {
             gameProcessId
         }, cancellationToken);
@@ -330,7 +330,7 @@ public sealed class LocalNodeHost : ILocalNodeService, IAsyncDisposable
             try
             {
                 using var response = await _controlClient.PostAsync(
-                    "/v1/lifecycle/stop",
+                    "/_hyprism/v1/lifecycle/stop",
                     content: null,
                     cancellationToken);
                 if (response.IsSuccessStatusCode)
@@ -380,8 +380,11 @@ public sealed class LocalNodeHost : ILocalNodeService, IAsyncDisposable
                 if (!_nodeProcess.HasExited)
                     _nodeProcess.Kill(entireProcessTree: true);
             }
-            catch
+            catch (Exception exception)
             {
+                LauncherLogger.Warning(
+                    "LocalNode",
+                    $"Could not terminate dedicated process {_nodeProcess.Id}: {exception.Message}");
             }
         }
         DisposeExitedProcess(force: true);

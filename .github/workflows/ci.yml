@@ -33,6 +33,10 @@ jobs:
     name: Core
     uses: ./.github/workflows/test-core.yml
 
+  mesh:
+    name: Mesh
+    uses: ./.github/workflows/test-mesh.yml
+
   desktop:
     name: Desktop
     uses: ./.github/workflows/test-desktop.yml

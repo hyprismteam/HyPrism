@@ -43,7 +43,7 @@ Local Node attaches to the game process after launch. Closing HyPrism does not i
 
 Both modes use the DualAuth Agent for the embedded server. HyPrism no longer modifies `HytaleServer.jar`. Installations left by an older release are restored from their backup before launch
 
-The Local Node persists profiles, saved skins, and presence preferences on the device. It unlocks all character creator items found in the active instance's `Assets.zip`, while cosmetic choices remain local. Centralized friends, parties, invites, global presence, cloud cosmetic synchronization, and server discovery return compatible empty states because there is no shared backend. Direct friend joins still depend on a reachable host through LAN, UPnP, IPv6, port forwarding, or a VPN such as Tailscale
+The Local Node persists profiles, saved skins, and presence preferences on the device. It unlocks all character creator items found in the active instance's `Assets.zip`, while cosmetic choices remain local. HyPrism also creates a persistent signed Peer ID, stores friendships exchanged through short-lived one-time invite and acceptance codes, and exchanges encrypted online presence with confirmed friends on the same reachable IPv4 LAN. This first transport layer is not exposed in the launcher interface or connected to Hytale's social screens yet, and centralized friends, parties, invites, global presence, cloud cosmetic synchronization, and server discovery continue to return compatible empty states. Direct friend joins still depend on a reachable host through LAN, UPnP, IPv6, port forwarding, or a VPN such as Tailscale
 
 ## Download sources
 
