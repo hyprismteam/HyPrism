@@ -53,6 +53,7 @@ public static class LocalNodeApplication
             options.MeshTransport,
             log,
             friends: meshFriends);
+        var socketGateway = new SocketGatewayService(meshNetwork, meshFriends, log);
 
         var builder = WebApplication.CreateSlimBuilder(new WebApplicationOptions
         {
@@ -63,6 +64,8 @@ public static class LocalNodeApplication
         builder.Logging.ClearProviders();
         builder.Services.AddSingleton(meshNetwork);
         builder.Services.AddHostedService(provider => provider.GetRequiredService<MeshNetworkHost>());
+        builder.Services.AddSingleton(socketGateway);
+        builder.Services.AddHostedService(provider => provider.GetRequiredService<SocketGatewayService>());
         builder.Services.Configure<JsonOptions>(json =>
         {
             json.SerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
@@ -131,9 +134,17 @@ public static class LocalNodeApplication
             }
         });
 
+        app.UseWebSockets(new WebSocketOptions
+        {
+            KeepAliveInterval = TimeSpan.FromSeconds(20),
+            KeepAliveTimeout = TimeSpan.FromSeconds(20)
+        });
+
         MapHealthAndSessionRoutes(app, options, sessions, accounts, processLifetime, meshNetwork, log);
         MapAccountRoutes(app, sessions, accounts, cosmetics);
-        MapCompatibilityRoutes(app, sessions, accounts);
+        MapCompatibilityRoutes(app, options, sessions, accounts, meshFriends, meshNetwork, socketGateway, log);
+        MapSocketGatewayRoute(app, sessions, socketGateway);
+        MapWorldInviteRoutes(app, sessions, socketGateway);
         MapMeshControlRoutes(app, options, meshFriends, meshNetwork);
 
         app.MapFallback(async context =>
@@ -724,48 +735,341 @@ public static class LocalNodeApplication
         });
     }
 
-    private static void MapCompatibilityRoutes(
+    private static void MapSocketGatewayRoute(
         WebApplication app,
         LocalSessionRegistry sessions,
-        LocalAccountStore accounts)
+        SocketGatewayService socketGateway)
     {
-        object LocalConfig() => new
+        app.MapGet("/ws", async (HttpContext context, CancellationToken cancellationToken) =>
         {
-            flags = new Dictionary<string, object>
+            if (!context.WebSockets.IsWebSocketRequest)
             {
-                ["enable_discord_integration"] = new { type = "boolean", value = false },
-                ["enable_in_game_discord_link"] = new { type = "boolean", value = false },
-                ["enable_new_server_discovery"] = new { type = "boolean", value = false },
-                ["enable_news_tiles"] = new { type = "boolean", value = false },
-                ["enable_social_layer"] = new { type = "boolean", value = true }
-            },
-            version = "hyprism-local-v1"
+                context.Response.StatusCode = StatusCodes.Status400BadRequest;
+                return;
+            }
+
+            if (!TryGetSocketGatewayIdentity(context.Request, sessions, out var uuid, out var name))
+            {
+                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                return;
+            }
+
+            using var socket = await context.WebSockets.AcceptWebSocketAsync().ConfigureAwait(false);
+            await socketGateway.RunConnectionAsync(uuid, name, socket, cancellationToken).ConfigureAwait(false);
+        });
+    }
+
+    private static void MapWorldInviteRoutes(
+        WebApplication app,
+        LocalSessionRegistry sessions,
+        SocketGatewayService socketGateway)
+    {
+        app.MapGet("/world-invites", (HttpContext context) =>
+        {
+            if (!TryGetBearerIdentity(context.Request, sessions, out var uuid, out _))
+                return Results.Unauthorized();
+            return Results.Ok(new
+            {
+                invites = socketGateway.GetIncomingWorldInvites(uuid).Select(MapWorldInvite)
+            });
+        });
+        app.MapGet("/world-invites/sent", (HttpContext context) =>
+        {
+            if (!TryGetBearerIdentity(context.Request, sessions, out var uuid, out _))
+                return Results.Unauthorized();
+            return Results.Ok(new
+            {
+                invites = socketGateway.GetOutgoingWorldInvites(uuid).Select(MapWorldInvite)
+            });
+        });
+        app.MapPost("/world-invite", async (
+            HttpContext context,
+            JsonElement body,
+            CancellationToken cancellationToken) =>
+        {
+            if (!TryGetBearerIdentity(context.Request, sessions, out var uuid, out _))
+                return Results.Unauthorized();
+            var playerUuid = GetGuid(body, "player_uuid", "invited_player_uuid", "playerUuid");
+            var inviteCode = GetString(body, "invite_code", "inviteCode");
+            if (playerUuid is null || string.IsNullOrWhiteSpace(inviteCode))
+                return InvalidWorldInviteRequest();
+
+            var invite = await socketGateway.SendWorldInviteAsync(
+                uuid,
+                playerUuid.Value,
+                inviteCode,
+                cancellationToken);
+            return invite is null
+                ? Results.Json(
+                    new { error = "friend_offline", message = "The Mesh friend is unavailable" },
+                    statusCode: StatusCodes.Status409Conflict)
+                : Results.Ok(MapWorldInvite(invite));
+        });
+        app.MapPost("/world-invites/accept", async (
+            HttpContext context,
+            JsonElement body,
+            CancellationToken cancellationToken) =>
+        {
+            if (!TryGetBearerIdentity(context.Request, sessions, out var uuid, out _))
+                return Results.Unauthorized();
+            var inviteUuid = GetGuid(body, "invite_uuid", "inviteUuid");
+            if (inviteUuid is null)
+                return InvalidWorldInviteRequest();
+
+            var join = await socketGateway.AcceptWorldInviteAsync(uuid, inviteUuid.Value, cancellationToken);
+            return join is null
+                ? Results.NotFound(new { error = "invite_not_found" })
+                : Results.Ok(MapWorldJoin(join));
+        });
+        app.MapPost("/world-invites/reject", async (
+            HttpContext context,
+            JsonElement body,
+            CancellationToken cancellationToken) =>
+        {
+            if (!TryGetBearerIdentity(context.Request, sessions, out var uuid, out _))
+                return Results.Unauthorized();
+            var inviteUuid = GetGuid(body, "invite_uuid", "inviteUuid");
+            if (inviteUuid is null)
+                return InvalidWorldInviteRequest();
+            return await socketGateway.RejectWorldInviteAsync(uuid, inviteUuid.Value, cancellationToken)
+                ? Results.NoContent()
+                : Results.NotFound(new { error = "invite_not_found" });
+        });
+        app.MapPost("/world-invites/cancel", async (
+            HttpContext context,
+            JsonElement body,
+            CancellationToken cancellationToken) =>
+        {
+            if (!TryGetBearerIdentity(context.Request, sessions, out var uuid, out _))
+                return Results.Unauthorized();
+            var inviteUuid = GetGuid(body, "invite_uuid", "inviteUuid");
+            if (inviteUuid is null)
+                return InvalidWorldInviteRequest();
+            return await socketGateway.CancelWorldInviteAsync(uuid, inviteUuid.Value, cancellationToken)
+                ? Results.NoContent()
+                : Results.NotFound(new { error = "invite_not_found" });
+        });
+        app.MapPost("/presence/join-world", (
+            HttpContext context,
+            JsonElement body) =>
+        {
+            if (!TryGetBearerIdentity(context.Request, sessions, out var uuid, out _))
+                return Results.Unauthorized();
+            var playerUuid = GetGuid(body, "player_uuid", "playerUuid");
+            if (playerUuid is null)
+                return InvalidWorldInviteRequest();
+            var join = socketGateway.JoinFriendWorld(uuid, playerUuid.Value);
+            return join is null
+                ? Results.NotFound(new { error = "join_unavailable" })
+                : Results.Ok(MapWorldJoin(join));
+        });
+    }
+
+    private static object MapWorldInvite(WorldInviteSnapshot invite)
+        => new Dictionary<string, object?>
+        {
+            ["invite_uuid"] = invite.InviteUuid,
+            ["inviter_uuid"] = invite.InviterUuid,
+            ["invitedPlayerUuid"] = invite.InvitedPlayerUuid,
+            ["created_at"] = invite.CreatedAt,
+            ["expires_at"] = invite.ExpiresAt,
+            ["server_host"] = null,
+            ["server_port"] = null,
+            ["invite_code"] = invite.InviteCode,
+            ["is_p2p"] = invite.IsP2P
         };
-        app.MapGet("/configs", () => Results.Ok(LocalConfig()));
-        app.MapGet("/configs/{**path}", () => Results.Ok(LocalConfig()));
-        app.MapGet("/v1/release/any/any/feature-flags/{hash}.json", (string hash) =>
-            Results.Ok(LocalConfig()));
+
+    private static object MapWorldJoin(WorldJoinSnapshot join)
+        => new Dictionary<string, object?>
+        {
+            ["server_host"] = join.ServerHost,
+            ["server_port"] = join.ServerPort,
+            ["invite_code"] = join.InviteCode,
+            ["server_uuid"] = join.ServerUuid,
+            ["server_name"] = join.ServerName,
+            ["is_p2p"] = join.IsP2P
+        };
+
+    private static IResult InvalidWorldInviteRequest()
+        => Results.BadRequest(new
+        {
+            error = "invalid_world_invite",
+            message = "A valid player or invite UUID and P2P invite code are required"
+        });
+
+    private static void MapCompatibilityRoutes(
+        WebApplication app,
+        LocalNodeOptions options,
+        LocalSessionRegistry sessions,
+        LocalAccountStore accounts,
+        MeshFriendService meshFriends,
+        MeshNetworkHost meshNetwork,
+        SocketGatewayService socketGateway,
+        LocalNodeLog? log)
+    {
+        const string liveConfigVersion = "hyprism-local-v1";
+        const string liveConfigHash = "7832ee33ba4e83cd8f15933b3c474ec7fc7a3a51b46c6f8afd304cca6420291c";
+        const string liveConfigPath = "/v1/release/any/any/feature-flags/"
+                                      + liveConfigHash + ".json";
+        var liveConfigFlags = new Dictionary<string, object>
+        {
+            ["enable_discord_integration"] = new { type = "boolean", value = false },
+            ["enable_in_game_discord_link"] = new { type = "boolean", value = false },
+            ["enable_new_server_discovery"] = new { type = "boolean", value = false },
+            ["enable_news_tiles"] = new { type = "boolean", value = false },
+            ["enable_social_layer"] = new { type = "boolean", value = true }
+        };
+
+        IResult LiveConfigDescriptor(HttpContext context)
+        {
+            log?.Info($"Live config descriptor requested at {context.Request.Path}");
+            return Results.Ok(new
+            {
+                flags = liveConfigFlags,
+                manifest_url = $"{options.Issuer}/liveconfig/manifest.json",
+                version = liveConfigVersion
+            });
+        }
+
+        app.MapGet("/configs", LiveConfigDescriptor);
+        app.MapGet("/configs/{**path}", LiveConfigDescriptor);
+        app.MapGet(liveConfigPath, () => Results.Ok(liveConfigFlags));
         app.MapGet("/liveconfig/manifest.json", () => Results.Ok(new
         {
-            version = "hyprism-local-v1",
+            version = liveConfigVersion,
             patchline = "release",
-            configs = new Dictionary<string, object>()
+            platform = new { os = "any", arch = "any" },
+            configs = new Dictionary<string, object>
+            {
+                ["feature-flags"] = new
+                {
+                    url = liveConfigPath,
+                    hash = liveConfigHash,
+                    updated = DateTimeOffset.UnixEpoch
+                }
+            }
         }));
         app.MapGet("/news-tiles", () => Results.Ok(new { tiles = Array.Empty<object>() }));
 
-        app.MapGet("/friends", () => Results.Ok(new { friends = Array.Empty<object>(), truncated = false }));
+        app.MapGet("/friends", async (HttpContext context, CancellationToken cancellationToken) =>
+        {
+            if (!TryGetBearerIdentity(context.Request, sessions, out var uuid, out _))
+                return Results.Unauthorized();
+
+            var friends = await GetSocialFriendsAsync(
+                uuid,
+                meshFriends,
+                meshNetwork,
+                socketGateway,
+                log,
+                cancellationToken);
+            return Results.Ok(new { friends, truncated = false });
+        });
         app.MapGet("/friends/favorites", () => Results.Ok(new { favorites = Array.Empty<object>() }));
-        app.MapGet("/presence/friends", () => Results.Ok(new { friends = Array.Empty<object>() }));
-        app.MapGet("/friend-requests/outgoing", () => Results.Ok(new { requests = Array.Empty<object>(), truncated = false }));
-        app.MapGet("/friend-requests/incoming", () => Results.Ok(new { requests = Array.Empty<object>(), truncated = false }));
+        app.MapGet("/presence/friends", async (HttpContext context, CancellationToken cancellationToken) =>
+        {
+            if (!TryGetBearerIdentity(context.Request, sessions, out var uuid, out _))
+                return Results.Unauthorized();
+
+            var friends = await GetSocialFriendsAsync(
+                uuid,
+                meshFriends,
+                meshNetwork,
+                socketGateway,
+                log,
+                cancellationToken);
+            return Results.Ok(new
+            {
+                friends = friends.Select(friend => new HytaleFriendPresence(
+                    friend.Uuid,
+                    friend.Username,
+                    friend.IsOnline ? "online" : "offline",
+                    Activity: null,
+                    friend.GameMode,
+                    ServerUuid: null,
+                    ServerName: null,
+                    friend.WorldName,
+                    ServerHost: null,
+                    ServerPort: null,
+                    InviteCode: null,
+                    friend.CanJoin,
+                    friend.IsWorldOwner))
+            });
+        });
+        app.MapGet("/friend-requests/outgoing", (HttpContext context) =>
+        {
+            if (!TryGetBearerIdentity(context.Request, sessions, out var uuid, out _))
+                return Results.Unauthorized();
+            return Results.Ok(new
+            {
+                requests = meshNetwork.GetOutgoingFriendRequests(uuid).Select(ToHytaleFriendRequest),
+                truncated = false
+            });
+        });
+        app.MapGet("/friend-requests/incoming", (HttpContext context) =>
+        {
+            if (!TryGetBearerIdentity(context.Request, sessions, out var uuid, out _))
+                return Results.Unauthorized();
+            return Results.Ok(new
+            {
+                requests = meshNetwork.GetIncomingFriendRequests(uuid).Select(ToHytaleFriendRequest),
+                truncated = false
+            });
+        });
         app.MapGet("/party/invites", () => Results.Ok(new { invites = Array.Empty<object>() }));
         app.MapGet("/party/invites/sent", () => Results.Ok(new { invites = Array.Empty<object>() }));
         app.MapGet("/party", () => Results.Text("not in a party", statusCode: StatusCodes.Status404NotFound));
-        app.MapGet("/world-invites", () => Results.Ok(new { invites = Array.Empty<object>() }));
-        app.MapGet("/world-invites/sent", () => Results.Ok(new { invites = Array.Empty<object>() }));
         app.MapGet("/blocks", () => Results.Ok(new { blocks = Array.Empty<object>(), truncated = false }));
-        app.MapPost("/friend-requests/by-username", () =>
-            Results.Text("profile not found", statusCode: StatusCodes.Status404NotFound));
+        app.MapPost("/friend-requests/by-username", async (
+            HttpContext context,
+            JsonElement body,
+            CancellationToken cancellationToken) =>
+        {
+            if (!TryGetBearerIdentity(context.Request, sessions, out var uuid, out var name))
+                return Results.Unauthorized();
+            var friendId = GetString(body, "username");
+            if (string.IsNullOrWhiteSpace(friendId))
+                return Results.BadRequest(new { error = "unknown_username" });
+
+            await TryActivateMeshAsync(meshNetwork, uuid, name, log, cancellationToken);
+            var result = await meshNetwork.SendFriendRequestAsync(uuid, friendId, cancellationToken);
+            return result.IsSuccess
+                ? Results.Ok(ToHytaleFriendRequest(result.Value))
+                : MapSocialFailure(result.Failure);
+        });
+        app.MapPost("/friend-requests/accept", async (
+            HttpContext context,
+            JsonElement body,
+            CancellationToken cancellationToken) =>
+        {
+            if (!TryGetBearerIdentity(context.Request, sessions, out var uuid, out var name))
+                return Results.Unauthorized();
+            var requesterUuid = GetGuid(body, "requester_uuid", "requesterUuid", "player_uuid", "playerUuid");
+            if (requesterUuid is null)
+                return Results.BadRequest(new { error = "invalid_request" });
+
+            await TryActivateMeshAsync(meshNetwork, uuid, name, log, cancellationToken);
+            var result = await meshNetwork.AcceptFriendRequestAsync(uuid, requesterUuid.Value, cancellationToken);
+            return result.IsSuccess
+                ? Results.Ok(ToHytaleFriendRequest(result.Value))
+                : MapSocialFailure(result.Failure);
+        });
+        app.MapPost("/friend-requests/reject", async (
+            HttpContext context,
+            JsonElement body,
+            CancellationToken cancellationToken) =>
+        {
+            if (!TryGetBearerIdentity(context.Request, sessions, out var uuid, out var name))
+                return Results.Unauthorized();
+            var requesterUuid = GetGuid(body, "requester_uuid", "requesterUuid", "player_uuid", "playerUuid");
+            if (requesterUuid is null)
+                return Results.BadRequest(new { error = "invalid_request" });
+
+            await TryActivateMeshAsync(meshNetwork, uuid, name, log, cancellationToken);
+            return await meshNetwork.RejectFriendRequestAsync(uuid, requesterUuid.Value, cancellationToken)
+                ? Results.NoContent()
+                : Results.NotFound(new { error = "request_not_found" });
+        });
         app.MapMethods("/me/interactions/{**path}",
             ["GET", "POST", "PUT", "PATCH", "DELETE"],
             () => Results.StatusCode(StatusCodes.Status501NotImplemented));
@@ -820,11 +1124,62 @@ public static class LocalNodeApplication
         {
             await meshNetwork.ActivateProfileAsync(profileId, displayName, cancellationToken);
         }
-        catch (Exception exception) when (exception is InvalidOperationException
-                                          or ArgumentException
-                                          or SocketException)
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
         {
             log?.Warning($"Mesh profile activation failed: {exception.Message}");
+        }
+    }
+
+    private static async Task<IReadOnlyList<HytaleFriend>> GetSocialFriendsAsync(
+        string profileId,
+        MeshFriendService meshFriends,
+        MeshNetworkHost meshNetwork,
+        SocketGatewayService socketGateway,
+        LocalNodeLog? log,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var presence = meshNetwork.GetPresence(profileId)
+                .ToDictionary(item => item.PeerId, StringComparer.Ordinal);
+            var friends = await meshFriends.GetFriendsAsync(profileId, cancellationToken);
+            return friends
+                .Select(friend =>
+                {
+                    if (!Guid.TryParse(friend.PlayerUuid, out var playerUuid))
+                        return null;
+
+                    var isOnline = presence.TryGetValue(friend.PeerId, out var current)
+                                   && current.IsOnline;
+                    var canJoin = socketGateway.JoinFriendWorld(profileId, playerUuid) is not null;
+                    return new HytaleFriend(
+                        playerUuid,
+                        friend.DisplayName,
+                        friend.AddedAt,
+                        isOnline,
+                        DiscordUserId: null,
+                        IsFavorite: false,
+                        WorldName: null,
+                        GameMode: null,
+                        CanJoin: canJoin,
+                        IsWorldOwner: canJoin);
+                })
+                .OfType<HytaleFriend>()
+                .OrderBy(friend => friend.Username, StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            log?.Warning($"Mesh social state could not be read: {exception.Message}");
+            return [];
         }
     }
 
@@ -852,6 +1207,36 @@ public static class LocalNodeApplication
                 return value.GetString();
         }
         return null;
+    }
+
+    private static object ToHytaleFriendRequest(MeshFriendRequestSnapshot request)
+        => new
+        {
+            uuid = request.RequestUuid,
+            requester_uuid = request.RequesterUuid,
+            player_uuid = request.PlayerUuid,
+            username = request.Username,
+            created_at = request.CreatedAt,
+            accepted_at = request.AcceptedAt
+        };
+
+    private static IResult MapSocialFailure(MeshFailure failure)
+    {
+        var statusCode = failure.Code switch
+        {
+            "unknown_username" or "invalid_peer_record" => StatusCodes.Status404NotFound,
+            "request_not_found" => StatusCodes.Status404NotFound,
+            "already_friends" or "duplicate_pending_invite" => StatusCodes.Status409Conflict,
+            "self_target" => StatusCodes.Status400BadRequest,
+            _ => StatusCodes.Status422UnprocessableEntity
+        };
+        return Results.Json(new { error = failure.Code, message = failure.Message }, statusCode: statusCode);
+    }
+
+    private static Guid? GetGuid(JsonElement body, params string[] names)
+    {
+        var value = GetString(body, names);
+        return Guid.TryParse(value, out var parsed) ? parsed : null;
     }
 
     private static string? GetScope(JsonElement body)
@@ -931,7 +1316,57 @@ public static class LocalNodeApplication
         return uuid.Length > 0 && name.Length > 0;
     }
 
+    private static bool TryGetSocketGatewayIdentity(
+        HttpRequest request,
+        LocalSessionRegistry sessions,
+        out string uuid,
+        out string name)
+    {
+        if (TryGetBearerIdentity(request, sessions, out uuid, out name))
+            return true;
+
+        uuid = string.Empty;
+        name = string.Empty;
+        var token = request.Query["access_token"].ToString();
+        if (string.IsNullOrWhiteSpace(token))
+            token = request.Query["token"].ToString();
+        if (string.IsNullOrWhiteSpace(token) || !sessions.TryValidate(token, out var claims))
+            return false;
+
+        uuid = claims.GetProperty("sub").GetString() ?? string.Empty;
+        if (claims.TryGetProperty("username", out var username))
+            name = username.GetString() ?? string.Empty;
+        if (name.Length == 0 && claims.TryGetProperty("name", out var displayName))
+            name = displayName.GetString() ?? string.Empty;
+        return uuid.Length > 0 && name.Length > 0;
+    }
+
     private sealed record MeshCreateInviteRequest(string DisplayName, double? LifetimeMinutes);
     private sealed record MeshAcceptInviteRequest(string DisplayName, string InviteToken);
     private sealed record MeshCompleteInviteRequest(string AcceptanceToken);
+    private sealed record HytaleFriend(
+        Guid Uuid,
+        string Username,
+        DateTimeOffset Since,
+        bool IsOnline,
+        string? DiscordUserId,
+        bool IsFavorite,
+        string? WorldName,
+        string? GameMode,
+        bool CanJoin,
+        bool IsWorldOwner);
+    private sealed record HytaleFriendPresence(
+        Guid PlayerUuid,
+        string Username,
+        string Status,
+        string? Activity,
+        string? GameMode,
+        Guid? ServerUuid,
+        string? ServerName,
+        string? WorldName,
+        string? ServerHost,
+        int? ServerPort,
+        string? InviteCode,
+        bool CanJoin,
+        bool IsWorldOwner);
 }

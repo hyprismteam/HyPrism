@@ -9,6 +9,73 @@ namespace HyPrism.Mesh.Tests;
 public sealed class MeshFriendServiceTests
 {
     [Fact]
+    public async Task Identity_ExposesStableCrockfordFriendId()
+    {
+        using var directory = new TemporaryDirectory();
+        var service = new MeshFriendService(directory.Path);
+
+        var first = await service.GetIdentityAsync("alice-profile");
+        var second = await service.GetIdentityAsync("alice-profile");
+
+        Assert.Equal(first.FriendId, second.FriendId);
+        Assert.Equal(MeshFriendId.Length, first.FriendId.Length);
+        Assert.True(MeshFriendId.TryNormalize(
+            $"{first.FriendId[..4]}-{first.FriendId[4..8]}-{first.FriendId[8..12]}-{first.FriendId[12..]}",
+            out var normalized));
+        Assert.Equal(first.FriendId, normalized);
+    }
+
+    [Fact]
+    public async Task PeerRecord_IsSignedAndBoundToRequestId()
+    {
+        using var directory = new TemporaryDirectory();
+        var service = new MeshFriendService(directory.Path);
+        var identity = await service.GetIdentityAsync("alice-profile");
+
+        var created = await service.CreatePeerRecordAsync(
+            "alice-profile",
+            "Alice",
+            "request_1",
+            "ack",
+            TimeSpan.FromMinutes(2));
+        var verified = service.VerifyPeerRecord(created.Value.Token, "request_1", "ack");
+        var wrongRequest = service.VerifyPeerRecord(created.Value.Token, "request_2", "ack");
+        var wrongPurpose = service.VerifyPeerRecord(created.Value.Token, "request_1", "reject");
+
+        Assert.True(created.IsSuccess);
+        Assert.True(verified.IsSuccess);
+        Assert.Equal(identity.FriendId, verified.Value.FriendId);
+        Assert.Equal("Alice", verified.Value.DisplayName);
+        Assert.False(wrongRequest.IsSuccess);
+        Assert.False(wrongPurpose.IsSuccess);
+    }
+
+    [Fact]
+    public async Task TargetedInvite_CannotBeAcceptedByAnotherFriendId()
+    {
+        using var directory = new TemporaryDirectory();
+        var service = new MeshFriendService(directory.Path);
+        var bob = await service.GetIdentityAsync("bob-profile");
+        var invitation = await service.CreateInviteForFriendIdAsync(
+            "alice-profile",
+            "Alice",
+            bob.FriendId,
+            TimeSpan.FromMinutes(10));
+
+        var wrongRecipient = await service.AcceptInviteAsync(
+            "mallory-profile",
+            "Mallory",
+            invitation.Value.Token);
+        var accepted = await service.AcceptInviteAsync(
+            "bob-profile",
+            "Bob",
+            invitation.Value.Token);
+
+        Assert.False(wrongRecipient.IsSuccess);
+        Assert.Equal("wrong_recipient", wrongRecipient.Failure.Code);
+        Assert.True(accepted.IsSuccess);
+    }
+    [Fact]
     public async Task GetIdentityAsync_PersistsStableIdentityPerProfile()
     {
         using var directory = new TemporaryDirectory();
@@ -56,19 +123,21 @@ public sealed class MeshFriendServiceTests
         using var directory = new TemporaryDirectory();
         var time = new MutableTimeProvider(new DateTimeOffset(2026, 9, 2, 12, 0, 0, TimeSpan.Zero));
         var service = new MeshFriendService(directory.Path, time);
-        var aliceIdentity = await service.GetIdentityAsync("alice-profile");
-        var bobIdentity = await service.GetIdentityAsync("bob-profile");
+        const string aliceProfile = "550e8400-e29b-41d4-a716-446655440000";
+        const string bobProfile = "660e8400-e29b-41d4-a716-446655440000";
+        var aliceIdentity = await service.GetIdentityAsync(aliceProfile);
+        var bobIdentity = await service.GetIdentityAsync(bobProfile);
 
         var invitation = await service.CreateInviteAsync(
-            "alice-profile",
+            aliceProfile,
             "Alice",
             TimeSpan.FromMinutes(10));
         var acceptance = await service.AcceptInviteAsync(
-            "bob-profile",
+            bobProfile,
             "Bob",
             invitation.Value.Token);
         var completion = await service.CompleteInviteAsync(
-            "alice-profile",
+            aliceProfile,
             acceptance.Value.AcceptanceToken);
 
         Assert.True(invitation.IsSuccess);
@@ -76,10 +145,14 @@ public sealed class MeshFriendServiceTests
         Assert.True(completion.IsSuccess);
         Assert.Equal(bobIdentity.PeerId, completion.Value.PeerId);
 
-        var aliceFriends = await new MeshFriendService(directory.Path, time).GetFriendsAsync("alice-profile");
-        var bobFriends = await new MeshFriendService(directory.Path, time).GetFriendsAsync("bob-profile");
-        Assert.Equal(bobIdentity.PeerId, Assert.Single(aliceFriends).PeerId);
-        Assert.Equal(aliceIdentity.PeerId, Assert.Single(bobFriends).PeerId);
+        var aliceFriends = await new MeshFriendService(directory.Path, time).GetFriendsAsync(aliceProfile);
+        var bobFriends = await new MeshFriendService(directory.Path, time).GetFriendsAsync(bobProfile);
+        var aliceFriend = Assert.Single(aliceFriends);
+        var bobFriend = Assert.Single(bobFriends);
+        Assert.Equal(bobIdentity.PeerId, aliceFriend.PeerId);
+        Assert.Equal(bobProfile, aliceFriend.PlayerUuid);
+        Assert.Equal(aliceIdentity.PeerId, bobFriend.PeerId);
+        Assert.Equal(aliceProfile, bobFriend.PlayerUuid);
     }
 
     [Fact]

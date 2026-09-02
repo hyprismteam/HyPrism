@@ -7,6 +7,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Net.Sockets;
+using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using HyPrism.Core;
@@ -14,11 +15,79 @@ using HyPrism.Core.Game.Authentication;
 using HyPrism.Core.Game.Launch;
 using HyPrism.Core.Infrastructure;
 using HyPrism.LocalNode;
+using HyPrism.Mesh;
 
 namespace HyPrism.LocalNode.Tests;
 
 public sealed class LocalNodeHostTests
 {
+    [Fact]
+    public async Task SocialApi_FriendIdRequest_CompletesBuiltInFriendFlow()
+    {
+        var rootDirectory = Path.Combine(Path.GetTempPath(), "HyPrismSocialPairingTests_" + Guid.NewGuid());
+        var aliceDiscoveryPort = GetAvailableUdpPort();
+        var bobDiscoveryPort = GetAvailableUdpPort();
+        var aliceOptions = CreatePairingNodeOptions(
+            Path.Combine(rootDirectory, "Alice"),
+            GetAvailablePort(),
+            aliceDiscoveryPort,
+            bobDiscoveryPort);
+        var bobOptions = CreatePairingNodeOptions(
+            Path.Combine(rootDirectory, "Bob"),
+            GetAvailablePort(),
+            bobDiscoveryPort,
+            aliceDiscoveryPort);
+        const string aliceUuid = "550e8400-e29b-41d4-a716-446655440000";
+        const string bobUuid = "660e8400-e29b-41d4-a716-446655440000";
+        await using var aliceHost = new LocalNodeHost(aliceOptions);
+        await using var bobHost = new LocalNodeHost(bobOptions);
+
+        try
+        {
+            await aliceHost.EnsureReadyAsync();
+            await bobHost.EnsureReadyAsync();
+            var aliceSession = await aliceHost.CreateSessionAsync(aliceUuid, "Alice");
+            var bobSession = await bobHost.CreateSessionAsync(bobUuid, "Bob");
+            var bobIdentity = await new MeshFriendService(bobOptions.DataDirectory).GetIdentityAsync(bobUuid);
+            using var aliceClient = CreatePinnedClient(aliceOptions);
+            using var bobClient = CreatePinnedClient(bobOptions);
+            aliceClient.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", aliceSession.SessionToken);
+            bobClient.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", bobSession.SessionToken);
+
+            using var sendResponse = await aliceClient.PostAsJsonAsync(
+                "/friend-requests/by-username",
+                new { username = bobIdentity.FriendId });
+            sendResponse.EnsureSuccessStatusCode();
+
+            var incoming = await WaitForJsonAsync(
+                bobClient,
+                "/friend-requests/incoming",
+                root => root.GetProperty("requests").GetArrayLength() == 1,
+                TimeSpan.FromSeconds(5));
+            var request = incoming.GetProperty("requests")[0];
+            Assert.Equal(Guid.Parse(aliceUuid), request.GetProperty("requester_uuid").GetGuid());
+            Assert.Equal("Alice", request.GetProperty("username").GetString());
+
+            using var acceptResponse = await bobClient.PostAsJsonAsync(
+                "/friend-requests/accept",
+                new { requester_uuid = aliceUuid });
+            acceptResponse.EnsureSuccessStatusCode();
+            var friends = await WaitForJsonAsync(
+                aliceClient,
+                "/friends",
+                root => root.GetProperty("friends").GetArrayLength() == 1,
+                TimeSpan.FromSeconds(5));
+            Assert.Equal("Bob", friends.GetProperty("friends")[0].GetProperty("username").GetString());
+        }
+        finally
+        {
+            if (Directory.Exists(rootDirectory))
+                Directory.Delete(rootDirectory, recursive: true);
+        }
+    }
+
     [Fact]
     public void Factory_CreatesNodesWithSeparateEndpointsAndStateDirectories()
     {
@@ -193,6 +262,73 @@ public sealed class LocalNodeHostTests
     }
 
     [Fact]
+    public async Task LiveConfig_ReturnsProductionClientDescriptorAndManifest()
+    {
+        var dataDirectory = Path.Combine(Path.GetTempPath(), "HyPrismLiveConfigTests_" + Guid.NewGuid());
+        var logPath = Path.Combine(dataDirectory, "local-node.log");
+        var options = new LocalNodeOptions(
+            dataDirectory,
+            "h.localhost",
+            GetAvailablePort(),
+            LogFilePath: logPath)
+        {
+            ConfigureSystemTrust = false
+        };
+        await using var host = new LocalNodeHost(options);
+
+        try
+        {
+            await host.EnsureReadyAsync();
+            using var client = CreatePinnedClient(options);
+            using var descriptorResponse = await client.GetAsync(
+                "/configs/pre-release/linux/amd64?version=0.6.0-pre.13.1");
+            descriptorResponse.EnsureSuccessStatusCode();
+            using var descriptor = JsonDocument.Parse(await descriptorResponse.Content.ReadAsStringAsync());
+            Assert.Equal(
+                $"{options.Issuer}/liveconfig/manifest.json",
+                descriptor.RootElement.GetProperty("manifest_url").GetString());
+            Assert.True(descriptor.RootElement.GetProperty("flags")
+                .GetProperty("enable_social_layer")
+                .GetProperty("value")
+                .GetBoolean());
+
+            using var manifestResponse = await client.GetAsync(
+                descriptor.RootElement.GetProperty("manifest_url").GetString());
+            manifestResponse.EnsureSuccessStatusCode();
+            using var manifest = JsonDocument.Parse(await manifestResponse.Content.ReadAsStringAsync());
+            Assert.Equal("any", manifest.RootElement.GetProperty("platform").GetProperty("os").GetString());
+            Assert.Equal("any", manifest.RootElement.GetProperty("platform").GetProperty("arch").GetString());
+            var config = manifest.RootElement.GetProperty("configs").GetProperty("feature-flags");
+            var configPath = config.GetProperty("url").GetString();
+            var expectedHash = config.GetProperty("hash").GetString();
+            Assert.False(string.IsNullOrWhiteSpace(configPath));
+            Assert.False(string.IsNullOrWhiteSpace(expectedHash));
+
+            using var flagsResponse = await client.GetAsync(configPath);
+            flagsResponse.EnsureSuccessStatusCode();
+            var flagsPayload = await flagsResponse.Content.ReadAsByteArrayAsync();
+            Assert.Equal(
+                expectedHash,
+                Convert.ToHexString(SHA256.HashData(flagsPayload)).ToLowerInvariant());
+            using var flags = JsonDocument.Parse(flagsPayload);
+            Assert.False(flags.RootElement.TryGetProperty("flags", out _));
+            Assert.True(flags.RootElement.GetProperty("enable_social_layer")
+                .GetProperty("value")
+                .GetBoolean());
+
+            Assert.Contains(
+                "Live config descriptor requested at /configs/pre-release/linux/amd64",
+                await File.ReadAllTextAsync(logPath));
+        }
+        finally
+        {
+            await host.DisposeAsync();
+            if (Directory.Exists(dataDirectory))
+                Directory.Delete(dataDirectory, recursive: true);
+        }
+    }
+
+    [Fact]
     public async Task Host_ExecutesAutonomousSessionAndAccountFlow()
     {
         var dataDirectory = Path.Combine(Path.GetTempPath(), "HyPrismLocalNodeTests_" + Guid.NewGuid());
@@ -364,6 +500,38 @@ public sealed class LocalNodeHostTests
     }
 
     [Fact]
+    public async Task Host_CorruptMeshState_DoesNotBlockAutonomousSession()
+    {
+        var dataDirectory = Path.Combine(
+            Path.GetTempPath(),
+            "HyPrismLocalNodeCorruptMeshTests_" + Guid.NewGuid());
+        var meshDirectory = Path.Combine(dataDirectory, "Mesh");
+        Directory.CreateDirectory(meshDirectory);
+        await File.WriteAllTextAsync(Path.Combine(meshDirectory, "Friends.json"), "not-json");
+        var options = new LocalNodeOptions(dataDirectory, "h.localhost", GetAvailablePort())
+        {
+            ConfigureSystemTrust = false
+        };
+        await using var host = new LocalNodeHost(options);
+
+        try
+        {
+            var session = await host.CreateSessionAsync(
+                "550e8400-e29b-41d4-a716-446655440000",
+                "LocalPlayer");
+
+            Assert.False(string.IsNullOrWhiteSpace(session.IdentityToken));
+            Assert.False(string.IsNullOrWhiteSpace(session.SessionToken));
+        }
+        finally
+        {
+            await host.DisposeAsync();
+            if (Directory.Exists(dataDirectory))
+                Directory.Delete(dataDirectory, recursive: true);
+        }
+    }
+
+    [Fact]
     public async Task Cosmetics_ReturnsInstalledAssetIdsInUpstreamShape()
     {
         var testDirectory = Path.Combine(Path.GetTempPath(), "HyPrismLocalNodeCosmeticsTests_" + Guid.NewGuid());
@@ -500,6 +668,51 @@ public sealed class LocalNodeHostTests
             BaseAddress = new Uri($"https://127.0.0.1:{options.Port}"),
             Timeout = TimeSpan.FromSeconds(10)
         };
+    }
+
+    private static LocalNodeOptions CreatePairingNodeOptions(
+        string directory,
+        int httpPort,
+        int discoveryPort,
+        int targetDiscoveryPort)
+        => new(directory, "h.localhost", httpPort)
+        {
+            ConfigureSystemTrust = false,
+            MeshTransport = new MeshTransportOptions
+            {
+                DiscoveryPort = discoveryPort,
+                EnableMulticast = false,
+                EnableInternetDiscovery = false,
+                DiscoveryTargets = [new IPEndPoint(IPAddress.Loopback, targetDiscoveryPort)],
+                AnnouncementInterval = TimeSpan.FromMilliseconds(100),
+                PresenceTimeout = TimeSpan.FromSeconds(2),
+                EndpointLifetime = TimeSpan.FromSeconds(2)
+            }
+        };
+
+    private static int GetAvailableUdpPort()
+    {
+        using var client = new UdpClient(new IPEndPoint(IPAddress.Loopback, 0));
+        return ((IPEndPoint)client.Client.LocalEndPoint!).Port;
+    }
+
+    private static async Task<JsonElement> WaitForJsonAsync(
+        HttpClient client,
+        string path,
+        Func<JsonElement, bool> predicate,
+        TimeSpan timeout)
+    {
+        var deadline = DateTimeOffset.UtcNow.Add(timeout);
+        while (DateTimeOffset.UtcNow < deadline)
+        {
+            using var response = await client.GetAsync(path);
+            response.EnsureSuccessStatusCode();
+            using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+            if (predicate(document.RootElement))
+                return document.RootElement.Clone();
+            await Task.Delay(25);
+        }
+        throw new TimeoutException($"The expected response state was not observed at {path}");
     }
 
     private static void AssertSkinClaim(string token, string expectedHaircut)

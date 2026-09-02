@@ -10,7 +10,13 @@ public sealed record MeshPublicIdentity(
     string PeerId,
     string SigningPublicKey,
     string AgreementPublicKey,
-    DateTimeOffset CreatedAt);
+    DateTimeOffset CreatedAt)
+{
+    /// <summary>
+    /// Short stable identifier accepted by Hytale's add-friend dialog
+    /// </summary>
+    public string FriendId => MeshFriendId.FromIdentity(this);
+}
 
 /// <summary>
 /// A locally confirmed friend identity
@@ -20,7 +26,8 @@ public sealed record MeshFriend(
     string SigningPublicKey,
     string AgreementPublicKey,
     string DisplayName,
-    DateTimeOffset AddedAt);
+    DateTimeOffset AddedAt,
+    string? PlayerUuid = null);
 
 /// <summary>
 /// Application message carried by an authenticated pairwise mesh channel
@@ -90,6 +97,30 @@ public enum MeshMessageKind : byte
 /// </summary>
 public sealed record MeshFriendInvite(
     string Token,
+    DateTimeOffset ExpiresAt);
+
+/// <summary>
+/// Verified sender metadata carried by a friendship invitation
+/// </summary>
+public sealed record MeshFriendInviteDetails(
+    string PeerId,
+    string FriendId,
+    string DisplayName,
+    string? PlayerUuid,
+    string? TargetFriendId,
+    DateTimeOffset ExpiresAt);
+
+/// <summary>
+/// Signed public identity record used while two profiles are not friends yet
+/// </summary>
+public sealed record MeshPeerRecord(
+    string Token,
+    string PeerId,
+    string FriendId,
+    string DisplayName,
+    string? PlayerUuid,
+    string RequestId,
+    string Purpose,
     DateTimeOffset ExpiresAt);
 
 /// <summary>

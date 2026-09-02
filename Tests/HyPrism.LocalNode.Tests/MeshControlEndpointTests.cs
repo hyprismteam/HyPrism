@@ -2,16 +2,95 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Net.Sockets;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
+using HyPrism.Mesh;
 using HyPrism.LocalNode;
 
 namespace HyPrism.LocalNode.Tests;
 
 public sealed class MeshControlEndpointTests
 {
+    [Fact]
+    public async Task SocialEndpoints_ReturnAuthenticatedMeshFriendsInHytaleShape()
+    {
+        var directory = Path.Combine(
+            Path.GetTempPath(),
+            "HyPrism-MeshSocialEndpointTests",
+            Guid.NewGuid().ToString("N"));
+        const string aliceProfile = "550e8400-e29b-41d4-a716-446655440000";
+        const string bobProfile = "660e8400-e29b-41d4-a716-446655440000";
+        var meshFriends = new MeshFriendService(directory);
+        var invite = await meshFriends.CreateInviteAsync(
+            aliceProfile,
+            "Alice",
+            TimeSpan.FromMinutes(10));
+        var acceptance = await meshFriends.AcceptInviteAsync(
+            bobProfile,
+            "Bob",
+            invite.Value.Token);
+        var completion = await meshFriends.CompleteInviteAsync(
+            aliceProfile,
+            acceptance.Value.AcceptanceToken);
+        Assert.True(invite.IsSuccess);
+        Assert.True(acceptance.IsSuccess);
+        Assert.True(completion.IsSuccess);
+
+        var options = new LocalNodeOptions(
+            directory,
+            "h.localhost",
+            GetAvailablePort(),
+            AccountDataDirectory: directory)
+        {
+            ConfigureSystemTrust = false
+        };
+        await using var host = new LocalNodeHost(options);
+
+        try
+        {
+            await host.EnsureReadyAsync();
+            var session = await host.CreateSessionAsync(aliceProfile, "Alice");
+            using var client = CreatePinnedClient(options);
+
+            using var unauthorized = await client.GetAsync("/friends");
+            Assert.Equal(HttpStatusCode.Unauthorized, unauthorized.StatusCode);
+
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+                "Bearer",
+                session.SessionToken);
+            using var friendsResponse = await client.GetAsync("/friends");
+            friendsResponse.EnsureSuccessStatusCode();
+            using var friendsDocument = JsonDocument.Parse(
+                await friendsResponse.Content.ReadAsStringAsync());
+            var friend = Assert.Single(
+                friendsDocument.RootElement.GetProperty("friends").EnumerateArray());
+            Assert.Equal(bobProfile, friend.GetProperty("uuid").GetString());
+            Assert.Equal("Bob", friend.GetProperty("username").GetString());
+            Assert.False(friend.GetProperty("isOnline").GetBoolean());
+            Assert.False(friend.GetProperty("canJoin").GetBoolean());
+            Assert.False(friendsDocument.RootElement.GetProperty("truncated").GetBoolean());
+
+            using var presenceResponse = await client.GetAsync("/presence/friends");
+            presenceResponse.EnsureSuccessStatusCode();
+            using var presenceDocument = JsonDocument.Parse(
+                await presenceResponse.Content.ReadAsStringAsync());
+            var presence = Assert.Single(
+                presenceDocument.RootElement.GetProperty("friends").EnumerateArray());
+            Assert.Equal(bobProfile, presence.GetProperty("playerUuid").GetString());
+            Assert.Equal("Bob", presence.GetProperty("username").GetString());
+            Assert.Equal("offline", presence.GetProperty("status").GetString());
+            Assert.False(presence.GetProperty("canJoin").GetBoolean());
+        }
+        finally
+        {
+            if (Directory.Exists(directory))
+                Directory.Delete(directory, recursive: true);
+        }
+    }
+
     [Fact]
     public async Task PairingEndpoints_RequireControlSecretAndPersistFriendship()
     {

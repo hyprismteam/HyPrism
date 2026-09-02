@@ -16,6 +16,7 @@ public sealed class MeshFriendService
     private const int ProtocolVersion = 2;
     private const string InvitePrefix = "hyprism://friend/v2/invite/";
     private const string AcceptancePrefix = "hyprism://friend/v2/accept/";
+    private const string PeerRecordPrefix = "hyprism://peer/v1/";
     private static readonly JsonSerializerOptions TokenSerializerOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase
@@ -141,6 +142,39 @@ public sealed class MeshFriendService
         string displayName,
         TimeSpan lifetime,
         CancellationToken cancellationToken = default)
+        => await CreateInviteCoreAsync(
+            profileId,
+            displayName,
+            null,
+            lifetime,
+            cancellationToken).ConfigureAwait(false);
+
+    /// <summary>
+    /// Creates an invitation that only the profile owning the requested Friend ID may accept
+    /// </summary>
+    public async Task<MeshResult<MeshFriendInvite>> CreateInviteForFriendIdAsync(
+        string profileId,
+        string displayName,
+        string targetFriendId,
+        TimeSpan lifetime,
+        CancellationToken cancellationToken = default)
+    {
+        if (!MeshFriendId.TryNormalize(targetFriendId, out var normalized))
+            return MeshResult<MeshFriendInvite>.Failed("invalid_friend_id", "A valid target Friend ID is required");
+        return await CreateInviteCoreAsync(
+            profileId,
+            displayName,
+            normalized,
+            lifetime,
+            cancellationToken).ConfigureAwait(false);
+    }
+
+    private async Task<MeshResult<MeshFriendInvite>> CreateInviteCoreAsync(
+        string profileId,
+        string displayName,
+        string? targetFriendId,
+        TimeSpan lifetime,
+        CancellationToken cancellationToken)
     {
         var validation = ValidateInput(profileId, displayName);
         if (validation is not null)
@@ -163,7 +197,9 @@ public sealed class MeshFriendService
                 identity.PeerId,
                 identity.SigningPublicKey,
                 identity.AgreementPublicKey,
+                profileId,
                 displayName,
+                targetFriendId,
                 MeshCryptography.Base64UrlEncode(capability),
                 now.ToUnixTimeSeconds(),
                 expiresAt.ToUnixTimeSeconds());
@@ -195,6 +231,164 @@ public sealed class MeshFriendService
         }
     }
 
+    /// <summary>
+    /// Verifies an invitation without consuming it or changing friendship state
+    /// </summary>
+    public MeshResult<MeshFriendInviteDetails> InspectInvite(string inviteToken)
+    {
+        var result = ParseInvite(inviteToken, _timeProvider.GetUtcNow());
+        if (!result.IsSuccess)
+        {
+            return MeshResult<MeshFriendInviteDetails>.Failed(
+                result.Failure.Code,
+                result.Failure.Message);
+        }
+
+        var invite = result.Value;
+        return MeshResult<MeshFriendInviteDetails>.Success(new MeshFriendInviteDetails(
+            invite.PeerId,
+            MeshFriendId.FromSigningPublicKey(invite.PublicKey),
+            invite.DisplayName,
+            invite.PlayerUuid,
+            invite.TargetFriendId,
+            invite.ExpiresAt));
+    }
+
+    /// <summary>
+    /// Creates a short-lived signed identity response bound to one pairing request
+    /// </summary>
+    public async Task<MeshResult<MeshPeerRecord>> CreatePeerRecordAsync(
+        string profileId,
+        string displayName,
+        string requestId,
+        string purpose,
+        TimeSpan lifetime,
+        CancellationToken cancellationToken = default)
+    {
+        var validation = ValidateInput(profileId, displayName);
+        if (validation is not null)
+            return MeshResult<MeshPeerRecord>.Failed(validation.Code, validation.Message);
+        if (!IsValidRequestId(requestId)
+            || !IsValidPeerRecordPurpose(purpose)
+            || lifetime <= TimeSpan.Zero
+            || lifetime > TimeSpan.FromMinutes(10))
+        {
+            return MeshResult<MeshPeerRecord>.Failed(
+                "invalid_peer_record",
+                "A valid request ID and lifetime are required");
+        }
+
+        var identity = await _identities.GetPublicIdentityAsync(profileId, cancellationToken).ConfigureAwait(false);
+        var now = _timeProvider.GetUtcNow();
+        var expiresAt = now.Add(lifetime);
+        var payload = new PeerRecordPayload(
+            1,
+            identity.PeerId,
+            identity.SigningPublicKey,
+            identity.AgreementPublicKey,
+            profileId,
+            displayName,
+            requestId,
+            purpose,
+            now.ToUnixTimeSeconds(),
+            expiresAt.ToUnixTimeSeconds());
+        var payloadBytes = JsonSerializer.SerializeToUtf8Bytes(payload, TokenSerializerOptions);
+        var signature = await _identities.SignAsync(profileId, payloadBytes, cancellationToken).ConfigureAwait(false);
+        var token = PeerRecordPrefix
+                    + MeshCryptography.Base64UrlEncode(payloadBytes)
+                    + "."
+                    + MeshCryptography.Base64UrlEncode(signature);
+        if (token.Length > _limits.MaximumTokenLength)
+        {
+            return MeshResult<MeshPeerRecord>.Failed(
+                "token_too_large",
+                "The generated peer record exceeds the configured size limit");
+        }
+
+        return MeshResult<MeshPeerRecord>.Success(new MeshPeerRecord(
+            token,
+            identity.PeerId,
+            identity.FriendId,
+            displayName,
+            profileId,
+            requestId,
+            purpose,
+            expiresAt));
+    }
+
+    /// <summary>
+    /// Verifies a signed peer record and its pairing request binding
+    /// </summary>
+    public MeshResult<MeshPeerRecord> VerifyPeerRecord(
+        string token,
+        string expectedRequestId,
+        string expectedPurpose)
+    {
+        if (!IsValidRequestId(expectedRequestId) || !IsValidPeerRecordPurpose(expectedPurpose))
+            return MeshResult<MeshPeerRecord>.Failed("invalid_peer_record", "The pairing request ID is invalid");
+
+        var envelope = ParseEnvelope(token, PeerRecordPrefix);
+        if (!envelope.IsSuccess)
+            return MeshResult<MeshPeerRecord>.Failed(envelope.Failure.Code, envelope.Failure.Message);
+
+        PeerRecordPayload? payload;
+        try
+        {
+            payload = JsonSerializer.Deserialize<PeerRecordPayload>(envelope.Value.Payload, TokenSerializerOptions);
+        }
+        catch (JsonException)
+        {
+            return MeshResult<MeshPeerRecord>.Failed("invalid_peer_record", "The peer record is malformed");
+        }
+
+        if (payload is null
+            || payload.Version != 1
+            || !string.Equals(payload.RequestId, expectedRequestId, StringComparison.Ordinal)
+            || !string.Equals(payload.Purpose, expectedPurpose, StringComparison.Ordinal)
+            || !IsValidRequestId(payload.RequestId)
+            || !IsValidPeerRecordPurpose(payload.Purpose)
+            || !IsValidDisplayName(payload.DisplayName)
+            || !MeshCryptography.TryBase64UrlDecode(
+                payload.PublicKey,
+                MeshCryptography.PublicKeyLength,
+                out var publicKey)
+            || !MeshCryptography.TryBase64UrlDecode(
+                payload.AgreementPublicKey,
+                MeshCryptography.AgreementKeyLength,
+                out var agreementPublicKey))
+        {
+            return MeshResult<MeshPeerRecord>.Failed("invalid_peer_record", "The peer record is malformed");
+        }
+
+        try
+        {
+            if (!string.Equals(payload.PeerId, MeshCryptography.GetPeerId(publicKey), StringComparison.Ordinal)
+                || !MeshCryptography.Verify(publicKey, envelope.Value.Payload, envelope.Value.Signature))
+            {
+                return MeshResult<MeshPeerRecord>.Failed("invalid_signature", "The peer record signature is invalid");
+            }
+
+            var timeResult = ValidateTokenTime(payload.IssuedAt, payload.ExpiresAt, _timeProvider.GetUtcNow());
+            if (timeResult is not null)
+                return MeshResult<MeshPeerRecord>.Failed(timeResult.Code, timeResult.Message);
+
+            return MeshResult<MeshPeerRecord>.Success(new MeshPeerRecord(
+                token,
+                payload.PeerId,
+                MeshFriendId.FromSigningPublicKey(payload.PublicKey),
+                payload.DisplayName,
+                payload.PlayerUuid,
+                payload.RequestId,
+                payload.Purpose,
+                DateTimeOffset.FromUnixTimeSeconds(payload.ExpiresAt)));
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(publicKey);
+            CryptographicOperations.ZeroMemory(agreementPublicKey);
+        }
+    }
+
     public async Task<MeshResult<MeshFriendAcceptance>> AcceptInviteAsync(
         string profileId,
         string displayName,
@@ -216,6 +410,13 @@ public sealed class MeshFriendService
 
         var invite = inviteResult.Value;
         var localIdentity = await _identities.GetPublicIdentityAsync(profileId, cancellationToken).ConfigureAwait(false);
+        if (invite.TargetFriendId is not null
+            && !string.Equals(invite.TargetFriendId, localIdentity.FriendId, StringComparison.Ordinal))
+        {
+            return MeshResult<MeshFriendAcceptance>.Failed(
+                "wrong_recipient",
+                "The friendship invitation was issued for another Friend ID");
+        }
         if (string.Equals(localIdentity.PeerId, invite.PeerId, StringComparison.Ordinal))
         {
             return MeshResult<MeshFriendAcceptance>.Failed(
@@ -233,6 +434,7 @@ public sealed class MeshFriendService
             localIdentity.PeerId,
             localIdentity.SigningPublicKey,
             localIdentity.AgreementPublicKey,
+            profileId,
             displayName,
             now.ToUnixTimeSeconds(),
             acceptanceExpiresAt.ToUnixTimeSeconds());
@@ -254,7 +456,8 @@ public sealed class MeshFriendService
             invite.PublicKey,
             invite.AgreementPublicKey,
             invite.DisplayName,
-            now);
+            now,
+            invite.PlayerUuid);
         var stateResult = await _state.UpdateAsync(
             profileId,
             profile => StoreAcceptedInvite(profile, invite, friend, now),
@@ -269,6 +472,31 @@ public sealed class MeshFriendService
         string profileId,
         string acceptanceToken,
         CancellationToken cancellationToken = default)
+        => await CompleteInviteCoreAsync(
+            profileId,
+            acceptanceToken,
+            null,
+            cancellationToken).ConfigureAwait(false);
+
+    /// <summary>
+    /// Completes an invitation only when the accepting identity matches a requested Friend ID
+    /// </summary>
+    public async Task<MeshResult<MeshFriend>> CompleteInviteFromFriendIdAsync(
+        string profileId,
+        string acceptanceToken,
+        string expectedFriendId,
+        CancellationToken cancellationToken = default)
+        => await CompleteInviteCoreAsync(
+            profileId,
+            acceptanceToken,
+            expectedFriendId,
+            cancellationToken).ConfigureAwait(false);
+
+    private async Task<MeshResult<MeshFriend>> CompleteInviteCoreAsync(
+        string profileId,
+        string acceptanceToken,
+        string? expectedFriendId,
+        CancellationToken cancellationToken)
     {
         try
         {
@@ -285,6 +513,17 @@ public sealed class MeshFriendService
             return MeshResult<MeshFriend>.Failed(acceptanceResult.Failure.Code, acceptanceResult.Failure.Message);
 
         var acceptance = acceptanceResult.Value;
+        if (expectedFriendId is not null
+            && (!MeshFriendId.TryNormalize(expectedFriendId, out var normalizedExpected)
+                || !string.Equals(
+                    normalizedExpected,
+                    MeshFriendId.FromSigningPublicKey(acceptance.PublicKey),
+                    StringComparison.Ordinal)))
+        {
+            return MeshResult<MeshFriend>.Failed(
+                "wrong_friend_id",
+                "The friendship acceptance does not match the requested Friend ID");
+        }
         var localIdentity = await _identities.GetPublicIdentityAsync(profileId, cancellationToken).ConfigureAwait(false);
         if (!string.Equals(localIdentity.PeerId, acceptance.InviterPeerId, StringComparison.Ordinal))
         {
@@ -298,7 +537,8 @@ public sealed class MeshFriendService
             acceptance.PublicKey,
             acceptance.AgreementPublicKey,
             acceptance.DisplayName,
-            now);
+            now,
+            acceptance.PlayerUuid);
         return await _state.UpdateAsync(
             profileId,
             profile => CompleteIssuedInvite(profile, acceptance, friend, now),
@@ -324,6 +564,9 @@ public sealed class MeshFriendService
         if (payload is null
             || payload.Version != ProtocolVersion
             || !IsValidDisplayName(payload.DisplayName)
+            || (payload.TargetFriendId is not null
+                && (!MeshFriendId.TryNormalize(payload.TargetFriendId, out var normalizedTarget)
+                    || !string.Equals(payload.TargetFriendId, normalizedTarget, StringComparison.Ordinal)))
             || !MeshCryptography.TryBase64UrlDecode(
                 payload.PublicKey,
                 MeshCryptography.PublicKeyLength,
@@ -358,7 +601,9 @@ public sealed class MeshFriendService
                 payload.PeerId,
                 payload.PublicKey,
                 payload.AgreementPublicKey,
+                payload.PlayerUuid,
                 payload.DisplayName,
+                payload.TargetFriendId,
                 MeshCryptography.HashCapability(capability),
                 DateTimeOffset.FromUnixTimeSeconds(payload.ExpiresAt)));
         }
@@ -424,6 +669,7 @@ public sealed class MeshFriendService
                 payload.PeerId,
                 payload.PublicKey,
                 payload.AgreementPublicKey,
+                payload.PlayerUuid,
                 payload.DisplayName));
         }
         finally
@@ -591,7 +837,8 @@ public sealed class MeshFriendService
                 SigningPublicKey = friend.SigningPublicKey,
                 AgreementPublicKey = friend.AgreementPublicKey,
                 DisplayName = friend.DisplayName,
-                AddedAt = friend.AddedAt
+                AddedAt = friend.AddedAt,
+                PlayerUuid = friend.PlayerUuid
             });
             return;
         }
@@ -599,6 +846,7 @@ public sealed class MeshFriendService
         existing.SigningPublicKey = friend.SigningPublicKey;
         existing.AgreementPublicKey = friend.AgreementPublicKey;
         existing.DisplayName = friend.DisplayName;
+        existing.PlayerUuid = friend.PlayerUuid;
     }
 
     private MeshFailure? ValidateInput(string profileId, string displayName)
@@ -660,12 +908,21 @@ public sealed class MeshFriendService
         }
     }
 
+    private static bool IsValidRequestId(string? requestId)
+        => requestId is { Length: > 0 and <= 64 }
+           && requestId.All(character => char.IsAsciiLetterOrDigit(character) || character is '-' or '_');
+
+    private static bool IsValidPeerRecordPurpose(string? purpose)
+        => purpose is "ack" or "reject";
+
     private sealed record TokenEnvelope(byte[] Payload, byte[] Signature);
     private sealed record VerifiedInvite(
         string PeerId,
         string PublicKey,
         string AgreementPublicKey,
+        string? PlayerUuid,
         string DisplayName,
+        string? TargetFriendId,
         string InviteHash,
         DateTimeOffset ExpiresAt);
     private sealed record VerifiedAcceptance(
@@ -674,6 +931,7 @@ public sealed class MeshFriendService
         string PeerId,
         string PublicKey,
         string AgreementPublicKey,
+        string? PlayerUuid,
         string DisplayName);
 
     private sealed record InvitePayload(
@@ -681,7 +939,9 @@ public sealed class MeshFriendService
         [property: JsonPropertyName("peerId")] string PeerId,
         [property: JsonPropertyName("publicKey")] string PublicKey,
         [property: JsonPropertyName("agreementPublicKey")] string AgreementPublicKey,
+        [property: JsonPropertyName("playerUuid")] string? PlayerUuid,
         [property: JsonPropertyName("displayName")] string DisplayName,
+        [property: JsonPropertyName("targetFriendId")] string? TargetFriendId,
         [property: JsonPropertyName("capability")] string Capability,
         [property: JsonPropertyName("issuedAt")] long IssuedAt,
         [property: JsonPropertyName("expiresAt")] long ExpiresAt);
@@ -693,7 +953,20 @@ public sealed class MeshFriendService
         [property: JsonPropertyName("peerId")] string PeerId,
         [property: JsonPropertyName("publicKey")] string PublicKey,
         [property: JsonPropertyName("agreementPublicKey")] string AgreementPublicKey,
+        [property: JsonPropertyName("playerUuid")] string? PlayerUuid,
         [property: JsonPropertyName("displayName")] string DisplayName,
+        [property: JsonPropertyName("issuedAt")] long IssuedAt,
+        [property: JsonPropertyName("expiresAt")] long ExpiresAt);
+
+    private sealed record PeerRecordPayload(
+        [property: JsonPropertyName("v")] int Version,
+        [property: JsonPropertyName("peerId")] string PeerId,
+        [property: JsonPropertyName("publicKey")] string PublicKey,
+        [property: JsonPropertyName("agreementPublicKey")] string AgreementPublicKey,
+        [property: JsonPropertyName("playerUuid")] string? PlayerUuid,
+        [property: JsonPropertyName("displayName")] string DisplayName,
+        [property: JsonPropertyName("requestId")] string RequestId,
+        [property: JsonPropertyName("purpose")] string Purpose,
         [property: JsonPropertyName("issuedAt")] long IssuedAt,
         [property: JsonPropertyName("expiresAt")] long ExpiresAt);
 }

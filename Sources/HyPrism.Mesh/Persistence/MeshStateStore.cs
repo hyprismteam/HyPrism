@@ -168,8 +168,10 @@ internal sealed class MeshFriendState
     public string AgreementPublicKey { get; set; } = string.Empty;
     public string DisplayName { get; set; } = string.Empty;
     public DateTimeOffset AddedAt { get; set; }
+    public string? PlayerUuid { get; set; }
 
-    public MeshFriend ToFriend() => new(PeerId, SigningPublicKey, AgreementPublicKey, DisplayName, AddedAt);
+    public MeshFriend ToFriend()
+        => new(PeerId, SigningPublicKey, AgreementPublicKey, DisplayName, AddedAt, PlayerUuid);
 }
 
 internal sealed class MeshIssuedInviteState
