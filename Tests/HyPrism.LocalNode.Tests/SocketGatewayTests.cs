@@ -4,7 +4,6 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using System.Net.Sockets;
 using System.Net.WebSockets;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
@@ -99,6 +98,33 @@ public sealed class SocketGatewayTests
 
             using var aliceHttp = CreateHttpClient(aliceOptions, aliceCertificate, aliceSession.SessionToken);
             using var bobHttp = CreateHttpClient(bobOptions, bobCertificate, bobSession.SessionToken);
+            var reorderedInvite = Guid.NewGuid();
+            var reorderedCreatedAt = DateTimeOffset.UtcNow;
+            var reorderedPayload = new
+            {
+                version = 1,
+                operation = "canceled",
+                inviteUuid = reorderedInvite,
+                inviterUuid = Guid.Parse(aliceUuid),
+                invitedPlayerUuid = Guid.Parse(bobUuid),
+                createdAt = reorderedCreatedAt,
+                expiresAt = reorderedCreatedAt.AddMinutes(10),
+                inviteCode = "p2p-reordered"
+            };
+            Assert.True(await aliceMesh.SendAsync(
+                aliceUuid,
+                bobIdentity.PeerId,
+                MeshMessageKind.WorldInvite,
+                JsonSerializer.SerializeToUtf8Bytes(reorderedPayload)));
+            await Task.Delay(TimeSpan.FromMilliseconds(100));
+            Assert.True(await aliceMesh.SendAsync(
+                aliceUuid,
+                bobIdentity.PeerId,
+                MeshMessageKind.WorldInvite,
+                JsonSerializer.SerializeToUtf8Bytes(reorderedPayload with { operation = "invite" })));
+            await Task.Delay(TimeSpan.FromMilliseconds(200));
+            Assert.Null(await GetOnlyInviteUuidAsync(bobHttp, "/world-invites"));
+
             var acceptedInvite = await SendWorldInviteAsync(aliceHttp, bobUuid, "p2p-accepted");
             using var receivedNotification = await ReceiveJsonAsync(bobSocket);
             AssertWorldNotification(receivedNotification, "world.invite.received", acceptedInvite);
@@ -144,6 +170,8 @@ public sealed class SocketGatewayTests
             }
             using var rejectedNotification = await ReceiveJsonAsync(aliceSocket);
             AssertWorldNotification(rejectedNotification, "world.invite.rejected", rejectedInvite);
+            await Task.Delay(TimeSpan.FromMilliseconds(200));
+            Assert.Null(await GetOnlyInviteUuidAsync(bobHttp, "/world-invites"));
 
             var canceledInvite = await SendWorldInviteAsync(aliceHttp, bobUuid, "p2p-canceled");
             using var canceledReceived = await ReceiveJsonAsync(bobSocket);
@@ -361,17 +389,10 @@ public sealed class SocketGatewayTests
         => document.RootElement.GetProperty("data");
 
     private static int GetAvailableTcpPort()
-    {
-        using var listener = new TcpListener(IPAddress.Loopback, 0);
-        listener.Start();
-        return ((IPEndPoint)listener.LocalEndpoint).Port;
-    }
+        => TestNetworkPortAllocator.ReserveTcpPort();
 
     private static int GetAvailableUdpPort()
-    {
-        using var client = new UdpClient(new IPEndPoint(IPAddress.Loopback, 0));
-        return ((IPEndPoint)client.Client.LocalEndPoint!).Port;
-    }
+        => TestNetworkPortAllocator.ReserveUdpPort();
 
     private sealed class TemporaryDirectory : IDisposable
     {

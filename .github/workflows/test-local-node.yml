@@ -43,21 +43,8 @@ jobs:
           HYPRISM_LOCAL_NODE_SKIP_MACOS_TRUST: '1'
         run: dotnet test Tests/HyPrism.LocalNode.Tests/HyPrism.LocalNode.Tests.csproj --configuration Release
 
-  macos-trust:
-    name: macOS trust and HTTPS smoke
-    runs-on: macos-15
-    timeout-minutes: 15
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
-          dotnet-quality: ${{ env.DOTNET_QUALITY }}
-
       - name: Publish macOS apphosts
+        if: matrix.platform == 'macOS'
         run: |
           dotnet publish Sources/HyPrism.Desktop/HyPrism.Desktop.csproj \
             --configuration Release \
@@ -70,6 +57,7 @@ jobs:
           file "$RUNNER_TEMP/hyprism-osx-arm64/HyPrism.LocalNode" | grep -q 'Mach-O 64-bit executable arm64'
 
       - name: Verify trusted Local Node HTTPS
+        if: matrix.platform == 'macOS'
         run: |
           set -euo pipefail
           PORT=18443
@@ -107,7 +95,9 @@ jobs:
 
           HEALTH_RESPONSE="$RUNNER_TEMP/local-node-health.json"
           for attempt in {1..60}; do
-            if curl --fail --silent --show-error "https://h.localhost:$PORT/health" \
+            if curl --fail --silent --show-error \
+              --resolve "h.localhost:$PORT:127.0.0.1" \
+              "https://h.localhost:$PORT/health" \
               --output "$HEALTH_RESPONSE"; then
               break
             fi

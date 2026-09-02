@@ -307,10 +307,7 @@ public sealed class MeshNetworkHostTests
     }
 
     private static int GetAvailableUdpPort()
-    {
-        using var client = new UdpClient(new IPEndPoint(IPAddress.Loopback, 0));
-        return ((IPEndPoint)client.Client.LocalEndPoint!).Port;
-    }
+        => TestNetworkPortAllocator.ReserveUdpPort();
 
     private sealed class MutableTimeProvider(DateTimeOffset value) : TimeProvider
     {

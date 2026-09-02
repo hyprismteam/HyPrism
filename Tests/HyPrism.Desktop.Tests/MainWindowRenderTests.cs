@@ -3585,6 +3585,10 @@ public sealed class MainWindowRenderTests
                 .OfType<Button>()
                 .Single(button => button.Classes.Contains("settingsRailCategory") &&
                                   button.Classes.Contains("selected"));
+            await WaitForConditionAsync(
+                () => selectedCategoryButton.Background is ISolidColorBrush { Color.A: <= 1 },
+                "selected settings category rest color");
+            Dispatcher.UIThread.RunJobs();
             Assert.InRange(
                 Assert.IsAssignableFrom<ISolidColorBrush>(selectedCategoryButton.Background).Color.A,
                 (byte)0,

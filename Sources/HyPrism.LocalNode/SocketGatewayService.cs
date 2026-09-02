@@ -30,6 +30,7 @@ public sealed class SocketGatewayService(
     private readonly ConcurrentDictionary<SessionKey, TaskCompletionSource<bool>> _pendingOpens = [];
     private readonly ConcurrentDictionary<InviteKey, WorldInviteSnapshot> _incomingInvites = [];
     private readonly ConcurrentDictionary<InviteKey, WorldInviteRoute> _outgoingInvites = [];
+    private readonly ConcurrentDictionary<InviteKey, DateTimeOffset> _resolvedInvites = [];
     private readonly object _worldInviteGate = new();
 
     /// <summary>
@@ -127,8 +128,14 @@ public sealed class SocketGatewayService(
         CancellationToken cancellationToken)
     {
         PruneWorldInvites();
-        if (!_incomingInvites.TryRemove(new InviteKey(profileId, inviteUuid), out var invite))
-            return null;
+        var key = new InviteKey(profileId, inviteUuid);
+        WorldInviteSnapshot invite;
+        lock (_worldInviteGate)
+        {
+            if (!_incomingInvites.TryRemove(key, out invite!))
+                return null;
+            _resolvedInvites[key] = invite.ExpiresAt;
+        }
 
         var friend = await FindFriendAsync(profileId, invite.InviterUuid, cancellationToken).ConfigureAwait(false);
         if (friend is null)
@@ -653,11 +660,10 @@ public sealed class SocketGatewayService(
                     bool added;
                     lock (_worldInviteGate)
                     {
+                        if (_resolvedInvites.ContainsKey(key))
+                            return;
                         if (!_incomingInvites.ContainsKey(key)
-                            && _incomingInvites.Count(item => string.Equals(
-                                item.Key.ProfileId,
-                                delivery.ProfileId,
-                                StringComparison.OrdinalIgnoreCase)) >= MaximumInvitesPerProfile)
+                            && CountTrackedInvites(delivery.ProfileId) >= MaximumInvitesPerProfile)
                         {
                             return;
                         }
@@ -726,11 +732,24 @@ public sealed class SocketGatewayService(
                         cancellationToken).ConfigureAwait(false);
                 }
                 break;
-            case "canceled" when message.InvitedPlayerUuid == localUuid:
-                if (_incomingInvites.TryGetValue(key, out var canceledInvite)
-                    && canceledInvite.InviterUuid == message.InviterUuid
-                    && _incomingInvites.TryRemove(
-                        new KeyValuePair<InviteKey, WorldInviteSnapshot>(key, canceledInvite)))
+            case "canceled" when message.InvitedPlayerUuid == localUuid
+                                 && message.ExpiresAt > now
+                                 && message.ExpiresAt <= now.Add(WorldInviteLifetime).AddMinutes(1):
+                bool removed;
+                lock (_worldInviteGate)
+                {
+                    removed = _incomingInvites.TryGetValue(key, out var canceledInvite)
+                              && canceledInvite.InviterUuid == message.InviterUuid
+                              && _incomingInvites.TryRemove(
+                                  new KeyValuePair<InviteKey, WorldInviteSnapshot>(key, canceledInvite));
+                    if (removed
+                        || _resolvedInvites.ContainsKey(key)
+                        || CountTrackedInvites(delivery.ProfileId) < MaximumInvitesPerProfile)
+                    {
+                        _resolvedInvites[key] = message.ExpiresAt;
+                    }
+                }
+                if (removed)
                 {
                     await BroadcastNotificationAsync(
                         delivery.ProfileId,
@@ -749,8 +768,14 @@ public sealed class SocketGatewayService(
         CancellationToken cancellationToken)
     {
         PruneWorldInvites();
-        if (!_incomingInvites.TryRemove(new InviteKey(profileId, inviteUuid), out var invite))
-            return false;
+        var key = new InviteKey(profileId, inviteUuid);
+        WorldInviteSnapshot invite;
+        lock (_worldInviteGate)
+        {
+            if (!_incomingInvites.TryRemove(key, out invite!))
+                return false;
+            _resolvedInvites[key] = invite.ExpiresAt;
+        }
         var friend = await FindFriendAsync(profileId, invite.InviterUuid, cancellationToken).ConfigureAwait(false);
         if (friend is not null)
         {
@@ -823,8 +848,20 @@ public sealed class SocketGatewayService(
                 _incomingInvites.TryRemove(item.Key, out _);
             foreach (var item in _outgoingInvites.Where(item => item.Value.Invite.ExpiresAt <= now))
                 _outgoingInvites.TryRemove(item.Key, out _);
+            foreach (var item in _resolvedInvites.Where(item => item.Value <= now))
+                _resolvedInvites.TryRemove(item.Key, out _);
         }
     }
+
+    private int CountTrackedInvites(string profileId)
+        => _incomingInvites.Count(item => string.Equals(
+               item.Key.ProfileId,
+               profileId,
+               StringComparison.OrdinalIgnoreCase))
+           + _resolvedInvites.Count(item => string.Equals(
+               item.Key.ProfileId,
+               profileId,
+               StringComparison.OrdinalIgnoreCase));
 
     private Task BroadcastNotificationAsync(
         string profileId,

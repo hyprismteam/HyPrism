@@ -658,11 +658,28 @@ public sealed class LocalNodeHostTests
             password: null,
             X509KeyStorageFlags.Exportable);
         var expectedCertificate = certificate.RawData;
-        var handler = new HttpClientHandler
+        var handler = new SocketsHttpHandler
         {
-            ServerCertificateCustomValidationCallback = (_, presented, _, _) =>
-                presented is not null && presented.RawData.AsSpan().SequenceEqual(expectedCertificate)
+            ConnectCallback = async (context, cancellationToken) =>
+            {
+                var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                try
+                {
+                    await socket.ConnectAsync(
+                        IPAddress.Loopback,
+                        context.DnsEndPoint.Port,
+                        cancellationToken);
+                    return new NetworkStream(socket, ownsSocket: true);
+                }
+                catch
+                {
+                    socket.Dispose();
+                    throw;
+                }
+            }
         };
+        handler.SslOptions.RemoteCertificateValidationCallback = (_, presented, _, _) =>
+            presented is not null && presented.GetRawCertData().AsSpan().SequenceEqual(expectedCertificate);
         return new HttpClient(handler)
         {
             BaseAddress = new Uri($"https://127.0.0.1:{options.Port}"),
@@ -691,10 +708,7 @@ public sealed class LocalNodeHostTests
         };
 
     private static int GetAvailableUdpPort()
-    {
-        using var client = new UdpClient(new IPEndPoint(IPAddress.Loopback, 0));
-        return ((IPEndPoint)client.Client.LocalEndPoint!).Port;
-    }
+        => TestNetworkPortAllocator.ReserveUdpPort();
 
     private static async Task<JsonElement> WaitForJsonAsync(
         HttpClient client,
@@ -725,11 +739,7 @@ public sealed class LocalNodeHostTests
     }
 
     private static int GetAvailablePort()
-    {
-        using var listener = new TcpListener(IPAddress.Loopback, 0);
-        listener.Start();
-        return ((IPEndPoint)listener.LocalEndpoint).Port;
-    }
+        => TestNetworkPortAllocator.ReserveTcpPort();
 
     private static Process StartIdleProcess()
     {

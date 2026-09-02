@@ -4,7 +4,6 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using System.Net.Sockets;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using HyPrism.Mesh;
@@ -177,9 +176,5 @@ public sealed class MeshControlEndpointTests
     }
 
     private static int GetAvailablePort()
-    {
-        using var listener = new TcpListener(IPAddress.Loopback, 0);
-        listener.Start();
-        return ((IPEndPoint)listener.LocalEndpoint).Port;
-    }
+        => TestNetworkPortAllocator.ReserveTcpPort();
 }
