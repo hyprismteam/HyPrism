@@ -22,8 +22,6 @@ namespace HyPrism.Desktop.Features.Instances;
 
 public sealed partial class InstancesView : UserControl
 {
-    private const double ModCatalogModalHiddenOffset = 720;
-
     private static readonly TimeSpan CompactContentTransitionDuration = MotionDurations.CompactPageSlide;
     private static readonly TimeSpan CompactSectionSlideDuration = MotionDurations.CompactSectionSlide;
     private static readonly TimeSpan WideSectionSlideDuration = MotionDurations.ContentFade;
@@ -36,7 +34,6 @@ public sealed partial class InstancesView : UserControl
     private int _creatorNavigationRevision;
     private CancellationTokenSource? _sectionAnimationCancellation;
     private CancellationTokenSource? _versionLoadingCancellation;
-    private CancellationTokenSource? _modCatalogModalCancellation;
     private bool _modDropActive;
 
     public InstancesView()
@@ -87,7 +84,7 @@ public sealed partial class InstancesView : UserControl
         UpdateBranchIndicator(animate: false);
         ApplyVersionLoadingStateImmediately();
         ApplySectionStateImmediately();
-        ApplyModCatalogModalStateImmediately();
+        ApplyModCatalogModalBackground();
 
         if (DataContext is MainWindowViewModel { IsInstanceCreatorOpen: true })
             _ = PlayCreatorOpenAnimationAsync();
@@ -131,100 +128,21 @@ public sealed partial class InstancesView : UserControl
         }
 
         if (args.PropertyName is nameof(MainWindowViewModel.HasModCatalogPreview))
-        {
-            if (DataContext is MainWindowViewModel { HasModCatalogPreview: true })
-                _ = ShowModCatalogModalAsync();
-            else
-                _ = HideModCatalogModalAsync();
-        }
+            ApplyModCatalogModalBackground();
     }
 
-    private async Task ShowModCatalogModalAsync()
+    private void ApplyModCatalogModalBackground()
     {
-        var cancellationToken = ReplaceModCatalogModalCancellation();
-        var translation = (TranslateTransform)ModCatalogModalSheet.RenderTransform!;
-        var shoulderScale = (ScaleTransform)ModCatalogModalShoulders.RenderTransform!;
-        ModCatalogModalBackdrop.Opacity = 0;
-        translation.Y = ModCatalogModalHiddenOffset;
-        shoulderScale.ScaleY = 0;
-        ModCatalogModal.IsVisible = true;
-        ModCatalogModal.IsHitTestVisible = true;
-        InstancesLayout.IsHitTestVisible = false;
-        ((BlurEffect)InstancesLayout.Effect!).Radius = 6;
-
-        await Dispatcher.UIThread.InvokeAsync(static () => { }, DispatcherPriority.Loaded);
-        if (cancellationToken.IsCancellationRequested ||
-            DataContext is not MainWindowViewModel { HasModCatalogPreview: true })
-        {
-            return;
-        }
-
-        ModCatalogModalBackdrop.Opacity = 1;
-        translation.Y = 0;
-        shoulderScale.ScaleY = 1;
+        var isOpen = DataContext is MainWindowViewModel { HasModCatalogPreview: true };
+        InstancesLayout.IsHitTestVisible = !isOpen;
+        ((BlurEffect)InstancesLayout.Effect!).Radius = isOpen ? 6 : 0;
     }
 
-    private async Task HideModCatalogModalAsync()
+    private void OnModCatalogModalClosed(object? sender, EventArgs args)
     {
-        if (!ModCatalogModal.IsVisible)
-            return;
-
-        var cancellationToken = ReplaceModCatalogModalCancellation();
-        ModCatalogModal.IsHitTestVisible = false;
-        ModCatalogModalBackdrop.Opacity = 0;
-        ((TranslateTransform)ModCatalogModalSheet.RenderTransform!).Y = ModCatalogModalHiddenOffset;
-        ((ScaleTransform)ModCatalogModalShoulders.RenderTransform!).ScaleY = 0;
-        ((BlurEffect)InstancesLayout.Effect!).Radius = 0;
-
-        try
-        {
-            await Task.Delay(MotionDurations.ModalCloseRetention, cancellationToken);
-        }
-        catch (OperationCanceledException)
-        {
-            return;
-        }
-
-        if (DataContext is MainWindowViewModel { HasModCatalogPreview: true })
-            return;
-
-        ModCatalogModal.IsVisible = false;
         InstancesLayout.IsHitTestVisible = true;
         if (DataContext is MainWindowViewModel viewModel)
             viewModel.CompleteModCatalogPreviewClose();
-    }
-
-    private void ApplyModCatalogModalStateImmediately()
-    {
-        _modCatalogModalCancellation?.Cancel();
-        _modCatalogModalCancellation?.Dispose();
-        _modCatalogModalCancellation = null;
-        var visible = DataContext is MainWindowViewModel { HasModCatalogPreview: true };
-        ModCatalogModal.IsVisible = visible;
-        ModCatalogModal.IsHitTestVisible = visible;
-        ModCatalogModalBackdrop.Opacity = visible ? 1 : 0;
-        ((TranslateTransform)ModCatalogModalSheet.RenderTransform!).Y =
-            visible ? 0 : ModCatalogModalHiddenOffset;
-        ((ScaleTransform)ModCatalogModalShoulders.RenderTransform!).ScaleY = visible ? 1 : 0;
-        InstancesLayout.IsHitTestVisible = !visible;
-        ((BlurEffect)InstancesLayout.Effect!).Radius = visible ? 6 : 0;
-    }
-
-    private CancellationToken ReplaceModCatalogModalCancellation()
-    {
-        _modCatalogModalCancellation?.Cancel();
-        _modCatalogModalCancellation?.Dispose();
-        _modCatalogModalCancellation = new CancellationTokenSource();
-        return _modCatalogModalCancellation.Token;
-    }
-
-    private void OnModCatalogModalBackdropPressed(object? sender, PointerPressedEventArgs args)
-    {
-        if (DataContext is not MainWindowViewModel { HasModCatalogPreview: true } viewModel)
-            return;
-
-        args.Handled = true;
-        viewModel.CloseModCatalogPreviewCommand.Execute(null);
     }
 
     private void OnInstancesKeyDown(object? sender, KeyEventArgs args)

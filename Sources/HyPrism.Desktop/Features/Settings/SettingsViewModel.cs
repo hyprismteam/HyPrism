@@ -100,6 +100,10 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     [ObservableProperty] private string _customJavaPath;
     [ObservableProperty] private string _javaArguments;
     [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(AddJavaArgumentCommand))]
+    private string _newJavaArgument = string.Empty;
+    [ObservableProperty] private bool _isAddingJavaArgument;
+    [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(JavaMaximumRamValue))]
     [NotifyPropertyChangedFor(nameof(JavaInitialRamMaximum))]
     private double _javaMaximumRamMb;
@@ -260,6 +264,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         }
 
         RefreshLocalization();
+        ReplaceJavaArgumentItems(_javaArguments);
         ReloadMirrorItems();
     }
 
@@ -270,6 +275,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     public ObservableCollection<AboutTeamMemberViewModel> AboutTeamMembers { get; }
     public ObservableCollection<AboutContributorViewModel> AboutContributors { get; } = [];
     public ObservableCollection<MirrorSourceViewModel> MirrorSources { get; } = [];
+    public ObservableCollection<JavaArgumentItemViewModel> JavaArgumentItems { get; } = [];
 
     public int DetectedSystemMemoryMb { get; }
     public double MinimumJavaRamMb => MinimumJavaMemoryMb;
@@ -279,6 +285,8 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     public bool UseBundledJava => !UseCustomJava;
     public bool HasJavaPathError => !string.IsNullOrWhiteSpace(JavaPathError);
     public bool HasJavaArgumentsError => !string.IsNullOrWhiteSpace(JavaArgumentsError);
+    public bool HasJavaArguments => JavaArgumentItems.Count > 0;
+    public bool HasNoJavaArguments => JavaArgumentItems.Count == 0;
     public string JavaMaximumRamValue => FormatMemory(JavaMaximumRamMb);
     public string JavaInitialRamValue => FormatMemory(JavaInitialRamMb);
     public bool HasMirrors => MirrorSources.Count > 0;
@@ -666,10 +674,12 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
             }
 
             JavaArgumentsError = _localizer["settings.javaSettings.jvmMemoryArgumentsManaged"];
+            ReplaceJavaArgumentItems(withoutHeap);
             return;
         }
 
         JavaArgumentsError = string.Empty;
+        ReplaceJavaArgumentItems(withoutHeap);
     }
     partial void OnJavaMaximumRamMbChanged(double value) => PersistJavaMemory();
     partial void OnJavaInitialRamMbChanged(double value) => PersistJavaMemory();
@@ -967,6 +977,98 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
             : string.Empty;
         _settings.JavaArguments = BuildPersistedJavaArguments(sanitized);
         ShowSaved();
+    }
+
+    [RelayCommand]
+    private void ShowAddJavaArgument()
+    {
+        NewJavaArgument = string.Empty;
+        JavaArgumentsError = string.Empty;
+        IsAddingJavaArgument = true;
+    }
+
+    [RelayCommand]
+    private void CancelAddJavaArgument()
+    {
+        NewJavaArgument = string.Empty;
+        IsAddingJavaArgument = false;
+    }
+
+    private bool CanAddJavaArgument()
+        => !string.IsNullOrWhiteSpace(NewJavaArgument);
+
+    [RelayCommand(CanExecute = nameof(CanAddJavaArgument))]
+    private void AddJavaArgument()
+    {
+        var withoutHeap = JvmArgumentBuilder.RemoveHeapArguments(NewJavaArgument);
+        var sanitized = JvmArgumentBuilder.Sanitize(withoutHeap);
+        var containedBlockedArguments =
+            !string.Equals(sanitized, NewJavaArgument.Trim(), StringComparison.Ordinal);
+        var additions = JavaArgumentTokenizer.Split(sanitized);
+
+        if (additions.Count == 0)
+        {
+            JavaArgumentsError = _localizer["settings.javaSettings.jvmMemoryArgumentsManaged"];
+            return;
+        }
+
+        foreach (var addition in additions)
+            JavaArgumentItems.Add(new JavaArgumentItemViewModel(addition));
+
+        UpdateJavaArgumentRows();
+        PersistJavaArgumentItems();
+        JavaArgumentsError = containedBlockedArguments
+            ? _localizer["settings.javaSettings.jvmArgumentsBlocked"]
+            : string.Empty;
+        NewJavaArgument = string.Empty;
+        IsAddingJavaArgument = false;
+        ShowSaved();
+    }
+
+    [RelayCommand]
+    private void RemoveJavaArgument(JavaArgumentItemViewModel? argument)
+    {
+        if (argument is null || !JavaArgumentItems.Remove(argument))
+            return;
+
+        UpdateJavaArgumentRows();
+        PersistJavaArgumentItems();
+        JavaArgumentsError = string.Empty;
+        ShowSaved();
+    }
+
+    private void ReplaceJavaArgumentItems(string arguments)
+    {
+        JavaArgumentItems.Clear();
+        foreach (var argument in JavaArgumentTokenizer.Split(arguments))
+            JavaArgumentItems.Add(new JavaArgumentItemViewModel(argument));
+
+        UpdateJavaArgumentRows();
+    }
+
+    private void UpdateJavaArgumentRows()
+    {
+        for (var index = 0; index < JavaArgumentItems.Count; index++)
+            JavaArgumentItems[index].IsLast = index == JavaArgumentItems.Count - 1;
+
+        OnPropertyChanged(nameof(HasJavaArguments));
+        OnPropertyChanged(nameof(HasNoJavaArguments));
+    }
+
+    private void PersistJavaArgumentItems()
+    {
+        var arguments = JavaArgumentTokenizer.Join(JavaArgumentItems);
+        _updatingJavaArguments = true;
+        try
+        {
+            JavaArguments = arguments;
+        }
+        finally
+        {
+            _updatingJavaArguments = false;
+        }
+
+        _settings.JavaArguments = BuildPersistedJavaArguments(arguments);
     }
 
     [RelayCommand]
@@ -1875,6 +1977,12 @@ public enum DownloadSourceAdditionStep
     ChooseMethod,
     Automatic,
     Manual
+}
+
+public sealed partial class JavaArgumentItemViewModel(string value) : ObservableObject
+{
+    public string Value { get; } = value;
+    [ObservableProperty] private bool _isLast;
 }
 
 public sealed partial class AboutTeamMemberViewModel : ObservableObject, IDisposable

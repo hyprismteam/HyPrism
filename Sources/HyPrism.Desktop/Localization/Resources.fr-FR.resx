@@ -2020,7 +2020,7 @@ Vous devrez peut-être réinstaller le jeu si vous changez de lecteur.</value>
     <value>Choisis quel exécutable Java utiliser pour le serveur solo</value>
   </data>
   <data name="settings.javaSettings.jvmArguments" xml:space="preserve">
-    <value>Arguments JVM serveur avancés</value>
+    <value>Arguments JVM avancés</value>
   </data>
   <data name="settings.javaSettings.jvmArgumentsBlocked" xml:space="preserve">
     <value>Certains flags JVM dangereux ou gérés ont été supprimés avant l'enregistrement</value>

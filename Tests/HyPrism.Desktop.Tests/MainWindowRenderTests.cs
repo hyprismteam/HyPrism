@@ -3585,6 +3585,9 @@ public sealed class MainWindowRenderTests
                 .OfType<Button>()
                 .Single(button => button.Classes.Contains("settingsRailCategory") &&
                                   button.Classes.Contains("selected"));
+            await WaitForConditionAsync(
+                () => selectedCategoryButton.Background is ISolidColorBrush { Color.A: <= 1 },
+                "compact selected category hover fade");
             Assert.InRange(
                 Assert.IsAssignableFrom<ISolidColorBrush>(selectedCategoryButton.Background).Color.A,
                 (byte)0,
@@ -3719,6 +3722,39 @@ public sealed class MainWindowRenderTests
         Assert.Contains(viewModel.Settings.JavaRuntimeLabel, javaCategoryHeadings);
         Assert.Contains(viewModel.Settings.RamAllocationLabel, javaCategoryHeadings);
         Assert.Contains(viewModel.Settings.JavaArgumentsLabel, javaCategoryHeadings);
+        var javaArgumentsTable = settingsView.FindControl<Border>("JavaArgumentsTable");
+        var addJavaArgumentButton = settingsView.FindControl<Button>("AddJavaArgumentButton");
+        var javaArgumentModal = settingsView.FindControl<OverlayModal>("JavaArgumentModal");
+        Assert.NotNull(javaArgumentsTable);
+        Assert.NotNull(addJavaArgumentButton);
+        Assert.NotNull(javaArgumentModal);
+        Assert.Same(viewModel.Settings.ShowAddJavaArgumentCommand, addJavaArgumentButton!.Command);
+        viewModel.Settings.ShowAddJavaArgumentCommand.Execute(null);
+        Dispatcher.UIThread.RunJobs();
+        Assert.True(javaArgumentModal!.IsOpen);
+        Assert.True(javaArgumentModal.IsVisible);
+        window.UpdateLayout();
+        var javaModalSheet = javaArgumentModal.FindControl<Grid>("OverlayModalSheet");
+        var javaModalShoulders = javaArgumentModal.FindControl<Grid>("OverlayModalShoulders");
+        var javaModalShoulderMask = javaArgumentModal.FindControl<Border>("OverlayModalShoulderMask");
+        Assert.NotNull(javaModalSheet);
+        Assert.NotNull(javaModalShoulders);
+        Assert.NotNull(javaModalShoulderMask);
+        await WaitForConditionAsync(
+            () => Assert.IsType<TranslateTransform>(javaModalSheet!.RenderTransform).Y == 0 &&
+                  Assert.IsType<ScaleTransform>(javaModalShoulders!.RenderTransform).ScaleY == 1,
+            "Java argument modal to finish opening");
+        Dispatcher.UIThread.RunJobs();
+        Assert.Equal(608, javaArgumentModal.ShoulderMaxWidth);
+        Assert.True(javaModalShoulders.ZIndex > javaModalSheet.ZIndex);
+        Assert.True(javaModalShoulderMask!.ZIndex > javaModalShoulders.ZIndex);
+        Assert.Equal(3, javaModalShoulderMask.Height);
+        Assert.Equal(javaModalShoulders.Bounds.Width, javaModalShoulderMask.Bounds.Width);
+        var javaArgumentModalPreviewPath = Environment.GetEnvironmentVariable(
+            "HYPRISM_JAVA_ARGUMENT_MODAL_RENDER_OUTPUT");
+        if (!string.IsNullOrWhiteSpace(javaArgumentModalPreviewPath) && width == 1280)
+            window.CaptureRenderedFrame()!.Save(javaArgumentModalPreviewPath, PngBitmapEncoderOptions.Default);
+        viewModel.Settings.CancelAddJavaArgumentCommand.Execute(null);
         var maximumMemorySlider = settingsView.FindControl<Slider>("JavaMaximumMemorySlider");
         var initialMemorySlider = settingsView.FindControl<Slider>("JavaInitialMemorySlider");
         Assert.NotNull(maximumMemorySlider);

@@ -2020,7 +2020,7 @@ Sürücü değiştirirseniz oyunu yeniden yüklemeniz gerekebilir.</value>
     <value>Tek oyunculu sunucuyu çalıştırmak için hangi Java yürütülebilir dosyasının kullanılacağını seçin</value>
   </data>
   <data name="settings.javaSettings.jvmArguments" xml:space="preserve">
-    <value>Gelişmiş sunucu JVM argümanları</value>
+    <value>Gelişmiş JVM argümanları</value>
   </data>
   <data name="settings.javaSettings.jvmArgumentsBlocked" xml:space="preserve">
     <value>Bazı güvensiz veya yönetilen JVM bayrakları kaydetmeden önce kaldırıldı</value>

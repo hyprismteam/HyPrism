@@ -2020,7 +2020,7 @@ Bei Laufwerkswechsel muss das Spiel möglicherweise neu installiert werden.</val
     <value>Wähle aus, welche Java-Datei zum Starten des Singleplayer-Servers verwendet werden soll</value>
   </data>
   <data name="settings.javaSettings.jvmArguments" xml:space="preserve">
-    <value>Erweiterte Server-JVM-Argumente</value>
+    <value>Erweiterte JVM-Argumente</value>
   </data>
   <data name="settings.javaSettings.jvmArgumentsBlocked" xml:space="preserve">
     <value>Einige unsichere oder verwaltete JVM-Flags wurden vor dem Speichern entfernt</value>

@@ -443,7 +443,7 @@ SPDX-License-Identifier: GPL-3.0-only
     </Setter>
   </Style>
 
-  <Style Selector="Border.mainSceneFrame.modPreviewOpen">
+  <Style Selector="Border.mainSceneFrame.bottomSheetOpen">
     <Setter Property="BorderThickness" Value="1,1,1,0" />
   </Style>
 
@@ -1771,7 +1771,7 @@ SPDX-License-Identifier: GPL-3.0-only
   </Style>
 
   <Style Selector="Button.javaRuntimeOption:pointerover">
-    <Setter Property="Background" Value="#0AFFFFFF" />
+    <Setter Property="Background" Value="{DynamicResource NavigationItemHoverBrush}" />
     <Setter Property="RenderTransform" Value="{x:Null}" />
   </Style>
 
@@ -1785,7 +1785,34 @@ SPDX-License-Identifier: GPL-3.0-only
   </Style>
 
   <Style Selector="Button.javaRuntimeOption.selected:pointerover">
-    <Setter Property="Background" Value="#0AFFFFFF" />
+    <Setter Property="Background" Value="{DynamicResource NavigationItemHoverBrush}" />
+  </Style>
+
+  <Style Selector="settings|SettingsView Grid.javaArgumentModalSheet">
+    <Setter Property="Margin" Value="0" />
+  </Style>
+
+  <Style Selector="settings|SettingsView Border.javaArgumentModalContent">
+    <Setter Property="Padding" Value="20" />
+    <Setter Property="Background" Value="{DynamicResource AppBackgroundBrush}" />
+    <Setter Property="CornerRadius" Value="18,18,0,0" />
+    <Setter Property="ClipToBounds" Value="True" />
+  </Style>
+
+  <Style Selector="settings|SettingsView Border.javaArgumentModalOutline">
+    <Setter Property="Margin" Value="0,0,0,42" />
+    <Setter Property="BorderBrush" Value="{DynamicResource MainCardStrokeBrush}" />
+    <Setter Property="BorderThickness" Value="1,1,1,0" />
+    <Setter Property="CornerRadius" Value="18,18,0,0" />
+    <Setter Property="IsHitTestVisible" Value="False" />
+  </Style>
+
+  <Style Selector="settings|SettingsView Button.javaArgumentModalClose">
+    <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+  </Style>
+
+  <Style Selector="settings|SettingsView Button.javaArgumentModalClose:pointerover">
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
   </Style>
 
   <Style Selector="Border.javaRadioIndicator">
@@ -3411,42 +3438,20 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="Height" Value="40" />
   </Style>
 
-  <Style Selector="instances|InstancesView Grid.instanceModPreview">
-    <Setter Property="MaxWidth" Value="720" />
-    <Setter Property="MaxHeight" Value="680" />
-    <Setter Property="Margin" Value="20,20,20,0" />
+  <Style Selector="instances|InstancesView controls|OverlayModal.modCatalogModal">
+    <Setter Property="SheetMaxWidth" Value="720" />
+    <Setter Property="SheetMaxHeight" Value="680" />
+    <Setter Property="SheetMargin" Value="20,20,20,0" />
+    <Setter Property="ShoulderMaxWidth" Value="780" />
+    <Setter Property="ShoulderMargin" Value="20,0,20,0" />
   </Style>
 
-  <Style Selector="instances|InstancesView.compact Grid.instanceModPreview.modalSheet">
-    <Setter Property="MaxWidth" Value="560" />
-    <Setter Property="MaxHeight" Value="520" />
-    <Setter Property="Margin" Value="12,36,12,0" />
-  </Style>
-
-  <Style Selector="instances|InstancesView Grid.instanceModPreviewShoulders">
-    <Setter Property="Height" Value="42" />
-    <Setter Property="MaxWidth" Value="780" />
-    <Setter Property="Margin" Value="20,0,20,0" />
-  </Style>
-
-  <Style Selector="instances|InstancesView Border.instanceModPreviewShoulderMask">
-    <Setter Property="Height" Value="2" />
-    <Setter Property="Background" Value="{DynamicResource AppBackgroundBrush}" />
-  </Style>
-
-  <Style Selector="instances|InstancesView.compact Grid.instanceModPreviewShoulders">
-    <Setter Property="MaxWidth" Value="608" />
-    <Setter Property="Margin" Value="12,0,12,0" />
-  </Style>
-
-  <Style Selector="instances|InstancesView Path.instanceModPreviewShoulderFill">
-    <Setter Property="Fill" Value="{DynamicResource AppBackgroundBrush}" />
-  </Style>
-
-  <Style Selector="instances|InstancesView Path.instanceModPreviewShoulderStroke">
-    <Setter Property="Fill" Value="Transparent" />
-    <Setter Property="Stroke" Value="{DynamicResource MainCardStrokeBrush}" />
-    <Setter Property="StrokeThickness" Value="1" />
+  <Style Selector="instances|InstancesView.compact controls|OverlayModal.modCatalogModal">
+    <Setter Property="SheetMaxWidth" Value="560" />
+    <Setter Property="SheetMaxHeight" Value="520" />
+    <Setter Property="SheetMargin" Value="12,36,12,0" />
+    <Setter Property="ShoulderMaxWidth" Value="608" />
+    <Setter Property="ShoulderMargin" Value="12,0,12,0" />
   </Style>
 
   <Style Selector="instances|InstancesView Border.instanceModPreviewContent">
@@ -3471,10 +3476,6 @@ SPDX-License-Identifier: GPL-3.0-only
 
   <Style Selector="instances|InstancesView.compact Border.instanceModPreviewBodyOutline">
     <Setter Property="CornerRadius" Value="16,16,0,0" />
-  </Style>
-
-  <Style Selector="instances|InstancesView Border.instanceModalBackdrop">
-    <Setter Property="Background" Value="#B8000000" />
   </Style>
 
   <Style Selector="instances|InstancesView Border.instancePreviewHero.modalHero">

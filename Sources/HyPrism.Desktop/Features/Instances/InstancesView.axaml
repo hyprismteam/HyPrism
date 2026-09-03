@@ -1429,45 +1429,14 @@ SPDX-License-Identifier: GPL-3.0-only
     </Border>
   </Grid>
 
-    <Grid x:Name="ModCatalogModal"
-          IsVisible="False"
-          IsHitTestVisible="False"
-          ZIndex="200">
-      <Border x:Name="ModCatalogModalBackdrop"
-              Classes="instanceModalBackdrop"
-              Opacity="0"
-              PointerPressed="OnModCatalogModalBackdropPressed">
-        <Border.Transitions>
-          <Transitions>
-            <DoubleTransition Property="Opacity" Duration="0:0:0.18">
-              <DoubleTransition.Easing><easing:CubicEaseOut /></DoubleTransition.Easing>
-            </DoubleTransition>
-          </Transitions>
-        </Border.Transitions>
-      </Border>
-
-      <Border Classes="instanceModPreviewSceneEdge"
-              Height="1"
-              Background="{DynamicResource MainCardStrokeBrush}"
-              VerticalAlignment="Bottom"
-              IsHitTestVisible="False" />
-
-      <Grid x:Name="ModCatalogModalSheet"
-            Classes="instanceModPreview modalSheet"
-            HorizontalAlignment="Stretch"
-            VerticalAlignment="Bottom">
-        <Grid.RenderTransform>
-          <TranslateTransform Y="720">
-            <TranslateTransform.Transitions>
-              <Transitions>
-                <DoubleTransition Property="Y" Duration="0:0:0.32">
-                  <DoubleTransition.Easing><easing:CubicEaseInOut /></DoubleTransition.Easing>
-                </DoubleTransition>
-              </Transitions>
-            </TranslateTransform.Transitions>
-          </TranslateTransform>
-        </Grid.RenderTransform>
-
+    <controls:OverlayModal x:Name="ModCatalogModal"
+                           Classes="modCatalogModal"
+                           IsOpen="{Binding HasModCatalogPreview}"
+                           DismissCommand="{Binding CloseModCatalogPreviewCommand}"
+                           Closed="OnModCatalogModalClosed"
+                           ZIndex="200">
+      <controls:OverlayModal.ModalContent>
+      <Grid Classes="instanceModPreview modalSheet">
         <Border Classes="instanceModPreviewContent">
           <Grid RowDefinitions="Auto,*" RowSpacing="14">
           <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
@@ -1727,36 +1696,7 @@ SPDX-License-Identifier: GPL-3.0-only
 
         <Border Classes="instanceModPreviewBodyOutline" />
       </Grid>
-
-      <Grid x:Name="ModCatalogModalShoulders"
-            Classes="instanceModPreviewShoulders"
-            HorizontalAlignment="Stretch"
-            VerticalAlignment="Bottom"
-            RenderTransformOrigin="50%,100%"
-            IsHitTestVisible="False">
-        <Grid.RenderTransform>
-          <ScaleTransform ScaleY="0">
-            <ScaleTransform.Transitions>
-              <Transitions>
-                <DoubleTransition Property="ScaleY" Duration="0:0:0.32">
-                  <DoubleTransition.Easing><easing:CubicEaseInOut /></DoubleTransition.Easing>
-                </DoubleTransition>
-              </Transitions>
-            </ScaleTransform.Transitions>
-          </ScaleTransform>
-        </Grid.RenderTransform>
-        <Path Classes="instanceModPreviewShoulderFill"
-              Data="M 0,100 C 2.4,100 4,70 4,0 L 4,100 Z M 96,0 C 96,70 97.6,100 100,100 L 96,100 Z"
-              Stretch="Fill" />
-        <Path Classes="instanceModPreviewShoulderStroke"
-              Data="M 0,100 C 2.4,100 4,70 4,0 M 96,0 C 96,70 97.6,100 100,100"
-              Stretch="Fill"
-              StrokeJoin="Round" />
-        <Border Classes="instanceModPreviewShoulderMask"
-                ZIndex="2"
-                HorizontalAlignment="Stretch"
-                VerticalAlignment="Bottom" />
-      </Grid>
-    </Grid>
+      </controls:OverlayModal.ModalContent>
+    </controls:OverlayModal>
   </Grid>
 </UserControl>

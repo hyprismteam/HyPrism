@@ -2020,7 +2020,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>싱글플레이어 서버 실행에 사용할 Java 실행 파일을 선택</value>
   </data>
   <data name="settings.javaSettings.jvmArguments" xml:space="preserve">
-    <value>서버 고급 JVM 인수</value>
+    <value>고급 JVM 인수</value>
   </data>
   <data name="settings.javaSettings.jvmArgumentsBlocked" xml:space="preserve">
     <value>일부 안전하지 않거나 관리되는 JVM 플래그가 저장 전에 제거되었습니다</value>

@@ -2020,7 +2020,7 @@ Você pode precisar reinstalar o jogo se trocar de unidade.</value>
     <value>Escolha qual executável Java usar para o servidor singleplayer</value>
   </data>
   <data name="settings.javaSettings.jvmArguments" xml:space="preserve">
-    <value>Argumentos JVM do servidor</value>
+    <value>Argumentos JVM avançados</value>
   </data>
   <data name="settings.javaSettings.jvmArgumentsBlocked" xml:space="preserve">
     <value>Algumas flags JVM inseguras ou gerenciadas foram removidas antes de salvar</value>

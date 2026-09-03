@@ -405,6 +405,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     [NotifyPropertyChangedFor(nameof(CanShowPreviousModCatalogScreenshot))]
     [NotifyPropertyChangedFor(nameof(CanShowNextModCatalogScreenshot))]
     [NotifyPropertyChangedFor(nameof(IsModCatalogPreviewMounted))]
+    [NotifyPropertyChangedFor(nameof(IsBottomSheetMounted))]
     private ModCatalogItemViewModel? _selectedModCatalogPreview;
 
     [ObservableProperty]
@@ -493,6 +494,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         _localizer.LanguageChanged += ApplyLanguage;
         _settingsStore.BackgroundChanged += OnBackgroundChanged;
         _settings = CreateSettingsViewModel();
+        _settings.PropertyChanged += OnSettingsPropertyChanged;
         _profiles = new ProfilesViewModel(
             profiles,
             profileRepository,
@@ -556,7 +558,13 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     public SettingsViewModel Settings
     {
         get => _settings;
-        private set => SetProperty(ref _settings, value);
+        private set
+        {
+            if (_settings is not null)
+                _settings.PropertyChanged -= OnSettingsPropertyChanged;
+            if (SetProperty(ref _settings, value) && _settings is not null)
+                _settings.PropertyChanged += OnSettingsPropertyChanged;
+        }
     }
     public ProfilesViewModel Profiles => _profiles;
 
@@ -660,6 +668,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     public bool CanLoadMoreModCatalog => HasMoreModCatalog && !IsLoadingMoreModCatalog && !IsModCatalogLoading;
     public bool HasModCatalogPreview => IsModCatalogPreviewOpen;
     public bool IsModCatalogPreviewMounted => SelectedModCatalogPreview is not null;
+    public bool IsBottomSheetMounted => IsModCatalogPreviewMounted || Settings.IsAddingJavaArgument;
     public bool HasModCatalogPreviewImage => ModCatalogPreviewImage is not null;
     public bool HasModCatalogPreviewFiles => ModCatalogPreviewFiles.Count > 0;
     public bool HasMultipleModCatalogPreviewScreenshots =>
@@ -1564,6 +1573,12 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         {
             RecalculateInstalledModsSelection();
         }
+    }
+
+    private void OnSettingsPropertyChanged(object? sender, PropertyChangedEventArgs args)
+    {
+        if (args.PropertyName == nameof(SettingsViewModel.IsAddingJavaArgument))
+            OnPropertyChanged(nameof(IsBottomSheetMounted));
     }
 
     private void RecalculateInstalledModsSelection()

@@ -2023,7 +2023,7 @@ Potrebbe essere necessario reinstallare il gioco se si cambia drive.</value>
     <value>Scegli quale eseguibile Java deve essere utilizzato per il server singleplayer.</value>
   </data>
   <data name="settings.javaSettings.jvmArguments" xml:space="preserve">
-    <value>Argomenti JVM server avanzati</value>
+    <value>Argomenti JVM avanzati</value>
   </data>
   <data name="settings.javaSettings.jvmArgumentsBlocked" xml:space="preserve">
     <value>Alcuni flag JVM non sicuri o gestiti sono stati rimossi prima del salvataggio.</value>

@@ -2020,7 +2020,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>选择用于运行单人服务器的 Java 可执行文件</value>
   </data>
   <data name="settings.javaSettings.jvmArguments" xml:space="preserve">
-    <value>服务器高级 JVM 参数</value>
+    <value>高级 JVM 参数</value>
   </data>
   <data name="settings.javaSettings.jvmArgumentsBlocked" xml:space="preserve">
     <value>部分不安全或受管理的 JVM 参数已在保存前移除</value>

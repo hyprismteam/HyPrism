@@ -348,10 +348,22 @@ SPDX-License-Identifier: GPL-3.0-only
     </DataTemplate>
   </UserControl.Resources>
 
+  <Grid x:Name="SettingsOverlayRoot">
   <Grid x:Name="SettingsLayout"
         ColumnDefinitions="Auto,*"
         ClipToBounds="True"
         Background="{DynamicResource SurfaceBrush}">
+    <Grid.Effect>
+      <BlurEffect Radius="0">
+        <BlurEffect.Transitions>
+          <Transitions>
+            <DoubleTransition Property="Radius" Duration="0:0:0.2">
+              <DoubleTransition.Easing><easing:CubicEaseOut /></DoubleTransition.Easing>
+            </DoubleTransition>
+          </Transitions>
+        </BlurEffect.Transitions>
+      </BlurEffect>
+    </Grid.Effect>
     <Border x:Name="SettingsCategoryRail"
             Grid.Column="0"
             Width="276"
@@ -722,23 +734,66 @@ SPDX-License-Identifier: GPL-3.0-only
             </StackPanel>
 
             <StackPanel Spacing="10">
-              <TextBlock Text="{Binding JavaArgumentsLabel}" Classes="settingsCategoryHeading" />
-              <Border Classes="uiSettingsGroup settingsGroup">
-                <Border Classes="uiSettingsRow settingsRow last">
-                  <StackPanel Spacing="10">
-                    <TextBlock Text="{Binding JavaArgumentsHint}" Classes="uiSettingsHint settingsHint" />
-                    <TextBox Text="{Binding JavaArguments}"
-                             PlaceholderText="{Binding JavaArgumentsPlaceholder}"
-                             AcceptsReturn="True"
-                             TextWrapping="Wrap"
-                             MinHeight="104" />
-                    <TextBlock Text="{Binding JavaArgumentsError}" Classes="settingsError" IsVisible="{Binding HasJavaArgumentsError}" />
-                    <Button Classes="settingsAction" Command="{Binding SaveJavaArgumentsCommand}" HorizontalAlignment="Right">
-                      <TextBlock Text="{Binding SaveLabel}" />
-                    </Button>
+              <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16" Margin="4,0,4,2">
+                <TextBlock Text="{Binding JavaArgumentsLabel}"
+                           Classes="settingsCategoryHeading"
+                           VerticalAlignment="Center" />
+                <Button x:Name="AddJavaArgumentButton"
+                        Grid.Column="1"
+                        Classes="sourceAdd"
+                        Theme="{StaticResource SourceAddButtonTheme}"
+                        Command="{Binding ShowAddJavaArgumentCommand}">
+                  <StackPanel Orientation="Horizontal" Spacing="6">
+                    <TextBlock Text="+" FontSize="17" FontWeight="SemiBold" />
+                    <TextBlock Text="{Binding AddSourceButtonLabel}" />
                   </StackPanel>
-                </Border>
+                </Button>
+              </Grid>
+              <Border x:Name="JavaArgumentsTable" Classes="uiSettingsGroup settingsGroup">
+                <StackPanel>
+                  <Border Classes="sourceTableHeader">
+                    <Grid ColumnDefinitions="*,34" ColumnSpacing="10">
+                      <TextBlock Text="{Binding JavaArgumentsLabel}" />
+                    </Grid>
+                  </Border>
+                  <ItemsControl ItemsSource="{Binding JavaArgumentItems}"
+                                IsVisible="{Binding HasJavaArguments}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="vm:JavaArgumentItemViewModel">
+                        <Border Classes="uiSettingsRow settingsRow"
+                                Classes.last="{Binding IsLast}">
+                          <Grid ColumnDefinitions="*,34" ColumnSpacing="10">
+                            <TextBlock Text="{Binding Value}"
+                                       Classes="sourceTableValue link"
+                                       TextTrimming="CharacterEllipsis"
+                                       VerticalAlignment="Center" />
+                            <Button Grid.Column="1"
+                                    Classes="mirrorRemove"
+                                    Command="{Binding DataContext.RemoveJavaArgumentCommand, ElementName=SettingsRoot}"
+                                    CommandParameter="{Binding}"
+                                    ToolTip.Tip="{Binding DataContext.RemoveLabel, ElementName=SettingsRoot}">
+                              <PathIcon Data="{StaticResource CloseIcon}" Width="15" Height="15" />
+                            </Button>
+                          </Grid>
+                        </Border>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                  <Border Classes="uiSettingsRow settingsRow last"
+                          IsVisible="{Binding HasNoJavaArguments}">
+                    <TextBlock Text="{Binding JavaArgumentsHint}"
+                               Classes="uiSettingsHint settingsHint" />
+                  </Border>
+                </StackPanel>
               </Border>
+              <TextBlock Text="{Binding JavaArgumentsHint}"
+                         Classes="uiSettingsHint settingsHint"
+                         Margin="4,0"
+                         IsVisible="{Binding HasJavaArguments}" />
+              <TextBlock Text="{Binding JavaArgumentsError}"
+                         Classes="settingsError"
+                         Margin="4,0"
+                         IsVisible="{Binding HasJavaArgumentsError}" />
             </StackPanel>
           </StackPanel>
 
@@ -1523,5 +1578,60 @@ SPDX-License-Identifier: GPL-3.0-only
         </StackPanel>
       </Border>
     </Grid>
+  </Grid>
+
+  <controls:OverlayModal x:Name="JavaArgumentModal"
+                         Classes="javaArgumentModal"
+                         IsOpen="{Binding IsAddingJavaArgument}"
+                         DismissCommand="{Binding CancelAddJavaArgumentCommand}"
+                         SheetMaxWidth="560"
+                         SheetMaxHeight="360"
+                         SheetMargin="12,20,12,0"
+                         ShoulderMaxWidth="608"
+                         ShoulderMargin="12,0,12,0"
+                         HiddenOffset="420"
+                         ZIndex="200">
+    <controls:OverlayModal.ModalContent>
+      <Grid Classes="javaArgumentModalSheet">
+        <Border Classes="javaArgumentModalContent">
+          <StackPanel Spacing="16">
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+              <TextBlock Text="{Binding JavaArgumentsLabel}"
+                         FontSize="22"
+                         FontWeight="Bold"
+                         VerticalAlignment="Center" />
+              <Button Grid.Column="1"
+                      Classes="javaArgumentModalClose mirrorRemove"
+                      Command="{Binding CancelAddJavaArgumentCommand}"
+                      ToolTip.Tip="{Binding CancelLabel}">
+                <PathIcon Data="{StaticResource CloseIcon}" Width="15" Height="15" />
+              </Button>
+            </Grid>
+            <TextBlock Text="{Binding JavaArgumentsHint}"
+                       Classes="uiSettingsHint settingsHint" />
+            <TextBox x:Name="NewJavaArgumentTextBox"
+                     Text="{Binding NewJavaArgument, Mode=TwoWay}"
+                     PlaceholderText="{Binding JavaArgumentsPlaceholder}" />
+            <TextBlock Text="{Binding JavaArgumentsError}"
+                       Classes="settingsError"
+                       IsVisible="{Binding HasJavaArgumentsError}" />
+            <StackPanel Orientation="Horizontal"
+                        HorizontalAlignment="Right"
+                        Spacing="10">
+              <Button Classes="wizardAction"
+                      Command="{Binding CancelAddJavaArgumentCommand}">
+                <TextBlock Text="{Binding CancelLabel}" />
+              </Button>
+              <Button Classes="wizardAction create"
+                      Command="{Binding AddJavaArgumentCommand}">
+                <TextBlock Text="{Binding AddSourceButtonLabel}" />
+              </Button>
+            </StackPanel>
+          </StackPanel>
+        </Border>
+        <Border Classes="javaArgumentModalOutline" />
+      </Grid>
+    </controls:OverlayModal.ModalContent>
+  </controls:OverlayModal>
   </Grid>
 </UserControl>

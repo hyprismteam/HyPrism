@@ -58,10 +58,19 @@ public sealed partial class SettingsView : UserControl
             _ = PlayDownloadSourceWizardOpenAsync();
         else
             HideDownloadSourceWizardImmediately();
+
+        ApplyJavaArgumentModalBackground();
     }
 
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs args)
     {
+        if (args.PropertyName == nameof(SettingsViewModel.IsAddingJavaArgument))
+        {
+            ApplyJavaArgumentModalBackground();
+            if (DataContext is SettingsViewModel { IsAddingJavaArgument: true })
+                Dispatcher.UIThread.Post(() => NewJavaArgumentTextBox.Focus(), DispatcherPriority.Loaded);
+        }
+
         if (args.PropertyName != nameof(SettingsViewModel.IsAddingMirror))
             return;
 
@@ -231,6 +240,12 @@ public sealed partial class SettingsView : UserControl
 
     public bool TryCloseCompactContent()
     {
+        if (DataContext is SettingsViewModel { IsAddingJavaArgument: true } javaViewModel)
+        {
+            javaViewModel.CancelAddJavaArgumentCommand.Execute(null);
+            return true;
+        }
+
         if (DataContext is SettingsViewModel { IsAddingMirror: true } viewModel)
         {
             viewModel.CancelAddMirrorCommand.Execute(null);
@@ -238,6 +253,13 @@ public sealed partial class SettingsView : UserControl
         }
 
         return _layoutHost.TryCloseDetail();
+    }
+
+    private void ApplyJavaArgumentModalBackground()
+    {
+        var isOpen = DataContext is SettingsViewModel { IsAddingJavaArgument: true };
+        SettingsLayout.IsHitTestVisible = !isOpen;
+        ((BlurEffect)SettingsLayout.Effect!).Radius = isOpen ? 6 : 0;
     }
 
     private async Task PlayDownloadSourceWizardOpenAsync()

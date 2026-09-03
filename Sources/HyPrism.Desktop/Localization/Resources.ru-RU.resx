@@ -2332,7 +2332,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>Выберите, какой Java-исполняемый файл использовать для запуска однопользовательского сервера</value>
   </data>
   <data name="settings.javaSettings.jvmArguments" xml:space="preserve">
-    <value>Расширенные JVM-аргументы (сервер)</value>
+    <value>Расширенные JVM-аргументы</value>
   </data>
   <data name="settings.javaSettings.jvmArgumentsBlocked" xml:space="preserve">
     <value>Часть опасных или управляемых JVM-флагов была удалена перед сохранением</value>

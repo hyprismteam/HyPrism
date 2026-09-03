@@ -2335,7 +2335,7 @@ You may need to reinstall the game if switching drives.</value>
     <value>Choose which Java executable should be used to run the singleplayer server</value>
   </data>
   <data name="settings.javaSettings.jvmArguments" xml:space="preserve">
-    <value>Advanced server JVM arguments</value>
+    <value>Advanced JVM arguments</value>
   </data>
   <data name="settings.javaSettings.jvmArgumentsBlocked" xml:space="preserve">
     <value>Some unsafe or managed JVM flags were removed before saving</value>

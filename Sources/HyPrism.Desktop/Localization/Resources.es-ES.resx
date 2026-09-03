@@ -2020,7 +2020,7 @@ Es posible que necesites reinstalar el juego si cambias de unidad.</value>
     <value>Elige qué ejecutable de Java usar para el servidor de un jugador</value>
   </data>
   <data name="settings.javaSettings.jvmArguments" xml:space="preserve">
-    <value>Argumentos JVM del servidor</value>
+    <value>Argumentos JVM avanzados</value>
   </data>
   <data name="settings.javaSettings.jvmArgumentsBlocked" xml:space="preserve">
     <value>Algunos flags JVM inseguros o gestionados fueron eliminados antes de guardar</value>

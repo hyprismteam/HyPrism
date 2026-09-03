@@ -2020,7 +2020,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>シングルプレイヤーサーバーの起動に使用するJava実行ファイルを選択</value>
   </data>
   <data name="settings.javaSettings.jvmArguments" xml:space="preserve">
-    <value>サーバー詳細JVM引数</value>
+    <value>高度な JVM 引数</value>
   </data>
   <data name="settings.javaSettings.jvmArgumentsBlocked" xml:space="preserve">
     <value>一部の危険または管理されたJVMフラグは保存前に削除されました</value>

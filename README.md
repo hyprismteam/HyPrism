@@ -14,17 +14,14 @@ SPDX-License-Identifier: GPL-3.0-only
   [![Discord](https://img.shields.io/badge/Discord-Join-5865F2?style=flat&logo=discord&logoColor=white&logoWidth=20)](https://discord.com/invite/ekZqTtynjp)
   [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-Support-FFDD00?style=flat&logo=buy-me-a-coffee&logoColor=black&logoWidth=20)](https://buymeacoffee.com/yyyumeniku)
 
-> Disclaimer: HyPrism has no any connection to [PrismLauncher](https://github.com/PrismLauncher/PrismLauncher). HyPrism is an application that is being developed **INDEPENDENTLY** of the PrismLauncher project or its team. Thank you for your understanding
+> [!IMPORTANT]
+> HyPrism has no any connection to [PrismLauncher](https://github.com/PrismLauncher/PrismLauncher). HyPrism is an application that is being developed **INDEPENDENTLY** of the PrismLauncher project or its team. Thank you for your understanding
 
 ## Installation
 
 Downloads are available in [Releases](https://github.com/hyprismteam/HyPrism/releases)
 
-> We are also here! https://gitlab.com/yyyumeniku/HyPrism
-> 
-> And here: https://git.sanhost.net/HyprismTeam/HyPrism
-
-## Build Instructions
+## Build
 
 **Requirements:**
 

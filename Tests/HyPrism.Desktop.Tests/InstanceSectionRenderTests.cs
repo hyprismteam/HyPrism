@@ -21,6 +21,7 @@ using HyPrism.Core.Game.Instances;
 using HyPrism.Core.Game.Launch;
 using HyPrism.Core.Game.Mods;
 using HyPrism.Core.Models;
+using HyPrism.Desktop.Controls;
 using HyPrism.Desktop.Features.Instances;
 using HyPrism.Desktop.Features.News;
 using HyPrism.Desktop.Features.Settings;
@@ -305,10 +306,10 @@ public sealed class InstanceSectionRenderTests
         await WaitUntilAsync(() => view.GetVisualDescendants()
             .OfType<ItemsControl>()
             .Any(items => items.IsEffectivelyVisible && items.Classes.Contains("instancePreviewFiles")));
-        var preview = view.FindControl<Grid>("ModCatalogModalSheet");
+        var modal = view.FindControl<OverlayModal>("ModCatalogModal");
+        var preview = modal?.FindControl<Grid>("OverlayModalSheet");
         Assert.NotNull(preview);
         Assert.True(preview.IsEffectivelyVisible);
-        var modal = view.FindControl<Grid>("ModCatalogModal");
         var instancesLayout = view.FindControl<Grid>("InstancesLayout");
         Assert.NotNull(modal);
         Assert.True(modal.IsVisible);
@@ -401,14 +402,11 @@ public sealed class InstanceSectionRenderTests
         Assert.Equal(23, curseForgeIcon.Width);
         Assert.Equal(5, Assert.IsType<TranslateTransform>(curseForgeIcon.RenderTransform).Y);
         var shoulderScale = Assert.IsType<ScaleTransform>(
-            view.FindControl<Grid>("ModCatalogModalShoulders")?.RenderTransform);
+            modal?.FindControl<Grid>("OverlayModalShoulders")?.RenderTransform);
         Assert.NotEmpty(Assert.IsAssignableFrom<IEnumerable<ITransition>>(shoulderScale.Transitions));
-        var shoulderMask = Assert.Single(
-            view.FindControl<Grid>("ModCatalogModalShoulders")!
-                .GetVisualDescendants()
-                .OfType<Border>(),
-            border => border.Classes.Contains("instanceModPreviewShoulderMask"));
-        Assert.Equal(2, shoulderMask.Height);
+        var shoulderMask = modal!.FindControl<Border>("OverlayModalShoulderMask");
+        Assert.NotNull(shoulderMask);
+        Assert.Equal(3, shoulderMask.Height);
 
         var previewPath = Environment.GetEnvironmentVariable("HYPRISM_MOD_CATALOG_RENDER_OUTPUT");
         if (!string.IsNullOrWhiteSpace(previewPath))
@@ -421,11 +419,9 @@ public sealed class InstanceSectionRenderTests
         window.UpdateLayout();
         Dispatcher.UIThread.RunJobs();
         await WaitUntilAsync(() => view.Classes.Contains("compact"));
-        var modalSheet = view.FindControl<Grid>("ModCatalogModalSheet");
-        var modalShoulders = view.FindControl<Grid>("ModCatalogModalShoulders");
-        Assert.Equal(560, modalSheet?.MaxWidth);
-        Assert.Equal(608, modalShoulders?.MaxWidth);
-        Assert.Equal(520, modalSheet?.MaxHeight);
+        Assert.Equal(560, modal.SheetMaxWidth);
+        Assert.Equal(608, modal.ShoulderMaxWidth);
+        Assert.Equal(520, modal.SheetMaxHeight);
         var compactPreviewPath = Environment.GetEnvironmentVariable(
             "HYPRISM_MOD_CATALOG_COMPACT_RENDER_OUTPUT");
         if (!string.IsNullOrWhiteSpace(compactPreviewPath))
@@ -550,6 +546,8 @@ public sealed class InstanceSectionRenderTests
             gameConsole: console);
 
         var view = new InstancesView { DataContext = viewModel };
+        var modal = view.FindControl<OverlayModal>("ModCatalogModal");
+        Assert.NotNull(modal);
         var window = new Window
         {
             Width = 1180,
@@ -630,7 +628,7 @@ public sealed class InstanceSectionRenderTests
         viewModel.CloseModCatalogPreviewCommand.Execute(null);
         Assert.False(viewModel.HasModCatalogPreview);
         Assert.True(viewModel.IsModCatalogPreviewMounted);
-        Assert.Equal(1d, view.FindControl<Grid>("ModCatalogModalSheet")!.Opacity);
+        Assert.Equal(1d, modal.FindControl<Grid>("OverlayModalSheet")!.Opacity);
         Assert.Same(closingImage, viewModel.ModCatalogPreviewImage);
         await Task.Delay(100);
         Assert.Same(closingImage, viewModel.ModCatalogPreviewImage);

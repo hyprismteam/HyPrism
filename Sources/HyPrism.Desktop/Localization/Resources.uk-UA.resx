@@ -2020,7 +2020,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>Виберіть, який виконуваний файл Java використовувати для однокористувацького сервера</value>
   </data>
   <data name="settings.javaSettings.jvmArguments" xml:space="preserve">
-    <value>Розширені JVM-аргументи (сервер)</value>
+    <value>Розширені JVM-аргументи</value>
   </data>
   <data name="settings.javaSettings.jvmArgumentsBlocked" xml:space="preserve">
     <value>Деякі небезпечні або керовані JVM-прапорці були видалені перед збереженням</value>
