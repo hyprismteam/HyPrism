@@ -3747,7 +3747,10 @@ public sealed class MainWindowRenderTests
         Dispatcher.UIThread.RunJobs();
         Assert.Equal(608, javaArgumentModal.ShoulderMaxWidth);
         Assert.True(javaModalShoulders.ZIndex > javaModalSheet.ZIndex);
-        Assert.True(javaModalShoulderMask!.ZIndex > javaModalShoulders.ZIndex);
+        Assert.Same(javaModalShoulders, javaModalShoulderMask!.GetVisualParent());
+        Assert.All(
+            javaModalShoulders!.Children.OfType<Avalonia.Controls.Shapes.Path>(),
+            shoulderPath => Assert.True(javaModalShoulderMask.ZIndex > shoulderPath.ZIndex));
         Assert.Equal(3, javaModalShoulderMask.Height);
         Assert.Equal(javaModalShoulders.Bounds.Width, javaModalShoulderMask.Bounds.Width);
         var javaArgumentModalPreviewPath = Environment.GetEnvironmentVariable(

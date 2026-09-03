@@ -3,6 +3,7 @@
 
 using System.Windows.Input;
 using Avalonia;
+using Avalonia.Animation;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
@@ -143,6 +144,7 @@ public sealed partial class OverlayModal : UserControl
         if (cancellationToken.IsCancellationRequested || !IsOpen)
             return;
 
+        SyncShoulderScaleWithSheetTravel(opening: true);
         OverlayModalBackdrop.Opacity = 1;
         ((TranslateTransform)OverlayModalSheet.RenderTransform!).Y = 0;
         ((ScaleTransform)OverlayModalShoulders.RenderTransform!).ScaleY = 1;
@@ -157,6 +159,7 @@ public sealed partial class OverlayModal : UserControl
         var cancellationToken = ReplaceAnimationCancellation();
         IsHitTestVisible = false;
         OverlayModalBackdrop.Opacity = 0;
+        SyncShoulderScaleWithSheetTravel(opening: false);
         ((TranslateTransform)OverlayModalSheet.RenderTransform!).Y = HiddenOffset;
         ((ScaleTransform)OverlayModalShoulders.RenderTransform!).ScaleY = 0;
 
@@ -184,6 +187,47 @@ public sealed partial class OverlayModal : UserControl
         OverlayModalBackdrop.Opacity = IsOpen ? 1 : 0;
         ((TranslateTransform)OverlayModalSheet.RenderTransform!).Y = IsOpen ? 0 : HiddenOffset;
         ((ScaleTransform)OverlayModalShoulders.RenderTransform!).ScaleY = IsOpen ? 1 : 0;
+    }
+
+    /// <summary>
+    /// Aligns the shoulder scale animation with the moment the sheet visually crosses
+    /// the window edge, so the shoulders finish exactly when the sheet arrives or leaves.
+    /// </summary>
+    private void SyncShoulderScaleWithSheetTravel(bool opening)
+    {
+        if (OverlayModalShoulders.RenderTransform is not ScaleTransform transform ||
+            transform.Transitions?.OfType<DoubleTransition>().FirstOrDefault() is not { } transition)
+            return;
+
+        var sheetHeight = OverlayModalSheet.Bounds.Height;
+        var visibleFraction = sheetHeight <= 0
+            ? 1
+            : Math.Clamp(sheetHeight / HiddenOffset, 0, 1);
+
+        if (opening)
+        {
+            var enterProgress = InverseCubicEaseInOut(1 - visibleFraction);
+            transition.Delay = MotionDurations.ModalCloseRetention * enterProgress;
+            transition.Duration = MotionDurations.ModalCloseRetention * (1 - enterProgress);
+        }
+        else
+        {
+            transition.Delay = TimeSpan.Zero;
+            transition.Duration = MotionDurations.ModalCloseRetention * InverseCubicEaseInOut(visibleFraction);
+        }
+    }
+
+    private static double InverseCubicEaseInOut(double value)
+    {
+        if (value <= 0)
+            return 0;
+
+        if (value >= 1)
+            return 1;
+
+        return value < 0.5
+            ? Math.Cbrt(value / 4)
+            : 1 - (Math.Cbrt(2 * (1 - value)) / 2);
     }
 
     private CancellationToken ReplaceAnimationCancellation()
