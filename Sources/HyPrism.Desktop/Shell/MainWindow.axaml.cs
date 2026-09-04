@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 using System.ComponentModel;
+using System.Runtime.InteropServices;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
@@ -18,12 +19,45 @@ public sealed partial class MainWindow : Window
 {
     private const double WideNewsLayoutThreshold = 1180;
 
+    private static readonly Dictionary<WindowEdge, Cursor> ResizeCursors = new()
+    {
+        [WindowEdge.North] = new Cursor(StandardCursorType.SizeNorthSouth),
+        [WindowEdge.South] = new Cursor(StandardCursorType.SizeNorthSouth),
+        [WindowEdge.East] = new Cursor(StandardCursorType.SizeWestEast),
+        [WindowEdge.West] = new Cursor(StandardCursorType.SizeWestEast),
+        [WindowEdge.NorthEast] = new Cursor(StandardCursorType.TopRightCorner),
+        [WindowEdge.SouthWest] = new Cursor(StandardCursorType.BottomLeftCorner),
+        [WindowEdge.NorthWest] = new Cursor(StandardCursorType.TopLeftCorner),
+        [WindowEdge.SouthEast] = new Cursor(StandardCursorType.BottomRightCorner)
+    };
+
     private INotifyPropertyChanged? _observedViewModel;
     private bool? _usesWideNewsLayout;
     private int _wideArticleTransitionVersion;
     private int _startupTransitionVersion;
     private bool _startupAnimationFrameActive;
     private TimeSpan? _startupAnimationStartedAt;
+    private WindowEdge? _activeResizeEdge;
+    private PixelPoint _resizeStartScreenPoint;
+    private PixelPoint _pendingResizeScreenPoint;
+    private PixelPoint _resizeStartWindowPosition;
+    private Size _resizeStartClientSize;
+    private Cursor? _resizeCursorSnapshot;
+    private bool _isResizeFrameScheduled;
+    private readonly Action<TimeSpan> _onResizeFrame;
+
+    [DllImport("user32.dll")]
+    private static extern bool SetWindowPos(
+        IntPtr hWnd,
+        IntPtr hWndInsertAfter,
+        int x,
+        int y,
+        int cx,
+        int cy,
+        uint uFlags);
+
+    private const uint SwpNoZOrder = 0x0004;
+    private const uint SwpNoActivate = 0x0010;
 
     private ScaleTransform LauncherShellScale =>
         ((TransformGroup)LauncherShell.RenderTransform!).Children.OfType<ScaleTransform>().Single();
@@ -37,6 +71,7 @@ public sealed partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        _onResizeFrame = ApplyResizeFrame;
         DataContextChanged += OnDataContextChanged;
     }
 
@@ -263,6 +298,16 @@ public sealed partial class MainWindow : Window
     protected override void OnKeyDown(KeyEventArgs e)
     {
         if (e.Key == Key.Escape &&
+            _activeResizeEdge is not null)
+        {
+            Position = _resizeStartWindowPosition;
+            ClientSize = _resizeStartClientSize;
+            EndResize();
+            e.Handled = true;
+            return;
+        }
+
+        if (e.Key == Key.Escape &&
             DataContext is MainWindowViewModel { IsInstances: true } &&
             this.GetVisualDescendants()
                 .OfType<InstancesView>()
@@ -322,11 +367,143 @@ public sealed partial class MainWindow : Window
 
     private void BeginResize(WindowEdge edge, PointerPressedEventArgs e)
     {
-        if (WindowState == WindowState.Normal &&
-            e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
+        if (WindowState != WindowState.Normal ||
+            !e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
+            return;
+
+        _activeResizeEdge = edge;
+        _resizeStartScreenPoint = this.PointToScreen(e.GetCurrentPoint(this).Position);
+        _pendingResizeScreenPoint = _resizeStartScreenPoint;
+        _resizeStartWindowPosition = Position;
+        _resizeStartClientSize = ClientSize;
+        _resizeCursorSnapshot = Cursor;
+        Cursor = ResizeCursors[edge];
+        e.Pointer.Capture(this);
+        e.Handled = true;
+    }
+
+    private void UpdateResize(WindowEdge edge, PointerEventArgs e)
+    {
+        _pendingResizeScreenPoint = this.PointToScreen(e.GetCurrentPoint(this).Position);
+        if (_isResizeFrameScheduled)
+            return;
+
+        _isResizeFrameScheduled = true;
+        TopLevel.GetTopLevel(this)?.RequestAnimationFrame(_onResizeFrame);
+    }
+
+    private void ApplyResizeFrame(TimeSpan timestamp)
+    {
+        _isResizeFrameScheduled = false;
+        if (_activeResizeEdge is not { } edge)
+            return;
+
+        var deltaDips = new Vector(
+            (_pendingResizeScreenPoint.X - _resizeStartScreenPoint.X) / RenderScaling,
+            (_pendingResizeScreenPoint.Y - _resizeStartScreenPoint.Y) / RenderScaling);
+        var (newClientSize, positionOffsetDips) = CalculateResize(
+            edge,
+            _resizeStartClientSize,
+            deltaDips,
+            MinWidth,
+            MaxWidth,
+            MinHeight,
+            MaxHeight);
+
+        // One atomic move-and-resize per frame: separate Position and ClientSize
+        // updates present intermediate window states to DWM and make the surface flicker
+        var handle = TryGetPlatformHandle()?.Handle ?? IntPtr.Zero;
+        if (handle == IntPtr.Zero)
+            return;
+
+        SetWindowPos(
+            handle,
+            IntPtr.Zero,
+            (int)Math.Round(_resizeStartWindowPosition.X + positionOffsetDips.X * RenderScaling),
+            (int)Math.Round(_resizeStartWindowPosition.Y + positionOffsetDips.Y * RenderScaling),
+            (int)Math.Round(newClientSize.Width * RenderScaling),
+            (int)Math.Round(newClientSize.Height * RenderScaling),
+            SwpNoZOrder | SwpNoActivate);
+    }
+
+    internal static (Size NewClientSize, Vector PositionOffsetDips) CalculateResize(
+        WindowEdge edge,
+        Size startClientSize,
+        Vector dragDeltaDips,
+        double minWidth,
+        double maxWidth,
+        double minHeight,
+        double maxHeight)
+    {
+        var newWidth = startClientSize.Width;
+        var newHeight = startClientSize.Height;
+        var offsetX = 0.0;
+        var offsetY = 0.0;
+
+        switch (edge)
         {
-            BeginResizeDrag(edge, e);
+            case WindowEdge.East:
+            case WindowEdge.NorthEast:
+            case WindowEdge.SouthEast:
+                newWidth = ClampLength(startClientSize.Width + dragDeltaDips.X, minWidth, maxWidth);
+                break;
+            case WindowEdge.West:
+            case WindowEdge.NorthWest:
+            case WindowEdge.SouthWest:
+                newWidth = ClampLength(startClientSize.Width - dragDeltaDips.X, minWidth, maxWidth);
+                offsetX = startClientSize.Width - newWidth;
+                break;
         }
+
+        switch (edge)
+        {
+            case WindowEdge.South:
+            case WindowEdge.SouthEast:
+            case WindowEdge.SouthWest:
+                newHeight = ClampLength(startClientSize.Height + dragDeltaDips.Y, minHeight, maxHeight);
+                break;
+            case WindowEdge.North:
+            case WindowEdge.NorthEast:
+            case WindowEdge.NorthWest:
+                newHeight = ClampLength(startClientSize.Height - dragDeltaDips.Y, minHeight, maxHeight);
+                offsetY = startClientSize.Height - newHeight;
+                break;
+        }
+
+        return (new Size(newWidth, newHeight), new Vector(offsetX, offsetY));
+    }
+
+    private static double ClampLength(double value, double min, double max)
+        => Math.Clamp(value, min, double.IsNaN(max) || max < min ? min : max);
+
+    private void EndResize()
+    {
+        if (_activeResizeEdge is null)
+            return;
+
+        _activeResizeEdge = null;
+        Cursor = _resizeCursorSnapshot;
+        _resizeCursorSnapshot = null;
+    }
+
+    protected override void OnPointerMoved(PointerEventArgs e)
+    {
+        if (_activeResizeEdge is { } edge)
+            UpdateResize(edge, e);
+
+        base.OnPointerMoved(e);
+    }
+
+    protected override void OnPointerReleased(PointerReleasedEventArgs e)
+    {
+        EndResize();
+        base.OnPointerReleased(e);
+    }
+
+    protected override void OnPointerCaptureLost(PointerCaptureLostEventArgs e)
+    {
+        EndResize();
+        base.OnPointerCaptureLost(e);
     }
 
     private void OnResizeNorth(object? sender, PointerPressedEventArgs e)
