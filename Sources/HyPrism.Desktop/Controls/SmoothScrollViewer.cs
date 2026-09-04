@@ -5,7 +5,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Data;
 using Avalonia.Input;
-using Avalonia.Threading;
+using Avalonia.VisualTree;
 
 namespace HyPrism.Desktop.Controls;
 
@@ -23,16 +23,23 @@ public sealed class SmoothScrollViewer : ScrollViewer
         AvaloniaProperty.Register<SmoothScrollViewer, string?>(nameof(ScrollContextKey));
 
     private const double WheelStep = 92;
-    private const double WheelEasing = 0.16;
+    private const double WheelEasingPerTick = 0.16;
+    private const double TickMilliseconds = 16.0;
     private const double AutoScrollDeadZone = 14;
-    private const double AutoScrollAcceleration = 0.14;
-    private readonly DispatcherTimer _scrollTimer;
+    private const double AutoScrollAccelerationPerTick = 0.14;
+    private const double AutoScrollMaximumVelocity = 1625;
+    private const double AutoScrollBaseVelocity = 137.5;
+    private const double AutoScrollStopVelocity = 1.25;
+    private const double AutoScrollEasingExponent = 1.12;
+    private const double AutoScrollEasingScale = 18;
     private readonly Cursor _autoScrollIdleCursor = new(StandardCursorType.SizeAll);
     private readonly Cursor _autoScrollUpCursor = new(StandardCursorType.TopSide);
     private readonly Cursor _autoScrollDownCursor = new(StandardCursorType.BottomSide);
     private double _targetY;
     private bool _isAnimating;
     private bool _isAutoScrolling;
+    private bool _isFrameLoopActive;
+    private TimeSpan? _lastFrameTimestamp;
     private Point _autoScrollAnchor;
     private double _autoScrollVelocity;
     private double _autoScrollTargetVelocity;
@@ -53,15 +60,6 @@ public sealed class SmoothScrollViewer : ScrollViewer
         set => SetValue(ScrollContextKeyProperty, value);
     }
 
-    public SmoothScrollViewer()
-    {
-        _scrollTimer = new DispatcherTimer
-        {
-            Interval = TimeSpan.FromMilliseconds(16)
-        };
-        _scrollTimer.Tick += OnScrollTick;
-    }
-
     protected override void OnPointerWheelChanged(PointerWheelEventArgs e)
     {
         if (Extent.Height <= Viewport.Height)
@@ -76,7 +74,7 @@ public sealed class SmoothScrollViewer : ScrollViewer
             0,
             Math.Max(0, Extent.Height - Viewport.Height));
         _isAnimating = true;
-        EnsureTimerRunning();
+        EnsureFrameLoop();
         e.Handled = true;
     }
 
@@ -101,8 +99,7 @@ public sealed class SmoothScrollViewer : ScrollViewer
                 Cursor = _autoScrollIdleCursor;
                 _capturedPointer = e.Pointer;
                 e.Pointer.Capture(this);
-                Focus();
-                EnsureTimerRunning();
+                EnsureFrameLoop();
             }
 
             e.Handled = true;
@@ -124,7 +121,9 @@ public sealed class SmoothScrollViewer : ScrollViewer
             _autoScrollTargetVelocity = distance == 0
                 ? 0
                 : Math.CopySign(
-                    Math.Min(26, Math.Pow(distance / 18, 1.12) * 2.2),
+                    Math.Min(
+                        AutoScrollMaximumVelocity,
+                        Math.Pow(distance / AutoScrollEasingScale, AutoScrollEasingExponent) * AutoScrollBaseVelocity),
                     delta);
             UpdateAutoScrollCursor();
             e.Handled = true;
@@ -150,7 +149,7 @@ public sealed class SmoothScrollViewer : ScrollViewer
     {
         StopAutoScroll();
         _isAnimating = false;
-        _scrollTimer.Stop();
+        _isFrameLoopActive = false;
         base.OnDetachedFromVisualTree(e);
     }
 
@@ -167,17 +166,46 @@ public sealed class SmoothScrollViewer : ScrollViewer
         }
     }
 
-    private void OnScrollTick(object? sender, EventArgs e)
+    private void EnsureFrameLoop()
     {
+        if (_isFrameLoopActive)
+            return;
+
+        var topLevel = TopLevel.GetTopLevel(this);
+        if (topLevel is null)
+            return;
+
+        _isFrameLoopActive = true;
+        _lastFrameTimestamp = null;
+        topLevel.RequestAnimationFrame(OnAnimationFrame);
+    }
+
+    private void OnAnimationFrame(TimeSpan timestamp)
+    {
+        if (!_isFrameLoopActive)
+            return;
+
+        var topLevel = TopLevel.GetTopLevel(this);
+        if (topLevel is null || !this.IsAttachedToVisualTree())
+        {
+            _isFrameLoopActive = false;
+            return;
+        }
+
+        var deltaMilliseconds = _lastFrameTimestamp is { } previous
+            ? (timestamp - previous).TotalMilliseconds
+            : 0.0;
+        _lastFrameTimestamp = timestamp;
+
         var maxY = Math.Max(0, Extent.Height - Viewport.Height);
         if (_isAutoScrolling)
         {
-            _autoScrollVelocity +=
-                (_autoScrollTargetVelocity - _autoScrollVelocity) * AutoScrollAcceleration;
-            if (Math.Abs(_autoScrollVelocity) < 0.02 && _autoScrollTargetVelocity == 0)
+            _autoScrollVelocity += (_autoScrollTargetVelocity - _autoScrollVelocity) *
+                                   EasePerFrame(AutoScrollAccelerationPerTick, deltaMilliseconds);
+            if (Math.Abs(_autoScrollVelocity) < AutoScrollStopVelocity && _autoScrollTargetVelocity == 0)
                 _autoScrollVelocity = 0;
 
-            var next = Math.Clamp(Offset.Y + _autoScrollVelocity, 0, maxY);
+            var next = Math.Clamp(Offset.Y + _autoScrollVelocity * deltaMilliseconds / 1000.0, 0, maxY);
             Offset = new Vector(Offset.X, next);
             if ((next <= 0 && _autoScrollVelocity < 0) ||
                 (next >= maxY && _autoScrollVelocity > 0))
@@ -199,19 +227,21 @@ public sealed class SmoothScrollViewer : ScrollViewer
             }
             else
             {
-                Offset = new Vector(Offset.X, Offset.Y + delta * WheelEasing);
+                Offset = new Vector(Offset.X, Offset.Y + delta * EasePerFrame(WheelEasingPerTick, deltaMilliseconds));
             }
         }
 
         if (!_isAnimating && !_isAutoScrolling)
-            _scrollTimer.Stop();
+        {
+            _isFrameLoopActive = false;
+            return;
+        }
+
+        topLevel.RequestAnimationFrame(OnAnimationFrame);
     }
 
-    private void EnsureTimerRunning()
-    {
-        if (!_scrollTimer.IsEnabled)
-            _scrollTimer.Start();
-    }
+    private static double EasePerFrame(double perTickFactor, double deltaMilliseconds)
+        => 1 - Math.Pow(1 - perTickFactor, Math.Max(0, deltaMilliseconds) / TickMilliseconds);
 
     private void ResetScrollPosition()
     {
@@ -220,8 +250,6 @@ public sealed class SmoothScrollViewer : ScrollViewer
         _targetY = 0;
         Offset = new Vector(Offset.X, 0);
         SetCurrentValue(IsPastTopProperty, false);
-        if (!_isAutoScrolling)
-            _scrollTimer.Stop();
     }
 
     private void StopAutoScroll()
@@ -236,8 +264,6 @@ public sealed class SmoothScrollViewer : ScrollViewer
         _previousCursor = null;
         _capturedPointer?.Capture(null);
         _capturedPointer = null;
-        if (!_isAnimating)
-            _scrollTimer.Stop();
     }
 
     private void UpdateAutoScrollCursor()

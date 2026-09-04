@@ -15,10 +15,13 @@ HyPrism использует Avalonia 12.1.1 и включает compiled bindin
 - замена коллекций публикует одно reset-уведомление вместо отдельного уведомления на каждый элемент
 - обновления прогресса загрузки объединяются до последнего ожидающего значения перед обработкой UI-диспетчером
 - непрерывное пользовательское вращение использует `TopLevel.RequestAnimationFrame` и не изменяет transform, пока визуальный элемент фактически скрыт
+- плавный скролл и auto-scroll средней кнопкой анимируются через `TopLevel.RequestAnimationFrame` с easing, независимым от частоты кадров, вместо фиксированного таймера 16 мс, поэтому обновления колеса следуют частоте обновления дисплея
 - декодирование фонового bitmap выполняется вне UI-потока
 - кэш GPU-ресурсов Skia ограничен 256 МиБ, чтобы удерживать активный фон 1920x1080 и декодированные изображения новостей без частого вытеснения
 - region dirty rectangle clipping сохраняет стандартное значение Avalonia 12.1, поскольку его стоимость на CPU может снижать частоту кадров на desktop с GPU-ускорением
 - Windows-рендеринг ANGLE запрашивает у DXGI high-performance адаптер и сопоставляет его с адаптером Avalonia по LUID, сохраняя программный рендеринг как fallback
+- режим композиции Windows по умолчанию использует low-latency flip-model DXGI swap chain с pacing по vblank дисплея, а переменная окружения `HYPRISM_WIN32_COMPOSITION` возвращает старые режимы для диагностики со значением `winui` или `dcomp`
+- сборщик мусора .NET работает в режиме SustainedLowLatency, чтобы блокирующие сборки реже прерывали анимационные кадры
 - Linux-пакеты объявляют `PrefersNonDefaultGPU=true`; при прямом запуске переменные Mesa и NVIDIA PRIME добавляются только если DRM показывает несколько адаптеров, а значения пользователя или desktop environment не заменяются
 
 ## Правила коллекций и layout
@@ -60,4 +63,7 @@ dotnet test Tests/HyPrism.Desktop.Tests/HyPrism.Desktop.Tests.csproj
 - [Релиз Avalonia 12.1.1](https://github.com/AvaloniaUI/Avalonia/releases/tag/12.1.1)
 - [Объяснение timing в RequestAnimationFrame](https://github.com/AvaloniaUI/Avalonia/discussions/19276)
 - [Исследование задержки рендеринга](https://github.com/AvaloniaUI/Avalonia/discussions/20562)
+- [Pacing кадров low-latency DXGI swap chain](https://github.com/AvaloniaUI/Avalonia/discussions/20547)
+- [Высокочастотный рендеринг и аллокации GC](https://github.com/AvaloniaUI/Avalonia/issues/19363)
+- [Таймер рендеринга на максимальной герцовке в Win32](https://github.com/AvaloniaUI/Avalonia/pull/21643)
 - [Жизненный цикл пакета ItemsRepeater](https://github.com/AvaloniaUI/Avalonia.Controls.ItemsRepeater)

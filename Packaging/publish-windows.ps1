@@ -78,6 +78,7 @@ try {
         --configuration Release `
         --runtime win-x64 `
         --self-contained true `
+        -p:PublishReadyToRun=true `
         --output $publishDirectory
 
     foreach ($appHost in 'HyPrism.Desktop.exe', 'HyPrism.LocalNode.exe') {

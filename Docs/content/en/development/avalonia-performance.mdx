@@ -15,10 +15,13 @@ HyPrism targets Avalonia 12.1.1 and enables compiled bindings for the whole Desk
 - collection replacements publish one reset notification instead of one notification per item
 - download progress updates are coalesced to the latest pending value before the UI dispatcher processes them
 - continuous custom rotation uses `TopLevel.RequestAnimationFrame` and does not mutate the transform while the visual is effectively hidden
+- smooth scrolling and middle-click auto-scroll animate through `TopLevel.RequestAnimationFrame` with frame-rate independent easing instead of a fixed 16 ms timer, so wheel updates track the display refresh rate
 - dashboard bitmap decoding runs outside the UI thread
 - the Skia GPU resource cache is capped at 256 MiB to retain the active 1920x1080 background and decoded news images without frequent eviction
 - region dirty rectangle clipping keeps the Avalonia 12.1 default because its CPU cost can reduce frame rate on GPU accelerated desktops
 - Windows ANGLE rendering asks DXGI for its high-performance adapter and matches that adapter to Avalonia by LUID, with software rendering retained as the fallback
+- the Windows composition mode defaults to the low-latency flip-model DXGI swap chain paced by display vblank, and the `HYPRISM_WIN32_COMPOSITION` environment variable reverts it for troubleshooting to `winui` or `dcomp`
+- the .NET garbage collector runs in SustainedLowLatency mode so blocking collections are less likely to interrupt animation frames
 - Linux packaging declares `PrefersNonDefaultGPU=true`; direct startup adds Mesa and NVIDIA PRIME variables only when DRM exposes multiple adapters and does not replace values inherited from the user or desktop environment
 
 ## Collection and layout rules
@@ -60,4 +63,7 @@ The startup budget is enforced by `AvaloniaPerformanceTests.MainWindowInitialVis
 - [Avalonia 12.1.1 release](https://github.com/AvaloniaUI/Avalonia/releases/tag/12.1.1)
 - [RequestAnimationFrame timing explanation](https://github.com/AvaloniaUI/Avalonia/discussions/19276)
 - [Rendering latency investigation](https://github.com/AvaloniaUI/Avalonia/discussions/20562)
+- [Low-latency DXGI swap chain frame pacing](https://github.com/AvaloniaUI/Avalonia/discussions/20547)
+- [High-frequency rendering and GC allocations](https://github.com/AvaloniaUI/Avalonia/issues/19363)
+- [Win32 max refresh rate render timer](https://github.com/AvaloniaUI/Avalonia/pull/21643)
 - [ItemsRepeater package lifecycle](https://github.com/AvaloniaUI/Avalonia.Controls.ItemsRepeater)

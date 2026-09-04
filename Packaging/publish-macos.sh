@@ -84,6 +84,7 @@ dotnet publish "$PROJECT_FILE" \
     --configuration Release \
     --runtime osx-arm64 \
     --self-contained true \
+    -p:PublishReadyToRun=true \
     --output "$APP_DIR/Contents/MacOS"
 
 for host in HyPrism.Desktop HyPrism.LocalNode; do

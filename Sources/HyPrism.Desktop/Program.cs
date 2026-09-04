@@ -1,6 +1,7 @@
 // Copyright (C) 2026 HyPrism Launcher
 // SPDX-License-Identifier: GPL-3.0-only
 
+using System.Runtime;
 using Avalonia;
 using Avalonia.Skia;
 using HyPrism.Desktop.Features.About;
@@ -25,6 +26,7 @@ internal static class Program
     {
         Logger.CaptureOriginalConsole();
         DesktopGpuPreference.ConfigureBeforeAvalonia();
+        GCSettings.LatencyMode = GCLatencyMode.SustainedLowLatency;
         LauncherUserAgent.ConfigureVersion(DesktopApplicationInfo.Version);
         DesktopRuntime.Services = Bootstrapper.Initialize(services =>
         {
@@ -61,7 +63,7 @@ internal static class Program
             .With(DesktopGpuPreference.CreateWin32Options())
             .With(new SkiaOptions
             {
-                MaxGpuResourceSizeBytes = 512 * 1024 * 1024
+                MaxGpuResourceSizeBytes = 256 * 1024 * 1024
             });
 }
 

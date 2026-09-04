@@ -157,6 +157,7 @@ dotnet publish "$PROJECT_FILE" \
     --configuration Release \
     --runtime "$RUNTIME" \
     --self-contained true \
+    -p:PublishReadyToRun=true \
     --output "$PUBLISH_DIR"
 
 test -x "$PUBLISH_DIR/HyPrism.Desktop"

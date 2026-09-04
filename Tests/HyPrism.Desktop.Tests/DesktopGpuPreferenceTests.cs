@@ -19,6 +19,9 @@ public sealed class DesktopGpuPreferenceTests
             [Win32RenderingMode.AngleEgl, Win32RenderingMode.Software],
             options.RenderingMode);
         Assert.NotNull(options.GraphicsAdapterSelectionCallback);
+        Assert.Equal(
+            Win32CompositionMode.LowLatencyDxgiSwapChain,
+            Assert.Single(options.CompositionMode.Take(1)));
     }
 
     [Fact]
