@@ -1651,7 +1651,7 @@ Vous devrez peut-être réinstaller le jeu si vous changez de lecteur.</value>
     <value>Sources de téléchargement, test de connexion et lancement du jeu</value>
   </data>
   <data name="settings.categoryDescriptions.general" xml:space="preserve">
-    <value>Langue, mises à jour et comportement du launcher</value>
+    <value>Langue, mises à jour, comportement du launcher, préférence de GPU et variables d'environnement</value>
   </data>
   <data name="settings.categoryDescriptions.graphics" xml:space="preserve">
     <value>Choix du GPU pour lancer Hytale</value>
@@ -1855,10 +1855,13 @@ Vous devrez peut-être réinstaller le jeu si vous changez de lecteur.</value>
     <value>Activer les Mods d'Optimisation</value>
   </data>
   <data name="settings.graphicsSettings.gpuPreference" xml:space="preserve">
-    <value>Préférence GPU</value>
+    <value>Rendu</value>
   </data>
-  <data name="settings.graphicsSettings.gpuPreferenceHint" xml:space="preserve">
-    <value>Choisis quel GPU utiliser pour lancer le jeu. Utile pour les portables avec graphiques intégrés et dédiés.</value>
+    <data name="settings.graphicsSettings.usedGpu" xml:space="preserve">
+    <value>GPU utilisée</value>
+  </data>
+<data name="settings.graphicsSettings.gpuPreferenceHint" xml:space="preserve">
+    <value>Choisis quel GPU utiliser pour lancer le jeu</value>
   </data>
   <data name="settings.graphicsSettings.gpu_auto" xml:space="preserve">
     <value>Auto</value>
@@ -2176,7 +2179,7 @@ Vous devrez peut-être réinstaller le jeu si vous changez de lecteur.</value>
     <value>Bascules rapides pour les variables d'environnement courantes. Elles sont ajoutées automatiquement à vos variables personnalisées</value>
   </data>
   <data name="settings.variablesSettings.customEnvVars" xml:space="preserve">
-    <value>Variables d'environnement personnalisées</value>
+    <value>Variables d'environnement</value>
   </data>
     <data name="settings.variablesSettings.customEnvVarsEmpty" xml:space="preserve">
     <value>Aucune variable personnalisée pour le moment, le jeu hérite de l'environnement du launcher</value>

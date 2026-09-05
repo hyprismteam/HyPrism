@@ -1651,7 +1651,7 @@ Potrebbe essere necessario reinstallare il gioco se si cambia drive.</value>
     <value>Fonti di download, verifica della connessione e avvio del gioco</value>
   </data>
   <data name="settings.categoryDescriptions.general" xml:space="preserve">
-    <value>Lingua, aggiornamenti e comportamento del launcher</value>
+    <value>Lingua, aggiornamenti, comportamento del launcher, preferenza GPU e variabili d'ambiente</value>
   </data>
   <data name="settings.categoryDescriptions.graphics" xml:space="preserve">
     <value>Selezione della GPU per avviare Hytale</value>
@@ -1855,10 +1855,13 @@ Potrebbe essere necessario reinstallare il gioco se si cambia drive.</value>
     <value>Abilita le mod di ottimizzazione</value>
   </data>
   <data name="settings.graphicsSettings.gpuPreference" xml:space="preserve">
-    <value>Preferenza GPU</value>
+    <value>Rendering</value>
   </data>
-  <data name="settings.graphicsSettings.gpuPreferenceHint" xml:space="preserve">
-    <value>Scegli quale GPU utilizzare per avviare il gioco. Utile per laptop con GPU integrate e dedicate.</value>
+    <data name="settings.graphicsSettings.usedGpu" xml:space="preserve">
+    <value>GPU utilizzata</value>
+  </data>
+<data name="settings.graphicsSettings.gpuPreferenceHint" xml:space="preserve">
+    <value>Scegli quale GPU utilizzare per avviare il gioco</value>
   </data>
   <data name="settings.graphicsSettings.gpu_auto" xml:space="preserve">
     <value>Automatico</value>
@@ -2179,7 +2182,7 @@ Potrebbe essere necessario reinstallare il gioco se si cambia drive.</value>
     <value>Interruttori rapidi per le variabili d'ambiente comuni. Queste vengono aggiunte automaticamente alle tue variabili personalizzate</value>
   </data>
   <data name="settings.variablesSettings.customEnvVars" xml:space="preserve">
-    <value>Variabili d'ambiente personalizzate</value>
+    <value>Variabili d'ambiente</value>
   </data>
     <data name="settings.variablesSettings.customEnvVarsEmpty" xml:space="preserve">
     <value>Ancora nessuna variabile personalizzata, il gioco eredita l'ambiente del launcher</value>

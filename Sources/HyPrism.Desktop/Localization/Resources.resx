@@ -1840,7 +1840,7 @@ You may need to reinstall the game if switching drives.</value>
     <value>Download sources, connection checks and game launch</value>
   </data>
   <data name="settings.categoryDescriptions.general" xml:space="preserve">
-    <value>Language, music and launcher behavior</value>
+    <value>Language, music, launcher behavior, GPU preference, and environment variables</value>
   </data>
   <data name="settings.categoryDescriptions.graphics" xml:space="preserve">
     <value>GPU selection for launching Hytale</value>
@@ -2167,10 +2167,13 @@ You may need to reinstall the game if switching drives.</value>
     <value>Enable Optimization Mods</value>
   </data>
   <data name="settings.graphicsSettings.gpuPreference" xml:space="preserve">
-    <value>GPU Preference</value>
+    <value>Rendering</value>
   </data>
-  <data name="settings.graphicsSettings.gpuPreferenceHint" xml:space="preserve">
-    <value>Choose which GPU to use for launching the game. Useful for laptops with both integrated and dedicated graphics.</value>
+    <data name="settings.graphicsSettings.usedGpu" xml:space="preserve">
+    <value>Game GPU</value>
+  </data>
+<data name="settings.graphicsSettings.gpuPreferenceHint" xml:space="preserve">
+    <value>Choose which GPU to use for launching the game</value>
   </data>
   <data name="settings.graphicsSettings.gpu_auto" xml:space="preserve">
     <value>Auto</value>
@@ -2527,7 +2530,7 @@ You may need to reinstall the game if switching drives.</value>
     <value>Quick toggles for common environment variables. These are added to your custom variables automatically</value>
   </data>
   <data name="settings.variablesSettings.customEnvVars" xml:space="preserve">
-    <value>Custom Environment Variables</value>
+    <value>Environment Variables</value>
   </data>
     <data name="settings.variablesSettings.customEnvVarsEmpty" xml:space="preserve">
     <value>No custom variables yet, the game inherits the launcher environment</value>

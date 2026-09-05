@@ -1651,7 +1651,7 @@ Bei Laufwerkswechsel muss das Spiel möglicherweise neu installiert werden.</val
     <value>Downloadquellen, Verbindungstests und Spielstart</value>
   </data>
   <data name="settings.categoryDescriptions.general" xml:space="preserve">
-    <value>Sprache, Updates und Launcher-Verhalten</value>
+    <value>Sprache, Updates, Launcher-Verhalten, GPU-Präferenz und Umgebungsvariablen</value>
   </data>
   <data name="settings.categoryDescriptions.graphics" xml:space="preserve">
     <value>Grafikauswahl zum Starten von Hytale</value>
@@ -1855,10 +1855,13 @@ Bei Laufwerkswechsel muss das Spiel möglicherweise neu installiert werden.</val
     <value>Optimierungsmods aktivieren</value>
   </data>
   <data name="settings.graphicsSettings.gpuPreference" xml:space="preserve">
-    <value>GPU-Präferenz</value>
+    <value>Rendering</value>
   </data>
-  <data name="settings.graphicsSettings.gpuPreferenceHint" xml:space="preserve">
-    <value>Wähle, welche GPU zum Starten des Spiels verwendet werden soll. Nützlich für Laptops mit integrierter und dedizierter Grafik.</value>
+    <data name="settings.graphicsSettings.usedGpu" xml:space="preserve">
+    <value>Verwendete GPU</value>
+  </data>
+<data name="settings.graphicsSettings.gpuPreferenceHint" xml:space="preserve">
+    <value>Wähle, welche GPU zum Starten des Spiels verwendet werden soll</value>
   </data>
   <data name="settings.graphicsSettings.gpu_auto" xml:space="preserve">
     <value>Auto</value>
@@ -2176,7 +2179,7 @@ Bei Laufwerkswechsel muss das Spiel möglicherweise neu installiert werden.</val
     <value>Schnelle Schalter für häufige Umgebungsvariablen. Diese werden automatisch zu deinen benutzerdefinierten Variablen hinzugefügt</value>
   </data>
   <data name="settings.variablesSettings.customEnvVars" xml:space="preserve">
-    <value>Benutzerdefinierte Umgebungsvariablen</value>
+    <value>Umgebungsvariablen</value>
   </data>
     <data name="settings.variablesSettings.customEnvVarsEmpty" xml:space="preserve">
     <value>Noch keine benutzerdefinierten Variablen, das Spiel übernimmt die Launcher-Umgebung</value>

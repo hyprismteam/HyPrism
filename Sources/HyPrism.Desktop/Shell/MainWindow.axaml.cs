@@ -10,6 +10,7 @@ using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
+using HyPrism.Desktop.Controls;
 using HyPrism.Desktop.Features.Instances;
 using HyPrism.Desktop.Features.Settings;
 
@@ -36,6 +37,7 @@ public sealed partial class MainWindow : Window
     private int _wideArticleTransitionVersion;
     private int _startupTransitionVersion;
     private bool _startupAnimationFrameActive;
+    private bool _isSectionWarmUpStarted;
     private TimeSpan? _startupAnimationStartedAt;
     private WindowEdge? _activeResizeEdge;
     private PixelPoint _resizeStartScreenPoint;
@@ -179,6 +181,7 @@ public sealed partial class MainWindow : Window
         StartupMarkScale.ScaleY = 1;
         StartupAnimation.Start();
         StartStartupFrameAnimation();
+        StartSectionWarmUp();
 
         Dispatcher.UIThread.Post(() =>
         {
@@ -235,6 +238,37 @@ public sealed partial class MainWindow : Window
         LauncherShellTranslation.Y = 0;
         StartupAnimation.Stop();
         StopStartupFrameAnimation();
+    }
+
+    private void StartSectionWarmUp()
+    {
+        if (_isSectionWarmUpStarted)
+            return;
+
+        _isSectionWarmUpStarted = true;
+        _ = WarmUpDeferredSectionsAsync();
+    }
+
+    private async Task WarmUpDeferredSectionsAsync()
+        => await WarmUpDeferredSections(MainSceneSurface);
+
+    internal static async Task WarmUpDeferredSections(Visual root)
+    {
+        var deferredControls = root.GetVisualDescendants()
+            .OfType<DeferredContentControl>()
+            .ToArray();
+        foreach (var control in deferredControls)
+        {
+            if (control.IsActive)
+                continue;
+
+            control.BeginPreWarm();
+            // Yield below the render priority so the layout pass builds the
+            // section while the loading animation keeps moving, then hide it
+            // again before the next section
+            await Dispatcher.UIThread.InvokeAsync(static () => { }, DispatcherPriority.Background);
+            control.EndPreWarm();
+        }
     }
 
     private void StartStartupFrameAnimation()

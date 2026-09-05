@@ -1651,7 +1651,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>下载源、连接检测和游戏启动</value>
   </data>
   <data name="settings.categoryDescriptions.general" xml:space="preserve">
-    <value>语言、更新和启动器行为</value>
+    <value>语言、更新、启动器行为、GPU 首选项和环境变量</value>
   </data>
   <data name="settings.categoryDescriptions.graphics" xml:space="preserve">
     <value>启动 Hytale 时使用的 GPU</value>
@@ -1855,10 +1855,13 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>启用优化模组</value>
   </data>
   <data name="settings.graphicsSettings.gpuPreference" xml:space="preserve">
-    <value>GPU 偏好</value>
+    <value>渲染</value>
   </data>
-  <data name="settings.graphicsSettings.gpuPreferenceHint" xml:space="preserve">
-    <value>选择启动游戏时使用的 GPU。对于同时具有集成显卡和独立显卡的笔记本电脑很有用。</value>
+    <data name="settings.graphicsSettings.usedGpu" xml:space="preserve">
+    <value>使用的显卡</value>
+  </data>
+<data name="settings.graphicsSettings.gpuPreferenceHint" xml:space="preserve">
+    <value>选择启动游戏时使用的 GPU</value>
   </data>
   <data name="settings.graphicsSettings.gpu_auto" xml:space="preserve">
     <value>自动</value>
@@ -2176,7 +2179,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>常用环境变量的快速开关。这些将自动添加到您的自定义变量中</value>
   </data>
   <data name="settings.variablesSettings.customEnvVars" xml:space="preserve">
-    <value>自定义环境变量</value>
+    <value>环境变量</value>
   </data>
     <data name="settings.variablesSettings.customEnvVarsEmpty" xml:space="preserve">
     <value>暂无自定义变量，游戏会继承启动器环境</value>

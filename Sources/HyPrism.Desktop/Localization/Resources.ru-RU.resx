@@ -1837,7 +1837,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>Источники загрузки, проверка соединения и запуск игры</value>
   </data>
   <data name="settings.categoryDescriptions.general" xml:space="preserve">
-    <value>Язык, музыка и поведение лаунчера</value>
+    <value>Язык, музыка, поведение лаунчера, выбор GPU и переменные окружения</value>
   </data>
   <data name="settings.categoryDescriptions.graphics" xml:space="preserve">
     <value>Выбор видеокарты для запуска Hytale</value>
@@ -2164,10 +2164,13 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>Включить моды оптимизации</value>
   </data>
   <data name="settings.graphicsSettings.gpuPreference" xml:space="preserve">
-    <value>Выбор видеокарты</value>
+    <value>Рендеринг</value>
   </data>
-  <data name="settings.graphicsSettings.gpuPreferenceHint" xml:space="preserve">
-    <value>Выберите, какая видеокарта будет использоваться для запуска игры. Полезно для ноутбуков с интегрированной и дискретной графикой.</value>
+    <data name="settings.graphicsSettings.usedGpu" xml:space="preserve">
+    <value>Используемая видеокарта</value>
+  </data>
+<data name="settings.graphicsSettings.gpuPreferenceHint" xml:space="preserve">
+    <value>Выберите, какая видеокарта будет использоваться для запуска игры</value>
   </data>
   <data name="settings.graphicsSettings.gpu_auto" xml:space="preserve">
     <value>Авто</value>
@@ -2524,7 +2527,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>Быстрые переключатели для распространённых переменных окружения. Добавляются к вашим кастомным переменным автоматически</value>
   </data>
   <data name="settings.variablesSettings.customEnvVars" xml:space="preserve">
-    <value>Кастомные переменные окружения</value>
+    <value>Переменные окружения</value>
   </data>
     <data name="settings.variablesSettings.customEnvVarsEmpty" xml:space="preserve">
     <value>Пользовательских переменных пока нет, игра наследует окружение лаунчера</value>

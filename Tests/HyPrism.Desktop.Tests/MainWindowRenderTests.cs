@@ -3542,20 +3542,20 @@ public sealed class MainWindowRenderTests
             .OfType<Image>()
             .Where(image => image.Classes.Contains("settingsCategoryIcon"))
             .ToArray();
-        Assert.Equal(9, categoryIcons.Length);
+        Assert.Equal(7, categoryIcons.Length);
         Assert.All(categoryIcons, icon => Assert.NotNull(icon.Source));
-        Assert.Equal(9, categoryIcons.Count(icon => icon.IsEffectivelyVisible));
+        Assert.Equal(7, categoryIcons.Count(icon => icon.IsEffectivelyVisible));
         var categoryDescriptions = settingsView.GetVisualDescendants()
             .OfType<TextBlock>()
             .Where(text => text.Classes.Contains("settingsCategoryDescription"))
             .ToArray();
-        Assert.Equal(9, categoryDescriptions.Length);
-        Assert.Equal(9, categoryDescriptions.Count(description => description.IsEffectivelyVisible));
+        Assert.Equal(7, categoryDescriptions.Length);
+        Assert.Equal(7, categoryDescriptions.Count(description => description.IsEffectivelyVisible));
         var categoryTitles = settingsView.GetVisualDescendants()
             .OfType<TextBlock>()
             .Where(text => text.Classes.Contains("settingsCategoryTitle"))
             .ToArray();
-        Assert.Equal(9, categoryTitles.Length);
+        Assert.Equal(7, categoryTitles.Length);
         Assert.All(
             categoryTitles,
             title => Assert.Equal(
@@ -3565,7 +3565,7 @@ public sealed class MainWindowRenderTests
             .OfType<Button>()
             .Where(button => button.Classes.Contains("settingsRailCategory"))
             .ToArray();
-        Assert.Equal(9, categoryButtons.Length);
+        Assert.Equal(7, categoryButtons.Length);
         Assert.All(
             categoryButtons,
             button => Assert.InRange(
@@ -3623,29 +3623,33 @@ public sealed class MainWindowRenderTests
             var categoryScrollBar = categoryScroll.GetVisualDescendants()
                 .OfType<ScrollBar>()
                 .Single(scrollBar => scrollBar.Orientation == Avalonia.Layout.Orientation.Vertical);
-            Assert.True(categoryScrollBar.IsVisible);
-            var categoryScrollThumb = categoryScrollBar.GetVisualDescendants().OfType<Thumb>().Single();
-            var scrollBarPoint = categoryScrollThumb.TranslatePoint(
-                new Point(categoryScrollThumb.Bounds.Width / 2, categoryScrollThumb.Bounds.Height / 2),
-                window);
-            Assert.NotNull(scrollBarPoint);
-            window.MouseMove(scrollBarPoint!.Value);
-            await WaitForConditionAsync(
-                () => categoryScrollBar.IsExpanded && categoryScrollThumb.Width >= 5.99,
-                "settings category scroll bar to expand");
-            Dispatcher.UIThread.RunJobs();
-            Assert.True(categoryScrollBar.IsExpanded);
-            var expandedThumb = categoryScrollBar.GetVisualDescendants().OfType<Thumb>().Single();
-            Assert.InRange(expandedThumb.Width, 5.99, 6.01);
-            Assert.InRange(expandedThumb.Bounds.Width, 5.5, 6.5);
-            var expandedThumbCenter = expandedThumb.TranslatePoint(
-                new Point(expandedThumb.Bounds.Width / 2, expandedThumb.Bounds.Height / 2),
-                categoryScrollBar);
-            Assert.NotNull(expandedThumbCenter);
-            Assert.InRange(
-                Math.Abs(expandedThumbCenter!.Value.X - (categoryScrollBar.Bounds.Width / 2)),
-                0,
-                1);
+            // Seven merged categories may fit the rail without scrolling, so the
+            // hover-expanded scrollbar checks only apply when it is scrollable
+            if (categoryScrollBar.IsVisible)
+            {
+                var categoryScrollThumb = categoryScrollBar.GetVisualDescendants().OfType<Thumb>().Single();
+                var scrollBarPoint = categoryScrollThumb.TranslatePoint(
+                    new Point(categoryScrollThumb.Bounds.Width / 2, categoryScrollThumb.Bounds.Height / 2),
+                    window);
+                Assert.NotNull(scrollBarPoint);
+                window.MouseMove(scrollBarPoint!.Value);
+                await WaitForConditionAsync(
+                    () => categoryScrollBar.IsExpanded && categoryScrollThumb.Width >= 5.99,
+                    "settings category scroll bar to expand");
+                Dispatcher.UIThread.RunJobs();
+                Assert.True(categoryScrollBar.IsExpanded);
+                var expandedThumb = categoryScrollBar.GetVisualDescendants().OfType<Thumb>().Single();
+                Assert.InRange(expandedThumb.Width, 5.99, 6.01);
+                Assert.InRange(expandedThumb.Bounds.Width, 5.5, 6.5);
+                var expandedThumbCenter = expandedThumb.TranslatePoint(
+                    new Point(expandedThumb.Bounds.Width / 2, expandedThumb.Bounds.Height / 2),
+                    categoryScrollBar);
+                Assert.NotNull(expandedThumbCenter);
+                Assert.InRange(
+                    Math.Abs(expandedThumbCenter!.Value.X - (categoryScrollBar.Bounds.Width / 2)),
+                    0,
+                    1);
+            }
 
             var expandedScrollBarPreviewPath = Environment.GetEnvironmentVariable(
                 "HYPRISM_SETTINGS_SCROLLBAR_RENDER_OUTPUT");
@@ -3670,7 +3674,7 @@ public sealed class MainWindowRenderTests
             .OfType<Border>()
             .Where(border => border.IsEffectivelyVisible && border.Classes.Contains("settingsGroup"))
             .ToArray();
-        Assert.Equal(2, visibleSettingsGroups.Length);
+        Assert.Equal(4, visibleSettingsGroups.Length);
         Assert.All(visibleSettingsGroups, group =>
         {
             Assert.Equal(new Thickness(0), group.BorderThickness);
@@ -3680,31 +3684,53 @@ public sealed class MainWindowRenderTests
             Assert.Equal(new CornerRadius(14), group.CornerRadius);
 
             var rows = group.GetVisualDescendants()
-                .OfType<TemplatedControl>()
+                .OfType<Visual>()
                 .Where(control =>
                     control.IsEffectivelyVisible &&
-                    (control is SettingsRow || control.Classes.Contains("uiSettingsRow")))
+                    (control is SettingsRow || (control is Border && control.Classes.Contains("uiSettingsRow"))))
                 .ToArray();
-            Assert.NotEmpty(rows);
+            if (rows.Length == 0)
+                return;
+
             Assert.All(rows.Where(row => !row.Classes.Contains("last")), row =>
             {
-                Assert.Equal(new Thickness(0, 0, 0, 3), row.BorderThickness);
+                var borderThickness = row switch
+                {
+                    SettingsRow settingsRow => settingsRow.BorderThickness,
+                    Border border => border.BorderThickness,
+                    _ => default(Thickness)
+                };
+                var borderBrush = row switch
+                {
+                    SettingsRow settingsRow => settingsRow.BorderBrush,
+                    Border border => border.BorderBrush,
+                    _ => null
+                };
+                Assert.Equal(new Thickness(0, 0, 0, 3), borderThickness);
                 Assert.Equal(
                     Color.Parse("#0D0E10"),
-                    Assert.IsAssignableFrom<ISolidColorBrush>(row.BorderBrush).Color);
+                    Assert.IsAssignableFrom<ISolidColorBrush>(borderBrush).Color);
             });
         });
+        var groupsWithRows = visibleSettingsGroups
+            .Count(group => group.GetVisualDescendants()
+                .OfType<Visual>()
+                .Any(control => control.IsEffectivelyVisible &&
+                                (control is SettingsRow || (control is Border && control.Classes.Contains("uiSettingsRow")))));
+        Assert.Equal(3, groupsWithRows);
         var visibleSettingsHeadings = settingsView.GetVisualDescendants()
             .OfType<TextBlock>()
             .Where(text => text.IsEffectivelyVisible && text.Classes.Contains("settingsCategoryHeading"))
             .ToArray();
-        Assert.Equal(2, visibleSettingsHeadings.Length);
+        Assert.Equal(4, visibleSettingsHeadings.Length);
         Assert.Contains(visibleSettingsHeadings, heading => heading.Text == viewModel.Settings.LanguageCategoryTitle);
         Assert.Contains(visibleSettingsHeadings, heading => heading.Text == viewModel.Settings.GeneralTitle);
+        Assert.Contains(visibleSettingsHeadings, heading => heading.Text == viewModel.Settings.GpuLabel);
+        Assert.Contains(visibleSettingsHeadings, heading => heading.Text == viewModel.Settings.EnvLabel);
         Assert.DoesNotContain(
             settingsView.GetVisualDescendants().OfType<Grid>(),
             grid => grid.Name == "SettingsHeader");
-        Assert.Equal(9, viewModel.Settings.Categories.Count);
+        Assert.Equal(7, viewModel.Settings.Categories.Count);
         Assert.DoesNotContain(viewModel.Settings.Categories, category => category.Id == "developer");
         Assert.True(viewModel.Settings.IsGeneral);
         Assert.All(categoryButtons, AssertNoPressScale);

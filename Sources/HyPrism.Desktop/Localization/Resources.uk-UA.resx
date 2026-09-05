@@ -1651,7 +1651,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>Джерела завантаження, перевірка з’єднання та запуск гри</value>
   </data>
   <data name="settings.categoryDescriptions.general" xml:space="preserve">
-    <value>Мова, оновлення та поведінка лаунчера</value>
+    <value>Мова, оновлення, поведінка лаунчера, вибір GPU і змінні середовища</value>
   </data>
   <data name="settings.categoryDescriptions.graphics" xml:space="preserve">
     <value>Вибір відеокарти для запуску Hytale</value>
@@ -1855,10 +1855,13 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>Увімкнути моди оптимізації</value>
   </data>
   <data name="settings.graphicsSettings.gpuPreference" xml:space="preserve">
-    <value>Налаштування графічного процесора</value>
+    <value>Рендеринг</value>
   </data>
-  <data name="settings.graphicsSettings.gpuPreferenceHint" xml:space="preserve">
-    <value>Виберіть, який графічний процесор використовувати для запуску гри. Корисно для ноутбуків як з інтегрованою, так і з дискретною графікою.</value>
+    <data name="settings.graphicsSettings.usedGpu" xml:space="preserve">
+    <value>Використовувана відеокарта</value>
+  </data>
+<data name="settings.graphicsSettings.gpuPreferenceHint" xml:space="preserve">
+    <value>Виберіть, який графічний процесор використовувати для запуску гри</value>
   </data>
   <data name="settings.graphicsSettings.gpu_auto" xml:space="preserve">
     <value>Автоматично</value>
@@ -2176,7 +2179,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>Швидкі перемикачі для поширених змінних оточення. Додаються до ваших користувацьких змінних автоматично</value>
   </data>
   <data name="settings.variablesSettings.customEnvVars" xml:space="preserve">
-    <value>Користувацькі змінні оточення</value>
+    <value>Змінні середовища</value>
   </data>
     <data name="settings.variablesSettings.customEnvVarsEmpty" xml:space="preserve">
     <value>Користувацьких змінних поки немає, гра успадковує середовище лаунчера</value>

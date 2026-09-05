@@ -1651,7 +1651,7 @@ Sürücü değiştirirseniz oyunu yeniden yüklemeniz gerekebilir.</value>
     <value>İndirme kaynakları, bağlantı denetimi ve oyun başlatma</value>
   </data>
   <data name="settings.categoryDescriptions.general" xml:space="preserve">
-    <value>Dil, güncellemeler ve başlatıcı davranışı</value>
+    <value>Dil, güncellemeler, başlatıcı davranışı, GPU tercihi ve ortam değişkenleri</value>
   </data>
   <data name="settings.categoryDescriptions.graphics" xml:space="preserve">
     <value>Hytale'ı başlatmak için GPU seçimi</value>
@@ -1855,10 +1855,13 @@ Sürücü değiştirirseniz oyunu yeniden yüklemeniz gerekebilir.</value>
     <value>Optimizasyon Modlarını Etkinleştir</value>
   </data>
   <data name="settings.graphicsSettings.gpuPreference" xml:space="preserve">
-    <value>GPU Tercihi</value>
+    <value>Render</value>
   </data>
-  <data name="settings.graphicsSettings.gpuPreferenceHint" xml:space="preserve">
-    <value>Oyunu başlatırken hangi GPU'yu kullanacağınızı seçin. Hem entegre hem de ayrık grafiklere sahip dizüstü bilgisayarlar için kullanışlıdır.</value>
+    <data name="settings.graphicsSettings.usedGpu" xml:space="preserve">
+    <value>Kullanılan GPU</value>
+  </data>
+<data name="settings.graphicsSettings.gpuPreferenceHint" xml:space="preserve">
+    <value>Oyunu başlatırken hangi GPU'yu kullanacağınızı seçin</value>
   </data>
   <data name="settings.graphicsSettings.gpu_auto" xml:space="preserve">
     <value>Otomatik</value>
@@ -2176,7 +2179,7 @@ Sürücü değiştirirseniz oyunu yeniden yüklemeniz gerekebilir.</value>
     <value>Yaygın ortam değişkenleri için hızlı açma/kapama. Özel değişkenlerinize otomatik olarak eklenir</value>
   </data>
   <data name="settings.variablesSettings.customEnvVars" xml:space="preserve">
-    <value>Özel Ortam Değişkenleri</value>
+    <value>Ortam değişkenleri</value>
   </data>
     <data name="settings.variablesSettings.customEnvVarsEmpty" xml:space="preserve">
     <value>Henüz özel değişken yok, oyun başlatıcı ortamını devralır</value>

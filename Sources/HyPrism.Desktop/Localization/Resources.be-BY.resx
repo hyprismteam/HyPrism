@@ -1651,7 +1651,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>Крыніцы спампоўвання, праверка злучэння і запуск гульні</value>
   </data>
   <data name="settings.categoryDescriptions.general" xml:space="preserve">
-    <value>Мова, абнаўленні і паводзіны лаўнчара</value>
+    <value>Мова, абнаўленні, паводзіны лаунчера, выбар GPU і зменныя асяроддзя</value>
   </data>
   <data name="settings.categoryDescriptions.graphics" xml:space="preserve">
     <value>Выбар відэакарты для запуску Hytale</value>
@@ -1855,10 +1855,13 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>Уключыць моды аптымізацыі</value>
   </data>
   <data name="settings.graphicsSettings.gpuPreference" xml:space="preserve">
-    <value>Пераважны GPU</value>
+    <value>Рендэринг</value>
   </data>
-  <data name="settings.graphicsSettings.gpuPreferenceHint" xml:space="preserve">
-    <value>Выберыце, які GPU выкарыстоўваць для запуску гульні. Карысна для наўтбукаў з інтэграванай і дыскрэтнай графікай.</value>
+    <data name="settings.graphicsSettings.usedGpu" xml:space="preserve">
+    <value>Выкарыстоўваная відэакарта</value>
+  </data>
+<data name="settings.graphicsSettings.gpuPreferenceHint" xml:space="preserve">
+    <value>Выберыце, які GPU выкарыстоўваць для запуску гульні</value>
   </data>
   <data name="settings.graphicsSettings.gpu_auto" xml:space="preserve">
     <value>Аўта</value>
@@ -2176,7 +2179,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>Хуткія пераключальнікі для распаўсюджаных зменных асяроддзя. Дадаюцца да вашых кастамных зменных аўтаматычна</value>
   </data>
   <data name="settings.variablesSettings.customEnvVars" xml:space="preserve">
-    <value>Кастамныя зменныя асяроддзя</value>
+    <value>Зменныя асяроддзя</value>
   </data>
     <data name="settings.variablesSettings.customEnvVarsEmpty" xml:space="preserve">
     <value>Карыстальніцкіх зменных пакуль няма, гульня наследуе асяроддзе лаунчера</value>

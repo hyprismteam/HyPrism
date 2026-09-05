@@ -1651,7 +1651,7 @@ Você pode precisar reinstalar o jogo se trocar de unidade.</value>
     <value>Fontes de download, teste de conexão e inicialização do jogo</value>
   </data>
   <data name="settings.categoryDescriptions.general" xml:space="preserve">
-    <value>Idioma, atualizações e comportamento do launcher</value>
+    <value>Idioma, atualizações, comportamento do launcher, preferência de GPU e variáveis de ambiente</value>
   </data>
   <data name="settings.categoryDescriptions.graphics" xml:space="preserve">
     <value>Seleção de GPU para iniciar o Hytale</value>
@@ -1855,10 +1855,13 @@ Você pode precisar reinstalar o jogo se trocar de unidade.</value>
     <value>Ativar Mods de Otimização</value>
   </data>
   <data name="settings.graphicsSettings.gpuPreference" xml:space="preserve">
-    <value>Preferência de GPU</value>
+    <value>Renderização</value>
   </data>
-  <data name="settings.graphicsSettings.gpuPreferenceHint" xml:space="preserve">
-    <value>Escolha qual GPU usar para iniciar o jogo. Útil para notebooks com gráficos integrados e dedicados.</value>
+    <data name="settings.graphicsSettings.usedGpu" xml:space="preserve">
+    <value>GPU utilizada</value>
+  </data>
+<data name="settings.graphicsSettings.gpuPreferenceHint" xml:space="preserve">
+    <value>Escolha qual GPU usar para iniciar o jogo</value>
   </data>
   <data name="settings.graphicsSettings.gpu_auto" xml:space="preserve">
     <value>Auto</value>
@@ -2176,7 +2179,7 @@ Você pode precisar reinstalar o jogo se trocar de unidade.</value>
     <value>Botões rápidos para variáveis de ambiente comuns. São adicionadas automaticamente às suas variáveis personalizadas</value>
   </data>
   <data name="settings.variablesSettings.customEnvVars" xml:space="preserve">
-    <value>Variáveis de ambiente personalizadas</value>
+    <value>Variáveis de ambiente</value>
   </data>
     <data name="settings.variablesSettings.customEnvVarsEmpty" xml:space="preserve">
     <value>Ainda sem variáveis personalizadas, o jogo herda o ambiente do launcher</value>

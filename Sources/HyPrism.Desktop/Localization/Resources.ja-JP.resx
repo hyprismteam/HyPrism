@@ -1651,7 +1651,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>ダウンロード元、接続確認、ゲーム起動</value>
   </data>
   <data name="settings.categoryDescriptions.general" xml:space="preserve">
-    <value>言語、アップデート、ランチャーの動作</value>
+    <value>言語、アップデート、ランチャーの動作、GPU の設定、環境変数</value>
   </data>
   <data name="settings.categoryDescriptions.graphics" xml:space="preserve">
     <value>Hytale の起動に使用する GPU</value>
@@ -1855,10 +1855,13 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>最適化Modを有効にする</value>
   </data>
   <data name="settings.graphicsSettings.gpuPreference" xml:space="preserve">
-    <value>GPU設定</value>
+    <value>レンダリング</value>
   </data>
-  <data name="settings.graphicsSettings.gpuPreferenceHint" xml:space="preserve">
-    <value>ゲーム起動に使用するGPUを選択します。統合グラフィックスと専用グラフィックスの両方を搭載したノートパソコンに便利です。</value>
+    <data name="settings.graphicsSettings.usedGpu" xml:space="preserve">
+    <value>使用するGPU</value>
+  </data>
+<data name="settings.graphicsSettings.gpuPreferenceHint" xml:space="preserve">
+    <value>ゲーム起動に使用するGPUを選択します</value>
   </data>
   <data name="settings.graphicsSettings.gpu_auto" xml:space="preserve">
     <value>自動</value>
@@ -2176,7 +2179,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>一般的な環境変数のクイックトグル。カスタム変数に自動的に追加されます</value>
   </data>
   <data name="settings.variablesSettings.customEnvVars" xml:space="preserve">
-    <value>カスタム環境変数</value>
+    <value>環境変数</value>
   </data>
     <data name="settings.variablesSettings.customEnvVarsEmpty" xml:space="preserve">
     <value>カスタム変数はまだありません、ゲームはランチャーの環境を継承します</value>

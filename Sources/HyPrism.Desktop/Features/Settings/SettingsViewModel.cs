@@ -77,8 +77,6 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     [NotifyPropertyChangedFor(nameof(IsJava))]
     [NotifyPropertyChangedFor(nameof(IsVisual))]
     [NotifyPropertyChangedFor(nameof(IsNetwork))]
-    [NotifyPropertyChangedFor(nameof(IsGraphics))]
-    [NotifyPropertyChangedFor(nameof(IsVariables))]
     [NotifyPropertyChangedFor(nameof(IsData))]
     [NotifyPropertyChangedFor(nameof(IsAbout))]
     [NotifyPropertyChangedFor(nameof(ActiveCategoryTitle))]
@@ -201,8 +199,6 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
             new("java", localizer["settings.java"], "java.png"),
             new("visual", localizer["settings.visual"], "visual.png"),
             new("network", localizer["settings.network"], "network.png"),
-            new("graphics", localizer["settings.graphics"], "graphics.png"),
-            new("variables", localizer["settings.variables"], "variables.png"),
             new("data", localizer["settings.data"], "data.png"),
             new("about", localizer["settings.about"], "about.png")
         ]);
@@ -281,9 +277,6 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     public ObservableCollection<MirrorSourceViewModel> MirrorSources { get; } = [];
     public ObservableCollection<JavaArgumentItemViewModel> JavaArgumentItems { get; } = [];
     public ObservableCollection<EnvironmentVariableItemViewModel> EnvironmentVariableItems { get; } = [];
-    public IReadOnlyList<string> EnvironmentPresetExamples { get; } = OperatingSystem.IsWindows()
-        ? ["JAVA_TOOL_OPTIONS=-Dfile.encoding=UTF-8", "HTTP_PROXY=http://127.0.0.1:8080"]
-        : ["SDL_VIDEODRIVER=x11", "VK_LOADER_LAYERS_DISABLE=all"];
 
     public int DetectedSystemMemoryMb { get; }
     public double MinimumJavaRamMb => MinimumJavaMemoryMb;
@@ -326,8 +319,6 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     public string JavaTitle { get; private set; } = string.Empty;
     public string VisualTitle { get; private set; } = string.Empty;
     public string NetworkTitle { get; private set; } = string.Empty;
-    public string GraphicsTitle { get; private set; } = string.Empty;
-    public string VariablesTitle { get; private set; } = string.Empty;
     public string DataTitle { get; private set; } = string.Empty;
     public string AboutTitle { get; private set; } = string.Empty;
     public string SaveLabel { get; private set; } = string.Empty;
@@ -402,7 +393,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     public string JavaArgumentsPlaceholder { get; private set; } = string.Empty;
     public string GpuLabel { get; private set; } = string.Empty;
     public string GpuHint { get; private set; } = string.Empty;
-    public string EnvPresetsLabel { get; private set; } = string.Empty;
+    public string GpuRowLabel { get; private set; } = string.Empty;
     public string EnvLabel { get; private set; } = string.Empty;
     public string EnvHint { get; private set; } = string.Empty;
     public string EnvEmptyState { get; private set; } = string.Empty;
@@ -462,8 +453,6 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     public bool IsJava => SelectedCategory == "java";
     public bool IsVisual => SelectedCategory == "visual";
     public bool IsNetwork => SelectedCategory == "network";
-    public bool IsGraphics => SelectedCategory == "graphics";
-    public bool IsVariables => SelectedCategory == "variables";
     public bool IsData => SelectedCategory == "data";
     public bool IsAbout => SelectedCategory == "about";
     public void RefreshLocalization()
@@ -477,8 +466,6 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         JavaTitle = _localizer["settings.java"];
         VisualTitle = _localizer["settings.visualSettings.title"];
         NetworkTitle = _localizer["settings.network"];
-        GraphicsTitle = _localizer["settings.graphicsSettings.title"];
-        VariablesTitle = _localizer["settings.variablesSettings.title"];
         DataTitle = _localizer["settings.dataSettings.title"];
         AboutTitle = _localizer["settings.aboutSettings.title"];
         SaveLabel = _localizer["common.save"];
@@ -543,7 +530,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         JavaArgumentsPlaceholder = _localizer["settings.javaSettings.jvmArgumentsPlaceholder"];
         GpuLabel = _localizer["settings.graphicsSettings.gpuPreference"];
         GpuHint = _localizer["settings.graphicsSettings.gpuPreferenceHint"];
-        EnvPresetsLabel = _localizer["settings.variablesSettings.commonPresets"];
+        GpuRowLabel = _localizer["settings.graphicsSettings.usedGpu"];
         EnvLabel = _localizer["settings.variablesSettings.customEnvVars"];
         EnvHint = _localizer["settings.variablesSettings.customEnvVarsHint"];
         EnvEmptyState = _localizer["settings.variablesSettings.customEnvVarsEmpty"];
@@ -612,8 +599,6 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         UpdateCategoryLabel("java", _localizer["settings.java"]);
         UpdateCategoryLabel("visual", _localizer["desktopSettings.categories.appearance"]);
         UpdateCategoryLabel("network", _localizer["settings.network"]);
-        UpdateCategoryLabel("graphics", _localizer["settings.graphics"]);
-        UpdateCategoryLabel("variables", _localizer["settings.variables"]);
         UpdateCategoryLabel("data", _localizer["settings.data"]);
         UpdateCategoryLabel("about", _localizer["settings.about"]);
         UpdateCategoryDescription("general", _localizer["settings.categoryDescriptions.general"]);
@@ -621,8 +606,6 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         UpdateCategoryDescription("java", _localizer["settings.categoryDescriptions.java"]);
         UpdateCategoryDescription("visual", _localizer["settings.categoryDescriptions.visual"]);
         UpdateCategoryDescription("network", _localizer["settings.categoryDescriptions.network"]);
-        UpdateCategoryDescription("graphics", _localizer["settings.categoryDescriptions.graphics"]);
-        UpdateCategoryDescription("variables", _localizer["settings.categoryDescriptions.variables"]);
         UpdateCategoryDescription("data", _localizer["settings.categoryDescriptions.data"]);
         UpdateCategoryDescription("about", _localizer["settings.categoryDescriptions.about"]);
         Backgrounds.First(choice => choice.Value == "auto").Display =

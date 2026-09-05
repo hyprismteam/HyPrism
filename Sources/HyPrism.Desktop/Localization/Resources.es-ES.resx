@@ -1651,7 +1651,7 @@ Es posible que necesites reinstalar el juego si cambias de unidad.</value>
     <value>Fuentes de descarga, pruebas de conexión e inicio del juego</value>
   </data>
   <data name="settings.categoryDescriptions.general" xml:space="preserve">
-    <value>Idioma, actualizaciones y comportamiento del launcher</value>
+    <value>Idioma, actualizaciones, comportamiento del launcher, preferencia de GPU y variables de entorno</value>
   </data>
   <data name="settings.categoryDescriptions.graphics" xml:space="preserve">
     <value>Selección de GPU para iniciar Hytale</value>
@@ -1855,10 +1855,13 @@ Es posible que necesites reinstalar el juego si cambias de unidad.</value>
     <value>Activar Mods de Optimización</value>
   </data>
   <data name="settings.graphicsSettings.gpuPreference" xml:space="preserve">
-    <value>Preferencia de GPU</value>
+    <value>Renderizado</value>
   </data>
-  <data name="settings.graphicsSettings.gpuPreferenceHint" xml:space="preserve">
-    <value>Elige qué GPU usar para ejecutar el juego. Útil para portátiles con gráficos integrados y dedicados.</value>
+    <data name="settings.graphicsSettings.usedGpu" xml:space="preserve">
+    <value>GPU utilizada</value>
+  </data>
+<data name="settings.graphicsSettings.gpuPreferenceHint" xml:space="preserve">
+    <value>Elige qué GPU usar para ejecutar el juego</value>
   </data>
   <data name="settings.graphicsSettings.gpu_auto" xml:space="preserve">
     <value>Auto</value>
@@ -2176,7 +2179,7 @@ Es posible que necesites reinstalar el juego si cambias de unidad.</value>
     <value>Interruptores rápidos para variables de entorno comunes. Se añaden automáticamente a tus variables personalizadas</value>
   </data>
   <data name="settings.variablesSettings.customEnvVars" xml:space="preserve">
-    <value>Variables de entorno personalizadas</value>
+    <value>Variables de entorno</value>
   </data>
     <data name="settings.variablesSettings.customEnvVarsEmpty" xml:space="preserve">
     <value>Aún no hay variables personalizadas, el juego hereda el entorno del launcher</value>
