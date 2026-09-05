@@ -93,7 +93,10 @@ Vous devrez peut-être réinstaller le jeu si vous changez de lecteur.</value>
   <data name="common.cancel" xml:space="preserve">
     <value>Annuler</value>
   </data>
-  <data name="common.clear" xml:space="preserve">
+    <data name="common.change" xml:space="preserve">
+    <value>Changer</value>
+  </data>
+<data name="common.clear" xml:space="preserve">
     <value>Effacer</value>
   </data>
   <data name="common.close" xml:space="preserve">
@@ -1980,7 +1983,10 @@ Vous devrez peut-être réinstaller le jeu si vous changez de lecteur.</value>
   <data name="settings.instances" xml:space="preserve">
     <value>Instances</value>
   </data>
-  <data name="settings.javaSettings.customJavaPathNotFound" xml:space="preserve">
+    <data name="settings.javaSettings.customJavaPathEmpty" xml:space="preserve">
+    <value>Aucun exécutable sélectionné</value>
+  </data>
+<data name="settings.javaSettings.customJavaPathNotFound" xml:space="preserve">
     <value>L'exécutable Java sélectionné n'a pas été trouvé</value>
   </data>
   <data name="settings.javaSettings.customJavaPathPlaceholder" xml:space="preserve">
@@ -2025,7 +2031,10 @@ Vous devrez peut-être réinstaller le jeu si vous changez de lecteur.</value>
   <data name="settings.javaSettings.jvmArgumentsBlocked" xml:space="preserve">
     <value>Certains flags JVM dangereux ou gérés ont été supprimés avant l'enregistrement</value>
   </data>
-  <data name="settings.javaSettings.jvmArgumentsHint" xml:space="preserve">
+    <data name="settings.javaSettings.jvmArgumentsEmpty" xml:space="preserve">
+    <value>Aucun argument supplémentaire pour le moment, les options facultatives sont enregistrées dans JAVA_TOOL_OPTIONS</value>
+  </data>
+<data name="settings.javaSettings.jvmArgumentsHint" xml:space="preserve">
     <value>Flags supplémentaires pour le serveur solo. Sauvegardé dans JAVA_TOOL_OPTIONS</value>
   </data>
   <data name="settings.javaSettings.jvmArgumentsPlaceholder" xml:space="preserve">
@@ -2169,7 +2178,10 @@ Vous devrez peut-être réinstaller le jeu si vous changez de lecteur.</value>
   <data name="settings.variablesSettings.customEnvVars" xml:space="preserve">
     <value>Variables d'environnement personnalisées</value>
   </data>
-  <data name="settings.variablesSettings.customEnvVarsHint" xml:space="preserve">
+    <data name="settings.variablesSettings.customEnvVarsEmpty" xml:space="preserve">
+    <value>Aucune variable personnalisée pour le moment, le jeu hérite de l'environnement du launcher</value>
+  </data>
+<data name="settings.variablesSettings.customEnvVarsHint" xml:space="preserve">
     <value>Paires KEY=VALUE séparées par des espaces. Exemple: MY_VAR=value ANOTHER=123</value>
   </data>
   <data name="settings.variablesSettings.customEnvVarsPlaceholder" xml:space="preserve">

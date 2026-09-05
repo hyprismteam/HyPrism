@@ -96,7 +96,10 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="common.remove" xml:space="preserve">
     <value>Удалить</value>
   </data>
-  <data name="common.clear" xml:space="preserve">
+    <data name="common.change" xml:space="preserve">
+    <value>Сменить</value>
+  </data>
+<data name="common.clear" xml:space="preserve">
     <value>Очистить</value>
   </data>
   <data name="common.close" xml:space="preserve">
@@ -2292,7 +2295,10 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="settings.java" xml:space="preserve">
     <value>Java</value>
   </data>
-  <data name="settings.javaSettings.customJavaPathNotFound" xml:space="preserve">
+    <data name="settings.javaSettings.customJavaPathEmpty" xml:space="preserve">
+    <value>Исполняемый файл не выбран</value>
+  </data>
+<data name="settings.javaSettings.customJavaPathNotFound" xml:space="preserve">
     <value>Выбранный исполняемый файл Java не найден</value>
   </data>
   <data name="settings.javaSettings.customJavaPathPlaceholder" xml:space="preserve">
@@ -2340,7 +2346,10 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="settings.javaSettings.jvmMemoryArgumentsManaged" xml:space="preserve">
     <value>-Xms и -Xmx настраиваются ползунками выделения памяти</value>
   </data>
-  <data name="settings.javaSettings.jvmArgumentsHint" xml:space="preserve">
+    <data name="settings.javaSettings.jvmArgumentsEmpty" xml:space="preserve">
+    <value>Дополнительных аргументов пока нет, необязательные флаги сохраняются в JAVA_TOOL_OPTIONS</value>
+  </data>
+<data name="settings.javaSettings.jvmArgumentsHint" xml:space="preserve">
     <value>Дополнительные флаги для однопользовательского сервера. Сохраняются в JAVA_TOOL_OPTIONS</value>
   </data>
   <data name="settings.javaSettings.jvmArgumentsPlaceholder" xml:space="preserve">
@@ -2517,7 +2526,10 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="settings.variablesSettings.customEnvVars" xml:space="preserve">
     <value>Кастомные переменные окружения</value>
   </data>
-  <data name="settings.variablesSettings.customEnvVarsHint" xml:space="preserve">
+    <data name="settings.variablesSettings.customEnvVarsEmpty" xml:space="preserve">
+    <value>Пользовательских переменных пока нет, игра наследует окружение лаунчера</value>
+  </data>
+<data name="settings.variablesSettings.customEnvVarsHint" xml:space="preserve">
     <value>KEY=VALUE пары через пробел. Пример: MY_VAR=value ANOTHER=123</value>
   </data>
   <data name="settings.variablesSettings.customEnvVarsPlaceholder" xml:space="preserve">

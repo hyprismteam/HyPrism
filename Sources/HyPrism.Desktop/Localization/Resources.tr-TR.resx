@@ -93,7 +93,10 @@ Sürücü değiştirirseniz oyunu yeniden yüklemeniz gerekebilir.</value>
   <data name="common.cancel" xml:space="preserve">
     <value>İptal</value>
   </data>
-  <data name="common.clear" xml:space="preserve">
+    <data name="common.change" xml:space="preserve">
+    <value>Değiştir</value>
+  </data>
+<data name="common.clear" xml:space="preserve">
     <value>Temizle</value>
   </data>
   <data name="common.close" xml:space="preserve">
@@ -1980,7 +1983,10 @@ Sürücü değiştirirseniz oyunu yeniden yüklemeniz gerekebilir.</value>
   <data name="settings.instances" xml:space="preserve">
     <value>Örnekler</value>
   </data>
-  <data name="settings.javaSettings.customJavaPathNotFound" xml:space="preserve">
+    <data name="settings.javaSettings.customJavaPathEmpty" xml:space="preserve">
+    <value>Seçilmiş yürütülebilir dosya yok</value>
+  </data>
+<data name="settings.javaSettings.customJavaPathNotFound" xml:space="preserve">
     <value>Seçilen Java yürütülebilir dosyası bulunamadı</value>
   </data>
   <data name="settings.javaSettings.customJavaPathPlaceholder" xml:space="preserve">
@@ -2025,7 +2031,10 @@ Sürücü değiştirirseniz oyunu yeniden yüklemeniz gerekebilir.</value>
   <data name="settings.javaSettings.jvmArgumentsBlocked" xml:space="preserve">
     <value>Bazı güvensiz veya yönetilen JVM bayrakları kaydetmeden önce kaldırıldı</value>
   </data>
-  <data name="settings.javaSettings.jvmArgumentsHint" xml:space="preserve">
+    <data name="settings.javaSettings.jvmArgumentsEmpty" xml:space="preserve">
+    <value>Henüz ek bağımsız değişken yok, isteğe bağlı bayraklar JAVA_TOOL_OPTIONS üzerine kaydedilir</value>
+  </data>
+<data name="settings.javaSettings.jvmArgumentsHint" xml:space="preserve">
     <value>Tek oyunculu sunucu için isteğe bağlı ek bayraklar. JAVA_TOOL_OPTIONS'a kaydedilir</value>
   </data>
   <data name="settings.javaSettings.jvmArgumentsPlaceholder" xml:space="preserve">
@@ -2169,7 +2178,10 @@ Sürücü değiştirirseniz oyunu yeniden yüklemeniz gerekebilir.</value>
   <data name="settings.variablesSettings.customEnvVars" xml:space="preserve">
     <value>Özel Ortam Değişkenleri</value>
   </data>
-  <data name="settings.variablesSettings.customEnvVarsHint" xml:space="preserve">
+    <data name="settings.variablesSettings.customEnvVarsEmpty" xml:space="preserve">
+    <value>Henüz özel değişken yok, oyun başlatıcı ortamını devralır</value>
+  </data>
+<data name="settings.variablesSettings.customEnvVarsHint" xml:space="preserve">
     <value>Boşlukla ayrılmış KEY=VALUE çiftleri. Örnek: MY_VAR=value ANOTHER=123</value>
   </data>
   <data name="settings.variablesSettings.customEnvVarsPlaceholder" xml:space="preserve">

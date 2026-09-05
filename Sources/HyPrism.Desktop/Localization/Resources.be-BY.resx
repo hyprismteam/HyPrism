@@ -93,7 +93,10 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="common.cancel" xml:space="preserve">
     <value>Скасаваць</value>
   </data>
-  <data name="common.clear" xml:space="preserve">
+    <data name="common.change" xml:space="preserve">
+    <value>Змяніць</value>
+  </data>
+<data name="common.clear" xml:space="preserve">
     <value>Ачысціць</value>
   </data>
   <data name="common.close" xml:space="preserve">
@@ -1980,7 +1983,10 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="settings.instances" xml:space="preserve">
     <value>Экзэмпляры</value>
   </data>
-  <data name="settings.javaSettings.customJavaPathNotFound" xml:space="preserve">
+    <data name="settings.javaSettings.customJavaPathEmpty" xml:space="preserve">
+    <value>Выканаўчы файл не выбраны</value>
+  </data>
+<data name="settings.javaSettings.customJavaPathNotFound" xml:space="preserve">
     <value>Выбраны выканальны файл Java не знойдзены</value>
   </data>
   <data name="settings.javaSettings.customJavaPathPlaceholder" xml:space="preserve">
@@ -2025,7 +2031,10 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="settings.javaSettings.jvmArgumentsBlocked" xml:space="preserve">
     <value>Некаторыя небяспечныя або кіраваныя JVM-сцягі былі выдалены перад захаваннем</value>
   </data>
-  <data name="settings.javaSettings.jvmArgumentsHint" xml:space="preserve">
+    <data name="settings.javaSettings.jvmArgumentsEmpty" xml:space="preserve">
+    <value>Дадатковых аргументаў пакуль няма, неабавязковыя сцягі захоўваюцца ў JAVA_TOOL_OPTIONS</value>
+  </data>
+<data name="settings.javaSettings.jvmArgumentsHint" xml:space="preserve">
     <value>Дадатковыя сцягі для аднакарыстальніцкага сервера. Захоўваюцца ў JAVA_TOOL_OPTIONS</value>
   </data>
   <data name="settings.javaSettings.jvmArgumentsPlaceholder" xml:space="preserve">
@@ -2169,7 +2178,10 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="settings.variablesSettings.customEnvVars" xml:space="preserve">
     <value>Кастамныя зменныя асяроддзя</value>
   </data>
-  <data name="settings.variablesSettings.customEnvVarsHint" xml:space="preserve">
+    <data name="settings.variablesSettings.customEnvVarsEmpty" xml:space="preserve">
+    <value>Карыстальніцкіх зменных пакуль няма, гульня наследуе асяроддзе лаунчера</value>
+  </data>
+<data name="settings.variablesSettings.customEnvVarsHint" xml:space="preserve">
     <value>KEY=VALUE пары праз прабел. Прыклад: MY_VAR=value ANOTHER=123</value>
   </data>
   <data name="settings.variablesSettings.customEnvVarsPlaceholder" xml:space="preserve">

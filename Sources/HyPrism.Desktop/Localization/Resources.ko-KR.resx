@@ -93,7 +93,10 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="common.cancel" xml:space="preserve">
     <value>취소</value>
   </data>
-  <data name="common.clear" xml:space="preserve">
+    <data name="common.change" xml:space="preserve">
+    <value>변경</value>
+  </data>
+<data name="common.clear" xml:space="preserve">
     <value>지우기</value>
   </data>
   <data name="common.close" xml:space="preserve">
@@ -1980,7 +1983,10 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="settings.instances" xml:space="preserve">
     <value>인스턴스</value>
   </data>
-  <data name="settings.javaSettings.customJavaPathNotFound" xml:space="preserve">
+    <data name="settings.javaSettings.customJavaPathEmpty" xml:space="preserve">
+    <value>선택된 실행 파일이 없습니다</value>
+  </data>
+<data name="settings.javaSettings.customJavaPathNotFound" xml:space="preserve">
     <value>선택한 Java 실행 파일을 찾을 수 없습니다</value>
   </data>
   <data name="settings.javaSettings.customJavaPathPlaceholder" xml:space="preserve">
@@ -2025,7 +2031,10 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="settings.javaSettings.jvmArgumentsBlocked" xml:space="preserve">
     <value>일부 안전하지 않거나 관리되는 JVM 플래그가 저장 전에 제거되었습니다</value>
   </data>
-  <data name="settings.javaSettings.jvmArgumentsHint" xml:space="preserve">
+    <data name="settings.javaSettings.jvmArgumentsEmpty" xml:space="preserve">
+    <value>아직 추가 인수가 없으며, 선택적 플래그는 JAVA_TOOL_OPTIONS에 저장됩니다</value>
+  </data>
+<data name="settings.javaSettings.jvmArgumentsHint" xml:space="preserve">
     <value>싱글플레이어 서버용 추가 플래그. JAVA_TOOL_OPTIONS에 저장</value>
   </data>
   <data name="settings.javaSettings.jvmArgumentsPlaceholder" xml:space="preserve">
@@ -2169,7 +2178,10 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="settings.variablesSettings.customEnvVars" xml:space="preserve">
     <value>사용자 지정 환경 변수</value>
   </data>
-  <data name="settings.variablesSettings.customEnvVarsHint" xml:space="preserve">
+    <data name="settings.variablesSettings.customEnvVarsEmpty" xml:space="preserve">
+    <value>아직 사용자 지정 변수가 없으며, 게임은 런처 환경을 상속합니다</value>
+  </data>
+<data name="settings.variablesSettings.customEnvVarsHint" xml:space="preserve">
     <value>공백으로 구분된 KEY=VALUE 쌍. 예: MY_VAR=value ANOTHER=123</value>
   </data>
   <data name="settings.variablesSettings.customEnvVarsPlaceholder" xml:space="preserve">

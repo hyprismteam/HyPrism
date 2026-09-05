@@ -93,7 +93,10 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="common.cancel" xml:space="preserve">
     <value>取消</value>
   </data>
-  <data name="common.clear" xml:space="preserve">
+    <data name="common.change" xml:space="preserve">
+    <value>更改</value>
+  </data>
+<data name="common.clear" xml:space="preserve">
     <value>清除</value>
   </data>
   <data name="common.close" xml:space="preserve">
@@ -1980,7 +1983,10 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="settings.instances" xml:space="preserve">
     <value>实例</value>
   </data>
-  <data name="settings.javaSettings.customJavaPathNotFound" xml:space="preserve">
+    <data name="settings.javaSettings.customJavaPathEmpty" xml:space="preserve">
+    <value>未选择可执行文件</value>
+  </data>
+<data name="settings.javaSettings.customJavaPathNotFound" xml:space="preserve">
     <value>未找到所选的 Java 可执行文件</value>
   </data>
   <data name="settings.javaSettings.customJavaPathPlaceholder" xml:space="preserve">
@@ -2025,7 +2031,10 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="settings.javaSettings.jvmArgumentsBlocked" xml:space="preserve">
     <value>部分不安全或受管理的 JVM 参数已在保存前移除</value>
   </data>
-  <data name="settings.javaSettings.jvmArgumentsHint" xml:space="preserve">
+    <data name="settings.javaSettings.jvmArgumentsEmpty" xml:space="preserve">
+    <value>暂无附加参数，可选参数会保存到 JAVA_TOOL_OPTIONS</value>
+  </data>
+<data name="settings.javaSettings.jvmArgumentsHint" xml:space="preserve">
     <value>单人服务器的可选附加参数。保存到 JAVA_TOOL_OPTIONS</value>
   </data>
   <data name="settings.javaSettings.jvmArgumentsPlaceholder" xml:space="preserve">
@@ -2169,7 +2178,10 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="settings.variablesSettings.customEnvVars" xml:space="preserve">
     <value>自定义环境变量</value>
   </data>
-  <data name="settings.variablesSettings.customEnvVarsHint" xml:space="preserve">
+    <data name="settings.variablesSettings.customEnvVarsEmpty" xml:space="preserve">
+    <value>暂无自定义变量，游戏会继承启动器环境</value>
+  </data>
+<data name="settings.variablesSettings.customEnvVarsHint" xml:space="preserve">
     <value>空格分隔的 KEY=VALUE 对。示例：MY_VAR=value ANOTHER=123</value>
   </data>
   <data name="settings.variablesSettings.customEnvVarsPlaceholder" xml:space="preserve">

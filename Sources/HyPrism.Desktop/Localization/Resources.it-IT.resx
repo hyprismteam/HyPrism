@@ -93,7 +93,10 @@ Potrebbe essere necessario reinstallare il gioco se si cambia drive.</value>
   <data name="common.cancel" xml:space="preserve">
     <value>Annulla</value>
   </data>
-  <data name="common.clear" xml:space="preserve">
+    <data name="common.change" xml:space="preserve">
+    <value>Cambia</value>
+  </data>
+<data name="common.clear" xml:space="preserve">
     <value>Pulisci</value>
   </data>
   <data name="common.close" xml:space="preserve">
@@ -1983,7 +1986,10 @@ Potrebbe essere necessario reinstallare il gioco se si cambia drive.</value>
   <data name="settings.java" xml:space="preserve">
     <value>Java</value>
   </data>
-  <data name="settings.javaSettings.customJavaPathNotFound" xml:space="preserve">
+    <data name="settings.javaSettings.customJavaPathEmpty" xml:space="preserve">
+    <value>Nessun eseguibile selezionato</value>
+  </data>
+<data name="settings.javaSettings.customJavaPathNotFound" xml:space="preserve">
     <value>L'eseguibile Java selezionato non è stato trovato.</value>
   </data>
   <data name="settings.javaSettings.customJavaPathPlaceholder" xml:space="preserve">
@@ -2028,7 +2034,10 @@ Potrebbe essere necessario reinstallare il gioco se si cambia drive.</value>
   <data name="settings.javaSettings.jvmArgumentsBlocked" xml:space="preserve">
     <value>Alcuni flag JVM non sicuri o gestiti sono stati rimossi prima del salvataggio.</value>
   </data>
-  <data name="settings.javaSettings.jvmArgumentsHint" xml:space="preserve">
+    <data name="settings.javaSettings.jvmArgumentsEmpty" xml:space="preserve">
+    <value>Ancora nessun argomento aggiuntivo, i flag facoltativi vengono salvati in JAVA_TOOL_OPTIONS</value>
+  </data>
+<data name="settings.javaSettings.jvmArgumentsHint" xml:space="preserve">
     <value>Flag opzionali aggiuntivi per il server singleplayer. Salvati in JAVA_TOOL_OPTIONS.</value>
   </data>
   <data name="settings.javaSettings.jvmArgumentsPlaceholder" xml:space="preserve">
@@ -2053,7 +2062,7 @@ Potrebbe essere necessario reinstallare il gioco se si cambia drive.</value>
     <value>Consigliato: utilizza Java fornito con HyPrism.</value>
   </data>
   <data name="settings.javaSettings.useCustomJava" xml:space="preserve">
-    <value>Usa percorso Java personalizzato</value>
+    <value>Usa Java personalizzato</value>
   </data>
   <data name="settings.javaSettings.useCustomJavaHint" xml:space="preserve">
     <value>Specifica il tuo eseguibile Java (java/java.exe).</value>
@@ -2172,7 +2181,10 @@ Potrebbe essere necessario reinstallare il gioco se si cambia drive.</value>
   <data name="settings.variablesSettings.customEnvVars" xml:space="preserve">
     <value>Variabili d'ambiente personalizzate</value>
   </data>
-  <data name="settings.variablesSettings.customEnvVarsHint" xml:space="preserve">
+    <data name="settings.variablesSettings.customEnvVarsEmpty" xml:space="preserve">
+    <value>Ancora nessuna variabile personalizzata, il gioco eredita l'ambiente del launcher</value>
+  </data>
+<data name="settings.variablesSettings.customEnvVarsHint" xml:space="preserve">
     <value>Coppie KEY=VALUE separate da spazi. Esempio: MY_VAR=value ANOTHER=123</value>
   </data>
   <data name="settings.variablesSettings.customEnvVarsPlaceholder" xml:space="preserve">

@@ -64,6 +64,23 @@ SPDX-License-Identifier: GPL-3.0-only
       </Grid>
     </DataTemplate>
 
+    <DataTemplate x:Key="CustomJavaPathActionTemplate" x:DataType="vm:SettingsViewModel">
+      <Grid Classes="managedActionContent">
+        <StackPanel Classes="managedActionIdle"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center">
+          <TextBlock Text="{Binding EditCustomJavaPathLabel}"
+                     VerticalAlignment="Center" />
+        </StackPanel>
+        <Grid Classes="managedActionProgress" VerticalAlignment="Center">
+          <Path Classes="managedActionSpinner"
+                controls:RotatingVisual.IsActive="{Binding IsBrowsingCustomJava}"
+                HorizontalAlignment="Center"
+                Data="M10,2 A8,8 0 1 1 2,10" />
+        </Grid>
+      </Grid>
+    </DataTemplate>
+
     <DataTemplate x:Key="InstanceFolderChangeActionTemplate" x:DataType="vm:SettingsViewModel">
       <Grid Classes="managedActionContent">
         <StackPanel Classes="managedActionIdle"
@@ -648,6 +665,7 @@ SPDX-License-Identifier: GPL-3.0-only
                   <Border Classes="uiSettingsRow settingsRow runtime">
                     <Button Classes="javaRuntimeOption"
                             Classes.selected="{Binding UseBundledJava}"
+                            IsHitTestVisible="{Binding !UseBundledJava}"
                             Command="{Binding SelectBundledJavaCommand}">
                       <Grid ColumnDefinitions="Auto,*" ColumnSpacing="14">
                         <Border Classes="javaRadioIndicator">
@@ -662,33 +680,52 @@ SPDX-License-Identifier: GPL-3.0-only
                   </Border>
                   <Border Classes="uiSettingsRow settingsRow runtime last">
                     <StackPanel>
-                      <Button Classes="javaRuntimeOption"
-                              Classes.selected="{Binding UseCustomJava}"
-                              Command="{Binding SelectCustomJavaCommand}">
-                        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="14">
-                          <Border Classes="javaRadioIndicator">
-                            <Ellipse Classes="javaRadioDot" IsVisible="{Binding UseCustomJava}" />
-                          </Border>
-                          <StackPanel Grid.Column="1" Spacing="2">
-                            <TextBlock Text="{Binding CustomJavaLabel}" Classes="uiSettingsLabel settingsLabel" />
-                            <TextBlock Text="{Binding CustomJavaHint}" Classes="uiSettingsHint settingsHint" />
-                          </StackPanel>
-                        </Grid>
-                      </Button>
-                      <StackPanel Margin="18,4,18,14" Spacing="8" IsVisible="{Binding UseCustomJava}">
-                        <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
-                          <TextBox Text="{Binding CustomJavaPath}"
-                                   PlaceholderText="{Binding CustomJavaPathPlaceholder}"
-                                   VerticalAlignment="Center" />
-                          <Button Grid.Column="1" Classes="javaInlineAction" Command="{Binding BrowseJavaCommand}">
-                            <TextBlock Text="{Binding SelectLabel}" />
+                      <Grid>
+                        <Button Classes="javaRuntimeOption"
+                                Classes.selected="{Binding UseCustomJava}"
+                                IsHitTestVisible="{Binding !UseCustomJava}"
+                                Command="{Binding SelectCustomJavaCommand}">
+                          <Grid ColumnDefinitions="Auto,*" ColumnSpacing="14">
+                            <Border Classes="javaRadioIndicator">
+                              <Ellipse Classes="javaRadioDot" IsVisible="{Binding UseCustomJava}" />
+                            </Border>
+                            <StackPanel Grid.Column="1" Spacing="2">
+                              <TextBlock Text="{Binding CustomJavaLabel}" Classes="uiSettingsLabel settingsLabel" />
+                              <TextBlock Text="{Binding CustomJavaHint}" Classes="uiSettingsHint settingsHint" />
+                            </StackPanel>
+                          </Grid>
+                        </Button>
+                        <Border Classes="customJavaPathActionHost"
+                                Classes.open="{Binding UseCustomJava}">
+                          <Button VerticalAlignment="Center"
+                                  Margin="0,0,18,0"
+                                  Classes="settingsAction instanceFolderChangeAction"
+                                  Classes.active="{Binding IsBrowsingCustomJava}"
+                                  Command="{Binding BrowseJavaCommand}">
+                            <ContentControl Content="{Binding}"
+                                            ContentTemplate="{StaticResource CustomJavaPathActionTemplate}" />
                           </Button>
-                          <Button Grid.Column="2" Classes="settingsAction" Command="{Binding SaveJavaPathCommand}">
-                            <TextBlock Text="{Binding SaveLabel}" />
-                          </Button>
-                        </Grid>
-                        <TextBlock Text="{Binding JavaPathError}" Classes="settingsError" IsVisible="{Binding HasJavaPathError}" />
-                      </StackPanel>
+                        </Border>
+                      </Grid>
+                      <Border Classes="customJavaExpander"
+                              Classes.open="{Binding UseCustomJava}">
+                        <Border Classes="dataPathSurface" Margin="18,10,18,14">
+                          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                            <TextBlock Text="{Binding CustomJavaPathDisplay}"
+                                       Classes="dataPathText"
+                                       Classes.placeholder="{Binding !HasCustomJavaPath}"
+                                       TextTrimming="CharacterEllipsis"
+                                       ToolTip.Tip="{Binding CustomJavaPath}" />
+                            <Button Grid.Column="1"
+                                    Classes="dataPathOpen"
+                                    Command="{Binding OpenCustomJavaFolderCommand}"
+                                    IsVisible="{Binding HasCustomJavaPath}"
+                                    ToolTip.Tip="{Binding OpenFolderLabel}">
+                              <Path Classes="dataPathOpenIcon" Data="{StaticResource OpenIcon}" />
+                            </Button>
+                          </Grid>
+                        </Border>
+                      </Border>
                     </StackPanel>
                   </Border>
                 </StackPanel>
@@ -749,15 +786,14 @@ SPDX-License-Identifier: GPL-3.0-only
                   </StackPanel>
                 </Button>
               </Grid>
-              <Border x:Name="JavaArgumentsTable" Classes="uiSettingsGroup settingsGroup">
+              <Border x:Name="JavaArgumentsTable" Classes="uiSettingsGroup settingsGroup" IsVisible="{Binding HasJavaArguments}">
                 <StackPanel>
                   <Border Classes="sourceTableHeader">
                     <Grid ColumnDefinitions="*,34" ColumnSpacing="10">
                       <TextBlock Text="{Binding JavaArgumentsLabel}" />
                     </Grid>
                   </Border>
-                  <ItemsControl ItemsSource="{Binding JavaArgumentItems}"
-                                IsVisible="{Binding HasJavaArguments}">
+                  <ItemsControl ItemsSource="{Binding JavaArgumentItems}">
                     <ItemsControl.ItemTemplate>
                       <DataTemplate x:DataType="vm:JavaArgumentItemViewModel">
                         <Border Classes="uiSettingsRow settingsRow"
@@ -779,11 +815,23 @@ SPDX-License-Identifier: GPL-3.0-only
                       </DataTemplate>
                     </ItemsControl.ItemTemplate>
                   </ItemsControl>
-                  <Border Classes="uiSettingsRow settingsRow last"
-                          IsVisible="{Binding HasNoJavaArguments}">
-                    <TextBlock Text="{Binding JavaArgumentsHint}"
-                               Classes="uiSettingsHint settingsHint" />
-                  </Border>
+                </StackPanel>
+              </Border>
+              <Border x:Name="JavaArgumentsEmptyCard"
+                      Classes="uiSettingsGroup settingsGroup"
+                      IsVisible="{Binding HasNoJavaArguments}">
+                <StackPanel Spacing="12"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Margin="0,26">
+                  <PathIcon Classes="emptyStateIcon"
+                            Data="{StaticResource ConsoleIcon}"
+                            HorizontalAlignment="Center" />
+                  <TextBlock Text="{Binding JavaArgumentsEmptyState}"
+                             Classes="uiSettingsHint settingsHint"
+                             TextAlignment="Center"
+                             MaxWidth="440"
+                             HorizontalAlignment="Center" />
                 </StackPanel>
               </Border>
               <TextBlock Text="{Binding JavaArgumentsHint}"
@@ -934,15 +982,14 @@ SPDX-License-Identifier: GPL-3.0-only
                   </StackPanel>
                 </Button>
               </Grid>
-              <Border x:Name="EnvironmentVariablesTable" Classes="uiSettingsGroup settingsGroup">
+              <Border x:Name="EnvironmentVariablesTable" Classes="uiSettingsGroup settingsGroup" IsVisible="{Binding HasEnvironmentVariables}">
                 <StackPanel>
                   <Border Classes="sourceTableHeader">
                     <Grid ColumnDefinitions="*,34" ColumnSpacing="10">
                       <TextBlock Text="{Binding EnvLabel}" />
                     </Grid>
                   </Border>
-                  <ItemsControl ItemsSource="{Binding EnvironmentVariableItems}"
-                                IsVisible="{Binding HasEnvironmentVariables}">
+                  <ItemsControl ItemsSource="{Binding EnvironmentVariableItems}">
                     <ItemsControl.ItemTemplate>
                       <DataTemplate x:DataType="vm:EnvironmentVariableItemViewModel">
                         <Border Classes="uiSettingsRow settingsRow"
@@ -965,11 +1012,23 @@ SPDX-License-Identifier: GPL-3.0-only
                       </DataTemplate>
                     </ItemsControl.ItemTemplate>
                   </ItemsControl>
-                  <Border Classes="uiSettingsRow settingsRow last"
-                          IsVisible="{Binding HasNoEnvironmentVariables}">
-                    <TextBlock Text="{Binding EnvHint}"
-                               Classes="uiSettingsHint settingsHint" />
-                  </Border>
+                </StackPanel>
+              </Border>
+              <Border x:Name="EnvironmentVariablesEmptyCard"
+                      Classes="uiSettingsGroup settingsGroup"
+                      IsVisible="{Binding HasNoEnvironmentVariables}">
+                <StackPanel Spacing="12"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Margin="0,26">
+                  <PathIcon Classes="emptyStateIcon"
+                            Data="{StaticResource DataObjectIcon}"
+                            HorizontalAlignment="Center" />
+                  <TextBlock Text="{Binding EnvEmptyState}"
+                             Classes="uiSettingsHint settingsHint"
+                             TextAlignment="Center"
+                             MaxWidth="440"
+                             HorizontalAlignment="Center" />
                 </StackPanel>
               </Border>
               <TextBlock Text="{Binding EnvHint}"

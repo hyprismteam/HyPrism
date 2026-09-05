@@ -93,7 +93,10 @@ Bei Laufwerkswechsel muss das Spiel möglicherweise neu installiert werden.</val
   <data name="common.cancel" xml:space="preserve">
     <value>Abbrechen</value>
   </data>
-  <data name="common.clear" xml:space="preserve">
+    <data name="common.change" xml:space="preserve">
+    <value>Ändern</value>
+  </data>
+<data name="common.clear" xml:space="preserve">
     <value>Löschen</value>
   </data>
   <data name="common.close" xml:space="preserve">
@@ -1980,7 +1983,10 @@ Bei Laufwerkswechsel muss das Spiel möglicherweise neu installiert werden.</val
   <data name="settings.instances" xml:space="preserve">
     <value>Instanzen</value>
   </data>
-  <data name="settings.javaSettings.customJavaPathNotFound" xml:space="preserve">
+    <data name="settings.javaSettings.customJavaPathEmpty" xml:space="preserve">
+    <value>Keine ausführbare Datei ausgewählt</value>
+  </data>
+<data name="settings.javaSettings.customJavaPathNotFound" xml:space="preserve">
     <value>Die ausgewählte Java-Datei wurde nicht gefunden</value>
   </data>
   <data name="settings.javaSettings.customJavaPathPlaceholder" xml:space="preserve">
@@ -2025,7 +2031,10 @@ Bei Laufwerkswechsel muss das Spiel möglicherweise neu installiert werden.</val
   <data name="settings.javaSettings.jvmArgumentsBlocked" xml:space="preserve">
     <value>Einige unsichere oder verwaltete JVM-Flags wurden vor dem Speichern entfernt</value>
   </data>
-  <data name="settings.javaSettings.jvmArgumentsHint" xml:space="preserve">
+    <data name="settings.javaSettings.jvmArgumentsEmpty" xml:space="preserve">
+    <value>Noch keine zusätzlichen Argumente, optionale Flags werden in JAVA_TOOL_OPTIONS gespeichert</value>
+  </data>
+<data name="settings.javaSettings.jvmArgumentsHint" xml:space="preserve">
     <value>Optionale zusätzliche Flags für den Singleplayer-Server. Wird in JAVA_TOOL_OPTIONS gespeichert</value>
   </data>
   <data name="settings.javaSettings.jvmArgumentsPlaceholder" xml:space="preserve">
@@ -2169,7 +2178,10 @@ Bei Laufwerkswechsel muss das Spiel möglicherweise neu installiert werden.</val
   <data name="settings.variablesSettings.customEnvVars" xml:space="preserve">
     <value>Benutzerdefinierte Umgebungsvariablen</value>
   </data>
-  <data name="settings.variablesSettings.customEnvVarsHint" xml:space="preserve">
+    <data name="settings.variablesSettings.customEnvVarsEmpty" xml:space="preserve">
+    <value>Noch keine benutzerdefinierten Variablen, das Spiel übernimmt die Launcher-Umgebung</value>
+  </data>
+<data name="settings.variablesSettings.customEnvVarsHint" xml:space="preserve">
     <value>Leerzeichen-getrennte KEY=VALUE-Paare. Beispiel: MY_VAR=value ANOTHER=123</value>
   </data>
   <data name="settings.variablesSettings.customEnvVarsPlaceholder" xml:space="preserve">

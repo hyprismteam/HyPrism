@@ -18,8 +18,9 @@ public interface IFilePicker
     /// <summary>
     /// Lets the user select a Java executable
     /// </summary>
+    /// <param name="initialDirectory">Optional initial directory shown instead of the dialog's remembered location</param>
     /// <returns>The selected local path, or <see langword="null"/> when cancelled</returns>
-    Task<string?> BrowseJavaExecutableAsync();
+    Task<string?> BrowseJavaExecutableAsync(string? initialDirectory = null);
 
     /// <summary>
     /// Lets the user select one or more mod archives

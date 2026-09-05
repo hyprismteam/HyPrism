@@ -46,8 +46,19 @@ public sealed class FilePicker(Func<TopLevel?> topLevelProvider) : IFilePicker
         });
 
     /// <inheritdoc/>
-    public Task<string?> BrowseJavaExecutableAsync()
-        => PickSingleFileAsync("Select Java executable", [JavaFileType]);
+    public Task<string?> BrowseJavaExecutableAsync(string? initialDirectory = null)
+        => RunOnUiThreadAsync(async storageProvider =>
+        {
+            var files = await storageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+            {
+                Title = "Select Java executable",
+                AllowMultiple = false,
+                FileTypeFilter = [JavaFileType],
+                SuggestedStartLocation = await ResolveFolderAsync(storageProvider, initialDirectory)
+            });
+
+            return files.FirstOrDefault()?.TryGetLocalPath();
+        });
 
     /// <inheritdoc/>
     public async Task<string[]> BrowseModFilesAsync()

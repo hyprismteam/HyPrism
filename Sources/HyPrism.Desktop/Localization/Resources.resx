@@ -99,7 +99,10 @@ You may need to reinstall the game if switching drives.</value>
   <data name="common.remove" xml:space="preserve">
     <value>Remove</value>
   </data>
-  <data name="common.clear" xml:space="preserve">
+    <data name="common.change" xml:space="preserve">
+    <value>Change</value>
+  </data>
+<data name="common.clear" xml:space="preserve">
     <value>Clear</value>
   </data>
   <data name="common.close" xml:space="preserve">
@@ -2295,7 +2298,10 @@ You may need to reinstall the game if switching drives.</value>
   <data name="settings.java" xml:space="preserve">
     <value>Java</value>
   </data>
-  <data name="settings.javaSettings.customJavaPathNotFound" xml:space="preserve">
+    <data name="settings.javaSettings.customJavaPathEmpty" xml:space="preserve">
+    <value>No executable selected</value>
+  </data>
+<data name="settings.javaSettings.customJavaPathNotFound" xml:space="preserve">
     <value>The selected Java executable was not found</value>
   </data>
   <data name="settings.javaSettings.customJavaPathPlaceholder" xml:space="preserve">
@@ -2343,7 +2349,10 @@ You may need to reinstall the game if switching drives.</value>
   <data name="settings.javaSettings.jvmMemoryArgumentsManaged" xml:space="preserve">
     <value>-Xms and -Xmx are controlled by the memory allocation sliders</value>
   </data>
-  <data name="settings.javaSettings.jvmArgumentsHint" xml:space="preserve">
+    <data name="settings.javaSettings.jvmArgumentsEmpty" xml:space="preserve">
+    <value>No extra arguments yet, optional flags are saved to JAVA_TOOL_OPTIONS</value>
+  </data>
+<data name="settings.javaSettings.jvmArgumentsHint" xml:space="preserve">
     <value>Optional extra flags for the singleplayer server. Saved to JAVA_TOOL_OPTIONS</value>
   </data>
   <data name="settings.javaSettings.jvmArgumentsPlaceholder" xml:space="preserve">
@@ -2368,7 +2377,7 @@ You may need to reinstall the game if switching drives.</value>
     <value>Recommended: uses Java shipped with HyPrism</value>
   </data>
   <data name="settings.javaSettings.useCustomJava" xml:space="preserve">
-    <value>Use custom Java path</value>
+    <value>Use custom Java</value>
   </data>
   <data name="settings.javaSettings.useCustomJavaHint" xml:space="preserve">
     <value>Specify your own Java executable (java/java.exe)</value>
@@ -2520,7 +2529,10 @@ You may need to reinstall the game if switching drives.</value>
   <data name="settings.variablesSettings.customEnvVars" xml:space="preserve">
     <value>Custom Environment Variables</value>
   </data>
-  <data name="settings.variablesSettings.customEnvVarsHint" xml:space="preserve">
+    <data name="settings.variablesSettings.customEnvVarsEmpty" xml:space="preserve">
+    <value>No custom variables yet, the game inherits the launcher environment</value>
+  </data>
+<data name="settings.variablesSettings.customEnvVarsHint" xml:space="preserve">
     <value>Space-separated KEY=VALUE pairs. Example: MY_VAR=value ANOTHER=123</value>
   </data>
   <data name="settings.variablesSettings.customEnvVarsPlaceholder" xml:space="preserve">

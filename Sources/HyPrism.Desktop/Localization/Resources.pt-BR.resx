@@ -93,7 +93,10 @@ Você pode precisar reinstalar o jogo se trocar de unidade.</value>
   <data name="common.cancel" xml:space="preserve">
     <value>Cancelar</value>
   </data>
-  <data name="common.clear" xml:space="preserve">
+    <data name="common.change" xml:space="preserve">
+    <value>Alterar</value>
+  </data>
+<data name="common.clear" xml:space="preserve">
     <value>Limpar</value>
   </data>
   <data name="common.close" xml:space="preserve">
@@ -1980,7 +1983,10 @@ Você pode precisar reinstalar o jogo se trocar de unidade.</value>
   <data name="settings.instances" xml:space="preserve">
     <value>Instâncias</value>
   </data>
-  <data name="settings.javaSettings.customJavaPathNotFound" xml:space="preserve">
+    <data name="settings.javaSettings.customJavaPathEmpty" xml:space="preserve">
+    <value>Nenhum executável selecionado</value>
+  </data>
+<data name="settings.javaSettings.customJavaPathNotFound" xml:space="preserve">
     <value>O executável Java selecionado não foi encontrado</value>
   </data>
   <data name="settings.javaSettings.customJavaPathPlaceholder" xml:space="preserve">
@@ -2025,7 +2031,10 @@ Você pode precisar reinstalar o jogo se trocar de unidade.</value>
   <data name="settings.javaSettings.jvmArgumentsBlocked" xml:space="preserve">
     <value>Algumas flags JVM inseguras ou gerenciadas foram removidas antes de salvar</value>
   </data>
-  <data name="settings.javaSettings.jvmArgumentsHint" xml:space="preserve">
+    <data name="settings.javaSettings.jvmArgumentsEmpty" xml:space="preserve">
+    <value>Ainda sem argumentos extras, sinalizadores opcionais são salvos em JAVA_TOOL_OPTIONS</value>
+  </data>
+<data name="settings.javaSettings.jvmArgumentsHint" xml:space="preserve">
     <value>Flags extras para o servidor singleplayer. Salvo em JAVA_TOOL_OPTIONS</value>
   </data>
   <data name="settings.javaSettings.jvmArgumentsPlaceholder" xml:space="preserve">
@@ -2169,7 +2178,10 @@ Você pode precisar reinstalar o jogo se trocar de unidade.</value>
   <data name="settings.variablesSettings.customEnvVars" xml:space="preserve">
     <value>Variáveis de ambiente personalizadas</value>
   </data>
-  <data name="settings.variablesSettings.customEnvVarsHint" xml:space="preserve">
+    <data name="settings.variablesSettings.customEnvVarsEmpty" xml:space="preserve">
+    <value>Ainda sem variáveis personalizadas, o jogo herda o ambiente do launcher</value>
+  </data>
+<data name="settings.variablesSettings.customEnvVarsHint" xml:space="preserve">
     <value>Pares KEY=VALUE separados por espaços. Exemplo: MY_VAR=value ANOTHER=123</value>
   </data>
   <data name="settings.variablesSettings.customEnvVarsPlaceholder" xml:space="preserve">

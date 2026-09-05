@@ -111,15 +111,13 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     [NotifyPropertyChangedFor(nameof(JavaInitialRamValue))]
     private double _javaInitialRamMb;
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HasJavaPathError))]
-    private string _javaPathError = string.Empty;
-    [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasJavaArgumentsError))]
     private string _javaArgumentsError = string.Empty;
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(AddEnvironmentVariableCommand))]
     private string _newEnvironmentVariable = string.Empty;
     [ObservableProperty] private bool _isAddingEnvironmentVariable;
+    [ObservableProperty] private bool _isBrowsingCustomJava;
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasEnvironmentVariablesError))]
     private string _environmentVariablesError = string.Empty;
@@ -293,7 +291,6 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     public double JavaMemoryTickFrequency => JavaMemoryStepMb;
     public double JavaInitialRamMaximum => JavaMaximumRamMb;
     public bool UseBundledJava => !UseCustomJava;
-    public bool HasJavaPathError => !string.IsNullOrWhiteSpace(JavaPathError);
     public bool HasJavaArgumentsError => !string.IsNullOrWhiteSpace(JavaArgumentsError);
     public bool HasJavaArguments => JavaArgumentItems.Count > 0;
     public bool HasNoJavaArguments => JavaArgumentItems.Count == 0;
@@ -389,19 +386,26 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     public string BundledJavaHint { get; private set; } = string.Empty;
     public string CustomJavaLabel { get; private set; } = string.Empty;
     public string CustomJavaHint { get; private set; } = string.Empty;
-    public string CustomJavaPathPlaceholder { get; private set; } = string.Empty;
+    public string EditLabel { get; private set; } = string.Empty;
+    public string ChangeLabel { get; private set; } = string.Empty;
+    public string CustomJavaPathEmptyState { get; private set; } = string.Empty;
+    public bool HasCustomJavaPath => !string.IsNullOrWhiteSpace(CustomJavaPath);
+    public string EditCustomJavaPathLabel => HasCustomJavaPath ? ChangeLabel : EditLabel;
+    public string CustomJavaPathDisplay => HasCustomJavaPath ? CustomJavaPath : CustomJavaPathEmptyState;
     public string SelectLabel { get; private set; } = string.Empty;
     public string RamAllocationLabel { get; private set; } = string.Empty;
     public string MaximumRamLabel { get; private set; } = string.Empty;
     public string InitialRamLabel { get; private set; } = string.Empty;
     public string JavaArgumentsLabel { get; private set; } = string.Empty;
     public string JavaArgumentsHint { get; private set; } = string.Empty;
+    public string JavaArgumentsEmptyState { get; private set; } = string.Empty;
     public string JavaArgumentsPlaceholder { get; private set; } = string.Empty;
     public string GpuLabel { get; private set; } = string.Empty;
     public string GpuHint { get; private set; } = string.Empty;
     public string EnvPresetsLabel { get; private set; } = string.Empty;
     public string EnvLabel { get; private set; } = string.Empty;
     public string EnvHint { get; private set; } = string.Empty;
+    public string EnvEmptyState { get; private set; } = string.Empty;
     public string EnvPlaceholder { get; private set; } = string.Empty;
     public string InstanceFolderLabel { get; private set; } = string.Empty;
     public string LauncherFilesLabel { get; private set; } = string.Empty;
@@ -527,19 +531,22 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         BundledJavaHint = _localizer["settings.javaSettings.useBundledJavaHint"];
         CustomJavaLabel = _localizer["settings.javaSettings.useCustomJava"];
         CustomJavaHint = _localizer["settings.javaSettings.useCustomJavaHint"];
-        CustomJavaPathPlaceholder = _localizer["settings.javaSettings.customJavaPathPlaceholder"];
-        SelectLabel = _localizer["common.select"];
+        EditLabel = _localizer["common.edit"];
+        ChangeLabel = _localizer["common.change"];
+        CustomJavaPathEmptyState = _localizer["settings.javaSettings.customJavaPathEmpty"];
         RamAllocationLabel = _localizer["settings.javaSettings.ramAllocation"];
         MaximumRamLabel = _localizer["settings.javaSettings.maxRam"];
         InitialRamLabel = _localizer["settings.javaSettings.initialRam"];
         JavaArgumentsLabel = _localizer["settings.javaSettings.jvmArguments"];
         JavaArgumentsHint = _localizer["settings.javaSettings.jvmArgumentsHint"];
+        JavaArgumentsEmptyState = _localizer["settings.javaSettings.jvmArgumentsEmpty"];
         JavaArgumentsPlaceholder = _localizer["settings.javaSettings.jvmArgumentsPlaceholder"];
         GpuLabel = _localizer["settings.graphicsSettings.gpuPreference"];
         GpuHint = _localizer["settings.graphicsSettings.gpuPreferenceHint"];
         EnvPresetsLabel = _localizer["settings.variablesSettings.commonPresets"];
         EnvLabel = _localizer["settings.variablesSettings.customEnvVars"];
         EnvHint = _localizer["settings.variablesSettings.customEnvVarsHint"];
+        EnvEmptyState = _localizer["settings.variablesSettings.customEnvVarsEmpty"];
         EnvPlaceholder = _localizer["settings.variablesSettings.customEnvVarsPlaceholder"];
         InstanceFolderLabel = _localizer["settings.dataSettings.instanceFolder"];
         LauncherFilesLabel = _localizer["settings.dataSettings.launcherFiles"];
@@ -665,11 +672,15 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     partial void OnOnlineModeChanged(bool value) => _settings.OnlineMode = value;
     partial void OnUseCustomJavaChanged(bool value)
     {
-        JavaPathError = string.Empty;
         _settings.UseCustomJava = value;
     }
 
-    partial void OnCustomJavaPathChanged(string value) => JavaPathError = string.Empty;
+    partial void OnCustomJavaPathChanged(string value)
+    {
+        OnPropertyChanged(nameof(HasCustomJavaPath));
+        OnPropertyChanged(nameof(EditCustomJavaPathLabel));
+        OnPropertyChanged(nameof(CustomJavaPathDisplay));
+    }
     partial void OnJavaArgumentsChanged(string value)
     {
         if (_updatingJavaArguments)
@@ -947,36 +958,40 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private async Task BrowseJava()
     {
-        if (_filePicker is null)
+        if (_filePicker is null || IsBrowsingCustomJava)
             return;
 
-        var selectedPath = await _filePicker.BrowseJavaExecutableAsync();
-        if (!string.IsNullOrWhiteSpace(selectedPath))
+        IsBrowsingCustomJava = true;
+        try
+        {
+            var selectedPath = await _filePicker.BrowseJavaExecutableAsync(ResolveCustomJavaPickerDirectory());
+            if (string.IsNullOrWhiteSpace(selectedPath))
+                return;
+
+            // The path is applied only through this validated pick, so a stale or
+            // hand-typed value can never persist after the instance folder moves
             CustomJavaPath = selectedPath;
+            _settings.CustomJavaPath = selectedPath;
+            UseCustomJava = true;
+            ShowSaved();
+        }
+        finally
+        {
+            IsBrowsingCustomJava = false;
+        }
     }
+
+    private string ResolveCustomJavaPickerDirectory()
+        => Path.GetDirectoryName(CustomJavaPath) is { Length: > 0 } directory && Directory.Exists(directory)
+            ? directory
+            : _settings.LauncherDataDirectory;
 
     [RelayCommand]
-    private void SaveJavaPath()
-    {
-        var normalizedPath = CustomJavaPath.Trim();
-        if (normalizedPath.Length == 0)
-        {
-            JavaPathError = _localizer["settings.javaSettings.customJavaPathRequired"];
-            return;
-        }
-
-        if (!File.Exists(normalizedPath))
-        {
-            JavaPathError = _localizer["settings.javaSettings.customJavaPathNotFound"];
-            return;
-        }
-
-        CustomJavaPath = normalizedPath;
-        JavaPathError = string.Empty;
-        _settings.CustomJavaPath = normalizedPath;
-        UseCustomJava = true;
-        ShowSaved();
-    }
+    private Task OpenCustomJavaFolder()
+        => _uriLauncher.LaunchDirectoryAsync(
+            Path.GetDirectoryName(CustomJavaPath) is { Length: > 0 } directory
+                ? directory
+                : _settings.LauncherDataDirectory);
 
     [RelayCommand]
     private void SaveJavaArguments()
@@ -1286,6 +1301,9 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
                 ? $"{moveProgress.Percentage}%"
                 : string.Empty;
         });
+        var previousDirectory = string.IsNullOrWhiteSpace(_settings.InstanceDirectory)
+            ? _settings.DefaultInstanceDirectory
+            : _settings.InstanceDirectory;
         if (!await _settings.SetInstanceDirectoryAsync(path, cancellationToken, progress))
             return;
 
@@ -1293,6 +1311,27 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
             ? _settings.DefaultInstanceDirectory
             : _settings.InstanceDirectory;
         RefreshStorageUsage();
+        InvalidateCustomJavaPathUnder(previousDirectory);
+    }
+
+    private void InvalidateCustomJavaPathUnder(string previousDirectory)
+    {
+        if (!HasCustomJavaPath)
+            return;
+
+        var root = Path.TrimEndingDirectorySeparator(Path.GetFullPath(previousDirectory)) +
+                   Path.DirectorySeparatorChar;
+        var javaPath = Path.GetFullPath(CustomJavaPath);
+        var comparison = OperatingSystem.IsWindows()
+            ? StringComparison.OrdinalIgnoreCase
+            : StringComparison.Ordinal;
+        if (!javaPath.StartsWith(root, comparison))
+            return;
+
+        // The old instance tree is removed after a move, so a custom Java
+        // living inside it can no longer resolve and must be re-picked
+        CustomJavaPath = string.Empty;
+        _settings.CustomJavaPath = string.Empty;
     }
 
     public void ArmInstanceFolderChangeCancellation()
