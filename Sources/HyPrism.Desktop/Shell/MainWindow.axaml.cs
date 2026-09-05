@@ -371,6 +371,13 @@ public sealed partial class MainWindow : Window
             !e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
             return;
 
+        if (!OperatingSystem.IsWindows() && !OperatingSystem.IsMacOS())
+        {
+            BeginResizeDrag(edge, e);
+            e.Handled = true;
+            return;
+        }
+
         _activeResizeEdge = edge;
         _resizeStartScreenPoint = this.PointToScreen(e.GetCurrentPoint(this).Position);
         _pendingResizeScreenPoint = _resizeStartScreenPoint;
@@ -410,6 +417,17 @@ public sealed partial class MainWindow : Window
             MinHeight,
             MaxHeight);
 
+        var framePosition = new PixelPoint(
+            (int)Math.Round(_resizeStartWindowPosition.X + positionOffsetDips.X * RenderScaling),
+            (int)Math.Round(_resizeStartWindowPosition.Y + positionOffsetDips.Y * RenderScaling));
+
+        if (!OperatingSystem.IsWindows())
+        {
+            Position = framePosition;
+            ClientSize = newClientSize;
+            return;
+        }
+
         // One atomic move-and-resize per frame: separate Position and ClientSize
         // updates present intermediate window states to DWM and make the surface flicker
         var handle = TryGetPlatformHandle()?.Handle ?? IntPtr.Zero;
@@ -419,8 +437,8 @@ public sealed partial class MainWindow : Window
         SetWindowPos(
             handle,
             IntPtr.Zero,
-            (int)Math.Round(_resizeStartWindowPosition.X + positionOffsetDips.X * RenderScaling),
-            (int)Math.Round(_resizeStartWindowPosition.Y + positionOffsetDips.Y * RenderScaling),
+            framePosition.X,
+            framePosition.Y,
             (int)Math.Round(newClientSize.Width * RenderScaling),
             (int)Math.Round(newClientSize.Height * RenderScaling),
             SwpNoZOrder | SwpNoActivate);

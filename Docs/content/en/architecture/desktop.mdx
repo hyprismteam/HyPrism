@@ -10,7 +10,7 @@ description: Avalonia views, view models, localization, and native controls
 ## Composition
 
 - `App.axaml` loads shared tokens, styles, and resources
-- `Shell` contains the main window, native chrome, navigation, top-level application state, and the frame-synchronized startup loading transition
+- `Shell` contains the main window, native chrome, navigation, top-level application state, the frame-synchronized startup loading transition, and border resizing that applies one atomic move-and-resize per frame on Windows, runs a frame loop with `Position` plus `ClientSize` updates on macOS, and delegates the resize loop to the window manager through `BeginResizeDrag` on Linux
 - `Features/Dashboard` contains the home view and its instance presentation model
 - `SettingsViewModel` adapts `IDesktopSettingsStore` to the settings UI
 - `DesktopSettingsStore` owns Avalonia preferences and persists them through Core configuration storage
