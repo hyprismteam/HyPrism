@@ -29,10 +29,6 @@ internal static class DesktopRenderOptions
             _ => LowLatencyDxgiModes
         };
 
-        Logger.Info(
-            "Render",
-            $"Win32 composition modes: {FormatModes(modes)} (override with {CompositionEnvironmentVariable}=winui|dcomp|dxgi)");
-
         return modes;
     }
 

@@ -59,16 +59,23 @@ public sealed partial class SettingsView : UserControl
         else
             HideDownloadSourceWizardImmediately();
 
-        ApplyJavaArgumentModalBackground();
+        ApplyModalBackground();
     }
 
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs args)
     {
         if (args.PropertyName == nameof(SettingsViewModel.IsAddingJavaArgument))
         {
-            ApplyJavaArgumentModalBackground();
+            ApplyModalBackground();
             if (DataContext is SettingsViewModel { IsAddingJavaArgument: true })
                 Dispatcher.UIThread.Post(() => NewJavaArgumentTextBox.Focus(), DispatcherPriority.Loaded);
+        }
+
+        if (args.PropertyName == nameof(SettingsViewModel.IsAddingEnvironmentVariable))
+        {
+            ApplyModalBackground();
+            if (DataContext is SettingsViewModel { IsAddingEnvironmentVariable: true })
+                Dispatcher.UIThread.Post(() => NewEnvironmentVariableTextBox.Focus(), DispatcherPriority.Loaded);
         }
 
         if (args.PropertyName != nameof(SettingsViewModel.IsAddingMirror))
@@ -246,6 +253,12 @@ public sealed partial class SettingsView : UserControl
             return true;
         }
 
+        if (DataContext is SettingsViewModel { IsAddingEnvironmentVariable: true } variableViewModel)
+        {
+            variableViewModel.CancelAddEnvironmentVariableCommand.Execute(null);
+            return true;
+        }
+
         if (DataContext is SettingsViewModel { IsAddingMirror: true } viewModel)
         {
             viewModel.CancelAddMirrorCommand.Execute(null);
@@ -255,9 +268,15 @@ public sealed partial class SettingsView : UserControl
         return _layoutHost.TryCloseDetail();
     }
 
-    private void ApplyJavaArgumentModalBackground()
+    private void ApplyModalBackground()
     {
-        var isOpen = DataContext is SettingsViewModel { IsAddingJavaArgument: true };
+        var isOpen = DataContext is SettingsViewModel
+        {
+            IsAddingJavaArgument: true
+        } or SettingsViewModel
+        {
+            IsAddingEnvironmentVariable: true
+        };
         SettingsLayout.IsHitTestVisible = !isOpen;
         ((BlurEffect)SettingsLayout.Effect!).Radius = isOpen ? 6 : 0;
     }

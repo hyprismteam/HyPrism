@@ -907,27 +907,79 @@ SPDX-License-Identifier: GPL-3.0-only
               <TextBlock Text="{Binding EnvPresetsLabel}" Classes="settingsCategoryHeading" />
               <Border Classes="uiSettingsGroup settingsGroup">
                 <Border Classes="uiSettingsRow settingsRow last">
-                  <StackPanel Spacing="8">
-                    <Border Classes="settingsCodeLine"><TextBlock Text="SDL_VIDEODRIVER=x11" FontFamily="JetBrains Mono" /></Border>
-                    <Border Classes="settingsCodeLine"><TextBlock Text="VK_LOADER_LAYERS_DISABLE=all" FontFamily="JetBrains Mono" /></Border>
-                  </StackPanel>
+                  <ItemsControl ItemsSource="{Binding EnvironmentPresetExamples}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="x:String">
+                        <Border Classes="settingsCodeLine"><TextBlock Text="{Binding}" FontFamily="JetBrains Mono" /></Border>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
                 </Border>
               </Border>
             </StackPanel>
 
             <StackPanel Spacing="10">
-              <TextBlock Text="{Binding EnvLabel}" Classes="settingsCategoryHeading" />
-              <Border Classes="uiSettingsGroup settingsGroup">
-                <Border Classes="uiSettingsRow settingsRow last">
-                  <StackPanel Spacing="10">
-                    <TextBlock Text="{Binding EnvHint}" Classes="uiSettingsHint settingsHint" />
-                    <TextBox Text="{Binding GameEnvironmentVariables}" AcceptsReturn="True" MinHeight="150" FontFamily="JetBrains Mono" />
-                    <Button Classes="settingsAction" Command="{Binding SaveVariablesCommand}" HorizontalAlignment="Right">
-                      <TextBlock Text="{Binding SaveLabel}" />
-                    </Button>
+              <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16" Margin="4,0,4,2">
+                <TextBlock Text="{Binding EnvLabel}"
+                           Classes="settingsCategoryHeading"
+                           VerticalAlignment="Center" />
+                <Button x:Name="AddEnvironmentVariableButton"
+                        Grid.Column="1"
+                        Classes="sourceAdd"
+                        Theme="{StaticResource SourceAddButtonTheme}"
+                        Command="{Binding ShowAddEnvironmentVariableCommand}">
+                  <StackPanel Orientation="Horizontal" Spacing="6">
+                    <TextBlock Text="+" FontSize="17" FontWeight="SemiBold" />
+                    <TextBlock Text="{Binding AddSourceButtonLabel}" />
                   </StackPanel>
-                </Border>
+                </Button>
+              </Grid>
+              <Border x:Name="EnvironmentVariablesTable" Classes="uiSettingsGroup settingsGroup">
+                <StackPanel>
+                  <Border Classes="sourceTableHeader">
+                    <Grid ColumnDefinitions="*,34" ColumnSpacing="10">
+                      <TextBlock Text="{Binding EnvLabel}" />
+                    </Grid>
+                  </Border>
+                  <ItemsControl ItemsSource="{Binding EnvironmentVariableItems}"
+                                IsVisible="{Binding HasEnvironmentVariables}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="vm:EnvironmentVariableItemViewModel">
+                        <Border Classes="uiSettingsRow settingsRow"
+                                Classes.last="{Binding IsLast}">
+                          <Grid ColumnDefinitions="*,34" ColumnSpacing="10">
+                            <TextBlock Text="{Binding Display}"
+                                       Classes="sourceTableValue link"
+                                       FontFamily="JetBrains Mono"
+                                       TextTrimming="CharacterEllipsis"
+                                       VerticalAlignment="Center" />
+                            <Button Grid.Column="1"
+                                    Classes="mirrorRemove"
+                                    Command="{Binding DataContext.RemoveEnvironmentVariableCommand, ElementName=SettingsRoot}"
+                                    CommandParameter="{Binding}"
+                                    ToolTip.Tip="{Binding DataContext.RemoveLabel, ElementName=SettingsRoot}">
+                              <PathIcon Data="{StaticResource CloseIcon}" Width="15" Height="15" />
+                            </Button>
+                          </Grid>
+                        </Border>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                  <Border Classes="uiSettingsRow settingsRow last"
+                          IsVisible="{Binding HasNoEnvironmentVariables}">
+                    <TextBlock Text="{Binding EnvHint}"
+                               Classes="uiSettingsHint settingsHint" />
+                  </Border>
+                </StackPanel>
               </Border>
+              <TextBlock Text="{Binding EnvHint}"
+                         Classes="uiSettingsHint settingsHint"
+                         Margin="4,0"
+                         IsVisible="{Binding HasEnvironmentVariables}" />
+              <TextBlock Text="{Binding EnvironmentVariablesError}"
+                         Classes="settingsError"
+                         Margin="4,0"
+                         IsVisible="{Binding HasEnvironmentVariablesError}" />
             </StackPanel>
           </StackPanel>
 
@@ -1624,6 +1676,59 @@ SPDX-License-Identifier: GPL-3.0-only
               </Button>
               <Button Classes="wizardAction create"
                       Command="{Binding AddJavaArgumentCommand}">
+                <TextBlock Text="{Binding AddSourceButtonLabel}" />
+              </Button>
+            </StackPanel>
+          </StackPanel>
+        </Border>
+        <Border Classes="javaArgumentModalOutline" />
+      </Grid>
+    </controls:OverlayModal.ModalContent>
+  </controls:OverlayModal>
+  <controls:OverlayModal x:Name="EnvironmentVariableModal"
+                         Classes="javaArgumentModal"
+                         IsOpen="{Binding IsAddingEnvironmentVariable}"
+                         DismissCommand="{Binding CancelAddEnvironmentVariableCommand}"
+                         SheetMaxWidth="560"
+                         SheetMaxHeight="360"
+                         SheetMargin="12,20,12,0"
+                         ShoulderMaxWidth="608"
+                         ShoulderMargin="12,0,12,0"
+                         HiddenOffset="420"
+                         ZIndex="200">
+    <controls:OverlayModal.ModalContent>
+      <Grid Classes="javaArgumentModalSheet">
+        <Border Classes="javaArgumentModalContent">
+          <StackPanel Spacing="16">
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+              <TextBlock Text="{Binding EnvLabel}"
+                         FontSize="22"
+                         FontWeight="Bold"
+                         VerticalAlignment="Center" />
+              <Button Grid.Column="1"
+                      Classes="javaArgumentModalClose mirrorRemove"
+                      Command="{Binding CancelAddEnvironmentVariableCommand}"
+                      ToolTip.Tip="{Binding CancelLabel}">
+                <PathIcon Data="{StaticResource CloseIcon}" Width="15" Height="15" />
+              </Button>
+            </Grid>
+            <TextBlock Text="{Binding EnvHint}"
+                       Classes="uiSettingsHint settingsHint" />
+            <TextBox x:Name="NewEnvironmentVariableTextBox"
+                     Text="{Binding NewEnvironmentVariable, Mode=TwoWay}"
+                     PlaceholderText="{Binding EnvPlaceholder}" />
+            <TextBlock Text="{Binding EnvironmentVariablesError}"
+                       Classes="settingsError"
+                       IsVisible="{Binding HasEnvironmentVariablesError}" />
+            <StackPanel Orientation="Horizontal"
+                        HorizontalAlignment="Right"
+                        Spacing="10">
+              <Button Classes="wizardAction"
+                      Command="{Binding CancelAddEnvironmentVariableCommand}">
+                <TextBlock Text="{Binding CancelLabel}" />
+              </Button>
+              <Button Classes="wizardAction create"
+                      Command="{Binding AddEnvironmentVariableCommand}">
                 <TextBlock Text="{Binding AddSourceButtonLabel}" />
               </Button>
             </StackPanel>

@@ -909,6 +909,7 @@ public partial class GameLauncher : IGameLauncher
             if (!onlineMode && !isOfficialProfile)
                 (localNode ?? throw new InvalidOperationException("A Local Node is required for an autonomous launch"))
                     .ApplyClientTrust(startInfo);
+            ApplyCustomEnvironment(startInfo);
             return startInfo;
         }
 
@@ -1296,8 +1297,8 @@ export __NV_PRIME_RENDER_OFFLOAD=0
     }
 
     /// <summary>
-    /// Builds custom environment variable lines for the Unix launch script.
-    /// Parses KEY=VALUE pairs from config and adds them to ENV_ARGS
+    /// Builds custom environment variable lines for the Unix launch script
+    /// from the settings parsed by EnvironmentVariableParser
     /// </summary>
     private string BuildCustomEnvLines()
     {
@@ -1308,61 +1309,30 @@ export __NV_PRIME_RENDER_OFFLOAD=0
         var sb = new StringBuilder();
         sb.AppendLine("# Custom environment variables from Settings");
 
-        var lines = customEnv.Split(['\n', '\r'], StringSplitOptions.RemoveEmptyEntries);
-        var validCount = 0;
-
-        var envVarRegex = EnvironmentVariableAssignmentRegex();
-
-        foreach (var line in lines)
+        var variables = EnvironmentVariableParser.Parse(customEnv);
+        foreach (var variable in variables)
         {
-            var trimmed = line.Trim();
-            if (string.IsNullOrEmpty(trimmed) || trimmed.StartsWith('#'))
-                continue;
-
-            bool isMultiVarLine = MultipleEnvironmentVariablesRegex().IsMatch(trimmed);
-
-            if (isMultiVarLine)
-            {
-                var matches = envVarRegex.Matches(trimmed);
-                foreach (Match match in matches)
-                {
-                    var key = match.Groups["key"].Value;
-                    var val = match.Groups["value"].Value;
-
-                    if ((val.StartsWith('"') && val.EndsWith('"')) || (val.StartsWith('\'') && val.EndsWith('\'')))
-                    {
-                        if (val.Length >= 2) val = val[1..^1];
-                    }
-
-                    var escaped = EscapeForBashDoubleQuoted(val);
-                    sb.AppendLine($"ENV_ARGS+=({key}=\"{escaped}\")");
-                    validCount++;
-                }
-            }
-            else
-            {
-                var eqIndex = trimmed.IndexOf('=');
-                if (eqIndex <= 0) continue;
-
-                var key = trimmed[..eqIndex].Trim();
-                var value = trimmed[(eqIndex + 1)..].Trim();
-
-                if (!EnvironmentVariableNameRegex().IsMatch(key))
-                    continue;
-
-                var escapedValue = EscapeForBashDoubleQuoted(value);
-                sb.AppendLine($"ENV_ARGS+=({key}=\"{escapedValue}\")");
-                validCount++;
-            }
+            var escaped = JvmArgumentBuilder.EscapeForBash(variable.Value);
+            sb.AppendLine($"ENV_ARGS+=({variable.Key}=\"{escaped}\")");
         }
 
-        if (validCount > 0)
-        {
-            Logger.Info("Game", $"Applied {validCount} custom environment variable(s) from settings");
-        }
+        if (variables.Count > 0)
+            Logger.Info("Game", $"Applied {variables.Count} custom environment variable(s) from settings");
 
         sb.AppendLine();
         return sb.ToString();
+    }
+
+    /// <summary>
+    /// Applies custom environment variables from settings to a Windows
+    /// process start info, mirroring the Unix launch script behavior where
+    /// user variables are applied last and may override built-in values
+    /// </summary>
+    private void ApplyCustomEnvironment(ProcessStartInfo startInfo)
+    {
+        var applied = EnvironmentVariableParser.ApplyToProcess(startInfo, CurrentConfig.GameEnvironmentVariables);
+        if (applied > 0)
+            Logger.Info("Game", $"Applied {applied} custom environment variable(s) from settings");
     }
 
     /// <summary>
@@ -1394,9 +1364,6 @@ DUALAUTH_TRUST_OFFICIAL=""true""
 
     private string BuildUserJavaEnvLines()
         => JvmArgumentBuilder.BuildEnvLine(CurrentConfig.JavaArguments);
-
-    private static string EscapeForBashDoubleQuoted(string value)
-        => JvmArgumentBuilder.EscapeForBash(value);
 
     /// <summary>
     /// Classifies a raw game output line into a console severity tag
@@ -1599,15 +1566,6 @@ DUALAUTH_TRUST_OFFICIAL=""true""
             throw new Exception($"Failed to start game: {ex.Message}");
         }
     }
-
-    [GeneratedRegex(@"(?<key>[A-Za-z_][A-Za-z0-9_]*)=(?<value>""[^""]*""|'[^']*'|[^""'\s]+)")]
-    private static partial Regex EnvironmentVariableAssignmentRegex();
-
-    [GeneratedRegex(@"\s+[A-Za-z_][A-Za-z0-9_]*=")]
-    private static partial Regex MultipleEnvironmentVariablesRegex();
-
-    [GeneratedRegex(@"^[A-Za-z_][A-Za-z0-9_]*$")]
-    private static partial Regex EnvironmentVariableNameRegex();
 
     [GeneratedRegex(@"^\d{4}-\d{2}-\d{2}")]
     private static partial Regex LogTimestampRegex();

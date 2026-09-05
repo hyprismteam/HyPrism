@@ -116,7 +116,13 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasJavaArgumentsError))]
     private string _javaArgumentsError = string.Empty;
-    [ObservableProperty] private string _gameEnvironmentVariables;
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(AddEnvironmentVariableCommand))]
+    private string _newEnvironmentVariable = string.Empty;
+    [ObservableProperty] private bool _isAddingEnvironmentVariable;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasEnvironmentVariablesError))]
+    private string _environmentVariablesError = string.Empty;
     [ObservableProperty] private string _statusMessage = string.Empty;
     [ObservableProperty] private bool _isCompactLayout;
     [ObservableProperty] private bool _isAboutDataLoading;
@@ -255,7 +261,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         _javaInitialRamMb = NormalizeJavaMemory(
             JvmArgumentBuilder.ParseInitialHeapMb(persistedJavaArguments) ?? (int)defaultInitialMemory,
             _javaMaximumRamMb);
-        _gameEnvironmentVariables = settings.GameEnvironmentVariables;
+        ReplaceEnvironmentVariableItems(settings.GameEnvironmentVariables);
         _isGameRunning = gameProcess?.IsGameRunning() == true;
         if (gameProcess is not null)
         {
@@ -276,6 +282,10 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     public ObservableCollection<AboutContributorViewModel> AboutContributors { get; } = [];
     public ObservableCollection<MirrorSourceViewModel> MirrorSources { get; } = [];
     public ObservableCollection<JavaArgumentItemViewModel> JavaArgumentItems { get; } = [];
+    public ObservableCollection<EnvironmentVariableItemViewModel> EnvironmentVariableItems { get; } = [];
+    public IReadOnlyList<string> EnvironmentPresetExamples { get; } = OperatingSystem.IsWindows()
+        ? ["JAVA_TOOL_OPTIONS=-Dfile.encoding=UTF-8", "HTTP_PROXY=http://127.0.0.1:8080"]
+        : ["SDL_VIDEODRIVER=x11", "VK_LOADER_LAYERS_DISABLE=all"];
 
     public int DetectedSystemMemoryMb { get; }
     public double MinimumJavaRamMb => MinimumJavaMemoryMb;
@@ -287,6 +297,9 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     public bool HasJavaArgumentsError => !string.IsNullOrWhiteSpace(JavaArgumentsError);
     public bool HasJavaArguments => JavaArgumentItems.Count > 0;
     public bool HasNoJavaArguments => JavaArgumentItems.Count == 0;
+    public bool HasEnvironmentVariablesError => !string.IsNullOrWhiteSpace(EnvironmentVariablesError);
+    public bool HasEnvironmentVariables => EnvironmentVariableItems.Count > 0;
+    public bool HasNoEnvironmentVariables => EnvironmentVariableItems.Count == 0;
     public string JavaMaximumRamValue => FormatMemory(JavaMaximumRamMb);
     public string JavaInitialRamValue => FormatMemory(JavaInitialRamMb);
     public bool HasMirrors => MirrorSources.Count > 0;
@@ -389,6 +402,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     public string EnvPresetsLabel { get; private set; } = string.Empty;
     public string EnvLabel { get; private set; } = string.Empty;
     public string EnvHint { get; private set; } = string.Empty;
+    public string EnvPlaceholder { get; private set; } = string.Empty;
     public string InstanceFolderLabel { get; private set; } = string.Empty;
     public string LauncherFilesLabel { get; private set; } = string.Empty;
     public string StorageLoadingLabel { get; private set; } = string.Empty;
@@ -526,6 +540,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         EnvPresetsLabel = _localizer["settings.variablesSettings.commonPresets"];
         EnvLabel = _localizer["settings.variablesSettings.customEnvVars"];
         EnvHint = _localizer["settings.variablesSettings.customEnvVarsHint"];
+        EnvPlaceholder = _localizer["settings.variablesSettings.customEnvVarsPlaceholder"];
         InstanceFolderLabel = _localizer["settings.dataSettings.instanceFolder"];
         LauncherFilesLabel = _localizer["settings.dataSettings.launcherFiles"];
         StorageLoadingLabel = _localizer["common.loading"];
@@ -1072,11 +1087,78 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     }
 
     [RelayCommand]
-    private void SaveVariables()
+    private void ShowAddEnvironmentVariable()
     {
-        _settings.GameEnvironmentVariables = GameEnvironmentVariables;
+        NewEnvironmentVariable = string.Empty;
+        EnvironmentVariablesError = string.Empty;
+        IsAddingEnvironmentVariable = true;
+    }
+
+    [RelayCommand]
+    private void CancelAddEnvironmentVariable()
+    {
+        NewEnvironmentVariable = string.Empty;
+        IsAddingEnvironmentVariable = false;
+    }
+
+    private bool CanAddEnvironmentVariable()
+        => !string.IsNullOrWhiteSpace(NewEnvironmentVariable);
+
+    [RelayCommand(CanExecute = nameof(CanAddEnvironmentVariable))]
+    private void AddEnvironmentVariable()
+    {
+        var variables = EnvironmentVariableParser.Parse(NewEnvironmentVariable);
+        if (variables.Count == 0)
+        {
+            EnvironmentVariablesError = _localizer["settings.variablesSettings.envVarsInvalidFormat"];
+            return;
+        }
+
+        foreach (var variable in variables)
+            EnvironmentVariableItems.Add(new EnvironmentVariableItemViewModel(variable.Key, variable.Value));
+
+        UpdateEnvironmentVariableRows();
+        PersistEnvironmentVariableItems();
+        EnvironmentVariablesError = string.Empty;
+        NewEnvironmentVariable = string.Empty;
+        IsAddingEnvironmentVariable = false;
         ShowSaved();
     }
+
+    [RelayCommand]
+    private void RemoveEnvironmentVariable(EnvironmentVariableItemViewModel? variable)
+    {
+        if (variable is null || !EnvironmentVariableItems.Remove(variable))
+            return;
+
+        UpdateEnvironmentVariableRows();
+        PersistEnvironmentVariableItems();
+        EnvironmentVariablesError = string.Empty;
+        ShowSaved();
+    }
+
+    private void ReplaceEnvironmentVariableItems(string? variables)
+    {
+        EnvironmentVariableItems.Clear();
+        foreach (var variable in EnvironmentVariableParser.Parse(variables))
+            EnvironmentVariableItems.Add(new EnvironmentVariableItemViewModel(variable.Key, variable.Value));
+
+        UpdateEnvironmentVariableRows();
+    }
+
+    private void UpdateEnvironmentVariableRows()
+    {
+        for (var index = 0; index < EnvironmentVariableItems.Count; index++)
+            EnvironmentVariableItems[index].IsLast = index == EnvironmentVariableItems.Count - 1;
+
+        OnPropertyChanged(nameof(HasEnvironmentVariables));
+        OnPropertyChanged(nameof(HasNoEnvironmentVariables));
+    }
+
+    private void PersistEnvironmentVariableItems()
+        => _settings.GameEnvironmentVariables = string.Join(
+            '\n',
+            EnvironmentVariableItems.Select(variable => $"{variable.Key}={variable.Value}"));
 
     [RelayCommand(AllowConcurrentExecutions = true)]
     private async Task BrowseInstanceFolder()
@@ -1982,6 +2064,14 @@ public enum DownloadSourceAdditionStep
 public sealed partial class JavaArgumentItemViewModel(string value) : ObservableObject
 {
     public string Value { get; } = value;
+    [ObservableProperty] private bool _isLast;
+}
+
+public sealed partial class EnvironmentVariableItemViewModel(string key, string value) : ObservableObject
+{
+    public string Key { get; } = key;
+    public string Value { get; } = value;
+    public string Display => $"{Key}={Value}";
     [ObservableProperty] private bool _isLast;
 }
 
