@@ -1,0 +1,86 @@
+---
+title: Core contracts
+description: Service responsibilities, host integration, events, and cancellation
+---
+
+# Core contracts
+
+Desktop calls Core interfaces directly. `Bootstrapper.Initialize` registers default implementations and accepts a callback for host services before building the provider
+
+## Contract map
+
+| Area | Contracts | Responsibility |
+| --- | --- | --- |
+| Configuration | `IConfigStore` | Preferences and selected identifiers |
+| Progress | `IProgressReporter` | Instance-scoped progress and errors |
+| Versions | `IGameVersionCatalog`, `IVersionSource` | Version lists, metadata, source selection |
+| Mirrors | `IMirrorCatalog`, `IMirrorDiscovery` | Persistence, discovery, source construction |
+| Instances | `IInstanceRepository`, `IInstanceMigrator` | Paths, registry, order, selection, imports, migrations |
+| Downloads | `IFileDownloader`, `IPatchManager`, `IButlerClient` | Transfer and patch application |
+| Runtime | `IRuntimeProvisioner` | Java and Visual C++ prerequisites |
+| Launch | `IGameLaunchCoordinator`, `IGameInstallationWorkflow`, `IGameLauncher` | Preparation through process start |
+| Processes | `IGameProcessTracker` | Process identity, events, restoration and exit |
+| Console | `IGameConsoleService` | Per-instance output buffers and line events |
+| Mods | `IModManager` | Catalog, files, imports, state, updates and changelogs |
+| Official authentication | `IHytaleAuthenticator`, `IOAuthCallbackPageRenderer` | OAuth, token refresh and callback page |
+| Profiles | `IProfileManager`, `IProfileRepository`, `IUserIdentityProvider` | Active identity, lifecycle and ordering |
+| Character data | `IAvatarCache`, `ISkinRepository` | Avatars and skins |
+| Local Node | `ILocalNodeServiceFactory`, `ILocalNodeService` | Per-launch node, trust and process attachment |
+| Host capabilities | `IGpuProvider`, `IDiscordPresence` | GPU discovery and activity reporting |
+
+Contracts are colocated with implementations. `Application/Ports` contains only host-supplied capabilities, not a central collection of all interfaces
+
+## Read an instance snapshot
+
+A consumer receives the narrowest interface it needs. For example, this helper lists persisted instances without constructing the entire launch graph
+
+```csharp
+using HyPrism.Core.Game.Instances;
+
+static void PrintInstances(IInstanceRepository instances)
+{
+    foreach (var instance in instances.GetCachedInstances())
+        Console.WriteLine($"{instance.Id}: {instance.Name}");
+}
+```
+
+## Address a launch explicitly
+
+The host supplies browser presentation. This helper is intended for an already installed instance and uses the current active profile
+
+```csharp
+using HyPrism.Core.Accounts;
+using HyPrism.Core.Game;
+
+static Task LaunchInstalledAsync(
+    IGameLaunchCoordinator coordinator,
+    string instanceId,
+    AuthUriPresenter openAuthorizationUri)
+    => coordinator.LaunchAsync(instanceId, openAuthorizationUri);
+```
+
+For a new installation, call `DownloadAndLaunchInstanceAsync` on `IGameInstallationWorkflow` and inspect its result. Cancel using `CancelDownload(instanceId)`. See [Game lifecycle](/docs/architecture/game-lifecycle) for the distinction
+
+## Events and cancellation
+
+Repositories raise `InstancesChanged` and `ProfilesChanged` after mutations. Process start and exit use typed events on `IGameProcessTracker`. `IGameLaunchCoordinator.LaunchFailed` reports failures or cancellation returned by its launch workflow; preflight rejections can report through progress or return early
+
+Progress scopes associate nested asynchronous operations with the correct instance. Stage changes and completion bypass same-stage throttling. Hosts must dispatch UI updates and unsubscribe when disposed
+
+Where a contract accepts `CancellationToken`, forward it through network and file I/O. Installation owns cancellation per instance instead of accepting a token on its public entry point
+
+## Official authentication
+
+`IHytaleAuthenticator.LoginAsync` creates an OAuth PKCE challenge and passes an authorization URI to the host. The callback renderer returns success or failure HTML to the browser. Session storage is profile-scoped through `TokenStore`
+
+Switching profiles reloads the current session. Version discovery may request a valid session from any official profile, while game launch uses the selected profile. Do not confuse download authorization with active player identity
+
+Never log or copy access, refresh, identity, or game-session tokens into UI diagnostics. Official account concurrency is coordinated by `OfficialLaunchGate` and the persistent process registry
+
+## Desktop-only services
+
+`IDesktopSettingsStore` adapts preferences for the UI. `IHytaleNewsClient` and `IGitHubClient` own presentation data. Native file pickers and URI launchers stay in Desktop
+
+The launcher release version comes from `HyPrism.Desktop.csproj` and configures `LauncherUserAgent` once at startup. Consumers use that shared value instead of maintaining their own version strings
+
+Source: [IGameLaunchCoordinator](../../../../Sources/HyPrism.Core/Game/IGameLaunchCoordinator.cs), [IProfileRepository](../../../../Sources/HyPrism.Core/Accounts/Profiles/IProfileRepository.cs)

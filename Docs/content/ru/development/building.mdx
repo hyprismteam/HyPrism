@@ -1,0 +1,66 @@
+---
+title: Сборка
+description: Восстановление зависимостей, сборка и изолированный запуск лаунчера
+---
+
+# Сборка
+
+Для лаунчера нужны .NET 10 SDK и Git. Node.js и pnpm нужны только для [сайта документации](/docs/development/documentation)
+
+## Клонирование и сборка
+
+Выполните команды в терминале
+
+```bash
+git clone https://github.com/hyprismteam/HyPrism.git
+cd HyPrism
+dotnet restore HyPrism.sln
+dotnet build HyPrism.sln
+```
+
+Решение собирает Core, Desktop, Local Node и их тестовые проекты
+
+## Запуск Desktop
+
+```bash
+dotnet run --project Sources/HyPrism.Desktop/HyPrism.Desktop.csproj
+```
+
+Без переопределения Desktop использует тот же каталог данных, что и установленный лаунчер. Для отдельного состояния разработки в Linux или macOS
+
+```bash
+hyprism_data="$(mktemp -d)"
+HYPRISM_DATA="$hyprism_data" dotnet run \
+  --project Sources/HyPrism.Desktop/HyPrism.Desktop.csproj
+```
+
+В Windows PowerShell
+
+```powershell
+$hyprismData = Join-Path ([IO.Path]::GetTempPath()) ("hyprism-dev-" + [guid]::NewGuid())
+New-Item -ItemType Directory -Path $hyprismData | Out-Null
+$env:HYPRISM_DATA = $hyprismData
+dotnet run --project Sources/HyPrism.Desktop/HyPrism.Desktop.csproj
+```
+
+Каталог должен существовать до запуска. После выхода он сохраняется для проверки логов и состояния
+
+## Конфигурация Release
+
+```bash
+dotnet build HyPrism.sln --configuration Release
+```
+
+Обычная сборка создает файлы для разработки. Автономные приложения и установщики описаны в разделе [Упаковка и релизы](/docs/development/packaging)
+
+## Проверка изменения
+
+Запустите подходящий [набор тестов](/docs/development/testing), затем проверьте документацию, если меняется поведение или рабочий процесс разработчика
+
+```bash
+cd Docs
+pnpm check
+PAGES_BASE_PATH=/HyPrism pnpm build
+```
+
+Статический сайт записывается в `Docs/out`

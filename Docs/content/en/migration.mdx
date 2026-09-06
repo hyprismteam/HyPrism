@@ -1,0 +1,26 @@
+---
+title: Migration status
+description: Current native host and remaining feature gaps
+---
+
+# Migration status
+
+Avalonia is the only launcher UI. The previous Electron.NET host, React frontend, and IPC generator have been removed
+
+## Current implementation
+
+Home, instance management, profiles, mod discovery and installation, news, and settings use native Avalonia views. Desktop calls Core interfaces directly; Local Node runs as a separate companion for autonomous sessions
+
+See the [architecture overview](/docs/architecture/overview) for current project ownership and [packaging](/docs/development/packaging) for release entry points
+
+## Remaining gaps
+
+The first-run onboarding UI and per-instance log viewer are not implemented. Players create a profile and instance manually through [First run](/docs/getting-started/first-run), and inspect diagnostic files through the [data directory](/docs/architecture/data-and-cache)
+
+A visible settings field may preserve an older preference before a corresponding native feature is implemented. Check its consumers when documenting behavior
+
+## Existing data
+
+Runtime compatibility remains for older profile, instance, configuration, and cache layouts. Those migrations belong to the owning Core repository or storage service and need fixture-based tests
+
+Do not restore the removed web bridge for new work. Historical implementation is available in version control when needed to understand old data

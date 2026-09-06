@@ -1,0 +1,69 @@
+---
+title: Avalonia performance
+description: Layout rules, rendering diagnostics, and regression checks
+---
+
+# Avalonia performance
+
+Measure UI performance with a reproducible window size, navigation path, data set, and renderer. Headless tests verify structure and state; they do not measure native compositor frame rate
+
+## Layout and collections
+
+Constrain long lists in a `Grid` and use a virtualizing panel. A `StackPanel` on the scrolling axis gives an infinite size constraint and can defeat virtualization
+
+```xml
+<Grid RowDefinitions="Auto,*">
+  <TextBlock Text="Items" />
+  <ListBox Grid.Row="1" ItemsSource="{Binding Items}">
+    <ListBox.ItemsPanel>
+      <ItemsPanelTemplate>
+        <VirtualizingStackPanel />
+      </ItemsPanelTemplate>
+    </ListBox.ItemsPanel>
+  </ListBox>
+</Grid>
+```
+
+This layout fragment assumes a view model exposing `Items`. Use `ItemsControl` for small bounded groups, batch collection replacements, and avoid per-item dispatcher posts
+
+Hidden content should use `IsVisible="False"` when it must leave layout and hit testing. Transparent content can still participate in both
+
+## Startup and background work
+
+`DeferredContentControl` delays view creation and retains it after realization. Production startup can warm deferred sections while the loading screen covers the shell. The initial-tree test measures the uninitialized window, not the final warmed application
+
+Prepare network data and expensive transformations off the dispatcher. Coalesce high-frequency progress so only the latest value is pending, and release decoded article images when the reader closes
+
+## Animation and rendering
+
+Reuse shared controls and `MotionDurations`. Custom continuous animation uses `TopLevel.RequestAnimationFrame`, stops when hidden or detached, and follows elapsed time rather than assuming a fixed refresh rate
+
+Desktop caps the Skia GPU resource cache at 256 MiB and uses sustained-low-latency garbage collection. Windows selects a high-performance rendering adapter with software fallback. These launcher-rendering choices are separate from the user's game GPU selection
+
+To compare a Windows composition backend in PowerShell
+
+```powershell
+$env:HYPRISM_WIN32_COMPOSITION = 'winui'
+dotnet run --project Sources/HyPrism.Desktop/HyPrism.Desktop.csproj
+```
+
+Supported values are `dxgi` (default), `winui`, and `dcomp`. Remove the variable after diagnosis
+
+```powershell
+Remove-Item Env:HYPRISM_WIN32_COMPOSITION
+```
+
+## Regression workflow
+
+1. Reproduce startup, navigation, scrolling, or download progress separately
+2. Record UI-thread time, allocations, visual count, and native frame behavior
+3. Change one cause and repeat with the same data
+4. Add a focused regression check when the change fixes measurable behavior
+
+Run the existing Desktop suite
+
+```bash
+dotnet test Tests/HyPrism.Desktop.Tests/HyPrism.Desktop.Tests.csproj
+```
+
+`AvaloniaPerformanceTests` checks initial visual count, deferred realization, virtualization, and batched collection notifications. Render tests wait for observable final state instead of relying on an assumed animation duration

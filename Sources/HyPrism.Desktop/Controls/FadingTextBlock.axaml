@@ -1,0 +1,67 @@
+<!--
+Copyright (C) 2026 HyPrism Launcher
+SPDX-License-Identifier: GPL-3.0-only
+-->
+
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:easing="using:Avalonia.Animation.Easings"
+             x:Class="HyPrism.Desktop.Controls.FadingTextBlock"
+             x:Name="FadingTextRoot"
+             IsHitTestVisible="False">
+  <Grid>
+    <TextBlock x:Name="CurrentText"
+               Foreground="{Binding Foreground, ElementName=FadingTextRoot}"
+               TextWrapping="NoWrap"
+               TextTrimming="CharacterEllipsis"
+               HorizontalAlignment="Center"
+               VerticalAlignment="Center"
+               TextAlignment="Center">
+      <TextBlock.RenderTransform>
+        <TranslateTransform>
+          <TranslateTransform.Transitions>
+            <Transitions>
+              <DoubleTransition Property="Y" Duration="0:0:0.24">
+                <DoubleTransition.Easing><easing:CubicEaseOut /></DoubleTransition.Easing>
+              </DoubleTransition>
+            </Transitions>
+          </TranslateTransform.Transitions>
+        </TranslateTransform>
+      </TextBlock.RenderTransform>
+      <TextBlock.Transitions>
+        <Transitions>
+          <DoubleTransition Property="Opacity" Duration="0:0:0.22">
+            <DoubleTransition.Easing><easing:CubicEaseOut /></DoubleTransition.Easing>
+          </DoubleTransition>
+        </Transitions>
+      </TextBlock.Transitions>
+    </TextBlock>
+    <TextBlock x:Name="IncomingText"
+               Foreground="{Binding Foreground, ElementName=FadingTextRoot}"
+               Opacity="0"
+               TextWrapping="NoWrap"
+               TextTrimming="CharacterEllipsis"
+               HorizontalAlignment="Center"
+               VerticalAlignment="Center"
+               TextAlignment="Center">
+      <TextBlock.RenderTransform>
+        <TranslateTransform Y="10">
+          <TranslateTransform.Transitions>
+            <Transitions>
+              <DoubleTransition Property="Y" Duration="0:0:0.24">
+                <DoubleTransition.Easing><easing:CubicEaseOut /></DoubleTransition.Easing>
+              </DoubleTransition>
+            </Transitions>
+          </TranslateTransform.Transitions>
+        </TranslateTransform>
+      </TextBlock.RenderTransform>
+      <TextBlock.Transitions>
+        <Transitions>
+          <DoubleTransition Property="Opacity" Duration="0:0:0.22">
+            <DoubleTransition.Easing><easing:CubicEaseOut /></DoubleTransition.Easing>
+          </DoubleTransition>
+        </Transitions>
+      </TextBlock.Transitions>
+    </TextBlock>
+  </Grid>
+</UserControl>

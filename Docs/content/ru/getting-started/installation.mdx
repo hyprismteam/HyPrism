@@ -1,0 +1,60 @@
+---
+title: Установка
+description: Выбор и установка подходящего пакета HyPrism
+---
+
+# Установка
+
+Используйте готовый релизный пакет, если не собираетесь разрабатывать HyPrism
+
+## Загрузка релиза
+
+Откройте [релизы HyPrism на GitHub](https://github.com/hyprismteam/HyPrism/releases) и выберите пакет для своей системы
+
+| Платформа | Архитектура | Пакеты |
+| --- | --- | --- |
+| Windows | x64 | установщик EXE, MSI или переносимый ZIP |
+| Linux | x64 | DEB, RPM, AppImage, Flatpak bundle или tar.xz |
+| macOS | Apple Silicon | DMG |
+
+Пакеты содержат настольный лаунчер и вспомогательный процесс Local Node для автономных локальных профилей
+
+## Особенности платформ
+
+### Windows
+
+Для обычной установки выберите EXE или MSI. Переносимый ZIP нужно распаковать в доступный для записи каталог перед запуском `HyPrism.Desktop.exe`
+
+### Linux
+
+Используйте DEB или RPM, если формат поддерживается вашим дистрибутивом. Перед запуском AppImage сделайте файл исполняемым. Замените `4.0.0` в примерах на скачанную версию
+
+```bash
+chmod +x HyPrism-linux-x64-4.0.0.AppImage
+./HyPrism-linux-x64-4.0.0.AppImage
+```
+
+Flatpak bundle можно установить через графический менеджер приложений или командную строку
+
+```bash
+flatpak install ./HyPrism-linux-x64-4.0.0.flatpak
+```
+
+### macOS
+
+Откройте DMG и переместите HyPrism в «Программы». Текущая сборка предназначена для Mac с Apple Silicon
+
+При первом автономном запуске система может запросить разрешение на доверие локальному центру сертификации HyPrism. Отмена запроса прервет запуск игры, но не отключит проверку TLS. Причина описана в разделе [Local Node](/docs/reference/local-node#certificate-trust)
+
+## Запуск из исходного кода
+
+Разработчикам нужны .NET 10 SDK и Git
+
+```bash
+git clone https://github.com/hyprismteam/HyPrism.git
+cd HyPrism
+dotnet restore HyPrism.sln
+dotnet run --project Sources/HyPrism.Desktop/HyPrism.Desktop.csproj
+```
+
+После открытия лаунчера перейдите к разделу [Первый запуск](/docs/getting-started/first-run)

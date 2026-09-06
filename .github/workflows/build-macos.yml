@@ -1,0 +1,41 @@
+# Copyright (C) 2026 HyPrism Launcher
+# SPDX-License-Identifier: GPL-3.0-only
+
+name: Build macOS
+
+on:
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_VERSION: '10.0.x'
+  DOTNET_QUALITY: 'preview'
+
+jobs:
+  build:
+    name: macOS ARM64
+    runs-on: macos-15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+          dotnet-quality: ${{ env.DOTNET_QUALITY }}
+
+      - name: Publish macOS ARM64 DMG
+        run: |
+          ./Packaging/publish-macos.sh dmg \
+            --output dist
+
+      - name: Upload macOS artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-arm64
+          path: dist/*.dmg
+          if-no-files-found: error

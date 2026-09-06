@@ -1,0 +1,2985 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+Copyright (C) 2026 HyPrism Launcher
+SPDX-License-Identifier: GPL-3.0-only
+-->
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+  <data name="_langName" xml:space="preserve">
+    <value>Español</value>
+  </data>
+  <data name="accessibility.next" xml:space="preserve">
+    <value>Siguiente</value>
+  </data>
+  <data name="accessibility.previous" xml:space="preserve">
+    <value>Anterior</value>
+  </data>
+  <data name="accessibility.segmentedControl" xml:space="preserve">
+    <value>Control segmentado</value>
+  </data>
+  <data name="app.downloadedUpdate" xml:space="preserve">
+    <value>Se descargó la última versión de HyPrism a tu carpeta de Descargas.</value>
+  </data>
+  <data name="app.downloadedUpdateHint" xml:space="preserve">
+    <value>Intentamos abrir el archivo para que puedas instalarlo. Si no se abrió, ve a Descargas y ejecuta el archivo manualmente.</value>
+  </data>
+  <data name="app.enterInstancePath" xml:space="preserve">
+    <value>Ingresa la ruta completa donde quieres almacenar las instancias de HyPrism:</value>
+  </data>
+  <data name="app.failedChangeDir" xml:space="preserve">
+    <value>Error al cambiar el directorio de instancias</value>
+  </data>
+  <data name="app.failedUpdate" xml:space="preserve">
+    <value>Error al actualizar el launcher</value>
+  </data>
+  <data name="app.gameCrashed" xml:space="preserve">
+    <value>El juego se cerró con código de error {{code}}</value>
+  </data>
+  <data name="app.instanceDirUpdated" xml:space="preserve">
+    <value>Directorio de Instancias Actualizado</value>
+  </data>
+  <data name="app.instanceDirUpdatedDetail" xml:space="preserve">
+    <value>Las instancias del juego ahora se almacenarán en:
+{{dir}}
+
+Nota: Lo siguiente permanece en AppData:
+• Java Runtime (JRE)
+• Herramienta Butler
+• Archivos de caché
+• Registros
+• Configuración del lanzador
+• WebView2 (carpeta EBWebView)
+
+Es posible que necesites reinstalar el juego si cambias de unidad.</value>
+  </data>
+  <data name="app.invalidNickname" xml:space="preserve">
+    <value>Nombre de usuario inválido</value>
+  </data>
+  <data name="app.nicknameLengthError" xml:space="preserve">
+    <value>El nombre debe tener entre 1 y 16 caracteres</value>
+  </data>
+  <data name="app.pathError" xml:space="preserve">
+    <value>No se pudo usar la ruta. Verifica que exista y tengas permisos de escritura.</value>
+  </data>
+  <data name="app.title" xml:space="preserve">
+    <value>HyPrism</value>
+  </data>
+  <data name="app.version" xml:space="preserve">
+    <value>HyPrism {0}</value>
+  </data>
+  <data name="common.all" xml:space="preserve">
+    <value>Todos</value>
+  </data>
+  <data name="common.back" xml:space="preserve">
+    <value>Atrás</value>
+  </data>
+  <data name="common.branch" xml:space="preserve">
+    <value>Rama</value>
+  </data>
+  <data name="common.browse" xml:space="preserve">
+    <value>Examinar</value>
+  </data>
+  <data name="common.cancel" xml:space="preserve">
+    <value>Cancelar</value>
+  </data>
+    <data name="common.change" xml:space="preserve">
+    <value>Cambiar</value>
+  </data>
+<data name="common.clear" xml:space="preserve">
+    <value>Limpiar</value>
+  </data>
+  <data name="common.close" xml:space="preserve">
+    <value>Cerrar</value>
+  </data>
+  <data name="common.continue" xml:space="preserve">
+    <value>Continuar</value>
+  </data>
+  <data name="common.copied" xml:space="preserve">
+    <value>¡Copiado!</value>
+  </data>
+  <data name="common.copy" xml:space="preserve">
+    <value>Copiar</value>
+  </data>
+  <data name="common.delete" xml:space="preserve">
+    <value>Eliminar</value>
+  </data>
+  <data name="common.dismiss" xml:space="preserve">
+    <value>Descartar</value>
+  </data>
+  <data name="common.download" xml:space="preserve">
+    <value>Descargar</value>
+  </data>
+  <data name="common.edit" xml:space="preserve">
+    <value>Editar</value>
+  </data>
+  <data name="common.export" xml:space="preserve">
+    <value>Exportar</value>
+  </data>
+  <data name="common.exporting" xml:space="preserve">
+    <value>Exportando...</value>
+  </data>
+  <data name="common.import" xml:space="preserve">
+    <value>Importar</value>
+  </data>
+  <data name="common.important" xml:space="preserve">
+    <value>Importante</value>
+  </data>
+  <data name="common.importing" xml:space="preserve">
+    <value>Importando...</value>
+  </data>
+  <data name="common.latest" xml:space="preserve">
+    <value>última</value>
+  </data>
+  <data name="common.loading" xml:space="preserve">
+    <value>Cargando...</value>
+  </data>
+  <data name="common.never" xml:space="preserve">
+    <value>Nunca</value>
+  </data>
+  <data name="common.note" xml:space="preserve">
+    <value>Nota</value>
+  </data>
+  <data name="common.ok" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="common.open" xml:space="preserve">
+    <value>Abrir</value>
+  </data>
+  <data name="common.openFolder" xml:space="preserve">
+    <value>Abrir carpeta</value>
+  </data>
+  <data name="common.preRelease" xml:space="preserve">
+    <value>Prelanzamiento</value>
+  </data>
+  <data name="common.refresh" xml:space="preserve">
+    <value>Actualizar</value>
+  </data>
+  <data name="common.release" xml:space="preserve">
+    <value>Lanzamiento</value>
+  </data>
+  <data name="common.reload" xml:space="preserve">
+    <value>Recargar</value>
+  </data>
+  <data name="common.reset" xml:space="preserve">
+    <value>Restablecer</value>
+  </data>
+  <data name="common.save" xml:space="preserve">
+    <value>Guardar</value>
+  </data>
+  <data name="common.select" xml:space="preserve">
+    <value>Seleccionar</value>
+  </data>
+  <data name="common.skip" xml:space="preserve">
+    <value>Omitir</value>
+  </data>
+  <data name="common.unknown" xml:space="preserve">
+    <value>Desconocido</value>
+  </data>
+  <data name="common.update" xml:space="preserve">
+    <value>Actualizar</value>
+  </data>
+  <data name="common.version" xml:space="preserve">
+    <value>Versión</value>
+  </data>
+  <data name="deleteGame.cacheFiles" xml:space="preserve">
+    <value>Archivos de caché</value>
+  </data>
+  <data name="deleteGame.downloadedPatches" xml:space="preserve">
+    <value>Parches descargados</value>
+  </data>
+  <data name="deleteGame.gameInstallation" xml:space="preserve">
+    <value>Instalación del juego</value>
+  </data>
+  <data name="deleteGame.preserveNote" xml:space="preserve">
+    <value>Tus datos de usuario y preajustes de skin se conservarán.</value>
+  </data>
+  <data name="deleteGame.title" xml:space="preserve">
+    <value>¿Eliminar Juego?</value>
+  </data>
+  <data name="deleteGame.warning" xml:space="preserve">
+    <value>Esto eliminará permanentemente todos los archivos del juego, incluyendo:</value>
+  </data>
+  <data name="deleteProfile.avatarData" xml:space="preserve">
+    <value>Datos de avatar y skin</value>
+  </data>
+  <data name="deleteProfile.cancel" xml:space="preserve">
+    <value>Cancelar</value>
+  </data>
+  <data name="deleteProfile.cannotUndo" xml:space="preserve">
+    <value>Esta acción no se puede deshacer.</value>
+  </data>
+  <data name="deleteProfile.delete" xml:space="preserve">
+    <value>Eliminar Perfil</value>
+  </data>
+  <data name="deleteProfile.gameData" xml:space="preserve">
+    <value>Progreso del juego</value>
+  </data>
+  <data name="deleteProfile.installedMods" xml:space="preserve">
+    <value>Mods instalados</value>
+  </data>
+  <data name="deleteProfile.message" xml:space="preserve">
+    <value>¿Seguro que quieres eliminar</value>
+  </data>
+  <data name="deleteProfile.profile" xml:space="preserve">
+    <value>Perfil:</value>
+  </data>
+  <data name="deleteProfile.profileSettings" xml:space="preserve">
+    <value>Ajustes y preferencias del perfil</value>
+  </data>
+  <data name="deleteProfile.savedGameData" xml:space="preserve">
+    <value>Datos de partidas guardadas</value>
+  </data>
+  <data name="deleteProfile.settings" xml:space="preserve">
+    <value>Ajustes del perfil</value>
+  </data>
+  <data name="deleteProfile.skinAndAvatar" xml:space="preserve">
+    <value>Skin y avatar</value>
+  </data>
+  <data name="deleteProfile.title" xml:space="preserve">
+    <value>¿Eliminar Perfil?</value>
+  </data>
+  <data name="deleteProfile.warning" xml:space="preserve">
+    <value>Esto eliminará permanentemente todos los datos del perfil, incluyendo:</value>
+  </data>
+  <data name="discord.announcement" xml:space="preserve">
+    <value>Anuncio</value>
+  </data>
+  <data name="discord.bugReport" xml:space="preserve">
+    <value>Informar de un error</value>
+  </data>
+  <data name="discord.showAnnouncements" xml:space="preserve">
+    <value>Mostrar anuncios</value>
+  </data>
+  <data name="dock.dashboard" xml:space="preserve">
+    <value>Inicio</value>
+  </data>
+  <data name="dock.instances" xml:space="preserve">
+    <value>Instancias</value>
+  </data>
+  <data name="dock.logs" xml:space="preserve">
+    <value>Registros</value>
+  </data>
+  <data name="dock.mods" xml:space="preserve">
+    <value>Mods</value>
+  </data>
+  <data name="dock.news" xml:space="preserve">
+    <value>Noticias</value>
+  </data>
+  <data name="dock.profiles" xml:space="preserve">
+    <value>Perfiles</value>
+  </data>
+  <data name="dock.settings" xml:space="preserve">
+    <value>Ajustes</value>
+  </data>
+  <data name="error.copyError" xml:space="preserve">
+    <value>Copiar Error</value>
+  </data>
+  <data name="error.dismiss" xml:space="preserve">
+    <value>Cerrar</value>
+  </data>
+  <data name="error.noLogEntries" xml:space="preserve">
+    <value>Sin entradas de registro</value>
+  </data>
+  <data name="error.occurredAt" xml:space="preserve">
+    <value>Ocurrió en:</value>
+  </data>
+  <data name="error.ok" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="error.reportIssue" xml:space="preserve">
+    <value>Reportar Problema</value>
+  </data>
+  <data name="error.somethingWrong" xml:space="preserve">
+    <value>Algo salió mal</value>
+  </data>
+  <data name="error.technicalDetails" xml:space="preserve">
+    <value>Detalles Técnicos</value>
+  </data>
+  <data name="error.title" xml:space="preserve">
+    <value>Ha Ocurrido un Error</value>
+  </data>
+  <data name="instances.addInstance" xml:space="preserve">
+    <value>Añadir Instancia</value>
+  </data>
+  <data name="instances.create" xml:space="preserve">
+    <value>Crear</value>
+  </data>
+  <data name="instances.createInstance" xml:space="preserve">
+    <value>Crear Instancia</value>
+  </data>
+  <data name="instances.createInstanceHint" xml:space="preserve">
+    <value>Descarga y configura una nueva instancia del juego</value>
+  </data>
+  <data name="instances.creating" xml:space="preserve">
+    <value>Creando...</value>
+  </data>
+  <data name="instances.deleteConfirm" xml:space="preserve">
+    <value>¿Seguro que quieres eliminar</value>
+  </data>
+  <data name="instances.deleteFailed" xml:space="preserve">
+    <value>Error al eliminar instancia</value>
+  </data>
+  <data name="instances.deleteTitle" xml:space="preserve">
+    <value>Eliminar Instancia</value>
+  </data>
+  <data name="instances.deleted" xml:space="preserve">
+    <value>Instancia eliminada</value>
+  </data>
+  <data name="instances.editInstance" xml:space="preserve">
+    <value>Editar Instancia</value>
+  </data>
+  <data name="instances.editInstanceHint" xml:space="preserve">
+    <value>Cambiar el nombre o icono de esta instancia</value>
+  </data>
+  <data name="instances.exportFailed" xml:space="preserve">
+    <value>Error al exportar instancia</value>
+  </data>
+  <data name="instances.exportedSuccess" xml:space="preserve">
+    <value>Instancia exportada correctamente</value>
+  </data>
+  <data name="instances.import" xml:space="preserve">
+    <value>Importar</value>
+  </data>
+  <data name="instances.importFailed" xml:space="preserve">
+    <value>Error al importar instancia</value>
+  </data>
+  <data name="instances.importedSuccess" xml:space="preserve">
+    <value>Instancia importada correctamente</value>
+  </data>
+  <data name="instances.installContent" xml:space="preserve">
+    <value>Instalar contenido</value>
+  </data>
+  <data name="instances.instanceName" xml:space="preserve">
+    <value>Nombre de Instancia</value>
+  </data>
+  <data name="instances.instanceNamePlaceholder" xml:space="preserve">
+    <value>Introduce un nombre para esta instancia</value>
+  </data>
+  <data name="instances.instanceNotInstalled" xml:space="preserve">
+    <value>La instancia no está instalada</value>
+  </data>
+  <data name="instances.instanceNotInstalledHint" xml:space="preserve">
+    <value>Descarga esta instancia para gestionar su contenido</value>
+  </data>
+  <data name="instances.lastPlayed" xml:space="preserve">
+    <value>Última partida</value>
+  </data>
+  <data name="instances.logsComingSoon" xml:space="preserve">
+    <value>Visor de registros próximamente</value>
+  </data>
+  <data name="instances.noInstances" xml:space="preserve">
+    <value>No hay instancias instaladas</value>
+  </data>
+  <data name="instances.noSaves" xml:space="preserve">
+    <value>No se encontraron partidas</value>
+  </data>
+  <data name="instances.noSavesHint" xml:space="preserve">
+    <value>Juega para crear tu primera partida guardada</value>
+  </data>
+  <data name="instances.rename" xml:space="preserve">
+    <value>Renombrar</value>
+  </data>
+  <data name="instances.saves" xml:space="preserve">
+    <value>Partidas</value>
+  </data>
+  <data name="instances.selectIcon" xml:space="preserve">
+    <value>Seleccionar Icono</value>
+  </data>
+  <data name="instances.selectInstance" xml:space="preserve">
+    <value>Seleccionar Instancia</value>
+  </data>
+  <data name="instances.selectInstanceHint" xml:space="preserve">
+    <value>Elige una instancia de la izquierda para ver y gestionar su contenido</value>
+  </data>
+  <data name="instances.status.corrupted" xml:space="preserve">
+    <value>Corrupta</value>
+  </data>
+  <data name="instances.status.incomplete" xml:space="preserve">
+    <value>Incompleta</value>
+  </data>
+  <data name="instances.status.notInstalled" xml:space="preserve">
+    <value>No Instalada</value>
+  </data>
+  <data name="instances.status.ready" xml:space="preserve">
+    <value>Lista</value>
+  </data>
+  <data name="instances.status.unknown" xml:space="preserve">
+    <value>Desconocido</value>
+  </data>
+  <data name="instances.storage" xml:space="preserve">
+    <value>Almacenamiento</value>
+  </data>
+  <data name="instances.tab.browse" xml:space="preserve">
+    <value>Explorar mods</value>
+  </data>
+  <data name="instances.tab.content" xml:space="preserve">
+    <value>Mods instalados</value>
+  </data>
+  <data name="instances.tab.logs" xml:space="preserve">
+    <value>Registros</value>
+  </data>
+  <data name="instances.tab.worlds" xml:space="preserve">
+    <value>Mundos</value>
+  </data>
+  <data name="instances.title" xml:space="preserve">
+    <value>Instancias</value>
+  </data>
+  <data name="instances.uploadIcon" xml:space="preserve">
+    <value>Subir Icono</value>
+  </data>
+  <data name="instances.versionChangeWarning" xml:space="preserve">
+    <value>Cambiar de versión eliminará los archivos del juego</value>
+  </data>
+  <data name="instances.versionChangeWarningHint" xml:space="preserve">
+    <value>El cliente del juego se eliminará y tendrás que volver a descargar esta versión. Los datos del usuario, como partidas guardadas y mods, se conservarán.</value>
+  </data>
+  <data name="languageSelector.changeLanguage" xml:space="preserve">
+    <value>Cambiar Idioma</value>
+  </data>
+  <data name="languageSelector.dontAskAgain" xml:space="preserve">
+    <value>No preguntar de nuevo</value>
+  </data>
+  <data name="languageSelector.installTranslation" xml:space="preserve">
+    <value>¿Instalar Traducción?</value>
+  </data>
+  <data name="languageSelector.no" xml:space="preserve">
+    <value>No</value>
+  </data>
+  <data name="languageSelector.searchTranslationMods" xml:space="preserve">
+    <value>¿Te gustaría buscar mods de traducción para {{lang}}?</value>
+  </data>
+  <data name="languageSelector.yesSearch" xml:space="preserve">
+    <value>Sí, buscar</value>
+  </data>
+  <data name="launch.detail.applying_patch" xml:space="preserve">
+    <value>Aplicando parche {0}/{1}...</value>
+  </data>
+  <data name="launch.detail.authenticating" xml:space="preserve">
+    <value>Autenticando con {0}...</value>
+  </data>
+  <data name="launch.detail.authenticating_generic" xml:space="preserve">
+    <value>Autenticando...</value>
+  </data>
+  <data name="launch.detail.butler_install" xml:space="preserve">
+    <value>Instalando Butler...</value>
+  </data>
+  <data name="launch.detail.butler_ready" xml:space="preserve">
+    <value>Butler listo</value>
+  </data>
+  <data name="launch.detail.checking_install" xml:space="preserve">
+    <value>Comprobando instalación...</value>
+  </data>
+  <data name="launch.detail.checking_versions" xml:space="preserve">
+    <value>Comprobando versiones disponibles...</value>
+  </data>
+  <data name="launch.detail.client_already_patched" xml:space="preserve">
+    <value>Cliente ya parcheado</value>
+  </data>
+  <data name="launch.detail.creating_backup" xml:space="preserve">
+    <value>Creando copia de seguridad...</value>
+  </data>
+  <data name="launch.detail.done" xml:space="preserve">
+    <value>Hecho</value>
+  </data>
+  <data name="launch.detail.download_complete" xml:space="preserve">
+    <value>¡Descarga completada!</value>
+  </data>
+  <data name="launch.detail.downloading_butler" xml:space="preserve">
+    <value>Descargando Butler...</value>
+  </data>
+  <data name="launch.detail.downloading_generic" xml:space="preserve">
+    <value>Descargando</value>
+  </data>
+  <data name="launch.detail.downloading_mirror" xml:space="preserve">
+    <value>Descargando</value>
+  </data>
+  <data name="launch.detail.downloading_official" xml:space="preserve">
+    <value>Descargando</value>
+  </data>
+  <data name="launch.detail.downloading_patch" xml:space="preserve">
+    <value>Descargando</value>
+  </data>
+  <data name="launch.detail.dualauth_setup" xml:space="preserve">
+    <value>Configurando agente de autenticación...</value>
+  </data>
+  <data name="launch.detail.game_installed" xml:space="preserve">
+    <value>El juego ya está instalado</value>
+  </data>
+  <data name="launch.detail.installing_butler" xml:space="preserve">
+    <value>Configurando motor de descarga...</value>
+  </data>
+  <data name="launch.detail.installing_butler_pwr" xml:space="preserve">
+    <value>Instalando juego con Butler...</value>
+  </data>
+  <data name="launch.detail.installing_game" xml:space="preserve">
+    <value>Instalando juego...</value>
+  </data>
+  <data name="launch.detail.java_check" xml:space="preserve">
+    <value>Comprobando Java Runtime...</value>
+  </data>
+  <data name="launch.detail.java_install" xml:space="preserve">
+    <value>Instalando Java Runtime...</value>
+  </data>
+  <data name="launch.detail.launching_game" xml:space="preserve">
+    <value>Iniciando juego...</value>
+  </data>
+  <data name="launch.detail.patch_applied" xml:space="preserve">
+    <value>Parche {0} aplicado con éxito</value>
+  </data>
+  <data name="launch.detail.patching_client" xml:space="preserve">
+    <value>Parcheando binario del cliente...</value>
+  </data>
+  <data name="launch.detail.patching_complete" xml:space="preserve">
+    <value>Parcheo completado</value>
+  </data>
+  <data name="launch.detail.patching_domain_refs" xml:space="preserve">
+    <value>Parcheando referencias de dominio...</value>
+  </data>
+  <data name="launch.detail.patching_init" xml:space="preserve">
+    <value>Inicializando parcheador...</value>
+  </data>
+  <data name="launch.detail.preparing_download" xml:space="preserve">
+    <value>Preparando descarga...</value>
+  </data>
+  <data name="launch.detail.preparing_session" xml:space="preserve">
+    <value>Preparando sesión de juego...</value>
+  </data>
+  <data name="launch.detail.reading_client_binary" xml:space="preserve">
+    <value>Leyendo binario del cliente...</value>
+  </data>
+  <data name="launch.detail.resigning" xml:space="preserve">
+    <value>Volviendo a firmar binario...</value>
+  </data>
+  <data name="launch.detail.started" xml:space="preserve">
+    <value>¡Juego iniciado!</value>
+  </data>
+  <data name="launch.detail.starting_process" xml:space="preserve">
+    <value>Iniciando proceso del juego...</value>
+  </data>
+  <data name="launch.detail.update_check" xml:space="preserve">
+    <value>Buscando actualizaciones...</value>
+  </data>
+  <data name="launch.detail.using_cached_installer" xml:space="preserve">
+    <value>Usando instalador en caché...</value>
+  </data>
+  <data name="launch.detail.vc_redist" xml:space="preserve">
+    <value>Comprobando Visual C++ Runtime...</value>
+  </data>
+  <data name="launch.detail.waiting_for_window" xml:space="preserve">
+    <value>Esperando la ventana del juego...</value>
+  </data>
+  <data name="launch.detail.writing_patched_binary" xml:space="preserve">
+    <value>Escribiendo binario parcheado...</value>
+  </data>
+  <data name="launch.option.cancel" xml:space="preserve">
+    <value>Cancelar el inicio/descarga del juego</value>
+  </data>
+  <data name="launch.state.complete" xml:space="preserve">
+    <value>Completo</value>
+  </data>
+  <data name="launch.state.download" xml:space="preserve">
+    <value>Descargando</value>
+  </data>
+  <data name="launch.state.install" xml:space="preserve">
+    <value>Instalando</value>
+  </data>
+  <data name="launch.state.launching" xml:space="preserve">
+    <value>Iniciando</value>
+  </data>
+  <data name="launch.state.patching" xml:space="preserve">
+    <value>Parcheando</value>
+  </data>
+  <data name="launch.state.preparing" xml:space="preserve">
+    <value>Preparando</value>
+  </data>
+  <data name="launch.state.update" xml:space="preserve">
+    <value>Actualizando</value>
+  </data>
+  <data name="logs.auto" xml:space="preserve">
+    <value>Auto</value>
+  </data>
+  <data name="logs.clear" xml:space="preserve">
+    <value>Limpiar</value>
+  </data>
+  <data name="logs.copy" xml:space="preserve">
+    <value>Copiar todo</value>
+  </data>
+  <data name="logs.copySelected" xml:space="preserve">
+    <value>Copiar selección</value>
+  </data>
+  <data name="logs.empty" xml:space="preserve">
+    <value>Aún no hay registros</value>
+  </data>
+  <data name="logs.export" xml:space="preserve">
+    <value>Exportar</value>
+  </data>
+  <data name="logs.filter.all" xml:space="preserve">
+    <value>Todos</value>
+  </data>
+  <data name="logs.filter.debug" xml:space="preserve">
+    <value>Depuración</value>
+  </data>
+  <data name="logs.filter.error" xml:space="preserve">
+    <value>Error</value>
+  </data>
+  <data name="logs.filter.info" xml:space="preserve">
+    <value>Info</value>
+  </data>
+  <data name="logs.filter.success" xml:space="preserve">
+    <value>Éxito</value>
+  </data>
+  <data name="logs.filter.warning" xml:space="preserve">
+    <value>Advertencia</value>
+  </data>
+  <data name="logs.loading" xml:space="preserve">
+    <value>Cargando registros...</value>
+  </data>
+  <data name="logs.noResults" xml:space="preserve">
+    <value>Ningún registro coincide con tus filtros</value>
+  </data>
+  <data name="logs.refresh" xml:space="preserve">
+    <value>Actualizar</value>
+  </data>
+  <data name="logs.searchPlaceholder" xml:space="preserve">
+    <value>Buscar registros...</value>
+  </data>
+  <data name="logs.selected" xml:space="preserve">
+    <value>{{count}} seleccionado(s)</value>
+  </data>
+  <data name="logs.showing" xml:space="preserve">
+    <value>Mostrando {{count}} de {{total}} entradas</value>
+  </data>
+  <data name="logs.title" xml:space="preserve">
+    <value>Registros</value>
+  </data>
+  <data name="main.buyIt" xml:space="preserve">
+    <value>CÓMPRALO</value>
+  </data>
+  <data name="main.buyMeA" xml:space="preserve">
+    <value>Invítame a un</value>
+  </data>
+  <data name="main.cancel" xml:space="preserve">
+    <value>CANCELAR</value>
+  </data>
+  <data name="main.checking" xml:space="preserve">
+    <value>VERIFICANDO</value>
+  </data>
+  <data name="main.download" xml:space="preserve">
+    <value>DESCARGAR</value>
+  </data>
+  <data name="main.duplicate" xml:space="preserve">
+    <value>DUPLICAR</value>
+  </data>
+  <data name="main.editProfile" xml:space="preserve">
+    <value>Editar Perfil</value>
+  </data>
+  <data name="main.educational" xml:space="preserve">
+    <value>Solo fines educativos. ¿Te gusta?</value>
+  </data>
+  <data name="main.educationalOnly" xml:space="preserve">
+    <value>Solo con fines educativos.</value>
+  </data>
+  <data name="main.exit" xml:space="preserve">
+    <value>SALIR</value>
+  </data>
+  <data name="main.gitHubRepository" xml:space="preserve">
+    <value>Repositorio GitHub</value>
+  </data>
+  <data name="main.joinDiscord" xml:space="preserve">
+    <value>Unirse a Discord</value>
+  </data>
+  <data name="main.latest" xml:space="preserve">
+    <value>última</value>
+  </data>
+  <data name="main.likeIt" xml:space="preserve">
+    <value>¿Te gusta?</value>
+  </data>
+  <data name="main.mirror" xml:space="preserve">
+    <value>Mirror</value>
+  </data>
+  <data name="main.modManager" xml:space="preserve">
+    <value>Gestor de Mods</value>
+  </data>
+  <data name="main.noVersions" xml:space="preserve">
+    <value>Sin versiones</value>
+  </data>
+  <data name="main.officialServerBlocked" xml:space="preserve">
+    <value>Los servidores oficiales requieren un juego comprado y una cuenta de Hytale</value>
+  </data>
+  <data name="main.openInstanceFolder" xml:space="preserve">
+    <value>Abrir carpeta de instancia</value>
+  </data>
+  <data name="main.play" xml:space="preserve">
+    <value>JUGAR</value>
+  </data>
+  <data name="main.preRelease" xml:space="preserve">
+    <value>Prelanzamiento</value>
+  </data>
+  <data name="main.release" xml:space="preserve">
+    <value>Lanzamiento</value>
+  </data>
+  <data name="main.running" xml:space="preserve">
+    <value>EJECUTANDO</value>
+  </data>
+  <data name="main.selectInstance" xml:space="preserve">
+    <value>SELECCIONAR</value>
+  </data>
+  <data name="main.settings" xml:space="preserve">
+    <value>Ajustes</value>
+  </data>
+  <data name="main.sourceMirror" xml:space="preserve">
+    <value>Descargado desde mirror de la comunidad</value>
+  </data>
+  <data name="main.sourceOfficial" xml:space="preserve">
+    <value>Descargado desde servidores oficiales de Hytale</value>
+  </data>
+  <data name="main.stop" xml:space="preserve">
+    <value>PARAR</value>
+  </data>
+  <data name="main.update" xml:space="preserve">
+    <value>ACTUALIZAR</value>
+  </data>
+  <data name="main.updateAvailable" xml:space="preserve">
+    <value>Actualización disponible</value>
+  </data>
+  <data name="modManager.addMods" xml:space="preserve">
+    <value>Añadir Mods</value>
+  </data>
+  <data name="modManager.allCategories" xml:space="preserve">
+    <value>Todas las Categorías</value>
+  </data>
+  <data name="modManager.allMods" xml:space="preserve">
+    <value>Todos los Mods</value>
+  </data>
+  <data name="modManager.allUpToDate" xml:space="preserve">
+    <value>¡Todos los mods están actualizados!</value>
+  </data>
+  <data name="modManager.author" xml:space="preserve">
+    <value>Autor</value>
+  </data>
+  <data name="modManager.backendRefused" xml:space="preserve">
+    <value>El backend rechazó instalar este mod. Por favor, inténtalo de nuevo.</value>
+  </data>
+  <data name="modManager.browse" xml:space="preserve">
+    <value>Explorar Mods</value>
+  </data>
+  <data name="modManager.browseMods" xml:space="preserve">
+    <value>Explorar Mods</value>
+  </data>
+  <data name="modManager.category.all_mods" xml:space="preserve">
+    <value>Todos los Mods</value>
+  </data>
+  <data name="modManager.category.blocks" xml:space="preserve">
+    <value>Bloques</value>
+  </data>
+  <data name="modManager.category.cosmetics_armor" xml:space="preserve">
+    <value>Cosméticos / Armadura</value>
+  </data>
+  <data name="modManager.category.food_farming" xml:space="preserve">
+    <value>Comida / Agricultura</value>
+  </data>
+  <data name="modManager.category.furniture" xml:space="preserve">
+    <value>Muebles</value>
+  </data>
+  <data name="modManager.category.gameplay" xml:space="preserve">
+    <value>Jugabilidad</value>
+  </data>
+  <data name="modManager.category.library" xml:space="preserve">
+    <value>Biblioteca</value>
+  </data>
+  <data name="modManager.category.miscellaneous" xml:space="preserve">
+    <value>Miscelánea</value>
+  </data>
+  <data name="modManager.category.mobs_characters" xml:space="preserve">
+    <value>Mobs / Personajes</value>
+  </data>
+  <data name="modManager.category.prefab" xml:space="preserve">
+    <value>Prefab</value>
+  </data>
+  <data name="modManager.category.quality_of_life" xml:space="preserve">
+    <value>Calidad de Vida</value>
+  </data>
+  <data name="modManager.category.resource_packs" xml:space="preserve">
+    <value>Paquetes de Recursos</value>
+  </data>
+  <data name="modManager.category.utility" xml:space="preserve">
+    <value>Utilidad</value>
+  </data>
+  <data name="modManager.category.world_gen" xml:space="preserve">
+    <value>Generación de Mundo</value>
+  </data>
+  <data name="modManager.checkForUpdates" xml:space="preserve">
+    <value>Buscar Actualizaciones</value>
+  </data>
+  <data name="modManager.clickInstallContent" xml:space="preserve">
+    <value>Haz clic en 'Instalar contenido' para agregar mods</value>
+  </data>
+  <data name="modManager.clickToClose" xml:space="preserve">
+    <value>Haz clic en cualquier lugar para cerrar</value>
+  </data>
+  <data name="modManager.clickToViewImage" xml:space="preserve">
+    <value>Haz clic para ver la imagen completa</value>
+  </data>
+  <data name="modManager.close" xml:space="preserve">
+    <value>Cerrar</value>
+  </data>
+  <data name="modManager.confirmDelete" xml:space="preserve">
+    <value>¿Seguro que quieres eliminar {{count}} mod(s)? Esto no se puede deshacer.</value>
+  </data>
+  <data name="modManager.confirmDownload" xml:space="preserve">
+    <value>¿Seguro que quieres descargar {{count}} mod(s)?</value>
+  </data>
+  <data name="modManager.delete" xml:space="preserve">
+    <value>Eliminar</value>
+  </data>
+  <data name="modManager.deleteCount" xml:space="preserve">
+    <value>Eliminar {{count}} mod(s)</value>
+  </data>
+  <data name="modManager.deleteFailed" xml:space="preserve">
+    <value>Error al eliminar mod</value>
+  </data>
+  <data name="modManager.deleteModConfirm" xml:space="preserve">
+    <value>¿Estás seguro de que quieres eliminar este mod?</value>
+  </data>
+  <data name="modManager.deleteModTitle" xml:space="preserve">
+    <value>Eliminar Mod</value>
+  </data>
+  <data name="modManager.deleteMods" xml:space="preserve">
+    <value>Eliminar Mods</value>
+  </data>
+  <data name="modManager.deleteSelected" xml:space="preserve">
+    <value>Eliminar Seleccionados</value>
+  </data>
+  <data name="modManager.description" xml:space="preserve">
+    <value>Descripción</value>
+  </data>
+  <data name="modManager.disableSelected" xml:space="preserve">
+    <value>Desactivar seleccionados</value>
+  </data>
+  <data name="modManager.download" xml:space="preserve">
+    <value>Descargar</value>
+  </data>
+  <data name="modManager.downloadCount" xml:space="preserve">
+    <value>Descargar {{count}} mod(s)</value>
+  </data>
+  <data name="modManager.downloadFailed" xml:space="preserve">
+    <value>Error de descarga</value>
+  </data>
+  <data name="modManager.downloadMods" xml:space="preserve">
+    <value>Descargar Mods</value>
+  </data>
+  <data name="modManager.downloadSelected" xml:space="preserve">
+    <value>Descargar Seleccionados</value>
+  </data>
+  <data name="modManager.downloading" xml:space="preserve">
+    <value>Descargando</value>
+  </data>
+  <data name="modManager.downloadingMods" xml:space="preserve">
+    <value>Descargando Mods</value>
+  </data>
+  <data name="modManager.downloads" xml:space="preserve">
+    <value>Descargas</value>
+  </data>
+  <data name="modManager.dragModFiles" xml:space="preserve">
+    <value>Arrastra archivos de mod o una lista de mods</value>
+  </data>
+  <data name="modManager.dropModsHere" xml:space="preserve">
+    <value>Suelta los mods aquí</value>
+  </data>
+  <data name="modManager.enableSelected" xml:space="preserve">
+    <value>Activar seleccionados</value>
+  </data>
+  <data name="modManager.enabled" xml:space="preserve">
+    <value>Habilitado</value>
+  </data>
+  <data name="modManager.exportFailed" xml:space="preserve">
+    <value>Error al exportar mods</value>
+  </data>
+  <data name="modManager.exportMods" xml:space="preserve">
+    <value>Exportar Mods</value>
+  </data>
+  <data name="modManager.exportType.exportFolder" xml:space="preserve">
+    <value>Carpeta de Exportación</value>
+  </data>
+  <data name="modManager.exportType.modList" xml:space="preserve">
+    <value>Lista de Mods</value>
+  </data>
+  <data name="modManager.exportType.modListHint" xml:space="preserve">
+    <value>Archivo JSON para re-descargar</value>
+  </data>
+  <data name="modManager.exportType.selectFolder" xml:space="preserve">
+    <value>Seleccionar carpeta de exportación...</value>
+  </data>
+  <data name="modManager.exportType.title" xml:space="preserve">
+    <value>Tipo de Exportación</value>
+  </data>
+  <data name="modManager.exportType.zipArchive" xml:space="preserve">
+    <value>Archivo ZIP</value>
+  </data>
+  <data name="modManager.exportType.zipArchiveHint" xml:space="preserve">
+    <value>Todos los archivos de mod empaquetados</value>
+  </data>
+  <data name="modManager.exportedList" xml:space="preserve">
+    <value>Lista de mods exportada a {{path}}</value>
+  </data>
+  <data name="modManager.exportedZip" xml:space="preserve">
+    <value>Mods exportados como ZIP a {{path}}</value>
+  </data>
+  <data name="modManager.importFailed" xml:space="preserve">
+    <value>Error al importar mods</value>
+  </data>
+  <data name="modManager.importedCount" xml:space="preserve">
+    <value>{{count}} mods importados</value>
+  </data>
+  <data name="modManager.importingList" xml:space="preserve">
+    <value>Importando lista de mods...</value>
+  </data>
+  <data name="modManager.installFailed" xml:space="preserve">
+    <value>Error al instalar mods. Por favor, inténtalo de nuevo.</value>
+  </data>
+  <data name="modManager.installSelected" xml:space="preserve">
+    <value>Instalar Seleccionados</value>
+  </data>
+  <data name="modManager.installed" xml:space="preserve">
+    <value>Mods instalados</value>
+  </data>
+  <data name="modManager.installedBadge" xml:space="preserve">
+    <value>Instalado</value>
+  </data>
+  <data name="modManager.installedCount" xml:space="preserve">
+    <value>{{count}} mod(s) instalado(s)</value>
+  </data>
+  <data name="modManager.installingMod" xml:space="preserve">
+    <value>Instalando {{name}}...</value>
+  </data>
+  <data name="modManager.loadingVersions" xml:space="preserve">
+    <value>Cargando versiones...</value>
+  </data>
+  <data name="modManager.modDeleted" xml:space="preserve">
+    <value>Mod eliminado correctamente</value>
+  </data>
+  <data name="modManager.mods" xml:space="preserve">
+    <value>Mods</value>
+  </data>
+  <data name="modManager.modsDeleted" xml:space="preserve">
+    <value>Mods eliminados correctamente</value>
+  </data>
+  <data name="modManager.modsDisabled" xml:space="preserve">
+    <value>Mods desactivados</value>
+  </data>
+  <data name="modManager.modsEnabled" xml:space="preserve">
+    <value>Mods activados</value>
+  </data>
+  <data name="modManager.modsInstalled" xml:space="preserve">
+    <value>mods instalados</value>
+  </data>
+  <data name="modManager.modsSelected" xml:space="preserve">
+    <value>mod(s) seleccionado(s)</value>
+  </data>
+  <data name="modManager.name" xml:space="preserve">
+    <value>Nombre</value>
+  </data>
+  <data name="modManager.noCurseForge" xml:space="preserve">
+    <value>No hay mods de CurseForge para exportar</value>
+  </data>
+  <data name="modManager.noDescription" xml:space="preserve">
+    <value>Sin descripción</value>
+  </data>
+  <data name="modManager.noDownloadableFiles" xml:space="preserve">
+    <value>No se encontraron archivos descargables para los mods seleccionados.</value>
+  </data>
+  <data name="modManager.noFilesAvailable" xml:space="preserve">
+    <value>No hay archivos disponibles</value>
+  </data>
+  <data name="modManager.noMatch" xml:space="preserve">
+    <value>Ningún mod coincide con tu búsqueda</value>
+  </data>
+  <data name="modManager.noModFiles" xml:space="preserve">
+    <value>No hay archivos de mod para exportar</value>
+  </data>
+  <data name="modManager.noModsFound" xml:space="preserve">
+    <value>No se encontraron mods</value>
+  </data>
+  <data name="modManager.noModsInstalled" xml:space="preserve">
+    <value>No hay mods instalados</value>
+  </data>
+  <data name="modManager.noVersionsAvailable" xml:space="preserve">
+    <value>No hay versiones disponibles</value>
+  </data>
+  <data name="modManager.of" xml:space="preserve">
+    <value>de</value>
+  </data>
+  <data name="modManager.openCurseforge" xml:space="preserve">
+    <value>Abrir mod en CurseForge</value>
+  </data>
+  <data name="modManager.openModsFolder" xml:space="preserve">
+    <value>Abrir Carpeta de Mods</value>
+  </data>
+  <data name="modManager.profile" xml:space="preserve">
+    <value>Perfil</value>
+  </data>
+  <data name="modManager.redownloadCount" xml:space="preserve">
+    <value>Re-descargar {{count}} mod(s)</value>
+  </data>
+  <data name="modManager.releaseType.alpha" xml:space="preserve">
+    <value>Alfa</value>
+  </data>
+  <data name="modManager.releaseType.beta" xml:space="preserve">
+    <value>Beta</value>
+  </data>
+  <data name="modManager.releaseType.release" xml:space="preserve">
+    <value>Lanzamiento</value>
+  </data>
+  <data name="modManager.releaseType.unknown" xml:space="preserve">
+    <value>Desconocido</value>
+  </data>
+  <data name="modManager.screenshots" xml:space="preserve">
+    <value>Capturas de pantalla</value>
+  </data>
+  <data name="modManager.search" xml:space="preserve">
+    <value>Buscar mods...</value>
+  </data>
+  <data name="modManager.searchFailed" xml:space="preserve">
+    <value>Error al buscar mods</value>
+  </data>
+  <data name="modManager.searchInstalled" xml:space="preserve">
+    <value>Buscar mods instalados...</value>
+  </data>
+  <data name="modManager.searchMods" xml:space="preserve">
+    <value>Buscar mods...</value>
+  </data>
+  <data name="modManager.selectCountForDownload" xml:space="preserve">
+    <value>Seleccionar {{count}} mods para descargar</value>
+  </data>
+  <data name="modManager.selectCountMods" xml:space="preserve">
+    <value>Seleccionar {{count}} mods</value>
+  </data>
+  <data name="modManager.selectExportFolder" xml:space="preserve">
+    <value>Por favor, selecciona una carpeta de exportación</value>
+  </data>
+  <data name="modManager.selectForDownload" xml:space="preserve">
+    <value>Seleccionar para descargar (Shift+clic para rango)</value>
+  </data>
+  <data name="modManager.selectForInstall" xml:space="preserve">
+    <value>Seleccionar para instalar (Shift+clic para rango)</value>
+  </data>
+  <data name="modManager.selectMod" xml:space="preserve">
+    <value>Seleccionar mod</value>
+  </data>
+  <data name="modManager.selectModForDownload" xml:space="preserve">
+    <value>Seleccionar mod para descargar</value>
+  </data>
+  <data name="modManager.selectModToView" xml:space="preserve">
+    <value>Selecciona un mod para ver detalles</value>
+  </data>
+  <data name="modManager.selectModsToDelete" xml:space="preserve">
+    <value>Selecciona mods para eliminar</value>
+  </data>
+  <data name="modManager.selectModsToDownload" xml:space="preserve">
+    <value>Selecciona mods para descargar</value>
+  </data>
+  <data name="modManager.selectShift" xml:space="preserve">
+    <value>Seleccionar (Shift+clic para rango)</value>
+  </data>
+  <data name="modManager.selectVersion" xml:space="preserve">
+    <value>Seleccionar Versión</value>
+  </data>
+  <data name="modManager.selected" xml:space="preserve">
+    <value>Seleccionado</value>
+  </data>
+  <data name="modManager.selectedForDownload" xml:space="preserve">
+    <value>Seleccionado para descargar</value>
+  </data>
+  <data name="modManager.selectedForInstall" xml:space="preserve">
+    <value>Seleccionado para instalar</value>
+  </data>
+  <data name="modManager.sortBy" xml:space="preserve">
+    <value>Ordenar por</value>
+  </data>
+  <data name="modManager.sortCreationDate" xml:space="preserve">
+    <value>Fecha de creación</value>
+  </data>
+  <data name="modManager.sortLatestUpdate" xml:space="preserve">
+    <value>Última actualización</value>
+  </data>
+  <data name="modManager.sortPopularity" xml:space="preserve">
+    <value>Popularidad</value>
+  </data>
+  <data name="modManager.sortRelevancy" xml:space="preserve">
+    <value>Relevancia</value>
+  </data>
+  <data name="modManager.sortTotalDownloads" xml:space="preserve">
+    <value>Total de descargas</value>
+  </data>
+  <data name="modManager.title" xml:space="preserve">
+    <value>Gestor de Mods</value>
+  </data>
+  <data name="modManager.toggleFailed" xml:space="preserve">
+    <value>No se pudo actualizar el estado de los mods</value>
+  </data>
+  <data name="modManager.unknownAuthor" xml:space="preserve">
+    <value>Autor Desconocido</value>
+  </data>
+  <data name="modManager.unselectAllCount" xml:space="preserve">
+    <value>Deseleccionar todo ({{count}})</value>
+  </data>
+  <data name="modManager.unselectCountMods" xml:space="preserve">
+    <value>Deseleccionar {{count}} mods</value>
+  </data>
+  <data name="modManager.unselectMod" xml:space="preserve">
+    <value>Deseleccionar mod</value>
+  </data>
+  <data name="modManager.update" xml:space="preserve">
+    <value>Actualizar</value>
+  </data>
+  <data name="modManager.updateAll" xml:space="preserve">
+    <value>Actualizar Todo</value>
+  </data>
+  <data name="modManager.updateBadge" xml:space="preserve">
+    <value>Actualizar</value>
+  </data>
+  <data name="modManager.updatesAvailable" xml:space="preserve">
+    <value>{{count}} mod(s) tienen actualizaciones disponibles:</value>
+  </data>
+  <data name="modManager.updatesAvailableCount" xml:space="preserve">
+    <value>{{count}} actualizaciones disponibles</value>
+  </data>
+  <data name="modManager.updatesAvailableShort" xml:space="preserve">
+    <value>actualizaciones</value>
+  </data>
+  <data name="modManager.updating" xml:space="preserve">
+    <value>Actualizando...</value>
+  </data>
+  <data name="modManager.gameVersions" xml:space="preserve">
+    <value>Para versiones del juego</value>
+  </data>
+  <data name="modManager.version" xml:space="preserve">
+    <value>Versión</value>
+  </data>
+  <data name="modManager.versionSelected" xml:space="preserve">
+    <value>Versión seleccionada:</value>
+  </data>
+  <data name="modManager.viewChangelog" xml:space="preserve">
+    <value>Ver registro de cambios</value>
+  </data>
+  <data name="music.mute" xml:space="preserve">
+    <value>Silenciar</value>
+  </data>
+  <data name="music.mutedWhilePlaying" xml:space="preserve">
+    <value>Música silenciada mientras el juego está ejecutándose</value>
+  </data>
+  <data name="music.on" xml:space="preserve">
+    <value>Música</value>
+  </data>
+  <data name="music.unmute" xml:space="preserve">
+    <value>Activar sonido</value>
+  </data>
+  <data name="news.all" xml:space="preserve">
+    <value>Todo</value>
+  </data>
+  <data name="news.disabled" xml:space="preserve">
+    <value>Noticias deshabilitadas</value>
+  </data>
+  <data name="news.enableInSettings" xml:space="preserve">
+    <value>Habilitar noticias en Configuración</value>
+  </data>
+  <data name="news.expand" xml:space="preserve">
+    <value>Expandir</value>
+  </data>
+  <data name="news.hyprism" xml:space="preserve">
+    <value>HyPrism</value>
+  </data>
+  <data name="news.hytale" xml:space="preserve">
+    <value>Hytale</value>
+  </data>
+  <data name="news.loading" xml:space="preserve">
+    <value>Cargando noticias...</value>
+  </data>
+  <data name="news.minimize" xml:space="preserve">
+    <value>Minimizar</value>
+  </data>
+  <data name="news.noNewsFound" xml:space="preserve">
+    <value>No se encontraron noticias</value>
+  </data>
+  <data name="news.readMore" xml:space="preserve">
+    <value>Enlace</value>
+  </data>
+  <data name="news.title" xml:space="preserve">
+    <value>Noticias</value>
+  </data>
+  <data name="news.tryAgain" xml:space="preserve">
+    <value>Reintentar</value>
+  </data>
+  <data name="onboarding.about" xml:space="preserve">
+    <value>Acerca de</value>
+  </data>
+  <data name="onboarding.aboutHyPrism" xml:space="preserve">
+    <value>Acerca de HyPrism</value>
+  </data>
+  <data name="onboarding.allSet" xml:space="preserve">
+    <value>¡Todo listo! Aquí tienes información sobre el launcher</value>
+  </data>
+  <data name="onboarding.auth.authenticating" xml:space="preserve">
+    <value>Autenticando...</value>
+  </data>
+  <data name="onboarding.auth.createFailed" xml:space="preserve">
+    <value>Error al crear perfil desde la cuenta de Hytale.</value>
+  </data>
+  <data name="onboarding.auth.description" xml:space="preserve">
+    <value>Inicia sesión con tu cuenta de Hytale. Si aún no has comprado el juego, haz clic en Omitir.</value>
+  </data>
+  <data name="onboarding.auth.error" xml:space="preserve">
+    <value>Ocurrió un error durante la autenticación.</value>
+  </data>
+  <data name="onboarding.auth.failed" xml:space="preserve">
+    <value>Error de autenticación. Por favor, inténtalo de nuevo.</value>
+  </data>
+  <data name="onboarding.auth.login" xml:space="preserve">
+    <value>Iniciar sesión con Hytale</value>
+  </data>
+  <data name="onboarding.auth.noHytaleProfile" xml:space="preserve">
+    <value>Tu cuenta aún no tiene acceso a Hytale. Puedes comprar el juego en el sitio web oficial.</value>
+  </data>
+  <data name="onboarding.auth.skip" xml:space="preserve">
+    <value>Omitir</value>
+  </data>
+  <data name="onboarding.auth.title" xml:space="preserve">
+    <value>Autenticación</value>
+  </data>
+  <data name="onboarding.authServerCreator" xml:space="preserve">
+    <value>Creador del servidor de autenticación</value>
+  </data>
+  <data name="onboarding.background" xml:space="preserve">
+    <value>Fondo</value>
+  </data>
+  <data name="onboarding.bugReport" xml:space="preserve">
+    <value>Reportar Error</value>
+  </data>
+  <data name="onboarding.changeInSettings" xml:space="preserve">
+    <value>Puedes cambiar esta ubicación más tarde en Ajustes &gt; Datos</value>
+  </data>
+  <data name="onboarding.chooseLanguage" xml:space="preserve">
+    <value>Elige tu idioma</value>
+  </data>
+  <data name="onboarding.chooseLocation" xml:space="preserve">
+    <value>Elige ubicación de instancias</value>
+  </data>
+  <data name="onboarding.chooseUsername" xml:space="preserve">
+    <value>Elige un nombre de usuario para el juego</value>
+  </data>
+  <data name="onboarding.customizeAppearance" xml:space="preserve">
+    <value>Personaliza la apariencia</value>
+  </data>
+  <data name="onboarding.disclaimer" xml:space="preserve">
+    <value>HyPrism es un launcher no oficial de Hytale. Este proyecto no está afiliado con Hypixel Studios.</value>
+  </data>
+  <data name="onboarding.enterLauncher" xml:space="preserve">
+    <value>Entrar al Launcher</value>
+  </data>
+  <data name="onboarding.enterUsername" xml:space="preserve">
+    <value>Introduce tu nombre de usuario</value>
+  </data>
+  <data name="onboarding.filesStoredHere" xml:space="preserve">
+    <value>Aquí se almacenarán tus archivos del juego</value>
+  </data>
+  <data name="onboarding.generateUsername" xml:space="preserve">
+    <value>Generar nombre aleatorio</value>
+  </data>
+  <data name="onboarding.getStarted" xml:space="preserve">
+    <value>Empezar</value>
+  </data>
+  <data name="onboarding.gpuHint" xml:space="preserve">
+    <value>Elige qué tarjeta gráfica usar al iniciar el juego</value>
+  </data>
+  <data name="onboarding.gpuPreference" xml:space="preserve">
+    <value>Preferencia de GPU</value>
+  </data>
+  <data name="onboarding.gpu_auto" xml:space="preserve">
+    <value>Automático</value>
+  </data>
+  <data name="onboarding.gpu_autoHint" xml:space="preserve">
+    <value>Dejar que el sistema decida</value>
+  </data>
+  <data name="onboarding.gpu_dedicated" xml:space="preserve">
+    <value>GPU Dedicada</value>
+  </data>
+  <data name="onboarding.gpu_dedicatedHint" xml:space="preserve">
+    <value>Usar tarjeta gráfica dedicada</value>
+  </data>
+  <data name="onboarding.gpu_integrated" xml:space="preserve">
+    <value>GPU Integrada</value>
+  </data>
+  <data name="onboarding.gpu_integratedHint" xml:space="preserve">
+    <value>Usar gráficos integrados</value>
+  </data>
+  <data name="onboarding.hardware" xml:space="preserve">
+    <value>Hardware</value>
+  </data>
+  <data name="onboarding.hardwareSettings" xml:space="preserve">
+    <value>Ajustes de Hardware</value>
+  </data>
+  <data name="onboarding.instanceFolder" xml:space="preserve">
+    <value>Carpeta de Instancias</value>
+  </data>
+  <data name="onboarding.language" xml:space="preserve">
+    <value>Idioma</value>
+  </data>
+  <data name="onboarding.letsSetUp" xml:space="preserve">
+    <value>Configuremos tu launcher</value>
+  </data>
+  <data name="onboarding.location" xml:space="preserve">
+    <value>Ubicación</value>
+  </data>
+  <data name="onboarding.locationHint" xml:space="preserve">
+    <value>Selecciona dónde almacenar tus instancias del juego. Puedes dejarlo como predeterminado o elegir una ubicación personalizada.</value>
+  </data>
+  <data name="onboarding.maintainerRole" xml:space="preserve">
+    <value>Mantenedor y Desarrollador</value>
+  </data>
+  <data name="onboarding.profile" xml:space="preserve">
+    <value>Perfil</value>
+  </data>
+  <data name="onboarding.selectLanguageHint" xml:space="preserve">
+    <value>Selecciona tu idioma preferido para la interfaz del launcher</value>
+  </data>
+  <data name="onboarding.setupProfile" xml:space="preserve">
+    <value>Configura tu perfil</value>
+  </data>
+  <data name="onboarding.skip" xml:space="preserve">
+    <value>Omitir</value>
+  </data>
+  <data name="onboarding.slideshow" xml:space="preserve">
+    <value>Presentación</value>
+  </data>
+  <data name="onboarding.slideshowHint" xml:space="preserve">
+    <value>Alternar entre todos los fondos</value>
+  </data>
+  <data name="onboarding.staticBackground" xml:space="preserve">
+    <value>O elige un fondo estático:</value>
+  </data>
+  <data name="onboarding.unofficial" xml:space="preserve">
+    <value>Lanzador No Oficial de Hytale</value>
+  </data>
+  <data name="onboarding.username" xml:space="preserve">
+    <value>Nombre de Usuario</value>
+  </data>
+  <data name="onboarding.usernameHint" xml:space="preserve">
+    <value>1-16 caracteres</value>
+  </data>
+  <data name="onboarding.visual" xml:space="preserve">
+    <value>Visual</value>
+  </data>
+  <data name="onboarding.welcome" xml:space="preserve">
+    <value>Bienvenido a HyPrism</value>
+  </data>
+  <data name="onboarding.welcomeBack" xml:space="preserve">
+    <value>¡Bienvenido de nuevo, {{name}}!</value>
+  </data>
+  <data name="onlineToggle.offline" xml:space="preserve">
+    <value>Modo Sin Conexión</value>
+  </data>
+  <data name="onlineToggle.offlineClickEnable" xml:space="preserve">
+    <value>Modo Sin Conexión (Clic para activar online)</value>
+  </data>
+  <data name="onlineToggle.online" xml:space="preserve">
+    <value>Modo conectado</value>
+  </data>
+  <data name="onlineToggle.onlineClickDisable" xml:space="preserve">
+    <value>Modo Online (Clic para desactivar)</value>
+  </data>
+  <data name="profileEditor.avatar" xml:space="preserve">
+    <value>Avatar</value>
+  </data>
+  <data name="profileEditor.cancel" xml:space="preserve">
+    <value>Cancelar</value>
+  </data>
+  <data name="profileEditor.copy" xml:space="preserve">
+    <value>Copiar</value>
+  </data>
+  <data name="profileEditor.dropSkin" xml:space="preserve">
+    <value>Arrastra tu archivo de skin aquí o usa los botones de abajo</value>
+  </data>
+  <data name="profileEditor.openAvatarFolder" xml:space="preserve">
+    <value>Abrir Carpeta de Avatares</value>
+  </data>
+  <data name="profileEditor.randomize" xml:space="preserve">
+    <value>Aleatorio</value>
+  </data>
+  <data name="profileEditor.refreshPreview" xml:space="preserve">
+    <value>Actualizar Vista Previa</value>
+  </data>
+  <data name="profileEditor.save" xml:space="preserve">
+    <value>Guardar</value>
+  </data>
+  <data name="profileEditor.title" xml:space="preserve">
+    <value>Editor de Perfil</value>
+  </data>
+  <data name="profileEditor.username" xml:space="preserve">
+    <value>Nombre de Usuario</value>
+  </data>
+  <data name="profileEditor.usernameHint" xml:space="preserve">
+    <value>Debe tener 1-16 caracteres</value>
+  </data>
+  <data name="profileEditor.uuid" xml:space="preserve">
+    <value>UUID</value>
+  </data>
+  <data name="profileEditor.uuidHint" xml:space="preserve">
+    <value>Identificador único de tu perfil</value>
+  </data>
+  <data name="profiles.copyUuid" xml:space="preserve">
+    <value>Copiar UUID</value>
+  </data>
+  <data name="profiles.createNew" xml:space="preserve">
+    <value>Crear Nuevo Perfil</value>
+  </data>
+  <data name="profiles.deleteProfile" xml:space="preserve">
+    <value>Eliminar Perfil</value>
+  </data>
+  <data name="profiles.duplicateProfile" xml:space="preserve">
+    <value>Duplicar Perfil</value>
+  </data>
+  <data name="profiles.editUsername" xml:space="preserve">
+    <value>Editar Nombre de Usuario</value>
+  </data>
+  <data name="profiles.editUuid" xml:space="preserve">
+    <value>Editar UUID</value>
+  </data>
+  <data name="profiles.editor" xml:space="preserve">
+    <value>Tipo de perfil</value>
+  </data>
+  <data name="startup.loading.title" xml:space="preserve">
+    <value>Preparando el launcher</value>
+  </data>
+  <data name="startup.loading.content" xml:space="preserve">
+    <value>Guardando noticias y comunidad</value>
+  </data>
+  <data name="startup.loading.ready" xml:space="preserve">
+    <value>Todo listo</value>
+  </data>
+  <data name="profiles.favoriteInstance" xml:space="preserve">
+    <value>Instancia favorita</value>
+  </data>
+  <data name="profiles.enterName" xml:space="preserve">
+    <value>Introduce nombre del perfil...</value>
+  </data>
+  <data name="profiles.enterNewName" xml:space="preserve">
+    <value>Introduce un nombre para tu nuevo perfil o pulsa Escape para uno aleatorio</value>
+  </data>
+  <data name="profiles.generateName" xml:space="preserve">
+    <value>Generar Nombre Aleatorio</value>
+  </data>
+  <data name="profiles.noProfiles" xml:space="preserve">
+    <value>Aún no hay perfiles guardados</value>
+  </data>
+  <data name="profiles.officialLocked" xml:space="preserve">
+    <value>Los perfiles oficiales de Hytale no se pueden editar</value>
+  </data>
+  <data name="profiles.openFolder" xml:space="preserve">
+    <value>Abrir carpeta del perfil</value>
+  </data>
+  <data name="profiles.playerUuid" xml:space="preserve">
+    <value>UUID del Jugador</value>
+  </data>
+  <data name="profiles.randomUuid" xml:space="preserve">
+    <value>Generar UUID Aleatorio</value>
+  </data>
+  <data name="profiles.saveUuid" xml:space="preserve">
+    <value>Guardar UUID</value>
+  </data>
+  <data name="profiles.saved" xml:space="preserve">
+    <value>¡Perfil guardado!</value>
+  </data>
+  <data name="profiles.savedProfiles" xml:space="preserve">
+    <value>Perfiles Guardados</value>
+  </data>
+  <data name="profiles.title" xml:space="preserve">
+    <value>Perfiles</value>
+  </data>
+  <data name="profiles.wizard.authDesc" xml:space="preserve">
+    <value>Serás redirigido a la página de inicio de sesión de Hytale en tu navegador. Después de iniciar sesión, tu perfil se creará automáticamente.</value>
+  </data>
+  <data name="profiles.wizard.authError" xml:space="preserve">
+    <value>Ocurrió un error durante el inicio de sesión. Por favor, inténtalo de nuevo.</value>
+  </data>
+  <data name="profiles.wizard.authFailed" xml:space="preserve">
+    <value>El inicio de sesión no se completó. Por favor, inténtalo de nuevo.</value>
+  </data>
+  <data name="profiles.wizard.authTitle" xml:space="preserve">
+    <value>Iniciar sesión con Hytale</value>
+  </data>
+  <data name="profiles.wizard.browserHint" xml:space="preserve">
+    <value>Completa el inicio de sesión en tu navegador. Esta ventana se actualizará automáticamente.</value>
+  </data>
+  <data name="profiles.wizard.characters" xml:space="preserve">
+    <value>caracteres</value>
+  </data>
+  <data name="profiles.wizard.chooseType" xml:space="preserve">
+    <value>Elige cómo quieres crear tu perfil</value>
+  </data>
+  <data name="profiles.wizard.create" xml:space="preserve">
+    <value>Crear Perfil</value>
+  </data>
+  <data name="profiles.wizard.createError" xml:space="preserve">
+    <value>Ocurrió un error al crear el perfil.</value>
+  </data>
+  <data name="profiles.wizard.createFailed" xml:space="preserve">
+    <value>Error al crear el perfil. Por favor, inténtalo de nuevo.</value>
+  </data>
+  <data name="profiles.wizard.loginHytale" xml:space="preserve">
+    <value>Iniciar sesión</value>
+  </data>
+  <data name="profiles.wizard.nameDesc" xml:space="preserve">
+    <value>Elige un nombre para tu perfil sin conexión (3-16 caracteres, letras inglesas, dígitos, - y _)</value>
+  </data>
+  <data name="profiles.wizard.namePlaceholder" xml:space="preserve">
+    <value>Introduce apodo...</value>
+  </data>
+  <data name="profiles.wizard.nameTitle" xml:space="preserve">
+    <value>Elige un Apodo</value>
+  </data>
+  <data name="profiles.wizard.nickInvalid" xml:space="preserve">
+    <value>El apodo debe tener 3-16 caracteres: letras inglesas, dígitos, guion o guion bajo.</value>
+  </data>
+  <data name="profiles.wizard.nickRules" xml:space="preserve">
+    <value>Solo A-Z, 0-9, - y _</value>
+  </data>
+  <data name="profiles.wizard.noHytaleProfile" xml:space="preserve">
+    <value>Tu cuenta de Hytale aún no tiene perfiles de juego. Se creará un perfil de juego cuando accedas al juego por primera vez.</value>
+  </data>
+  <data name="profiles.wizard.official" xml:space="preserve">
+    <value>Cuenta Oficial de Hytale</value>
+  </data>
+  <data name="profiles.wizard.officialDesc" xml:space="preserve">
+    <value>Inicia sesión con tu cuenta de Hytale para jugar en servidores oficiales</value>
+  </data>
+  <data name="profiles.wizard.title" xml:space="preserve">
+    <value>Crear Nuevo Perfil</value>
+  </data>
+  <data name="profiles.wizard.unofficial" xml:space="preserve">
+    <value>Perfil Sin Conexión</value>
+  </data>
+  <data name="profiles.wizard.unofficialDesc" xml:space="preserve">
+    <value>Crea un perfil local con nombre y UUID personalizados</value>
+  </data>
+  <data name="profiles.wizard.waitingAuth" xml:space="preserve">
+    <value>Esperando inicio de sesión...</value>
+  </data>
+  <data name="profiles.yourAvatar" xml:space="preserve">
+    <value>Tu avatar de jugador</value>
+  </data>
+  <data name="settings.about" xml:space="preserve">
+    <value>Acerca de</value>
+  </data>
+  <data name="settings.aboutSettings.authRole" xml:space="preserve">
+    <value>Creador del servidor de autenticación</value>
+  </data>
+  <data name="settings.aboutSettings.bugReport" xml:space="preserve">
+    <value>Reportar Error</value>
+  </data>
+  <data name="settings.aboutSettings.cicdRole" xml:space="preserve">
+    <value>Desplegador CI/CD</value>
+  </data>
+  <data name="settings.aboutSettings.codevRole" xml:space="preserve">
+    <value>Coordinador del desarrollo del lanzador</value>
+  </data>
+  <data name="settings.aboutSettings.contributorRole" xml:space="preserve">
+    <value>Colaborador</value>
+  </data>
+  <data name="settings.aboutSettings.contributors" xml:space="preserve">
+    <value>Colaboradores</value>
+  </data>
+  <data name="settings.aboutSettings.contributorsDescription" xml:space="preserve">
+    <value>Personas increíbles que ayudaron en la creación de este lanzador</value>
+  </data>
+  <data name="settings.aboutSettings.coreTeam" xml:space="preserve">
+    <value>Equipo Principal</value>
+  </data>
+  <data name="settings.aboutSettings.coreTeamDescription" xml:space="preserve">
+    <value>Las personas detrás del desarrollo de HyPrism</value>
+  </data>
+  <data name="settings.aboutSettings.creatorRole" xml:space="preserve">
+    <value>Creador del Proyecto</value>
+  </data>
+  <data name="settings.aboutSettings.description" xml:space="preserve">
+    <value>Un lanzador moderno para Hytale</value>
+  </data>
+  <data name="settings.aboutSettings.disclaimer" xml:space="preserve">
+    <value>HyPrism no es un lanzador oficial de Hytale ni un producto desarrollado por Hypixel Studios.</value>
+  </data>
+  <data name="settings.aboutSettings.builtWith" xml:space="preserve">
+    <value>Creado con</value>
+  </data>
+  <data name="settings.aboutSettings.installerRole" xml:space="preserve">
+    <value>Creador del Instalador</value>
+  </data>
+  <data name="settings.aboutSettings.maintainerRole" xml:space="preserve">
+    <value>Mantenedor y Desarrollador</value>
+  </data>
+  <data name="settings.aboutSettings.others" xml:space="preserve">
+    <value>Y otros</value>
+  </data>
+  <data name="settings.aboutSettings.replayIntro" xml:space="preserve">
+    <value>Repetir Introducción</value>
+  </data>
+  <data name="settings.aboutSettings.testerRole" xml:space="preserve">
+    <value>Tester Principal</value>
+  </data>
+  <data name="settings.aboutSettings.title" xml:space="preserve">
+    <value>Lanzador HyPrism</value>
+  </data>
+  <data name="settings.aboutSettings.unofficial" xml:space="preserve">
+    <value>Lanzador No Oficial de Hytale</value>
+  </data>
+  <data name="settings.aboutSettings.version" xml:space="preserve">
+    <value>Versión {0}</value>
+  </data>
+  <data name="settings.browse" xml:space="preserve">
+    <value>Examinar</value>
+  </data>
+  <data name="settings.categoryDescriptions.about" xml:space="preserve">
+    <value>Versión, enlaces del proyecto e informes de errores</value>
+  </data>
+  <data name="settings.categoryDescriptions.data" xml:space="preserve">
+    <value>Archivos del launcher, versiones del juego y caché</value>
+  </data>
+  <data name="settings.categoryDescriptions.downloads" xml:space="preserve">
+    <value>Fuentes de descarga, pruebas de conexión e inicio del juego</value>
+  </data>
+  <data name="settings.categoryDescriptions.general" xml:space="preserve">
+    <value>Idioma, actualizaciones, comportamiento del launcher, preferencia de GPU y variables de entorno</value>
+  </data>
+  <data name="settings.categoryDescriptions.graphics" xml:space="preserve">
+    <value>Selección de GPU para iniciar Hytale</value>
+  </data>
+  <data name="settings.categoryDescriptions.java" xml:space="preserve">
+    <value>Entorno de ejecución, ruta de Java y argumentos de JVM</value>
+  </data>
+  <data name="settings.categoryDescriptions.network" xml:space="preserve">
+    <value>Modo en línea y opciones de autenticación</value>
+  </data>
+  <data name="settings.categoryDescriptions.variables" xml:space="preserve">
+    <value>Variables de entorno enviadas a Hytale</value>
+  </data>
+  <data name="settings.categoryDescriptions.visual" xml:space="preserve">
+    <value>Fondo, música, noticias y anuncios</value>
+  </data>
+  <data name="settings.close" xml:space="preserve">
+    <value>Cerrar</value>
+  </data>
+  <data name="settings.data" xml:space="preserve">
+    <value>Datos</value>
+  </data>
+  <data name="settings.dataSettings.deleteAllData" xml:space="preserve">
+    <value>Eliminar Todos los Datos</value>
+  </data>
+  <data name="settings.dataSettings.gameDirectory" xml:space="preserve">
+    <value>Directorio del juego</value>
+  </data>
+  <data name="settings.dataSettings.gameDirectoryHint" xml:space="preserve">
+    <value>Ubicación donde se almacenan las instancias del juego instaladas.</value>
+  </data>
+  <data name="settings.dataSettings.gameRunningWarning" xml:space="preserve">
+    <value>Algunas opciones no están disponibles mientras el juego está en ejecución. Cierra el juego para cambiar estos ajustes.</value>
+  </data>
+  <data name="settings.dataSettings.instanceFolder" xml:space="preserve">
+    <value>Carpeta de Instancias</value>
+  </data>
+  <data name="settings.dataSettings.launcherData" xml:space="preserve">
+    <value>Datos del lanzador</value>
+  </data>
+  <data name="settings.dataSettings.launcherDataFolder" xml:space="preserve">
+    <value>Carpeta de Datos del Launcher</value>
+  </data>
+  <data name="settings.dataSettings.launcherDataHint" xml:space="preserve">
+    <value>Ubicación donde se almacenan la configuración y los recursos del lanzador.</value>
+  </data>
+  <data name="settings.dataSettings.launcherFiles" xml:space="preserve"><value>Archivos del launcher</value></data>
+  <data name="settings.dataSettings.storageUsed" xml:space="preserve"><value>Espacio utilizado</value></data>
+  <data name="settings.dataSettings.otherFiles" xml:space="preserve"><value>Otros archivos</value></data>
+  <data name="settings.dataSettings.movingData" xml:space="preserve">
+    <value>Moviendo datos...</value>
+  </data>
+  <data name="settings.dataSettings.movingDataHint" xml:space="preserve">
+    <value>Moviendo: {{file}}</value>
+  </data>
+  <data name="settings.dataSettings.open" xml:space="preserve">
+    <value>Abrir</value>
+  </data>
+  <data name="settings.dataSettings.openLauncherFolder" xml:space="preserve">
+    <value>Abrir Carpeta del Launcher</value>
+  </data>
+  <data name="settings.dataSettings.resetToDefault" xml:space="preserve">
+    <value>Restablecer</value>
+  </data>
+  <data name="settings.dataSettings.title" xml:space="preserve">
+    <value>Gestión de datos</value>
+  </data>
+  <data name="settings.deleteAllData.message" xml:space="preserve">
+    <value>Esto eliminará todos los datos del launcher incluyendo ajustes, caché y archivos descargados. Esta acción no se puede deshacer.</value>
+  </data>
+  <data name="settings.deleteAllData.title" xml:space="preserve">
+    <value>¿Eliminar Todos los Datos?</value>
+  </data>
+  <data name="settings.deleteInstance.message" xml:space="preserve">
+    <value>Esto eliminará la instancia {{branch}} {{version}} y todos sus datos. Esta acción no se puede deshacer.</value>
+  </data>
+  <data name="settings.deleteInstance.title" xml:space="preserve">
+    <value>¿Eliminar Instancia?</value>
+  </data>
+  <data name="settings.devMode" xml:space="preserve">
+    <value>Modo Desarrollador</value>
+  </data>
+  <data name="settings.downloads.addMirror" xml:space="preserve">
+    <value>Añadir Espejo</value>
+  </data>
+  <data name="settings.downloads.addMirrorBtn" xml:space="preserve">
+    <value>Añadir Espejo</value>
+  </data>
+  <data name="settings.downloads.communityMirrors" xml:space="preserve">
+    <value>Espejos de la Comunidad</value>
+  </data>
+  <data name="settings.downloads.deleteMirror" xml:space="preserve">
+    <value>Eliminar espejo</value>
+  </data>
+  <data name="settings.downloads.disable" xml:space="preserve">
+    <value>Desactivar</value>
+  </data>
+  <data name="settings.downloads.enable" xml:space="preserve">
+    <value>Activar</value>
+  </data>
+  <data name="settings.downloads.headersHint" xml:space="preserve">
+    <value>Formato: header=valor o header="valor con espacios". Usa {hytaleAgent} para el User-Agent oficial.</value>
+  </data>
+  <data name="settings.downloads.headersPlaceholder" xml:space="preserve">
+    <value>Cabeceras personalizadas (opcional): Authorization="Bearer token" User-Agent="{hytaleAgent}"</value>
+  </data>
+  <data name="settings.downloads.howDownloadsWork" xml:space="preserve">
+    <value>Cómo funcionan las descargas</value>
+  </data>
+  <data name="settings.downloads.howDownloadsWorkDescription" xml:space="preserve">
+    <value>HyPrism selecciona automáticamente la fuente más rápida disponible para descargar archivos del juego. Pulsa "Probar Velocidad" para verificar tu conexión.</value>
+  </data>
+  <data name="settings.downloads.mirrorUrlHint" xml:space="preserve">
+    <value>Introduce la URL base de un espejo Hytale. El launcher intentará detectar automáticamente la configuración.</value>
+  </data>
+  <data name="settings.downloads.mirrors" xml:space="preserve">
+    <value>Espejos de la Comunidad</value>
+  </data>
+  <data name="settings.downloads.mirrorsDescription" xml:space="preserve">
+    <value>Fuentes de descarga alternativas para archivos del juego</value>
+  </data>
+  <data name="settings.downloads.mirrorsHint" xml:space="preserve">
+    <value>Fuentes alternativas de la comunidad</value>
+  </data>
+  <data name="settings.downloads.noMirrors" xml:space="preserve">
+    <value>No hay espejos configurados</value>
+  </data>
+  <data name="settings.downloads.noMirrorsHint" xml:space="preserve">
+    <value>Añade un espejo para descargar archivos del juego sin una cuenta oficial</value>
+  </data>
+  <data name="settings.downloads.officialSource" xml:space="preserve">
+    <value>Fuente Oficial</value>
+  </data>
+  <data name="settings.downloads.officialSourceHint" xml:space="preserve">
+    <value>Descargar desde servidores oficiales de Hytale</value>
+  </data>
+  <data name="settings.downloads.refreshMirrors" xml:space="preserve">
+    <value>Actualizar espejos</value>
+  </data>
+  <data name="settings.downloads.testSpeed" xml:space="preserve">
+    <value>Probar Velocidad</value>
+  </data>
+  <data name="settings.downloads.testing" xml:space="preserve">
+    <value>Probando...</value>
+  </data>
+  <data name="settings.downloads.title" xml:space="preserve">
+    <value>Descargas</value>
+  </data>
+  <data name="settings.downloads.unavailable" xml:space="preserve">
+    <value>No disponible</value>
+  </data>
+  <data name="settings.exportInstance.exportFolder" xml:space="preserve">
+    <value>Carpeta de Exportación</value>
+  </data>
+  <data name="settings.exportInstance.exportType" xml:space="preserve">
+    <value>Tipo de Exportación</value>
+  </data>
+  <data name="settings.exportInstance.selectExportFolder" xml:space="preserve">
+    <value>Seleccionar carpeta de exportación...</value>
+  </data>
+  <data name="settings.exportInstance.title" xml:space="preserve">
+    <value>Exportar instancia</value>
+  </data>
+  <data name="settings.exportInstance.zipArchive" xml:space="preserve">
+    <value>Archivo ZIP</value>
+  </data>
+  <data name="settings.exportInstance.zipArchiveHint" xml:space="preserve">
+    <value>Todos los datos de la instancia empaquetados</value>
+  </data>
+  <data name="settings.general" xml:space="preserve">
+    <value>General</value>
+  </data>
+  <data name="settings.generalSettings.closeLauncher" xml:space="preserve">
+    <value>Cerrar tras iniciar</value>
+  </data>
+  <data name="settings.generalSettings.closeLauncherHint" xml:space="preserve">
+    <value>Cerrar al iniciar el juego.</value>
+  </data>
+  <data name="settings.generalSettings.launcherStorage" xml:space="preserve">
+    <value>Almacenamiento</value>
+  </data>
+  <data name="settings.generalSettings.launcherStorageHint" xml:space="preserve">
+    <value>Ubicación de datos y juegos.</value>
+  </data>
+  <data name="settings.generalSettings.showAlphaMods" xml:space="preserve">
+    <value>Mostrar Mods Alpha</value>
+  </data>
+  <data name="settings.generalSettings.showAlphaModsHint" xml:space="preserve">
+    <value>Mostrar mods con tipo de lanzamiento alpha en el administrador de mods</value>
+  </data>
+  <data name="settings.generalSettings.title" xml:space="preserve">
+    <value>Ajustes Generales</value>
+  </data>
+  <data name="settings.generalSettings.watchTutorial" xml:space="preserve">
+    <value>Ver Tutorial</value>
+  </data>
+  <data name="settings.graphics" xml:space="preserve">
+    <value>Gráficos</value>
+  </data>
+  <data name="settings.graphicsSettings.enableOptimizationMods" xml:space="preserve">
+    <value>Activar Mods de Optimización</value>
+  </data>
+  <data name="settings.graphicsSettings.gpuPreference" xml:space="preserve">
+    <value>Renderizado</value>
+  </data>
+    <data name="settings.graphicsSettings.usedGpu" xml:space="preserve">
+    <value>GPU utilizada</value>
+  </data>
+<data name="settings.graphicsSettings.gpuPreferenceHint" xml:space="preserve">
+    <value>Elige qué GPU usar para ejecutar el juego</value>
+  </data>
+  <data name="settings.graphicsSettings.gpu_auto" xml:space="preserve">
+    <value>Auto</value>
+  </data>
+  <data name="settings.graphicsSettings.gpu_autoHint" xml:space="preserve">
+    <value>Dejar que el sistema decida</value>
+  </data>
+  <data name="settings.graphicsSettings.gpu_dedicatedHint" xml:space="preserve">
+    <value>Usar GPU discreta (NVIDIA/AMD)</value>
+  </data>
+  <data name="settings.graphicsSettings.gpu_integratedHint" xml:space="preserve">
+    <value>Usar GPU integrada (Intel/AMD)</value>
+  </data>
+  <data name="settings.graphicsSettings.installOptModsAction" xml:space="preserve">
+    <value>Instalar 8 mods de rendimiento a todos los perfiles</value>
+  </data>
+  <data name="settings.graphicsSettings.installingOptMods" xml:space="preserve">
+    <value>Instalando mods de optimización...</value>
+  </data>
+  <data name="settings.graphicsSettings.optModsFailed" xml:space="preserve">
+    <value>Error al instalar mods de optimización</value>
+  </data>
+  <data name="settings.graphicsSettings.optModsInstalled" xml:space="preserve">
+    <value>¡Mods de optimización instalados!</value>
+  </data>
+  <data name="settings.graphicsSettings.optimizationMods" xml:space="preserve">
+    <value>Mods de Optimización</value>
+  </data>
+  <data name="settings.graphicsSettings.optimizationModsHint" xml:space="preserve">
+    <value>Descarga e instala mods de optimización para mejorar el rendimiento del juego</value>
+  </data>
+  <data name="settings.graphicsSettings.singleGpuNotice" xml:space="preserve">
+    <value>Solo se detectó una GPU — la selección está bloqueada en modo Auto.</value>
+  </data>
+  <data name="settings.graphicsSettings.title" xml:space="preserve">
+    <value>Configuración de Gráficos</value>
+  </data>
+  <data name="settings.importInstance.importing" xml:space="preserve">
+    <value>Importando</value>
+  </data>
+  <data name="settings.importInstance.importingProgress" xml:space="preserve">
+    <value>Importando...</value>
+  </data>
+  <data name="settings.importInstance.selectInstance" xml:space="preserve">
+    <value>Selecciona a qué instancia importar los datos de usuario:</value>
+  </data>
+  <data name="settings.importInstance.title" xml:space="preserve">
+    <value>Importar Instancia</value>
+  </data>
+  <data name="settings.instanceSettings.clickToRefresh" xml:space="preserve">
+    <value>Clic para actualizar</value>
+  </data>
+  <data name="settings.instanceSettings.created" xml:space="preserve">
+    <value>Creado</value>
+  </data>
+  <data name="settings.instanceSettings.delete" xml:space="preserve">
+    <value>Eliminar instancia</value>
+  </data>
+  <data name="settings.instanceSettings.description" xml:space="preserve">
+    <value>Gestiona tus versiones instaladas del juego.</value>
+  </data>
+  <data name="settings.instanceSettings.dropZipImport" xml:space="preserve">
+    <value>Suelta ZIP o PWR para importar instancia</value>
+  </data>
+  <data name="settings.instanceSettings.empty" xml:space="preserve">
+    <value>Parece que aún no has descargado nada.</value>
+  </data>
+  <data name="settings.instanceSettings.exportFailed" xml:space="preserve">
+    <value>Error al exportar instancia</value>
+  </data>
+  <data name="settings.instanceSettings.exportInstance" xml:space="preserve">
+    <value>Exportar Instancia</value>
+  </data>
+  <data name="settings.instanceSettings.exportedSuccess" xml:space="preserve">
+    <value>Exportado a</value>
+  </data>
+  <data name="settings.instanceSettings.installHytale" xml:space="preserve">
+    <value>Instala Hytale para crear una instancia</value>
+  </data>
+  <data name="settings.instanceSettings.lastPlayed" xml:space="preserve">
+    <value>Última partida</value>
+  </data>
+  <data name="settings.instanceSettings.launchBranch" xml:space="preserve">
+    <value>Rama de inicio</value>
+  </data>
+  <data name="settings.instanceSettings.never" xml:space="preserve">
+    <value>Nunca</value>
+  </data>
+  <data name="settings.instanceSettings.noInstances" xml:space="preserve">
+    <value>No hay instancias instaladas</value>
+  </data>
+  <data name="settings.instanceSettings.noUserData" xml:space="preserve">
+    <value>No hay carpeta UserData para exportar</value>
+  </data>
+  <data name="settings.instanceSettings.notPlayed" xml:space="preserve">
+    <value>No jugado</value>
+  </data>
+  <data name="settings.instanceSettings.openFolder" xml:space="preserve">
+    <value>Abrir carpeta</value>
+  </data>
+  <data name="settings.instanceSettings.playtime" xml:space="preserve">
+    <value>Tiempo de juego</value>
+  </data>
+  <data name="settings.instanceSettings.title" xml:space="preserve">
+    <value>Gestión de instancias</value>
+  </data>
+  <data name="settings.instanceSettings.updated" xml:space="preserve">
+    <value>Actualizado</value>
+  </data>
+  <data name="settings.instanceSettings.userData" xml:space="preserve">
+    <value>Datos de usuario</value>
+  </data>
+  <data name="settings.instanceSettings.version" xml:space="preserve">
+    <value>Versión</value>
+  </data>
+  <data name="settings.instances" xml:space="preserve">
+    <value>Instancias</value>
+  </data>
+    <data name="settings.javaSettings.customJavaPathEmpty" xml:space="preserve">
+    <value>Ningún ejecutable seleccionado</value>
+  </data>
+<data name="settings.javaSettings.customJavaPathNotFound" xml:space="preserve">
+    <value>El ejecutable de Java seleccionado no fue encontrado</value>
+  </data>
+  <data name="settings.javaSettings.customJavaPathPlaceholder" xml:space="preserve">
+    <value>/ruta/a/java o C:\Java\bin\java.exe</value>
+  </data>
+  <data name="settings.javaSettings.customJavaPathRequired" xml:space="preserve">
+    <value>Por favor especifica una ruta al ejecutable de Java</value>
+  </data>
+  <data name="settings.javaSettings.detectedMemory" xml:space="preserve">
+    <value>Memoria del sistema detectada: {{value}}</value>
+  </data>
+  <data name="settings.javaSettings.gcMode" xml:space="preserve">
+    <value>Recolector de basura</value>
+  </data>
+  <data name="settings.javaSettings.gcModeHint" xml:space="preserve">
+    <value>Elige un perfil de GC simple sin escribir flags manualmente</value>
+  </data>
+  <data name="settings.javaSettings.gc_auto" xml:space="preserve">
+    <value>Auto (predeterminado)</value>
+  </data>
+  <data name="settings.javaSettings.gc_autoHint" xml:space="preserve">
+    <value>No forzar un recolector específico</value>
+  </data>
+  <data name="settings.javaSettings.gc_g1" xml:space="preserve">
+    <value>G1GC</value>
+  </data>
+  <data name="settings.javaSettings.gc_g1Hint" xml:space="preserve">
+    <value>Añade -XX:+UseG1GC para un rendimiento más suave</value>
+  </data>
+  <data name="settings.javaSettings.initialRam" xml:space="preserve">
+    <value>RAM Inicial (-Xms)</value>
+  </data>
+  <data name="settings.javaSettings.javaRuntime" xml:space="preserve">
+    <value>Java Runtime</value>
+  </data>
+  <data name="settings.javaSettings.javaRuntimeHint" xml:space="preserve">
+    <value>Elige qué ejecutable de Java usar para el servidor de un jugador</value>
+  </data>
+  <data name="settings.javaSettings.jvmArguments" xml:space="preserve">
+    <value>Argumentos JVM avanzados</value>
+  </data>
+  <data name="settings.javaSettings.jvmArgumentsBlocked" xml:space="preserve">
+    <value>Algunos flags JVM inseguros o gestionados fueron eliminados antes de guardar</value>
+  </data>
+    <data name="settings.javaSettings.jvmArgumentsEmpty" xml:space="preserve">
+    <value>Aún no hay argumentos adicionales, los indicadores opcionales se guardan en JAVA_TOOL_OPTIONS</value>
+  </data>
+<data name="settings.javaSettings.jvmArgumentsHint" xml:space="preserve">
+    <value>Flags adicionales para el servidor de un jugador. Se guardan en JAVA_TOOL_OPTIONS</value>
+  </data>
+  <data name="settings.javaSettings.jvmArgumentsPlaceholder" xml:space="preserve">
+    <value>-Dfile.encoding=UTF-8 -XX:+UnlockExperimentalVMOptions</value>
+  </data>
+  <data name="settings.javaSettings.maxRam" xml:space="preserve">
+    <value>RAM Máxima (-Xmx)</value>
+  </data>
+  <data name="settings.javaSettings.maxRecommended" xml:space="preserve">
+    <value>Máximo recomendado: {{value}}</value>
+  </data>
+  <data name="settings.javaSettings.ramAllocation" xml:space="preserve">
+    <value>Asignación de RAM (servidor)</value>
+  </data>
+  <data name="settings.javaSettings.ramAllocationHint" xml:space="preserve">
+    <value>Configura el heap máximo de Java (-Xmx) para el servidor de un jugador con un control deslizante</value>
+  </data>
+  <data name="settings.javaSettings.useBundledJava" xml:space="preserve">
+    <value>Usar Java incluida</value>
+  </data>
+  <data name="settings.javaSettings.useBundledJavaHint" xml:space="preserve">
+    <value>Recomendado: usa la Java incluida con HyPrism</value>
+  </data>
+  <data name="settings.javaSettings.useCustomJava" xml:space="preserve">
+    <value>Usar Java personalizada</value>
+  </data>
+  <data name="settings.javaSettings.useCustomJavaHint" xml:space="preserve">
+    <value>Especifica tu propia ruta al ejecutable de Java (java/java.exe)</value>
+  </data>
+  <data name="settings.language" xml:space="preserve">
+    <value>Idioma</value>
+  </data>
+  <data name="settings.languageChanged.dontAskAgain" xml:space="preserve">
+    <value>No preguntar de nuevo</value>
+  </data>
+  <data name="settings.languageChanged.message" xml:space="preserve">
+    <value>¿Te gustaría buscar mods de traducción para {{language}}?</value>
+  </data>
+  <data name="settings.languageChanged.noThanks" xml:space="preserve">
+    <value>No, gracias</value>
+  </data>
+  <data name="settings.languageChanged.searchMods" xml:space="preserve">
+    <value>Buscar Mods</value>
+  </data>
+  <data name="settings.languageChanged.title" xml:space="preserve">
+    <value>Idioma Cambiado</value>
+  </data>
+  <data name="settings.languageSettings.interfaceLanguage" xml:space="preserve">
+    <value>Idioma de Interfaz</value>
+  </data>
+  <data name="settings.languageSettings.interfaceLanguageHint" xml:space="preserve">
+    <value>Elige tu idioma preferido para la interfaz del launcher</value>
+  </data>
+  <data name="settings.languageSettings.note" xml:space="preserve">
+    <value>Nota: Algunos textos pueden permanecer en inglés hasta que se complete la localización. Los desarrolladores están localizando activamente el launcher para que todos puedan disfrutar usándolo.</value>
+  </data>
+  <data name="settings.languageSettings.selectLanguage" xml:space="preserve">
+    <value>Seleccionar Idioma</value>
+  </data>
+  <data name="settings.languageSettings.title" xml:space="preserve">
+    <value>Idioma</value>
+  </data>
+  <data name="settings.myProfile" xml:space="preserve">
+    <value>Mi Perfil</value>
+  </data>
+  <data name="settings.network" xml:space="preserve">
+    <value>Red</value>
+  </data>
+  <data name="settings.networkSettings.authCustom" xml:space="preserve">
+    <value>Personalizado</value>
+  </data>
+  <data name="settings.networkSettings.authCustomHint" xml:space="preserve">
+    <value>Ingresa tu propia dirección de servidor de autenticación</value>
+  </data>
+  <data name="settings.networkSettings.authDefault" xml:space="preserve">
+    <value>Predeterminado</value>
+  </data>
+  <data name="settings.networkSettings.authOfficial" xml:space="preserve">
+    <value>Oficial</value>
+  </data>
+  <data name="settings.networkSettings.authOfficialHint" xml:space="preserve">
+    <value>Servidores de Hytale</value>
+  </data>
+  <data name="settings.networkSettings.authServer" xml:space="preserve">
+    <value>Servidor de Autenticación</value>
+  </data>
+  <data name="settings.networkSettings.authServerHint" xml:space="preserve">
+    <value>Selecciona el servidor de autenticación usado para juego online.</value>
+  </data>
+  <data name="settings.networkSettings.currentServer" xml:space="preserve">
+    <value>Servidor actual</value>
+  </data>
+  <data name="settings.networkSettings.onlineMode" xml:space="preserve">
+    <value>Modo Online</value>
+  </data>
+  <data name="settings.networkSettings.onlineModeHint" xml:space="preserve">
+    <value>Usar el servicio de autenticación y los datos de la cuenta; al desactivarlo, HyPrism crea una sesión OmniAuth local</value>
+  </data>
+  <data name="settings.profile.avatar" xml:space="preserve">
+    <value>Avatar</value>
+  </data>
+  <data name="settings.profile.copy" xml:space="preserve">
+    <value>Copiar</value>
+  </data>
+  <data name="settings.profile.displayName" xml:space="preserve">
+    <value>Nombre</value>
+  </data>
+  <data name="settings.profile.displayNameHint" xml:space="preserve">
+    <value>Nombre en el juego (1-16 car.).</value>
+  </data>
+  <data name="settings.profile.nameWarning" xml:space="preserve">
+    <value>Hytale tiene un patrón específico de apodos. Usa solo caracteres en inglés y números (0-9), evitando símbolos especiales y espacios (excepciones: '-', '_')</value>
+  </data>
+  <data name="settings.profile.randomize" xml:space="preserve">
+    <value>Aleatorio</value>
+  </data>
+  <data name="settings.profile.title" xml:space="preserve">
+    <value>Mi Perfil</value>
+  </data>
+  <data name="settings.profile.uploadSkin" xml:space="preserve">
+    <value>Subir Skin</value>
+  </data>
+  <data name="settings.profile.uuid" xml:space="preserve">
+    <value>UUID</value>
+  </data>
+  <data name="settings.profile.uuidWarning" xml:space="preserve">
+    <value>ID único. ¡Cambiarlo reinicia tu skin!</value>
+  </data>
+  <data name="settings.title" xml:space="preserve">
+    <value>Ajustes</value>
+  </data>
+  <data name="settings.variables" xml:space="preserve">
+    <value>Variables</value>
+  </data>
+  <data name="settings.variablesSettings.commonPresets" xml:space="preserve">
+    <value>Preajustes comunes</value>
+  </data>
+  <data name="settings.variablesSettings.commonPresetsHint" xml:space="preserve">
+    <value>Interruptores rápidos para variables de entorno comunes. Se añaden automáticamente a tus variables personalizadas</value>
+  </data>
+  <data name="settings.variablesSettings.customEnvVars" xml:space="preserve">
+    <value>Variables de entorno</value>
+  </data>
+    <data name="settings.variablesSettings.customEnvVarsEmpty" xml:space="preserve">
+    <value>Aún no hay variables personalizadas, el juego hereda el entorno del launcher</value>
+  </data>
+<data name="settings.variablesSettings.customEnvVarsHint" xml:space="preserve">
+    <value>Pares KEY=VALUE separados por espacios. Ejemplo: MY_VAR=value ANOTHER=123</value>
+  </data>
+  <data name="settings.variablesSettings.customEnvVarsPlaceholder" xml:space="preserve">
+    <value>MY_VAR=value ANOTHER_VAR=123</value>
+  </data>
+  <data name="settings.variablesSettings.disableVkLayers" xml:space="preserve">
+    <value>Desactivar capas Vulkan</value>
+  </data>
+  <data name="settings.variablesSettings.disableVkLayersHint" xml:space="preserve">
+    <value>Desactiva las capas de validación de Vulkan que pueden causar fallos con controladores experimentales</value>
+  </data>
+  <data name="settings.variablesSettings.envVarsInvalidFormat" xml:space="preserve">
+    <value>Formato inválido. Usa pares KEY=VALUE separados por espacios</value>
+  </data>
+  <data name="settings.variablesSettings.forceAmdVulkan" xml:space="preserve">
+    <value>Forzar controlador AMD RADV</value>
+  </data>
+  <data name="settings.variablesSettings.forceAmdVulkanHint" xml:space="preserve">
+    <value>Fuerza el uso del controlador Vulkan RADV de código abierto para GPUs AMD</value>
+  </data>
+  <data name="settings.variablesSettings.forceX11" xml:space="preserve">
+    <value>Forzar X11 (SDL_VIDEODRIVER)</value>
+  </data>
+  <data name="settings.variablesSettings.forceX11Hint" xml:space="preserve">
+    <value>Fuerza al juego a usar X11 en lugar de Wayland. Ayuda con problemas de compatibilidad GPU/controlador</value>
+  </data>
+  <data name="settings.variablesSettings.linuxOnlyNotice" xml:space="preserve">
+    <value>Las variables de entorno solo se aplican en Linux</value>
+  </data>
+  <data name="settings.variablesSettings.title" xml:space="preserve">
+    <value>Variables de entorno</value>
+  </data>
+  <data name="settings.visual" xml:space="preserve">
+    <value>Visual</value>
+  </data>
+  <data name="settings.visualSettings.autoShuffle" xml:space="preserve">
+    <value>Auto / Aleatorio</value>
+  </data>
+  <data name="settings.visualSettings.background" xml:space="preserve">
+    <value>Fondo</value>
+  </data>
+  <data name="settings.visualSettings.chooseBackground" xml:space="preserve">
+    <value>Elegir Fondo</value>
+  </data>
+  <data name="settings.visualSettings.current" xml:space="preserve">
+    <value>Actual</value>
+  </data>
+  <data name="settings.visualSettings.hideNews" xml:space="preserve">
+    <value>Ocultar Noticias</value>
+  </data>
+  <data name="settings.visualSettings.hideNewsHint" xml:space="preserve">
+    <value>Ocultar completamente el panel de noticias</value>
+  </data>
+  <data name="settings.visualSettings.images" xml:space="preserve">
+    <value>Imágenes</value>
+  </data>
+  <data name="settings.visualSettings.slideshow" xml:space="preserve">
+    <value>Presentación</value>
+  </data>
+  <data name="settings.visualSettings.slideshowHint" xml:space="preserve">
+    <value>Alternar entre todos los fondos</value>
+  </data>
+  <data name="settings.visualSettings.solidColors" xml:space="preserve">
+    <value>Colores Sólidos</value>
+  </data>
+  <data name="settings.visualSettings.staticBackground" xml:space="preserve">
+    <value>O elige un fondo estático:</value>
+  </data>
+  <data name="settings.visualSettings.title" xml:space="preserve">
+    <value>Ajustes Visuales</value>
+  </data>
+  <data name="settings.visuals" xml:space="preserve">
+    <value>Visual</value>
+  </data>
+  <data name="social.discord" xml:space="preserve">
+    <value>Discord</value>
+  </data>
+  <data name="social.github" xml:space="preserve">
+    <value>GitHub</value>
+  </data>
+  <data name="update.autoLaunch" xml:space="preserve">
+    <value>El juego se iniciará automáticamente cuando esté listo.</value>
+  </data>
+  <data name="update.downloading" xml:space="preserve">
+    <value>Descargando...</value>
+  </data>
+  <data name="update.extracting" xml:space="preserve">
+    <value>Extrayendo...</value>
+  </data>
+  <data name="update.launching" xml:space="preserve">
+    <value>Iniciando...</value>
+  </data>
+  <data name="update.pleaseWait" xml:space="preserve">
+    <value>Por favor espera mientras descargamos e instalamos los archivos del juego.</value>
+  </data>
+  <data name="updateConfirmation.copyDataQuestion" xml:space="preserve">
+    <value>¿Te gustaría copiar tus datos guardados a la nueva versión?</value>
+  </data>
+  <data name="updateConfirmation.currentVersion" xml:space="preserve">
+    <value>Versión Actual</value>
+  </data>
+  <data name="updateConfirmation.hasDataMessage" xml:space="preserve">
+    <value>Hay una nueva versión del juego disponible. Tu versión actual tiene datos guardados (ajustes, mods, etc.).</value>
+  </data>
+  <data name="updateConfirmation.newVersion" xml:space="preserve">
+    <value>Nueva Versión</value>
+  </data>
+  <data name="updateConfirmation.readyMessage" xml:space="preserve">
+    <value>Hay una nueva versión del juego disponible. ¿Listo para actualizar?</value>
+  </data>
+  <data name="updateConfirmation.title" xml:space="preserve">
+    <value>Actualización de Juego Disponible</value>
+  </data>
+  <data name="updateConfirmation.updateCopyData" xml:space="preserve">
+    <value>Actualizar y Copiar Datos</value>
+  </data>
+  <data name="updateConfirmation.updateNow" xml:space="preserve">
+    <value>Actualizar Ahora</value>
+  </data>
+  <data name="updateConfirmation.updateWithoutCopy" xml:space="preserve">
+    <value>Actualizar Sin Copiar</value>
+  </data>
+  <data name="updateOverlay.autoRestart" xml:space="preserve">
+    <value>El launcher se reiniciará automáticamente cuando se complete la actualización.</value>
+  </data>
+  <data name="updateOverlay.failed" xml:space="preserve">
+    <value>Error en la actualización</value>
+  </data>
+  <data name="updateOverlay.installing" xml:space="preserve">
+    <value>Instalando</value>
+  </data>
+  <data name="updateOverlay.message" xml:space="preserve">
+    <value>Por favor espera mientras descargamos e instalamos la última versión de HyPrism.</value>
+  </data>
+  <data name="updateOverlay.title" xml:space="preserve">
+    <value>ACTUALIZANDO LAUNCHER</value>
+  </data>
+  <data name="wrapper.checkForUpdates" xml:space="preserve">
+    <value>Buscar actualizaciones</value>
+  </data>
+  <data name="wrapper.description" xml:space="preserve">
+    <value>Modo wrapper — descarga y ejecuta la versión completa de HyPrism</value>
+  </data>
+  <data name="wrapper.downloadInstall" xml:space="preserve">
+    <value>Descargar e Instalar</value>
+  </data>
+  <data name="wrapper.installFailed" xml:space="preserve">
+    <value>Error en la instalación - revisa los logs</value>
+  </data>
+  <data name="wrapper.installed" xml:space="preserve">
+    <value>Instalado:</value>
+  </data>
+  <data name="wrapper.latest" xml:space="preserve">
+    <value>Última:</value>
+  </data>
+  <data name="wrapper.launch" xml:space="preserve">
+    <value>Iniciar</value>
+  </data>
+  <data name="wrapper.launchFailed" xml:space="preserve">
+    <value>Error al iniciar HyPrism</value>
+  </data>
+  <data name="wrapper.loadingNews" xml:space="preserve">
+    <value>Cargando noticias…</value>
+  </data>
+  <data name="wrapper.none" xml:space="preserve">
+    <value>ninguno</value>
+  </data>
+  <data name="wrapper.upToDate" xml:space="preserve">
+    <value>Actualizado</value>
+  </data>
+  <data name="wrapper.updateAvailable" xml:space="preserve">
+    <value>Actualización disponible</value>
+  </data>
+  <data name="oauth.callback.successTitle" xml:space="preserve">
+    <value>Autorización completada</value>
+  </data>
+  <data name="oauth.callback.successMessage" xml:space="preserve">
+    <value>Tu cuenta oficial de Hytale está conectada a HyPrism</value>
+  </data>
+  <data name="oauth.callback.closeHint" xml:space="preserve">
+    <value>Puedes cerrar esta ventana y volver al launcher</value>
+  </data>
+  <data name="oauth.callback.failureTitle" xml:space="preserve">
+    <value>Error de autorización</value>
+  </data>
+  <data name="oauth.callback.failureHint" xml:space="preserve">
+    <value>Vuelve al launcher e inténtalo de nuevo</value>
+  </data>
+  <data name="common.remove" xml:space="preserve">
+    <value>Eliminar</value>
+  </data>
+  <data name="common.selectVersion" xml:space="preserve">
+    <value>Seleccionar versión</value>
+  </data>
+  <data name="desktopSettings.accountHytale" xml:space="preserve">
+    <value>Cuenta de Hytale</value>
+  </data>
+  <data name="desktopSettings.accountOffline" xml:space="preserve">
+    <value>Cuenta sin conexión</value>
+  </data>
+  <data name="desktopSettings.defaultLocation" xml:space="preserve">
+    <value>Ubicación predeterminada del sistema</value>
+  </data>
+  <data name="desktopSettings.description" xml:space="preserve">
+    <value>Preferencias del lanzador, del juego y del sistema</value>
+  </data>
+  <data name="desktopSettings.discordAnnouncementsHint" xml:space="preserve">
+    <value>Mostrar anuncios del lanzador recibidos de Discord</value>
+  </data>
+  <data name="desktopSettings.music" xml:space="preserve">
+    <value>Música de fondo</value>
+  </data>
+  <data name="desktopSettings.musicHint" xml:space="preserve">
+    <value>Reproducir música del lanzador mientras navegas</value>
+  </data>
+  <data name="home.createInstance" xml:space="preserve">
+    <value>Crear una instancia</value>
+  </data>
+  <data name="home.currentInstance" xml:space="preserve">
+    <value>Instancia actual</value>
+  </data>
+  <data name="home.welcomeHint" xml:space="preserve">
+    <value>Crear una instancia para elegir una versión de Hytale, descargar sus archivos y comenzar tu próxima aventura</value>
+  </data>
+  <data name="home.welcomeTitle" xml:space="preserve">
+    <value>Bienvenido a HyPrism</value>
+  </data>
+  <data name="instances.newInstance" xml:space="preserve">
+    <value>Nueva instancia</value>
+  </data>
+  <data name="instances.newInstanceHint" xml:space="preserve">
+    <value>Elige una rama y versión del juego para tu nueva instancia</value>
+  </data>
+  <data name="instances.branchHint" xml:space="preserve">
+    <value>Compilaciones estables o preliminares</value>
+  </data>
+  <data name="instances.actions.delete" xml:space="preserve">
+    <value>Eliminar</value>
+  </data>
+  <data name="instances.actions.deleteHint" xml:space="preserve">
+    <value>¿Eliminar "{0}" y todos sus datos? Esta acción no se puede deshacer.</value>
+  </data>
+  <data name="instances.actions.deleteTitle" xml:space="preserve">
+    <value>¿Eliminar instancia?</value>
+  </data>
+  <data name="instances.actions.install" xml:space="preserve">
+    <value>Instalar</value>
+  </data>
+  <data name="instances.actions.cancel" xml:space="preserve">
+    <value>Cancelar</value>
+  </data>
+  <data name="instances.actions.launching" xml:space="preserve">
+    <value>Iniciando</value>
+  </data>
+  <data name="instances.actions.running" xml:space="preserve">
+    <value>Ejecutando</value>
+  </data>
+  <data name="instances.actions.openFolder" xml:space="preserve">
+    <value>Abrir carpeta</value>
+  </data>
+  <data name="instances.actions.play" xml:space="preserve">
+    <value>Lanzar</value>
+  </data>
+  <data name="instances.versionHint" xml:space="preserve">
+    <value>Versión del juego a instalar</value>
+  </data>
+  <data name="instances.selectVersion" xml:space="preserve">
+    <value>Seleccionar versión</value>
+  </data>
+  <data name="main.clickToOpenRelease" xml:space="preserve">
+    <value>Haga clic para ver la versión en GitHub</value>
+  </data>
+  <data name="news.articleLoadFailed" xml:space="preserve">
+    <value>No se pudo cargar el artículo. Aún puede abrirlo en hytale.com.</value>
+  </data>
+  <data name="news.articleLoading" xml:space="preserve">
+    <value>Cargando artículo...</value>
+  </data>
+  <data name="news.loadMore" xml:space="preserve">
+    <value>Cargar más</value>
+  </data>
+  <data name="news.selectArticle" xml:space="preserve">
+    <value>Selecciona un artículo de noticias para leerlo aquí.</value>
+  </data>
+  <data name="onboarding.warning.back" xml:space="preserve">
+    <value>Volver al inicio de sesión</value>
+  </data>
+  <data name="onboarding.warning.continue" xml:space="preserve">
+    <value>Continuar</value>
+  </data>
+  <data name="onboarding.warning.description" xml:space="preserve">
+    <value>Sin una cuenta de Hytale, no puedes descargar archivos del juego desde los servidores oficiales.</value>
+  </data>
+  <data name="onboarding.warning.noSources" xml:space="preserve">
+    <value>No hay recursos web disponibles para descargar</value>
+  </data>
+  <data name="onboarding.warning.noSourcesHint" xml:space="preserve">
+    <value>Para descargar el juego, necesitarás añadir un espejo en Configuración → Descargas, o iniciar sesión con tu cuenta de Hytale más adelante.</value>
+  </data>
+  <data name="onboarding.warning.title" xml:space="preserve">
+    <value>No hay fuentes de descarga</value>
+  </data>
+  <data name="profiles.setActive" xml:space="preserve">
+    <value>Seleccionar</value>
+  </data>
+  <data name="profiles.active" xml:space="preserve">
+    <value>Activo</value>
+  </data>
+  <data name="settings.aboutSettings.siteRole" xml:space="preserve">
+    <value>Sitio web de documentación para desarrolladores</value>
+  </data>
+  <data name="settings.aboutSettings.project" xml:space="preserve">
+    <value>Proyecto</value>
+  </data>
+  <data name="settings.aboutSettings.githubHint" xml:space="preserve">
+    <value>Código fuente, versiones y desarrollo</value>
+  </data>
+  <data name="settings.aboutSettings.documentation" xml:space="preserve">
+    <value>Documentación</value>
+  </data>
+  <data name="settings.aboutSettings.documentationHint" xml:space="preserve">
+    <value>Guías, arquitectura y referencia para contribuidores</value>
+  </data>
+  <data name="settings.aboutSettings.community" xml:space="preserve">
+    <value>Comunidad</value>
+  </data>
+  <data name="settings.aboutSettings.discordHint" xml:space="preserve">
+    <value>Noticias, discusiones y ayuda de la comunidad</value>
+  </data>
+  <data name="settings.aboutSettings.bugReportHint" xml:space="preserve">
+    <value>Reportar un problema o sugerir una mejora</value>
+  </data>
+  <data name="settings.aboutSettings.legal" xml:space="preserve">
+    <value>Código abierto y avisos legales</value>
+  </data>
+  <data name="settings.aboutSettings.license" xml:space="preserve">
+    <value>Licencia</value>
+  </data>
+  <data name="settings.aboutSettings.licenseHint" xml:space="preserve">
+    <value>El código fuente de HyPrism se distribuye bajo GPL-3.0-only</value>
+  </data>
+  <data name="settings.aboutSettings.credits" xml:space="preserve">
+    <value>Materiales visuales</value>
+  </data>
+  <data name="settings.aboutSettings.creditsHint" xml:space="preserve">
+    <value>Ilustraciones proporcionadas por Icons8</value>
+  </data>
+  <data name="settings.aboutSettings.lordicon" xml:space="preserve">
+    <value>Materiales animados</value>
+  </data>
+  <data name="settings.aboutSettings.lordiconHint" xml:space="preserve">
+    <value>Iconos animados proporcionados por Lordicon</value>
+  </data>
+  <data name="settings.aboutSettings.currentVersion" xml:space="preserve">
+    <value>Versión actual</value>
+  </data>
+  <data name="settings.aboutSettings.currentVersionHint" xml:space="preserve">
+    <value>La versión del lanzador instalada en este dispositivo</value>
+  </data>
+  <data name="settings.aboutSettings.latestMainCommit" xml:space="preserve">
+    <value>Último commit en main</value>
+  </data>
+  <data name="settings.aboutSettings.latestMainCommitLoading" xml:space="preserve">
+    <value>Cargando información del repositorio</value>
+  </data>
+  <data name="settings.aboutSettings.latestMainCommitUnavailable" xml:space="preserve">
+    <value>La información del repositorio no está disponible temporalmente</value>
+  </data>
+  <data name="settings.aboutSettings.hytaleEula" xml:space="preserve">
+    <value>EULA de Hytale</value>
+  </data>
+  <data name="settings.aboutSettings.hytaleEulaHint" xml:space="preserve">
+    <value>Acuerdo de Licencia de Usuario Final para Hytale</value>
+  </data>
+  <data name="settings.downloads.sources" xml:space="preserve">
+    <value>Fuentes de descarga</value>
+  </data>
+  <data name="settings.downloads.columnLink" xml:space="preserve">
+    <value>Enlace</value>
+  </data>
+  <data name="settings.downloads.columnType" xml:space="preserve">
+    <value>Tipo</value>
+  </data>
+  <data name="settings.downloads.columnAvailability" xml:space="preserve">
+    <value>Disponibilidad</value>
+  </data>
+  <data name="settings.downloads.columnPing" xml:space="preserve">
+    <value>Latencia</value>
+  </data>
+  <data name="settings.downloads.sourceTypeOfficial" xml:space="preserve">
+    <value>Oficial</value>
+  </data>
+  <data name="settings.downloads.checkingAvailability" xml:space="preserve">
+    <value>Comprobando</value>
+  </data>
+  <data name="settings.downloads.sourceAvailable" xml:space="preserve">
+    <value>Disponible</value>
+  </data>
+  <data name="settings.downloads.sourceNoCompatibleVersions" xml:space="preserve">
+    <value>Disponible, pero sin versiones para este sistema</value>
+  </data>
+  <data name="settings.downloads.sourceUnavailable" xml:space="preserve">
+    <value>No disponible</value>
+  </data>
+  <data name="settings.downloads.sourceDisabledState" xml:space="preserve">
+    <value>Deshabilitado</value>
+  </data>
+  <data name="settings.downloads.officialSourceConnected" xml:space="preserve">
+    <value>Cuenta conectada</value>
+  </data>
+  <data name="settings.downloads.officialSourceRequiresAccount" xml:space="preserve">
+    <value>Se requiere cuenta de Hytale</value>
+  </data>
+  <data name="settings.downloads.addSource" xml:space="preserve">
+    <value>Agregar fuente</value>
+  </data>
+  <data name="settings.downloads.add" xml:space="preserve">
+    <value>Agregar</value>
+  </data>
+  <data name="settings.downloads.addSourceTitle" xml:space="preserve">
+    <value>Conectar una fuente de descarga</value>
+  </data>
+  <data name="settings.downloads.addSourceHint" xml:space="preserve">
+    <value>Introduce su dirección pública y HyPrism detectará el formato de espejo compatible</value>
+  </data>
+  <data name="settings.downloads.sourceUrlPlaceholder" xml:space="preserve">
+    <value>https://mirror.example.com</value>
+  </data>
+  <data name="settings.downloads.deleteSourceTitle" xml:space="preserve">
+    <value>¿Eliminar esta fuente?</value>
+  </data>
+  <data name="settings.downloads.deleteSourceHint" xml:space="preserve">
+    <value>Su definición local será eliminada y ya no se utilizará para descargas</value>
+  </data>
+  <data name="settings.downloads.sourceManagementUnavailable" xml:space="preserve">
+    <value>La gestión de fuentes de descarga no está disponible en esta sesión</value>
+  </data>
+  <data name="settings.downloads.invalidSourceUrl" xml:space="preserve">
+    <value>Introduzca una dirección HTTPS o una dirección HTTP local</value>
+  </data>
+  <data name="settings.downloads.sourceAlreadyExists" xml:space="preserve">
+    <value>Esta fuente de descarga ya está configurada</value>
+  </data>
+  <data name="settings.downloads.detectingSource" xml:space="preserve">
+    <value>Comprobando la compatibilidad de la fuente</value>
+  </data>
+  <data name="settings.downloads.sourceDetectionFailed" xml:space="preserve">
+    <value>HyPrism no pudo detectar un espejo compatible en esta dirección</value>
+  </data>
+  <data name="settings.downloads.sourceSaveFailed" xml:space="preserve">
+    <value>No se pudo guardar la fuente de descarga</value>
+  </data>
+  <data name="settings.downloads.sourceReadFailed" xml:space="preserve">
+    <value>No se pudieron leer las fuentes de descarga guardadas</value>
+  </data>
+  <data name="settings.downloads.sourceRemoveFailed" xml:space="preserve">
+    <value>No se pudo eliminar la fuente de descarga</value>
+  </data>
+  <data name="settings.downloads.sourceAdded" xml:space="preserve">
+    <value>Fuente de descarga añadida</value>
+  </data>
+  <data name="settings.downloads.sourceRemoved" xml:space="preserve">
+    <value>Fuente de descarga eliminada</value>
+  </data>
+  <data name="settings.downloads.sourceEnabled" xml:space="preserve">
+    <value>Fuente de descarga habilitada</value>
+  </data>
+  <data name="settings.downloads.sourceDisabled" xml:space="preserve">
+    <value>Fuente de descarga deshabilitada</value>
+  </data>
+  <data name="settings.downloads.sourceTypeJsonIndex" xml:space="preserve">
+    <value>Índice JSON</value>
+  </data>
+  <data name="settings.downloads.sourceTypePattern" xml:space="preserve">
+    <value>Plantilla de URL</value>
+  </data>
+  <data name="settings.generalSettings.mirrorDescription" xml:space="preserve">
+    <value>El espejo de la comunidad se utiliza como fuente alternativa para archivos del juego cuando los servidores oficiales no están disponibles.</value>
+  </data>
+  <data name="settings.generalSettings.mirrorSettings" xml:space="preserve">
+    <value>Configuración del espejo</value>
+  </data>
+  <data name="settings.generalSettings.mirrorTestSpeed" xml:space="preserve">
+    <value>Probar velocidad</value>
+  </data>
+  <data name="settings.generalSettings.mirrorTesting" xml:space="preserve">
+    <value>Probando...</value>
+  </data>
+  <data name="settings.generalSettings.mirrorUnavailable" xml:space="preserve">
+    <value>No disponible</value>
+  </data>
+  <data name="settings.java" xml:space="preserve">
+    <value>Java</value>
+  </data>
+  <data name="settings.javaSettings.jvmMemoryArgumentsManaged" xml:space="preserve">
+    <value>-Xms y -Xmx se controlan mediante los deslizadores de asignación de memoria</value>
+  </data>
+  <data name="settings.networkSettings.authServerCheckNow" xml:space="preserve">
+    <value>Comprobar ahora</value>
+  </data>
+  <data name="settings.networkSettings.authServerChecking" xml:space="preserve">
+    <value>Comprobando...</value>
+  </data>
+  <data name="settings.networkSettings.authServerOfficialNote" xml:space="preserve">
+    <value>Los servidores oficiales siempre se consideran disponibles.</value>
+  </data>
+  <data name="settings.networkSettings.authServerOffline" xml:space="preserve">
+    <value>Desconectado</value>
+  </data>
+  <data name="settings.networkSettings.authServerOfflineWarning" xml:space="preserve">
+    <value>El servidor de autenticación no está disponible. El modo en línea está deshabilitado temporalmente.</value>
+  </data>
+  <data name="settings.networkSettings.authServerOnline" xml:space="preserve">
+    <value>En línea</value>
+  </data>
+  <data name="settings.networkSettings.authServerPing" xml:space="preserve">
+    <value>{{ping}}ms</value>
+  </data>
+  <data name="settings.networkSettings.authServerStatus" xml:space="preserve">
+    <value>Estado del servidor de autenticación</value>
+  </data>
+  <data name="settings.networkSettings.authServerStatusHint" xml:space="preserve">
+    <value>Verifique si el servidor de autenticación es accesible.</value>
+  </data>
+  <data name="settings.networkSettings.officialProfileNote" xml:space="preserve">
+    <value>Las cuentas oficiales solo pueden usar la autenticación oficial de Hytale.</value>
+  </data>
+  <data name="settings.networkSettings.unofficialProfileNote" xml:space="preserve">
+    <value>Las cuentas no oficiales no pueden usar la autenticación oficial de Hytale.</value>
+  </data>
+  <data name="desktopSettings.categories.language" xml:space="preserve">
+    <value>Idioma</value>
+  </data>
+  <data name="desktopSettings.categories.miscellaneous" xml:space="preserve">
+    <value>Varios</value>
+  </data>
+  <data name="desktopSettings.categories.appearance" xml:space="preserve">
+    <value>Apariencia</value>
+  </data>
+  <data name="instances.tab.mods" xml:space="preserve">
+    <value>Mods</value>
+  </data>
+  <data name="instances.mods.title" xml:space="preserve">
+    <value>Mods instalados</value>
+  </data>
+  <data name="instances.mods.hint" xml:space="preserve">
+    <value>Contenido instalado solo para esta instancia</value>
+  </data>
+  <data name="instances.mods.search" xml:space="preserve">
+    <value>Buscar mods instalados</value>
+  </data>
+  <data name="instances.mods.emptyTitle" xml:space="preserve">
+    <value>No hay mods instalados</value>
+  </data>
+  <data name="instances.mods.emptyHint" xml:space="preserve">
+    <value>Abre Discover para encontrar contenido para esta instancia</value>
+  </data>
+  <data name="instances.mods.install" xml:space="preserve">
+    <value>Instalar</value>
+  </data>
+  <data name="instances.mods.installed" xml:space="preserve">
+    <value>Instalado</value>
+  </data>
+  <data name="instances.mods.enabled" xml:space="preserve">
+    <value>Activado</value>
+  </data>
+  <data name="instances.mods.disabled" xml:space="preserve">
+    <value>Desactivado</value>
+  </data>
+  <data name="instances.mods.installFailed" xml:space="preserve">
+    <value>No se pudo instalar el mod seleccionado</value>
+  </data>
+  <data name="instances.browse.title" xml:space="preserve">
+    <value>Descubrir mods</value>
+  </data>
+  <data name="instances.browse.hint" xml:space="preserve">
+    <value>Buscar e instalar contenido de CurseForge en esta instancia</value>
+  </data>
+  <data name="instances.browse.search" xml:space="preserve">
+    <value>Buscar en el catálogo de mods</value>
+  </data>
+  <data name="instances.browse.emptyTitle" xml:space="preserve">
+    <value>No se encontraron mods</value>
+  </data>
+  <data name="instances.browse.emptyHint" xml:space="preserve">
+    <value>Prueba una consulta diferente o verifica la configuración de la API de CurseForge</value>
+  </data>
+  <data name="instances.worlds.title" xml:space="preserve">
+    <value>Mundos</value>
+  </data>
+  <data name="instances.worlds.hint" xml:space="preserve">
+    <value>Mundos guardados que pertenecen a esta instancia</value>
+  </data>
+  <data name="instances.worlds.emptyTitle" xml:space="preserve">
+    <value>Aún no hay mundos</value>
+  </data>
+  <data name="instances.worlds.emptyHint" xml:space="preserve">
+    <value>Los mundos creados por el juego aparecerán aquí</value>
+  </data>
+  <data name="instances.content.notInstalledTitle" xml:space="preserve">
+    <value>Instala primero esta instancia</value>
+  </data>
+  <data name="instances.content.notInstalledHint" xml:space="preserve">
+    <value>Los mods y mundos estarán disponibles después de que se instalen los archivos del juego</value>
+  </data>
+  <data name="instances.content.back" xml:space="preserve">
+    <value>Instancia</value>
+  </data>
+  <data name="instances.info.status" xml:space="preserve">
+    <value>Estado</value>
+  </data>
+  <data name="instances.info.playtime" xml:space="preserve">
+    <value>Tiempo de juego</value>
+  </data>
+  <data name="instances.info.mods" xml:space="preserve">
+    <value>Mods</value>
+  </data>
+  <data name="instances.info.worlds" xml:space="preserve">
+    <value>Mundos</value>
+  </data>
+  <data name="instances.info.playtimeValue" xml:space="preserve">
+    <value>{0} h {1} min</value>
+  </data>
+  <data name="instances.console.title" xml:space="preserve">
+    <value>Consola</value>
+  </data>
+  <data name="instances.console.hint" xml:space="preserve">
+    <value>Comandos y salida en vivo para esta instancia</value>
+  </data>
+  <data name="instances.console.emptyTitle" xml:space="preserve">
+    <value>La consola aún no está disponible</value>
+  </data>
+  <data name="instances.console.emptyHint" xml:space="preserve">
+    <value>El seguimiento de la consola por instancia se agregará aquí</value>
+  </data>
+  <data name="instances.logs.title" xml:space="preserve">
+    <value>Registros</value>
+  </data>
+  <data name="instances.logs.hint" xml:space="preserve">
+    <value>Registros de lanzamiento y del juego para esta instancia</value>
+  </data>
+  <data name="instances.logs.emptyTitle" xml:space="preserve">
+    <value>Aún no hay registros de instancias</value>
+  </data>
+  <data name="instances.logs.emptyHint" xml:space="preserve">
+    <value>El historial de registros por instancia aparecerá aquí</value>
+  </data>
+  <data name="settings.downloads.columnEnabled" xml:space="preserve">
+    <value>Activada</value>
+  </data>
+  <data name="settings.downloads.addSourceMethodHint" xml:space="preserve">
+    <value>Elige cómo debe configurar HyPrism la fuente</value>
+  </data>
+  <data name="settings.downloads.addSourceAutomatic" xml:space="preserve">
+    <value>Detectar automáticamente</value>
+  </data>
+  <data name="settings.downloads.addSourceAutomaticHint" xml:space="preserve">
+    <value>Introduce una dirección y deja que HyPrism detecte el formato de la fuente</value>
+  </data>
+  <data name="settings.downloads.addSourceManual" xml:space="preserve">
+    <value>Introducir JSON manualmente</value>
+  </data>
+  <data name="settings.downloads.addSourceManualHint" xml:space="preserve">
+    <value>Pega una definición completa del espejo cuando la detección automática no sea adecuada</value>
+  </data>
+  <data name="settings.downloads.manualSourceTitle" xml:space="preserve">
+    <value>Añadir fuente desde JSON</value>
+  </data>
+  <data name="settings.downloads.manualSourceHint" xml:space="preserve">
+    <value>Pega una definición .mirror.json. HyPrism la validará antes de guardarla</value>
+  </data>
+  <data name="settings.downloads.manualSourceJson" xml:space="preserve">
+    <value>Definición de la fuente</value>
+  </data>
+  <data name="settings.downloads.invalidSourceJson" xml:space="preserve">
+    <value>Introduce una definición JSON válida del espejo con una dirección HTTPS compatible</value>
+  </data>
+  <data name="settings.downloads.manualSourceJsonPlaceholder" xml:space="preserve">
+    <value>{"schemaVersion":1,"id":"my-mirror","name":"My mirror","sourceType":"pattern","pattern":{"baseUrl":"https://mirror.example.com"}}</value>
+  </data>
+  <data name="instances.mods.checkUpdates" xml:space="preserve">
+    <value>Check for updates</value>
+  </data>
+  <data name="instances.mods.updateAll" xml:space="preserve">
+    <value>Update all</value>
+  </data>
+  <data name="instances.mods.add" xml:space="preserve">
+    <value>Add mod</value>
+  </data>
+  <data name="instances.mods.dropToImport" xml:space="preserve">
+    <value>Drop mod files to import</value>
+  </data>
+  <data name="instances.mods.selectAll" xml:space="preserve">
+    <value>Select all</value>
+  </data>
+  <data name="instances.mods.enableSelected" xml:space="preserve">
+    <value>Enable</value>
+  </data>
+  <data name="instances.mods.disableSelected" xml:space="preserve">
+    <value>Disable</value>
+  </data>
+  <data name="instances.mods.deleteSelected" xml:space="preserve">
+    <value>Delete selected</value>
+  </data>
+  <data name="instances.mods.openPage" xml:space="preserve">
+    <value>Open CurseForge page</value>
+  </data>
+  <data name="instances.mods.toggle" xml:space="preserve">
+    <value>Toggle mod</value>
+  </data>
+  <data name="instances.mods.deleteTitle" xml:space="preserve">
+    <value>Delete mod</value>
+  </data>
+  <data name="instances.mods.deleteHint" xml:space="preserve">
+    <value>The mod file will be removed from this instance</value>
+  </data>
+  <data name="instances.mods.toggleFailed" xml:space="preserve">
+    <value>Could not change the mod state</value>
+  </data>
+  <data name="instances.mods.deleteFailed" xml:space="preserve">
+    <value>Could not delete the mod</value>
+  </data>
+  <data name="instances.mods.selectedCount" xml:space="preserve">
+    <value>{0} selected</value>
+  </data>
+  <data name="instances.mods.compatibility.compatible" xml:space="preserve">
+    <value>Compatible</value>
+  </data>
+  <data name="instances.mods.compatibility.incompatible" xml:space="preserve">
+    <value>Incompatible</value>
+  </data>
+  <data name="instances.mods.compatibility.unknown" xml:space="preserve">
+    <value>Compatibilidad desconocida</value>
+  </data>
+  <data name="instances.mods.compatibility.gameVersion" xml:space="preserve">
+    <value>Hytale {0}</value>
+  </data>
+  <data name="instances.mods.compatibility.versionUnknown" xml:space="preserve">
+    <value>No se pudo detectar la versión de Hytale</value>
+  </data>
+  <data name="instances.mods.countInstalled" xml:space="preserve">
+    <value>{0} mods installed</value>
+  </data>
+  <data name="instances.mods.updatesAvailable" xml:space="preserve">
+    <value>{0} updates available</value>
+  </data>
+  <data name="instances.mods.updateAvailableShort" xml:space="preserve">
+    <value>Update</value>
+  </data>
+  <data name="instances.browse.categoryAll" xml:space="preserve">
+    <value>All categories</value>
+  </data>
+  <data name="instances.browse.category" xml:space="preserve">
+    <value>Category</value>
+  </data>
+  <data name="instances.browse.sort" xml:space="preserve">
+    <value>Sort</value>
+  </data>
+  <data name="instances.browse.sortRelevancy" xml:space="preserve">
+    <value>Relevancy</value>
+  </data>
+  <data name="instances.browse.sortPopularity" xml:space="preserve">
+    <value>Popularity</value>
+  </data>
+  <data name="instances.browse.sortLatestUpdate" xml:space="preserve">
+    <value>Last updated</value>
+  </data>
+  <data name="instances.browse.sortCreationDate" xml:space="preserve">
+    <value>Creation date</value>
+  </data>
+  <data name="instances.browse.sortTotalDownloads" xml:space="preserve">
+    <value>Total downloads</value>
+  </data>
+  <data name="instances.browse.loadingMore" xml:space="preserve">
+    <value>Loading more results</value>
+  </data>
+  <data name="instances.console.running" xml:space="preserve">
+    <value>Game running</value>
+  </data>
+  <data name="instances.console.offline" xml:space="preserve">
+    <value>Not running</value>
+  </data>
+  <data name="instances.console.autoScroll" xml:space="preserve">
+    <value>Auto-scroll</value>
+  </data>
+  <data name="instances.console.wrap" xml:space="preserve">
+    <value>Wrap</value>
+  </data>
+  <data name="instances.console.clear" xml:space="preserve">
+    <value>Clear</value>
+  </data>
+  <data name="instances.console.search" xml:space="preserve">
+    <value>Filter console output</value>
+  </data>
+  <data name="instances.console.lineCount" xml:space="preserve">
+    <value>{0} lines</value>
+  </data>
+</root>

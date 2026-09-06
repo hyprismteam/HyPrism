@@ -1,0 +1,24 @@
+# Copyright (C) 2026 HyPrism Launcher
+# SPDX-License-Identifier: GPL-3.0-only
+
+name: Tests
+
+on:
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  core:
+    name: Core
+    uses: ./.github/workflows/test-core.yml
+
+  desktop:
+    name: Desktop
+    uses: ./.github/workflows/test-desktop.yml
+
+  local-node:
+    name: Local Node
+    uses: ./.github/workflows/test-local-node.yml

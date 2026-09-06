@@ -1,0 +1,37 @@
+# Copyright (C) 2026 HyPrism Launcher
+# SPDX-License-Identifier: GPL-3.0-only
+
+name: REUSE Compliance
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  reuse:
+    name: REUSE lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check SPDX source headers
+        run: python3 Scripts/license_headers.py --check
+
+      # REUSE requires this exact conventional directory name. The repository
+      # keeps the human-facing license collection in Licenses/.
+      - name: Prepare REUSE license directory
+        run: mv Licenses LICENSES
+
+      - name: Check licensing metadata
+        uses: fsfe/reuse-action@v6

@@ -1,0 +1,2985 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+Copyright (C) 2026 HyPrism Launcher
+SPDX-License-Identifier: GPL-3.0-only
+-->
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+  <data name="_langName" xml:space="preserve">
+    <value>Türkçe</value>
+  </data>
+  <data name="accessibility.next" xml:space="preserve">
+    <value>Sonraki</value>
+  </data>
+  <data name="accessibility.previous" xml:space="preserve">
+    <value>Önceki</value>
+  </data>
+  <data name="accessibility.segmentedControl" xml:space="preserve">
+    <value>Bölümlü kontrol</value>
+  </data>
+  <data name="app.downloadedUpdate" xml:space="preserve">
+    <value>En son HyPrism sürümü İndirilenler klasörüne indirildi.</value>
+  </data>
+  <data name="app.downloadedUpdateHint" xml:space="preserve">
+    <value>Yükleyebilmeniz için dosyayı açmaya çalıştık. Açılmadıysa, İndirilenler klasörüne gidin ve dosyayı manuel olarak çalıştırın.</value>
+  </data>
+  <data name="app.enterInstancePath" xml:space="preserve">
+    <value>HyPrism örneklerinin saklanacağı tam yolu girin:</value>
+  </data>
+  <data name="app.failedChangeDir" xml:space="preserve">
+    <value>Örnek dizini değiştirilemedi</value>
+  </data>
+  <data name="app.failedUpdate" xml:space="preserve">
+    <value>Başlatıcı güncellenemedi</value>
+  </data>
+  <data name="app.gameCrashed" xml:space="preserve">
+    <value>Oyun {{code}} çıkış kodu ile çöktü</value>
+  </data>
+  <data name="app.instanceDirUpdated" xml:space="preserve">
+    <value>Örnek Dizini Güncellendi</value>
+  </data>
+  <data name="app.instanceDirUpdatedDetail" xml:space="preserve">
+    <value>Oyun örnekleri artık burada saklanacak:
+{{dir}}
+
+Not: Aşağıdakiler AppData'da kalır:
+• Java Runtime (JRE)
+• Butler aracı
+• Önbellek dosyaları
+• Günlükler
+• Başlatıcı ayarları
+• WebView2 (EBWebView klasörü)
+
+Sürücü değiştirirseniz oyunu yeniden yüklemeniz gerekebilir.</value>
+  </data>
+  <data name="app.invalidNickname" xml:space="preserve">
+    <value>Geçersiz Takma Ad</value>
+  </data>
+  <data name="app.nicknameLengthError" xml:space="preserve">
+    <value>Takma ad 1 ile 16 karakter arasında olmalıdır</value>
+  </data>
+  <data name="app.pathError" xml:space="preserve">
+    <value>Yol kullanılamadı. Lütfen var olduğunu ve yazma izniniz olduğunu kontrol edin.</value>
+  </data>
+  <data name="app.title" xml:space="preserve">
+    <value>HyPrism</value>
+  </data>
+  <data name="app.version" xml:space="preserve">
+    <value>HyPrism {0}</value>
+  </data>
+  <data name="common.all" xml:space="preserve">
+    <value>Tümü</value>
+  </data>
+  <data name="common.back" xml:space="preserve">
+    <value>Geri</value>
+  </data>
+  <data name="common.branch" xml:space="preserve">
+    <value>Dal</value>
+  </data>
+  <data name="common.browse" xml:space="preserve">
+    <value>Gözat</value>
+  </data>
+  <data name="common.cancel" xml:space="preserve">
+    <value>İptal</value>
+  </data>
+    <data name="common.change" xml:space="preserve">
+    <value>Değiştir</value>
+  </data>
+<data name="common.clear" xml:space="preserve">
+    <value>Temizle</value>
+  </data>
+  <data name="common.close" xml:space="preserve">
+    <value>Kapat</value>
+  </data>
+  <data name="common.continue" xml:space="preserve">
+    <value>Devam</value>
+  </data>
+  <data name="common.copied" xml:space="preserve">
+    <value>Kopyalandı!</value>
+  </data>
+  <data name="common.copy" xml:space="preserve">
+    <value>Kopyala</value>
+  </data>
+  <data name="common.delete" xml:space="preserve">
+    <value>Sil</value>
+  </data>
+  <data name="common.dismiss" xml:space="preserve">
+    <value>Kapat</value>
+  </data>
+  <data name="common.download" xml:space="preserve">
+    <value>İndir</value>
+  </data>
+  <data name="common.edit" xml:space="preserve">
+    <value>Düzenle</value>
+  </data>
+  <data name="common.export" xml:space="preserve">
+    <value>Dışa aktar</value>
+  </data>
+  <data name="common.exporting" xml:space="preserve">
+    <value>Dışa aktarılıyor...</value>
+  </data>
+  <data name="common.import" xml:space="preserve">
+    <value>İçe aktar</value>
+  </data>
+  <data name="common.important" xml:space="preserve">
+    <value>Önemli</value>
+  </data>
+  <data name="common.importing" xml:space="preserve">
+    <value>İçe aktarılıyor...</value>
+  </data>
+  <data name="common.latest" xml:space="preserve">
+    <value>en son</value>
+  </data>
+  <data name="common.loading" xml:space="preserve">
+    <value>Yükleniyor...</value>
+  </data>
+  <data name="common.never" xml:space="preserve">
+    <value>Hiç</value>
+  </data>
+  <data name="common.note" xml:space="preserve">
+    <value>Not</value>
+  </data>
+  <data name="common.ok" xml:space="preserve">
+    <value>Tamam</value>
+  </data>
+  <data name="common.open" xml:space="preserve">
+    <value>Aç</value>
+  </data>
+  <data name="common.openFolder" xml:space="preserve">
+    <value>Klasörü aç</value>
+  </data>
+  <data name="common.preRelease" xml:space="preserve">
+    <value>Ön Sürüm</value>
+  </data>
+  <data name="common.refresh" xml:space="preserve">
+    <value>Yenile</value>
+  </data>
+  <data name="common.release" xml:space="preserve">
+    <value>Sürüm</value>
+  </data>
+  <data name="common.reload" xml:space="preserve">
+    <value>Yenile</value>
+  </data>
+  <data name="common.reset" xml:space="preserve">
+    <value>Sıfırla</value>
+  </data>
+  <data name="common.save" xml:space="preserve">
+    <value>Kaydet</value>
+  </data>
+  <data name="common.select" xml:space="preserve">
+    <value>Seç</value>
+  </data>
+  <data name="common.skip" xml:space="preserve">
+    <value>Atla</value>
+  </data>
+  <data name="common.unknown" xml:space="preserve">
+    <value>Bilinmiyor</value>
+  </data>
+  <data name="common.update" xml:space="preserve">
+    <value>Güncelle</value>
+  </data>
+  <data name="common.version" xml:space="preserve">
+    <value>Sürüm</value>
+  </data>
+  <data name="deleteGame.cacheFiles" xml:space="preserve">
+    <value>Önbellek dosyaları</value>
+  </data>
+  <data name="deleteGame.downloadedPatches" xml:space="preserve">
+    <value>İndirilen yamalar</value>
+  </data>
+  <data name="deleteGame.gameInstallation" xml:space="preserve">
+    <value>Oyun kurulumu</value>
+  </data>
+  <data name="deleteGame.preserveNote" xml:space="preserve">
+    <value>Kullanıcı verileriniz ve skin ön ayarlarınız korunacaktır.</value>
+  </data>
+  <data name="deleteGame.title" xml:space="preserve">
+    <value>Oyunu Sil?</value>
+  </data>
+  <data name="deleteGame.warning" xml:space="preserve">
+    <value>Bu işlem aşağıdakileri kalıcı olarak silecektir:</value>
+  </data>
+  <data name="deleteProfile.avatarData" xml:space="preserve">
+    <value>Avatar ve skin verileri</value>
+  </data>
+  <data name="deleteProfile.cancel" xml:space="preserve">
+    <value>İptal</value>
+  </data>
+  <data name="deleteProfile.cannotUndo" xml:space="preserve">
+    <value>Bu işlem geri alınamaz.</value>
+  </data>
+  <data name="deleteProfile.delete" xml:space="preserve">
+    <value>Profili Sil</value>
+  </data>
+  <data name="deleteProfile.gameData" xml:space="preserve">
+    <value>Oyun ilerlemesi</value>
+  </data>
+  <data name="deleteProfile.installedMods" xml:space="preserve">
+    <value>Yüklü modlar</value>
+  </data>
+  <data name="deleteProfile.message" xml:space="preserve">
+    <value>Silmek istediğinize emin misiniz:</value>
+  </data>
+  <data name="deleteProfile.profile" xml:space="preserve">
+    <value>Profil:</value>
+  </data>
+  <data name="deleteProfile.profileSettings" xml:space="preserve">
+    <value>Profil ayarları ve tercihler</value>
+  </data>
+  <data name="deleteProfile.savedGameData" xml:space="preserve">
+    <value>Kayıtlı oyun verileri</value>
+  </data>
+  <data name="deleteProfile.settings" xml:space="preserve">
+    <value>Profil ayarları</value>
+  </data>
+  <data name="deleteProfile.skinAndAvatar" xml:space="preserve">
+    <value>Skin ve avatar</value>
+  </data>
+  <data name="deleteProfile.title" xml:space="preserve">
+    <value>Profili Sil?</value>
+  </data>
+  <data name="deleteProfile.warning" xml:space="preserve">
+    <value>Bu işlem aşağıdakileri kalıcı olarak silecektir:</value>
+  </data>
+  <data name="discord.announcement" xml:space="preserve">
+    <value>Duyuru</value>
+  </data>
+  <data name="discord.bugReport" xml:space="preserve">
+    <value>Hata Bildirimi</value>
+  </data>
+  <data name="discord.showAnnouncements" xml:space="preserve">
+    <value>Duyuruları göster</value>
+  </data>
+  <data name="dock.dashboard" xml:space="preserve">
+    <value>Ana Sayfa</value>
+  </data>
+  <data name="dock.instances" xml:space="preserve">
+    <value>Örnekler</value>
+  </data>
+  <data name="dock.logs" xml:space="preserve">
+    <value>Günlükler</value>
+  </data>
+  <data name="dock.mods" xml:space="preserve">
+    <value>Modlar</value>
+  </data>
+  <data name="dock.news" xml:space="preserve">
+    <value>Haberler</value>
+  </data>
+  <data name="dock.profiles" xml:space="preserve">
+    <value>Profiller</value>
+  </data>
+  <data name="dock.settings" xml:space="preserve">
+    <value>Ayarlar</value>
+  </data>
+  <data name="error.copyError" xml:space="preserve">
+    <value>Hatayı Kopyala</value>
+  </data>
+  <data name="error.dismiss" xml:space="preserve">
+    <value>Kapat</value>
+  </data>
+  <data name="error.noLogEntries" xml:space="preserve">
+    <value>Günlük girdisi yok</value>
+  </data>
+  <data name="error.occurredAt" xml:space="preserve">
+    <value>Oluştuğu yer:</value>
+  </data>
+  <data name="error.ok" xml:space="preserve">
+    <value>Tamam</value>
+  </data>
+  <data name="error.reportIssue" xml:space="preserve">
+    <value>Sorun Bildir</value>
+  </data>
+  <data name="error.somethingWrong" xml:space="preserve">
+    <value>Bir şeyler ters gitti</value>
+  </data>
+  <data name="error.technicalDetails" xml:space="preserve">
+    <value>Teknik Detaylar</value>
+  </data>
+  <data name="error.title" xml:space="preserve">
+    <value>Hata Oluştu</value>
+  </data>
+  <data name="instances.addInstance" xml:space="preserve">
+    <value>Örnek Ekle</value>
+  </data>
+  <data name="instances.create" xml:space="preserve">
+    <value>Oluştur</value>
+  </data>
+  <data name="instances.createInstance" xml:space="preserve">
+    <value>Örnek Oluştur</value>
+  </data>
+  <data name="instances.createInstanceHint" xml:space="preserve">
+    <value>Yeni bir oyun örneği indir ve kur</value>
+  </data>
+  <data name="instances.creating" xml:space="preserve">
+    <value>Oluşturuluyor...</value>
+  </data>
+  <data name="instances.deleteConfirm" xml:space="preserve">
+    <value>Silmek istediğinize emin misiniz:</value>
+  </data>
+  <data name="instances.deleteFailed" xml:space="preserve">
+    <value>Örnek silinemedi</value>
+  </data>
+  <data name="instances.deleteTitle" xml:space="preserve">
+    <value>Örneği Sil</value>
+  </data>
+  <data name="instances.deleted" xml:space="preserve">
+    <value>Örnek silindi</value>
+  </data>
+  <data name="instances.editInstance" xml:space="preserve">
+    <value>Örneği Düzenle</value>
+  </data>
+  <data name="instances.editInstanceHint" xml:space="preserve">
+    <value>Bu örneğin adını veya simgesini değiştirin</value>
+  </data>
+  <data name="instances.exportFailed" xml:space="preserve">
+    <value>Örnek dışa aktarılamadı</value>
+  </data>
+  <data name="instances.exportedSuccess" xml:space="preserve">
+    <value>Örnek başarıyla dışa aktarıldı</value>
+  </data>
+  <data name="instances.import" xml:space="preserve">
+    <value>İçe Aktar</value>
+  </data>
+  <data name="instances.importFailed" xml:space="preserve">
+    <value>Örnek içe aktarılamadı</value>
+  </data>
+  <data name="instances.importedSuccess" xml:space="preserve">
+    <value>Örnek başarıyla içe aktarıldı</value>
+  </data>
+  <data name="instances.installContent" xml:space="preserve">
+    <value>İçerik kur</value>
+  </data>
+  <data name="instances.instanceName" xml:space="preserve">
+    <value>Örnek Adı</value>
+  </data>
+  <data name="instances.instanceNamePlaceholder" xml:space="preserve">
+    <value>Bu örnek için bir ad girin</value>
+  </data>
+  <data name="instances.instanceNotInstalled" xml:space="preserve">
+    <value>Örnek kurulu değil</value>
+  </data>
+  <data name="instances.instanceNotInstalledHint" xml:space="preserve">
+    <value>İçeriği yönetmek için bu örneği indirin</value>
+  </data>
+  <data name="instances.lastPlayed" xml:space="preserve">
+    <value>Son oynama</value>
+  </data>
+  <data name="instances.logsComingSoon" xml:space="preserve">
+    <value>Günlük görüntüleyici yakında</value>
+  </data>
+  <data name="instances.noInstances" xml:space="preserve">
+    <value>Yüklü örnek yok</value>
+  </data>
+  <data name="instances.noSaves" xml:space="preserve">
+    <value>Kayıt bulunamadı</value>
+  </data>
+  <data name="instances.noSavesHint" xml:space="preserve">
+    <value>İlk kaydınızı oluşturmak için oyunu oynayın</value>
+  </data>
+  <data name="instances.rename" xml:space="preserve">
+    <value>Yeniden Adlandır</value>
+  </data>
+  <data name="instances.saves" xml:space="preserve">
+    <value>Kayıtlar</value>
+  </data>
+  <data name="instances.selectIcon" xml:space="preserve">
+    <value>Simge Seç</value>
+  </data>
+  <data name="instances.selectInstance" xml:space="preserve">
+    <value>Bir Örnek Seçin</value>
+  </data>
+  <data name="instances.selectInstanceHint" xml:space="preserve">
+    <value>İçeriğini görüntülemek ve yönetmek için soldan bir örnek seçin</value>
+  </data>
+  <data name="instances.status.corrupted" xml:space="preserve">
+    <value>Bozuk</value>
+  </data>
+  <data name="instances.status.incomplete" xml:space="preserve">
+    <value>Eksik</value>
+  </data>
+  <data name="instances.status.notInstalled" xml:space="preserve">
+    <value>Kurulu Değil</value>
+  </data>
+  <data name="instances.status.ready" xml:space="preserve">
+    <value>Hazır</value>
+  </data>
+  <data name="instances.status.unknown" xml:space="preserve">
+    <value>Bilinmiyor</value>
+  </data>
+  <data name="instances.storage" xml:space="preserve">
+    <value>Depolama</value>
+  </data>
+  <data name="instances.tab.browse" xml:space="preserve">
+    <value>Modlara Göz At</value>
+  </data>
+  <data name="instances.tab.content" xml:space="preserve">
+    <value>Yüklü Modlar</value>
+  </data>
+  <data name="instances.tab.logs" xml:space="preserve">
+    <value>Günlükler</value>
+  </data>
+  <data name="instances.tab.worlds" xml:space="preserve">
+    <value>Dünyalar</value>
+  </data>
+  <data name="instances.title" xml:space="preserve">
+    <value>Örnekler</value>
+  </data>
+  <data name="instances.uploadIcon" xml:space="preserve">
+    <value>Simge Yükle</value>
+  </data>
+  <data name="instances.versionChangeWarning" xml:space="preserve">
+    <value>Sürümü değiştirmek oyun dosyalarını kaldıracak</value>
+  </data>
+  <data name="instances.versionChangeWarningHint" xml:space="preserve">
+    <value>Oyun istemcisi silinecek ve bu sürümü yeniden indirmen gerekecek. Kayıtlar ve modlar gibi kullanıcı verileri korunacak.</value>
+  </data>
+  <data name="languageSelector.changeLanguage" xml:space="preserve">
+    <value>Dil Değiştir</value>
+  </data>
+  <data name="languageSelector.dontAskAgain" xml:space="preserve">
+    <value>Bir daha sorma</value>
+  </data>
+  <data name="languageSelector.installTranslation" xml:space="preserve">
+    <value>Çeviri Yüklensin mi?</value>
+  </data>
+  <data name="languageSelector.no" xml:space="preserve">
+    <value>Hayır</value>
+  </data>
+  <data name="languageSelector.searchTranslationMods" xml:space="preserve">
+    <value>{{lang}} çeviri modlarını aramak ister misiniz?</value>
+  </data>
+  <data name="languageSelector.yesSearch" xml:space="preserve">
+    <value>Evet, ara</value>
+  </data>
+  <data name="launch.detail.applying_patch" xml:space="preserve">
+    <value>Yama {0}/{1} uygulanıyor...</value>
+  </data>
+  <data name="launch.detail.authenticating" xml:space="preserve">
+    <value>{0} ile kimlik doğrulanıyor...</value>
+  </data>
+  <data name="launch.detail.authenticating_generic" xml:space="preserve">
+    <value>Kimlik doğrulanıyor...</value>
+  </data>
+  <data name="launch.detail.butler_install" xml:space="preserve">
+    <value>Butler yükleniyor...</value>
+  </data>
+  <data name="launch.detail.butler_ready" xml:space="preserve">
+    <value>Butler hazır</value>
+  </data>
+  <data name="launch.detail.checking_install" xml:space="preserve">
+    <value>Kurulum kontrol ediliyor...</value>
+  </data>
+  <data name="launch.detail.checking_versions" xml:space="preserve">
+    <value>Mevcut sürümler kontrol ediliyor...</value>
+  </data>
+  <data name="launch.detail.client_already_patched" xml:space="preserve">
+    <value>İstemci zaten yamalı</value>
+  </data>
+  <data name="launch.detail.creating_backup" xml:space="preserve">
+    <value>Yedek oluşturuluyor...</value>
+  </data>
+  <data name="launch.detail.done" xml:space="preserve">
+    <value>Bitti</value>
+  </data>
+  <data name="launch.detail.download_complete" xml:space="preserve">
+    <value>İndirme tamamlandı!</value>
+  </data>
+  <data name="launch.detail.downloading_butler" xml:space="preserve">
+    <value>Butler indiriliyor...</value>
+  </data>
+  <data name="launch.detail.downloading_generic" xml:space="preserve">
+    <value>İndiriliyor</value>
+  </data>
+  <data name="launch.detail.downloading_mirror" xml:space="preserve">
+    <value>İndiriliyor</value>
+  </data>
+  <data name="launch.detail.downloading_official" xml:space="preserve">
+    <value>İndiriliyor</value>
+  </data>
+  <data name="launch.detail.downloading_patch" xml:space="preserve">
+    <value>İndiriliyor</value>
+  </data>
+  <data name="launch.detail.dualauth_setup" xml:space="preserve">
+    <value>Kimlik doğrulama aracısı kuruluyor...</value>
+  </data>
+  <data name="launch.detail.game_installed" xml:space="preserve">
+    <value>Oyun zaten yüklü</value>
+  </data>
+  <data name="launch.detail.installing_butler" xml:space="preserve">
+    <value>İndirme motoru kuruluyor...</value>
+  </data>
+  <data name="launch.detail.installing_butler_pwr" xml:space="preserve">
+    <value>Butler ile oyun yükleniyor...</value>
+  </data>
+  <data name="launch.detail.installing_game" xml:space="preserve">
+    <value>Oyun kuruluyor...</value>
+  </data>
+  <data name="launch.detail.java_check" xml:space="preserve">
+    <value>Java Runtime kontrol ediliyor...</value>
+  </data>
+  <data name="launch.detail.java_install" xml:space="preserve">
+    <value>Java Runtime yükleniyor...</value>
+  </data>
+  <data name="launch.detail.launching_game" xml:space="preserve">
+    <value>Oyun başlatılıyor...</value>
+  </data>
+  <data name="launch.detail.patch_applied" xml:space="preserve">
+    <value>Yama {0} başarıyla uygulandı</value>
+  </data>
+  <data name="launch.detail.patching_client" xml:space="preserve">
+    <value>İstemci ikili dosyası yamalanıyor...</value>
+  </data>
+  <data name="launch.detail.patching_complete" xml:space="preserve">
+    <value>Yama tamamlandı</value>
+  </data>
+  <data name="launch.detail.patching_domain_refs" xml:space="preserve">
+    <value>Alan adı başvuruları yamalanıyor...</value>
+  </data>
+  <data name="launch.detail.patching_init" xml:space="preserve">
+    <value>Yama aracı başlatılıyor...</value>
+  </data>
+  <data name="launch.detail.preparing_download" xml:space="preserve">
+    <value>İndirme hazırlanıyor...</value>
+  </data>
+  <data name="launch.detail.preparing_session" xml:space="preserve">
+    <value>Oyun oturumu hazırlanıyor...</value>
+  </data>
+  <data name="launch.detail.reading_client_binary" xml:space="preserve">
+    <value>İstemci ikili dosyası okunuyor...</value>
+  </data>
+  <data name="launch.detail.resigning" xml:space="preserve">
+    <value>İkili dosya yeniden imzalanıyor...</value>
+  </data>
+  <data name="launch.detail.started" xml:space="preserve">
+    <value>Oyun başladı!</value>
+  </data>
+  <data name="launch.detail.starting_process" xml:space="preserve">
+    <value>Oyun işlemi başlatılıyor...</value>
+  </data>
+  <data name="launch.detail.update_check" xml:space="preserve">
+    <value>Güncellemeler kontrol ediliyor...</value>
+  </data>
+  <data name="launch.detail.using_cached_installer" xml:space="preserve">
+    <value>Önbellekteki yükleyici kullanılıyor...</value>
+  </data>
+  <data name="launch.detail.vc_redist" xml:space="preserve">
+    <value>Visual C++ Runtime kontrol ediliyor...</value>
+  </data>
+  <data name="launch.detail.waiting_for_window" xml:space="preserve">
+    <value>Oyun penceresi bekleniyor...</value>
+  </data>
+  <data name="launch.detail.writing_patched_binary" xml:space="preserve">
+    <value>Yamalı ikili dosya yazılıyor...</value>
+  </data>
+  <data name="launch.option.cancel" xml:space="preserve">
+    <value>Oyun başlatma/indirme işlemini iptal et</value>
+  </data>
+  <data name="launch.state.complete" xml:space="preserve">
+    <value>Tamamlandı</value>
+  </data>
+  <data name="launch.state.download" xml:space="preserve">
+    <value>İndiriliyor</value>
+  </data>
+  <data name="launch.state.install" xml:space="preserve">
+    <value>Yükleniyor</value>
+  </data>
+  <data name="launch.state.launching" xml:space="preserve">
+    <value>Başlatılıyor</value>
+  </data>
+  <data name="launch.state.patching" xml:space="preserve">
+    <value>Yamalanıyor</value>
+  </data>
+  <data name="launch.state.preparing" xml:space="preserve">
+    <value>Hazırlanıyor</value>
+  </data>
+  <data name="launch.state.update" xml:space="preserve">
+    <value>Güncelleniyor</value>
+  </data>
+  <data name="logs.auto" xml:space="preserve">
+    <value>Otomatik</value>
+  </data>
+  <data name="logs.clear" xml:space="preserve">
+    <value>Temizle</value>
+  </data>
+  <data name="logs.copy" xml:space="preserve">
+    <value>Tümünü kopyala</value>
+  </data>
+  <data name="logs.copySelected" xml:space="preserve">
+    <value>Seçileni kopyala</value>
+  </data>
+  <data name="logs.empty" xml:space="preserve">
+    <value>Henüz günlük yok</value>
+  </data>
+  <data name="logs.export" xml:space="preserve">
+    <value>Dışa aktar</value>
+  </data>
+  <data name="logs.filter.all" xml:space="preserve">
+    <value>Tümü</value>
+  </data>
+  <data name="logs.filter.debug" xml:space="preserve">
+    <value>Hata Ayıklama</value>
+  </data>
+  <data name="logs.filter.error" xml:space="preserve">
+    <value>Hata</value>
+  </data>
+  <data name="logs.filter.info" xml:space="preserve">
+    <value>Bilgi</value>
+  </data>
+  <data name="logs.filter.success" xml:space="preserve">
+    <value>Başarılı</value>
+  </data>
+  <data name="logs.filter.warning" xml:space="preserve">
+    <value>Uyarı</value>
+  </data>
+  <data name="logs.loading" xml:space="preserve">
+    <value>Günlükler yükleniyor...</value>
+  </data>
+  <data name="logs.noResults" xml:space="preserve">
+    <value>Filtrelerinize uyan günlük yok</value>
+  </data>
+  <data name="logs.refresh" xml:space="preserve">
+    <value>Yenile</value>
+  </data>
+  <data name="logs.searchPlaceholder" xml:space="preserve">
+    <value>Günlüklerde ara...</value>
+  </data>
+  <data name="logs.selected" xml:space="preserve">
+    <value>{{count}} seçildi</value>
+  </data>
+  <data name="logs.showing" xml:space="preserve">
+    <value>{{total}} girişten {{count}} tanesi gösteriliyor</value>
+  </data>
+  <data name="logs.title" xml:space="preserve">
+    <value>Günlükler</value>
+  </data>
+  <data name="main.buyIt" xml:space="preserve">
+    <value>SATIN AL</value>
+  </data>
+  <data name="main.buyMeA" xml:space="preserve">
+    <value>Al bana bir</value>
+  </data>
+  <data name="main.cancel" xml:space="preserve">
+    <value>İPTAL</value>
+  </data>
+  <data name="main.checking" xml:space="preserve">
+    <value>KONTROL EDİLİYOR</value>
+  </data>
+  <data name="main.download" xml:space="preserve">
+    <value>İNDİR</value>
+  </data>
+  <data name="main.duplicate" xml:space="preserve">
+    <value>KOPYALA</value>
+  </data>
+  <data name="main.editProfile" xml:space="preserve">
+    <value>Profili Düzenle</value>
+  </data>
+  <data name="main.educational" xml:space="preserve">
+    <value>Sadece eğitim amaçlıdır. Beğendin mi?</value>
+  </data>
+  <data name="main.educationalOnly" xml:space="preserve">
+    <value>Sadece eğitim amaçlı.</value>
+  </data>
+  <data name="main.exit" xml:space="preserve">
+    <value>ÇIKIŞ</value>
+  </data>
+  <data name="main.gitHubRepository" xml:space="preserve">
+    <value>GitHub Deposu</value>
+  </data>
+  <data name="main.joinDiscord" xml:space="preserve">
+    <value>Discord'a Katıl</value>
+  </data>
+  <data name="main.latest" xml:space="preserve">
+    <value>son</value>
+  </data>
+  <data name="main.likeIt" xml:space="preserve">
+    <value>Beğendin mi?</value>
+  </data>
+  <data name="main.mirror" xml:space="preserve">
+    <value>Ayna</value>
+  </data>
+  <data name="main.modManager" xml:space="preserve">
+    <value>Mod Yöneticisi</value>
+  </data>
+  <data name="main.noVersions" xml:space="preserve">
+    <value>Sürüm yok</value>
+  </data>
+  <data name="main.officialServerBlocked" xml:space="preserve">
+    <value>Resmi sunucular satın alınmış bir oyun ve Hytale hesabı gerektirir</value>
+  </data>
+  <data name="main.openInstanceFolder" xml:space="preserve">
+    <value>Örnek klasörünü aç</value>
+  </data>
+  <data name="main.play" xml:space="preserve">
+    <value>OYNA</value>
+  </data>
+  <data name="main.preRelease" xml:space="preserve">
+    <value>Ön Sürüm</value>
+  </data>
+  <data name="main.release" xml:space="preserve">
+    <value>Sürüm</value>
+  </data>
+  <data name="main.running" xml:space="preserve">
+    <value>ÇALIŞIYOR</value>
+  </data>
+  <data name="main.selectInstance" xml:space="preserve">
+    <value>ÖRNEK SEÇ</value>
+  </data>
+  <data name="main.settings" xml:space="preserve">
+    <value>Ayarlar</value>
+  </data>
+  <data name="main.sourceMirror" xml:space="preserve">
+    <value>Topluluk aynasından indirildi</value>
+  </data>
+  <data name="main.sourceOfficial" xml:space="preserve">
+    <value>Resmi Hytale sunucularından indirildi</value>
+  </data>
+  <data name="main.stop" xml:space="preserve">
+    <value>DURDUR</value>
+  </data>
+  <data name="main.update" xml:space="preserve">
+    <value>GÜNCELLE</value>
+  </data>
+  <data name="main.updateAvailable" xml:space="preserve">
+    <value>Güncelleme Mevcut</value>
+  </data>
+  <data name="modManager.addMods" xml:space="preserve">
+    <value>Mod Ekle</value>
+  </data>
+  <data name="modManager.allCategories" xml:space="preserve">
+    <value>Tüm Kategoriler</value>
+  </data>
+  <data name="modManager.allMods" xml:space="preserve">
+    <value>Tüm Modlar</value>
+  </data>
+  <data name="modManager.allUpToDate" xml:space="preserve">
+    <value>Tüm modlar güncel!</value>
+  </data>
+  <data name="modManager.author" xml:space="preserve">
+    <value>Yazar</value>
+  </data>
+  <data name="modManager.backendRefused" xml:space="preserve">
+    <value>Sunucu bu modu kurmayı reddetti. Lütfen tekrar deneyin.</value>
+  </data>
+  <data name="modManager.browse" xml:space="preserve">
+    <value>Modlara Göz At</value>
+  </data>
+  <data name="modManager.browseMods" xml:space="preserve">
+    <value>Modlara Göz At</value>
+  </data>
+  <data name="modManager.category.all_mods" xml:space="preserve">
+    <value>Tüm Modlar</value>
+  </data>
+  <data name="modManager.category.blocks" xml:space="preserve">
+    <value>Bloklar</value>
+  </data>
+  <data name="modManager.category.cosmetics_armor" xml:space="preserve">
+    <value>Kozmetik / Zırh</value>
+  </data>
+  <data name="modManager.category.food_farming" xml:space="preserve">
+    <value>Yiyecek / Tarım</value>
+  </data>
+  <data name="modManager.category.furniture" xml:space="preserve">
+    <value>Mobilya</value>
+  </data>
+  <data name="modManager.category.gameplay" xml:space="preserve">
+    <value>Oynanış</value>
+  </data>
+  <data name="modManager.category.library" xml:space="preserve">
+    <value>Kütüphane</value>
+  </data>
+  <data name="modManager.category.miscellaneous" xml:space="preserve">
+    <value>Çeşitli</value>
+  </data>
+  <data name="modManager.category.mobs_characters" xml:space="preserve">
+    <value>Moblar / Karakterler</value>
+  </data>
+  <data name="modManager.category.prefab" xml:space="preserve">
+    <value>Prefab</value>
+  </data>
+  <data name="modManager.category.quality_of_life" xml:space="preserve">
+    <value>Yaşam Kalitesi</value>
+  </data>
+  <data name="modManager.category.resource_packs" xml:space="preserve">
+    <value>Kaynak Paketleri</value>
+  </data>
+  <data name="modManager.category.utility" xml:space="preserve">
+    <value>Araçlar</value>
+  </data>
+  <data name="modManager.category.world_gen" xml:space="preserve">
+    <value>Dünya Oluşturma</value>
+  </data>
+  <data name="modManager.checkForUpdates" xml:space="preserve">
+    <value>Güncellemeleri Kontrol Et</value>
+  </data>
+  <data name="modManager.clickInstallContent" xml:space="preserve">
+    <value>Mod eklemek için 'İçerik kur'a tıklayın</value>
+  </data>
+  <data name="modManager.clickToClose" xml:space="preserve">
+    <value>Kapatmak için herhangi bir yere tıklayın</value>
+  </data>
+  <data name="modManager.clickToViewImage" xml:space="preserve">
+    <value>Tam görüntüyü görmek için tıklayın</value>
+  </data>
+  <data name="modManager.close" xml:space="preserve">
+    <value>Kapat</value>
+  </data>
+  <data name="modManager.confirmDelete" xml:space="preserve">
+    <value>{{count}} mod silmek istediğinize emin misiniz? Bu işlem geri alınamaz.</value>
+  </data>
+  <data name="modManager.confirmDownload" xml:space="preserve">
+    <value>{{count}} mod indirmek istediğinize emin misiniz?</value>
+  </data>
+  <data name="modManager.delete" xml:space="preserve">
+    <value>Sil</value>
+  </data>
+  <data name="modManager.deleteCount" xml:space="preserve">
+    <value>{{count}} mod sil</value>
+  </data>
+  <data name="modManager.deleteFailed" xml:space="preserve">
+    <value>Mod silinemedi</value>
+  </data>
+  <data name="modManager.deleteModConfirm" xml:space="preserve">
+    <value>Bu mod'u silmek istediğinize emin misiniz?</value>
+  </data>
+  <data name="modManager.deleteModTitle" xml:space="preserve">
+    <value>Mod'u Sil</value>
+  </data>
+  <data name="modManager.deleteMods" xml:space="preserve">
+    <value>Modları Sil</value>
+  </data>
+  <data name="modManager.deleteSelected" xml:space="preserve">
+    <value>Seçilenleri Sil</value>
+  </data>
+  <data name="modManager.description" xml:space="preserve">
+    <value>Açıklama</value>
+  </data>
+  <data name="modManager.disableSelected" xml:space="preserve">
+    <value>Seçilenleri devre dışı bırak</value>
+  </data>
+  <data name="modManager.download" xml:space="preserve">
+    <value>İndir</value>
+  </data>
+  <data name="modManager.downloadCount" xml:space="preserve">
+    <value>{{count}} mod indir</value>
+  </data>
+  <data name="modManager.downloadFailed" xml:space="preserve">
+    <value>İndirme başarısız</value>
+  </data>
+  <data name="modManager.downloadMods" xml:space="preserve">
+    <value>Modları İndir</value>
+  </data>
+  <data name="modManager.downloadSelected" xml:space="preserve">
+    <value>Seçilenleri İndir</value>
+  </data>
+  <data name="modManager.downloading" xml:space="preserve">
+    <value>İndiriliyor</value>
+  </data>
+  <data name="modManager.downloadingMods" xml:space="preserve">
+    <value>Modlar İndiriliyor</value>
+  </data>
+  <data name="modManager.downloads" xml:space="preserve">
+    <value>İndirmeler</value>
+  </data>
+  <data name="modManager.dragModFiles" xml:space="preserve">
+    <value>Mod dosyalarını veya mod listesini sürükleyin</value>
+  </data>
+  <data name="modManager.dropModsHere" xml:space="preserve">
+    <value>Modları buraya bırakın</value>
+  </data>
+  <data name="modManager.enableSelected" xml:space="preserve">
+    <value>Seçilenleri etkinleştir</value>
+  </data>
+  <data name="modManager.enabled" xml:space="preserve">
+    <value>Etkin</value>
+  </data>
+  <data name="modManager.exportFailed" xml:space="preserve">
+    <value>Modlar dışa aktarılamadı</value>
+  </data>
+  <data name="modManager.exportMods" xml:space="preserve">
+    <value>Modları Dışa Aktar</value>
+  </data>
+  <data name="modManager.exportType.exportFolder" xml:space="preserve">
+    <value>Dışa Aktarma Klasörü</value>
+  </data>
+  <data name="modManager.exportType.modList" xml:space="preserve">
+    <value>Mod Listesi</value>
+  </data>
+  <data name="modManager.exportType.modListHint" xml:space="preserve">
+    <value>Yeniden indirmek için JSON dosyası</value>
+  </data>
+  <data name="modManager.exportType.selectFolder" xml:space="preserve">
+    <value>Dışa aktarma klasörü seçin...</value>
+  </data>
+  <data name="modManager.exportType.title" xml:space="preserve">
+    <value>Dışa Aktarma Türü</value>
+  </data>
+  <data name="modManager.exportType.zipArchive" xml:space="preserve">
+    <value>ZIP Arşivi</value>
+  </data>
+  <data name="modManager.exportType.zipArchiveHint" xml:space="preserve">
+    <value>Tüm mod dosyaları paketlenmiş</value>
+  </data>
+  <data name="modManager.exportedList" xml:space="preserve">
+    <value>Mod listesi {{path}} konumuna dışa aktarıldı</value>
+  </data>
+  <data name="modManager.exportedZip" xml:space="preserve">
+    <value>Modlar {{path}} konumuna ZIP olarak dışa aktarıldı</value>
+  </data>
+  <data name="modManager.importFailed" xml:space="preserve">
+    <value>Modlar içe aktarılamadı</value>
+  </data>
+  <data name="modManager.importedCount" xml:space="preserve">
+    <value>{{count}} mod içe aktarıldı</value>
+  </data>
+  <data name="modManager.importingList" xml:space="preserve">
+    <value>Mod listesi içe aktarılıyor...</value>
+  </data>
+  <data name="modManager.installFailed" xml:space="preserve">
+    <value>Modlar kurulamadı. Lütfen tekrar deneyin.</value>
+  </data>
+  <data name="modManager.installSelected" xml:space="preserve">
+    <value>Seçilenleri Kur</value>
+  </data>
+  <data name="modManager.installed" xml:space="preserve">
+    <value>Yüklü Modlar</value>
+  </data>
+  <data name="modManager.installedBadge" xml:space="preserve">
+    <value>Yüklü</value>
+  </data>
+  <data name="modManager.installedCount" xml:space="preserve">
+    <value>{{count}} mod kuruldu</value>
+  </data>
+  <data name="modManager.installingMod" xml:space="preserve">
+    <value>{{name}} kuruluyor...</value>
+  </data>
+  <data name="modManager.loadingVersions" xml:space="preserve">
+    <value>Sürümler yükleniyor...</value>
+  </data>
+  <data name="modManager.modDeleted" xml:space="preserve">
+    <value>Mod başarıyla silindi</value>
+  </data>
+  <data name="modManager.mods" xml:space="preserve">
+    <value>Modlar</value>
+  </data>
+  <data name="modManager.modsDeleted" xml:space="preserve">
+    <value>Modlar başarıyla silindi</value>
+  </data>
+  <data name="modManager.modsDisabled" xml:space="preserve">
+    <value>Modlar devre dışı bırakıldı</value>
+  </data>
+  <data name="modManager.modsEnabled" xml:space="preserve">
+    <value>Modlar etkinleştirildi</value>
+  </data>
+  <data name="modManager.modsInstalled" xml:space="preserve">
+    <value>mod yüklü</value>
+  </data>
+  <data name="modManager.modsSelected" xml:space="preserve">
+    <value>mod seçildi</value>
+  </data>
+  <data name="modManager.name" xml:space="preserve">
+    <value>Ad</value>
+  </data>
+  <data name="modManager.noCurseForge" xml:space="preserve">
+    <value>Dışa aktarılacak CurseForge modu yok</value>
+  </data>
+  <data name="modManager.noDescription" xml:space="preserve">
+    <value>Açıklama yok</value>
+  </data>
+  <data name="modManager.noDownloadableFiles" xml:space="preserve">
+    <value>Seçilen modlar için indirilebilir dosya bulunamadı.</value>
+  </data>
+  <data name="modManager.noFilesAvailable" xml:space="preserve">
+    <value>Dosya mevcut değil</value>
+  </data>
+  <data name="modManager.noMatch" xml:space="preserve">
+    <value>Aramanızla eşleşen mod yok</value>
+  </data>
+  <data name="modManager.noModFiles" xml:space="preserve">
+    <value>Dışa aktarılacak mod dosyası yok</value>
+  </data>
+  <data name="modManager.noModsFound" xml:space="preserve">
+    <value>Mod bulunamadı</value>
+  </data>
+  <data name="modManager.noModsInstalled" xml:space="preserve">
+    <value>Yüklü mod yok</value>
+  </data>
+  <data name="modManager.noVersionsAvailable" xml:space="preserve">
+    <value>Sürüm mevcut değil</value>
+  </data>
+  <data name="modManager.of" xml:space="preserve">
+    <value>/</value>
+  </data>
+  <data name="modManager.openCurseforge" xml:space="preserve">
+    <value>Modu CurseForge'da aç</value>
+  </data>
+  <data name="modManager.openModsFolder" xml:space="preserve">
+    <value>Mod Klasörünü Aç</value>
+  </data>
+  <data name="modManager.profile" xml:space="preserve">
+    <value>Profil</value>
+  </data>
+  <data name="modManager.redownloadCount" xml:space="preserve">
+    <value>{{count}} mod yeniden indir</value>
+  </data>
+  <data name="modManager.releaseType.alpha" xml:space="preserve">
+    <value>Alfa</value>
+  </data>
+  <data name="modManager.releaseType.beta" xml:space="preserve">
+    <value>Beta</value>
+  </data>
+  <data name="modManager.releaseType.release" xml:space="preserve">
+    <value>Kararlı</value>
+  </data>
+  <data name="modManager.releaseType.unknown" xml:space="preserve">
+    <value>Bilinmiyor</value>
+  </data>
+  <data name="modManager.screenshots" xml:space="preserve">
+    <value>Ekran Görüntüleri</value>
+  </data>
+  <data name="modManager.search" xml:space="preserve">
+    <value>Mod ara...</value>
+  </data>
+  <data name="modManager.searchFailed" xml:space="preserve">
+    <value>Mod araması başarısız</value>
+  </data>
+  <data name="modManager.searchInstalled" xml:space="preserve">
+    <value>Yüklü modlarda ara...</value>
+  </data>
+  <data name="modManager.searchMods" xml:space="preserve">
+    <value>Mod ara...</value>
+  </data>
+  <data name="modManager.selectCountForDownload" xml:space="preserve">
+    <value>İndirmek için {{count}} mod seç</value>
+  </data>
+  <data name="modManager.selectCountMods" xml:space="preserve">
+    <value>{{count}} mod seç</value>
+  </data>
+  <data name="modManager.selectExportFolder" xml:space="preserve">
+    <value>Lütfen bir dışa aktarma klasörü seçin</value>
+  </data>
+  <data name="modManager.selectForDownload" xml:space="preserve">
+    <value>İndirmek için seç (Aralık için Shift+tıkla)</value>
+  </data>
+  <data name="modManager.selectForInstall" xml:space="preserve">
+    <value>Kurulum için seç (Aralık için Shift+tıkla)</value>
+  </data>
+  <data name="modManager.selectMod" xml:space="preserve">
+    <value>Mod seç</value>
+  </data>
+  <data name="modManager.selectModForDownload" xml:space="preserve">
+    <value>İndirmek için mod seç</value>
+  </data>
+  <data name="modManager.selectModToView" xml:space="preserve">
+    <value>Detayları görüntülemek için bir mod seçin</value>
+  </data>
+  <data name="modManager.selectModsToDelete" xml:space="preserve">
+    <value>Silinecek modları seçin</value>
+  </data>
+  <data name="modManager.selectModsToDownload" xml:space="preserve">
+    <value>İndirilecek modları seçin</value>
+  </data>
+  <data name="modManager.selectShift" xml:space="preserve">
+    <value>Seç (Aralık için Shift+tıkla)</value>
+  </data>
+  <data name="modManager.selectVersion" xml:space="preserve">
+    <value>Sürüm Seç</value>
+  </data>
+  <data name="modManager.selected" xml:space="preserve">
+    <value>Seçildi</value>
+  </data>
+  <data name="modManager.selectedForDownload" xml:space="preserve">
+    <value>İndirmek için seçildi</value>
+  </data>
+  <data name="modManager.selectedForInstall" xml:space="preserve">
+    <value>Kurulum için seçildi</value>
+  </data>
+  <data name="modManager.sortBy" xml:space="preserve">
+    <value>Sırala</value>
+  </data>
+  <data name="modManager.sortCreationDate" xml:space="preserve">
+    <value>Oluşturma Tarihi</value>
+  </data>
+  <data name="modManager.sortLatestUpdate" xml:space="preserve">
+    <value>Son güncelleme</value>
+  </data>
+  <data name="modManager.sortPopularity" xml:space="preserve">
+    <value>Popülerlik</value>
+  </data>
+  <data name="modManager.sortRelevancy" xml:space="preserve">
+    <value>İlgililik</value>
+  </data>
+  <data name="modManager.sortTotalDownloads" xml:space="preserve">
+    <value>Toplam İndirmeler</value>
+  </data>
+  <data name="modManager.title" xml:space="preserve">
+    <value>Mod Yöneticisi</value>
+  </data>
+  <data name="modManager.toggleFailed" xml:space="preserve">
+    <value>Mod durumu güncellenemedi</value>
+  </data>
+  <data name="modManager.unknownAuthor" xml:space="preserve">
+    <value>Bilinmeyen Yazar</value>
+  </data>
+  <data name="modManager.unselectAllCount" xml:space="preserve">
+    <value>Tüm seçimi kaldır ({{count}})</value>
+  </data>
+  <data name="modManager.unselectCountMods" xml:space="preserve">
+    <value>{{count}} mod seçimini kaldır</value>
+  </data>
+  <data name="modManager.unselectMod" xml:space="preserve">
+    <value>Mod seçimini kaldır</value>
+  </data>
+  <data name="modManager.update" xml:space="preserve">
+    <value>Güncelle</value>
+  </data>
+  <data name="modManager.updateAll" xml:space="preserve">
+    <value>Tümünü Güncelle</value>
+  </data>
+  <data name="modManager.updateBadge" xml:space="preserve">
+    <value>Güncelle</value>
+  </data>
+  <data name="modManager.updatesAvailable" xml:space="preserve">
+    <value>{{count}} mod için güncelleme mevcut:</value>
+  </data>
+  <data name="modManager.updatesAvailableCount" xml:space="preserve">
+    <value>{{count}} güncelleme mevcut</value>
+  </data>
+  <data name="modManager.updatesAvailableShort" xml:space="preserve">
+    <value>güncelleme</value>
+  </data>
+  <data name="modManager.updating" xml:space="preserve">
+    <value>Güncelleniyor...</value>
+  </data>
+  <data name="modManager.gameVersions" xml:space="preserve">
+    <value>Oyun sürümleri için</value>
+  </data>
+  <data name="modManager.version" xml:space="preserve">
+    <value>Sürüm</value>
+  </data>
+  <data name="modManager.versionSelected" xml:space="preserve">
+    <value>Seçilen sürüm:</value>
+  </data>
+  <data name="modManager.viewChangelog" xml:space="preserve">
+    <value>Değişiklik günlüğünü görüntüle</value>
+  </data>
+  <data name="music.mute" xml:space="preserve">
+    <value>Sesi Kapat</value>
+  </data>
+  <data name="music.mutedWhilePlaying" xml:space="preserve">
+    <value>Oyun çalışırken müzik kapatıldı</value>
+  </data>
+  <data name="music.on" xml:space="preserve">
+    <value>Müzik</value>
+  </data>
+  <data name="music.unmute" xml:space="preserve">
+    <value>Sesi Aç</value>
+  </data>
+  <data name="news.all" xml:space="preserve">
+    <value>Tümü</value>
+  </data>
+  <data name="news.disabled" xml:space="preserve">
+    <value>Haberler devre dışı</value>
+  </data>
+  <data name="news.enableInSettings" xml:space="preserve">
+    <value>Haberleri Ayarlar'dan etkinleştirin</value>
+  </data>
+  <data name="news.expand" xml:space="preserve">
+    <value>Genişlet</value>
+  </data>
+  <data name="news.hyprism" xml:space="preserve">
+    <value>HyPrism</value>
+  </data>
+  <data name="news.hytale" xml:space="preserve">
+    <value>Hytale</value>
+  </data>
+  <data name="news.loading" xml:space="preserve">
+    <value>Haberler yükleniyor...</value>
+  </data>
+  <data name="news.minimize" xml:space="preserve">
+    <value>Küçült</value>
+  </data>
+  <data name="news.noNewsFound" xml:space="preserve">
+    <value>Haber bulunamadı</value>
+  </data>
+  <data name="news.readMore" xml:space="preserve">
+    <value>Bağlantı</value>
+  </data>
+  <data name="news.title" xml:space="preserve">
+    <value>Haberler</value>
+  </data>
+  <data name="news.tryAgain" xml:space="preserve">
+    <value>Tekrar Dene</value>
+  </data>
+  <data name="onboarding.about" xml:space="preserve">
+    <value>Hakkında</value>
+  </data>
+  <data name="onboarding.aboutHyPrism" xml:space="preserve">
+    <value>HyPrism Hakkında</value>
+  </data>
+  <data name="onboarding.allSet" xml:space="preserve">
+    <value>Hazırsınız! İşte başlatıcı hakkında bazı bilgiler</value>
+  </data>
+  <data name="onboarding.auth.authenticating" xml:space="preserve">
+    <value>Kimlik doğrulanıyor...</value>
+  </data>
+  <data name="onboarding.auth.createFailed" xml:space="preserve">
+    <value>Hytale hesabından profil oluşturulamadı.</value>
+  </data>
+  <data name="onboarding.auth.description" xml:space="preserve">
+    <value>Hytale hesabınızla giriş yapın. Henüz oyunu satın almadıysanız, Atla'ya tıklayın.</value>
+  </data>
+  <data name="onboarding.auth.error" xml:space="preserve">
+    <value>Kimlik doğrulama sırasında bir hata oluştu.</value>
+  </data>
+  <data name="onboarding.auth.failed" xml:space="preserve">
+    <value>Kimlik doğrulama başarısız oldu. Lütfen tekrar deneyin.</value>
+  </data>
+  <data name="onboarding.auth.login" xml:space="preserve">
+    <value>Hytale ile Giriş Yap</value>
+  </data>
+  <data name="onboarding.auth.noHytaleProfile" xml:space="preserve">
+    <value>Hesabınızın henüz Hytale'a erişimi yok. Oyunu resmi web sitesinden satın alabilirsiniz.</value>
+  </data>
+  <data name="onboarding.auth.skip" xml:space="preserve">
+    <value>Atla</value>
+  </data>
+  <data name="onboarding.auth.title" xml:space="preserve">
+    <value>Kimlik Doğrulama</value>
+  </data>
+  <data name="onboarding.authServerCreator" xml:space="preserve">
+    <value>Kimlik Doğrulama Sunucusu Oluşturucusu</value>
+  </data>
+  <data name="onboarding.background" xml:space="preserve">
+    <value>Arka Plan</value>
+  </data>
+  <data name="onboarding.bugReport" xml:space="preserve">
+    <value>Hata Bildirimi</value>
+  </data>
+  <data name="onboarding.changeInSettings" xml:space="preserve">
+    <value>Bu konumu daha sonra Ayarlar &gt; Veri'den değiştirebilirsiniz</value>
+  </data>
+  <data name="onboarding.chooseLanguage" xml:space="preserve">
+    <value>Dilinizi seçin</value>
+  </data>
+  <data name="onboarding.chooseLocation" xml:space="preserve">
+    <value>Örnek konumunu seçin</value>
+  </data>
+  <data name="onboarding.chooseUsername" xml:space="preserve">
+    <value>Oyun için bir kullanıcı adı seçin</value>
+  </data>
+  <data name="onboarding.customizeAppearance" xml:space="preserve">
+    <value>Görünümü özelleştir</value>
+  </data>
+  <data name="onboarding.disclaimer" xml:space="preserve">
+    <value>HyPrism, Hytale için resmi olmayan bir başlatıcıdır. Bu proje Hypixel Studios ile bağlantılı değildir.</value>
+  </data>
+  <data name="onboarding.enterLauncher" xml:space="preserve">
+    <value>Başlatıcıya Gir</value>
+  </data>
+  <data name="onboarding.enterUsername" xml:space="preserve">
+    <value>Kullanıcı adınızı girin</value>
+  </data>
+  <data name="onboarding.filesStoredHere" xml:space="preserve">
+    <value>Oyun dosyalarınız burada saklanacak</value>
+  </data>
+  <data name="onboarding.generateUsername" xml:space="preserve">
+    <value>Rastgele kullanıcı adı oluştur</value>
+  </data>
+  <data name="onboarding.getStarted" xml:space="preserve">
+    <value>Başla</value>
+  </data>
+  <data name="onboarding.gpuHint" xml:space="preserve">
+    <value>Oyunu başlatırken hangi ekran kartını kullanacağınızı seçin</value>
+  </data>
+  <data name="onboarding.gpuPreference" xml:space="preserve">
+    <value>GPU Tercihi</value>
+  </data>
+  <data name="onboarding.gpu_auto" xml:space="preserve">
+    <value>Otomatik</value>
+  </data>
+  <data name="onboarding.gpu_autoHint" xml:space="preserve">
+    <value>Sistemin karar vermesine izin ver</value>
+  </data>
+  <data name="onboarding.gpu_dedicated" xml:space="preserve">
+    <value>Ayrık GPU</value>
+  </data>
+  <data name="onboarding.gpu_dedicatedHint" xml:space="preserve">
+    <value>Ayrık ekran kartını kullan</value>
+  </data>
+  <data name="onboarding.gpu_integrated" xml:space="preserve">
+    <value>Entegre GPU</value>
+  </data>
+  <data name="onboarding.gpu_integratedHint" xml:space="preserve">
+    <value>Entegre grafikleri kullan</value>
+  </data>
+  <data name="onboarding.hardware" xml:space="preserve">
+    <value>Donanım</value>
+  </data>
+  <data name="onboarding.hardwareSettings" xml:space="preserve">
+    <value>Donanım Ayarları</value>
+  </data>
+  <data name="onboarding.instanceFolder" xml:space="preserve">
+    <value>Örnek Klasörü</value>
+  </data>
+  <data name="onboarding.language" xml:space="preserve">
+    <value>Dil</value>
+  </data>
+  <data name="onboarding.letsSetUp" xml:space="preserve">
+    <value>Başlatıcınızı kuralım</value>
+  </data>
+  <data name="onboarding.location" xml:space="preserve">
+    <value>Konum</value>
+  </data>
+  <data name="onboarding.locationHint" xml:space="preserve">
+    <value>Oyun örneklerinizin nerede saklanacağını seçin. Varsayılanı bırakabilir veya özel bir konum seçebilirsiniz.</value>
+  </data>
+  <data name="onboarding.maintainerRole" xml:space="preserve">
+    <value>Sürdürücü &amp; Geliştirici</value>
+  </data>
+  <data name="onboarding.profile" xml:space="preserve">
+    <value>Profil</value>
+  </data>
+  <data name="onboarding.selectLanguageHint" xml:space="preserve">
+    <value>Başlatıcı arayüzü için tercih ettiğiniz dili seçin</value>
+  </data>
+  <data name="onboarding.setupProfile" xml:space="preserve">
+    <value>Profilinizi ayarlayın</value>
+  </data>
+  <data name="onboarding.skip" xml:space="preserve">
+    <value>Atla</value>
+  </data>
+  <data name="onboarding.slideshow" xml:space="preserve">
+    <value>Slayt Gösterisi</value>
+  </data>
+  <data name="onboarding.slideshowHint" xml:space="preserve">
+    <value>Tüm arka planlar arasında geçiş yap</value>
+  </data>
+  <data name="onboarding.staticBackground" xml:space="preserve">
+    <value>Veya sabit bir arka plan seçin:</value>
+  </data>
+  <data name="onboarding.unofficial" xml:space="preserve">
+    <value>Resmi Olmayan Hytale Başlatıcısı</value>
+  </data>
+  <data name="onboarding.username" xml:space="preserve">
+    <value>Kullanıcı Adı</value>
+  </data>
+  <data name="onboarding.usernameHint" xml:space="preserve">
+    <value>1-16 karakter</value>
+  </data>
+  <data name="onboarding.visual" xml:space="preserve">
+    <value>Görsel</value>
+  </data>
+  <data name="onboarding.welcome" xml:space="preserve">
+    <value>HyPrism'e Hoş Geldiniz</value>
+  </data>
+  <data name="onboarding.welcomeBack" xml:space="preserve">
+    <value>Tekrar hoş geldin, {{name}}!</value>
+  </data>
+  <data name="onlineToggle.offline" xml:space="preserve">
+    <value>Çevrimdışı Mod</value>
+  </data>
+  <data name="onlineToggle.offlineClickEnable" xml:space="preserve">
+    <value>Çevrimdışı Mod (Çevrimiçi etkinleştirmek için tıklayın)</value>
+  </data>
+  <data name="onlineToggle.online" xml:space="preserve">
+    <value>Bağlı mod</value>
+  </data>
+  <data name="onlineToggle.onlineClickDisable" xml:space="preserve">
+    <value>Çevrimiçi Mod (Devre dışı bırakmak için tıklayın)</value>
+  </data>
+  <data name="profileEditor.avatar" xml:space="preserve">
+    <value>Avatar</value>
+  </data>
+  <data name="profileEditor.cancel" xml:space="preserve">
+    <value>İptal</value>
+  </data>
+  <data name="profileEditor.copy" xml:space="preserve">
+    <value>Kopyala</value>
+  </data>
+  <data name="profileEditor.dropSkin" xml:space="preserve">
+    <value>Skin dosyanızı buraya bırakın veya aşağıdaki düğmeleri kullanın</value>
+  </data>
+  <data name="profileEditor.openAvatarFolder" xml:space="preserve">
+    <value>Avatar Klasörünü Aç</value>
+  </data>
+  <data name="profileEditor.randomize" xml:space="preserve">
+    <value>Rastgele</value>
+  </data>
+  <data name="profileEditor.refreshPreview" xml:space="preserve">
+    <value>Önizlemeyi Yenile</value>
+  </data>
+  <data name="profileEditor.save" xml:space="preserve">
+    <value>Kaydet</value>
+  </data>
+  <data name="profileEditor.title" xml:space="preserve">
+    <value>Profil Düzenleyici</value>
+  </data>
+  <data name="profileEditor.username" xml:space="preserve">
+    <value>Kullanıcı Adı</value>
+  </data>
+  <data name="profileEditor.usernameHint" xml:space="preserve">
+    <value>1-16 karakter olmalıdır</value>
+  </data>
+  <data name="profileEditor.uuid" xml:space="preserve">
+    <value>UUID</value>
+  </data>
+  <data name="profileEditor.uuidHint" xml:space="preserve">
+    <value>Profiliniz için benzersiz tanımlayıcı</value>
+  </data>
+  <data name="profiles.copyUuid" xml:space="preserve">
+    <value>UUID'yi Kopyala</value>
+  </data>
+  <data name="profiles.createNew" xml:space="preserve">
+    <value>Yeni Profil Oluştur</value>
+  </data>
+  <data name="profiles.deleteProfile" xml:space="preserve">
+    <value>Profili Sil</value>
+  </data>
+  <data name="profiles.duplicateProfile" xml:space="preserve">
+    <value>Profili Çoğalt</value>
+  </data>
+  <data name="profiles.editUsername" xml:space="preserve">
+    <value>Kullanıcı Adını Düzenle</value>
+  </data>
+  <data name="profiles.editUuid" xml:space="preserve">
+    <value>UUID'yi Düzenle</value>
+  </data>
+  <data name="profiles.editor" xml:space="preserve">
+    <value>Profil türü</value>
+  </data>
+  <data name="startup.loading.title" xml:space="preserve">
+    <value>Başlatıcı hazırlanıyor</value>
+  </data>
+  <data name="startup.loading.content" xml:space="preserve">
+    <value>Haberler ve topluluk önbelleğe alınıyor</value>
+  </data>
+  <data name="startup.loading.ready" xml:space="preserve">
+    <value>Hazır</value>
+  </data>
+  <data name="profiles.favoriteInstance" xml:space="preserve">
+    <value>Favori örnek</value>
+  </data>
+  <data name="profiles.enterName" xml:space="preserve">
+    <value>Profil adı girin...</value>
+  </data>
+  <data name="profiles.enterNewName" xml:space="preserve">
+    <value>Yeni profiliniz için bir ad girin veya rastgele için Escape'e basın</value>
+  </data>
+  <data name="profiles.generateName" xml:space="preserve">
+    <value>Rastgele Ad Oluştur</value>
+  </data>
+  <data name="profiles.noProfiles" xml:space="preserve">
+    <value>Henüz kayıtlı profil yok</value>
+  </data>
+  <data name="profiles.officialLocked" xml:space="preserve">
+    <value>Resmi Hytale profilleri düzenlenemez</value>
+  </data>
+  <data name="profiles.openFolder" xml:space="preserve">
+    <value>Profil Klasörünü Aç</value>
+  </data>
+  <data name="profiles.playerUuid" xml:space="preserve">
+    <value>Oyuncu UUID'si</value>
+  </data>
+  <data name="profiles.randomUuid" xml:space="preserve">
+    <value>Rastgele UUID Oluştur</value>
+  </data>
+  <data name="profiles.saveUuid" xml:space="preserve">
+    <value>UUID'yi Kaydet</value>
+  </data>
+  <data name="profiles.saved" xml:space="preserve">
+    <value>Profil kaydedildi!</value>
+  </data>
+  <data name="profiles.savedProfiles" xml:space="preserve">
+    <value>Kayıtlı Profiller</value>
+  </data>
+  <data name="profiles.title" xml:space="preserve">
+    <value>Profiller</value>
+  </data>
+  <data name="profiles.wizard.authDesc" xml:space="preserve">
+    <value>Tarayıcınızda Hytale giriş sayfasına yönlendirileceksiniz. Giriş yaptıktan sonra profiliniz otomatik olarak oluşturulacak.</value>
+  </data>
+  <data name="profiles.wizard.authError" xml:space="preserve">
+    <value>Giriş sırasında bir hata oluştu. Lütfen tekrar deneyin.</value>
+  </data>
+  <data name="profiles.wizard.authFailed" xml:space="preserve">
+    <value>Giriş tamamlanamadı. Lütfen tekrar deneyin.</value>
+  </data>
+  <data name="profiles.wizard.authTitle" xml:space="preserve">
+    <value>Hytale ile Giriş Yap</value>
+  </data>
+  <data name="profiles.wizard.browserHint" xml:space="preserve">
+    <value>Tarayıcınızda girişi tamamlayın. Bu pencere otomatik olarak güncellenecek.</value>
+  </data>
+  <data name="profiles.wizard.characters" xml:space="preserve">
+    <value>karakter</value>
+  </data>
+  <data name="profiles.wizard.chooseType" xml:space="preserve">
+    <value>Profilinizi nasıl oluşturmak istediğinizi seçin</value>
+  </data>
+  <data name="profiles.wizard.create" xml:space="preserve">
+    <value>Profil Oluştur</value>
+  </data>
+  <data name="profiles.wizard.createError" xml:space="preserve">
+    <value>Profil oluşturulurken bir hata oluştu.</value>
+  </data>
+  <data name="profiles.wizard.createFailed" xml:space="preserve">
+    <value>Profil oluşturulamadı. Lütfen tekrar deneyin.</value>
+  </data>
+  <data name="profiles.wizard.loginHytale" xml:space="preserve">
+    <value>Giriş yap</value>
+  </data>
+  <data name="profiles.wizard.nameDesc" xml:space="preserve">
+    <value>Çevrimdışı profiliniz için bir ad seçin (3-16 karakter, İngilizce harfler, rakamlar, - ve _)</value>
+  </data>
+  <data name="profiles.wizard.namePlaceholder" xml:space="preserve">
+    <value>Takma ad girin...</value>
+  </data>
+  <data name="profiles.wizard.nameTitle" xml:space="preserve">
+    <value>Takma Ad Seçin</value>
+  </data>
+  <data name="profiles.wizard.nickInvalid" xml:space="preserve">
+    <value>Takma ad 3-16 karakter olmalıdır: İngilizce harfler, rakamlar, tire veya alt çizgi.</value>
+  </data>
+  <data name="profiles.wizard.nickRules" xml:space="preserve">
+    <value>Sadece A-Z, 0-9, - ve _</value>
+  </data>
+  <data name="profiles.wizard.noHytaleProfile" xml:space="preserve">
+    <value>Hytale hesabınızda henüz oyun profili yok. Oyuna ilk eriştiğinizde bir profil oluşturulacak.</value>
+  </data>
+  <data name="profiles.wizard.official" xml:space="preserve">
+    <value>Resmi Hytale Hesabı</value>
+  </data>
+  <data name="profiles.wizard.officialDesc" xml:space="preserve">
+    <value>Resmi sunucularda oynamak için Hytale hesabınızla giriş yapın</value>
+  </data>
+  <data name="profiles.wizard.title" xml:space="preserve">
+    <value>Yeni Profil Oluştur</value>
+  </data>
+  <data name="profiles.wizard.unofficial" xml:space="preserve">
+    <value>Çevrimdışı Profil</value>
+  </data>
+  <data name="profiles.wizard.unofficialDesc" xml:space="preserve">
+    <value>Özel ad ve UUID ile yerel profil oluşturun</value>
+  </data>
+  <data name="profiles.wizard.waitingAuth" xml:space="preserve">
+    <value>Giriş bekleniyor...</value>
+  </data>
+  <data name="profiles.yourAvatar" xml:space="preserve">
+    <value>Oyuncu avatarınız</value>
+  </data>
+  <data name="settings.about" xml:space="preserve">
+    <value>Hakkında</value>
+  </data>
+  <data name="settings.aboutSettings.authRole" xml:space="preserve">
+    <value>Kimlik Doğrulama Sunucusu Oluşturucusu</value>
+  </data>
+  <data name="settings.aboutSettings.bugReport" xml:space="preserve">
+    <value>Hata Bildirimi</value>
+  </data>
+  <data name="settings.aboutSettings.cicdRole" xml:space="preserve">
+    <value>CI/CD Dağıtıcısı</value>
+  </data>
+  <data name="settings.aboutSettings.codevRole" xml:space="preserve">
+    <value>Başlatıcı Eş Lideri</value>
+  </data>
+  <data name="settings.aboutSettings.contributorRole" xml:space="preserve">
+    <value>Katılımcı</value>
+  </data>
+  <data name="settings.aboutSettings.contributors" xml:space="preserve">
+    <value>Katkıda Bulunanlar</value>
+  </data>
+  <data name="settings.aboutSettings.contributorsDescription" xml:space="preserve">
+    <value>Bu başlatıcının oluşturulmasına yardım eden harika insanlar</value>
+  </data>
+  <data name="settings.aboutSettings.coreTeam" xml:space="preserve">
+    <value>Çekirdek Ekip</value>
+  </data>
+  <data name="settings.aboutSettings.coreTeamDescription" xml:space="preserve">
+    <value>HyPrism geliştirmesinin arkasındaki ekip</value>
+  </data>
+  <data name="settings.aboutSettings.creatorRole" xml:space="preserve">
+    <value>Proje Oluşturucusu</value>
+  </data>
+  <data name="settings.aboutSettings.description" xml:space="preserve">
+    <value>Hytale için modern bir başlatıcı</value>
+  </data>
+  <data name="settings.aboutSettings.disclaimer" xml:space="preserve">
+    <value>HyPrism, Hytale için resmi olmayan bir başlatıcıdır. Bu proje Hypixel Studios ile bağlantılı değildir.</value>
+  </data>
+  <data name="settings.aboutSettings.builtWith" xml:space="preserve">
+    <value>Şununla oluşturuldu</value>
+  </data>
+  <data name="settings.aboutSettings.installerRole" xml:space="preserve">
+    <value>Yükleyici Oluşturucusu</value>
+  </data>
+  <data name="settings.aboutSettings.maintainerRole" xml:space="preserve">
+    <value>Sürdürücü &amp; Geliştirici</value>
+  </data>
+  <data name="settings.aboutSettings.others" xml:space="preserve">
+    <value>Ve diğerleri</value>
+  </data>
+  <data name="settings.aboutSettings.replayIntro" xml:space="preserve">
+    <value>Girişi Tekrar Oynat</value>
+  </data>
+  <data name="settings.aboutSettings.testerRole" xml:space="preserve">
+    <value>Baş Test Uzmanı</value>
+  </data>
+  <data name="settings.aboutSettings.title" xml:space="preserve">
+    <value>HyPrism Başlatıcısı</value>
+  </data>
+  <data name="settings.aboutSettings.unofficial" xml:space="preserve">
+    <value>Resmi Olmayan Hytale Başlatıcısı</value>
+  </data>
+  <data name="settings.aboutSettings.version" xml:space="preserve">
+    <value>Sürüm {0}</value>
+  </data>
+  <data name="settings.browse" xml:space="preserve">
+    <value>Gözat</value>
+  </data>
+  <data name="settings.categoryDescriptions.about" xml:space="preserve">
+    <value>Sürüm, proje bağlantıları ve hata bildirimleri</value>
+  </data>
+  <data name="settings.categoryDescriptions.data" xml:space="preserve">
+    <value>Başlatıcı dosyaları, oyun sürümleri ve önbellek</value>
+  </data>
+  <data name="settings.categoryDescriptions.downloads" xml:space="preserve">
+    <value>İndirme kaynakları, bağlantı denetimi ve oyun başlatma</value>
+  </data>
+  <data name="settings.categoryDescriptions.general" xml:space="preserve">
+    <value>Dil, güncellemeler, başlatıcı davranışı, GPU tercihi ve ortam değişkenleri</value>
+  </data>
+  <data name="settings.categoryDescriptions.graphics" xml:space="preserve">
+    <value>Hytale'ı başlatmak için GPU seçimi</value>
+  </data>
+  <data name="settings.categoryDescriptions.java" xml:space="preserve">
+    <value>Çalışma zamanı, Java yolu ve JVM argümanları</value>
+  </data>
+  <data name="settings.categoryDescriptions.network" xml:space="preserve">
+    <value>Çevrimiçi mod ve kimlik doğrulama ayarları</value>
+  </data>
+  <data name="settings.categoryDescriptions.variables" xml:space="preserve">
+    <value>Hytale'a aktarılan ortam değişkenleri</value>
+  </data>
+  <data name="settings.categoryDescriptions.visual" xml:space="preserve">
+    <value>Arka plan, müzik, haberler ve duyurular</value>
+  </data>
+  <data name="settings.close" xml:space="preserve">
+    <value>Kapat</value>
+  </data>
+  <data name="settings.data" xml:space="preserve">
+    <value>Veri</value>
+  </data>
+  <data name="settings.dataSettings.deleteAllData" xml:space="preserve">
+    <value>Tüm Başlatıcı Verilerini Sil</value>
+  </data>
+  <data name="settings.dataSettings.gameDirectory" xml:space="preserve">
+    <value>Oyun Dizini</value>
+  </data>
+  <data name="settings.dataSettings.gameDirectoryHint" xml:space="preserve">
+    <value>Yüklü oyun örneklerinin saklandığı konum.</value>
+  </data>
+  <data name="settings.dataSettings.gameRunningWarning" xml:space="preserve">
+    <value>Oyun çalışırken bazı seçenekler kullanılamaz. Bu ayarları değiştirmek için lütfen oyunu kapatın.</value>
+  </data>
+  <data name="settings.dataSettings.instanceFolder" xml:space="preserve">
+    <value>Örnek Klasörü</value>
+  </data>
+  <data name="settings.dataSettings.launcherData" xml:space="preserve">
+    <value>Başlatıcı Verileri</value>
+  </data>
+  <data name="settings.dataSettings.launcherDataFolder" xml:space="preserve">
+    <value>Başlatıcı Veri Klasörü</value>
+  </data>
+  <data name="settings.dataSettings.launcherDataHint" xml:space="preserve">
+    <value>Başlatıcı yapılandırması ve varlıklarının saklandığı konum.</value>
+  </data>
+  <data name="settings.dataSettings.launcherFiles" xml:space="preserve"><value>Başlatıcı dosyaları</value></data>
+  <data name="settings.dataSettings.storageUsed" xml:space="preserve"><value>Kullanılan alan</value></data>
+  <data name="settings.dataSettings.otherFiles" xml:space="preserve"><value>Diğer dosyalar</value></data>
+  <data name="settings.dataSettings.movingData" xml:space="preserve">
+    <value>Veriler taşınıyor...</value>
+  </data>
+  <data name="settings.dataSettings.movingDataHint" xml:space="preserve">
+    <value>Taşınıyor: {{file}}</value>
+  </data>
+  <data name="settings.dataSettings.open" xml:space="preserve">
+    <value>Aç</value>
+  </data>
+  <data name="settings.dataSettings.openLauncherFolder" xml:space="preserve">
+    <value>Başlatıcı Klasörünü Aç</value>
+  </data>
+  <data name="settings.dataSettings.resetToDefault" xml:space="preserve">
+    <value>Varsayılana Sıfırla</value>
+  </data>
+  <data name="settings.dataSettings.title" xml:space="preserve">
+    <value>Veri Yönetimi</value>
+  </data>
+  <data name="settings.deleteAllData.message" xml:space="preserve">
+    <value>Bu, ayarlar, önbellek ve indirilen dosyalar dahil tüm başlatıcı verilerini silecektir. Bu işlem geri alınamaz.</value>
+  </data>
+  <data name="settings.deleteAllData.title" xml:space="preserve">
+    <value>Tüm Verileri Sil?</value>
+  </data>
+  <data name="settings.deleteInstance.message" xml:space="preserve">
+    <value>Bu, {{branch}} {{version}} örneğini ve tüm verilerini silecektir. Bu işlem geri alınamaz.</value>
+  </data>
+  <data name="settings.deleteInstance.title" xml:space="preserve">
+    <value>Örneği Sil?</value>
+  </data>
+  <data name="settings.devMode" xml:space="preserve">
+    <value>Geliştirici Modu</value>
+  </data>
+  <data name="settings.downloads.addMirror" xml:space="preserve">
+    <value>Ayna Ekle</value>
+  </data>
+  <data name="settings.downloads.addMirrorBtn" xml:space="preserve">
+    <value>Ayna Ekle</value>
+  </data>
+  <data name="settings.downloads.communityMirrors" xml:space="preserve">
+    <value>Topluluk Aynaları</value>
+  </data>
+  <data name="settings.downloads.deleteMirror" xml:space="preserve">
+    <value>Aynayı sil</value>
+  </data>
+  <data name="settings.downloads.disable" xml:space="preserve">
+    <value>Devre Dışı Bırak</value>
+  </data>
+  <data name="settings.downloads.enable" xml:space="preserve">
+    <value>Etkinleştir</value>
+  </data>
+  <data name="settings.downloads.headersHint" xml:space="preserve">
+    <value>Format: header=değer veya header="boşluklu değer". Resmi User-Agent için {hytaleAgent} kullanın.</value>
+  </data>
+  <data name="settings.downloads.headersPlaceholder" xml:space="preserve">
+    <value>Özel başlıklar (isteğe bağlı): Authorization="Bearer token" User-Agent="{hytaleAgent}"</value>
+  </data>
+  <data name="settings.downloads.howDownloadsWork" xml:space="preserve">
+    <value>İndirmeler nasıl çalışır</value>
+  </data>
+  <data name="settings.downloads.howDownloadsWorkDescription" xml:space="preserve">
+    <value>HyPrism, oyun dosyalarını indirmek için en hızlı kaynağı otomatik olarak seçer. Bağlantınızı kontrol etmek için "Hızı Test Et" düğmesine basın.</value>
+  </data>
+  <data name="settings.downloads.mirrorUrlHint" xml:space="preserve">
+    <value>Hytale aynasının temel URL'sini girin. Başlatıcı yapılandırmayı otomatik olarak algılamaya çalışacaktır.</value>
+  </data>
+  <data name="settings.downloads.mirrors" xml:space="preserve">
+    <value>Topluluk Aynaları</value>
+  </data>
+  <data name="settings.downloads.mirrorsDescription" xml:space="preserve">
+    <value>Oyun dosyaları için alternatif indirme kaynakları</value>
+  </data>
+  <data name="settings.downloads.mirrorsHint" xml:space="preserve">
+    <value>Topluluktan alternatif kaynaklar</value>
+  </data>
+  <data name="settings.downloads.noMirrors" xml:space="preserve">
+    <value>Ayna yapılandırılmadı</value>
+  </data>
+  <data name="settings.downloads.noMirrorsHint" xml:space="preserve">
+    <value>Resmi hesap olmadan oyun dosyalarını indirmek için bir ayna ekleyin</value>
+  </data>
+  <data name="settings.downloads.officialSource" xml:space="preserve">
+    <value>Resmi Kaynak</value>
+  </data>
+  <data name="settings.downloads.officialSourceHint" xml:space="preserve">
+    <value>Resmi Hytale sunucularından indir</value>
+  </data>
+  <data name="settings.downloads.refreshMirrors" xml:space="preserve">
+    <value>Aynaları yenile</value>
+  </data>
+  <data name="settings.downloads.testSpeed" xml:space="preserve">
+    <value>Hızı Test Et</value>
+  </data>
+  <data name="settings.downloads.testing" xml:space="preserve">
+    <value>Test ediliyor...</value>
+  </data>
+  <data name="settings.downloads.title" xml:space="preserve">
+    <value>İndirmeler</value>
+  </data>
+  <data name="settings.downloads.unavailable" xml:space="preserve">
+    <value>Kullanılamıyor</value>
+  </data>
+  <data name="settings.exportInstance.exportFolder" xml:space="preserve">
+    <value>Dışa Aktarma Klasörü</value>
+  </data>
+  <data name="settings.exportInstance.exportType" xml:space="preserve">
+    <value>Dışa Aktarma Türü</value>
+  </data>
+  <data name="settings.exportInstance.selectExportFolder" xml:space="preserve">
+    <value>Dışa aktarma klasörü seçin...</value>
+  </data>
+  <data name="settings.exportInstance.title" xml:space="preserve">
+    <value>Örneği dışa aktar</value>
+  </data>
+  <data name="settings.exportInstance.zipArchive" xml:space="preserve">
+    <value>ZIP Arşivi</value>
+  </data>
+  <data name="settings.exportInstance.zipArchiveHint" xml:space="preserve">
+    <value>Tüm örnek verileri paketlenmiş</value>
+  </data>
+  <data name="settings.general" xml:space="preserve">
+    <value>Genel</value>
+  </data>
+  <data name="settings.generalSettings.closeLauncher" xml:space="preserve">
+    <value>Başlatmadan sonra kapat</value>
+  </data>
+  <data name="settings.generalSettings.closeLauncherHint" xml:space="preserve">
+    <value>Oyun başladığında başlatıcıyı kapat</value>
+  </data>
+  <data name="settings.generalSettings.launcherStorage" xml:space="preserve">
+    <value>Başlatıcı Depolama</value>
+  </data>
+  <data name="settings.generalSettings.launcherStorageHint" xml:space="preserve">
+    <value>Başlatıcı verileri ve oyun dosyalarının saklandığı konum.</value>
+  </data>
+  <data name="settings.generalSettings.showAlphaMods" xml:space="preserve">
+    <value>Alfa Modları Göster</value>
+  </data>
+  <data name="settings.generalSettings.showAlphaModsHint" xml:space="preserve">
+    <value>Mod yöneticisinde alfa sürüm tipindeki modları göster</value>
+  </data>
+  <data name="settings.generalSettings.title" xml:space="preserve">
+    <value>Genel Ayarlar</value>
+  </data>
+  <data name="settings.generalSettings.watchTutorial" xml:space="preserve">
+    <value>Öğreticiyi İzle</value>
+  </data>
+  <data name="settings.graphics" xml:space="preserve">
+    <value>Grafik</value>
+  </data>
+  <data name="settings.graphicsSettings.enableOptimizationMods" xml:space="preserve">
+    <value>Optimizasyon Modlarını Etkinleştir</value>
+  </data>
+  <data name="settings.graphicsSettings.gpuPreference" xml:space="preserve">
+    <value>Render</value>
+  </data>
+    <data name="settings.graphicsSettings.usedGpu" xml:space="preserve">
+    <value>Kullanılan GPU</value>
+  </data>
+<data name="settings.graphicsSettings.gpuPreferenceHint" xml:space="preserve">
+    <value>Oyunu başlatırken hangi GPU'yu kullanacağınızı seçin</value>
+  </data>
+  <data name="settings.graphicsSettings.gpu_auto" xml:space="preserve">
+    <value>Otomatik</value>
+  </data>
+  <data name="settings.graphicsSettings.gpu_autoHint" xml:space="preserve">
+    <value>Sistemin karar vermesine izin ver</value>
+  </data>
+  <data name="settings.graphicsSettings.gpu_dedicatedHint" xml:space="preserve">
+    <value>Ayrık GPU kullan (NVIDIA/AMD)</value>
+  </data>
+  <data name="settings.graphicsSettings.gpu_integratedHint" xml:space="preserve">
+    <value>Dahili GPU kullan (Intel/AMD)</value>
+  </data>
+  <data name="settings.graphicsSettings.installOptModsAction" xml:space="preserve">
+    <value>Tüm profillere 8 performans modu kur</value>
+  </data>
+  <data name="settings.graphicsSettings.installingOptMods" xml:space="preserve">
+    <value>Optimizasyon modları kuruluyor...</value>
+  </data>
+  <data name="settings.graphicsSettings.optModsFailed" xml:space="preserve">
+    <value>Optimizasyon modları kurulamadı</value>
+  </data>
+  <data name="settings.graphicsSettings.optModsInstalled" xml:space="preserve">
+    <value>Optimizasyon modları kuruldu!</value>
+  </data>
+  <data name="settings.graphicsSettings.optimizationMods" xml:space="preserve">
+    <value>Optimizasyon Modları</value>
+  </data>
+  <data name="settings.graphicsSettings.optimizationModsHint" xml:space="preserve">
+    <value>Oyun performansını artırmak için optimizasyon modlarını indirin ve kurun</value>
+  </data>
+  <data name="settings.graphicsSettings.singleGpuNotice" xml:space="preserve">
+    <value>Sadece bir GPU algılandı — seçim Otomatik moda kilitli.</value>
+  </data>
+  <data name="settings.graphicsSettings.title" xml:space="preserve">
+    <value>Grafik Ayarları</value>
+  </data>
+  <data name="settings.importInstance.importing" xml:space="preserve">
+    <value>İçe aktarılıyor</value>
+  </data>
+  <data name="settings.importInstance.importingProgress" xml:space="preserve">
+    <value>İçe aktarılıyor...</value>
+  </data>
+  <data name="settings.importInstance.selectInstance" xml:space="preserve">
+    <value>UserData'yı hangi örneğe aktaracağınızı seçin:</value>
+  </data>
+  <data name="settings.importInstance.title" xml:space="preserve">
+    <value>Örneği İçe Aktar</value>
+  </data>
+  <data name="settings.instanceSettings.clickToRefresh" xml:space="preserve">
+    <value>Yenilemek için tıklayın</value>
+  </data>
+  <data name="settings.instanceSettings.created" xml:space="preserve">
+    <value>Oluşturulma</value>
+  </data>
+  <data name="settings.instanceSettings.delete" xml:space="preserve">
+    <value>Örneği Sil</value>
+  </data>
+  <data name="settings.instanceSettings.description" xml:space="preserve">
+    <value>Yüklü oyun sürümlerinizi yönetin.</value>
+  </data>
+  <data name="settings.instanceSettings.dropZipImport" xml:space="preserve">
+    <value>Örnek içe aktarmak için ZIP veya PWR bırakın</value>
+  </data>
+  <data name="settings.instanceSettings.empty" xml:space="preserve">
+    <value>Görünüşe göre henüz hiçbir şey indirmediniz</value>
+  </data>
+  <data name="settings.instanceSettings.exportFailed" xml:space="preserve">
+    <value>Örnek dışa aktarılamadı</value>
+  </data>
+  <data name="settings.instanceSettings.exportInstance" xml:space="preserve">
+    <value>Örneği Dışa Aktar</value>
+  </data>
+  <data name="settings.instanceSettings.exportedSuccess" xml:space="preserve">
+    <value>Dışa aktarıldı:</value>
+  </data>
+  <data name="settings.instanceSettings.installHytale" xml:space="preserve">
+    <value>Örnek oluşturmak için Hytale'ı yükleyin</value>
+  </data>
+  <data name="settings.instanceSettings.lastPlayed" xml:space="preserve">
+    <value>Son Oynama</value>
+  </data>
+  <data name="settings.instanceSettings.launchBranch" xml:space="preserve">
+    <value>Başlatma dalı</value>
+  </data>
+  <data name="settings.instanceSettings.never" xml:space="preserve">
+    <value>Hiç</value>
+  </data>
+  <data name="settings.instanceSettings.noInstances" xml:space="preserve">
+    <value>Yüklü örnek yok</value>
+  </data>
+  <data name="settings.instanceSettings.noUserData" xml:space="preserve">
+    <value>Dışa aktarılacak UserData klasörü yok</value>
+  </data>
+  <data name="settings.instanceSettings.notPlayed" xml:space="preserve">
+    <value>Oynanmadı</value>
+  </data>
+  <data name="settings.instanceSettings.openFolder" xml:space="preserve">
+    <value>Klasörü Aç</value>
+  </data>
+  <data name="settings.instanceSettings.playtime" xml:space="preserve">
+    <value>Oynama Süresi</value>
+  </data>
+  <data name="settings.instanceSettings.title" xml:space="preserve">
+    <value>Örnek Yönetimi</value>
+  </data>
+  <data name="settings.instanceSettings.updated" xml:space="preserve">
+    <value>Güncelleme</value>
+  </data>
+  <data name="settings.instanceSettings.userData" xml:space="preserve">
+    <value>Kullanıcı verileri</value>
+  </data>
+  <data name="settings.instanceSettings.version" xml:space="preserve">
+    <value>Sürüm</value>
+  </data>
+  <data name="settings.instances" xml:space="preserve">
+    <value>Örnekler</value>
+  </data>
+    <data name="settings.javaSettings.customJavaPathEmpty" xml:space="preserve">
+    <value>Seçilmiş yürütülebilir dosya yok</value>
+  </data>
+<data name="settings.javaSettings.customJavaPathNotFound" xml:space="preserve">
+    <value>Seçilen Java yürütülebilir dosyası bulunamadı</value>
+  </data>
+  <data name="settings.javaSettings.customJavaPathPlaceholder" xml:space="preserve">
+    <value>/yol/java veya C:\Java\bin\java.exe</value>
+  </data>
+  <data name="settings.javaSettings.customJavaPathRequired" xml:space="preserve">
+    <value>Lütfen bir Java yürütülebilir dosya yolu belirtin</value>
+  </data>
+  <data name="settings.javaSettings.detectedMemory" xml:space="preserve">
+    <value>Algılanan sistem belleği: {{value}}</value>
+  </data>
+  <data name="settings.javaSettings.gcMode" xml:space="preserve">
+    <value>Çöp Toplayıcı</value>
+  </data>
+  <data name="settings.javaSettings.gcModeHint" xml:space="preserve">
+    <value>Bayrakları manuel yazmadan basit bir GC profili seçin</value>
+  </data>
+  <data name="settings.javaSettings.gc_auto" xml:space="preserve">
+    <value>Otomatik (varsayılan)</value>
+  </data>
+  <data name="settings.javaSettings.gc_autoHint" xml:space="preserve">
+    <value>Belirli bir toplayıcıyı zorlamaz</value>
+  </data>
+  <data name="settings.javaSettings.gc_g1" xml:space="preserve">
+    <value>G1GC</value>
+  </data>
+  <data name="settings.javaSettings.gc_g1Hint" xml:space="preserve">
+    <value>Daha akıcı kare hızı için -XX:+UseG1GC ekler</value>
+  </data>
+  <data name="settings.javaSettings.initialRam" xml:space="preserve">
+    <value>Başlangıç RAM (-Xms)</value>
+  </data>
+  <data name="settings.javaSettings.javaRuntime" xml:space="preserve">
+    <value>Java Runtime</value>
+  </data>
+  <data name="settings.javaSettings.javaRuntimeHint" xml:space="preserve">
+    <value>Tek oyunculu sunucuyu çalıştırmak için hangi Java yürütülebilir dosyasının kullanılacağını seçin</value>
+  </data>
+  <data name="settings.javaSettings.jvmArguments" xml:space="preserve">
+    <value>Gelişmiş JVM argümanları</value>
+  </data>
+  <data name="settings.javaSettings.jvmArgumentsBlocked" xml:space="preserve">
+    <value>Bazı güvensiz veya yönetilen JVM bayrakları kaydetmeden önce kaldırıldı</value>
+  </data>
+    <data name="settings.javaSettings.jvmArgumentsEmpty" xml:space="preserve">
+    <value>Henüz ek bağımsız değişken yok, isteğe bağlı bayraklar JAVA_TOOL_OPTIONS üzerine kaydedilir</value>
+  </data>
+<data name="settings.javaSettings.jvmArgumentsHint" xml:space="preserve">
+    <value>Tek oyunculu sunucu için isteğe bağlı ek bayraklar. JAVA_TOOL_OPTIONS'a kaydedilir</value>
+  </data>
+  <data name="settings.javaSettings.jvmArgumentsPlaceholder" xml:space="preserve">
+    <value>-Dfile.encoding=UTF-8 -XX:+UnlockExperimentalVMOptions</value>
+  </data>
+  <data name="settings.javaSettings.maxRam" xml:space="preserve">
+    <value>Maksimum RAM (-Xmx)</value>
+  </data>
+  <data name="settings.javaSettings.maxRecommended" xml:space="preserve">
+    <value>Önerilen maksimum: {{value}}</value>
+  </data>
+  <data name="settings.javaSettings.ramAllocation" xml:space="preserve">
+    <value>Sunucu RAM Tahsisi</value>
+  </data>
+  <data name="settings.javaSettings.ramAllocationHint" xml:space="preserve">
+    <value>Tek oyunculu sunucu için Java max heap (-Xmx) ayarlayın</value>
+  </data>
+  <data name="settings.javaSettings.useBundledJava" xml:space="preserve">
+    <value>Dahili Java kullan</value>
+  </data>
+  <data name="settings.javaSettings.useBundledJavaHint" xml:space="preserve">
+    <value>Önerilen: HyPrism ile birlikte gelen Java'yı kullanır</value>
+  </data>
+  <data name="settings.javaSettings.useCustomJava" xml:space="preserve">
+    <value>Özel Java kullan</value>
+  </data>
+  <data name="settings.javaSettings.useCustomJavaHint" xml:space="preserve">
+    <value>Kendi Java yürütülebilir dosya yolunuzu belirtin (java/java.exe)</value>
+  </data>
+  <data name="settings.language" xml:space="preserve">
+    <value>Dil</value>
+  </data>
+  <data name="settings.languageChanged.dontAskAgain" xml:space="preserve">
+    <value>Bir daha sorma</value>
+  </data>
+  <data name="settings.languageChanged.message" xml:space="preserve">
+    <value>{{language}} için çeviri modları aramak ister misiniz?</value>
+  </data>
+  <data name="settings.languageChanged.noThanks" xml:space="preserve">
+    <value>Hayır, teşekkürler</value>
+  </data>
+  <data name="settings.languageChanged.searchMods" xml:space="preserve">
+    <value>Mod Ara</value>
+  </data>
+  <data name="settings.languageChanged.title" xml:space="preserve">
+    <value>Dil Değiştirildi</value>
+  </data>
+  <data name="settings.languageSettings.interfaceLanguage" xml:space="preserve">
+    <value>Arayüz Dili</value>
+  </data>
+  <data name="settings.languageSettings.interfaceLanguageHint" xml:space="preserve">
+    <value>Başlatıcı arayüzü için tercih ettiğiniz dili seçin</value>
+  </data>
+  <data name="settings.languageSettings.note" xml:space="preserve">
+    <value>Not: Tam yerelleştirme tamamlanana kadar bazı metinler İngilizce kalabilir. Geliştiriciler herkesin kullanabilmesi için başlatıcıyı aktif olarak yerelleştiriyor.</value>
+  </data>
+  <data name="settings.languageSettings.selectLanguage" xml:space="preserve">
+    <value>Dil Seç</value>
+  </data>
+  <data name="settings.languageSettings.title" xml:space="preserve">
+    <value>Dil Ayarları</value>
+  </data>
+  <data name="settings.myProfile" xml:space="preserve">
+    <value>Profilim</value>
+  </data>
+  <data name="settings.network" xml:space="preserve">
+    <value>Ağ</value>
+  </data>
+  <data name="settings.networkSettings.authCustom" xml:space="preserve">
+    <value>Özel</value>
+  </data>
+  <data name="settings.networkSettings.authCustomHint" xml:space="preserve">
+    <value>Kendi kimlik doğrulama sunucu adresinizi girin</value>
+  </data>
+  <data name="settings.networkSettings.authDefault" xml:space="preserve">
+    <value>Varsayılan</value>
+  </data>
+  <data name="settings.networkSettings.authOfficial" xml:space="preserve">
+    <value>Resmi</value>
+  </data>
+  <data name="settings.networkSettings.authOfficialHint" xml:space="preserve">
+    <value>Hytale sunucuları</value>
+  </data>
+  <data name="settings.networkSettings.authServer" xml:space="preserve">
+    <value>Kimlik Doğrulama Sunucusu</value>
+  </data>
+  <data name="settings.networkSettings.authServerHint" xml:space="preserve">
+    <value>Çevrimiçi oyun için kullanılacak kimlik doğrulama sunucusunu seçin.</value>
+  </data>
+  <data name="settings.networkSettings.currentServer" xml:space="preserve">
+    <value>Mevcut sunucu</value>
+  </data>
+  <data name="settings.networkSettings.onlineMode" xml:space="preserve">
+    <value>Çevrimiçi Mod</value>
+  </data>
+  <data name="settings.networkSettings.onlineModeHint" xml:space="preserve">
+    <value>Kimlik doğrulama hizmetini ve hesap verilerini kullan; devre dışı bırakıldığında HyPrism yerel bir OmniAuth oturumu oluşturur</value>
+  </data>
+  <data name="settings.profile.avatar" xml:space="preserve">
+    <value>Avatar</value>
+  </data>
+  <data name="settings.profile.copy" xml:space="preserve">
+    <value>Kopyala</value>
+  </data>
+  <data name="settings.profile.displayName" xml:space="preserve">
+    <value>Görünen Ad</value>
+  </data>
+  <data name="settings.profile.displayNameHint" xml:space="preserve">
+    <value>Oyundaki adınız (1-16 karakter).</value>
+  </data>
+  <data name="settings.profile.nameWarning" xml:space="preserve">
+    <value>Hytale belirli bir takma ad desenine sahiptir. Yalnızca İngilizce karakterleri ve sayıları (0-9) kullanın, özel sembollerden ve boşluklardan kaçının (istisnalar: '-', '_')</value>
+  </data>
+  <data name="settings.profile.randomize" xml:space="preserve">
+    <value>Rastgele</value>
+  </data>
+  <data name="settings.profile.title" xml:space="preserve">
+    <value>Profilim</value>
+  </data>
+  <data name="settings.profile.uploadSkin" xml:space="preserve">
+    <value>Skin Yükle</value>
+  </data>
+  <data name="settings.profile.uuid" xml:space="preserve">
+    <value>UUID</value>
+  </data>
+  <data name="settings.profile.uuidWarning" xml:space="preserve">
+    <value>Benzersiz ID. Değiştirmek skininizi sıfırlar!</value>
+  </data>
+  <data name="settings.title" xml:space="preserve">
+    <value>Ayarlar</value>
+  </data>
+  <data name="settings.variables" xml:space="preserve">
+    <value>Değişkenler</value>
+  </data>
+  <data name="settings.variablesSettings.commonPresets" xml:space="preserve">
+    <value>Yaygın Ön Ayarlar</value>
+  </data>
+  <data name="settings.variablesSettings.commonPresetsHint" xml:space="preserve">
+    <value>Yaygın ortam değişkenleri için hızlı açma/kapama. Özel değişkenlerinize otomatik olarak eklenir</value>
+  </data>
+  <data name="settings.variablesSettings.customEnvVars" xml:space="preserve">
+    <value>Ortam değişkenleri</value>
+  </data>
+    <data name="settings.variablesSettings.customEnvVarsEmpty" xml:space="preserve">
+    <value>Henüz özel değişken yok, oyun başlatıcı ortamını devralır</value>
+  </data>
+<data name="settings.variablesSettings.customEnvVarsHint" xml:space="preserve">
+    <value>Boşlukla ayrılmış KEY=VALUE çiftleri. Örnek: MY_VAR=value ANOTHER=123</value>
+  </data>
+  <data name="settings.variablesSettings.customEnvVarsPlaceholder" xml:space="preserve">
+    <value>MY_VAR=value ANOTHER_VAR=123</value>
+  </data>
+  <data name="settings.variablesSettings.disableVkLayers" xml:space="preserve">
+    <value>Vulkan Katmanlarını Devre Dışı Bırak</value>
+  </data>
+  <data name="settings.variablesSettings.disableVkLayersHint" xml:space="preserve">
+    <value>Deneysel sürücülerde çökmelere neden olabilecek Vulkan doğrulama katmanlarını devre dışı bırakır</value>
+  </data>
+  <data name="settings.variablesSettings.envVarsInvalidFormat" xml:space="preserve">
+    <value>Geçersiz format. Boşlukla ayrılmış KEY=VALUE çiftleri kullanın</value>
+  </data>
+  <data name="settings.variablesSettings.forceAmdVulkan" xml:space="preserve">
+    <value>AMD RADV Sürücüsünü Zorla</value>
+  </data>
+  <data name="settings.variablesSettings.forceAmdVulkanHint" xml:space="preserve">
+    <value>AMD GPU'lar için açık kaynak RADV Vulkan sürücüsünü kullanmaya zorlar</value>
+  </data>
+  <data name="settings.variablesSettings.forceX11" xml:space="preserve">
+    <value>X11'i Zorla (SDL_VIDEODRIVER)</value>
+  </data>
+  <data name="settings.variablesSettings.forceX11Hint" xml:space="preserve">
+    <value>Oyunu Wayland yerine X11 kullanmaya zorlar. Bazı GPU/sürücü uyumluluk sorunlarına yardımcı olur</value>
+  </data>
+  <data name="settings.variablesSettings.linuxOnlyNotice" xml:space="preserve">
+    <value>Ortam değişkenleri yalnızca Linux'ta uygulanır</value>
+  </data>
+  <data name="settings.variablesSettings.title" xml:space="preserve">
+    <value>Ortam Değişkenleri</value>
+  </data>
+  <data name="settings.visual" xml:space="preserve">
+    <value>Görsel</value>
+  </data>
+  <data name="settings.visualSettings.autoShuffle" xml:space="preserve">
+    <value>Otomatik / Karışık</value>
+  </data>
+  <data name="settings.visualSettings.background" xml:space="preserve">
+    <value>Arka Plan</value>
+  </data>
+  <data name="settings.visualSettings.chooseBackground" xml:space="preserve">
+    <value>Arka Plan Seç</value>
+  </data>
+  <data name="settings.visualSettings.current" xml:space="preserve">
+    <value>Mevcut</value>
+  </data>
+  <data name="settings.visualSettings.hideNews" xml:space="preserve">
+    <value>Haberleri Gizle</value>
+  </data>
+  <data name="settings.visualSettings.hideNewsHint" xml:space="preserve">
+    <value>Haber panelini tamamen gizle</value>
+  </data>
+  <data name="settings.visualSettings.images" xml:space="preserve">
+    <value>Görseller</value>
+  </data>
+  <data name="settings.visualSettings.slideshow" xml:space="preserve">
+    <value>Slayt Gösterisi</value>
+  </data>
+  <data name="settings.visualSettings.slideshowHint" xml:space="preserve">
+    <value>Tüm arka planlar arasında geçiş yap</value>
+  </data>
+  <data name="settings.visualSettings.solidColors" xml:space="preserve">
+    <value>Düz Renkler</value>
+  </data>
+  <data name="settings.visualSettings.staticBackground" xml:space="preserve">
+    <value>Veya sabit bir arka plan seçin:</value>
+  </data>
+  <data name="settings.visualSettings.title" xml:space="preserve">
+    <value>Görsel Ayarlar</value>
+  </data>
+  <data name="settings.visuals" xml:space="preserve">
+    <value>Görünüm</value>
+  </data>
+  <data name="social.discord" xml:space="preserve">
+    <value>Discord</value>
+  </data>
+  <data name="social.github" xml:space="preserve">
+    <value>GitHub</value>
+  </data>
+  <data name="update.autoLaunch" xml:space="preserve">
+    <value>Hazır olduğunda oyun otomatik olarak başlayacak.</value>
+  </data>
+  <data name="update.downloading" xml:space="preserve">
+    <value>İndiriliyor...</value>
+  </data>
+  <data name="update.extracting" xml:space="preserve">
+    <value>Çıkartılıyor...</value>
+  </data>
+  <data name="update.launching" xml:space="preserve">
+    <value>Başlatılıyor...</value>
+  </data>
+  <data name="update.pleaseWait" xml:space="preserve">
+    <value>Lütfen oyun dosyalarını indirip kuruyoruz bekleyin.</value>
+  </data>
+  <data name="updateConfirmation.copyDataQuestion" xml:space="preserve">
+    <value>Kayıtlı verilerinizi yeni sürüme kopyalamak ister misiniz?</value>
+  </data>
+  <data name="updateConfirmation.currentVersion" xml:space="preserve">
+    <value>Mevcut Sürüm</value>
+  </data>
+  <data name="updateConfirmation.hasDataMessage" xml:space="preserve">
+    <value>Yeni bir oyun sürümü mevcut. Mevcut sürümünüzde kayıtlı veriler (ayarlar, modlar vb.) var.</value>
+  </data>
+  <data name="updateConfirmation.newVersion" xml:space="preserve">
+    <value>Yeni Sürüm</value>
+  </data>
+  <data name="updateConfirmation.readyMessage" xml:space="preserve">
+    <value>Yeni bir oyun sürümü mevcut. Güncellemeye hazır mısınız?</value>
+  </data>
+  <data name="updateConfirmation.title" xml:space="preserve">
+    <value>Oyun Güncellemesi Mevcut</value>
+  </data>
+  <data name="updateConfirmation.updateCopyData" xml:space="preserve">
+    <value>Güncelle ve Verileri Kopyala</value>
+  </data>
+  <data name="updateConfirmation.updateNow" xml:space="preserve">
+    <value>Şimdi Güncelle</value>
+  </data>
+  <data name="updateConfirmation.updateWithoutCopy" xml:space="preserve">
+    <value>Kopyalamadan Güncelle</value>
+  </data>
+  <data name="updateOverlay.autoRestart" xml:space="preserve">
+    <value>Güncelleme tamamlandığında başlatıcı otomatik olarak yeniden başlayacak.</value>
+  </data>
+  <data name="updateOverlay.failed" xml:space="preserve">
+    <value>Güncelleme başarısız oldu</value>
+  </data>
+  <data name="updateOverlay.installing" xml:space="preserve">
+    <value>Kuruluyor</value>
+  </data>
+  <data name="updateOverlay.message" xml:space="preserve">
+    <value>HyPrism'in en son sürümü indiriliyor ve kuruluyor, lütfen bekleyin.</value>
+  </data>
+  <data name="updateOverlay.title" xml:space="preserve">
+    <value>BAŞLATICI GÜNCELLENİYOR</value>
+  </data>
+  <data name="wrapper.checkForUpdates" xml:space="preserve">
+    <value>Güncellemeleri kontrol et</value>
+  </data>
+  <data name="wrapper.description" xml:space="preserve">
+    <value>Sarıcı modu — HyPrism'in tam sürümünü indirin ve başlatın</value>
+  </data>
+  <data name="wrapper.downloadInstall" xml:space="preserve">
+    <value>İndir ve Kur</value>
+  </data>
+  <data name="wrapper.installFailed" xml:space="preserve">
+    <value>Kurulum başarısız - günlükleri kontrol edin</value>
+  </data>
+  <data name="wrapper.installed" xml:space="preserve">
+    <value>Kurulu:</value>
+  </data>
+  <data name="wrapper.latest" xml:space="preserve">
+    <value>En son:</value>
+  </data>
+  <data name="wrapper.launch" xml:space="preserve">
+    <value>Başlat</value>
+  </data>
+  <data name="wrapper.launchFailed" xml:space="preserve">
+    <value>HyPrism başlatılamadı</value>
+  </data>
+  <data name="wrapper.loadingNews" xml:space="preserve">
+    <value>Haberler yükleniyor…</value>
+  </data>
+  <data name="wrapper.none" xml:space="preserve">
+    <value>yok</value>
+  </data>
+  <data name="wrapper.upToDate" xml:space="preserve">
+    <value>Güncel</value>
+  </data>
+  <data name="wrapper.updateAvailable" xml:space="preserve">
+    <value>Güncelleme mevcut</value>
+  </data>
+  <data name="oauth.callback.successTitle" xml:space="preserve">
+    <value>Yetkilendirme başarılı</value>
+  </data>
+  <data name="oauth.callback.successMessage" xml:space="preserve">
+    <value>Resmî Hytale hesabınız HyPrism'e bağlandı</value>
+  </data>
+  <data name="oauth.callback.closeHint" xml:space="preserve">
+    <value>Bu pencereyi kapatıp başlatıcıya dönebilirsiniz</value>
+  </data>
+  <data name="oauth.callback.failureTitle" xml:space="preserve">
+    <value>Yetkilendirme başarısız</value>
+  </data>
+  <data name="oauth.callback.failureHint" xml:space="preserve">
+    <value>Başlatıcıya dönüp tekrar deneyin</value>
+  </data>
+  <data name="common.remove" xml:space="preserve">
+    <value>Kaldır</value>
+  </data>
+  <data name="common.selectVersion" xml:space="preserve">
+    <value>Sürümü seç</value>
+  </data>
+  <data name="desktopSettings.accountHytale" xml:space="preserve">
+    <value>Hytale Hesabı</value>
+  </data>
+  <data name="desktopSettings.accountOffline" xml:space="preserve">
+    <value>Çevrimdışı Hesap</value>
+  </data>
+  <data name="desktopSettings.defaultLocation" xml:space="preserve">
+    <value>Varsayılan sistem konumu</value>
+  </data>
+  <data name="desktopSettings.description" xml:space="preserve">
+    <value>Başlatıcı, oyun ve sistem tercihleri</value>
+  </data>
+  <data name="desktopSettings.discordAnnouncementsHint" xml:space="preserve">
+    <value>Discord üzerinden alınan başlatıcı duyurularını göster</value>
+  </data>
+  <data name="desktopSettings.music" xml:space="preserve">
+    <value>Arka plan müziği</value>
+  </data>
+  <data name="desktopSettings.musicHint" xml:space="preserve">
+    <value>Göz atarken başlatıcı müziğini çal</value>
+  </data>
+  <data name="home.createInstance" xml:space="preserve">
+    <value>Bir örnek oluştur</value>
+  </data>
+  <data name="home.currentInstance" xml:space="preserve">
+    <value>Mevcut örnek</value>
+  </data>
+  <data name="home.welcomeHint" xml:space="preserve">
+    <value>Bir Hytale sürümü seçmek, dosyalarını indirmek ve bir sonraki macerana başlamak için bir örnek oluştur</value>
+  </data>
+  <data name="home.welcomeTitle" xml:space="preserve">
+    <value>HyPrism'e hoş geldiniz</value>
+  </data>
+  <data name="instances.newInstance" xml:space="preserve">
+    <value>Yeni örnek</value>
+  </data>
+  <data name="instances.newInstanceHint" xml:space="preserve">
+    <value>Yeni örneğin için bir dal ve oyun sürümü seç</value>
+  </data>
+  <data name="instances.branchHint" xml:space="preserve">
+    <value>Kararlı veya ön sürüm yapıları</value>
+  </data>
+  <data name="instances.actions.delete" xml:space="preserve">
+    <value>Sil</value>
+  </data>
+  <data name="instances.actions.deleteHint" xml:space="preserve">
+    <value>"{0}" ve tüm verilerini silmek istiyor musun? Bu işlem geri alınamaz.</value>
+  </data>
+  <data name="instances.actions.deleteTitle" xml:space="preserve">
+    <value>Örneği silmek istiyor musun?</value>
+  </data>
+  <data name="instances.actions.install" xml:space="preserve">
+    <value>Yükle</value>
+  </data>
+  <data name="instances.actions.cancel" xml:space="preserve">
+    <value>İptal</value>
+  </data>
+  <data name="instances.actions.launching" xml:space="preserve">
+    <value>Başlatılıyor</value>
+  </data>
+  <data name="instances.actions.running" xml:space="preserve">
+    <value>Çalışıyor</value>
+  </data>
+  <data name="instances.actions.openFolder" xml:space="preserve">
+    <value>Klasörü Aç</value>
+  </data>
+  <data name="instances.actions.play" xml:space="preserve">
+    <value>Başlat</value>
+  </data>
+  <data name="instances.versionHint" xml:space="preserve">
+    <value>Yüklenecek oyun sürümü</value>
+  </data>
+  <data name="instances.selectVersion" xml:space="preserve">
+    <value>Sürümü seç</value>
+  </data>
+  <data name="main.clickToOpenRelease" xml:space="preserve">
+    <value>GitHub'daki sürümü görüntülemek için tıklayın</value>
+  </data>
+  <data name="news.articleLoadFailed" xml:space="preserve">
+    <value>Makale yüklenemedi. Yine de hytale.com üzerinde açabilirsiniz.</value>
+  </data>
+  <data name="news.articleLoading" xml:space="preserve">
+    <value>Makale yükleniyor...</value>
+  </data>
+  <data name="news.loadMore" xml:space="preserve">
+    <value>Daha Fazla Yükle</value>
+  </data>
+  <data name="news.selectArticle" xml:space="preserve">
+    <value>Burada okumak için bir haber öğesi seçin.</value>
+  </data>
+  <data name="onboarding.warning.back" xml:space="preserve">
+    <value>Girişe Geri Dön</value>
+  </data>
+  <data name="onboarding.warning.continue" xml:space="preserve">
+    <value>Devam Et</value>
+  </data>
+  <data name="onboarding.warning.description" xml:space="preserve">
+    <value>Bir Hytale hesabınız olmadan, oyun dosyalarını resmi sunuculardan indiremezsiniz.</value>
+  </data>
+  <data name="onboarding.warning.noSources" xml:space="preserve">
+    <value>İndirilecek web kaynağı yok</value>
+  </data>
+  <data name="onboarding.warning.noSourcesHint" xml:space="preserve">
+    <value>Oyunu indirmek için Ayarlar → İndirilenler bölümüne bir ayna eklemeniz veya daha sonra Hytale hesabınızla giriş yapmanız gerekecek.</value>
+  </data>
+  <data name="onboarding.warning.title" xml:space="preserve">
+    <value>İndirme Kaynağı Yok</value>
+  </data>
+  <data name="profiles.setActive" xml:space="preserve">
+    <value>Seç</value>
+  </data>
+  <data name="profiles.active" xml:space="preserve">
+    <value>Aktif</value>
+  </data>
+  <data name="settings.aboutSettings.siteRole" xml:space="preserve">
+    <value>Dokümantasyon Web Sitesi Geliştiricisi</value>
+  </data>
+  <data name="settings.aboutSettings.project" xml:space="preserve">
+    <value>Proje</value>
+  </data>
+  <data name="settings.aboutSettings.githubHint" xml:space="preserve">
+    <value>Kaynak kod, sürümler ve geliştirme</value>
+  </data>
+  <data name="settings.aboutSettings.documentation" xml:space="preserve">
+    <value>Dokümantasyon</value>
+  </data>
+  <data name="settings.aboutSettings.documentationHint" xml:space="preserve">
+    <value>Kılavuzlar, mimari ve katkıda bulunan referansı</value>
+  </data>
+  <data name="settings.aboutSettings.community" xml:space="preserve">
+    <value>Topluluk</value>
+  </data>
+  <data name="settings.aboutSettings.discordHint" xml:space="preserve">
+    <value>Topluluktan haberler, tartışma ve yardım</value>
+  </data>
+  <data name="settings.aboutSettings.bugReportHint" xml:space="preserve">
+    <value>Bir sorun bildirin veya iyileştirme önerin</value>
+  </data>
+  <data name="settings.aboutSettings.legal" xml:space="preserve">
+    <value>Açık kaynak ve yasal bilgiler</value>
+  </data>
+  <data name="settings.aboutSettings.license" xml:space="preserve">
+    <value>Lisans</value>
+  </data>
+  <data name="settings.aboutSettings.licenseHint" xml:space="preserve">
+    <value>HyPrism kaynak kodu yalnızca GPL-3.0 altında dağıtılmaktadır</value>
+  </data>
+  <data name="settings.aboutSettings.credits" xml:space="preserve">
+    <value>Görsel materyaller</value>
+  </data>
+  <data name="settings.aboutSettings.creditsHint" xml:space="preserve">
+    <value>İllüstrasyonlar Icons8 tarafından sağlanmıştır</value>
+  </data>
+  <data name="settings.aboutSettings.lordicon" xml:space="preserve">
+    <value>Animasyonlu materyaller</value>
+  </data>
+  <data name="settings.aboutSettings.lordiconHint" xml:space="preserve">
+    <value>Animasyonlu simgeler Lordicon tarafından sağlanmıştır</value>
+  </data>
+  <data name="settings.aboutSettings.currentVersion" xml:space="preserve">
+    <value>Mevcut sürüm</value>
+  </data>
+  <data name="settings.aboutSettings.currentVersionHint" xml:space="preserve">
+    <value>Bu cihaza yüklü başlatıcı sürümü</value>
+  </data>
+  <data name="settings.aboutSettings.latestMainCommit" xml:space="preserve">
+    <value>Ana daldeki son commit</value>
+  </data>
+  <data name="settings.aboutSettings.latestMainCommitLoading" xml:space="preserve">
+    <value>Depo bilgileri yükleniyor</value>
+  </data>
+  <data name="settings.aboutSettings.latestMainCommitUnavailable" xml:space="preserve">
+    <value>Depo bilgileri geçici olarak kullanılamıyor</value>
+  </data>
+  <data name="settings.aboutSettings.hytaleEula" xml:space="preserve">
+    <value>Hytale EULA</value>
+  </data>
+  <data name="settings.aboutSettings.hytaleEulaHint" xml:space="preserve">
+    <value>Hytale için Son Kullanıcı Lisans Sözleşmesi</value>
+  </data>
+  <data name="settings.downloads.sources" xml:space="preserve">
+    <value>İndirme kaynakları</value>
+  </data>
+  <data name="settings.downloads.columnLink" xml:space="preserve">
+    <value>Bağlantı</value>
+  </data>
+  <data name="settings.downloads.columnType" xml:space="preserve">
+    <value>Tür</value>
+  </data>
+  <data name="settings.downloads.columnAvailability" xml:space="preserve">
+    <value>Kullanılabilirlik</value>
+  </data>
+  <data name="settings.downloads.columnPing" xml:space="preserve">
+    <value>Ping</value>
+  </data>
+  <data name="settings.downloads.sourceTypeOfficial" xml:space="preserve">
+    <value>Resmi</value>
+  </data>
+  <data name="settings.downloads.checkingAvailability" xml:space="preserve">
+    <value>Kontrol ediliyor</value>
+  </data>
+  <data name="settings.downloads.sourceAvailable" xml:space="preserve">
+    <value>Mevcut</value>
+  </data>
+  <data name="settings.downloads.sourceNoCompatibleVersions" xml:space="preserve">
+    <value>Mevcut, ancak bu sistem için sürüm yok</value>
+  </data>
+  <data name="settings.downloads.sourceUnavailable" xml:space="preserve">
+    <value>Kullanılamıyor</value>
+  </data>
+  <data name="settings.downloads.sourceDisabledState" xml:space="preserve">
+    <value>Devre dışı</value>
+  </data>
+  <data name="settings.downloads.officialSourceConnected" xml:space="preserve">
+    <value>Hesap bağlı</value>
+  </data>
+  <data name="settings.downloads.officialSourceRequiresAccount" xml:space="preserve">
+    <value>Hytale hesabı gerekli</value>
+  </data>
+  <data name="settings.downloads.addSource" xml:space="preserve">
+    <value>Kaynak ekle</value>
+  </data>
+  <data name="settings.downloads.add" xml:space="preserve">
+    <value>Ekle</value>
+  </data>
+  <data name="settings.downloads.addSourceTitle" xml:space="preserve">
+    <value>Bir indirme kaynağı bağla</value>
+  </data>
+  <data name="settings.downloads.addSourceHint" xml:space="preserve">
+    <value>Genel adresini gir ve HyPrism desteklenen aynalama formatını algılayacak</value>
+  </data>
+  <data name="settings.downloads.sourceUrlPlaceholder" xml:space="preserve">
+    <value>https://mirror.example.com</value>
+  </data>
+  <data name="settings.downloads.deleteSourceTitle" xml:space="preserve">
+    <value>Bu kaynak kaldırılsın mı?</value>
+  </data>
+  <data name="settings.downloads.deleteSourceHint" xml:space="preserve">
+    <value>Yerel tanımı silinecek ve artık indirmeler için kullanılmayacak</value>
+  </data>
+  <data name="settings.downloads.sourceManagementUnavailable" xml:space="preserve">
+    <value>Bu oturumda indirme kaynağı yönetimi kullanılamıyor</value>
+  </data>
+  <data name="settings.downloads.invalidSourceUrl" xml:space="preserve">
+    <value>Bir HTTPS adresi veya yerel bir HTTP adresi girin</value>
+  </data>
+  <data name="settings.downloads.sourceAlreadyExists" xml:space="preserve">
+    <value>Bu indirme kaynağı zaten yapılandırılmış</value>
+  </data>
+  <data name="settings.downloads.detectingSource" xml:space="preserve">
+    <value>Kaynak uyumluluğu kontrol ediliyor</value>
+  </data>
+  <data name="settings.downloads.sourceDetectionFailed" xml:space="preserve">
+    <value>HyPrism bu adreste uyumlu bir ayna tespit edemedi</value>
+  </data>
+  <data name="settings.downloads.sourceSaveFailed" xml:space="preserve">
+    <value>İndirme kaynağı kaydedilemedi</value>
+  </data>
+  <data name="settings.downloads.sourceReadFailed" xml:space="preserve">
+    <value>Kaydedilen indirme kaynakları okunamadı</value>
+  </data>
+  <data name="settings.downloads.sourceRemoveFailed" xml:space="preserve">
+    <value>İndirme kaynağı kaldırılamadı</value>
+  </data>
+  <data name="settings.downloads.sourceAdded" xml:space="preserve">
+    <value>İndirme kaynağı eklendi</value>
+  </data>
+  <data name="settings.downloads.sourceRemoved" xml:space="preserve">
+    <value>İndirme kaynağı kaldırıldı</value>
+  </data>
+  <data name="settings.downloads.sourceEnabled" xml:space="preserve">
+    <value>İndirme kaynağı etkinleştirildi</value>
+  </data>
+  <data name="settings.downloads.sourceDisabled" xml:space="preserve">
+    <value>İndirme kaynağı devre dışı bırakıldı</value>
+  </data>
+  <data name="settings.downloads.sourceTypeJsonIndex" xml:space="preserve">
+    <value>JSON dizini</value>
+  </data>
+  <data name="settings.downloads.sourceTypePattern" xml:space="preserve">
+    <value>URL şablonu</value>
+  </data>
+  <data name="settings.generalSettings.mirrorDescription" xml:space="preserve">
+    <value>Resmi sunucular kullanılamadığında oyun dosyaları için alternatif kaynak olarak topluluk aynası kullanılır.</value>
+  </data>
+  <data name="settings.generalSettings.mirrorSettings" xml:space="preserve">
+    <value>Ayna Ayarları</value>
+  </data>
+  <data name="settings.generalSettings.mirrorTestSpeed" xml:space="preserve">
+    <value>Hızı Test Et</value>
+  </data>
+  <data name="settings.generalSettings.mirrorTesting" xml:space="preserve">
+    <value>Test ediliyor...</value>
+  </data>
+  <data name="settings.generalSettings.mirrorUnavailable" xml:space="preserve">
+    <value>Kullanılamıyor</value>
+  </data>
+  <data name="settings.java" xml:space="preserve">
+    <value>Java</value>
+  </data>
+  <data name="settings.javaSettings.jvmMemoryArgumentsManaged" xml:space="preserve">
+    <value>-Xms ve -Xmx bellek tahsis kaydırıcıları ile kontrol edilir</value>
+  </data>
+  <data name="settings.networkSettings.authServerCheckNow" xml:space="preserve">
+    <value>Şimdi Kontrol Et</value>
+  </data>
+  <data name="settings.networkSettings.authServerChecking" xml:space="preserve">
+    <value>Kontrol ediliyor...</value>
+  </data>
+  <data name="settings.networkSettings.authServerOfficialNote" xml:space="preserve">
+    <value>Resmi sunucular her zaman kullanılabilir olarak kabul edilir.</value>
+  </data>
+  <data name="settings.networkSettings.authServerOffline" xml:space="preserve">
+    <value>Çevrimdışı</value>
+  </data>
+  <data name="settings.networkSettings.authServerOfflineWarning" xml:space="preserve">
+    <value>Kimlik doğrulama sunucusuna ulaşılamıyor. Çevrimiçi mod geçici olarak devre dışı.</value>
+  </data>
+  <data name="settings.networkSettings.authServerOnline" xml:space="preserve">
+    <value>Çevrimiçi</value>
+  </data>
+  <data name="settings.networkSettings.authServerPing" xml:space="preserve">
+    <value>{{ping}}ms</value>
+  </data>
+  <data name="settings.networkSettings.authServerStatus" xml:space="preserve">
+    <value>Kimlik Doğrulama Sunucusu Durumu</value>
+  </data>
+  <data name="settings.networkSettings.authServerStatusHint" xml:space="preserve">
+    <value>Kimlik doğrulama sunucusuna ulaşılıp ulaşılamadığını kontrol edin.</value>
+  </data>
+  <data name="settings.networkSettings.officialProfileNote" xml:space="preserve">
+    <value>Resmi hesaplar yalnızca resmi Hytale kimlik doğrulamasını kullanabilir.</value>
+  </data>
+  <data name="settings.networkSettings.unofficialProfileNote" xml:space="preserve">
+    <value>Resmi olmayan hesaplar resmi Hytale kimlik doğrulamasını kullanamaz.</value>
+  </data>
+  <data name="desktopSettings.categories.language" xml:space="preserve">
+    <value>Dil</value>
+  </data>
+  <data name="desktopSettings.categories.miscellaneous" xml:space="preserve">
+    <value>Çeşitli</value>
+  </data>
+  <data name="desktopSettings.categories.appearance" xml:space="preserve">
+    <value>Görünüm</value>
+  </data>
+  <data name="instances.tab.mods" xml:space="preserve">
+    <value>Modlar</value>
+  </data>
+  <data name="instances.mods.title" xml:space="preserve">
+    <value>Yüklü modlar</value>
+  </data>
+  <data name="instances.mods.hint" xml:space="preserve">
+    <value>Sadece bu örnek için yüklenen içerik</value>
+  </data>
+  <data name="instances.mods.search" xml:space="preserve">
+    <value>Yüklü modları ara</value>
+  </data>
+  <data name="instances.mods.emptyTitle" xml:space="preserve">
+    <value>Hiç mod yüklenmedi</value>
+  </data>
+  <data name="instances.mods.emptyHint" xml:space="preserve">
+    <value>Bu örnek için içerik bulmak üzere Discover'ı aç</value>
+  </data>
+  <data name="instances.mods.install" xml:space="preserve">
+    <value>Yükle</value>
+  </data>
+  <data name="instances.mods.installed" xml:space="preserve">
+    <value>Yüklendi</value>
+  </data>
+  <data name="instances.mods.enabled" xml:space="preserve">
+    <value>Etkin</value>
+  </data>
+  <data name="instances.mods.disabled" xml:space="preserve">
+    <value>Devre Dışı</value>
+  </data>
+  <data name="instances.mods.installFailed" xml:space="preserve">
+    <value>Seçilen mod yüklenemedi</value>
+  </data>
+  <data name="instances.browse.title" xml:space="preserve">
+    <value>Modları keşfet</value>
+  </data>
+  <data name="instances.browse.hint" xml:space="preserve">
+    <value>CurseForge içeriğini bu örneğe bul ve yükle</value>
+  </data>
+  <data name="instances.browse.search" xml:space="preserve">
+    <value>Mod kataloğunda ara</value>
+  </data>
+  <data name="instances.browse.emptyTitle" xml:space="preserve">
+    <value>Hiç mod bulunamadı</value>
+  </data>
+  <data name="instances.browse.emptyHint" xml:space="preserve">
+    <value>Farklı bir sorgu deneyin veya CurseForge API yapılandırmasını kontrol edin</value>
+  </data>
+  <data name="instances.worlds.title" xml:space="preserve">
+    <value>Dünyalar</value>
+  </data>
+  <data name="instances.worlds.hint" xml:space="preserve">
+    <value>Bu örneğe ait kaydedilmiş dünyalar</value>
+  </data>
+  <data name="instances.worlds.emptyTitle" xml:space="preserve">
+    <value>Henüz dünya yok</value>
+  </data>
+  <data name="instances.worlds.emptyHint" xml:space="preserve">
+    <value>Oyun tarafından oluşturulan dünyalar burada görünecek</value>
+  </data>
+  <data name="instances.content.notInstalledTitle" xml:space="preserve">
+    <value>Önce bu örneği yükleyin</value>
+  </data>
+  <data name="instances.content.notInstalledHint" xml:space="preserve">
+    <value>Modlar ve dünyalar oyun dosyaları yüklendikten sonra kullanılabilir olur</value>
+  </data>
+  <data name="instances.content.back" xml:space="preserve">
+    <value>Örnek</value>
+  </data>
+  <data name="instances.info.status" xml:space="preserve">
+    <value>Durum</value>
+  </data>
+  <data name="instances.info.playtime" xml:space="preserve">
+    <value>Oynama süresi</value>
+  </data>
+  <data name="instances.info.mods" xml:space="preserve">
+    <value>Modlar</value>
+  </data>
+  <data name="instances.info.worlds" xml:space="preserve">
+    <value>Dünyalar</value>
+  </data>
+  <data name="instances.info.playtimeValue" xml:space="preserve">
+    <value>{0} s {1} dk</value>
+  </data>
+  <data name="instances.console.title" xml:space="preserve">
+    <value>Konsol</value>
+  </data>
+  <data name="instances.console.hint" xml:space="preserve">
+    <value>Bu örnek için komutlar ve canlı çıktı</value>
+  </data>
+  <data name="instances.console.emptyTitle" xml:space="preserve">
+    <value>Konsol henüz kullanılamıyor</value>
+  </data>
+  <data name="instances.console.emptyHint" xml:space="preserve">
+    <value>Örnek başına konsol takibi buraya eklenecek</value>
+  </data>
+  <data name="instances.logs.title" xml:space="preserve">
+    <value>Kayıtlar</value>
+  </data>
+  <data name="instances.logs.hint" xml:space="preserve">
+    <value>Bu örnek için başlatma ve oyun kayıtları</value>
+  </data>
+  <data name="instances.logs.emptyTitle" xml:space="preserve">
+    <value>Henüz örnek kaydı yok</value>
+  </data>
+  <data name="instances.logs.emptyHint" xml:space="preserve">
+    <value>Örnek başına kayıt geçmişi burada görünecek</value>
+  </data>
+  <data name="settings.downloads.columnEnabled" xml:space="preserve">
+    <value>Etkin</value>
+  </data>
+  <data name="settings.downloads.addSourceMethodHint" xml:space="preserve">
+    <value>HyPrism’in kaynağı nasıl yapılandıracağını seçin</value>
+  </data>
+  <data name="settings.downloads.addSourceAutomatic" xml:space="preserve">
+    <value>Otomatik algıla</value>
+  </data>
+  <data name="settings.downloads.addSourceAutomaticHint" xml:space="preserve">
+    <value>Bir adres girin ve kaynak biçimini HyPrism algılasın</value>
+  </data>
+  <data name="settings.downloads.addSourceManual" xml:space="preserve">
+    <value>JSON’u elle gir</value>
+  </data>
+  <data name="settings.downloads.addSourceManualHint" xml:space="preserve">
+    <value>Otomatik algılama uygun değilse tam ayna tanımını yapıştırın</value>
+  </data>
+  <data name="settings.downloads.manualSourceTitle" xml:space="preserve">
+    <value>JSON’dan kaynak ekle</value>
+  </data>
+  <data name="settings.downloads.manualSourceHint" xml:space="preserve">
+    <value>Bir .mirror.json tanımı yapıştırın. HyPrism kaydetmeden önce doğrular</value>
+  </data>
+  <data name="settings.downloads.manualSourceJson" xml:space="preserve">
+    <value>Kaynak tanımı</value>
+  </data>
+  <data name="settings.downloads.invalidSourceJson" xml:space="preserve">
+    <value>Desteklenen bir HTTPS adresi içeren geçerli ayna JSON tanımı girin</value>
+  </data>
+  <data name="settings.downloads.manualSourceJsonPlaceholder" xml:space="preserve">
+    <value>{"schemaVersion":1,"id":"my-mirror","name":"My mirror","sourceType":"pattern","pattern":{"baseUrl":"https://mirror.example.com"}}</value>
+  </data>
+  <data name="instances.mods.checkUpdates" xml:space="preserve">
+    <value>Check for updates</value>
+  </data>
+  <data name="instances.mods.updateAll" xml:space="preserve">
+    <value>Update all</value>
+  </data>
+  <data name="instances.mods.add" xml:space="preserve">
+    <value>Add mod</value>
+  </data>
+  <data name="instances.mods.dropToImport" xml:space="preserve">
+    <value>Drop mod files to import</value>
+  </data>
+  <data name="instances.mods.selectAll" xml:space="preserve">
+    <value>Select all</value>
+  </data>
+  <data name="instances.mods.enableSelected" xml:space="preserve">
+    <value>Enable</value>
+  </data>
+  <data name="instances.mods.disableSelected" xml:space="preserve">
+    <value>Disable</value>
+  </data>
+  <data name="instances.mods.deleteSelected" xml:space="preserve">
+    <value>Delete selected</value>
+  </data>
+  <data name="instances.mods.openPage" xml:space="preserve">
+    <value>Open CurseForge page</value>
+  </data>
+  <data name="instances.mods.toggle" xml:space="preserve">
+    <value>Toggle mod</value>
+  </data>
+  <data name="instances.mods.deleteTitle" xml:space="preserve">
+    <value>Delete mod</value>
+  </data>
+  <data name="instances.mods.deleteHint" xml:space="preserve">
+    <value>The mod file will be removed from this instance</value>
+  </data>
+  <data name="instances.mods.toggleFailed" xml:space="preserve">
+    <value>Could not change the mod state</value>
+  </data>
+  <data name="instances.mods.deleteFailed" xml:space="preserve">
+    <value>Could not delete the mod</value>
+  </data>
+  <data name="instances.mods.selectedCount" xml:space="preserve">
+    <value>{0} selected</value>
+  </data>
+  <data name="instances.mods.compatibility.compatible" xml:space="preserve">
+    <value>Uyumlu</value>
+  </data>
+  <data name="instances.mods.compatibility.incompatible" xml:space="preserve">
+    <value>Uyumsuz</value>
+  </data>
+  <data name="instances.mods.compatibility.unknown" xml:space="preserve">
+    <value>Uyumluluk bilinmiyor</value>
+  </data>
+  <data name="instances.mods.compatibility.gameVersion" xml:space="preserve">
+    <value>Hytale {0}</value>
+  </data>
+  <data name="instances.mods.compatibility.versionUnknown" xml:space="preserve">
+    <value>Hytale sürümü algılanamadı</value>
+  </data>
+  <data name="instances.mods.countInstalled" xml:space="preserve">
+    <value>{0} mods installed</value>
+  </data>
+  <data name="instances.mods.updatesAvailable" xml:space="preserve">
+    <value>{0} updates available</value>
+  </data>
+  <data name="instances.mods.updateAvailableShort" xml:space="preserve">
+    <value>Update</value>
+  </data>
+  <data name="instances.browse.categoryAll" xml:space="preserve">
+    <value>All categories</value>
+  </data>
+  <data name="instances.browse.category" xml:space="preserve">
+    <value>Category</value>
+  </data>
+  <data name="instances.browse.sort" xml:space="preserve">
+    <value>Sort</value>
+  </data>
+  <data name="instances.browse.sortRelevancy" xml:space="preserve">
+    <value>Relevancy</value>
+  </data>
+  <data name="instances.browse.sortPopularity" xml:space="preserve">
+    <value>Popularity</value>
+  </data>
+  <data name="instances.browse.sortLatestUpdate" xml:space="preserve">
+    <value>Last updated</value>
+  </data>
+  <data name="instances.browse.sortCreationDate" xml:space="preserve">
+    <value>Creation date</value>
+  </data>
+  <data name="instances.browse.sortTotalDownloads" xml:space="preserve">
+    <value>Total downloads</value>
+  </data>
+  <data name="instances.browse.loadingMore" xml:space="preserve">
+    <value>Loading more results</value>
+  </data>
+  <data name="instances.console.running" xml:space="preserve">
+    <value>Game running</value>
+  </data>
+  <data name="instances.console.offline" xml:space="preserve">
+    <value>Not running</value>
+  </data>
+  <data name="instances.console.autoScroll" xml:space="preserve">
+    <value>Auto-scroll</value>
+  </data>
+  <data name="instances.console.wrap" xml:space="preserve">
+    <value>Wrap</value>
+  </data>
+  <data name="instances.console.clear" xml:space="preserve">
+    <value>Clear</value>
+  </data>
+  <data name="instances.console.search" xml:space="preserve">
+    <value>Filter console output</value>
+  </data>
+  <data name="instances.console.lineCount" xml:space="preserve">
+    <value>{0} lines</value>
+  </data>
+</root>

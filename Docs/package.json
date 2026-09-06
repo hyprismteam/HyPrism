@@ -1,0 +1,46 @@
+{
+  "name": "@hyprism/docs",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@11.21.0",
+  "scripts": {
+    "dev": "docusaurus start --host 0.0.0.0",
+    "build": "docusaurus build --out-dir out",
+    "check": "python3 ../Scripts/test_documentation.py && python3 ../Scripts/check_documentation.py && tsc --noEmit",
+    "clear": "docusaurus clear",
+    "serve": "docusaurus serve --dir out",
+    "lint:content": "python3 ../Scripts/check_documentation.py"
+  },
+  "dependencies": {
+    "@docusaurus/core": "3.10.2",
+    "@docusaurus/faster": "3.10.2",
+    "@docusaurus/plugin-content-docs": "3.10.2",
+    "@docusaurus/preset-classic": "3.10.2",
+    "@mdx-js/react": "3.1.1",
+    "clsx": "2.1.1",
+    "gray-matter": "4.0.3",
+    "prism-react-renderer": "2.4.1",
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
+  },
+  "devDependencies": {
+    "@docusaurus/module-type-aliases": "3.10.2",
+    "@docusaurus/tsconfig": "3.10.2",
+    "@docusaurus/types": "3.10.2",
+    "@types/node": "24.10.13",
+    "@types/react": "19.2.18",
+    "typescript": "6.0.3"
+  },
+  "browserslist": {
+    "production": [
+      ">0.5%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 3 chrome version",
+      "last 3 firefox version",
+      "last 5 safari version"
+    ]
+  }
+}

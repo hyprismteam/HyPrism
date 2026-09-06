@@ -1,0 +1,67 @@
+---
+title: HyPrism.Desktop
+description: Avalonia composition, feature ownership, and reusable controls
+---
+
+# HyPrism.Desktop
+
+Desktop is the Avalonia application host. It composes Core services, provides native capabilities, and adapts their state into views and commands
+
+## Composition and features
+
+| Location | Responsibility |
+| --- | --- |
+| `Program.cs` | Service registrations, renderer configuration, application entry point |
+| `App.axaml` and `App.axaml.cs` | Resources, window creation, startup and shutdown |
+| `Shell` | Main window, navigation, top-level state, instance and news orchestration |
+| `Features/Dashboard` | Current-instance launch surface |
+| `Features/Instances` | Instance workspace, mods, catalog, worlds, console presentation |
+| `Features/Profiles` | Profile cards, activation, editing, creation and sign-in |
+| `Features/Settings` | Settings view model, persistence adapter, storage usage |
+| `Features/News` | Official feed, HTML parsing, structured articles, rich text |
+| `Features/About` | GitHub repository, commit, contributor and avatar data |
+| `Platform` | Browser and folder opening, file picker, memory and GPU discovery, image cache |
+| `Integrations/Discord` | Host implementation of Core presence |
+| `Localization` | Resource strings and runtime language selection |
+
+## Views and state
+
+Compiled bindings are enabled for the Desktop project. Views declare `x:DataType`; view models expose observable state and commands. Code-behind handles behavior tied to input, layout, focus, or animation
+
+The following fragment illustrates a compiled binding to the existing settings view model
+
+```xml
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:settings="using:HyPrism.Desktop.Features.Settings"
+             x:DataType="settings:SettingsViewModel">
+  <ToggleSwitch IsChecked="{Binding CloseAfterLaunch}" />
+</UserControl>
+```
+
+Publish observable collection changes on the UI dispatcher. Unsubscribe from service events and release image resources when their owner is disposed
+
+## Shared UI foundation
+
+`Styles/Tokens.axaml` defines colors and semantic tokens. `Styles/Controls.axaml` defines shared control styles. Reuse their classes instead of copying feature-specific variants
+
+| Control | Responsibility |
+| --- | --- |
+| `AdaptiveMasterDetailHost` | Shared wide and compact navigation |
+| `DeferredContentControl` | Delayed creation and retention of feature views |
+| `WizardHost` | Wizard state, step transitions, and navigation coordination |
+| `OverlayModal` | Shared dialog sheet |
+| `FadingPopup` and `FadingComboBox` | Popup lifecycle and selection menus |
+| `ReorderableListController` | Drag handles, previews, and drop positions |
+| `NoteCard` | Informational and important callouts |
+| `SmoothScrollViewer` | Wheel and middle-button scrolling |
+
+Animation timing belongs in `MotionDurations` or the owning reusable control. The [performance guide](/docs/development/avalonia-performance) explains layout and rendering checks
+
+## Network presentation
+
+News and GitHub clients use the shared HTTP identity. Parsed news lives in `Cache/News`; encoded remote images live in `Cache/Images`. Article text is prepared before image decoding, and decoded article bitmaps are released when the article closes
+
+Native file selection uses Avalonia's `StorageProvider`. External links preserve escaped absolute URIs, including OAuth parameters. Neither capability belongs in Core
+
+Source: [MainWindowViewModel](../../../../Sources/HyPrism.Desktop/Shell/MainWindowViewModel.cs), [Shared controls](../../../../Sources/HyPrism.Desktop/Controls)

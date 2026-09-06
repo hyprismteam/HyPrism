@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 
+# Copyright (C) 2026 HyPrism Launcher
+# SPDX-License-Identifier: GPL-3.0-only
+
+
 # This script fetches the latest Linux x64 tarball from the
 # HyPrism GitHub releases, computes its sha256 checksum and
 # updates the Flathub manifest at
@@ -93,7 +97,7 @@ fi
 # .NET runtime identifier, so we don't pass it to the generator.  The CLI's
 # `--runtime` option is intended for dotnet RIDs such as linux-x64.
 # compute absolute path to the project file (script may be run from any cwd)
-project_file="$(dirname "${BASH_SOURCE[0]}")/../HyPrism.csproj"
+project_file="$(dirname "${BASH_SOURCE[0]}")/../Sources/HyPrism.Launcher/HyPrism.Launcher.csproj"
 
 echo "Executing: python3 Properties/linux/flathub/flatpak-dotnet-generator.py \
     --only-arches x86_64 \

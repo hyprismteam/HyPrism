@@ -1,0 +1,1046 @@
+<!--
+Copyright (C) 2026 HyPrism Launcher
+SPDX-License-Identifier: GPL-3.0-only
+-->
+
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:profiles="using:HyPrism.Desktop.Features.Profiles"
+             xmlns:controls="using:HyPrism.Desktop.Controls"
+             xmlns:easing="using:Avalonia.Animation.Easings"
+             x:Class="HyPrism.Desktop.Features.Profiles.ProfilesView"
+             x:Name="ProfilesRoot"
+             x:DataType="profiles:ProfilesViewModel"
+             SizeChanged="OnProfilesViewSizeChanged">
+  <UserControl.Resources>
+    <DataTemplate x:Key="ProfileActivationActionTemplate" x:DataType="profiles:ProfilesViewModel">
+      <Grid Classes="profileActivationContent">
+        <StackPanel Classes="profileActivationIdle"
+                    Orientation="Horizontal"
+                    Spacing="8"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center">
+          <Path Classes="profileActivationIcon"
+                Data="{StaticResource ProfilesIcon}" />
+          <TextBlock Text="{Binding ActivationLabel}"
+                     VerticalAlignment="Center" />
+        </StackPanel>
+
+        <TextBlock Classes="profileActivationActive"
+                   Text="{Binding ActiveLabel}"
+                   Foreground="White"
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Center" />
+      </Grid>
+    </DataTemplate>
+
+    <DataTemplate x:Key="OfficialSignInActionTemplate" x:DataType="profiles:ProfilesViewModel">
+      <Grid Classes="managedActionContent">
+        <StackPanel Classes="managedActionIdle"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center">
+          <TextBlock Text="{Binding SignInLabel}"
+                     VerticalAlignment="Center" />
+        </StackPanel>
+
+        <Grid Classes="managedActionProgress"
+              VerticalAlignment="Center">
+          <Path Classes="managedActionSpinner"
+                controls:RotatingVisual.IsActive="{Binding IsAuthenticating}"
+                HorizontalAlignment="Center"
+                Data="M10,2 A8,8 0 1 1 2,10" />
+        </Grid>
+
+        <TextBlock Classes="managedActionCancel"
+                   Text="{Binding CancelLabel}"
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Center" />
+      </Grid>
+    </DataTemplate>
+  </UserControl.Resources>
+
+  <UserControl.Styles>
+    <Style Selector="profiles|ProfilesView">
+      <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
+    </Style>
+
+    <Style Selector="Border.profileListPane">
+      <Setter Property="Background" Value="{DynamicResource NavigationPaneBrush}" />
+    </Style>
+
+    <Style Selector="profiles|ProfilesView.compact Border.profileListPane">
+      <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
+    </Style>
+
+    <Style Selector="Border.profileAvatar">
+      <Setter Property="Background" Value="{DynamicResource AccentSoftBrush}" />
+      <Setter Property="CornerRadius" Value="999" />
+      <Setter Property="ClipToBounds" Value="True" />
+    </Style>
+
+    <Style Selector="Border.profileListAvatar">
+      <Setter Property="Width" Value="0" />
+      <Setter Property="Height" Value="0" />
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
+
+    <Style Selector="Grid.profileListIdentity">
+      <Setter Property="ColumnSpacing" Value="0" />
+    </Style>
+
+    <Style Selector="Border.profileMoreTarget">
+      <Setter Property="Width" Value="22" />
+      <Setter Property="Height" Value="40" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="HorizontalAlignment" Value="Center" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+    <Style Selector="profiles|ProfilesView.compact Border.profileListAvatar">
+      <Setter Property="Width" Value="38" />
+      <Setter Property="Height" Value="38" />
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
+
+    <Style Selector="profiles|ProfilesView.compact Grid.profileListIdentity">
+      <Setter Property="ColumnSpacing" Value="14" />
+    </Style>
+
+    <Style Selector="Border.profileDeleteConfirmation">
+      <Setter Property="Width" Value="300" />
+      <Setter Property="Padding" Value="18" />
+      <Setter Property="Background" Value="{DynamicResource ControlSurfaceActiveBrush}" />
+      <Setter Property="CornerRadius" Value="14" />
+      <Setter Property="BoxShadow" Value="{DynamicResource PopupShadow}" />
+    </Style>
+
+    <Style Selector="Border.profileHeroAvatar">
+      <Setter Property="Width" Value="144" />
+      <Setter Property="Height" Value="144" />
+      <Setter Property="HorizontalAlignment" Value="Center" />
+    </Style>
+
+    <Style Selector="profiles|ProfilesView.compact Border.profileHeroAvatar">
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
+
+    <Style Selector="StackPanel.profileHeroIdentity">
+      <Setter Property="HorizontalAlignment" Value="Center" />
+    </Style>
+
+    <Style Selector="profiles|ProfilesView.compact StackPanel.profileHeroIdentity">
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
+
+    <Style Selector="Button.profileIconButton">
+      <Setter Property="Width" Value="34" />
+      <Setter Property="Height" Value="34" />
+      <Setter Property="Padding" Value="8" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="CornerRadius" Value="9" />
+      <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+      <Setter Property="RenderTransform" Value="{x:Null}" />
+    </Style>
+
+    <Style Selector="Button.profileIconButton:pointerover">
+      <Setter Property="Background" Value="{DynamicResource ItemHoverBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+    </Style>
+
+    <Style Selector="Button.profileIconButton Path">
+      <Setter Property="Fill" Value="{Binding $parent[Button].Foreground}" />
+    </Style>
+
+    <Style Selector="TextBox.profileInput">
+      <Setter Property="MinHeight" Value="44" />
+      <Setter Property="Background" Value="{DynamicResource ControlSurfaceBrush}" />
+      <Setter Property="BorderBrush" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="CornerRadius" Value="11" />
+      <Setter Property="Padding" Value="13,8" />
+      <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+    </Style>
+
+    <Style Selector="TextBox.profileInput /template/ Border#PART_BorderElement">
+      <Setter Property="Background" Value="{DynamicResource ControlSurfaceBrush}" />
+      <Setter Property="BorderBrush" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="CornerRadius" Value="11" />
+    </Style>
+
+    <Style Selector="TextBox.profileInput:pointerover /template/ Border#PART_BorderElement">
+      <Setter Property="Background" Value="{DynamicResource ControlSurfaceHoverBrush}" />
+    </Style>
+
+    <Style Selector="TextBox.profileInput:focus /template/ Border#PART_BorderElement">
+      <Setter Property="Background" Value="{DynamicResource ControlSurfaceActiveBrush}" />
+    </Style>
+
+    <Style Selector="Border.profileStatus">
+      <Setter Property="Background" Value="{DynamicResource AccentSoftBrush}" />
+      <Setter Property="CornerRadius" Value="12" />
+      <Setter Property="Padding" Value="13,10" />
+    </Style>
+
+    <Style Selector="TextBlock.profileStatusText">
+      <Setter Property="Foreground" Value="{DynamicResource SuccessSoftBrush}" />
+    </Style>
+
+    <Style Selector="TextBlock.profileStatusText.error">
+      <Setter Property="Foreground" Value="{DynamicResource DangerSoftBrush}" />
+    </Style>
+
+    <Style Selector="Button.officialSignInAction">
+      <Setter Property="Width" Value="150" />
+      <Setter Property="CornerRadius" Value="14" />
+      <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    </Style>
+
+    <Style Selector="Button.officialSignInAction.active, Button.officialSignInAction.active:pointerover">
+      <Setter Property="Width" Value="272" />
+      <Setter Property="Background" Value="{DynamicResource TextPrimaryBrush}" />
+      <Setter Property="Foreground" Value="#111111" />
+    </Style>
+
+    <Style Selector="Button.officialSignInAction.active.cancelArmed:pointerover">
+      <Setter Property="Background" Value="{DynamicResource DangerActionBrush}" />
+      <Setter Property="Foreground" Value="White" />
+    </Style>
+
+    <Style Selector="Button.officialSignInAction.active Grid.managedActionContent">
+      <Setter Property="Width" Value="232" />
+      <Setter Property="MinWidth" Value="232" />
+      <Setter Property="MaxWidth" Value="232" />
+    </Style>
+
+  </UserControl.Styles>
+
+  <Grid x:Name="ProfilesLayout" ColumnDefinitions="Auto,*" ClipToBounds="True">
+    <Border x:Name="ProfilesListPane"
+            Classes="profileListPane"
+            Width="276"
+            ClipToBounds="True"
+            IsVisible="{Binding HasProfiles}">
+      <Border.Transitions>
+        <Transitions>
+          <DoubleTransition Property="Width" Duration="0:0:0.19">
+            <DoubleTransition.Easing><easing:CubicEaseInOut /></DoubleTransition.Easing>
+          </DoubleTransition>
+          <DoubleTransition Property="Opacity" Duration="0:0:0.15">
+            <DoubleTransition.Easing><easing:CubicEaseOut /></DoubleTransition.Easing>
+          </DoubleTransition>
+        </Transitions>
+      </Border.Transitions>
+      <Border.RenderTransform>
+        <TranslateTransform>
+          <TranslateTransform.Transitions>
+            <Transitions>
+              <DoubleTransition Property="X" Duration="0:0:0.19">
+                <DoubleTransition.Easing><easing:CubicEaseInOut /></DoubleTransition.Easing>
+              </DoubleTransition>
+            </Transitions>
+          </TranslateTransform.Transitions>
+        </TranslateTransform>
+      </Border.RenderTransform>
+      <Grid MinWidth="276">
+        <ScrollViewer Classes="instancesScroll"
+                      Margin="14,18,4,18"
+                      HorizontalContentAlignment="Stretch"
+                      HorizontalScrollBarVisibility="Disabled"
+                      VerticalScrollBarVisibility="Auto">
+          <StackPanel Margin="0,0,10,0" Spacing="2">
+          <ItemsControl x:Name="ProfilesItems" ItemsSource="{Binding Profiles}">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate>
+                <StackPanel HorizontalAlignment="Stretch" Spacing="2" />
+              </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="profiles:ProfileItemViewModel">
+                <Button Classes="settingsRailCategory instancesListItem"
+                        Classes.managed="{Binding IsSelected}"
+                        Click="OnProfileSelectedClicked">
+                  <Grid Classes="instancesListItemLayout"
+                        ColumnDefinitions="Auto,*,22"
+                        ColumnSpacing="12">
+                    <Border Classes="instancesListDragTarget"
+                            Cursor="Arrow"
+                            PointerPressed="OnProfileDragHandlePressed"
+                            PointerMoved="OnProfileDragHandleMoved"
+                            PointerReleased="OnProfileDragHandleReleased">
+                      <Path Classes="instancesListHandle" Data="{StaticResource DragIndicatorIcon}" />
+                    </Border>
+
+                    <Grid Grid.Column="1"
+                          Classes="instancesListIdentity profileListIdentity"
+                          ColumnDefinitions="Auto,*">
+                        <Border Classes="profileAvatar profileListAvatar">
+                          <Grid>
+                            <Image IsVisible="{Binding HasAvatar}"
+                                   Source="{Binding Avatar}"
+                                   Stretch="UniformToFill"
+                                   IsHitTestVisible="False" />
+                            <TextBlock IsVisible="{Binding !HasAvatar}"
+                                       Text="{Binding Initial}"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       FontSize="14"
+                                       FontWeight="Bold"
+                                       IsHitTestVisible="False" />
+                          </Grid>
+                        </Border>
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="4">
+                          <TextBlock Text="{Binding Name}"
+                                     Classes="settingsCategoryTitle instancesListTitle"
+                                     FontSize="15"
+                                     FontWeight="SemiBold"
+                                     TextTrimming="CharacterEllipsis"
+                                     TextWrapping="NoWrap" />
+                          <TextBlock Text="{Binding AccountType}"
+                                     Classes="settingsCategoryDescription"
+                                     TextTrimming="CharacterEllipsis"
+                                     TextWrapping="NoWrap" />
+                        </StackPanel>
+                    </Grid>
+
+                    <Border x:Name="ProfileMoreTarget"
+                            Grid.Column="2"
+                            Classes="profileMoreTarget"
+                            Cursor="Hand"
+                            PointerPressed="OnProfileMenuPointerPressed"
+                            PointerReleased="OnToggleProfileMenuPointerReleased">
+                      <Path Classes="instancesListMore" Data="{StaticResource MoreVerticalIcon}" />
+                    </Border>
+
+                    <controls:FadingPopup Grid.Column="2"
+                                          Placement="BottomEdgeAlignedRight"
+                                          PlacementTarget="ProfileMoreTarget"
+                                          VerticalOffset="8"
+                                          IsRequestedOpen="{Binding IsMenuOpen, Mode=TwoWay}">
+                      <Border Classes="uiPopupSurface compactInstanceActionFlyout">
+                        <StackPanel Spacing="2">
+                          <Button Classes="compactInstanceMenuAction"
+                                  Command="{Binding DataContext.DuplicateProfileCommand, ElementName=ProfilesRoot}"
+                                  CommandParameter="{Binding}"
+                                  Click="OnCloseProfileMenuClicked">
+                            <StackPanel Orientation="Horizontal" Spacing="10">
+                              <Path Classes="compactInstanceMenuIcon" Data="{StaticResource GestureSelectIcon}" />
+                              <TextBlock Text="{Binding DataContext.DuplicateLabel, ElementName=ProfilesRoot}" />
+                            </StackPanel>
+                          </Button>
+                          <Button Classes="compactInstanceMenuAction danger"
+                                  IsVisible="{Binding !IsActive}"
+                                  Command="{Binding DataContext.RequestProfileDeletionCommand, ElementName=ProfilesRoot}"
+                                  CommandParameter="{Binding}"
+                                  Click="OnCloseProfileMenuClicked">
+                            <StackPanel Orientation="Horizontal" Spacing="10">
+                              <Path Classes="compactInstanceMenuIcon" Data="{StaticResource DeleteIcon}" />
+                              <TextBlock Text="{Binding DataContext.DeleteLabel, ElementName=ProfilesRoot}" />
+                            </StackPanel>
+                          </Button>
+                        </StackPanel>
+                      </Border>
+                    </controls:FadingPopup>
+                  </Grid>
+                </Button>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+
+          <Button Classes="uiSettingsNavigationRow instancesAddRow last"
+                  Click="OnCreateProfileClicked">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="9">
+              <Path Width="14" Height="14" Stretch="Uniform" Data="{StaticResource AddIcon}" />
+              <TextBlock Text="{Binding AddLabel}" Classes="uiSettingsLabel" />
+            </StackPanel>
+          </Button>
+          </StackPanel>
+        </ScrollViewer>
+      </Grid>
+    </Border>
+
+    <Grid x:Name="ProfileMain"
+          Grid.Column="1"
+          Background="{DynamicResource SurfaceBrush}">
+      <Grid.RenderTransform>
+        <TranslateTransform>
+          <TranslateTransform.Transitions>
+            <Transitions>
+              <DoubleTransition Property="X" Duration="0:0:0.3">
+                <DoubleTransition.Easing><easing:CubicEaseInOut /></DoubleTransition.Easing>
+              </DoubleTransition>
+            </Transitions>
+          </TranslateTransform.Transitions>
+        </TranslateTransform>
+      </Grid.RenderTransform>
+
+      <Grid x:Name="ProfileOverview">
+        <Grid.Transitions>
+          <Transitions>
+            <DoubleTransition Property="Opacity" Duration="0:0:0.18">
+              <DoubleTransition.Easing><easing:CubicEaseInOut /></DoubleTransition.Easing>
+            </DoubleTransition>
+          </Transitions>
+        </Grid.Transitions>
+        <Grid.RenderTransform>
+          <TranslateTransform>
+            <TranslateTransform.Transitions>
+              <Transitions>
+                <DoubleTransition Property="X" Duration="0:0:0.18">
+                  <DoubleTransition.Easing><easing:CubicEaseInOut /></DoubleTransition.Easing>
+                </DoubleTransition>
+              </Transitions>
+            </TranslateTransform.Transitions>
+          </TranslateTransform>
+        </Grid.RenderTransform>
+        <StackPanel IsVisible="{Binding IsEmptyStateVisible}"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    MaxWidth="520"
+                    Spacing="12">
+          <Path Width="56"
+                Height="56"
+                HorizontalAlignment="Center"
+                Stretch="Uniform"
+                Fill="{DynamicResource TextSecondaryBrush}"
+                Data="{StaticResource ProfilesIcon}" />
+          <TextBlock Text="{Binding NoProfilesLabel}"
+                     HorizontalAlignment="Center"
+                     FontSize="22"
+                     FontWeight="Bold"
+                     TextAlignment="Center" />
+          <TextBlock Text="{Binding CreateProfileHint}"
+                     Classes="muted"
+                     HorizontalAlignment="Center"
+                     TextAlignment="Center" />
+          <Button Classes="primary"
+                  HorizontalAlignment="Center"
+                  Margin="0,14,0,0"
+                  Click="OnCreateProfileClicked">
+            <StackPanel Orientation="Horizontal" Spacing="9">
+              <Path Classes="actionIcon" Width="17" Height="17" Stretch="Uniform" Data="{StaticResource AddIcon}" />
+              <TextBlock Text="{Binding CreateProfileLabel}" />
+            </StackPanel>
+          </Button>
+        </StackPanel>
+
+        <Grid x:Name="ProfileEditorContent"
+              IsVisible="{Binding IsProfileEditorVisible}"
+              RowDefinitions="Auto,*">
+          <Border x:Name="CompactProfilesToolbar"
+                  Classes="articleToolbar compact scrolled"
+                  IsVisible="False">
+            <Grid ColumnDefinitions="*,Auto,*">
+              <Button Classes="articleBack" HorizontalAlignment="Left" Click="OnCompactProfilesBackClicked">
+                <StackPanel Orientation="Horizontal" Spacing="9">
+                  <Path Width="12" Height="12" Stretch="Uniform" Data="{StaticResource NextIcon}">
+                    <Path.RenderTransform><RotateTransform Angle="180" /></Path.RenderTransform>
+                  </Path>
+                  <TextBlock Text="{Binding BackLabel}" VerticalAlignment="Center" />
+                </StackPanel>
+              </Button>
+
+              <StackPanel Grid.Column="1"
+                          Orientation="Horizontal"
+                          HorizontalAlignment="Center"
+                          VerticalAlignment="Center"
+                          Spacing="9">
+                <Border Classes="profileAvatar" Width="30" Height="30">
+                  <Grid>
+                    <Image IsVisible="{Binding SelectedProfile.HasAvatar}"
+                           Source="{Binding SelectedProfile.Avatar}"
+                           Stretch="UniformToFill" />
+                    <TextBlock IsVisible="{Binding !SelectedProfile.HasAvatar}"
+                               Text="{Binding SelectedProfile.Initial}"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"
+                               FontSize="11"
+                               FontWeight="Bold" />
+                  </Grid>
+                </Border>
+                <TextBlock Text="{Binding SelectedProfile.Name}"
+                           MaxWidth="240"
+                           MaxLines="1"
+                           TextTrimming="CharacterEllipsis"
+                           FontSize="16"
+                           FontWeight="SemiBold"
+                           VerticalAlignment="Center" />
+              </StackPanel>
+
+              <Border Grid.Column="2"
+                      Classes="compactInstanceSplitAction"
+                      HorizontalAlignment="Right"
+                      VerticalAlignment="Center">
+                <Grid ColumnDefinitions="Auto,Auto">
+                  <Button Classes="compactInstanceActionPart main"
+                          Classes.active="{Binding SelectedProfile.IsActive}"
+                          ToolTip.Tip="{Binding ActivationLabel}"
+                          Command="{Binding ActivateSelectedProfileCommand}">
+                    <ContentControl Content="{Binding}"
+                                    ContentTemplate="{StaticResource ProfileActivationActionTemplate}" />
+                  </Button>
+
+                  <Button x:Name="CompactProfileMoreButton"
+                          Grid.Column="1"
+                          Classes="compactInstanceActionPart menu"
+                          Click="OnToggleCompactProfileMenuClicked">
+                    <PathIcon Classes="compactInstanceActionChevron"
+                              Data="{StaticResource ExpandMoreIcon}" />
+                  </Button>
+
+                  <controls:FadingPopup x:Name="CompactProfileMenuPopup"
+                                        Grid.Column="1"
+                                        Placement="BottomEdgeAlignedRight"
+                                        PlacementTarget="CompactProfileMoreButton"
+                                        VerticalOffset="8">
+                    <Border Classes="uiPopupSurface compactInstanceActionFlyout">
+                      <StackPanel Spacing="2">
+                        <Button Classes="compactInstanceMenuAction"
+                                Command="{Binding OpenProfileFolderCommand}"
+                                Click="OnCloseCompactProfileMenuClicked">
+                          <StackPanel Orientation="Horizontal" Spacing="10">
+                            <Path Classes="compactInstanceMenuIcon"
+                                  Data="{StaticResource FolderOpenIcon}" />
+                            <TextBlock Text="{Binding FolderLabel}"
+                                       VerticalAlignment="Center" />
+                          </StackPanel>
+                        </Button>
+
+                        <Button Classes="compactInstanceMenuAction danger"
+                                IsEnabled="{Binding !SelectedProfile.IsActive}"
+                                Command="{Binding RequestProfileDeletionCommand}"
+                                CommandParameter="{Binding SelectedProfile}"
+                                Click="OnCloseCompactProfileMenuClicked">
+                          <StackPanel Orientation="Horizontal" Spacing="10">
+                            <Path Classes="compactInstanceMenuIcon"
+                                  Data="{StaticResource DeleteIcon}" />
+                            <TextBlock Text="{Binding DeleteActionLabel}"
+                                       VerticalAlignment="Center" />
+                          </StackPanel>
+                        </Button>
+                      </StackPanel>
+                    </Border>
+                  </controls:FadingPopup>
+                </Grid>
+              </Border>
+            </Grid>
+          </Border>
+
+          <ScrollViewer Grid.Row="1"
+                        HorizontalScrollBarVisibility="Disabled"
+                        VerticalScrollBarVisibility="Auto">
+            <StackPanel x:Name="ProfilesContentHost"
+                        Margin="32,28,32,40"
+                        MaxWidth="720"
+                        HorizontalAlignment="Stretch"
+                        Spacing="22">
+              <StackPanel Spacing="22">
+                <Border Classes="profileAvatar profileHeroAvatar">
+                  <Grid>
+                    <Image IsVisible="{Binding SelectedProfile.HasAvatar}"
+                           Source="{Binding SelectedProfile.Avatar}"
+                           Stretch="UniformToFill" />
+                    <TextBlock IsVisible="{Binding !SelectedProfile.HasAvatar}"
+                               Text="{Binding SelectedProfile.Initial}"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"
+                               FontSize="48"
+                               FontWeight="Bold" />
+                  </Grid>
+                </Border>
+
+                <StackPanel Classes="profileHeroIdentity" Spacing="4">
+                  <TextBlock Text="{Binding SelectedProfile.Name}"
+                             HorizontalAlignment="Center"
+                             FontSize="26"
+                             FontWeight="Bold"
+                             TextTrimming="CharacterEllipsis" />
+                </StackPanel>
+
+                <Border Classes="wideInstanceSplitAction"
+                        HorizontalAlignment="Center">
+                  <StackPanel Classes="wideInstanceActions"
+                              Classes.actionActive="{Binding SelectedProfile.IsActive}"
+                              Orientation="Horizontal"
+                              HorizontalAlignment="Center"
+                              Spacing="0">
+                    <Button Classes="instanceAction primary first"
+                            Classes.active="{Binding SelectedProfile.IsActive}"
+                            Command="{Binding ActivateSelectedProfileCommand}">
+                      <ContentControl Content="{Binding}"
+                                      ContentTemplate="{StaticResource ProfileActivationActionTemplate}" />
+                    </Button>
+
+                    <Border Classes="wideInstanceActionDivider" />
+
+                    <Button Classes="instanceAction secondary middle"
+                            Command="{Binding OpenProfileFolderCommand}">
+                      <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Path Classes="instanceActionIcon" Data="{StaticResource FolderOpenIcon}" />
+                        <TextBlock Text="{Binding FolderLabel}"
+                                   VerticalAlignment="Center" />
+                      </StackPanel>
+                    </Button>
+
+                    <Border Classes="wideInstanceActionDivider deleteDivider" />
+
+                    <Button Classes="instanceAction secondary danger last deleteAction"
+                            IsEnabled="{Binding !SelectedProfile.IsActive}"
+                            Command="{Binding RequestProfileDeletionCommand}"
+                            CommandParameter="{Binding SelectedProfile}">
+                      <StackPanel Classes="instanceDeleteActionContent"
+                                  Orientation="Horizontal"
+                                  HorizontalAlignment="Center"
+                                  Spacing="8">
+                        <Path Classes="instanceActionIcon" Data="{StaticResource DeleteIcon}" />
+                        <TextBlock Text="{Binding DeleteActionLabel}"
+                                   VerticalAlignment="Center" />
+                      </StackPanel>
+                    </Button>
+                  </StackPanel>
+                </Border>
+
+                <Border Classes="instanceInfoGroup" IsVisible="{Binding !IsEditing}">
+                  <Grid ColumnDefinitions="*,2,*" RowDefinitions="Auto,2,Auto">
+                    <Border Classes="instanceInfoCell">
+                      <StackPanel Spacing="3">
+                        <TextBlock Text="{Binding EditorLabel}" Classes="instanceInfoLabel" />
+                        <TextBlock Text="{Binding SelectedProfile.AccountType}" Classes="instanceInfoValue" />
+                      </StackPanel>
+                    </Border>
+                    <Border Grid.Column="1" Background="{DynamicResource SurfaceBrush}" />
+                    <Border Grid.Column="2" Classes="instanceInfoCell">
+                      <StackPanel Spacing="3">
+                        <TextBlock Text="{Binding PlayTimeLabel}" Classes="instanceInfoLabel" />
+                        <TextBlock Text="{Binding SelectedProfile.PlayTime}" Classes="instanceInfoValue" />
+                      </StackPanel>
+                    </Border>
+
+                    <Border Grid.Row="1" Grid.ColumnSpan="3" Background="{DynamicResource SurfaceBrush}" />
+
+                    <Border Grid.Row="2" Classes="instanceInfoCell">
+                      <StackPanel Spacing="3">
+                        <TextBlock Text="{Binding FavoriteInstanceLabel}" Classes="instanceInfoLabel" />
+                        <TextBlock Text="{Binding SelectedProfile.FavoriteInstance}" Classes="instanceInfoValue" />
+                      </StackPanel>
+                    </Border>
+                    <Border Grid.Row="2" Grid.Column="1" Background="{DynamicResource SurfaceBrush}" />
+                    <Border Grid.Row="2" Grid.Column="2" Classes="instanceInfoCell">
+                      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                        <StackPanel Spacing="3">
+                          <TextBlock Text="{Binding UuidLabel}" Classes="instanceInfoLabel" />
+                          <TextBlock Text="{Binding SelectedProfile.Uuid}"
+                                     Classes="instanceInfoValue"
+                                     FontFamily="{DynamicResource JetBrainsMonoFont}"
+                                     FontSize="13" />
+                        </StackPanel>
+                        <Button Grid.Column="1"
+                                Classes="profileIconButton"
+                                ToolTip.Tip="{Binding CopyLabel}"
+                                Click="OnCopyUuidClicked">
+                          <Path Width="16" Height="16" Stretch="Uniform" Data="{StaticResource GestureSelectIcon}" />
+                        </Button>
+                      </Grid>
+                    </Border>
+                  </Grid>
+                </Border>
+
+                <Border IsVisible="{Binding SelectedProfile.IsOfficial}"
+                        Classes="uiSettingsGroup">
+                  <Border Classes="uiSettingsRow last">
+                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+                      <Path Width="18"
+                            Height="18"
+                            VerticalAlignment="Center"
+                            Stretch="Uniform"
+                            Fill="{DynamicResource TextSecondaryBrush}"
+                            Data="{StaticResource SettingsIcon}" />
+                      <TextBlock Grid.Column="1"
+                                 Text="{Binding OfficialLockedLabel}"
+                                 Classes="uiSettingsHint"
+                                 VerticalAlignment="Center" />
+                    </Grid>
+                  </Border>
+                </Border>
+
+                <StackPanel IsVisible="{Binding IsEditing}" Spacing="14">
+                  <Border Classes="uiSettingsGroup">
+                    <StackPanel>
+                      <Border Classes="uiSettingsRow">
+                        <StackPanel Spacing="8">
+                          <TextBlock Text="{Binding ProfileNameLabel}" Classes="uiSettingsLabel" />
+                          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                            <TextBox Classes="profileInput"
+                                     Text="{Binding EditName, Mode=TwoWay}"
+                                     MaxLength="16"
+                                     PlaceholderText="{Binding NamePlaceholder}" />
+                            <Button Grid.Column="1"
+                                    Classes="profileIconButton"
+                                    ToolTip.Tip="{Binding RandomizeNameLabel}"
+                                    Command="{Binding RandomizeEditNameCommand}">
+                              <Path Width="16" Height="16" Stretch="Uniform" Data="{StaticResource DirectionsRunIcon}" />
+                            </Button>
+                          </Grid>
+                          <TextBlock Text="{Binding ProfileNameHint}" Classes="uiSettingsHint" />
+                        </StackPanel>
+                      </Border>
+                      <Border Classes="uiSettingsRow last">
+                        <StackPanel Spacing="8">
+                          <TextBlock Text="{Binding UuidLabel}" Classes="uiSettingsLabel" />
+                          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                            <TextBox Classes="profileInput"
+                                     Text="{Binding EditUuid, Mode=TwoWay}"
+                                     FontFamily="{DynamicResource JetBrainsMonoFont}"
+                                     FontSize="13" />
+                            <Button Grid.Column="1"
+                                    Classes="profileIconButton"
+                                    ToolTip.Tip="{Binding RandomizeUuidLabel}"
+                                    Command="{Binding RandomizeEditUuidCommand}">
+                              <Path Width="16" Height="16" Stretch="Uniform" Data="{StaticResource DirectionsRunIcon}" />
+                            </Button>
+                          </Grid>
+                          <TextBlock Text="{Binding UuidHint}" Classes="uiSettingsHint" />
+                        </StackPanel>
+                      </Border>
+                    </StackPanel>
+                  </Border>
+
+                  <StackPanel Orientation="Horizontal"
+                              HorizontalAlignment="Center"
+                              Spacing="10">
+                    <Button Classes="wizardAction" Command="{Binding CancelEditingCommand}">
+                      <TextBlock Text="{Binding CancelLabel}" />
+                    </Button>
+                    <Button Classes="wizardAction create" Command="{Binding SaveProfileCommand}">
+                      <TextBlock Text="{Binding SaveLabel}" />
+                    </Button>
+                  </StackPanel>
+                </StackPanel>
+
+                <Border IsVisible="{Binding HasStatusMessage}" Classes="profileStatus">
+                  <TextBlock Classes="profileStatusText"
+                             Classes.error="{Binding IsStatusError}"
+                             Text="{Binding StatusMessage}"
+                             TextAlignment="Center" />
+                </Border>
+              </StackPanel>
+            </StackPanel>
+          </ScrollViewer>
+        </Grid>
+      </Grid>
+
+      <Border x:Name="ProfileCreatorScreen"
+              Classes="instancesWizardScreen profileWizardScreen"
+              IsVisible="False"
+              Opacity="0">
+        <Border.Transitions>
+          <Transitions>
+            <DoubleTransition Property="Opacity" Duration="0:0:0.18">
+              <DoubleTransition.Easing><easing:CubicEaseInOut /></DoubleTransition.Easing>
+            </DoubleTransition>
+          </Transitions>
+        </Border.Transitions>
+        <Border.RenderTransform>
+          <TranslateTransform X="36">
+            <TranslateTransform.Transitions>
+              <Transitions>
+                <DoubleTransition Property="X" Duration="0:0:0.18">
+                  <DoubleTransition.Easing><easing:CubicEaseInOut /></DoubleTransition.Easing>
+                </DoubleTransition>
+              </Transitions>
+            </TranslateTransform.Transitions>
+          </TranslateTransform>
+        </Border.RenderTransform>
+        <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+                      VerticalScrollBarVisibility="Auto">
+          <StackPanel MaxWidth="560"
+                      HorizontalAlignment="Stretch"
+                      VerticalAlignment="Center"
+                      Margin="32"
+                      Spacing="12">
+            <controls:WizardRevealIcon x:Name="ProfileWizardReveal"
+                                       AnimationPath="/Assets/Lotties/avatar-reveal.json" />
+
+            <StackPanel x:Name="ProfileCreationChoiceContent"
+                        Classes="profileWizardStep"
+                        IsVisible="{Binding IsCreateChoiceVisible}"
+                        Spacing="12">
+              <StackPanel.RenderTransform>
+                <TranslateTransform />
+              </StackPanel.RenderTransform>
+              <TextBlock Text="{Binding CreateProfileLabel}"
+                         HorizontalAlignment="Center"
+                         FontSize="26"
+                         FontWeight="Bold"
+                         TextAlignment="Center" />
+              <TextBlock Text="{Binding CreateProfileHint}"
+                         Classes="muted"
+                         MaxWidth="460"
+                         HorizontalAlignment="Center"
+                         TextAlignment="Center"
+                         TextWrapping="Wrap" />
+
+              <Border Classes="uiSettingsGroup" Margin="0,16,0,0">
+                <StackPanel>
+                  <Button x:Name="BeginOfficialProfileCreationButton"
+                          Classes="uiSettingsNavigationRow"
+                          Click="OnBeginOfficialProfileCreationClicked">
+                    <Grid ColumnDefinitions="44,*,Auto" ColumnSpacing="14">
+                      <Border Classes="profileAvatar" Width="44" Height="44">
+                        <Path Width="21"
+                              Height="21"
+                              HorizontalAlignment="Center"
+                              VerticalAlignment="Center"
+                              Stretch="Uniform"
+                              Fill="{DynamicResource TextPrimaryBrush}"
+                              Data="{StaticResource WorldsIcon}" />
+                      </Border>
+                      <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="3">
+                        <TextBlock Text="{Binding OfficialProfileLabel}" Classes="uiSettingsLabel" />
+                        <TextBlock Text="{Binding OfficialProfileHint}" Classes="uiSettingsHint" />
+                      </StackPanel>
+                      <Path Grid.Column="2"
+                            Width="15"
+                            Height="15"
+                            VerticalAlignment="Center"
+                            Stretch="Uniform"
+                            Fill="{DynamicResource TextSecondaryBrush}"
+                            Data="{StaticResource NextIcon}" />
+                    </Grid>
+                  </Button>
+                  <Button x:Name="BeginOfflineProfileCreationButton"
+                          Classes="uiSettingsNavigationRow last"
+                          Click="OnBeginOfflineProfileCreationClicked">
+                    <Grid ColumnDefinitions="44,*,Auto" ColumnSpacing="14">
+                      <Border Classes="profileAvatar" Width="44" Height="44">
+                        <Path Width="21"
+                              Height="21"
+                              HorizontalAlignment="Center"
+                              VerticalAlignment="Center"
+                              Stretch="Uniform"
+                              Fill="{DynamicResource TextPrimaryBrush}"
+                              Data="{StaticResource ProfilesIcon}" />
+                      </Border>
+                      <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="3">
+                        <TextBlock Text="{Binding OfflineProfileLabel}" Classes="uiSettingsLabel" />
+                        <TextBlock Text="{Binding OfflineProfileHint}" Classes="uiSettingsHint" />
+                      </StackPanel>
+                      <Path Grid.Column="2"
+                            Width="15"
+                            Height="15"
+                            VerticalAlignment="Center"
+                            Stretch="Uniform"
+                            Fill="{DynamicResource TextSecondaryBrush}"
+                            Data="{StaticResource NextIcon}" />
+                    </Grid>
+                  </Button>
+                </StackPanel>
+              </Border>
+
+              <Button x:Name="ProfileCreationCancelButton"
+                      Classes="wizardAction"
+                      HorizontalAlignment="Center"
+                      Margin="0,10,0,0"
+                      Command="{Binding CancelCreationCommand}">
+                <TextBlock Text="{Binding CancelLabel}" />
+              </Button>
+            </StackPanel>
+
+            <StackPanel x:Name="OfflineProfileCreationContent"
+                        Classes="profileWizardStep"
+                        IsVisible="{Binding IsOfflineCreationVisible}"
+                        Spacing="12">
+              <StackPanel.RenderTransform>
+                <TranslateTransform />
+              </StackPanel.RenderTransform>
+              <TextBlock Text="{Binding CreateOfflineTitle}"
+                         HorizontalAlignment="Center"
+                         FontSize="26"
+                         FontWeight="Bold"
+                         TextAlignment="Center" />
+              <TextBlock Text="{Binding CreateOfflineHint}"
+                         Classes="muted"
+                         MaxWidth="460"
+                         HorizontalAlignment="Center"
+                         TextAlignment="Center"
+                         TextWrapping="Wrap" />
+
+              <Border Classes="uiSettingsGroup" Margin="0,16,0,0">
+                <Border Classes="uiSettingsRow last">
+                  <StackPanel Spacing="8">
+                    <TextBlock Text="{Binding ProfileNameLabel}" Classes="uiSettingsLabel" />
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                      <TextBox Classes="profileInput"
+                               Text="{Binding OfflineProfileName, Mode=TwoWay}"
+                               MaxLength="16"
+                               PlaceholderText="{Binding NamePlaceholder}"
+                               FontSize="17" />
+                      <Button Grid.Column="1"
+                              Classes="profileIconButton"
+                              ToolTip.Tip="{Binding RandomizeNameLabel}"
+                              Command="{Binding GenerateOfflineProfileNameCommand}">
+                        <Path Width="16" Height="16" Stretch="Uniform" Data="{StaticResource DirectionsRunIcon}" />
+                      </Button>
+                    </Grid>
+                    <TextBlock Text="{Binding OfflineNameRuleLabel}" Classes="uiSettingsHint" />
+                  </StackPanel>
+                </Border>
+              </Border>
+
+              <Border IsVisible="{Binding HasStatusMessage}" Classes="profileStatus">
+                <TextBlock Classes="profileStatusText"
+                           Classes.error="{Binding IsStatusError}"
+                           Text="{Binding StatusMessage}"
+                           TextAlignment="Center" />
+              </Border>
+
+              <StackPanel Orientation="Horizontal"
+                          HorizontalAlignment="Center"
+                          Margin="0,10,0,0"
+                          Spacing="10">
+                <Button x:Name="OfflineProfileCreationBackButton"
+                        Classes="wizardAction"
+                        Click="OnReturnToProfileCreationChoiceClicked">
+                  <TextBlock Text="{Binding BackLabel}" />
+                </Button>
+                <Button Classes="wizardAction create"
+                        IsEnabled="{Binding CanCreateOfflineProfile}"
+                        Command="{Binding CreateOfflineProfileCommand}">
+                  <TextBlock Text="{Binding CreateLabel}" />
+                </Button>
+              </StackPanel>
+            </StackPanel>
+
+            <StackPanel x:Name="OfficialProfileCreationContent"
+                        Classes="profileWizardStep"
+                        IsVisible="{Binding IsOfficialCreationVisible}"
+                        Spacing="12">
+              <StackPanel.RenderTransform>
+                <TranslateTransform />
+              </StackPanel.RenderTransform>
+              <TextBlock Text="{Binding AuthenticationTitle}"
+                         HorizontalAlignment="Center"
+                         FontSize="26"
+                         FontWeight="Bold"
+                         TextAlignment="Center" />
+              <TextBlock Text="{Binding AuthenticationHint}"
+                         Classes="muted"
+                         MaxWidth="460"
+                         HorizontalAlignment="Center"
+                         TextAlignment="Center"
+                         TextWrapping="Wrap" />
+
+              <Border Classes="uiSettingsGroup" Margin="0,16,0,0">
+                <Border Classes="uiSettingsRow last">
+                  <StackPanel Spacing="5">
+                    <TextBlock Text="{Binding OfficialProfileLabel}" Classes="uiSettingsLabel" />
+                    <TextBlock Text="{Binding BrowserHint}" Classes="uiSettingsHint" />
+                  </StackPanel>
+                </Border>
+              </Border>
+
+              <Border IsVisible="{Binding HasStatusMessage}" Classes="profileStatus">
+                <TextBlock Classes="profileStatusText"
+                           Classes.error="{Binding IsStatusError}"
+                           Text="{Binding StatusMessage}"
+                           TextAlignment="Center" />
+              </Border>
+
+              <Grid x:Name="OfficialProfileSignInActions"
+                    Width="272"
+                    Height="50"
+                    ColumnDefinitions="112,10,150"
+                    HorizontalAlignment="Center"
+                    Margin="0,10,0,0">
+                <Button x:Name="OfficialProfileCreationBackButton"
+                        Classes="wizardAction"
+                        Click="OnReturnToProfileCreationChoiceClicked">
+                  <TextBlock Text="{Binding BackLabel}" />
+                </Button>
+
+                <Button x:Name="OfficialProfileSignInButton"
+                        Grid.Column="2"
+                        ZIndex="1"
+                        HorizontalAlignment="Right"
+                        Classes="wizardAction create officialSignInAction"
+                        Classes.active="{Binding IsAuthenticating}"
+                        Classes.cancelArmed="{Binding IsAuthenticationCancellationArmed}"
+                        PointerExited="OnAuthenticationActionPointerExited"
+                        Command="{Binding SignInWithHytaleCommand}">
+                  <ContentControl Content="{Binding}"
+                                  ContentTemplate="{StaticResource OfficialSignInActionTemplate}" />
+                </Button>
+              </Grid>
+            </StackPanel>
+          </StackPanel>
+        </ScrollViewer>
+      </Border>
+    </Grid>
+
+    <Border x:Name="ProfileDragPreview"
+            Grid.ColumnSpan="2"
+            Classes="instancesDragPreview"
+            HorizontalAlignment="Left"
+            VerticalAlignment="Top"
+            IsVisible="False"
+            IsHitTestVisible="False"
+            ZIndex="100">
+      <Border.RenderTransform>
+        <TranslateTransform />
+      </Border.RenderTransform>
+      <Grid Classes="instancesListItemLayout" ColumnDefinitions="Auto,*,22" ColumnSpacing="12">
+        <Border Classes="instancesListDragTarget">
+          <Path Classes="instancesListHandle" Data="{StaticResource DragIndicatorIcon}" />
+        </Border>
+        <Grid Grid.Column="1"
+              Classes="instancesListIdentity"
+              ColumnDefinitions="Auto,*">
+          <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="4">
+            <TextBlock x:Name="ProfileDragPreviewName"
+                       Classes="settingsCategoryTitle instancesListTitle"
+                       FontSize="15"
+                       FontWeight="SemiBold"
+                       TextTrimming="CharacterEllipsis"
+                       TextWrapping="NoWrap" />
+            <TextBlock x:Name="ProfileDragPreviewType"
+                       Classes="settingsCategoryDescription"
+                       TextTrimming="CharacterEllipsis"
+                       TextWrapping="NoWrap" />
+          </StackPanel>
+        </Grid>
+        <Path Grid.Column="2"
+              Classes="instancesListMore"
+              Data="{StaticResource MoreVerticalIcon}" />
+      </Grid>
+    </Border>
+
+    <Grid Grid.ColumnSpan="2"
+          IsVisible="{Binding HasPendingProfileDeletion}"
+          Background="{DynamicResource SurfaceElevatedBrush}"
+          ZIndex="110">
+      <Border Classes="profileDeleteConfirmation"
+              HorizontalAlignment="Center"
+              VerticalAlignment="Center">
+        <StackPanel Spacing="12">
+          <TextBlock Text="{Binding DeleteTitle}" FontSize="18" FontWeight="SemiBold" />
+          <TextBlock Text="{Binding DeleteHint}" Classes="muted" FontSize="13" TextWrapping="Wrap" />
+          <TextBlock Text="{Binding PendingProfileDeletion.Name}"
+                     FontSize="16"
+                     FontWeight="SemiBold"
+                     TextTrimming="CharacterEllipsis" />
+          <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+            <Button Classes="wizardAction" Command="{Binding CancelProfileDeletionCommand}">
+              <TextBlock Text="{Binding CancelLabel}" />
+            </Button>
+            <Button Classes="wizardAction create"
+                    Background="{DynamicResource DangerBrush}"
+                    Command="{Binding ConfirmProfileDeletionCommand}">
+              <TextBlock Text="{Binding DeleteLabel}" />
+            </Button>
+          </StackPanel>
+        </StackPanel>
+      </Border>
+    </Grid>
+  </Grid>
+</UserControl>

@@ -1,0 +1,76 @@
+# Copyright (C) 2026 HyPrism Launcher
+# SPDX-License-Identifier: GPL-3.0-only
+
+version = 1
+SPDX-PackageName = "HyPrism"
+SPDX-PackageSupplier = "HyPrism contributors"
+SPDX-PackageDownloadLocation = "https://github.com/hyprismteam/HyPrism"
+
+[[annotations]]
+path = [
+    "*.json",
+    "**/*.json",
+    "**/*.mdx",
+    "**/*.lock",
+    "Docs/pnpm-lock.yaml",
+    "Docs/next-env.d.ts",
+    "**/*.md5",
+    "**/.hintrc",
+    "**/*.png",
+    "**/*.jpg",
+    "**/*.ogg",
+    "**/*.ico",
+    "**/*.icns",
+    "HyPrism.sln"
+]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 HyPrism Launcher"
+SPDX-License-Identifier = "GPL-3.0-only"
+
+[[annotations]]
+path = "Sources/HyPrism.Desktop/Assets/Fonts/GoogleSans-*.ttf"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Google LLC"
+SPDX-License-Identifier = "OFL-1.1"
+
+[[annotations]]
+path = "Sources/HyPrism.Desktop/Assets/Fonts/JetBrainsMono-*.ttf"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2020 The JetBrains Mono Project Authors (https://github.com/JetBrains/JetBrainsMono)"
+SPDX-License-Identifier = "OFL-1.1"
+
+[[annotations]]
+path = "Sources/HyPrism.Desktop/Assets/Fluent/*.png"
+precedence = "override"
+SPDX-FileCopyrightText = "Icons8 LLC"
+SPDX-License-Identifier = "LicenseRef-Icons8"
+
+[[annotations]]
+path = "Sources/HyPrism.Desktop/Assets/Flags/*.png"
+precedence = "override"
+SPDX-FileCopyrightText = "2020 @catamphetamine <purecatamphetamine@gmail.com>"
+SPDX-License-Identifier = "MIT"
+
+[[annotations]]
+path = "Sources/HyPrism.Desktop/Assets/Lotties/*.json"
+precedence = "override"
+SPDX-FileCopyrightText = "Lordicon"
+SPDX-License-Identifier = "LicenseRef-Lordicon"
+
+[[annotations]]
+path = "Sources/HyPrism.Desktop/Assets/Brands/CurseForge*"
+precedence = "override"
+SPDX-FileCopyrightText = "Overwolf Ltd."
+SPDX-License-Identifier = "LicenseRef-CurseForge"
+
+[[annotations]]
+path = "Sources/HyPrism.Desktop/Assets/Brands/Avalonia*"
+precedence = "override"
+SPDX-FileCopyrightText = "AvaloniaUI OÜ"
+SPDX-License-Identifier = "LicenseRef-Avalonia"
+
+[[annotations]]
+path = "Sources/HyPrism.Desktop/Assets/Brands/DotNet*"
+precedence = "override"
+SPDX-FileCopyrightText = ".NET authors"
+SPDX-License-Identifier = "CC0-1.0"

@@ -1,0 +1,47 @@
+---
+title: Testing
+description: Run the three test suites and choose the right verification boundary
+---
+
+# Testing
+
+Run tests from the repository root. Each suite has its own project and CI matrix
+
+```bash
+dotnet test Tests/HyPrism.Core.Tests/HyPrism.Core.Tests.csproj
+dotnet test Tests/HyPrism.LocalNode.Tests/HyPrism.LocalNode.Tests.csproj
+dotnet test Tests/HyPrism.Desktop.Tests/HyPrism.Desktop.Tests.csproj
+```
+
+## Coverage boundaries
+
+| Suite | Main coverage |
+| --- | --- |
+| Core | Launch coordination, process tracking, profiles, downloads, configuration, mirrors, patching, mods |
+| Local Node | HTTPS routes, tokens, account persistence, certificates, companion lifecycle |
+| Desktop | View-model workflows, localization, platform adapters, native view rendering and controls |
+
+Local Node tests pin generated certificates and disable platform trust changes. Unit tests use temporary data and mocks rather than live account, game, or third-party services
+
+Desktop tests share an Avalonia application, dispatcher, and compositor and run sequentially. Wait for a final property or state; use fixed delays only when deliberately sampling an intermediate animation frame
+
+## Run a focused test
+
+Use a fully qualified name filter during development
+
+```bash
+dotnet test Tests/HyPrism.Desktop.Tests/HyPrism.Desktop.Tests.csproj \
+  --filter FullyQualifiedName~StringLocalizerTests
+```
+
+Screenshot generation is an opt-in workflow documented under [Documentation site](/docs/development/documentation#screenshots). Normal test runs skip that capture
+
+## CI and manual checks
+
+Core, Desktop, and Local Node run separately on Ubuntu, Windows, and macOS with `fail-fast: false`. Packaging is a separate check group
+
+The macOS Local Node workflow also publishes apphosts and checks HTTPS health with a generated authority in the disposable runner keychain. This does not cover an interactive trust prompt on a player's Mac or a full proprietary Hytale launch
+
+Verify native compositor behavior, platform dialogs, and real game compatibility manually when those boundaries change. For a documentation-only change, run [content checks and static export](/docs/development/documentation)
+
+Source: [Tests](../../../../Tests)

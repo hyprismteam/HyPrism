@@ -1,0 +1,66 @@
+<!--
+Copyright (C) 2026 HyPrism Launcher
+SPDX-License-Identifier: GPL-3.0-only
+-->
+
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <SolidColorBrush x:Key="AppBackgroundBrush" Color="#08090A" />
+  <SolidColorBrush x:Key="SurfaceBrush" Color="#0D0E10" />
+  <SolidColorBrush x:Key="NavigationPaneBrush" Color="#18191B" />
+  <SolidColorBrush x:Key="SurfaceElevatedBrush" Color="#D9141517" />
+  <SolidColorBrush x:Key="SurfaceHoverBrush" Color="#1A1B1E" />
+  <SolidColorBrush x:Key="StrokeBrush" Color="#16FFFFFF" />
+  <SolidColorBrush x:Key="StrokeStrongBrush" Color="#24FFFFFF" />
+  <SolidColorBrush x:Key="MainCardStrokeBrush" Color="#101114" />
+  <SolidColorBrush x:Key="TextPrimaryBrush" Color="#F7F7F8" />
+  <SolidColorBrush x:Key="TextSecondaryBrush" Color="#A8A9AE" />
+  <SolidColorBrush x:Key="TextMutedBrush" Color="#73757D" />
+  <SolidColorBrush x:Key="AccentBrush" Color="#F5F5F6" />
+  <SolidColorBrush x:Key="AccentSoftBrush" Color="#18FFFFFF" />
+  <SolidColorBrush x:Key="NoteBrush" Color="#79B0F4" />
+  <SolidColorBrush x:Key="NoteSurfaceBrush" Color="#1A79B0F4" />
+  <SolidColorBrush x:Key="ImportantBrush" Color="#B79DF8" />
+  <SolidColorBrush x:Key="ImportantSurfaceBrush" Color="#1AB79DF8" />
+
+  <!-- Interactive control surfaces -->
+  <SolidColorBrush x:Key="ControlSurfaceBrush" Color="#141517" />
+  <SolidColorBrush x:Key="ControlSurfaceHoverBrush" Color="#1A1B1E" />
+  <SolidColorBrush x:Key="ControlSurfaceActiveBrush" Color="#1D1E21" />
+  <SolidColorBrush x:Key="ControlGroupBrush" Color="#151618" />
+  <SolidColorBrush x:Key="ControlTrackBrush" Color="#303237" />
+  <SolidColorBrush x:Key="ControlTrackHoverBrush" Color="#3B3E43" />
+  <SolidColorBrush x:Key="SegmentedTrackBrush" Color="#292A2D" />
+  <SolidColorBrush x:Key="ControlSelectionBrush" Color="#55565A" />
+  <SolidColorBrush x:Key="ControlKnobBrush" Color="#F4F5F6" />
+  <SolidColorBrush x:Key="ControlKnobHoverBrush" Color="#FFFFFF" />
+
+  <!-- Semantic states -->
+  <SolidColorBrush x:Key="SuccessBrush" Color="#68CD8E" />
+  <SolidColorBrush x:Key="SuccessSoftBrush" Color="#A9E8BE" />
+  <SolidColorBrush x:Key="DangerBrush" Color="#E78383" />
+  <SolidColorBrush x:Key="DangerSoftBrush" Color="#FF9696" />
+  <SolidColorBrush x:Key="DangerActionBrush" Color="#D83B45" />
+  <SolidColorBrush x:Key="WarningBrush" Color="#FFC54D" />
+  <SolidColorBrush x:Key="ToggleOnBrush" Color="#35A85B" />
+  <SolidColorBrush x:Key="ToggleOnHoverBrush" Color="#43BC6B" />
+
+  <!-- Overlays and component states -->
+  <SolidColorBrush x:Key="ItemHoverBrush" Color="#10FFFFFF" />
+  <SolidColorBrush x:Key="ItemSelectedBrush" Color="#1DFFFFFF" />
+  <SolidColorBrush x:Key="ItemSelectedHoverBrush" Color="#27FFFFFF" />
+  <SolidColorBrush x:Key="NavigationItemHoverBrush" Color="#08FFFFFF" />
+  <SolidColorBrush x:Key="NavigationItemSelectedBrush" Color="#12FFFFFF" />
+  <SolidColorBrush x:Key="NavigationItemSelectedHoverBrush" Color="#18FFFFFF" />
+  <BoxShadows x:Key="PopupShadow">0 12 36 0 #80000000</BoxShadows>
+
+  <SolidColorBrush x:Key="ScrollBarBackgroundPointerOver" Color="Transparent" />
+  <SolidColorBrush x:Key="ScrollBarTrackFill" Color="Transparent" />
+  <SolidColorBrush x:Key="ScrollBarTrackStroke" Color="Transparent" />
+  <SolidColorBrush x:Key="ScrollBarTrackFillPointerOver" Color="Transparent" />
+  <SolidColorBrush x:Key="ScrollBarTrackStrokePointerOver" Color="Transparent" />
+  <SolidColorBrush x:Key="ScrollBarPanningThumbBackground" Color="#686868" />
+  <SolidColorBrush x:Key="ScrollBarThumbBackgroundColor" Color="#747474" />
+  <SolidColorBrush x:Key="ScrollBarThumbFillPointerOver" Color="#969696" />
+  <SolidColorBrush x:Key="ScrollBarThumbFillPressed" Color="#B0B0B0" />
+</ResourceDictionary>

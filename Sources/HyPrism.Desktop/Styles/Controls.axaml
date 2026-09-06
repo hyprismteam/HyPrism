@@ -1,0 +1,554 @@
+<!--
+Copyright (C) 2026 HyPrism Launcher
+SPDX-License-Identifier: GPL-3.0-only
+-->
+
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="using:HyPrism.Desktop.Controls"
+        xmlns:easing="using:Avalonia.Animation.Easings">
+  <Styles.Resources>
+    <ControlTheme x:Key="UiComboBoxItemTheme" TargetType="ComboBoxItem">
+      <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="CornerRadius" Value="9" />
+      <Setter Property="Margin" Value="0,2" />
+      <Setter Property="Padding" Value="12,9" />
+      <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+      <Setter Property="Cursor" Value="Hand" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <ContentPresenter x:Name="PART_ContentPresenter"
+                            Content="{TemplateBinding Content}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}"
+                            Foreground="{TemplateBinding Foreground}"
+                            Background="{TemplateBinding Background}"
+                            BorderThickness="0"
+                            CornerRadius="{TemplateBinding CornerRadius}"
+                            Padding="{TemplateBinding Padding}"
+                            HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}">
+            <ContentPresenter.Transitions>
+              <Transitions>
+                <BrushTransition Property="Background" Duration="0:0:0.16" />
+                <BrushTransition Property="Foreground" Duration="0:0:0.16" />
+              </Transitions>
+            </ContentPresenter.Transitions>
+          </ContentPresenter>
+        </ControlTemplate>
+      </Setter>
+      <Style Selector="^:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource ItemHoverBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+      </Style>
+      <Style Selector="^:selected /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource ItemSelectedBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+      </Style>
+      <Style Selector="^:selected:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource ItemSelectedHoverBrush}" />
+      </Style>
+    </ControlTheme>
+  </Styles.Resources>
+
+  <Style Selector="controls|FadingComboBox.uiComboBox">
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="HorizontalContentAlignment" Value="Left" />
+    <Setter Property="Background" Value="{DynamicResource ControlSurfaceBrush}" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="FocusAdorner" Value="{x:Null}" />
+    <Setter Property="CornerRadius" Value="11" />
+    <Setter Property="MinHeight" Value="44" />
+    <Setter Property="Padding" Value="14,6,42,6" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <DataValidationErrors>
+          <Grid ColumnDefinitions="*,32">
+            <Border x:Name="Background"
+                    Grid.ColumnSpan="2"
+                    Background="{TemplateBinding Background}"
+                    BorderBrush="{TemplateBinding BorderBrush}"
+                    BorderThickness="{TemplateBinding BorderThickness}"
+                    CornerRadius="{TemplateBinding CornerRadius}">
+              <Border.Transitions>
+                <Transitions>
+                  <BrushTransition Property="Background" Duration="0:0:0.18" />
+                </Transitions>
+              </Border.Transitions>
+            </Border>
+            <ContentControl x:Name="ContentPresenter"
+                            Grid.Column="0"
+                            Content="{TemplateBinding SelectionBoxItem}"
+                            ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                            Margin="{TemplateBinding Padding}"
+                            HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                            VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
+            <PathIcon x:Name="DropDownGlyph"
+                      Grid.Column="1"
+                      IsHitTestVisible="False"
+                      HorizontalAlignment="Right"
+                      VerticalAlignment="Center" />
+            <controls:FadingPopup x:Name="PART_Popup"
+                                  IsRequestedOpen="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+                                  MinWidth="{Binding Bounds.Width, RelativeSource={RelativeSource TemplatedParent}}"
+                                  MaxHeight="{TemplateBinding MaxDropDownHeight}"
+                                  PlacementTarget="{Binding RelativeSource={RelativeSource TemplatedParent}}"
+                                  VerticalOffset="8"
+                                  IsHitTestVisible="{TemplateBinding IsDropDownOpen}"
+                                  InheritsTransform="True">
+              <Border x:Name="PopupBorder"
+                      Classes="uiPopupSurface"
+                      Background="{DynamicResource ControlSurfaceActiveBrush}"
+                      HorizontalAlignment="Stretch"
+                      IsHitTestVisible="{TemplateBinding IsDropDownOpen}">
+                <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+                              VerticalScrollBarVisibility="Auto"
+                              IsScrollChainingEnabled="False">
+                  <ItemsPresenter x:Name="PART_ItemsPresenter"
+                                  ItemsPanel="{TemplateBinding ItemsPanel}" />
+                </ScrollViewer>
+              </Border>
+            </controls:FadingPopup>
+          </Grid>
+        </DataValidationErrors>
+      </ControlTemplate>
+    </Setter>
+  </Style>
+
+  <Style Selector="controls|FadingComboBox.uiComboBox:pointerover /template/ Border#Background">
+    <Setter Property="Background" Value="{DynamicResource ControlSurfaceHoverBrush}" />
+  </Style>
+
+  <Style Selector="controls|FadingComboBox.uiComboBox:dropdownopen /template/ Border#Background">
+    <Setter Property="Background" Value="{DynamicResource ControlSurfaceActiveBrush}" />
+  </Style>
+
+  <Style Selector="controls|FadingComboBox.uiComboBox /template/ PathIcon#DropDownGlyph">
+    <Setter Property="Data" Value="{StaticResource ExpandMoreIcon}" />
+    <Setter Property="Width" Value="14" />
+    <Setter Property="Height" Value="14" />
+    <Setter Property="Margin" Value="0,0,14,0" />
+    <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+    <Setter Property="RenderTransform" Value="rotate(0deg)" />
+    <Setter Property="RenderTransformOrigin" Value="50%,50%" />
+    <Setter Property="Transitions">
+      <Transitions>
+        <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.2" />
+        <BrushTransition Property="Foreground" Duration="0:0:0.18" />
+      </Transitions>
+    </Setter>
+  </Style>
+
+  <Style Selector="controls|FadingComboBox.uiComboBox:pointerover /template/ PathIcon#DropDownGlyph">
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+  </Style>
+
+  <Style Selector="controls|FadingComboBox.uiComboBox:dropdownopen /template/ PathIcon#DropDownGlyph">
+    <Setter Property="RenderTransform" Value="rotate(180deg)" />
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+  </Style>
+
+  <Style Selector="Border.uiPopupSurface">
+    <Setter Property="Background" Value="{DynamicResource ControlSurfaceActiveBrush}" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="CornerRadius" Value="18" />
+    <Setter Property="Padding" Value="6" />
+    <Setter Property="Opacity" Value="1" />
+    <Setter Property="Transitions">
+      <Transitions>
+        <DoubleTransition Property="Opacity" Duration="0:0:0.19">
+          <DoubleTransition.Easing>
+            <easing:CubicEaseInOut />
+          </DoubleTransition.Easing>
+        </DoubleTransition>
+      </Transitions>
+    </Setter>
+  </Style>
+
+  <Style Selector="ToggleSwitch.uiToggle">
+    <Setter Property="Width" Value="48" />
+    <Setter Property="Height" Value="28" />
+    <Setter Property="MinWidth" Value="48" />
+    <Setter Property="HorizontalAlignment" Value="Right" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="FocusAdorner" Value="{x:Null}" />
+    <Setter Property="Cursor" Value="Hand" />
+    <Setter Property="OnContent" Value="{x:Null}" />
+    <Setter Property="OffContent" Value="{x:Null}" />
+    <Setter Property="KnobTransitions">
+      <Transitions>
+        <DoubleTransition Property="Canvas.Left" Duration="0:0:0.22">
+          <DoubleTransition.Easing>
+            <easing:CubicEaseInOut />
+          </DoubleTransition.Easing>
+        </DoubleTransition>
+      </Transitions>
+    </Setter>
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Grid Width="48" Height="28" Background="Transparent">
+          <Border x:Name="SettingsSwitchTrack"
+                  Width="46"
+                  Height="26"
+                  HorizontalAlignment="Center"
+                  VerticalAlignment="Center"
+                  Background="{DynamicResource ControlTrackBrush}"
+                  BorderThickness="0"
+                  CornerRadius="13">
+            <Border.Transitions>
+              <Transitions>
+                <BrushTransition Property="Background" Duration="0:0:0.18" />
+              </Transitions>
+            </Border.Transitions>
+          </Border>
+          <Canvas x:Name="PART_SwitchKnob"
+                  Width="22"
+                  Height="28"
+                  Margin="2,0,0,0"
+                  HorizontalAlignment="Left"
+                  VerticalAlignment="Center">
+            <Grid x:Name="PART_MovingKnobs" Width="22" Height="28">
+              <Grid.Transitions>
+                <Transitions>
+                  <DoubleTransition Property="Canvas.Left" Duration="0:0:0.22">
+                    <DoubleTransition.Easing>
+                      <easing:CubicEaseInOut />
+                    </DoubleTransition.Easing>
+                  </DoubleTransition>
+                </Transitions>
+              </Grid.Transitions>
+              <Ellipse x:Name="SettingsSwitchKnob"
+                       Width="18"
+                       Height="18"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"
+                       Fill="{DynamicResource ControlKnobBrush}">
+                <Ellipse.Transitions>
+                  <Transitions>
+                    <BrushTransition Property="Fill" Duration="0:0:0.18" />
+                  </Transitions>
+                </Ellipse.Transitions>
+              </Ellipse>
+            </Grid>
+          </Canvas>
+        </Grid>
+      </ControlTemplate>
+    </Setter>
+  </Style>
+
+  <Style Selector="ToggleSwitch.uiToggle:pointerover /template/ Border#SettingsSwitchTrack">
+    <Setter Property="Background" Value="{DynamicResource ControlTrackHoverBrush}" />
+  </Style>
+
+  <Style Selector="ToggleSwitch.uiToggle:checked /template/ Border#SettingsSwitchTrack">
+    <Setter Property="Background" Value="{DynamicResource ToggleOnBrush}" />
+  </Style>
+
+  <Style Selector="ToggleSwitch.uiToggle:checked:pointerover /template/ Border#SettingsSwitchTrack">
+    <Setter Property="Background" Value="{DynamicResource ToggleOnHoverBrush}" />
+  </Style>
+
+  <Style Selector="ToggleSwitch.uiToggle:pointerover /template/ Ellipse#SettingsSwitchKnob">
+    <Setter Property="Fill" Value="{DynamicResource ControlKnobHoverBrush}" />
+  </Style>
+
+  <Style Selector="ToggleSwitch.uiToggle:disabled">
+    <Setter Property="Opacity" Value="0.45" />
+    <Setter Property="Cursor" Value="Arrow" />
+  </Style>
+
+  <Style Selector="Border.uiSettingsGroup">
+    <Setter Property="Background" Value="{DynamicResource ControlGroupBrush}" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="CornerRadius" Value="14" />
+    <Setter Property="ClipToBounds" Value="True" />
+  </Style>
+
+  <Style Selector="Border.uiSettingsRow">
+    <Setter Property="MinHeight" Value="66" />
+    <Setter Property="Padding" Value="18,14" />
+    <Setter Property="BorderBrush" Value="{DynamicResource SurfaceBrush}" />
+    <Setter Property="BorderThickness" Value="0,0,0,3" />
+  </Style>
+
+  <Style Selector="Border.uiSettingsRow.last">
+    <Setter Property="BorderThickness" Value="0" />
+  </Style>
+
+  <Style Selector="controls|SettingsRow">
+    <Setter Property="MinHeight" Value="66" />
+    <Setter Property="Padding" Value="18,14" />
+    <Setter Property="BorderBrush" Value="{DynamicResource SurfaceBrush}" />
+    <Setter Property="BorderThickness" Value="0,0,0,3" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="{TemplateBinding BorderThickness}"
+                Padding="{TemplateBinding Padding}">
+          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="24">
+            <StackPanel Spacing="3" VerticalAlignment="Center">
+              <TextBlock Classes="uiSettingsLabel" Text="{TemplateBinding Label}" />
+              <TextBlock Classes="uiSettingsHint" Text="{TemplateBinding Hint}" />
+            </StackPanel>
+            <ContentPresenter Grid.Column="1"
+                              Content="{TemplateBinding Content}"
+                              ContentTemplate="{TemplateBinding ContentTemplate}"
+                              HorizontalContentAlignment="Stretch"
+                              VerticalContentAlignment="Center" />
+          </Grid>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+  </Style>
+
+  <Style Selector="controls|SettingsRow.last">
+    <Setter Property="BorderThickness" Value="0" />
+  </Style>
+
+  <Style Selector="controls|NoteCard">
+    <Setter Property="Background" Value="{DynamicResource ControlGroupBrush}" />
+    <Setter Property="CornerRadius" Value="14" />
+    <Setter Property="Padding" Value="18,14" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Background="{TemplateBinding Background}"
+                CornerRadius="{TemplateBinding CornerRadius}"
+                Padding="{TemplateBinding Padding}">
+          <StackPanel>
+            <StackPanel Orientation="Horizontal" Spacing="9">
+              <PathIcon x:Name="PART_KindIcon"
+                        Width="19"
+                        Height="19"
+                        VerticalAlignment="Center" />
+              <TextBlock x:Name="PART_KindTitle"
+                         Classes="noteCardTitle"
+                         Text="{TemplateBinding Title}"
+                         VerticalAlignment="Center" />
+            </StackPanel>
+            <ContentPresenter x:Name="PART_ContentPresenter"
+                              Margin="0,9,0,0"
+                              Content="{TemplateBinding Content}"
+                              ContentTemplate="{TemplateBinding ContentTemplate}"
+                              HorizontalContentAlignment="Stretch" />
+          </StackPanel>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+  </Style>
+
+  <Style Selector="TextBlock.noteCardTitle">
+    <Setter Property="FontSize" Value="15" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+  </Style>
+
+  <Style Selector="controls|NoteCard.note">
+    <Setter Property="Background" Value="{DynamicResource NoteSurfaceBrush}" />
+  </Style>
+
+  <Style Selector="controls|NoteCard.important">
+    <Setter Property="Background" Value="{DynamicResource ImportantSurfaceBrush}" />
+  </Style>
+
+  <Style Selector="controls|NoteCard.note /template/ PathIcon#PART_KindIcon">
+    <Setter Property="Data" Value="{StaticResource InfoIcon}" />
+    <Setter Property="Foreground" Value="{DynamicResource NoteBrush}" />
+  </Style>
+
+  <Style Selector="controls|NoteCard.note /template/ TextBlock#PART_KindTitle">
+    <Setter Property="Foreground" Value="{DynamicResource NoteBrush}" />
+  </Style>
+
+  <Style Selector="controls|NoteCard.important /template/ PathIcon#PART_KindIcon">
+    <Setter Property="Data" Value="{StaticResource FeedbackIcon}" />
+    <Setter Property="Foreground" Value="{DynamicResource ImportantBrush}" />
+  </Style>
+
+  <Style Selector="controls|NoteCard.important /template/ TextBlock#PART_KindTitle">
+    <Setter Property="Foreground" Value="{DynamicResource ImportantBrush}" />
+  </Style>
+
+  <Style Selector="Button.uiSettingsNavigationRow">
+    <Setter Property="MinHeight" Value="66" />
+    <Setter Property="Padding" Value="18,14" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderBrush" Value="{DynamicResource SurfaceBrush}" />
+    <Setter Property="BorderThickness" Value="0,0,0,3" />
+    <Setter Property="CornerRadius" Value="0" />
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="RenderTransform" Value="{x:Null}" />
+    <Setter Property="Transitions">
+      <Transitions>
+        <BrushTransition Property="Background" Duration="0:0:0.16" />
+        <BrushTransition Property="Foreground" Duration="0:0:0.16" />
+      </Transitions>
+    </Setter>
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Background="{TemplateBinding Background}"
+                BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="{TemplateBinding BorderThickness}"
+                CornerRadius="{TemplateBinding CornerRadius}"
+                Padding="{TemplateBinding Padding}">
+          <ContentPresenter Content="{TemplateBinding Content}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}"
+                            HorizontalContentAlignment="Stretch"
+                            VerticalContentAlignment="Center" />
+        </Border>
+      </ControlTemplate>
+    </Setter>
+  </Style>
+
+  <Style Selector="Button.uiSettingsNavigationRow.last">
+    <Setter Property="BorderThickness" Value="0" />
+  </Style>
+
+  <Style Selector="Button.uiSettingsNavigationRow:pointerover">
+    <Setter Property="Background" Value="{DynamicResource ItemHoverBrush}" />
+    <Setter Property="RenderTransform" Value="{x:Null}" />
+  </Style>
+
+  <Style Selector="Button.uiSettingsNavigationRow:pressed">
+    <Setter Property="Background" Value="{DynamicResource ItemSelectedBrush}" />
+    <Setter Property="RenderTransform" Value="{x:Null}" />
+  </Style>
+
+  <Style Selector="Button.uiSettingsNavigationRow:disabled">
+    <Setter Property="Opacity" Value="0.42" />
+  </Style>
+
+  <Style Selector="TextBlock.uiSettingsLabel">
+    <Setter Property="FontSize" Value="14" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="TextWrapping" Value="Wrap" />
+  </Style>
+
+  <Style Selector="TextBlock.uiSettingsHint">
+    <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="LineHeight" Value="17" />
+    <Setter Property="TextWrapping" Value="Wrap" />
+  </Style>
+
+  <Style Selector="Border.uiSegmentedControl">
+    <Setter Property="Background" Value="{DynamicResource SegmentedTrackBrush}" />
+    <Setter Property="CornerRadius" Value="12" />
+    <Setter Property="Padding" Value="4" />
+    <Setter Property="Height" Value="48" />
+  </Style>
+
+  <Style Selector="Border.uiSegmentedIndicator">
+    <Setter Property="Background" Value="{DynamicResource ControlSelectionBrush}" />
+    <Setter Property="CornerRadius" Value="9" />
+  </Style>
+
+  <Style Selector="Button.uiSegmentedItem">
+    <Setter Property="Height" Value="40" />
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="VerticalAlignment" Value="Stretch" />
+    <Setter Property="MinWidth" Value="0" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="CornerRadius" Value="9" />
+    <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="RenderTransform" Value="{x:Null}" />
+    <Setter Property="Transitions">
+      <Transitions>
+        <BrushTransition Property="Foreground" Duration="0:0:0.16" />
+      </Transitions>
+    </Setter>
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Background="Transparent" CornerRadius="{TemplateBinding CornerRadius}">
+          <TextBlock Text="{Binding Content, RelativeSource={RelativeSource TemplatedParent}}"
+                     Foreground="{TemplateBinding Foreground}"
+                     HorizontalAlignment="Stretch"
+                     VerticalAlignment="Center"
+                     TextAlignment="Center" />
+        </Border>
+      </ControlTemplate>
+    </Setter>
+  </Style>
+
+  <Style Selector="Button.uiSegmentedItem:pointerover">
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+  </Style>
+
+  <Style Selector="Button.uiSegmentedItem.selected">
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+  </Style>
+
+  <Style Selector="Button.wizardAction">
+    <Setter Property="MinWidth" Value="112" />
+    <Setter Property="Height" Value="50" />
+    <Setter Property="Padding" Value="20,0" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="CornerRadius" Value="14" />
+    <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="RenderTransform" Value="{x:Null}" />
+    <Setter Property="Transitions">
+      <Transitions>
+        <DoubleTransition Property="Width" Duration="0:0:0.34">
+          <DoubleTransition.Easing><easing:CubicEaseInOut /></DoubleTransition.Easing>
+        </DoubleTransition>
+        <DoubleTransition Property="Opacity" Duration="0:0:0.24">
+          <DoubleTransition.Easing><easing:CubicEaseOut /></DoubleTransition.Easing>
+        </DoubleTransition>
+        <BrushTransition Property="Background" Duration="0:0:0.16" />
+        <BrushTransition Property="Foreground" Duration="0:0:0.16" />
+      </Transitions>
+    </Setter>
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Background="{TemplateBinding Background}"
+                CornerRadius="{TemplateBinding CornerRadius}"
+                Padding="{TemplateBinding Padding}">
+          <ContentPresenter Content="{TemplateBinding Content}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}"
+                            Foreground="{TemplateBinding Foreground}"
+                            HorizontalAlignment="Stretch"
+                            VerticalAlignment="Center"
+                            HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                            VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
+        </Border>
+      </ControlTemplate>
+    </Setter>
+  </Style>
+
+  <Style Selector="Button.wizardAction:pointerover">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+  </Style>
+
+  <Style Selector="Button.wizardAction.create">
+    <Setter Property="MinWidth" Value="150" />
+    <Setter Property="Background" Value="{DynamicResource TextPrimaryBrush}" />
+    <Setter Property="Foreground" Value="#111111" />
+  </Style>
+
+  <Style Selector="Button.wizardAction.create:pointerover">
+    <Setter Property="Background" Value="White" />
+    <Setter Property="Foreground" Value="#111111" />
+  </Style>
+
+  <Style Selector="Button.wizardAction.create:disabled">
+    <Setter Property="Opacity" Value="0.45" />
+  </Style>
+</Styles>

@@ -1,0 +1,93 @@
+---
+title: Mirrors
+description: Mirror schema, discovery, source selection, and examples
+---
+
+# Mirrors
+
+A mirror definition tells HyPrism where a source lists versions and serves full images or differential patches. The launcher ships the official source and no preconfigured third-party game mirrors
+
+## Storage and validation
+
+Definitions are stored under `Mirrors/<id>.mirror.json` in the application directory. `IMirrorCatalog.Save` validates the ID, name, schema version, source type, and required configuration section
+
+IDs contain lowercase ASCII letters, digits, dots, hyphens, and underscores, start with a letter or digit, and have at most 64 characters. The current schema version is `1`
+
+## Pattern source
+
+This complete example uses a reserved example domain and a static version list. Replace the endpoint and version list with values supplied by the source operator
+
+```json
+{
+  "SchemaVersion": 1,
+  "Id": "example-source",
+  "Name": "Example source",
+  "Priority": 100,
+  "Enabled": true,
+  "SourceType": "pattern",
+  "Pattern": {
+    "BaseUrl": "https://example.org/game",
+    "FullBuildUrl": "{base}/{os}/{arch}/{branch}/0/{version}.pwr",
+    "DiffPatchUrl": "{base}/{os}/{arch}/{branch}/{from}/{to}.pwr",
+    "VersionDiscovery": {
+      "Method": "static-list",
+      "StaticVersions": [7, 6]
+    }
+  }
+}
+```
+
+| Pattern field | Meaning |
+| --- | --- |
+| `BaseUrl` | Value substituted for `{base}` |
+| `FullBuildUrl` | Full installation template |
+| `DiffPatchUrl` | Optional differential template |
+| `VersionDiscovery` | Version-list strategy |
+| `OsMapping`, `ArchMapping`, `BranchMapping` | Override platform or branch strings |
+| `DiffBasedBranches` | Branches using differential patching |
+
+URL templates support `{base}`, `{os}`, `{arch}`, `{branch}`, `{version}`, `{from}`, and `{to}`. Internal platform strings include `windows`, `linux`, `darwin`, `amd64`, and `arm64`
+
+Discovery supports `static-list`, `json-api` with `Url` and `JsonPath`, or `html-autoindex` with `Url` and an optional `HtmlPattern`. Custom regular expressions are time-limited and invalid expressions are ignored
+
+## JSON index source
+
+A JSON index provides download URLs instead of constructing every URL from a template
+
+```json
+{
+  "SchemaVersion": 1,
+  "Id": "example-index",
+  "Name": "Example index",
+  "SourceType": "json-index",
+  "JsonIndex": {
+    "ApiUrl": "https://example.org/index.json",
+    "RootPath": "hytale",
+    "Structure": "flat"
+  }
+}
+```
+
+`Structure` accepts `flat` for branch → platform → filename → URL, or `grouped` with separate base and patch groups. `PlatformMapping` and `FileNamePattern` adapt source naming. Full file names default to `v{version}-{os}-{arch}.pwr`, differential files to `v{from}~{to}-{os}-{arch}.pwr`
+
+## Discovery and runtime selection
+
+Desktop automatic setup uses `IMirrorDiscovery` to inspect a public HTTPS endpoint. The UI rejects duplicate endpoints, assigns an ID, saves through the catalog, and calls `ReloadMirrorSources`. HTTP is accepted only for loopback development
+
+Availability probes check response latency and current-platform versions without downloading a game payload. The official probe needs a valid session from an official profile to query the authenticated patches API
+
+The official source is preferred when it can serve the request. Mirror selection uses enabled sources and cached speed results. Reloading after a source change does not require restarting the launcher
+
+## Optional settings
+
+| Section | Purpose |
+| --- | --- |
+| `Headers` | Request headers, including supported `{hytaleAgent}` substitution |
+| `SpeedTest` | Ping URL, timeout, and transfer sample size |
+| `Cache` | Index and speed-test cache lifetimes |
+
+Keep private headers out of source control and documentation. The complete model is `Sources/HyPrism.Core/Models/MirrorMeta.cs`; runtime parsing lives in `Game/Sources/JsonMirrorSource.cs`
+
+See [download settings](/docs/user-guide/settings#downloads) for the player workflow
+
+Source: [MirrorMeta](../../../../Sources/HyPrism.Core/Models/MirrorMeta.cs), [Mirror services](../../../../Sources/HyPrism.Core/Game/Sources)

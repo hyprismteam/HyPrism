@@ -1,0 +1,120 @@
+# Copyright (C) 2026 HyPrism Launcher
+# SPDX-License-Identifier: GPL-3.0-only
+
+name: Local Node Tests
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_VERSION: '10.0.x'
+  DOTNET_QUALITY: 'preview'
+
+jobs:
+  tests:
+    name: ${{ matrix.platform }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: Linux
+            runner: ubuntu-24.04
+          - platform: Windows
+            runner: windows-2025
+          - platform: macOS
+            runner: macos-15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+          dotnet-quality: ${{ env.DOTNET_QUALITY }}
+
+      - name: Run Local Node integration tests
+        env:
+          HYPRISM_LOCAL_NODE_SKIP_MACOS_TRUST: '1'
+        run: dotnet test Tests/HyPrism.LocalNode.Tests/HyPrism.LocalNode.Tests.csproj --configuration Release
+
+  macos-trust:
+    name: macOS trust and HTTPS smoke
+    runs-on: macos-15
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+          dotnet-quality: ${{ env.DOTNET_QUALITY }}
+
+      - name: Publish macOS apphosts
+        run: |
+          dotnet publish Sources/HyPrism.Desktop/HyPrism.Desktop.csproj \
+            --configuration Release \
+            --runtime osx-arm64 \
+            --self-contained true \
+            --output "$RUNNER_TEMP/hyprism-osx-arm64"
+          test -x "$RUNNER_TEMP/hyprism-osx-arm64/HyPrism.Desktop"
+          test -x "$RUNNER_TEMP/hyprism-osx-arm64/HyPrism.LocalNode"
+          file "$RUNNER_TEMP/hyprism-osx-arm64/HyPrism.Desktop" | grep -q 'Mach-O 64-bit executable arm64'
+          file "$RUNNER_TEMP/hyprism-osx-arm64/HyPrism.LocalNode" | grep -q 'Mach-O 64-bit executable arm64'
+
+      - name: Verify trusted Local Node HTTPS
+        run: |
+          set -euo pipefail
+          PORT=18443
+          DATA_DIR="$RUNNER_TEMP/local-node-data"
+          LOG_FILE="$RUNNER_TEMP/local-node.log"
+
+          HYPRISM_LOCAL_NODE_SKIP_MACOS_TRUST=1 \
+          "$RUNNER_TEMP/hyprism-osx-arm64/HyPrism.LocalNode" \
+            --port "$PORT" \
+            --data-directory "$DATA_DIR" \
+            >"$LOG_FILE" 2>&1 &
+          NODE_PID=$!
+          trap 'kill "$NODE_PID" 2>/dev/null || true; cat "$LOG_FILE"' EXIT
+
+          ROOT_CERTIFICATE="$DATA_DIR/hyprism-local-ca.crt"
+          SERVER_CERTIFICATE="$DATA_DIR/h.localhost.crt"
+          for attempt in {1..60}; do
+            if [ -f "$ROOT_CERTIFICATE" ] && [ -f "$SERVER_CERTIFICATE" ]; then
+              break
+            fi
+            sleep 0.5
+          done
+
+          test -f "$ROOT_CERTIFICATE"
+          test -f "$SERVER_CERTIFICATE"
+          sudo security add-trusted-cert \
+            -d \
+            -r trustRoot \
+            -k /Library/Keychains/System.keychain \
+            "$ROOT_CERTIFICATE"
+          security verify-cert \
+            -c "$SERVER_CERTIFICATE" \
+            -p ssl \
+            -s 127.0.0.1
+
+          HEALTH_RESPONSE="$RUNNER_TEMP/local-node-health.json"
+          for attempt in {1..60}; do
+            if curl --fail --silent --show-error "https://127.0.0.1:$PORT/health" \
+              --output "$HEALTH_RESPONSE"; then
+              break
+            fi
+            sleep 0.5
+          done
+
+          test -s "$HEALTH_RESPONSE"
+          grep -Fq '"status":"ready"' "$HEALTH_RESPONSE"
+          grep -Fq '"server":"hyprism-local-node"' "$HEALTH_RESPONSE"
+          grep -Fq "\"issuer\":\"https://127.0.0.1:$PORT\"" "$HEALTH_RESPONSE"

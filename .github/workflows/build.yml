@@ -1,285 +1,36 @@
-name: Build HyPrism
+# Copyright (C) 2026 HyPrism Launcher
+# SPDX-License-Identifier: GPL-3.0-only
+
+name: Build
 
 on:
-  # Allow manual trigger
   workflow_dispatch:
     inputs:
       platforms:
-        description: 'Platforms to build (comma-separated: linux,windows,macos or all)'
+        description: 'Platforms to build: linux, windows, macos, or all'
         required: false
         default: 'all'
         type: string
-
-  # Allow to be called from other workflows
   workflow_call:
     inputs:
       platforms:
-        description: 'Platforms to build (comma-separated: linux,windows,macos or all)'
+        description: 'Platforms to build: linux, windows, macos, or all'
         required: false
         default: 'all'
         type: string
 
-  # Build on push to main/develop for CI
-  push:
-    branches:
-      - main
-      - develop
-    paths-ignore:
-      - '**.md'
-      - 'Docs/**'
-      - '.github/ISSUE_TEMPLATE/**'
-
-  # Build on PRs
-  pull_request:
-    branches:
-      - main
-      - develop
-    paths-ignore:
-      - '**.md'
-      - 'Docs/**'
-
-env:
-  DOTNET_VERSION: '10.0.x'
-  DOTNET_QUALITY: 'preview'
-  NODE_VERSION: '22'
+permissions:
+  contents: read
 
 jobs:
-  # ============================================================================
-  # Determine which platforms to build
-  # ============================================================================
-  setup:
-    runs-on: ubuntu-latest
-    outputs:
-      build-linux: ${{ steps.platforms.outputs.linux }}
-      build-windows: ${{ steps.platforms.outputs.windows }}
-      build-macos: ${{ steps.platforms.outputs.macos }}
-    steps:
-      - name: Determine platforms
-        id: platforms
-        run: |
-          PLATFORMS="${{ inputs.platforms || 'all' }}"
-          
-          if [[ "$PLATFORMS" == "all" ]]; then
-            echo "linux=true" >> $GITHUB_OUTPUT
-            echo "windows=true" >> $GITHUB_OUTPUT
-            echo "macos=true" >> $GITHUB_OUTPUT
-          else
-            [[ "$PLATFORMS" == *"linux"* ]] && echo "linux=true" >> $GITHUB_OUTPUT || echo "linux=false" >> $GITHUB_OUTPUT
-            [[ "$PLATFORMS" == *"windows"* ]] && echo "windows=true" >> $GITHUB_OUTPUT || echo "windows=false" >> $GITHUB_OUTPUT
-            [[ "$PLATFORMS" == *"macos"* ]] && echo "macos=true" >> $GITHUB_OUTPUT || echo "macos=false" >> $GITHUB_OUTPUT
-          fi
+  linux:
+    if: inputs.platforms == 'all' || contains(inputs.platforms, 'linux')
+    uses: ./.github/workflows/build-linux.yml
 
-  # ============================================================================
-  # Linux Build (x64 + ARM64)
-  # ============================================================================
-  build-linux:
-    needs: setup
-    if: needs.setup.outputs.build-linux == 'true'
-    runs-on: ubuntu-24.04
-    strategy:
-      fail-fast: false
-      matrix:
-        arch: [x64]
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+  windows:
+    if: inputs.platforms == 'all' || contains(inputs.platforms, 'windows')
+    uses: ./.github/workflows/build-windows.yml
 
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
-          dotnet-quality: ${{ env.DOTNET_QUALITY }}
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          cache-dependency-path: Frontend/package-lock.json
-
-      - name: Install Electron.NET CLI
-        run: dotnet tool install --global ElectronNET.CLI
-
-      - name: Install Linux build dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            rpm \
-            libfuse2 \
-            flatpak \
-            flatpak-builder
-
-      - name: Prepare Flatpak remotes
-        run: |
-          sudo flatpak remote-add --system --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
-          sudo flatpak remote-add --system --if-not-exists flathub-beta https://dl.flathub.org/beta-repo/flathub-beta.flatpakrepo
-          flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
-          flatpak remote-add --user --if-not-exists flathub-beta https://dl.flathub.org/beta-repo/flathub-beta.flatpakrepo
-
-      - name: Diagnose Flatpak environment
-        run: |
-          echo "=== flatpak --version ==="
-          flatpak --version
-          echo "=== system remotes ==="
-          flatpak remotes --system || true
-          echo "=== system runtimes (25.08 / Electron2) ==="
-          flatpak list --system --runtime | grep -E 'freedesktop|electronjs|25\.08|Electron2' || true
-
-      - name: Build Linux ${{ matrix.arch }}
-        continue-on-error: true
-        run: |
-          chmod +x Scripts/publish.sh
-          # build all linux formats including Flatpak bundle
-          ./Scripts/publish.sh linux flatpak --arch ${{ matrix.arch }}
-
-      - name: Upload Linux ${{ matrix.arch }} artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: linux-${{ matrix.arch }}
-          path: |
-            dist/*.AppImage
-            dist/*.deb
-            dist/*.rpm
-            dist/*.tar.xz
-            dist/*.flatpak
-          if-no-files-found: warn
-
-  # ============================================================================
-  # Windows Build (x64 only)
-  # ============================================================================
-  build-windows:
-    needs: setup
-    if: needs.setup.outputs.build-windows == 'true'
-    runs-on: windows-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
-          dotnet-quality: ${{ env.DOTNET_QUALITY }}
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          cache-dependency-path: Frontend/package-lock.json
-
-      - name: Install Electron.NET CLI
-        run: dotnet tool install --global ElectronNET.CLI
-
-      - name: Generate Windows ICO icon
-        shell: bash
-        run: |
-          mkdir -p Build
-          if command -v magick >/dev/null 2>&1; then
-            magick Frontend/src/assets/images/appicon.png -define icon:auto-resize=16,24,32,48,64,128,256 Build/icon.ico
-            echo "Generated Build/icon.ico from appicon.png"
-          else
-            echo "magick not found; using existing Build/icon.ico"
-          fi
-
-      - name: Build Windows x64
-        shell: bash
-        run: |
-          chmod +x Scripts/publish.sh
-          ./Scripts/publish.sh win --arch x64
-
-      - name: Upload Windows artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: windows-x64
-          path: |
-            dist/*.zip
-            dist/*.exe
-          if-no-files-found: warn
-
-  # ============================================================================
-  # macOS Build (ARM64 only - Apple Silicon)
-  # ============================================================================
-  build-macos:
-    needs: setup
-    if: needs.setup.outputs.build-macos == 'true'
-    runs-on: macos-14  # Apple Silicon runner
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
-          dotnet-quality: ${{ env.DOTNET_QUALITY }}
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          cache-dependency-path: Frontend/package-lock.json
-
-      - name: Install Electron.NET CLI
-        run: dotnet tool install --global ElectronNET.CLI
-
-      - name: Generate macOS ICNS icon
-        run: |
-          # Generate ICNS from PNG using iconutil (macOS native tool)
-          mkdir -p HyPrism.iconset
-          for size in 16 32 64 128 256 512; do
-            sips -z $size $size Frontend/src/assets/images/appicon.png --out HyPrism.iconset/icon_${size}x${size}.png
-            size2=$((size * 2))
-            if [ $size2 -le 1024 ]; then
-              sips -z $size2 $size2 Frontend/src/assets/images/appicon.png --out HyPrism.iconset/icon_${size}x${size}@2x.png
-            fi
-          done
-          mkdir -p Build
-          iconutil -c icns HyPrism.iconset -o Build/icon.icns
-          rm -rf HyPrism.iconset
-          echo "ICNS icon generated in Build/icon.icns"
-
-      - name: Build macOS ARM64
-        run: |
-          chmod +x Scripts/publish.sh
-          ./Scripts/publish.sh mac --arch arm64
-
-      - name: Upload macOS artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: macos-arm64
-          path: |
-            dist/*.dmg
-          if-no-files-found: warn
-
-  # ============================================================================
-  # Build Summary
-  # ============================================================================
-  summary:
-    needs: [build-linux, build-windows, build-macos]
-    if: always()
-    runs-on: ubuntu-latest
-    steps:
-      - name: Build Summary
-        run: |
-          echo "## Build Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Platform | Status |" >> $GITHUB_STEP_SUMMARY
-          echo "|----------|--------|" >> $GITHUB_STEP_SUMMARY
-          
-          LINUX="${{ needs.build-linux.result }}"
-          WINDOWS="${{ needs.build-windows.result }}"
-          MACOS="${{ needs.build-macos.result }}"
-          
-          [[ "$LINUX" == "success" ]] && echo "| Linux (x64) | ✅ Success |" >> $GITHUB_STEP_SUMMARY || \
-          [[ "$LINUX" == "skipped" ]] && echo "| Linux (x64) | ⏭️ Skipped |" >> $GITHUB_STEP_SUMMARY || \
-          echo "| Linux (x64) | ❌ Failed |" >> $GITHUB_STEP_SUMMARY
-          
-          [[ "$WINDOWS" == "success" ]] && echo "| Windows (x64) | ✅ Success |" >> $GITHUB_STEP_SUMMARY || \
-          [[ "$WINDOWS" == "skipped" ]] && echo "| Windows (x64) | ⏭️ Skipped |" >> $GITHUB_STEP_SUMMARY || \
-          echo "| Windows (x64) | ❌ Failed |" >> $GITHUB_STEP_SUMMARY
-          
-          [[ "$MACOS" == "success" ]] && echo "| macOS (ARM64) | ✅ Success |" >> $GITHUB_STEP_SUMMARY || \
-          [[ "$MACOS" == "skipped" ]] && echo "| macOS (ARM64) | ⏭️ Skipped |" >> $GITHUB_STEP_SUMMARY || \
-          echo "| macOS (ARM64) | ❌ Failed |" >> $GITHUB_STEP_SUMMARY
+  macos:
+    if: inputs.platforms == 'all' || contains(inputs.platforms, 'macos')
+    uses: ./.github/workflows/build-macos.yml

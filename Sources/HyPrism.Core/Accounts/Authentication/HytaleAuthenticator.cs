@@ -1,0 +1,1109 @@
+// Copyright (C) 2026 HyPrism Launcher
+// SPDX-License-Identifier: GPL-3.0-only
+
+using System.Net;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Net.Sockets;
+using System.Diagnostics.CodeAnalysis;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using HyPrism.Core.Models;
+using HyPrism.Core.Infrastructure;
+using HyPrism.Core.Integrations.Hytale;
+
+namespace HyPrism.Core.Accounts;
+
+/// <summary>
+/// Handles Hytale OAuth 2.0 Authorization Code flow with PKCE.
+/// Used to authenticate official Hytale accounts and obtain session tokens
+/// for launching the game in authenticated mode
+/// </summary>
+/// <remarks>
+/// Session data is stored per-profile in the profile's folder to support
+/// multiple Hytale accounts across different launcher profiles
+/// </remarks>
+public class HytaleAuthenticator : IHytaleAuthenticator
+{
+    private const string AuthUrl = "https://oauth.accounts.hytale.com/oauth2/auth";
+    private const string TokenUrl = "https://oauth.accounts.hytale.com/oauth2/token";
+    private const string LauncherDataUrl = "https://account-data.hytale.com/my-account/get-launcher-data";
+    private const string SessionUrl = "https://sessions.hytale.com/game-session/new";
+    private const string ClientId = "hytale-launcher";
+    private const string RedirectUri = "https://accounts.hytale.com/consent/client";
+    private const string Scopes = "openid offline auth:launcher";
+    private const string CallbackPath = "/authorization-callback";
+
+    private readonly HttpClient _httpClient;
+    private readonly string _appDir;
+    private readonly IConfigStore _configStore;
+    private readonly IOAuthCallbackPageRenderer _callbackPageRenderer;
+
+    private string? _pendingCodeVerifier;
+    private string? _pendingState;
+    private TaskCompletionSource<string>? _authCodeTcs;
+    private HttpListener? _callbackListener;
+
+    /// <summary>
+    /// The current auth session, or null if not logged in
+    /// </summary>
+    public HytaleAuthSession? CurrentSession { get; private set; }
+
+    /// <summary>
+    /// Creates the official Hytale authentication service and restores the current profile session
+    /// </summary>
+    /// <param name="httpClient">The HTTP client used for OAuth requests</param>
+    /// <param name="appDir">The application data directory</param>
+    /// <param name="configStore">The launcher configuration service</param>
+    /// <param name="callbackPageRenderer">Optional host renderer for the browser callback page</param>
+    public HytaleAuthenticator(
+        HttpClient httpClient,
+        string appDir,
+        IConfigStore configStore,
+        IOAuthCallbackPageRenderer? callbackPageRenderer = null)
+    {
+        _httpClient = httpClient;
+        _appDir = appDir;
+        _configStore = configStore;
+        _callbackPageRenderer = callbackPageRenderer ?? DefaultOAuthCallbackPageRenderer.Instance;
+
+        LoadSession();
+
+        MigrateOldSessionIfNeeded();
+    }
+
+    /// <summary>
+    /// Starts the OAuth login flow, asks the host to present the authorization URI, waits for the callback and exchanges the code for tokens
+    /// </summary>
+    /// <param name="authorizationUriPresenter">Host callback that presents the authorization URI</param>
+    /// <param name="cancellationToken">Token used to cancel authorization</param>
+    /// <returns>The authenticated session, or null on failure/cancellation</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="authorizationUriPresenter"/> is <see langword="null"/></exception>
+    [SuppressMessage(
+        "Reliability",
+        "CA2025:Ensure tasks using an IDisposable instance complete before the instance is disposed",
+        Justification = "Both cleanup paths stop the listener and await the callback task before the listener leaves scope")]
+    public async Task<HytaleAuthSession?> LoginAsync(
+        AuthUriPresenter authorizationUriPresenter,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(authorizationUriPresenter);
+
+        StopListener();
+        using var listener = new HttpListener();
+        Task? callbackTask = null;
+
+        try
+        {
+            var codeVerifier = GenerateCodeVerifier();
+            var codeChallenge = GenerateCodeChallenge(codeVerifier);
+            _pendingCodeVerifier = codeVerifier;
+
+            var port = FindAvailablePort();
+            listener.Prefixes.Add($"http://127.0.0.1:{port}/");
+            listener.Start();
+            _callbackListener = listener;
+
+            _authCodeTcs = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            var callbackState = GenerateRandomString(26);
+            var state = GenerateState(callbackState, port);
+            _pendingState = callbackState;
+
+            var authUrl = $"{AuthUrl}?access_type=offline" +
+                          $"&client_id={Uri.EscapeDataString(ClientId)}" +
+                          $"&code_challenge={Uri.EscapeDataString(codeChallenge)}" +
+                          $"&code_challenge_method=S256" +
+                          $"&redirect_uri={Uri.EscapeDataString(RedirectUri)}" +
+                          $"&response_type=code" +
+                          $"&scope={Uri.EscapeDataString(Scopes)}" +
+                          $"&state={Uri.EscapeDataString(state)}";
+
+            // Match the official launcher order: listen before opening the browser
+            callbackTask = ListenForCallbackAsync(listener, cancellationToken);
+
+            Logger.Info("HytaleAuth", "Requesting presentation of the Hytale authorization page");
+            var authorizationUri = new Uri(authUrl, UriKind.Absolute);
+            if (!await authorizationUriPresenter(authorizationUri, cancellationToken))
+            {
+                Logger.Warning("HytaleAuth", "The host could not present the Hytale authorization page");
+                return null;
+            }
+
+            using var timeoutCts = new CancellationTokenSource(TimeSpan.FromMinutes(15));
+            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
+
+            linkedCts.Token.Register(() => _authCodeTcs.TrySetCanceled());
+
+            string authCode;
+            try
+            {
+                authCode = await _authCodeTcs.Task;
+            }
+            catch (OperationCanceledException)
+            {
+                Logger.Warning("HytaleAuth", "Login cancelled or timed out");
+                return null;
+            }
+            finally
+            {
+                listener.Stop();
+                await callbackTask;
+                callbackTask = null;
+                _callbackListener = null;
+            }
+
+            Logger.Info("HytaleAuth", "Exchanging auth code for tokens...");
+            var tokenResponse = await ExchangeCodeForTokensAsync(authCode);
+            if (tokenResponse == null)
+            {
+                Logger.Error("HytaleAuth", "Failed to exchange auth code for tokens");
+                return null;
+            }
+
+            Logger.Info("HytaleAuth", "Fetching Hytale profiles...");
+            List<HytaleProfile> allProfiles = await FetchProfileAsync(tokenResponse.AccessToken);
+            HytaleProfile primaryProfile = allProfiles[0];
+
+            Logger.Info("HytaleAuth", "Creating game session...");
+            var gameSession = await CreateGameSessionAsync(tokenResponse.AccessToken, primaryProfile.Uuid);
+
+            var session = new HytaleAuthSession
+            {
+                AccessToken = tokenResponse.AccessToken,
+                RefreshToken = tokenResponse.RefreshToken,
+                ExpiresAt = DateTime.UtcNow.AddSeconds(tokenResponse.ExpiresIn),
+                Username = primaryProfile.Username,
+                UUID = primaryProfile.Uuid,
+                AccountOwnerId = primaryProfile.Owner,
+                SessionToken = gameSession?.SessionToken ?? "",
+                IdentityToken = gameSession?.IdentityToken ?? "",
+                AccountProfiles = [.. allProfiles.Select(p => (p.Username, p.Uuid))]
+            };
+
+            CurrentSession = session;
+
+            Logger.Success("HytaleAuth", $"Logged in as {session.Username} ({session.UUID})");
+            return session;
+        }
+        catch (Exception ex)
+        {
+            Logger.Error("HytaleAuth", $"Login failed: {ex.Message}");
+            return null;
+        }
+        finally
+        {
+            if (listener.IsListening)
+                listener.Stop();
+            if (callbackTask is not null)
+                await callbackTask;
+            if (ReferenceEquals(_callbackListener, listener))
+                _callbackListener = null;
+        }
+    }
+
+    /// <summary>
+    /// Logs out: clears session from memory and disk
+    /// </summary>
+    public void Logout()
+    {
+        CurrentSession = null;
+        TokenStore.Delete(GetSessionFilePath());
+        Logger.Info("HytaleAuth", "Logged out");
+    }
+
+    /// <summary>
+    /// Returns the current auth status (logged in, username, uuid)
+    /// </summary>
+    public object GetAuthStatus()
+    {
+        if (CurrentSession != null)
+        {
+            return new
+            {
+                loggedIn = true,
+                username = CurrentSession.Username,
+                uuid = CurrentSession.UUID,
+                accountProfiles = CurrentSession.AccountProfiles.Select(p => new { username = p.Username, uuid = p.Uuid }).ToList()
+            };
+        }
+        return new { loggedIn = false, username = (string?)null, uuid = (string?)null };
+    }
+
+    /// <summary>
+    /// Refreshes the access token if expired. Returns a valid session or null
+    /// </summary>
+    public async Task<HytaleAuthSession?> GetValidSessionAsync()
+    {
+        if (CurrentSession == null) return null;
+
+        if (CurrentSession.ExpiresAt <= DateTime.UtcNow.AddMinutes(1))
+        {
+            Logger.Info("HytaleAuth", "Access token expired, refreshing...");
+            var refreshed = await RefreshTokenAsync();
+            if (!refreshed)
+            {
+                Logger.Warning("HytaleAuth", "Token refresh failed, session invalid");
+                Logout();
+                return null;
+            }
+        }
+
+        return CurrentSession;
+    }
+
+    /// <summary>
+    /// Forces a token refresh regardless of expiry time.
+    /// Used when API returns 401/403 indicating token is invalid
+    /// </summary>
+    public async Task<bool> ForceRefreshAsync()
+    {
+        if (CurrentSession == null) return false;
+
+        Logger.Info("HytaleAuth", "Forcing token refresh...");
+        var refreshed = await RefreshTokenAsync();
+        if (!refreshed)
+        {
+            Logger.Warning("HytaleAuth", "Forced token refresh failed");
+            return false;
+        }
+
+        Logger.Success("HytaleAuth", "Token refreshed successfully");
+        return true;
+    }
+
+    /// <summary>
+    /// Ensures a valid session with fresh game session tokens for launching.
+    /// Always creates a new game session even if the access token is still valid,
+    /// because game session tokens (identityToken/sessionToken) expire independently
+    /// and must be refreshed before each launch
+    /// </summary>
+    public async Task<HytaleAuthSession?> EnsureFreshSessionForLaunchAsync()
+    {
+        var session = await GetValidSessionAsync();
+        if (session == null) return null;
+
+        Logger.Info("HytaleAuth", "Creating fresh game session for launch...");
+        try
+        {
+            var gameSession = await CreateGameSessionAsync(session.AccessToken, session.UUID);
+            if (gameSession != null)
+            {
+                session.SessionToken = gameSession.SessionToken;
+                session.IdentityToken = gameSession.IdentityToken;
+                SaveSession();
+                Logger.Success("HytaleAuth", "Fresh game session tokens obtained");
+            }
+            else
+            {
+                Logger.Warning("HytaleAuth", "Failed to create fresh game session. Cached tokens will be used");
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning("HytaleAuth", $"Error creating fresh game session: {ex.Message}");
+            // Cached game tokens may remain valid when renewal fails
+        }
+
+        return session;
+    }
+
+    #region OAuth Helpers
+
+    private async Task ListenForCallbackAsync(HttpListener listener, CancellationToken ct)
+    {
+        try
+        {
+            while (listener.IsListening && !ct.IsCancellationRequested)
+            {
+                var context = await listener.GetContextAsync();
+                var request = context.Request;
+                var response = context.Response;
+
+                if (!string.Equals(request.Url?.AbsolutePath, CallbackPath, StringComparison.Ordinal))
+                {
+                    response.StatusCode = (int)HttpStatusCode.NotFound;
+                    response.Close();
+                    continue;
+                }
+
+                var query = request.QueryString;
+                var code = query["code"];
+                var error = query["error"];
+                var returnedState = query["state"];
+
+                string responseHtml;
+                if (string.IsNullOrEmpty(returnedState) ||
+                    !string.Equals(returnedState, _pendingState, StringComparison.Ordinal))
+                {
+                    response.StatusCode = (int)HttpStatusCode.InternalServerError;
+                    responseHtml = _callbackPageRenderer.Render(
+                        success: false,
+                        "Invalid or missing OAuth state");
+                    _authCodeTcs?.TrySetException(
+                        new HytaleAuthException("invalid_oauth_state", "Invalid or missing OAuth state"));
+                }
+                else if (!string.IsNullOrEmpty(code))
+                {
+                    responseHtml = _callbackPageRenderer.Render(
+                        success: true,
+                        "Authorization completed successfully");
+                    _authCodeTcs?.TrySetResult(code);
+                }
+                else if (!string.IsNullOrEmpty(error))
+                {
+                    response.StatusCode = (int)HttpStatusCode.InternalServerError;
+                    responseHtml = _callbackPageRenderer.Render(success: false, $"OAuth error: {error}");
+                    _authCodeTcs?.TrySetException(new HytaleAuthException(error, $"OAuth error: {error}"));
+                }
+                else
+                {
+                    response.StatusCode = (int)HttpStatusCode.InternalServerError;
+                    responseHtml = _callbackPageRenderer.Render(
+                        success: false,
+                        "Authorization callback did not contain a code or error");
+                    _authCodeTcs?.TrySetException(
+                        new HytaleAuthException("invalid_oauth_callback", "Authorization callback did not contain a code or error"));
+                }
+
+                var buffer = Encoding.UTF8.GetBytes(responseHtml);
+                response.ContentType = "text/html; charset=utf-8";
+                response.ContentLength64 = buffer.Length;
+                await response.OutputStream.WriteAsync(buffer, ct);
+                response.Close();
+
+                break;
+            }
+        }
+        catch (ObjectDisposedException) { }
+        catch (Exception ex)
+        {
+            Logger.Warning("HytaleAuth", $"Callback listener error: {ex.Message}");
+            _authCodeTcs?.TrySetException(ex);
+        }
+    }
+
+    private void StopListener()
+    {
+        try
+        {
+            _callbackListener?.Stop();
+            _callbackListener?.Close();
+        }
+        catch { }
+        _callbackListener = null;
+    }
+
+    private async Task<TokenResponse?> ExchangeCodeForTokensAsync(string code)
+    {
+        using var content = new FormUrlEncodedContent(new Dictionary<string, string>
+        {
+            ["grant_type"] = "authorization_code",
+            ["code"] = code,
+            ["redirect_uri"] = RedirectUri,
+            ["client_id"] = ClientId,
+            ["code_verifier"] = _pendingCodeVerifier ?? ""
+        });
+
+        try
+        {
+            using var response = await _httpClient.PostAsync(TokenUrl, content);
+            var json = await response.Content.ReadAsStringAsync();
+
+            if (!response.IsSuccessStatusCode)
+            {
+                Logger.Error("HytaleAuth", $"Token exchange failed ({response.StatusCode}): {json}");
+                return null;
+            }
+
+            return JsonSerializer.Deserialize<TokenResponse>(json);
+        }
+        catch (Exception ex)
+        {
+            Logger.Error("HytaleAuth", $"Token exchange exception: {ex.Message}");
+            return null;
+        }
+    }
+
+    private async Task<bool> RefreshTokenAsync()
+    {
+        if (CurrentSession?.RefreshToken == null) return false;
+
+        using var content = new FormUrlEncodedContent(new Dictionary<string, string>
+        {
+            ["grant_type"] = "refresh_token",
+            ["refresh_token"] = CurrentSession.RefreshToken,
+            ["client_id"] = ClientId
+        });
+
+        try
+        {
+            using var response = await _httpClient.PostAsync(TokenUrl, content);
+            var json = await response.Content.ReadAsStringAsync();
+
+            if (!response.IsSuccessStatusCode)
+            {
+                Logger.Error("HytaleAuth", $"Token refresh failed ({response.StatusCode}): {json}");
+                return false;
+            }
+
+            var tokenResp = JsonSerializer.Deserialize<TokenResponse>(json);
+            if (tokenResp == null) return false;
+
+            CurrentSession.AccessToken = tokenResp.AccessToken;
+            if (!string.IsNullOrEmpty(tokenResp.RefreshToken))
+                CurrentSession.RefreshToken = tokenResp.RefreshToken;
+            CurrentSession.ExpiresAt = DateTime.UtcNow.AddSeconds(tokenResp.ExpiresIn);
+
+            SaveSession();
+            Logger.Info("HytaleAuth", "Token refreshed successfully");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Logger.Error("HytaleAuth", $"Token refresh exception: {ex.Message}");
+            return false;
+        }
+    }
+
+    private async Task<List<HytaleProfile>> FetchProfileAsync(string accessToken)
+    {
+        try
+        {
+            var profileUrl = HytaleLauncherHeaders.BuildLauncherDataUrlWithClientId(LauncherDataUrl);
+            using var request = new HttpRequestMessage(HttpMethod.Get, profileUrl);
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+            await HytaleLauncherHeaders.ApplyOfficialHeadersAsync(request, _httpClient, "release");
+
+            using var response = await _httpClient.SendAsync(request);
+            var json = await response.Content.ReadAsStringAsync();
+
+            if (!response.IsSuccessStatusCode)
+            {
+                Logger.Error("HytaleAuth", $"Profile fetch failed ({response.StatusCode}): {json}");
+                throw new HytaleAuthException("profile_fetch_failed", $"HTTP {response.StatusCode}");
+            }
+
+            var profilesResp = JsonSerializer.Deserialize<ProfilesResponse>(json);
+            if (profilesResp?.Profiles == null || profilesResp.Profiles.Count == 0)
+            {
+                Logger.Warning("HytaleAuth", "No profiles found in Hytale account");
+                throw new HytaleNoProfileException("No game profiles found in this Hytale account");
+            }
+
+            return [.. profilesResp.Profiles.Select(p => new HytaleProfile
+            {
+                Username = p.Username,
+                Uuid = p.Uuid,
+                Owner = profilesResp.Owner
+            })];
+        }
+        catch (HytaleNoProfileException) { throw; }
+        catch (HytaleAuthException) { throw; }
+        catch (Exception ex)
+        {
+            Logger.Error("HytaleAuth", $"Profile fetch exception: {ex.Message}");
+            throw new HytaleAuthException("profile_fetch_error", ex.Message);
+        }
+    }
+
+    private async Task<GameSessionResponse?> CreateGameSessionAsync(string accessToken, string uuid)
+    {
+        try
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Post, SessionUrl);
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+            await HytaleLauncherHeaders.ApplyOfficialHeadersAsync(request, _httpClient, "release");
+            request.Content = new StringContent(
+                JsonSerializer.Serialize(new { uuid }),
+                Encoding.UTF8,
+                "application/json");
+
+            using var response = await _httpClient.SendAsync(request);
+            var json = await response.Content.ReadAsStringAsync();
+
+            if (!response.IsSuccessStatusCode)
+            {
+                Logger.Warning("HytaleAuth", $"Game session creation failed ({response.StatusCode}): {json}");
+                return null;
+            }
+
+            return JsonSerializer.Deserialize<GameSessionResponse>(json);
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning("HytaleAuth", $"Game session creation exception: {ex.Message}");
+            return null;
+        }
+    }
+
+    #endregion
+
+    #region PKCE & State Helpers
+
+    private static string GenerateCodeVerifier()
+    {
+        var bytes = new byte[32];
+        using var rng = RandomNumberGenerator.Create();
+        rng.GetBytes(bytes);
+        return Base64UrlEncode(bytes);
+    }
+
+    private static string GenerateCodeChallenge(string verifier)
+    {
+        var hash = SHA256.HashData(Encoding.ASCII.GetBytes(verifier));
+        return Base64UrlEncode(hash);
+    }
+
+    private static string GenerateState(string callbackState, int port)
+    {
+        var stateObj = new { state = callbackState, port = port.ToString() };
+        var json = JsonSerializer.Serialize(stateObj);
+        return Convert.ToBase64String(Encoding.UTF8.GetBytes(json));
+    }
+
+    private static string GenerateRandomString(int length)
+    {
+        const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+        var bytes = new byte[length];
+        using var rng = RandomNumberGenerator.Create();
+        rng.GetBytes(bytes);
+        var result = new char[length];
+        for (int i = 0; i < length; i++)
+            result[i] = chars[bytes[i] % chars.Length];
+        return new string(result);
+    }
+
+    private static string Base64UrlEncode(byte[] data)
+    {
+        return Convert.ToBase64String(data)
+            .TrimEnd('=')
+            .Replace('+', '-')
+            .Replace('/', '_');
+    }
+
+    private static int FindAvailablePort()
+    {
+        using var listener = new TcpListener(IPAddress.Loopback, 0);
+        listener.Start();
+        var port = ((IPEndPoint)listener.LocalEndpoint).Port;
+        listener.Stop();
+        return port;
+    }
+
+    #endregion
+
+    #region Session Persistence
+
+    /// <summary>
+    /// Reads all profiles from the Profiles.json cache on disk
+    /// </summary>
+    private List<Profile> ReadProfilesCache()
+    {
+        try
+        {
+            var path = LauncherJsonFile.GetPath(
+                LauncherUtilities.GetProfilesRoot(_appDir),
+                "Profiles.json",
+                "profiles.json");
+            if (!File.Exists(path)) return [];
+            return JsonSerializer.Deserialize<List<Profile>>(
+                File.ReadAllText(path),
+                JsonDefaults.CaseInsensitive) ?? [];
+        }
+        catch { return []; }
+    }
+
+    private async Task<List<Profile>> ReadProfilesCacheAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            var path = LauncherJsonFile.GetPath(
+                LauncherUtilities.GetProfilesRoot(_appDir),
+                "Profiles.json",
+                "profiles.json");
+            if (!File.Exists(path))
+                return [];
+
+            var json = await File.ReadAllTextAsync(path, cancellationToken);
+            return JsonSerializer.Deserialize<List<Profile>>(
+                json,
+                JsonDefaults.CaseInsensitive) ?? [];
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch
+        {
+            return [];
+        }
+    }
+
+    /// <summary>
+    /// Gets the profile folder path for the current active profile.
+    /// Returns null if no profile is active
+    /// </summary>
+    private string? GetCurrentProfileFolder()
+    {
+        var config = _configStore.Configuration;
+        var selectedId = config.SelectedProfileId;
+        if (string.IsNullOrEmpty(selectedId))
+            return null;
+
+        var profile = ReadProfilesCache().FirstOrDefault(p => p.Id == selectedId);
+        if (profile == null)
+            return null;
+
+        return LauncherUtilities.GetProfileFolderPath(_appDir, profile);
+    }
+
+    /// <summary>
+    /// Gets the session file path for the current profile.
+    /// Falls back to app root if no profile is active (legacy behavior)
+    /// </summary>
+    private string GetSessionFilePath() => TokenStore.GetSessionFilePath(GetCurrentProfileFolder(), _appDir);
+
+    /// <summary>
+    /// Gets the old (legacy) session file path at app root
+    /// </summary>
+    private string GetLegacySessionFilePath() => TokenStore.GetLegacySessionFilePath(_appDir);
+
+    /// <summary>
+    /// Migrates old global session file to current profile folder if needed
+    /// </summary>
+    private void MigrateOldSessionIfNeeded()
+    {
+        try
+        {
+            var legacyPath = GetLegacySessionFilePath();
+            var profileFolder = GetCurrentProfileFolder();
+
+            if (profileFolder == null || CurrentSession != null || !File.Exists(legacyPath))
+                return;
+
+            var profileSessionPath = TokenStore.GetSessionFilePath(profileFolder, _appDir);
+
+            if (File.Exists(profileSessionPath))
+                return;
+
+            Directory.CreateDirectory(profileFolder);
+            File.Copy(legacyPath, profileSessionPath);
+            Logger.Info("HytaleAuth", $"Migrated session from root to profile folder");
+
+            LoadSession();
+
+            if (CurrentSession != null)
+            {
+                var config = _configStore.Configuration;
+                var selectedId = config.SelectedProfileId;
+                if (!string.IsNullOrEmpty(selectedId))
+                {
+                    var profilesPath = LauncherJsonFile.GetPath(
+                        LauncherUtilities.GetProfilesRoot(_appDir),
+                        "Profiles.json",
+                        "profiles.json");
+                    if (File.Exists(profilesPath))
+                    {
+                        try
+                        {
+                            var profiles = JsonSerializer.Deserialize<List<Profile>>(
+                                File.ReadAllText(profilesPath),
+                                JsonDefaults.CaseInsensitiveIndented) ?? [];
+                            var activeProfile = profiles.FirstOrDefault(p => p.Id == selectedId);
+                            if (activeProfile != null)
+                            {
+                                activeProfile.IsOfficial = true;
+                                File.WriteAllText(
+                                    profilesPath,
+                                    JsonSerializer.Serialize(profiles, JsonDefaults.CaseInsensitiveIndented));
+                                Logger.Info("HytaleAuth", $"Marked profile '{activeProfile.Name}' as official after migration");
+                            }
+                        }
+                        catch (Exception ex2)
+                        {
+                            Logger.Warning("HytaleAuth", $"Failed to mark profile as official: {ex2.Message}");
+                        }
+                    }
+                }
+            }
+
+            try { File.Delete(legacyPath); }
+            catch (Exception ex) { Logger.Warning("HytaleAuth", $"Could not delete old session file: {ex.Message}"); }
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning("HytaleAuth", $"Session migration failed: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Reloads session for the current profile. Call this after switching profiles
+    /// </summary>
+    public void ReloadSessionForCurrentProfile()
+    {
+        CurrentSession = null;
+        LoadSession();
+        Logger.Info("HytaleAuth", CurrentSession != null
+            ? $"Reloaded session for profile, user: {CurrentSession.Username}"
+            : "No session for current profile");
+    }
+
+    /// <summary>
+    /// Gets a valid session from any official profile (not just the active one).
+    /// Used for fetching version info when the current profile may not be official
+    /// </summary>
+    public async Task<HytaleAuthSession?> GetValidOfficialSessionAsync(CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        if (CurrentSession != null)
+        {
+            var validSession = await GetValidSessionAsync();
+            cancellationToken.ThrowIfCancellationRequested();
+            if (validSession != null)
+            {
+                return validSession;
+            }
+        }
+
+        var officialProfiles = (await ReadProfilesCacheAsync(cancellationToken))
+            .Where(p => p.IsOfficial)
+            .ToList();
+        if (officialProfiles.Count == 0)
+        {
+            Logger.Debug("HytaleAuth", "No official profiles found");
+            return null;
+        }
+
+        foreach (var profile in officialProfiles)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var profileDir = LauncherUtilities.GetProfileFolderPath(_appDir, profile, createIfMissing: false, migrateLegacyByName: true);
+            var sessionPath = TokenStore.GetSessionFilePath(profileDir, _appDir);
+
+            if (!File.Exists(sessionPath))
+            {
+                continue;
+            }
+
+            try
+            {
+                var json = await File.ReadAllTextAsync(sessionPath, cancellationToken);
+                var session = JsonSerializer.Deserialize<HytaleAuthSession>(json, JsonDefaults.CaseInsensitive);
+                if (session == null || string.IsNullOrEmpty(session.RefreshToken))
+                {
+                    continue;
+                }
+
+                if (session.ExpiresAt <= DateTime.UtcNow.AddMinutes(1))
+                {
+                    Logger.Info("HytaleAuth", $"Refreshing token for official profile '{profile.Name}'...");
+                    var refreshed = await RefreshTokenForSessionAsync(session, cancellationToken);
+                    if (!refreshed)
+                    {
+                        Logger.Warning("HytaleAuth", $"Failed to refresh token for profile '{profile.Name}'");
+                        continue;
+                    }
+
+                    var updatedJson = JsonSerializer.Serialize(session, JsonDefaults.Indented);
+                    await File.WriteAllTextAsync(sessionPath, updatedJson, cancellationToken);
+                }
+
+                Logger.Info("HytaleAuth", $"Using official profile '{profile.Name}' for API access");
+                return session;
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning("HytaleAuth", $"Failed to load session for profile '{profile.Name}': {ex.Message}");
+            }
+        }
+
+        Logger.Warning("HytaleAuth", "No valid official session found in any profile");
+        return null;
+    }
+
+    /// <summary>
+    /// Refreshes token for a specific session (not necessarily the current one)
+    /// </summary>
+    private async Task<bool> RefreshTokenForSessionAsync(
+        HytaleAuthSession session,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrEmpty(session.RefreshToken)) return false;
+
+        using var content = new FormUrlEncodedContent(new Dictionary<string, string>
+        {
+            ["grant_type"] = "refresh_token",
+            ["refresh_token"] = session.RefreshToken,
+            ["client_id"] = ClientId
+        });
+
+        try
+        {
+            using var response = await _httpClient.PostAsync(TokenUrl, content, cancellationToken);
+            var json = await response.Content.ReadAsStringAsync(cancellationToken);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                Logger.Error("HytaleAuth", $"Token refresh failed ({response.StatusCode}): {json}");
+                return false;
+            }
+
+            var tokenResp = JsonSerializer.Deserialize<TokenResponse>(json);
+            if (tokenResp == null) return false;
+
+            session.AccessToken = tokenResp.AccessToken;
+            if (!string.IsNullOrEmpty(tokenResp.RefreshToken))
+                session.RefreshToken = tokenResp.RefreshToken;
+            session.ExpiresAt = DateTime.UtcNow.AddSeconds(tokenResp.ExpiresIn);
+
+            Logger.Info("HytaleAuth", "Token refreshed successfully for session");
+            return true;
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            Logger.Error("HytaleAuth", $"Token refresh exception: {ex.Message}");
+            return false;
+        }
+    }
+
+    private void SaveSession()
+    {
+        if (CurrentSession == null) return;
+        TokenStore.Save(GetSessionFilePath(), CurrentSession);
+    }
+
+    private void LoadSession()
+    {
+        CurrentSession = TokenStore.Load(GetSessionFilePath());
+        if (CurrentSession != null)
+            Logger.Info("HytaleAuth", $"Restored session for {CurrentSession.Username}");
+    }
+
+    /// <summary>
+    /// Saves current session to the active profile's folder.
+    /// Use this after LoginAsync() when re-authenticating within an existing official profile
+    /// </summary>
+    public void SaveCurrentSession()
+    {
+        SaveSession();
+    }
+
+    /// <summary>
+    /// Saves the current session to a specific profile's folder.
+    /// Used when creating a new official profile to enable Hytale source access
+    /// </summary>
+    /// <param name="profile">The profile to save the session to</param>
+    /// <returns>True if the session was saved successfully</returns>
+    public bool SaveSessionToProfile(Profile profile)
+    {
+        if (CurrentSession == null)
+        {
+            Logger.Warning("HytaleAuth", "Cannot save session: no current session");
+            return false;
+        }
+
+        try
+        {
+            var profileDir = LauncherUtilities.GetProfileFolderPath(_appDir, profile, createIfMissing: true);
+            var sessionPath = TokenStore.GetSessionFilePath(profileDir, _appDir);
+
+            var json = JsonSerializer.Serialize(CurrentSession, JsonDefaults.Indented);
+            File.WriteAllText(sessionPath, json);
+
+            Logger.Success("HytaleAuth", $"Saved Hytale session to profile '{profile.Name}'");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Logger.Error("HytaleAuth", $"Failed to save session to profile: {ex.Message}");
+            return false;
+        }
+    }
+
+    #endregion
+}
+
+#region Models
+
+/// <summary>
+/// Persisted auth session for Hytale account
+/// </summary>
+[JsonConverter(typeof(HytaleAuthSessionJsonConverter))]
+public class HytaleAuthSession
+{
+    public string AccessToken { get; set; } = "";
+
+    public string RefreshToken { get; set; } = "";
+
+    public DateTime ExpiresAt { get; set; }
+
+    public string SessionToken { get; set; } = "";
+
+    public string IdentityToken { get; set; } = "";
+
+    public string Username { get; set; } = "";
+
+    public string UUID { get; set; } = "";
+
+    public string AccountOwnerId { get; set; } = "";
+
+    [JsonIgnore]
+    public List<(string Username, string Uuid)> AccountProfiles { get; set; } = [];
+}
+
+internal sealed class HytaleAuthSessionJsonConverter : JsonConverter<HytaleAuthSession>
+{
+    public override HytaleAuthSession Read(
+        ref Utf8JsonReader reader,
+        Type typeToConvert,
+        JsonSerializerOptions options)
+    {
+        using var document = JsonDocument.ParseValue(ref reader);
+        var root = document.RootElement;
+        return new HytaleAuthSession
+        {
+            AccessToken = GetString(root, "AccessToken", "access_token"),
+            RefreshToken = GetString(root, "RefreshToken", "refresh_token"),
+            ExpiresAt = GetDateTime(root, "ExpiresAt", "expires_at"),
+            SessionToken = GetString(root, "SessionToken", "session_token"),
+            IdentityToken = GetString(root, "IdentityToken", "identity_token"),
+            Username = GetString(root, "Username", "username"),
+            UUID = GetString(root, "UUID", "uuid"),
+            AccountOwnerId = GetString(root, "AccountOwnerId", "account_owner_id")
+        };
+    }
+
+    public override void Write(
+        Utf8JsonWriter writer,
+        HytaleAuthSession value,
+        JsonSerializerOptions options)
+    {
+        writer.WriteStartObject();
+        writer.WriteString("AccessToken", value.AccessToken);
+        writer.WriteString("RefreshToken", value.RefreshToken);
+        writer.WriteString("ExpiresAt", value.ExpiresAt);
+        writer.WriteString("SessionToken", value.SessionToken);
+        writer.WriteString("IdentityToken", value.IdentityToken);
+        writer.WriteString("Username", value.Username);
+        writer.WriteString("UUID", value.UUID);
+        writer.WriteString("AccountOwnerId", value.AccountOwnerId);
+        writer.WriteEndObject();
+    }
+
+    private static string GetString(JsonElement root, string canonicalName, string legacyName)
+        => FindProperty(root, canonicalName, legacyName)?.GetString() ?? "";
+
+    private static DateTime GetDateTime(JsonElement root, string canonicalName, string legacyName)
+        => FindProperty(root, canonicalName, legacyName) is { } value && value.TryGetDateTime(out var result)
+            ? result
+            : default;
+
+    private static JsonElement? FindProperty(JsonElement root, string canonicalName, string legacyName)
+    {
+        foreach (var property in root.EnumerateObject())
+        {
+            if (string.Equals(property.Name, canonicalName, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(property.Name, legacyName, StringComparison.OrdinalIgnoreCase))
+            {
+                return property.Value;
+            }
+        }
+
+        return null;
+    }
+}
+
+internal class TokenResponse
+{
+    [JsonPropertyName("access_token")]
+    public string AccessToken { get; set; } = "";
+
+    [JsonPropertyName("refresh_token")]
+    public string RefreshToken { get; set; } = "";
+
+    [JsonPropertyName("expires_in")]
+    public int ExpiresIn { get; set; }
+}
+
+internal class ProfilesResponse
+{
+    [JsonPropertyName("owner")]
+    public string Owner { get; set; } = "";
+
+    [JsonPropertyName("profiles")]
+    public List<ProfileEntry> Profiles { get; set; } = [];
+}
+
+internal class ProfileEntry
+{
+    [JsonPropertyName("uuid")]
+    public string Uuid { get; set; } = "";
+
+    [JsonPropertyName("username")]
+    public string Username { get; set; } = "";
+}
+
+internal class HytaleProfile
+{
+    public string Username { get; set; } = "";
+    public string Uuid { get; set; } = "";
+    public string Owner { get; set; } = "";
+}
+
+internal class GameSessionResponse
+{
+    [JsonPropertyName("sessionToken")]
+    public string SessionToken { get; set; } = "";
+
+    [JsonPropertyName("identityToken")]
+    public string IdentityToken { get; set; } = "";
+
+    [JsonPropertyName("expiresAt")]
+    public string ExpiresAt { get; set; } = "";
+}
+
+/// <summary>
+/// Thrown when no game profiles are found in the Hytale account.
+/// This is a non-critical warning because the user has no game profile yet
+/// </summary>
+public class HytaleNoProfileException : Exception
+{
+    /// <summary>
+    /// Creates an exception for an account without game profiles
+    /// </summary>
+    /// <param name="message">The error message</param>
+    public HytaleNoProfileException(string message) : base(message) { }
+}
+
+/// <summary>
+/// Thrown when a general auth error occurs (network, HTTP status, etc.)
+/// </summary>
+public class HytaleAuthException : Exception
+{
+    public string ErrorType { get; }
+
+    /// <summary>
+    /// Creates an exception for an authentication failure
+    /// </summary>
+    /// <param name="errorType">The stable authentication error category</param>
+    /// <param name="message">The error message</param>
+    public HytaleAuthException(string errorType, string message) : base(message)
+    {
+        ErrorType = errorType;
+    }
+}
+
+#endregion

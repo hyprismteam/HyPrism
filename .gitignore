@@ -1,3 +1,6 @@
+# Copyright (C) 2026 HyPrism Launcher
+# SPDX-License-Identifier: GPL-3.0-only
+
 # macOS
 .DS_Store
 .AppleDouble
@@ -31,6 +34,14 @@ Build/*
 packaging-build
 wwwroot/
 node_modules/
+.next/
+Docs/out/
+Docs/.next/
+Docs/.docusaurus/
+Docs/.pagefind/
+Docs/AGENTS.md
+Docs/CLAUDE.md
+*.tsbuildinfo
 
 # IMPORTANT folder (backup)
 IMPORTANT/

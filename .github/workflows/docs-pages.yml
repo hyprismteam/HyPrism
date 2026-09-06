@@ -1,0 +1,86 @@
+# Copyright (C) 2026 HyPrism Launcher
+# SPDX-License-Identifier: GPL-3.0-only
+
+name: Documentation
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'Docs/**'
+      - 'Scripts/check_documentation.py'
+      - 'README.md'
+      - '.github/workflows/docs-pages.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'Docs/**'
+      - 'Scripts/check_documentation.py'
+      - 'README.md'
+      - '.github/workflows/docs-pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build documentation
+    runs-on: ubuntu-latest
+    env:
+      PAGES_BASE_PATH: /HyPrism
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Enable pnpm
+        run: corepack enable
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+          cache-dependency-path: Docs/pnpm-lock.yaml
+
+      - name: Configure GitHub Pages
+        if: github.event_name != 'pull_request'
+        uses: actions/configure-pages@v5
+
+      - name: Install dependencies
+        working-directory: Docs
+        run: pnpm install --frozen-lockfile
+
+      - name: Check types
+        working-directory: Docs
+        run: pnpm check
+
+      - name: Build static site
+        working-directory: Docs
+        run: pnpm build
+
+      - name: Upload Pages artifact
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: Docs/out
+
+  deploy:
+    name: Deploy GitHub Pages
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4
