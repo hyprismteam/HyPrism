@@ -278,6 +278,8 @@ public partial class GameLauncher : IGameLauncher
 
         InvalidateAotCacheIfNeeded(versionPath);
 
+        EnsureClientExecutableOnUnix(executable);
+
         RestoreProfileSkinData(sessionUuid, userDataDir);
 
         LogLaunchInfo(executable, javaPath, versionPath, userDataDir, sessionUuid, launchPlayerName);
@@ -804,6 +806,35 @@ public partial class GameLauncher : IGameLauncher
             _skins.StartSkinProtection(currentProfile, skinCachePath);
         }
     }
+
+    /// <summary>
+    /// Restores the execute permission on the client binary, because directory
+    /// moves and binary rewrites can drop the Unix executable bit
+    /// </summary>
+    private static void EnsureClientExecutableOnUnix(string executable)
+    {
+        if (OperatingSystem.IsWindows() || !File.Exists(executable))
+            return;
+
+        try
+        {
+            var mode = File.GetUnixFileMode(executable);
+            var executableMode = mode
+                | UnixFileMode.UserExecute
+                | UnixFileMode.GroupExecute
+                | UnixFileMode.OtherExecute;
+            if (executableMode != mode)
+            {
+                File.SetUnixFileMode(executable, executableMode);
+                Logger.Info("Game", $"Restored the executable permission on '{executable}'");
+            }
+        }
+        catch (Exception exception)
+        {
+            Logger.Warning("Game", $"Failed to ensure the client executable permission: {exception.Message}");
+        }
+    }
+
 
     /// <summary>
     /// Deletes the AOT (Ahead-Of-Time) cache in the Server directory when JVM flags have changed.

@@ -44,4 +44,4 @@ Profile names, UUIDs, and the profile list are not stored in `Config.json`. They
 
 On first load of an older configuration, HyPrism moves `Nick`, `UUID`, embedded `Profiles`, and `ActiveProfileIndex` into the profile store and removes those keys from `Config.json`. Runtime code only uses `SelectedProfileId`
 
-The Local Node hostname and port are intentionally fixed at `h.localhost:8443` because the client patch depends on the exact 16-character replacement. They are not stored in `Config.json`
+The Local Node loopback address and port are intentionally fixed at `127.0.0.1:8443` because the client patch composes the endpoint from embedded string segments and the literal IP removes every DNS dependency, including VPN clients that intercept resolution. They are not stored in `Config.json`

@@ -50,7 +50,7 @@ Core получает путь каталога профиля, но не отк
 
 `HyPrism.Desktop` владеет контроллером процесса `LocalNodeHost` через Core-контракт `ILocalNodeService`. Автономный запуск поднимает отдельный executable `HyPrism.LocalNode` до патча клиента, а затем передает владение lifetime PID игры через loopback control plane
 
-Хост слушает только `https://h.localhost:8443`. Endpoint длиной 16 символов позволяет `ClientPatcher` направить session, account-data, telemetry, live-config, social, server-discovery и socket-gateway префиксы к одному loopback authority без изменения длины встроенного сегмента домена
+Хост слушает только `https://127.0.0.1:8443`. Литеральный loopback-IP полностью убирает DNS из клиентского пути, поэтому VPN-клиенты с перехватом DNS в туннеле не могут сломать резолв endpoint ноды. Бюджет патча до 16 символов позволяет `ClientPatcher` направить session, account-data, telemetry, live-config, social, server-discovery и socket-gateway префиксы к одному loopback authority без роста встроенного сегмента домена
 
 Ключи подписи OmniAuth живут только в отдельном процессе ноды, привязанном к активной игре. Исходный identity handoff содержит приватный Ed25519 JWK, нужный DualAuth, а JWKS, authorization grant и access token отдают только публичный ключ. Данные аккаунта, скинов и настроек presence сохраняются в каталоге данных приложения
 

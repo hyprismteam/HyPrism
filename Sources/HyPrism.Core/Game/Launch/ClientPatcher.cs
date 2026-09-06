@@ -346,6 +346,42 @@ public class ClientPatcher
     }
 
     /// <summary>
+    /// Captures the Unix file mode of the client binary before the patcher
+    /// replaces it, because backups and rewritten files lose the executable bit
+    /// </summary>
+    private static UnixFileMode? CaptureExecutableFileMode(string clientPath)
+    {
+        if (OperatingSystem.IsWindows() || !File.Exists(clientPath))
+            return null;
+
+        try
+        {
+            var mode = File.GetUnixFileMode(clientPath);
+            return mode | UnixFileMode.UserExecute | UnixFileMode.GroupExecute | UnixFileMode.OtherExecute;
+        }
+        catch (Exception exception)
+        {
+            Logger.Warning("Patcher", $"Failed to capture the client file mode: {exception.Message}");
+            return null;
+        }
+    }
+
+    private static void RestoreExecutableFileMode(string clientPath, UnixFileMode? mode)
+    {
+        if (mode is null || OperatingSystem.IsWindows())
+            return;
+
+        try
+        {
+            File.SetUnixFileMode(clientPath, mode.Value);
+        }
+        catch (Exception exception)
+        {
+            Logger.Warning("Patcher", $"Failed to preserve the client file mode: {exception.Message}");
+        }
+    }
+
+    /// <summary>
     /// Create a backup of the original client binary.
     /// On macOS, stores outside the app bundle to preserve code signature
     /// </summary>
@@ -470,6 +506,8 @@ public class ClientPatcher
             return new PatchResult { Success = false, Error = error };
         }
 
+        var preservedMode = CaptureExecutableFileMode(clientPath);
+
         CleanupLegacyFiles(clientPath);
 
         if (IsPatchedAlready(clientPath))
@@ -495,6 +533,7 @@ public class ClientPatcher
             }
 
             File.Copy(backupPath, clientPath, overwrite: true);
+            RestoreExecutableFileMode(clientPath, preservedMode);
             if (File.Exists(currentFlagFile)) File.Delete(currentFlagFile);
             if (legacyFlagFile != currentFlagFile && File.Exists(legacyFlagFile)) File.Delete(legacyFlagFile);
             Logger.Info("Patcher", "Restored the original client before changing the authentication target");
@@ -570,6 +609,7 @@ public class ClientPatcher
                 Logger.Info("Patcher", "Creating backup before writing...", false);
                 BackupClient(clientPath);
                 File.WriteAllBytes(clientPath, data);
+                RestoreExecutableFileMode(clientPath, preservedMode);
                 MarkAsPatched(clientPath);
                 progressCallback?.Invoke("launch.detail.patching_complete", 100);
                 return new PatchResult { Success = true, PatchCount = utf8Count };
@@ -624,6 +664,7 @@ public class ClientPatcher
                 Logger.Info("Patcher", "Creating backup before writing...");
                 BackupClient(clientPath);
                 File.WriteAllBytes(clientPath, data);
+                RestoreExecutableFileMode(clientPath, preservedMode);
                 MarkAsPatched(clientPath);
                 progressCallback?.Invoke("launch.detail.patching_complete", 100);
                 return new PatchResult { Success = true, PatchCount = legacyCount };
@@ -640,6 +681,7 @@ public class ClientPatcher
         progressCallback?.Invoke("launch.detail.writing_patched_binary", 80);
         Logger.Info("Patcher", "Writing patched binary...");
         File.WriteAllBytes(clientPath, data);
+        RestoreExecutableFileMode(clientPath, preservedMode);
 
         MarkAsPatched(clientPath);
 
@@ -737,7 +779,9 @@ public class ClientPatcher
             progressCallback?.Invoke("launch.detail.restoring_client", 20);
             Logger.Info("Patcher", $"Restoring original client binary from {backupPath}");
 
+            var preservedMode = CaptureExecutableFileMode(clientPath);
             File.Copy(backupPath, clientPath, overwrite: true);
+            RestoreExecutableFileMode(clientPath, preservedMode);
 
             if (File.Exists(flagFile)) File.Delete(flagFile);
 

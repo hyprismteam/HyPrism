@@ -5,7 +5,7 @@ description: Autonomous OmniAuth and local Hytale compatibility endpoints
 
 # Local Node
 
-Autonomous mode runs `HyPrism.LocalNode` as a dedicated companion process on a loopback endpoint such as `https://h.localhost:8443`. Each autonomous game launch receives its own free port in the `8443` to `9999` range, so multiple local sessions can run together. The node rejects unexpected Host headers, limits request bodies to 2 MB, and does not require a separately deployed `hytale-auth-server`
+Autonomous mode runs `HyPrism.LocalNode` as a dedicated companion process on a loopback endpoint such as `https://127.0.0.1:8443`. The endpoint is a literal IP address, so the game never resolves the endpoint through DNS and VPN clients with a tunnel DNS interceptor cannot break it Each autonomous game launch receives its own free port in the `8443` to `9999` range, so multiple local sessions can run together. The node rejects unexpected Host headers, limits request bodies to 2 MB, and does not require a separately deployed `hytale-auth-server`
 
 ## Launch flow
 
@@ -43,7 +43,7 @@ Identity tokens, authorization grants, and server access tokens carry the active
 
 Each autonomous launch stores its runtime state below `LocalNode/Sessions/<session-id>` in the HyPrism application data directory. This prevents control secrets and trust bundles from colliding between concurrently running local sessions. Local profiles, selected skins, and presence preferences remain in the shared `LocalNode/Accounts.json` file, keyed by the stable UUID of the selected launcher profile
 
-The TLS certificate authority is intentionally shared at `LocalNode/Certificate`. It signs the `h.localhost` server certificate, which is valid for the hostname rather than a particular port. Every Local Node endpoint can therefore use the same trusted chain without another system trust prompt
+The TLS certificate authority is intentionally shared at `LocalNode/Certificate`. It signs the server certificate, which is valid for the `127.0.0.1` address rather than a particular port. Every Local Node endpoint can therefore use the same trusted chain without another system trust prompt
 
 | File | Purpose |
 | --- | --- |
@@ -51,14 +51,14 @@ The TLS certificate authority is intentionally shared at `LocalNode/Certificate`
 | `accounts.lock` | short-lived cross-process lock that serializes changes to shared local profiles |
 | `hyprism-local-ca.pfx` | shared local certificate authority and private key in `LocalNode/Certificate` |
 | `hyprism-local-ca.crt` | shared PEM public certificate authority in `LocalNode/Certificate` |
-| `h.localhost.pfx` | shared server TLS certificate and private key signed by the local authority |
-| `h.localhost.crt` | shared PEM server certificate signed by the local authority |
+| `h.localhost.pfx` | shared server TLS certificate and private key signed by the local authority; the file name predates the loopback IP endpoint |
+| `h.localhost.crt` | shared PEM server certificate signed by the local authority; the file name predates the loopback IP endpoint |
 | `client-ca-bundle.pem` | Unix CA bundle inherited by the game process |
 | `client-trust.p12` | Java trust store inherited by embedded server JVMs |
 | `macos-trusted-v2.crt` | copy of the certificate registered in macOS trust settings, used to skip re-approval on later launches |
-The `h.localhost` server certificate rotates when it is invalid, has the wrong host, is not signed by HyPrism's local certificate authority, or has fewer than seven valid days remaining. The certificate authority persists for ten years unless it is invalid. Windows adds that authority to the current user's root store only when its thumbprint is absent, then removes older self-signed HyPrism roots after the active authority is trusted. The Windows server key is imported without `EphemeralKeySet`, which Schannel requires for Kestrel TLS, and without `PersistKeySet`, so the imported key container is released with the certificate. Linux and macOS pass a combined CA bundle to the game process for OpenSSL consumers, and Java receives a dedicated PKCS#12 trust store on every platform
+The server certificate rotates when it is invalid, does not carry the endpoint IP address in its subject alternative names, is not signed by HyPrism's local certificate authority, or has fewer than seven valid days remaining. The certificate authority persists for ten years unless it is invalid. Windows adds that authority to the current user's root store only when its thumbprint is absent, then removes older self-signed HyPrism roots after the active authority is trusted. The Windows server key is imported without `EphemeralKeySet`, which Schannel requires for Kestrel TLS, and without `PersistKeySet`, so the imported key container is released with the certificate. Linux and macOS pass a combined CA bundle to the game process for OpenSSL consumers, and Java receives a dedicated PKCS#12 trust store on every platform
 
-On macOS, the first autonomous launch registers the HyPrism local certificate authority in the macOS admin trust settings so the game client and system TLS consumers trust the loopback endpoint. Registration may show a one-time approval prompt. The `macos-trusted-v2.crt` marker records the registered authority so later launches skip the prompt, and the previous root trust entry is removed only when the authority rotates. The server certificate remains restricted to the `h.localhost` hostname. HyPrism verifies the full chain before launching the game. Canceling the macOS security prompt stops the autonomous launch with an actionable error instead of weakening certificate validation
+On macOS, the first autonomous launch registers the HyPrism local certificate authority in the macOS admin trust settings so the game client and system TLS consumers trust the loopback endpoint. Registration may show a one-time approval prompt. The `macos-trusted-v2.crt` marker records the registered authority so later launches skip the prompt, and the previous root trust entry is removed only when the authority rotates. The server certificate remains restricted to the `127.0.0.1` endpoint address. HyPrism verifies the full chain before launching the game. Canceling the macOS security prompt stops the autonomous launch with an actionable error instead of weakening certificate validation
 
 ASP.NET logging providers are disabled for the companion process, so server request diagnostics do not share the static HyPrism logger or its console stream. The launcher reports only process startup, readiness, attachment, and exceptional control failures. Detailed node events stay in `Logs/<launch-time>/local-node-<port>.log`, and the previous file after size-based rotation is named `local-node-<port>.previous.log`. Unknown request metadata uses `local-node-requests-<port>.ndjson` in the same directory. Authentication routes record only method, path, response status, and duration without headers, tokens, or request bodies
 

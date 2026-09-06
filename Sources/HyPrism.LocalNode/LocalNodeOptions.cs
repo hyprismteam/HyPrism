@@ -103,7 +103,7 @@ public sealed record LocalNodeOptions(
 
         if (!string.Equals(hostname, LocalNodeEndpoint.Hostname, StringComparison.OrdinalIgnoreCase))
         {
-            throw new ArgumentException("The Local Node is restricted to the h.localhost loopback hostname", nameof(args));
+            throw new ArgumentException("The Local Node is restricted to the 127.0.0.1 loopback address", nameof(args));
         }
 
         if (port is < 1024 or > 65535)

@@ -103,11 +103,11 @@ jobs:
           security verify-cert \
             -c "$SERVER_CERTIFICATE" \
             -p ssl \
-            -s h.localhost
+            -s 127.0.0.1
 
           HEALTH_RESPONSE="$RUNNER_TEMP/local-node-health.json"
           for attempt in {1..60}; do
-            if curl --fail --silent --show-error "https://h.localhost:$PORT/health" \
+            if curl --fail --silent --show-error "https://127.0.0.1:$PORT/health" \
               --output "$HEALTH_RESPONSE"; then
               break
             fi
@@ -117,4 +117,4 @@ jobs:
           test -s "$HEALTH_RESPONSE"
           grep -Fq '"status":"ready"' "$HEALTH_RESPONSE"
           grep -Fq '"server":"hyprism-local-node"' "$HEALTH_RESPONSE"
-          grep -Fq "\"issuer\":\"https://h.localhost:$PORT\"" "$HEALTH_RESPONSE"
+          grep -Fq "\"issuer\":\"https://127.0.0.1:$PORT\"" "$HEALTH_RESPONSE"

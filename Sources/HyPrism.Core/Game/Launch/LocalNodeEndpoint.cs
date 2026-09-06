@@ -9,9 +9,11 @@ namespace HyPrism.Core.Game.Launch;
 public static class LocalNodeEndpoint
 {
     /// <summary>
-    /// Gets the loopback hostname used by the client patch
+    /// Gets the loopback address embedded into the client patch. A literal IP
+    /// keeps the client off DNS entirely, so VPN clients with a tunnel DNS
+    /// interceptor cannot break the resolution of the Local Node endpoint
     /// </summary>
-    public const string Hostname = "h.localhost";
+    public const string Hostname = "127.0.0.1";
 
     /// <summary>
     /// Gets the non-privileged HTTPS port used by the Local Node

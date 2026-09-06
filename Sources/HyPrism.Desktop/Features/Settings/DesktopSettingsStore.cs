@@ -308,7 +308,7 @@ public sealed class DesktopSettingsStore : IDesktopSettingsStore
         }
     }
 
-    private static async Task CopyFileAsync(
+    internal static async Task CopyFileAsync(
         string source,
         string destination,
         CancellationToken cancellationToken,
@@ -359,6 +359,7 @@ public sealed class DesktopSettingsStore : IDesktopSettingsStore
 
             cancellationToken.ThrowIfCancellationRequested();
             File.Move(temporaryFile, destination, overwrite: true);
+            PreserveUnixFileMode(source, destination);
         }
         finally
         {
@@ -375,6 +376,27 @@ public sealed class DesktopSettingsStore : IDesktopSettingsStore
                         $"Temporary instance copy could not be removed: {exception.Message}");
                 }
             }
+        }
+    }
+
+    /// <summary>
+    /// Copies the Unix file mode from the source, because freshly written files
+    /// lose the executable bit that game clients need to start
+    /// </summary>
+    private static void PreserveUnixFileMode(string source, string destination)
+    {
+        if (OperatingSystem.IsWindows())
+            return;
+
+        try
+        {
+            File.SetUnixFileMode(destination, File.GetUnixFileMode(source));
+        }
+        catch (Exception exception)
+        {
+            Logger.Warning(
+                "Settings",
+                $"Failed to preserve the file mode while copying '{source}': {exception.Message}");
         }
     }
 

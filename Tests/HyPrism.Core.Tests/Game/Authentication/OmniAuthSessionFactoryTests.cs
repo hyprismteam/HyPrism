@@ -29,14 +29,14 @@ public sealed class OmniAuthSessionFactoryTests
         var session = OmniAuthSessionFactory.Create(
             "550e8400-e29b-41d4-a716-446655440000",
             "TestPlayer",
-            "https://h.localhost:8443/some-path");
+            "https://127.0.0.1:8443/some-path");
 
         AssertToken(
             session.IdentityToken,
             "TestPlayer",
             "hytale:server hytale:client",
-            "https://h.localhost:8443");
-        AssertToken(session.SessionToken, null, "hytale:server", "https://h.localhost:8443");
+            "https://127.0.0.1:8443");
+        AssertToken(session.SessionToken, null, "hytale:server", "https://127.0.0.1:8443");
     }
 
     [Theory]

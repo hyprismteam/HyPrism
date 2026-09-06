@@ -1,6 +1,7 @@
 // Copyright (C) 2026 HyPrism Launcher
 // SPDX-License-Identifier: GPL-3.0-only
 
+using System.Net;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 
@@ -61,7 +62,15 @@ public static class LocalNodeCertificateStore
                 false));
 
             var subjectAlternativeNames = new SubjectAlternativeNameBuilder();
-            subjectAlternativeNames.AddDnsName(options.Hostname);
+            if (IPAddress.TryParse(options.Hostname, out var hostnameAddress))
+            {
+                subjectAlternativeNames.AddIpAddress(hostnameAddress);
+            }
+            else
+            {
+                subjectAlternativeNames.AddDnsName(options.Hostname);
+            }
+
             subjectAlternativeNames.AddDnsName("localhost");
             request.CertificateExtensions.Add(subjectAlternativeNames.Build());
 
@@ -194,12 +203,11 @@ public static class LocalNodeCertificateStore
         try
         {
             certificate = LoadPkcs12(certificatePath);
-            var expectedDnsName = certificate.GetNameInfo(X509NameType.DnsName, forIssuer: false);
             var reusable = certificate.HasPrivateKey
                 && certificate.Issuer == rootCertificate.Subject
                 && certificate.NotBefore.ToUniversalTime() <= DateTime.UtcNow
                 && certificate.NotAfter.ToUniversalTime() > DateTime.UtcNow.AddDays(7)
-                && string.Equals(expectedDnsName, hostname, StringComparison.OrdinalIgnoreCase)
+                && MatchesEndpoint(certificate, hostname)
                 && IsIssuedBy(certificate, rootCertificate);
             if (reusable)
                 return true;
@@ -215,6 +223,26 @@ public static class LocalNodeCertificateStore
         }
 
         return false;
+    }
+
+    /// <summary>
+    /// Validates that the certificate covers the endpoint address, so a
+    /// certificate issued for the previous endpoint is regenerated instead of
+    /// failing TLS hostname verification inside the game
+    /// </summary>
+    private static bool MatchesEndpoint(X509Certificate2 certificate, string hostname)
+    {
+        if (IPAddress.TryParse(hostname, out var address))
+        {
+            return certificate.Extensions
+                .OfType<X509SubjectAlternativeNameExtension>()
+                .Any(extension => extension.EnumerateIPAddresses().Any(candidate => candidate.Equals(address)));
+        }
+
+        return string.Equals(
+            certificate.GetNameInfo(X509NameType.DnsName, forIssuer: false),
+            hostname,
+            StringComparison.OrdinalIgnoreCase);
     }
 
     private static bool IsIssuedBy(X509Certificate2 certificate, X509Certificate2 rootCertificate)

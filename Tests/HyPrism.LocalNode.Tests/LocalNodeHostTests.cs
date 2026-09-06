@@ -63,12 +63,12 @@ public sealed class LocalNodeHostTests
             var certificateDirectory = Path.Combine(rootDirectory, "Certificate");
             var firstOptions = new LocalNodeOptions(
                 Path.Combine(rootDirectory, "Sessions", "first"),
-                "h.localhost",
+                "127.0.0.1",
                 8443,
                 CertificateDirectory: certificateDirectory);
             var secondOptions = new LocalNodeOptions(
                 Path.Combine(rootDirectory, "Sessions", "second"),
-                "h.localhost",
+                "127.0.0.1",
                 8444,
                 CertificateDirectory: certificateDirectory);
 
@@ -99,11 +99,11 @@ public sealed class LocalNodeHostTests
         {
             var currentOptions = new LocalNodeOptions(
                 Path.Combine(rootDirectory, "Current"),
-                "h.localhost",
+                "127.0.0.1",
                 8443);
             var obsoleteOptions = new LocalNodeOptions(
                 Path.Combine(rootDirectory, "Obsolete"),
-                "h.localhost",
+                "127.0.0.1",
                 8444);
             using var currentRoot = LocalNodeCertificateStore.LoadRootCertificate(currentOptions);
             using var obsoleteRoot = LocalNodeCertificateStore.LoadRootCertificate(obsoleteOptions);
@@ -201,7 +201,7 @@ public sealed class LocalNodeHostTests
         var requestJournalPath = Path.Combine(centralLogDirectory, "local-node-requests-8443.ndjson");
         var options = new LocalNodeOptions(
             dataDirectory,
-            "h.localhost",
+            "127.0.0.1",
             GetAvailablePort(),
             LogFilePath: nodeLogPath,
             RequestJournalPath: requestJournalPath)
@@ -372,7 +372,7 @@ public sealed class LocalNodeHostTests
         Directory.CreateDirectory(gameDirectory);
         CreateAssetsArchive(Path.Combine(gameDirectory, "Assets.zip"));
 
-        var options = new LocalNodeOptions(dataDirectory, "h.localhost", GetAvailablePort())
+        var options = new LocalNodeOptions(dataDirectory, "127.0.0.1", GetAvailablePort())
         {
             ConfigureSystemTrust = false
         };
@@ -418,7 +418,7 @@ public sealed class LocalNodeHostTests
     public async Task Host_TransfersLifetimeToGameAndNodeStopsAfterGameExit()
     {
         var testDirectory = Path.Combine(Path.GetTempPath(), "HyPrismLocalNodeLifetimeTests_" + Guid.NewGuid());
-        var options = new LocalNodeOptions(testDirectory, "h.localhost", GetAvailablePort())
+        var options = new LocalNodeOptions(testDirectory, "127.0.0.1", GetAvailablePort())
         {
             ConfigureSystemTrust = false
         };

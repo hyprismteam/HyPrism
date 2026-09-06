@@ -58,6 +58,54 @@ public class ClientPatcherTests : IDisposable
 
 
     [Fact]
+    public void PatchClient_PreservesTheExecutableBitOnUnix()
+    {
+        var clientPath = CreateFakeBinary(_gameDir, "HytaleClient", lengthPrefixed: true);
+        if (!OperatingSystem.IsWindows())
+        {
+            File.SetUnixFileMode(clientPath,
+                UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+        }
+
+        var patcher = new ClientPatcher("sanasol.ws");
+        var result = patcher.PatchClient(clientPath);
+
+        Assert.True(result.Success, result.Error);
+        if (OperatingSystem.IsWindows())
+            return;
+
+        var mode = File.GetUnixFileMode(clientPath);
+        Assert.Equal(UnixFileMode.UserExecute, mode & UnixFileMode.UserExecute);
+    }
+
+    [Fact]
+    public void PatchClient_WhenTargetChanges_PreservesTheExecutableBitAfterRestore()
+    {
+        var clientPath = Path.Combine(_gameDir, "HytaleClient");
+        File.WriteAllBytes(clientPath, ToLengthPrefixed(OriginalDomain)
+            .Concat(ToLengthPrefixed("https://sessions."))
+            .ToArray());
+        if (!OperatingSystem.IsWindows())
+        {
+            File.SetUnixFileMode(clientPath,
+                UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+        }
+
+        var localPatcher = new ClientPatcher("127.0.0.1:8443");
+        var firstPatch = localPatcher.PatchClient(clientPath);
+        Assert.True(firstPatch.Success, firstPatch.Error);
+
+        var restoreResult = new ClientPatcher("sanasol.ws").PatchClient(clientPath);
+
+        Assert.True(restoreResult.Success, restoreResult.Error);
+        if (OperatingSystem.IsWindows())
+            return;
+
+        var mode = File.GetUnixFileMode(clientPath);
+        Assert.Equal(UnixFileMode.UserExecute, mode & UnixFileMode.UserExecute);
+    }
+
+    [Fact]
     public void IsPatchedAlready_UnpatchedFile_ReturnsFalse()
     {
         var clientPath = CreateFakeBinary(_gameDir, "HytaleClient");
@@ -177,13 +225,13 @@ public class ClientPatcherTests : IDisposable
         ];
         File.WriteAllBytes(clientPath, values.SelectMany(value => ToLengthPrefixed(value)).ToArray());
 
-        var result = new ClientPatcher("h.localhost:8443").PatchClient(clientPath);
+        var result = new ClientPatcher("127.0.0.1:8443").PatchClient(clientPath);
 
         Assert.True(result.Success, result.Error);
         var patched = File.ReadAllBytes(clientPath);
-        AssertContains(patched, ToLengthPrefixed("lhost:8443"));
-        Assert.Equal(6, CountOccurrences(patched, ToLengthPrefixed("https://h.loca")));
-        AssertContains(patched, ToLengthPrefixed("wss://h.loca"));
+        AssertContains(patched, ToLengthPrefixed("0.1:8443"));
+        Assert.Equal(6, CountOccurrences(patched, ToLengthPrefixed("https://127.0.")));
+        AssertContains(patched, ToLengthPrefixed("wss://127.0."));
     }
 
     [Fact]
@@ -193,7 +241,7 @@ public class ClientPatcherTests : IDisposable
         File.WriteAllBytes(clientPath, ToLengthPrefixed(OriginalDomain)
             .Concat(ToLengthPrefixed("https://sessions."))
             .ToArray());
-        var localPatcher = new ClientPatcher("h.localhost:8443");
+        var localPatcher = new ClientPatcher("127.0.0.1:8443");
         var connectedPatcher = new ClientPatcher("sanasol.ws");
         Assert.True(localPatcher.PatchClient(clientPath).Success);
 
@@ -211,7 +259,7 @@ public class ClientPatcherTests : IDisposable
         var clientPath = CreateFakeBinary(_gameDir, "HytaleClient", lengthPrefixed: true);
         var original = File.ReadAllBytes(clientPath);
 
-        var result = new ClientPatcher("h.localhost:8443").PatchClient(clientPath);
+        var result = new ClientPatcher("127.0.0.1:8443").PatchClient(clientPath);
 
         Assert.False(result.Success);
         Assert.Contains("length-prefixed service URLs", result.Error);
@@ -231,12 +279,12 @@ public class ClientPatcherTests : IDisposable
             .Concat(frozenAccountData)
             .ToArray());
 
-        var result = new ClientPatcher("h.localhost:8443").PatchClient(clientPath);
+        var result = new ClientPatcher("127.0.0.1:8443").PatchClient(clientPath);
 
         Assert.True(result.Success, result.Error);
         var patched = File.ReadAllBytes(clientPath);
-        AssertContains(patched, ToFrozenPattern("lhost:8443"));
-        Assert.Equal(2, CountOccurrences(patched, ToFrozenPattern("https://h.loca")));
+        AssertContains(patched, ToFrozenPattern("0.1:8443"));
+        Assert.Equal(2, CountOccurrences(patched, ToFrozenPattern("https://127.0.")));
         Assert.Equal(3, patched.Count(value => value == metadata));
     }
 

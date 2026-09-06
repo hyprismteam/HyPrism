@@ -50,7 +50,7 @@ News parsing, GitHub metadata, and the Discord Rich Presence adapter belong to `
 
 `HyPrism.Desktop` owns a `LocalNodeHost` process controller behind the Core `ILocalNodeService` contract. Autonomous launch starts the dedicated `HyPrism.LocalNode` executable before patching the client, then transfers lifetime ownership to the game PID through the loopback control plane
 
-The host listens only on `https://h.localhost:8443`. The 16-character endpoint lets `ClientPatcher` redirect session, account-data, telemetry, live-config, social, server-discovery, and socket-gateway prefixes to one loopback authority without changing the length of the embedded domain segment
+The host listens only on `https://127.0.0.1:8443`. The loopback IP literal keeps the client off DNS entirely, so VPN clients with a tunnel DNS interceptor cannot break the resolution of the Local Node endpoint. The patch budget of at most 16 characters lets `ClientPatcher` redirect session, account-data, telemetry, live-config, social, server-discovery, and socket-gateway prefixes to one loopback authority without growing the embedded domain segment
 
 OmniAuth signing keys live only for the dedicated node process attached to the active game. The identity handoff includes the private Ed25519 JWK required by DualAuth, while JWKS, authorization grants, and access tokens expose only public key material. Account, skin, and presence preferences persist below the application data directory
 
