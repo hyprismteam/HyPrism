@@ -123,8 +123,9 @@ public class Config
     public bool HasCompletedOnboarding { get; set; } = false;
 
     /// <summary>
-    /// GPU preference for game launch: "dedicated" (default), "integrated", or "auto".
-    /// On laptops with dual GPUs, this controls which GPU the game uses via environment variables.
+    /// GPU preference for game launch: "auto" (system decides), the legacy "dedicated"/"integrated"
+    /// types, or an adapter key ("pci:<id>" when the platform exposes it, otherwise the card name).
+    /// Adapter keys pin the game to the exact card chosen in settings
     /// </summary>
     public string GpuPreference { get; set; } = "dedicated";
 

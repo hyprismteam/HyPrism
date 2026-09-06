@@ -138,6 +138,9 @@ You may need to reinstall the game if switching drives.</value>
   <data name="common.import" xml:space="preserve">
     <value>Import</value>
   </data>
+  <data name="common.important" xml:space="preserve">
+    <value>Important</value>
+  </data>
   <data name="common.importing" xml:space="preserve">
     <value>Importing...</value>
   </data>
@@ -149,6 +152,9 @@ You may need to reinstall the game if switching drives.</value>
   </data>
   <data name="common.never" xml:space="preserve">
     <value>Never</value>
+  </data>
+  <data name="common.note" xml:space="preserve">
+    <value>Note</value>
   </data>
   <data name="common.ok" xml:space="preserve">
     <value>OK</value>
@@ -2181,14 +2187,8 @@ You may need to reinstall the game if switching drives.</value>
   <data name="settings.graphicsSettings.gpu_autoHint" xml:space="preserve">
     <value>Let the system decide</value>
   </data>
-  <data name="settings.graphicsSettings.gpu_dedicated" xml:space="preserve">
-    <value>Dedicated</value>
-  </data>
   <data name="settings.graphicsSettings.gpu_dedicatedHint" xml:space="preserve">
     <value>Use discrete GPU (NVIDIA/AMD)</value>
-  </data>
-  <data name="settings.graphicsSettings.gpu_integrated" xml:space="preserve">
-    <value>Integrated</value>
   </data>
   <data name="settings.graphicsSettings.gpu_integratedHint" xml:space="preserve">
     <value>Use built-in GPU (Intel/AMD)</value>

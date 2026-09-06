@@ -14,6 +14,7 @@ using HyPrism.Desktop.Controls;
 using HyPrism.Desktop.Localization;
 using HyPrism.Desktop.Features.About;
 using HyPrism.Desktop.Platform;
+using HyPrism.Core.Application.Ports;
 using HyPrism.Core.Infrastructure;
 using HyPrism.Core.Game.Launch;
 using HyPrism.Core.Game.Instances;
@@ -85,6 +86,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     [ObservableProperty] private SettingChoiceViewModel _selectedLanguage;
     [ObservableProperty] private BackgroundChoiceViewModel _selectedBackground;
     [ObservableProperty] private SettingChoiceViewModel _selectedGpuPreference;
+    private readonly IReadOnlyList<GpuAdapterInfo> _detectedGpuAdapters = [];
     [ObservableProperty] private bool _closeAfterLaunch;
     [ObservableProperty] private bool _showAlphaMods;
     [ObservableProperty] private bool _musicEnabled;
@@ -177,7 +179,8 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         IMirrorDiscovery? mirrorDiscovery = null,
         IGameVersionCatalog? versionCatalog = null,
         IGameProcessTracker? gameProcess = null,
-        IInstanceRepository? instanceRepository = null)
+        IInstanceRepository? instanceRepository = null,
+        IGpuProvider? gpuProvider = null)
     {
         _settings = settings;
         _uriLauncher = uriLauncher;
@@ -211,12 +214,8 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         Backgrounds = new ObservableCollection<BackgroundChoiceViewModel>(
             [new("auto", localizer["settings.visualSettings.autoShuffle"], availableBackgrounds.Take(3)),
              .. availableBackgrounds.Select(name => new BackgroundChoiceViewModel(name, name, [name]))]);
-        GpuPreferences = new ObservableCollection<SettingChoiceViewModel>(
-        [
-            new("dedicated", localizer["settings.graphicsSettings.gpu_dedicated"]),
-            new("integrated", localizer["settings.graphicsSettings.gpu_integrated"]),
-            new("auto", localizer["settings.graphicsSettings.gpu_auto"])
-        ]);
+        _detectedGpuAdapters = gpuProvider?.GetAdapters() ?? [];
+        GpuPreferences = CreateGpuPreferences(localizer, _detectedGpuAdapters);
         AboutTeamMembers = new ObservableCollection<AboutTeamMemberViewModel>(
         [
             new("yyyumeniku", "YY", "creatorRole"),
@@ -230,7 +229,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         _selectedLanguage = FindChoice(Languages, settings.Language);
         _selectedBackground = FindBackgroundChoice(Backgrounds, settings.BackgroundMode);
         UpdateSelectedBackgroundState();
-        _selectedGpuPreference = FindChoice(GpuPreferences, settings.GpuPreference);
+        _selectedGpuPreference = ResolveGpuChoice(settings.GpuPreference);
         _closeAfterLaunch = settings.CloseAfterLaunch;
         _showAlphaMods = settings.ShowAlphaMods;
         _musicEnabled = settings.MusicEnabled;
@@ -329,6 +328,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     public string AlphaModsLabel { get; private set; } = string.Empty;
     public string AlphaModsHint { get; private set; } = string.Empty;
     public string DownloadsInfo { get; private set; } = string.Empty;
+    public string DownloadsNoteTitle { get; private set; } = string.Empty;
     public string DownloadSourcesTitle { get; private set; } = string.Empty;
     public string SourceLinkColumn { get; private set; } = string.Empty;
     public string SourceTypeColumn { get; private set; } = string.Empty;
@@ -476,6 +476,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         AlphaModsLabel = _localizer["settings.generalSettings.showAlphaMods"];
         AlphaModsHint = _localizer["settings.generalSettings.showAlphaModsHint"];
         DownloadsInfo = _localizer["settings.downloads.howDownloadsWorkDescription"];
+        DownloadsNoteTitle = _localizer["common.note"];
         DownloadSourcesTitle = _localizer["settings.downloads.sources"];
         SourceLinkColumn = _localizer["settings.downloads.columnLink"];
         SourceTypeColumn = _localizer["settings.downloads.columnType"];
@@ -610,8 +611,6 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         UpdateCategoryDescription("about", _localizer["settings.categoryDescriptions.about"]);
         Backgrounds.First(choice => choice.Value == "auto").Display =
             _localizer["settings.visualSettings.autoShuffle"];
-        UpdateChoiceDisplay(GpuPreferences, "dedicated", _localizer["settings.graphicsSettings.gpu_dedicated"]);
-        UpdateChoiceDisplay(GpuPreferences, "integrated", _localizer["settings.graphicsSettings.gpu_integrated"]);
         UpdateChoiceDisplay(GpuPreferences, "auto", _localizer["settings.graphicsSettings.gpu_auto"]);
         foreach (var mirror in MirrorSources)
         {
@@ -2015,6 +2014,53 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
             : $"{memoryGb:0.#} GB";
     }
 
+    private static ObservableCollection<SettingChoiceViewModel> CreateGpuPreferences(
+        StringLocalizer localizer,
+        IReadOnlyList<GpuAdapterInfo> adapters)
+    {
+        // The picker offers the detected cards themselves; the stored value is the
+        // adapter key (pci:<id> when known, otherwise the adapter name)
+        var preferences = adapters
+            .Select(adapter => new SettingChoiceViewModel(GpuLaunchPreference.AdapterValue(adapter), adapter.Name))
+            .ToList();
+        preferences.Add(new("auto", localizer["settings.graphicsSettings.gpu_auto"]));
+        return new ObservableCollection<SettingChoiceViewModel>(preferences);
+    }
+
+    private SettingChoiceViewModel ResolveGpuChoice(string? stored)
+    {
+        var normalized = stored?.Trim();
+        var exact = GpuPreferences.FirstOrDefault(
+            choice => string.Equals(choice.Value, normalized, StringComparison.Ordinal));
+        if (exact is not null)
+            return exact;
+
+        // Legacy values from the old type-based preference map onto a detected card
+        if (string.Equals(normalized, GpuLaunchPreference.Dedicated, StringComparison.OrdinalIgnoreCase))
+            return FindChoiceForType(GpuLaunchPreference.Dedicated)
+                ?? GpuPreferences[^1];
+
+        if (string.Equals(normalized, GpuLaunchPreference.Integrated, StringComparison.OrdinalIgnoreCase))
+            return FindChoiceForType(GpuLaunchPreference.Integrated)
+                ?? GpuPreferences[^1];
+
+        // A card that is no longer detected falls back to the discrete one, then to auto
+        return FindChoiceForType(GpuLaunchPreference.Dedicated)
+            ?? FindChoiceForType(GpuLaunchPreference.Integrated)
+            ?? GpuPreferences[^1];
+    }
+
+    private SettingChoiceViewModel? FindChoiceForType(string type)
+        => GpuPreferences.FirstOrDefault(IsChoiceForAdapterType(type));
+
+    private Func<SettingChoiceViewModel, bool> IsChoiceForAdapterType(string type)
+        => choice =>
+        {
+            var adapter = _detectedGpuAdapters.FirstOrDefault(
+                candidate => string.Equals(GpuLaunchPreference.AdapterValue(candidate), choice.Value, StringComparison.Ordinal));
+            return adapter is not null && string.Equals(adapter.Type, type, StringComparison.OrdinalIgnoreCase);
+        };
+
     private static SettingChoiceViewModel FindChoice(
         IEnumerable<SettingChoiceViewModel> choices,
         string? value)
@@ -2037,7 +2083,11 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         IEnumerable<SettingChoiceViewModel> choices,
         string value,
         string display)
-        => choices.First(choice => choice.Value == value).Display = display;
+    {
+        var choice = choices.FirstOrDefault(candidate => candidate.Value == value);
+        if (choice is not null)
+            choice.Display = display;
+    }
 
     private static string GetFlagCountryCode(string cultureName)
     {

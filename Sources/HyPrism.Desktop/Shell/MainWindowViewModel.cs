@@ -19,6 +19,7 @@ using HyPrism.Desktop.Localization;
 using HyPrism.Desktop.Platform;
 using HyPrism.Core.Models;
 using HyPrism.Core.Application.Progress;
+using HyPrism.Core.Application.Ports;
 using HyPrism.Core.Game;
 using HyPrism.Core.Game.Instances;
 using HyPrism.Core.Game.Launch;
@@ -62,6 +63,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     private readonly IGameVersionCatalog? _versionCatalog;
     private readonly IModManager? _modManager;
     private readonly IGameConsoleService? _gameConsole;
+    private readonly IGpuProvider? _gpuProvider;
     private readonly HttpClient _httpClient;
     private readonly RemoteImageCache? _remoteImageCache;
     private readonly StringLocalizer _localizer;
@@ -471,7 +473,8 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         IModManager? modManager = null,
         IHytaleAuthenticator? authenticator = null,
         RemoteImageCache? remoteImageCache = null,
-        IGameConsoleService? gameConsole = null)
+        IGameConsoleService? gameConsole = null,
+        IGpuProvider? gpuProvider = null)
     {
         _instances = instances;
         _gameLaunchCoordinator = gameLaunchCoordinator;
@@ -488,6 +491,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         _versionCatalog = versionCatalog;
         _modManager = modManager;
         _gameConsole = gameConsole;
+        _gpuProvider = gpuProvider;
         _httpClient = httpClient;
         _remoteImageCache = remoteImageCache;
         _localizer = localizer;
@@ -3470,7 +3474,8 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
             _mirrorDiscovery,
             _versionCatalog,
             _gameProcess,
-            _instances);
+            _instances,
+            _gpuProvider);
 
     private void ApplyLanguage(string language)
     {

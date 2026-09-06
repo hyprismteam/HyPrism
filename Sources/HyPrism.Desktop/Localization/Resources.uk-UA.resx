@@ -132,6 +132,9 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="common.import" xml:space="preserve">
     <value>Імпорт</value>
   </data>
+  <data name="common.important" xml:space="preserve">
+    <value>Важливо</value>
+  </data>
   <data name="common.importing" xml:space="preserve">
     <value>Імпорт...</value>
   </data>
@@ -143,6 +146,9 @@ SPDX-License-Identifier: GPL-3.0-only
   </data>
   <data name="common.never" xml:space="preserve">
     <value>Ніколи</value>
+  </data>
+  <data name="common.note" xml:space="preserve">
+    <value>Примітка</value>
   </data>
   <data name="common.ok" xml:space="preserve">
     <value>ОК</value>
@@ -1869,14 +1875,8 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="settings.graphicsSettings.gpu_autoHint" xml:space="preserve">
     <value>Нехай система вирішує</value>
   </data>
-  <data name="settings.graphicsSettings.gpu_dedicated" xml:space="preserve">
-    <value>Виділена</value>
-  </data>
   <data name="settings.graphicsSettings.gpu_dedicatedHint" xml:space="preserve">
     <value>Використовувати дискретний графічний процесор (NVIDIA/AMD)</value>
-  </data>
-  <data name="settings.graphicsSettings.gpu_integrated" xml:space="preserve">
-    <value>Інтегровано</value>
   </data>
   <data name="settings.graphicsSettings.gpu_integratedHint" xml:space="preserve">
     <value>Використовувати вбудований графічний процесор (Intel/AMD)</value>

@@ -132,6 +132,9 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="common.import" xml:space="preserve">
     <value>Імпарт</value>
   </data>
+  <data name="common.important" xml:space="preserve">
+    <value>Важна</value>
+  </data>
   <data name="common.importing" xml:space="preserve">
     <value>Імпарт...</value>
   </data>
@@ -143,6 +146,9 @@ SPDX-License-Identifier: GPL-3.0-only
   </data>
   <data name="common.never" xml:space="preserve">
     <value>Ніколі</value>
+  </data>
+  <data name="common.note" xml:space="preserve">
+    <value>Заўвага</value>
   </data>
   <data name="common.ok" xml:space="preserve">
     <value>ОК</value>
@@ -1869,14 +1875,8 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="settings.graphicsSettings.gpu_autoHint" xml:space="preserve">
     <value>Дазволіць сістэме вырашаць</value>
   </data>
-  <data name="settings.graphicsSettings.gpu_dedicated" xml:space="preserve">
-    <value>Дыскрэтны</value>
-  </data>
   <data name="settings.graphicsSettings.gpu_dedicatedHint" xml:space="preserve">
     <value>Выкарыстоўваць дыскрэтны GPU (NVIDIA/AMD)</value>
-  </data>
-  <data name="settings.graphicsSettings.gpu_integrated" xml:space="preserve">
-    <value>Інтэграваны</value>
   </data>
   <data name="settings.graphicsSettings.gpu_integratedHint" xml:space="preserve">
     <value>Выкарыстоўваць убудаваны GPU (Intel/AMD)</value>

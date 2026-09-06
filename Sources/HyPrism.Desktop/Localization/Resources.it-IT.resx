@@ -132,6 +132,9 @@ Potrebbe essere necessario reinstallare il gioco se si cambia drive.</value>
   <data name="common.import" xml:space="preserve">
     <value>Importa</value>
   </data>
+  <data name="common.important" xml:space="preserve">
+    <value>Importante</value>
+  </data>
   <data name="common.importing" xml:space="preserve">
     <value>Importazione...</value>
   </data>
@@ -143,6 +146,9 @@ Potrebbe essere necessario reinstallare il gioco se si cambia drive.</value>
   </data>
   <data name="common.never" xml:space="preserve">
     <value>Mai</value>
+  </data>
+  <data name="common.note" xml:space="preserve">
+    <value>Nota</value>
   </data>
   <data name="common.ok" xml:space="preserve">
     <value>OK</value>
@@ -1869,14 +1875,8 @@ Potrebbe essere necessario reinstallare il gioco se si cambia drive.</value>
   <data name="settings.graphicsSettings.gpu_autoHint" xml:space="preserve">
     <value>Lascia che il sistema decida</value>
   </data>
-  <data name="settings.graphicsSettings.gpu_dedicated" xml:space="preserve">
-    <value>Dedicata</value>
-  </data>
   <data name="settings.graphicsSettings.gpu_dedicatedHint" xml:space="preserve">
     <value>Usa GPU discreta (NVIDIA/AMD)</value>
-  </data>
-  <data name="settings.graphicsSettings.gpu_integrated" xml:space="preserve">
-    <value>Integrata</value>
   </data>
   <data name="settings.graphicsSettings.gpu_integratedHint" xml:space="preserve">
     <value>Usa GPU integrata (Intel/AMD)</value>

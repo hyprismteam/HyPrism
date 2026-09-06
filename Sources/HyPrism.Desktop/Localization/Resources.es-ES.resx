@@ -132,6 +132,9 @@ Es posible que necesites reinstalar el juego si cambias de unidad.</value>
   <data name="common.import" xml:space="preserve">
     <value>Importar</value>
   </data>
+  <data name="common.important" xml:space="preserve">
+    <value>Importante</value>
+  </data>
   <data name="common.importing" xml:space="preserve">
     <value>Importando...</value>
   </data>
@@ -143,6 +146,9 @@ Es posible que necesites reinstalar el juego si cambias de unidad.</value>
   </data>
   <data name="common.never" xml:space="preserve">
     <value>Nunca</value>
+  </data>
+  <data name="common.note" xml:space="preserve">
+    <value>Nota</value>
   </data>
   <data name="common.ok" xml:space="preserve">
     <value>OK</value>
@@ -1869,14 +1875,8 @@ Es posible que necesites reinstalar el juego si cambias de unidad.</value>
   <data name="settings.graphicsSettings.gpu_autoHint" xml:space="preserve">
     <value>Dejar que el sistema decida</value>
   </data>
-  <data name="settings.graphicsSettings.gpu_dedicated" xml:space="preserve">
-    <value>Dedicada</value>
-  </data>
   <data name="settings.graphicsSettings.gpu_dedicatedHint" xml:space="preserve">
     <value>Usar GPU discreta (NVIDIA/AMD)</value>
-  </data>
-  <data name="settings.graphicsSettings.gpu_integrated" xml:space="preserve">
-    <value>Integrada</value>
   </data>
   <data name="settings.graphicsSettings.gpu_integratedHint" xml:space="preserve">
     <value>Usar GPU integrada (Intel/AMD)</value>

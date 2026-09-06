@@ -132,6 +132,9 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="common.import" xml:space="preserve">
     <value>가져오기</value>
   </data>
+  <data name="common.important" xml:space="preserve">
+    <value>중요</value>
+  </data>
   <data name="common.importing" xml:space="preserve">
     <value>가져오는 중...</value>
   </data>
@@ -143,6 +146,9 @@ SPDX-License-Identifier: GPL-3.0-only
   </data>
   <data name="common.never" xml:space="preserve">
     <value>없음</value>
+  </data>
+  <data name="common.note" xml:space="preserve">
+    <value>참고</value>
   </data>
   <data name="common.ok" xml:space="preserve">
     <value>확인</value>
@@ -1869,14 +1875,8 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="settings.graphicsSettings.gpu_autoHint" xml:space="preserve">
     <value>시스템이 결정하도록 합니다</value>
   </data>
-  <data name="settings.graphicsSettings.gpu_dedicated" xml:space="preserve">
-    <value>전용</value>
-  </data>
   <data name="settings.graphicsSettings.gpu_dedicatedHint" xml:space="preserve">
     <value>별도 GPU 사용 (NVIDIA/AMD)</value>
-  </data>
-  <data name="settings.graphicsSettings.gpu_integrated" xml:space="preserve">
-    <value>내장</value>
   </data>
   <data name="settings.graphicsSettings.gpu_integratedHint" xml:space="preserve">
     <value>내장 GPU 사용 (Intel/AMD)</value>

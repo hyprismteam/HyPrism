@@ -44,7 +44,8 @@ internal static class DesktopGpuPreference
         {
             RenderingMode = [Win32RenderingMode.AngleEgl, Win32RenderingMode.Software],
             GraphicsAdapterSelectionCallback = SelectWindowsAdapter,
-            CompositionMode = DesktopRenderOptions.CreateCompositionModes()
+            CompositionMode = DesktopRenderOptions.CreateCompositionModes(),
+            OverlayPopups = true
         };
 
     internal static int FindAdapterIndex(

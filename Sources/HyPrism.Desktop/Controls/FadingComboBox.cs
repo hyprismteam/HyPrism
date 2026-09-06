@@ -49,6 +49,14 @@ public sealed class FadingComboBox : ComboBox
         return true;
     }
 
+    protected override void OnPointerWheelChanged(PointerWheelEventArgs e)
+    {
+        // The wheel must never change the selected value: with the drop-down open the
+        // event is swallowed, otherwise it bubbles to the scrollable content below.
+        if (IsDropDownOpen)
+            e.Handled = true;
+    }
+
     internal bool IsDropDownInteractionSource(Visual source)
         => ResolvePopup()?.IsInteractionSource(source) ??
            ReferenceEquals(source, this) ||

@@ -32,10 +32,15 @@ public sealed class DesktopSettingsStoreTests : IDisposable
     }
 
     [Fact]
-    public void GpuPreference_NormalizesUnknownValue()
+    public void GpuPreference_KeepsAdapterKeysAndDefaultsWhenEmpty()
     {
-        _settings.GpuPreference = "unsupported";
+        _settings.GpuPreference = "pci:0000:01:00.0";
+        Assert.Equal("pci:0000:01:00.0", _config.Configuration.GpuPreference);
 
+        _settings.GpuPreference = "AMD Radeon RX 7800 XT";
+        Assert.Equal("AMD Radeon RX 7800 XT", _config.Configuration.GpuPreference);
+
+        _settings.GpuPreference = "  ";
         Assert.Equal("dedicated", _config.Configuration.GpuPreference);
     }
 

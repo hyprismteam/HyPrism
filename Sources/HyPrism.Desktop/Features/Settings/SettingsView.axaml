@@ -736,8 +736,13 @@ SPDX-License-Identifier: GPL-3.0-only
                 </StackPanel>
               </Border>
 
-              <TextBlock Text="{Binding DownloadsInfo}"
-                         Classes="settingsHint sourceSelectionHint" />
+              <controls:NoteCard x:Name="DownloadsNoteCard"
+                                 Classes="note"
+                                 Title="{Binding DownloadsNoteTitle}">
+                <TextBlock Text="{Binding DownloadsInfo}"
+                           Classes="settingsHint"
+                           Foreground="{DynamicResource TextPrimaryBrush}" />
+              </controls:NoteCard>
 
               <TextBlock Text="{Binding MirrorOperationStatus}"
                          Classes="sourceOperationStatus"

@@ -132,6 +132,9 @@ Vous devrez peut-être réinstaller le jeu si vous changez de lecteur.</value>
   <data name="common.import" xml:space="preserve">
     <value>Importer</value>
   </data>
+  <data name="common.important" xml:space="preserve">
+    <value>Important</value>
+  </data>
   <data name="common.importing" xml:space="preserve">
     <value>Import...</value>
   </data>
@@ -143,6 +146,9 @@ Vous devrez peut-être réinstaller le jeu si vous changez de lecteur.</value>
   </data>
   <data name="common.never" xml:space="preserve">
     <value>Jamais</value>
+  </data>
+  <data name="common.note" xml:space="preserve">
+    <value>Remarque</value>
   </data>
   <data name="common.ok" xml:space="preserve">
     <value>OK</value>
@@ -1869,14 +1875,8 @@ Vous devrez peut-être réinstaller le jeu si vous changez de lecteur.</value>
   <data name="settings.graphicsSettings.gpu_autoHint" xml:space="preserve">
     <value>Laisser le système décider</value>
   </data>
-  <data name="settings.graphicsSettings.gpu_dedicated" xml:space="preserve">
-    <value>Dédié</value>
-  </data>
   <data name="settings.graphicsSettings.gpu_dedicatedHint" xml:space="preserve">
     <value>Utiliser le GPU dédié (NVIDIA/AMD)</value>
-  </data>
-  <data name="settings.graphicsSettings.gpu_integrated" xml:space="preserve">
-    <value>Intégré</value>
   </data>
   <data name="settings.graphicsSettings.gpu_integratedHint" xml:space="preserve">
     <value>Utiliser le GPU intégré (Intel/AMD)</value>

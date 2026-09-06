@@ -132,6 +132,9 @@ Sürücü değiştirirseniz oyunu yeniden yüklemeniz gerekebilir.</value>
   <data name="common.import" xml:space="preserve">
     <value>İçe aktar</value>
   </data>
+  <data name="common.important" xml:space="preserve">
+    <value>Önemli</value>
+  </data>
   <data name="common.importing" xml:space="preserve">
     <value>İçe aktarılıyor...</value>
   </data>
@@ -143,6 +146,9 @@ Sürücü değiştirirseniz oyunu yeniden yüklemeniz gerekebilir.</value>
   </data>
   <data name="common.never" xml:space="preserve">
     <value>Hiç</value>
+  </data>
+  <data name="common.note" xml:space="preserve">
+    <value>Not</value>
   </data>
   <data name="common.ok" xml:space="preserve">
     <value>Tamam</value>
@@ -1869,14 +1875,8 @@ Sürücü değiştirirseniz oyunu yeniden yüklemeniz gerekebilir.</value>
   <data name="settings.graphicsSettings.gpu_autoHint" xml:space="preserve">
     <value>Sistemin karar vermesine izin ver</value>
   </data>
-  <data name="settings.graphicsSettings.gpu_dedicated" xml:space="preserve">
-    <value>Ayrık</value>
-  </data>
   <data name="settings.graphicsSettings.gpu_dedicatedHint" xml:space="preserve">
     <value>Ayrık GPU kullan (NVIDIA/AMD)</value>
-  </data>
-  <data name="settings.graphicsSettings.gpu_integrated" xml:space="preserve">
-    <value>Entegre</value>
   </data>
   <data name="settings.graphicsSettings.gpu_integratedHint" xml:space="preserve">
     <value>Dahili GPU kullan (Intel/AMD)</value>

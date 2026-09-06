@@ -132,6 +132,9 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="common.import" xml:space="preserve">
     <value>导入</value>
   </data>
+  <data name="common.important" xml:space="preserve">
+    <value>重要</value>
+  </data>
   <data name="common.importing" xml:space="preserve">
     <value>导入中...</value>
   </data>
@@ -143,6 +146,9 @@ SPDX-License-Identifier: GPL-3.0-only
   </data>
   <data name="common.never" xml:space="preserve">
     <value>从未</value>
+  </data>
+  <data name="common.note" xml:space="preserve">
+    <value>注記</value>
   </data>
   <data name="common.ok" xml:space="preserve">
     <value>确定</value>
@@ -1869,14 +1875,8 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="settings.graphicsSettings.gpu_autoHint" xml:space="preserve">
     <value>让系统决定</value>
   </data>
-  <data name="settings.graphicsSettings.gpu_dedicated" xml:space="preserve">
-    <value>独立显卡</value>
-  </data>
   <data name="settings.graphicsSettings.gpu_dedicatedHint" xml:space="preserve">
     <value>使用独立 GPU（NVIDIA/AMD）</value>
-  </data>
-  <data name="settings.graphicsSettings.gpu_integrated" xml:space="preserve">
-    <value>集成显卡</value>
   </data>
   <data name="settings.graphicsSettings.gpu_integratedHint" xml:space="preserve">
     <value>使用内置 GPU（Intel/AMD）</value>

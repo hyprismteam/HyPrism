@@ -21,6 +21,7 @@ HyPrism targets Avalonia 12.1.2 and enables compiled bindings for the whole Desk
 - region dirty rectangle clipping keeps the Avalonia 12.1 default because its CPU cost can reduce frame rate on GPU accelerated desktops
 - Windows ANGLE rendering asks DXGI for its high-performance adapter and matches that adapter to Avalonia by LUID, with software rendering retained as the fallback
 - the Windows composition mode defaults to the low-latency flip-model DXGI swap chain paced by display vblank, and the `HYPRISM_WIN32_COMPOSITION` environment variable reverts it for troubleshooting to `winui` or `dcomp`
+- Windows renders popups in the window overlay layer (`Win32PlatformOptions.OverlayPopups = true`), so popups never become native OS windows and carry no system shadows, borders, or snap decorations; the `FadingPopup` control additionally keeps `WindowManagerAddShadowHint` disabled
 - the .NET garbage collector runs in SustainedLowLatency mode so blocking collections are less likely to interrupt animation frames
 - Linux packaging declares `PrefersNonDefaultGPU=true`; direct startup adds Mesa and NVIDIA PRIME variables only when DRM exposes multiple adapters and does not replace values inherited from the user or desktop environment
 

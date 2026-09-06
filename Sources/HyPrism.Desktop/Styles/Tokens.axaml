@@ -18,6 +18,10 @@ SPDX-License-Identifier: GPL-3.0-only
   <SolidColorBrush x:Key="TextMutedBrush" Color="#73757D" />
   <SolidColorBrush x:Key="AccentBrush" Color="#F5F5F6" />
   <SolidColorBrush x:Key="AccentSoftBrush" Color="#18FFFFFF" />
+  <SolidColorBrush x:Key="NoteBrush" Color="#79B0F4" />
+  <SolidColorBrush x:Key="NoteSurfaceBrush" Color="#1A79B0F4" />
+  <SolidColorBrush x:Key="ImportantBrush" Color="#B79DF8" />
+  <SolidColorBrush x:Key="ImportantSurfaceBrush" Color="#1AB79DF8" />
 
   <!-- Interactive control surfaces -->
   <SolidColorBrush x:Key="ControlSurfaceBrush" Color="#141517" />

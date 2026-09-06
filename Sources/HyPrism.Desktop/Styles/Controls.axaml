@@ -313,6 +313,69 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="BorderThickness" Value="0" />
   </Style>
 
+  <Style Selector="controls|NoteCard">
+    <Setter Property="Background" Value="{DynamicResource ControlGroupBrush}" />
+    <Setter Property="CornerRadius" Value="14" />
+    <Setter Property="Padding" Value="18,14" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Background="{TemplateBinding Background}"
+                CornerRadius="{TemplateBinding CornerRadius}"
+                Padding="{TemplateBinding Padding}">
+          <StackPanel>
+            <StackPanel Orientation="Horizontal" Spacing="9">
+              <PathIcon x:Name="PART_KindIcon"
+                        Width="19"
+                        Height="19"
+                        VerticalAlignment="Center" />
+              <TextBlock x:Name="PART_KindTitle"
+                         Classes="noteCardTitle"
+                         Text="{TemplateBinding Title}"
+                         VerticalAlignment="Center" />
+            </StackPanel>
+            <ContentPresenter x:Name="PART_ContentPresenter"
+                              Margin="0,9,0,0"
+                              Content="{TemplateBinding Content}"
+                              ContentTemplate="{TemplateBinding ContentTemplate}"
+                              HorizontalContentAlignment="Stretch" />
+          </StackPanel>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+  </Style>
+
+  <Style Selector="TextBlock.noteCardTitle">
+    <Setter Property="FontSize" Value="15" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+  </Style>
+
+  <Style Selector="controls|NoteCard.note">
+    <Setter Property="Background" Value="{DynamicResource NoteSurfaceBrush}" />
+  </Style>
+
+  <Style Selector="controls|NoteCard.important">
+    <Setter Property="Background" Value="{DynamicResource ImportantSurfaceBrush}" />
+  </Style>
+
+  <Style Selector="controls|NoteCard.note /template/ PathIcon#PART_KindIcon">
+    <Setter Property="Data" Value="{StaticResource InfoIcon}" />
+    <Setter Property="Foreground" Value="{DynamicResource NoteBrush}" />
+  </Style>
+
+  <Style Selector="controls|NoteCard.note /template/ TextBlock#PART_KindTitle">
+    <Setter Property="Foreground" Value="{DynamicResource NoteBrush}" />
+  </Style>
+
+  <Style Selector="controls|NoteCard.important /template/ PathIcon#PART_KindIcon">
+    <Setter Property="Data" Value="{StaticResource FeedbackIcon}" />
+    <Setter Property="Foreground" Value="{DynamicResource ImportantBrush}" />
+  </Style>
+
+  <Style Selector="controls|NoteCard.important /template/ TextBlock#PART_KindTitle">
+    <Setter Property="Foreground" Value="{DynamicResource ImportantBrush}" />
+  </Style>
+
   <Style Selector="Button.uiSettingsNavigationRow">
     <Setter Property="MinHeight" Value="66" />
     <Setter Property="Padding" Value="18,14" />

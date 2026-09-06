@@ -1031,10 +1031,34 @@ public partial class GameLauncher : IGameLauncher
     /// </summary>
     private void ApplyGpuEnvironment(ProcessStartInfo startInfo)
     {
-        var gpuPref = CurrentConfig.GpuPreference?.ToLowerInvariant() ?? "dedicated";
-        if (gpuPref == "auto") return;
+        var gpuPref = CurrentConfig.GpuPreference ?? "dedicated";
+        if (string.Equals(gpuPref, "auto", StringComparison.OrdinalIgnoreCase))
+            return;
 
-        if (gpuPref == "dedicated")
+        var configured = GpuLaunchPreference.FindAdapter(gpuPref, _gpuProvider.GetAdapters());
+        if (configured is not null)
+        {
+            var dedicatedLike = !string.Equals(configured.Type, "integrated", StringComparison.OrdinalIgnoreCase);
+            var suffix = dedicatedLike ? "dedicated" : "integrated";
+            Logger.Info("Game", $"GPU preference: {gpuPref} (applied as {suffix})");
+            if (dedicatedLike)
+            {
+                startInfo.Environment["__NV_PRIME_RENDER_OFFLOAD"] = "1";
+                startInfo.Environment["__GLX_VENDOR_LIBRARY_NAME"] = "nvidia";
+                startInfo.Environment["DRI_PRIME"] = "1";
+                startInfo.Environment["DXGI_GPU_PREFERENCE"] = "2";
+            }
+            else
+            {
+                startInfo.Environment["DRI_PRIME"] = "0";
+                startInfo.Environment["__NV_PRIME_RENDER_OFFLOAD"] = "0";
+                startInfo.Environment["DXGI_GPU_PREFERENCE"] = "1";
+            }
+
+            return;
+        }
+
+        if (string.Equals(gpuPref, "dedicated", StringComparison.OrdinalIgnoreCase))
         {
             startInfo.Environment["__NV_PRIME_RENDER_OFFLOAD"] = "1";
             startInfo.Environment["__GLX_VENDOR_LIBRARY_NAME"] = "nvidia";
@@ -1042,7 +1066,7 @@ public partial class GameLauncher : IGameLauncher
             startInfo.Environment["DXGI_GPU_PREFERENCE"] = "2";
             Logger.Info("Game", "GPU preference: dedicated (NVIDIA/AMD env vars set)");
         }
-        else if (gpuPref == "integrated")
+        else if (string.Equals(gpuPref, "integrated", StringComparison.OrdinalIgnoreCase))
         {
             startInfo.Environment["DRI_PRIME"] = "0";
             startInfo.Environment["__NV_PRIME_RENDER_OFFLOAD"] = "0";
@@ -1219,65 +1243,35 @@ exec env ""${{ENV_ARGS[@]}}"" ""{executable}"" {argsString}
     /// </summary>
     private string BuildGpuEnvLines()
     {
-        var gpuPref = CurrentConfig.GpuPreference?.ToLowerInvariant() ?? "dedicated";
-        if (gpuPref == "auto") return "# GPU preference: auto (system decides)\n\n";
+        var gpuPref = CurrentConfig.GpuPreference ?? "dedicated";
+        if (string.Equals(gpuPref, "auto", StringComparison.OrdinalIgnoreCase))
+            return "# GPU preference: auto (system decides)\n\n";
 
-        if (gpuPref == "dedicated")
+        var configured = GpuLaunchPreference.FindAdapter(gpuPref, _gpuProvider.GetAdapters());
+        if (configured is not null)
         {
-            var sb = new StringBuilder();
-            sb.AppendLine("# GPU preference: dedicated (discrete GPU)");
-
-            var adapters = _gpuProvider.GetAdapters();
-            var dedicatedGpu = adapters.FirstOrDefault(a => a.Type == "dedicated");
-
-            if (dedicatedGpu != null && !string.IsNullOrEmpty(dedicatedGpu.PciId))
+            if (string.Equals(configured.Type, "integrated", StringComparison.OrdinalIgnoreCase))
             {
-                Logger.Info("Game", $"Using dedicated GPU PCI ID for DRI_PRIME: {dedicatedGpu.PciId}");
-                sb.AppendLine($"export DRI_PRIME=pci:{dedicatedGpu.PciId}");
-            }
-            else
-            {
-                Logger.Info("Game", "Using generic DRI_PRIME=1 for dedicated GPU");
-                sb.AppendLine("export DRI_PRIME=1");
+                Logger.Info("Game", $"GPU preference: {gpuPref} (applied as integrated)");
+                return @"# GPU preference: integrated
+export DRI_PRIME=0
+export __NV_PRIME_RENDER_OFFLOAD=0
+
+";
             }
 
-            var vendor = dedicatedGpu?.Vendor?.ToUpperInvariant() ?? "";
-
-            if (vendor == "NVIDIA")
-            {
-                Logger.Info("Game", "GPU preference: dedicated (NVIDIA env vars in launch script)");
-                sb.AppendLine("export __NV_PRIME_RENDER_OFFLOAD=1");
-                sb.AppendLine("export __GLX_VENDOR_LIBRARY_NAME=nvidia");
-
-                var nvidiaEglVendorJson = TryGetLinuxNvidiaEglVendorJsonPath();
-                if (!string.IsNullOrWhiteSpace(nvidiaEglVendorJson))
-                {
-                    sb.AppendLine($"export __EGL_VENDOR_LIBRARY_FILENAMES=\"{nvidiaEglVendorJson}\"");
-                    Logger.Info("Game", $"Applied NVIDIA EGL vendor override: {nvidiaEglVendorJson}");
-                }
-            }
-            else if (vendor == "AMD")
-            {
-                Logger.Info("Game", "GPU preference: dedicated (AMD env vars in launch script)");
-            }
-            else
-            {
-                Logger.Info("Game", "GPU preference: dedicated (generic env vars, unknown vendor)");
-                sb.AppendLine("export __NV_PRIME_RENDER_OFFLOAD=1");
-                sb.AppendLine("export __GLX_VENDOR_LIBRARY_NAME=nvidia");
-
-                var nvidiaEglVendorJson = TryGetLinuxNvidiaEglVendorJsonPath();
-                if (!string.IsNullOrWhiteSpace(nvidiaEglVendorJson))
-                {
-                    sb.AppendLine($"export __EGL_VENDOR_LIBRARY_FILENAMES=\"{nvidiaEglVendorJson}\"");
-                }
-            }
-
-            sb.AppendLine();
-            return sb.ToString();
+            Logger.Info("Game", $"GPU preference: {gpuPref} (applied as dedicated)");
+            return BuildDedicatedGpuLines(configured);
         }
 
-        if (gpuPref == "integrated")
+        if (string.Equals(gpuPref, "dedicated", StringComparison.OrdinalIgnoreCase))
+        {
+            var adapters = _gpuProvider.GetAdapters();
+            var dedicatedGpu = adapters.FirstOrDefault(a => a.Type == "dedicated");
+            return BuildDedicatedGpuLines(dedicatedGpu);
+        }
+
+        if (string.Equals(gpuPref, "integrated", StringComparison.OrdinalIgnoreCase))
         {
             Logger.Info("Game", "GPU preference: integrated");
             return @"# GPU preference: integrated
@@ -1288,6 +1282,58 @@ export __NV_PRIME_RENDER_OFFLOAD=0
         }
 
         return "";
+    }
+
+    private string BuildDedicatedGpuLines(GpuAdapterInfo? dedicatedGpu)
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine("# GPU preference: dedicated (discrete GPU)");
+
+        if (dedicatedGpu != null && !string.IsNullOrEmpty(dedicatedGpu.PciId))
+        {
+            Logger.Info("Game", $"Using dedicated GPU PCI ID for DRI_PRIME: {dedicatedGpu.PciId}");
+            sb.AppendLine($"export DRI_PRIME=pci:{dedicatedGpu.PciId}");
+        }
+        else
+        {
+            Logger.Info("Game", "Using generic DRI_PRIME=1 for dedicated GPU");
+            sb.AppendLine("export DRI_PRIME=1");
+        }
+
+        var vendor = dedicatedGpu?.Vendor?.ToUpperInvariant() ?? "";
+
+        if (vendor == "NVIDIA")
+        {
+            Logger.Info("Game", "GPU preference: dedicated (NVIDIA env vars in launch script)");
+            sb.AppendLine("export __NV_PRIME_RENDER_OFFLOAD=1");
+            sb.AppendLine("export __GLX_VENDOR_LIBRARY_NAME=nvidia");
+
+            var nvidiaEglVendorJson = TryGetLinuxNvidiaEglVendorJsonPath();
+            if (!string.IsNullOrWhiteSpace(nvidiaEglVendorJson))
+            {
+                sb.AppendLine($"export __EGL_VENDOR_LIBRARY_FILENAMES=\"{nvidiaEglVendorJson}\"");
+                Logger.Info("Game", $"Applied NVIDIA EGL vendor override: {nvidiaEglVendorJson}");
+            }
+        }
+        else if (vendor == "AMD")
+        {
+            Logger.Info("Game", "GPU preference: dedicated (AMD env vars in launch script)");
+        }
+        else
+        {
+            Logger.Info("Game", "GPU preference: dedicated (generic env vars, unknown vendor)");
+            sb.AppendLine("export __NV_PRIME_RENDER_OFFLOAD=1");
+            sb.AppendLine("export __GLX_VENDOR_LIBRARY_NAME=nvidia");
+
+            var nvidiaEglVendorJson = TryGetLinuxNvidiaEglVendorJsonPath();
+            if (!string.IsNullOrWhiteSpace(nvidiaEglVendorJson))
+            {
+                sb.AppendLine($"export __EGL_VENDOR_LIBRARY_FILENAMES=\"{nvidiaEglVendorJson}\"");
+            }
+        }
+
+        sb.AppendLine();
+        return sb.ToString();
     }
 
     private static string? TryGetLinuxNvidiaEglVendorJsonPath()

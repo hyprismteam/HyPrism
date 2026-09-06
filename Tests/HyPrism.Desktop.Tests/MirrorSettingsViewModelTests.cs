@@ -456,6 +456,18 @@ public sealed class MirrorSettingsViewModelTests
             if (!string.IsNullOrWhiteSpace(checkingRenderPath))
                 window.CaptureRenderedFrame()!.Save(checkingRenderPath, PngBitmapEncoderOptions.Default);
 
+            var noteCard = Assert.IsType<NoteCard>(view.FindControl<NoteCard>("DownloadsNoteCard"));
+            Assert.Contains("note", noteCard.Classes);
+            Assert.DoesNotContain("important", noteCard.Classes);
+            Assert.Equal("Note", noteCard.Title);
+            Assert.Equal(new CornerRadius(14), noteCard.CornerRadius);
+            Assert.Equal(
+                Color.Parse("#1A79B0F4"),
+                Assert.IsAssignableFrom<ISolidColorBrush>(noteCard.Background).Color);
+            var noteText = Assert.IsType<TextBlock>(noteCard.Content);
+            Assert.Equal(viewModel.DownloadsInfo, noteText.Text);
+            Assert.Equal(TextWrapping.Wrap, noteText.TextWrapping);
+
             probeCompletion.SetResult(probeResult);
             await WaitUntilAsync(() => source.Ping == "42 ms");
             await Task.Delay(300);

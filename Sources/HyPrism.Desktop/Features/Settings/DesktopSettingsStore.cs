@@ -128,8 +128,10 @@ public sealed class DesktopSettingsStore : IDesktopSettingsStore
         get => _configStore.Configuration.GpuPreference;
         set
         {
-            var normalized = value?.ToLowerInvariant();
-            if (normalized is not ("dedicated" or "integrated" or "auto"))
+            // Stored values are "auto", the legacy types, or an adapter key
+            // ("pci:<id>" when the platform exposes it, otherwise the card name)
+            var normalized = value?.Trim();
+            if (string.IsNullOrWhiteSpace(normalized))
                 normalized = "dedicated";
             Save(config => config.GpuPreference = normalized);
         }
