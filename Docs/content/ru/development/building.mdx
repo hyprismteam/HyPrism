@@ -1,64 +1,66 @@
 ---
 title: Сборка
-description: Восстановление, сборка и запуск нативного лаунчера
+description: Восстановление зависимостей, сборка и изолированный запуск лаунчера
 ---
 
 # Сборка
 
-## Требования
+Для лаунчера нужны .NET 10 SDK и Git. Node.js и pnpm нужны только для [сайта документации](/docs/development/documentation)
 
-- .NET 10 SDK
-- Git
-- Node.js 22 и pnpm только для документации
+## Клонирование и сборка
 
-## Нативный лаунчер
+Выполните команды в терминале
 
 ```bash
+git clone https://github.com/hyprismteam/HyPrism.git
+cd HyPrism
 dotnet restore HyPrism.sln
-dotnet build Sources/HyPrism.Desktop/HyPrism.Desktop.csproj
-dotnet run --project Sources/HyPrism.Desktop/HyPrism.Desktop.csproj
-```
-
-## Все solution-проекты
-
-```bash
 dotnet build HyPrism.sln
 ```
 
-Solution содержит `HyPrism.Core`, `HyPrism.Desktop`, `HyPrism.LocalNode` и их тестовые проекты
+Решение собирает Core, Desktop, Local Node и их тестовые проекты
 
-## Локальная публикация
-
-Entry point публикации и платформенные assets централизованы в `Packaging/`. В Linux publisher создаёт `deb`, `rpm`, AppImage, Flatpak bundle и `tar.xz` из одного self-contained результата Desktop. Сначала установите `rpm`, Flatpak, Flatpak Builder и appimagetool, затем выполните:
+## Запуск Desktop
 
 ```bash
-./Packaging/publish-linux.sh all --output dist
+dotnet run --project Sources/HyPrism.Desktop/HyPrism.Desktop.csproj
 ```
 
-Для Linux одного формата используйте `deb`, `rpm`, `appimage`, `flatpak` или `tar`. В macOS команда `./Packaging/publish-macos.sh dmg` создаёт DMG. В Windows команда `pwsh Packaging/publish-windows.ps1 all` создаёт ZIP, MSI и EXE-инсталлятор. Каждый platform-workflow напрямую вызывает соответствующий entry point
+Без переопределения Desktop использует тот же каталог данных, что и установленный лаунчер. Для отдельного состояния разработки в Linux или macOS
 
-Windows publisher проверяет наличие `HyPrism.Desktop.exe` и `HyPrism.LocalNode.exe` перед созданием portable-архива и инсталляторов. Он устанавливает закрепленную версию WiX 6 в отдельный временный каталог и использует соответствующую версию bootstrapper-расширения
+```bash
+hyprism_data="$(mktemp -d)"
+HYPRISM_DATA="$hyprism_data" dotnet run \
+  --project Sources/HyPrism.Desktop/HyPrism.Desktop.csproj
+```
 
-Единственным источником версии релиза служит свойство `Version` в `Sources/HyPrism.Desktop/HyPrism.Desktop.csproj`. Packaging-скрипты получают вычисленное значение через MSBuild и используют его для assembly metadata, package metadata и имён артефактов. Release-тег должен совпадать с `v<Version>`, иначе release-workflow завершится ошибкой
+В Windows PowerShell
 
-## GitHub Actions
+```powershell
+$hyprismData = Join-Path ([IO.Path]::GetTempPath()) ("hyprism-dev-" + [guid]::NewGuid())
+New-Item -ItemType Directory -Path $hyprismData | Out-Null
+$env:HYPRISM_DATA = $hyprismData
+dotnet run --project Sources/HyPrism.Desktop/HyPrism.Desktop.csproj
+```
 
-`.github/workflows/ci.yml` является точкой входа для push и pull request. Он показывает отдельные группы checks для Core, Desktop, Local Node и Packaging. Каждая тестовая группа вызывает свой reusable matrix workflow, а Packaging использует диспетчер сборки. `.github/workflows/build.yml` только выбирает платформы, а `build-linux.yml`, `build-windows.yml` и `build-macos.yml` отвечают за упаковку своих платформ
+Каталог должен существовать до запуска. После выхода он сохраняется для проверки логов и состояния
 
-Сейчас CI создает `deb`, `rpm`, AppImage, Flatpak bundle и `tar.xz` для Linux x64, портативный ZIP, MSI и EXE-инсталлятор для Windows x64 и DMG для macOS ARM64. Release-сборки повторно используют те же platform-workflow и передают версию релиза в имена артефактов
+## Конфигурация Release
 
-Linux workflow повторяет установку runtime из Flathub при временной ошибке загрузки metadata или пакетов. Последняя неудачная попытка по-прежнему останавливает сборку до начала упаковки. Экспорт Flatpak и создание bundle используют одну ветку `stable`, заданную Linux publisher
+```bash
+dotnet build HyPrism.sln --configuration Release
+```
 
-## macOS-пакет
+Обычная сборка создает файлы для разработки. Автономные приложения и установщики описаны в разделе [Упаковка и релизы](/docs/development/packaging)
 
-macOS workflow публикует self-contained Desktop для `osx-arm64` с apphost Local Node рядом, собирает нативный bundle `.app`, применяет ad hoc-подпись, проверяет bundle и создает загружаемый DMG
+## Проверка изменения
 
-## Документация
+Запустите подходящий [набор тестов](/docs/development/testing), затем проверьте документацию, если меняется поведение или рабочий процесс разработчика
 
 ```bash
 cd Docs
-pnpm install --frozen-lockfile
-pnpm build
+pnpm check
+PAGES_BASE_PATH=/HyPrism pnpm build
 ```
 
-Статический сайт появится в `Docs/out`
+Статический сайт записывается в `Docs/out`

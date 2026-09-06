@@ -1,22 +1,27 @@
 ---
-title: News reader
-description: Browse and read Hytale articles without leaving HyPrism
+title: News
+description: Read official Hytale news in the launcher
 ---
 
-# News reader
+# News
 
-The native news page fetches the Hytale feed and renders full articles inside the launcher
+The News page loads the official Hytale feed and opens articles inside HyPrism
 
-## Layout
+[![News feed with demonstration articles](../../../static/img/user/en/news.png)](../../../static/img/user/en/news.png)
 
-Wide windows use two columns with the feed on the left and the selected article on the right. Compact windows show the feed and article as separate pages with a back action
+These screenshots use sample articles to demonstrate the interface, not current Hytale announcements
 
-Article content supports headings, paragraphs, links, images, inline and block code, quotes, nested lists, and collapsible sections. External links open in the system browser
+## Read an article
 
-## Caching
+1. Open **News**
+2. Select an item in the feed
+3. Use **Link** in the article header when you want the original page in your browser
+4. Select **Load more** at the end of the feed to request older posts
 
-Feed metadata and preview images are warmed during launcher startup, so opening the News destination does not initiate feed parsing or large image decoding on the UI thread. A skeleton is shown only while uncached article content is being prepared
+On a compact window, **Back** returns from the article to the feed
 
-Long articles prepare their controls in small background-priority groups that leave time for input and rendering between groups. After the header is available, animated text placeholders fill the article body until the final group is ready. The placeholders fade out completely before the finished text fades in, and the reader then becomes interactive with a stable scrollbar range. Wide-layout article switching keeps the reader mounted throughout this sequence. Each block creates only the controls required by its content type. Images start after the text layout is ready, decode on background workers at reader size, and are released when the article closes. Parsed articles and encoded image files remain available through bounded memory caches and the persistent disk cache
+[![Demonstration article displayed in the built-in reader](../../../static/img/user/en/news-article.png)](../../../static/img/user/en/news-article.png)
 
-Use **Load more** at the end of the feed to request older entries
+HyPrism caches the parsed feed, opened articles, and their images. Cached content can open when the network is temporarily unavailable
+
+The **Disable news** option in **Settings → Appearance** is not functional in the current desktop version

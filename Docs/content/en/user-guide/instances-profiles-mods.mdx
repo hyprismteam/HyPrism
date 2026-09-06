@@ -1,68 +1,60 @@
 ---
-title: Instances, profiles, and mods
-description: Current Core capabilities and native UI availability
+title: Instances
+description: Create, install, launch, and remove isolated Hytale installations
 ---
 
-# Instances, profiles, and mods
+# Instances
 
-The Core contains the working domain logic for all three areas. Native instance and profile managers are available, while advanced mod pages are still being completed
+An instance is one Hytale installation with its own version, game files, mods, worlds, console buffer, and play-time record
 
-## Instances
+[![Instances list and the selected instance workspace](../../../static/img/user/en/instances.png)](../../../static/img/user/en/instances.png)
 
-The native instance manager presents local installations as a settings-style list with the same pane spacing, rounded category cards, hover animation, and responsive card sizing. Wide layouts highlight the instance open in the management workspace, while the compact list does not retain an active highlight before navigating into its content. Compact cards show the default grass block icon after the six-dot drag handle, and their borderless drag preview repeats the same icon and layout. The handle reorders cards and persists their order in `Instances.json`. Opening a card changes only the instance shown in the management workspace and does not change the instance selected for Home or game launch. The neutral **New Instance** action below the list has no separator and creates a new installation by selecting a release channel and available version. The manager uses a two-column layout in wide windows and a stacked one-column layout when space is limited. With no instances, the list pane is removed so the create action has the full page
+## Create an instance
 
-Selecting an instance opens its own content workspace. Wide layouts show the default grass block instance icon above one large centered segmented action and use equal spacing around the information group. The action launches an installed game or installs and launches a missing game, opens the instance directory, and deletes the instance after confirmation. While installation is active, the primary action expands to show the current stage, overall percentage, and a spinner while the delete segment contracts. Launch preparation uses the same layout with an elapsed timer. After the game starts, a running icon replaces the spinner, the label changes to **Running**, and the timer begins measuring the current play session. Hovering the active primary action slides its content to **Cancel**, changes its background to strong red, and uses white text. Progress and errors remain inside the action workflow because standalone progress cards and screen-edge activity cards are not used. Compact layouts place a small version of the icon to the left of the instance name in the top toolbar and apply the same animated states to its primary action. Its adjacent arrow opens an animated settings-style popup containing the folder and delete actions while idle. These actions target the open management instance without changing the Home selection. A compact 2 by 2 information group shows status, branch, version, and tracked play time without repeating the instance name. The management group uses Fluent asset icons for **Installed mods**, **Discover mods**, **Worlds**, **Console**, and **Logs**. The console streams live game output for the open instance while the log viewer is still a placeholder, installed mod search reads the selected instance manifest and files, catalog installs target that same instance, and the worlds screen reads directories from `UserData/Saves`
+1. Open **Instances** and select **New Instance**
+2. Choose a branch
+3. Choose one of the available versions
+4. Confirm the creation
 
-Cancellation becomes available only after the pointer leaves the newly activated action and enters it again, so the starting click cannot immediately expose or trigger **Cancel**. The spinner and running icon occupy the left action zone, progress or elapsed time occupies the matching right zone, and the status remains centered between them
+The new entry appears immediately, but its game files are downloaded only when you launch it
 
-Launch preparation runs outside the UI thread so navigation and action animations remain responsive while files, patches, authentication, and the game process are prepared. The active action uses equal fixed side zones, matching icon geometry, and tabular timer digits so entering the running state and changing seconds do not move its contents
+## Install or launch
 
-Stopping a running game from the active action terminates its process tree and waits for the tracked process exit event. Closing the game itself uses the same event and immediately releases the action instead of retaining a disabled state while launch readiness is still waiting for output. The event also stops the session timer, records play time for both the instance and active profile, and restores idle launcher presence even if an optional cleanup step fails
+Select an instance card, then use its main action
 
-If HyPrism is reopened while a launched game is still running, its instance action restores the running state and can stop that same process. If the game ended while HyPrism was closed, the next startup reconciles the stored process record and retains play time and launch cleanup
+- An uninstalled instance downloads its files and starts automatically when installation succeeds
+- An installed instance starts without downloading a complete image again
+- A running instance shows its session time and the same action stops it
+- An active installation can be canceled after the action changes to **Cancel**
 
-Installation status is derived from the game files whenever an instance is opened and is not persisted in `Instances.json`
+Only one process can use an instance at a time. Different instances can run together because their files and user data are separate
 
-The responsive structure matches Settings. Wide windows keep the instance list beside its workspace and use the phased transition when opening a content section. Opening an instance or profile wizard in a wide window slides and fades the list away while the wizard expands across the available width, then restores the list together with the overview when the wizard closes. Compact windows show the instance list as the first page, slide an explicitly opened instance into the same space, and use the standard compact top toolbar and horizontal slide for nested content. Opening the creator from the compact list slides the prepared wizard directly into view, and cancelling slides it back to that list without briefly showing the first instance. Moving from a compact list to a wide window may display the first instance automatically, but returning to compact preserves the list until the user explicitly opens an instance. Content that was explicitly opened before or during the wide layout remains open when returning to compact. Settings categories follow the same intent-aware transition behavior
+## Manage files
 
-When no instances exist, the page starts with the first step of an instance wizard. Selecting **Select version** uses a phased transition that removes the first step before showing a configuration screen with a one-time server reveal animation, title, explanation, branch switch, and version picker. Wizard icon animations run at `2x` speed. The animation restarts once whenever the wizard opens and smoothly moves to its new vertical position when the active step changes the height of the centered content. The branch switch uses a light gray sliding selection. The version picker shows a spinner only while uncached data is loading. Switching to a branch with fresh cached versions updates the picker immediately without another catalog request. Cancelling or completing the wizard stops its pending version request and resets the branch, version selection, and error before the next opening. Creating an instance does not download game files immediately. Select it and use the main action to download or launch it
+**Open Folder** opens the instance directory. Use it only when no installation, update, or game process is writing to that instance
 
-The server reveal appears at its settled position and does not travel vertically while the instance wizard itself opens or closes
+**Delete** removes the instance and its game data after confirmation. Back up worlds or other files you want to keep before deleting it
 
-Wizard action rows use separate rounded buttons with a 10 px gap. The transparent secondary action stays on the left, while the wider white primary action stays on the right. Profile creation uses the same arrangement, and the official sign-in action can expand left over **Back** while authentication is active
+Dragging a card by its handle changes and saves the list order. Opening a card changes the workspace displayed on the right
 
-Core can also migrate legacy layouts, change versions, import ZIP archives, and delete installations
+## Instance sections
 
-## Profiles
+| Section | Use it for |
+| --- | --- |
+| **Installed mods** | Enable, disable, update, import, or remove mods in this instance |
+| **Discover mods** | Find compatible CurseForge files and install them into this instance |
+| **Worlds** | View saves found under the instance user data |
+| **Console** | Follow live output from the running game |
+| **Logs** | Not yet available; use the log files on disk |
 
-Core supports offline and official profiles, stable profile identifiers, per-profile data, identity switching, avatar backups, skin recovery, and authentication session storage
+See [Mods](/docs/user-guide/mods) for the complete mod workflow
 
-The complete profile list is stored in `Profiles/Profiles.json`. `Config.json` contains only `SelectedProfileId`, so creating, selecting, renaming, and deleting a profile always changes the multi-profile store instead of a second launcher identity
+## Console and logs {/* #console-and-logs */}
 
-Launching requires an existing selected profile with a valid name and UUID. HyPrism does not silently create an identity during launch
+The console keeps a separate in-memory buffer for every instance while the launcher is open. You can filter text, pause automatic scrolling by scrolling away from the bottom, toggle line wrapping, and clear the visible buffer
 
-The **Profiles** destination uses the same responsive master-detail pattern, full-card interaction, transitions, card styling, and list-edge spacing as Instances. In a wide window, the saved-profile list stays beside the displayed profile. In a compact window, opening a profile or **Add** shows the content view and the back action returns to the list. Drag a card by its left handle to persist a new order. Open its three-dot menu to duplicate it or delete an inactive profile after confirmation
+Launcher logs remain on disk after HyPrism closes. Open **Settings → Data**, open the launcher data folder, and look in `Logs` for the relevant session. If a launch fails, include the relevant launcher and instance logs when [reporting a bug](https://github.com/hyprismteam/HyPrism/issues/new/choose), but review them for personal paths or account data first
 
-Opening a saved profile only displays its details. Use the primary **Select** action to change the launcher identity used for launch. Its icon and label animate into a white **Active** label over a saturated green background. The selected profile cannot be deleted, and its delete action contracts out of the wide action row while the compact primary action keeps its normal width. **Open Folder** opens the displayed profile rather than the selected profile, and **Copy UUID** copies the displayed identifier. The information group shows account type, total tracked profile play time, the instance used most by that profile, and UUID without repeating the profile name. Statistics content is vertically centered in both profile and instance cards
+## Running games after reopening HyPrism
 
-Use **Add** below the final profile card to open the same animated full-content wizard transition as instance creation and choose an offline or official profile. The displayed profile remains mounted throughout the outgoing phase before the wizard enters. The wizard initializes and plays its light dark-theme avatar reveal animation once at `2x` speed on every opening, starts repositioning it together with the outgoing step when the centered content height changes, and settles it together with the incoming step without clipping the moving icon. After the new step has fully entered, the icon changes to the jumping state for offline creation or the looking state for official sign-in and plays that animation once with the same visible palette. Returning to account-type selection restores the final reveal frame after the transition without replaying its entrance animation. The current step stays intact throughout the closing animation. Every opening starts at account-type selection, while closing or completing the flow clears the previous step. An interrupted step animation restores the active content instead of leaving an empty wizard. In compact mode it returns to the list that opened it instead of showing the first profile. Offline names accept 3 to 16 English letters, digits, hyphens, and underscores. Official creation starts the local `/authorization-callback` handler before opening the Hytale sign-in flow in the system browser, preserves the escaped authorization URI, and validates the returned OAuth state. A successful callback shows a responsive HyPrism page in the language currently selected in the launcher, with a flat launcher-colored background, confirmation that the official account is connected, close-window guidance, and a compact logo in the footer. HyPrism saves each returned game profile, stores its session data in the corresponding profile folder, and selects the first returned profile
-
-The official sign-in step places the transparent **Back** action before the separate white **Sign in** action. Starting sign-in expands **Sign in** to the left over **Back** and replaces its label with a spinner. Cancellation is armed only after the pointer leaves the active button, so returning to it reveals **Cancel** without letting the original click cancel the operation immediately. The first account-type step uses the same transparent secondary treatment for its **Cancel** action
-
-## Mods
-
-Core integrates with CurseForge for search, categories, file resolution, installation, local file import, changelogs, and update checks scoped to an instance
-
-Mods do not have a global navigation destination. Open an instance and use **Installed mods** to inspect its content or **Discover mods** to search and install new content. This keeps every mod operation attached to an explicit installation target
-
-The **Installed mods** screen reads the instance manifest and `UserData/Mods` files. Each row shows the cached CurseForge icon when available, the mod name as a link to its CurseForge page, version, author, and release badge, and carries an enable or disable switch, a selection checkbox, and a delete action behind a confirmation flyout. The toolbar filters rows by name and author, adds a mod from local `.jar` or `.zip` files through the native file picker, checks for updates, and refreshes the list with a spinning icon while loading. A check surfaces an update banner with the available count and an **Update all** action that reinstalls the latest files. Selecting rows reveals a bulk bar with enable, disable, delete, and clear actions. Dropping mod files onto the content panel imports them through the same pipeline and shows a full-panel drop overlay while dragging
-
-The **Discover mods** screen searches CurseForge for the selected instance. Search, category, and sort controls share one toolbar without a redundant catalog button, and Enter runs a typed search. Taller borderless result rows use a restrained background change on hover instead of the Fluent reveal effect. Their larger project artwork aligns with the text block, while a compact identity badge shows the author's real avatar supplied by the CurseForge API without an extra CurseForge logo. HyPrism keeps downloaded avatar images in the shared 14-day disk cache, deduplicates concurrent downloads, and falls back to the author's initial when no avatar is available. Compatibility and release badges do not appear beside the mod name. Incompatible rows are dimmed as a whole. Solid borderless checkboxes smoothly change color on hover and animate their check mark when compatible mods are selected. Selecting compatible mods reveals one bulk installation action in the section top bar using the same compact styling as the instance download action. Clicking the rest of a row opens a sheet attached to the bottom edge with screenshots, summary, author, download count, available releases, and installation for the selected release while the catalog remains behind a smoothly dimmed and blurred backdrop. The sheet rises from the scene edge inside one continuous outline with curved shoulders and returns below the edge by translation instead of fading away. It uses a smaller maximum size in compact mode. Its centered gallery control moves between screenshots without wrapping and fades each image during replacement. Available files use the same table presentation as download sources, with green release badges, purple beta badges, yellow alpha badges, file names, and supported game versions. Escape closes the sheet without leaving the mod catalog. The close button or clicking the backdrop provides the same behavior. HyPrism reads the installed game version from `Server/HytaleServer.jar`, compares its numeric release line with CurseForge file tags, and marks files as compatible, incompatible, or unknown. The file table does not add compatibility tooltips on hover, and explicitly incompatible files cannot be selected or installed. Results page automatically when the list reaches its end and show a loading strip while the next page is in flight. The installed mods, discovery, and console workspaces use the same centered maximum width as the per-instance overview in wide mode and consume the available content width in compact mode
-
-Selecting catalog rows reveals the bulk installation action in the section top bar with a short fade and slide. The preview repeats the cached author avatar beside the author name, its split actions use subtle animated background darkening on hover, its gallery arrows remain centered in their button cells, and the scene-edge mask is removed at the same moment the closing sheet reaches the bottom edge
-
-The split action at the bottom of the preview either installs the selected file or opens the mod on CurseForge with the CurseForge trademark icon
-
-## Console
-
-The **Console** screen streams the live output of the running game for the open instance. Lines keep their capture time and are color-coded by severity: game output, warnings, errors, and launcher system messages such as start and exit. The status pill reports whether the game is running, the filter box searches buffered text, auto-scroll follows new lines until the user scrolls away, wrap toggles line breaking and horizontal scrolling, and clear empties the retained buffer. Output is buffered per instance while the launcher runs, so switching between instances restores each session history
+HyPrism records game process identity and restores the running state when the same process is still alive after reopening the launcher. It removes stale records and keeps accumulated play time

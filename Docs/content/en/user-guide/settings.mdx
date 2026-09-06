@@ -1,66 +1,101 @@
 ---
 title: Settings
-description: Configure launcher behavior, Java, networking, appearance, and storage
+description: Configure language, downloads, Java, appearance, network, and storage
 ---
 
 # Settings
 
-Settings use the same adaptive master-detail layout as the news reader. Wide windows keep categories beside their content and constrain the selected page to a centered readable column. Compact windows show one page at a time, use the available width, and support the Back button or Escape
+Settings are grouped by purpose. Wide windows show categories beside their content, while compact windows use **Back** to return to the category list
 
-## Categories
+[![General launcher settings](../../../static/img/user/en/settings-general.png)](../../../static/img/user/en/settings-general.png)
 
-| Category | Purpose |
-| --- | --- |
-| General | language, music, launch behavior, announcements, news visibility, GPU preference, and environment variables |
-| Downloads | official and community download sources |
-| Java | bundled or custom runtime, initial memory, maximum memory, and extra arguments |
-| Appearance | background selection and interface personalization |
-| Network | connected or autonomous authentication for local profiles |
-| Data | application and instance storage locations |
-| About | project and license information |
+## General
 
-The GPU selected in **General** applies to launched games. The preference popup lists the detected graphics cards by name and an automatic option, and the launcher preselects the discrete card when one is detected. Choosing a card pins the game to that adapter: on Linux the launch script pins `DRI_PRIME=pci:<id>`, and on Windows the card class maps to the matching DXGI preference. **Auto** launches without any GPU overrides so the driver decides. Virtual and software display adapters are excluded from detection. A stored card that is no longer detected falls back to the discrete card, then to automatic. The HyPrism interface separately requests the system high-performance GPU when hybrid graphics are available. Windows uses the DXGI high-performance adapter order, while Linux uses the desktop GPU preference and PRIME offload variables. Existing Linux PRIME variables are preserved, and Avalonia can still use software rendering if hardware initialization fails
+- **Interface Language** changes the launcher and official sign-in callback language immediately
+- **Close after launch** exits HyPrism after the game starts successfully
+- **Show Alpha Mods** includes prerelease files in mod search results
+- **Game GPU** chooses a detected graphics adapter or leaves the choice to the system with **Auto**
 
-The Java runtime choices use the same hover highlight as the settings navigation. The mouse wheel never changes the selected value: it scrolls the open drop-down list, and otherwise it bubbles to the page scroll. Advanced JVM arguments are shown as individual rows in a table and saved as soon as a row is added or removed. **Add** opens the shared launcher overlay, whose decorative shoulders remain joined to the body outline at every supported width. While the overlay is open the scene outline drops its bottom edge, so the sheet merges with the window border the same way as the mod catalog preview. Quoted values remain a single argument. Java heap arguments such as `-Xms` and `-Xmx` are managed by the memory controls and are rejected by the argument editor. An empty list renders a centered gray placeholder card with a Material Symbols icon instead of the table
+The **Show announcements** and **Background music** switches are present, but these features are not yet available in the current desktop version
 
-The environment variables in **General** are passed to the game process on every platform. Variables are shown as individual rows in the same table style as JVM arguments and saved as soon as a row is added or removed. **Add** opens the same shared launcher overlay and accepts one or more space-separated `KEY=VALUE` pairs, quoted values keep their spaces, and each new line becomes a separate row. Invalid assignments are rejected with an inline message. User variables are applied after the launcher-managed GPU, authentication, and Java environment values, so the last assignment wins when a key repeats. An empty list renders a centered gray placeholder card with a Material Symbols icon instead of the table
+[![Detected graphics adapters in the Game GPU picker](../../../static/img/user/en/settings-gpu-picker.png)](../../../static/img/user/en/settings-gpu-picker.png)
 
-The custom Java runtime is chosen only through the native file picker, and the picked executable is validated and saved immediately. The action button reads **Edit** while no executable is stored and **Change** afterwards, and the stored path is shown on the same path surface as the Data locations with an action that opens its containing folder; the surface shows a muted placeholder while no executable is stored. The picker starts in the stored executable's directory when it still exists and in the launcher data directory otherwise, so it never reopens a removed folder. Changing the instance directory clears a custom Java executable stored inside the old instance tree. The active runtime option ignores hover and repeated clicks, the action button sits beside the runtime option the same way as the Data location actions, slides in and out with the runtime selection, and shows the same spinner while the file picker is open. The open action appears only while an executable is stored, and the path surface slides and fades under the selected runtime option
+### Environment variables
 
-## Data storage
+Environment variables are passed to every game process. Add one or more `KEY=VALUE` assignments. Quote a value when it contains spaces
 
-The Data page combines game instance storage and launcher data in one **Launcher Files** group. Each location is shown as a readable local path with an icon action that opens it in the system file manager
+```text
+MESA_VK_DEVICE_SELECT=10de:2786
+MY_GAME_OPTION="value with spaces"
+```
 
-A donut chart above the file locations shows total disk usage and groups occupied space into instance files, images, mods, news articles, logs, and other files. Its darker segments contain multiple filled Material Symbols Rounded icons that drift, appear, and dissolve independently across each storage category, while the responsive legend uses the same grouped statistic cells and internal dividers as instance and profile information. The percentage labels use Google Sans. Static chart layers are cached, particle paths are recalculated only for a new animation cycle, updates are limited to 60 frames per second, and animation pauses while the chart is hidden. The legend keeps size and percentage values aligned. Encoded files in the persistent image cache are counted as images, while parsed feed and article data under `Cache/News` is counted as news. Storage is measured in the background during launcher startup and the cached result is reused when the page is opened
+Invalid assignments are rejected. A custom value replaces a launcher-managed value when both use the same key
 
-The borderless path fields use the same background as an inactive switch. Use **Edit** to choose a new instance folder. The action expands over **Reset** and starts its spinner as soon as the system folder picker opens, then returns smoothly to its idle size if the picker is closed. After a folder is selected, the expanded action shows a spinner, the move status, and byte-based completion percentage when files need to be copied. A short minimum active interval lets the opening transition finish even when an empty folder is moved or the location is reset immediately. Moving the pointer away during the copy arms cancellation, so the next hover shows **Cancel** and a click stops the copy while keeping the current folder selected. **Reset** appears only after the default location has been changed and returns it to `Instances` inside the launcher data directory. HyPrism removes the previous folder only after the copy and location update succeed, and the copy preserves Unix file permissions, so executable files such as the game client keep their execute bit
+## Downloads {/* #downloads */}
 
-Instance storage cannot be changed while a game is running. The current paths can still be opened during an active game session
+The official source is always available as a configuration entry. User-added mirrors are optional and can be enabled, disabled, or removed
 
-## Local profile authentication
+[![Official and user-added download sources](../../../static/img/user/en/settings-downloads.png)](../../../static/img/user/en/settings-downloads.png)
 
-Connected mode requests a session from the configured authentication service and keeps its account-data integration available. Autonomous mode starts a dedicated Local Node process on the literal loopback address `https://127.0.0.1:8443`, creates an ephemeral OmniAuth identity, and redirects the client service endpoints to that node
+To add a mirror, select **Add** and choose one method
 
-Local Node attaches to the game process after launch. Closing HyPrism does not interrupt an active autonomous game session, and the node exits automatically when the game closes. Its isolated diagnostics are stored beside the launcher and instance logs in the current `Logs/<launch-time>/` directory
+- **Automatic detection** accepts a public HTTPS endpoint and tries to infer its supported layout
+- **Manual setup** accepts a complete `.mirror.json` definition
 
-Both modes use the DualAuth Agent for the embedded server. HyPrism no longer modifies `HytaleServer.jar`. Installations left by an older release are restored from their backup before launch
+HyPrism validates the definition and checks whether each source has files for the current platform. It prefers the official source and selects the fastest available enabled mirror when the official source cannot serve the requested version
 
-The Local Node persists profiles, saved skins, and presence preferences on the device. It unlocks all character creator items found in the active instance's `Assets.zip`, while cosmetic choices remain local. Centralized friends, parties, invites, global presence, cloud cosmetic synchronization, and server discovery return compatible empty states because there is no shared backend. Direct friend joins still depend on a reachable host through LAN, UPnP, IPv6, port forwarding, or a VPN such as Tailscale
+:::warning
+A mirror supplies executable game content and patches. Add only endpoints you trust and make sure their use complies with the [Hytale EULA](https://hytale.com/eula) and local law
+:::
 
-## Download sources
+The [mirror reference](/docs/reference/mirrors) documents the format for advanced setups
 
-The Downloads page shows the official Hytale source and community mirrors in one table under **Download sources**. Its columns show the endpoint link, source type, current availability, and enabled state. Availability starts with a continuously rotating spinner that smoothly changes when the background probe finishes. A check means the source is available, a cross means it is unavailable, and a yellow-orange warning symbol means the mirror responds but exposes no release or pre-release versions for the current operating system and CPU architecture. When any profile has a valid official Hytale session, HyPrism checks the official source through its authenticated patches API and verifies that a download exists for the current platform. Source checks run on the first visit and their results remain in the table when switching settings categories or clicking the active category again. Changing the source list or enabling a source starts the relevant checks again. HyPrism continues measuring source latency for automatic source selection without displaying ping in the table
+## Java {/* #java */}
 
-Selecting **Add** opens a wizard with a load-balancer reveal animation that initializes before the first visible frame and plays once at `2x` speed on every opening. Its light housing preserves the dark left indicator circle and status dots. The same final reveal frame remains visible on every step without restarting the animation. When a step changes the centered content height, the icon starts moving with the outgoing step and settles with the incoming step without being clipped. The first step lets you enter a public HTTPS address for automatic format detection or paste a complete `.mirror.json` definition manually. HyPrism validates either result before saving the source
+Use the bundled runtime unless you need a specific compatible Java installation
 
-The reveal icon appears at the first step's settled position and does not travel vertically while the wizard itself opens or closes. The active step remains visible throughout the closing fade and is cleared only after the overview returns
+- **Use bundled Java** lets HyPrism provision and update its managed runtime
+- **Use custom Java** requires selecting the `java` or `java.exe` executable
+- **Maximum RAM (-Xmx)** and **Initial RAM (-Xms)** control the heap values generated by HyPrism
+- **Advanced JVM arguments** adds options for the singleplayer server through `JAVA_TOOL_OPTIONS`
 
-The download-source wizard uses separate rounded actions with a 10 px gap. **Back** and **Cancel** remain transparent secondary actions, while **Add source** is the wider white primary action
+[![Advanced JVM argument editor](../../../static/img/user/en/java-arguments.png)](../../../static/img/user/en/java-arguments.png)
 
-Each user-provided source can be enabled or disabled from the table. Its three-dot action menu contains source-specific actions, including removal with confirmation. HyPrism prioritizes the official download source and automatically selects the fastest added user mirror when the official source is unavailable. The same rule is restated in a note card below the table
+Enter each advanced option as a separate argument. Heap flags are managed by the memory controls and are rejected in this editor
 
-Only add sources you trust. Automatic mode only requests the public address, while manual JSON mode accepts the complete source definition, including optional custom headers
+```text
+-Dfile.encoding=UTF-8
+-XX:+UnlockExperimentalVMOptions
+```
 
-The About page shows the installed launcher version, the latest commit in `main`, project and community links, the core team, an adaptive row of recent contributors, the source-code license, the Hytale EULA, visual credits, and the disclaimer. Visual credits separate illustrations provided by Icons8 from animated media provided by Lordicon, with the required Lordicon link on its row. A subdued footer links to the official Avalonia UI and .NET websites, while its heading follows the selected interface language
+Agent, classpath, Java-home, and executable-selection arguments are removed because they can bypass the launch setup
 
-Settings are written through `IDesktopSettingsStore` and persisted by `IConfigStore`
+## Appearance {/* #appearance */}
+
+Choose a fixed launcher background or **Auto** for rotation. The **Disable news** switch is present but does not currently stop the News page from loading
+
+## Network {/* #network */}
+
+This category affects offline profiles only
+
+- **Online mode** sends local-profile session requests to the configured authentication server
+- Disabling online mode uses the on-device [Local Node](/docs/reference/local-node)
+
+Official profiles always use official Hytale authentication. Local Node sessions do not grant official ownership or centralized social features
+
+## Data {/* #data */}
+
+- **Instance folder** changes the root used for game installations
+- **Reset** moves instances back to the default location inside the HyPrism data directory
+- **Open folder** opens either the instance root or the complete launcher data directory
+- The storage chart groups instance files, mods, images, news, logs, and other data
+
+Changing the instance folder copies existing data, preserves Unix permissions where supported, and removes the previous folder only after success. The action is disabled while a game is running and can be canceled while copying
+
+Back up important worlds before moving a large instance directory or changing disks
+
+## About
+
+About shows the installed version, latest `main` commit, project links, contributors, licenses, the Hytale EULA, and visual credits
+
+Use **Bug Report** to open the issue templates. Include your platform, HyPrism version, reproduction steps, expected result, actual result, and relevant logs

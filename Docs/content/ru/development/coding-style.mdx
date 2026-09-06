@@ -27,14 +27,22 @@ description: Правила языка, XML-документации и стру
 - `<returns>` для каждого результата кроме `void`, включая `Task` и `Task<T>`
 - `<exception>` для ошибок, которые должен учитывать вызывающий код
 
+Пример интерфейса показывает формат документации, а не контракт лаунчера
+
 ```csharp
-/// <summary>
-/// Загружает выбранный профиль из постоянного хранилища
-/// </summary>
-/// <param name="profileId">Стабильный идентификатор загружаемого профиля</param>
-/// <returns>Профиль при его наличии, иначе <see langword="null"/></returns>
-/// <exception cref="IOException">Возникает, если файл профиля не удалось прочитать</exception>
-public Profile? LoadProfile(string profileId)
+using System.IO;
+using HyPrism.Core.Models;
+
+public interface IProfileReader
+{
+    /// <summary>
+    /// Загружает выбранный профиль из постоянного хранилища
+    /// </summary>
+    /// <param name="profileId">Стабильный идентификатор загружаемого профиля</param>
+    /// <returns>Профиль при его наличии, иначе <see langword="null"/></returns>
+    /// <exception cref="IOException">Возникает, если файл профиля не удалось прочитать</exception>
+    public Profile? LoadProfile(string profileId);
+}
 ```
 
 Используйте `<inheritdoc/>` в реализации только тогда, когда интерфейс полностью описывает контракт
@@ -50,3 +58,5 @@ public Profile? LoadProfile(string profileId)
 - переиспользуйте `JsonSerializerOptions` вместо создания нового экземпляра при каждом вызове сериализации
 - предпочитайте collection expressions и `System.Threading.Lock`, если их поддерживает target framework
 - добавляйте `using` вместо повторения однозначного framework namespace в теле членов
+
+Изменения документации должны соблюдать правила аудитории, примеров и скриншотов из [AGENTS.md](../../../../AGENTS.md)

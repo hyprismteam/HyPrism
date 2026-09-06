@@ -164,6 +164,37 @@ html:not([data-docs-ready='true']) body {
   text-decoration: none;
 }
 
+.hyprism-sidebar-category > summary {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+  list-style: none;
+}
+
+.hyprism-sidebar-category > summary::-webkit-details-marker {
+  display: none;
+}
+
+.hyprism-sidebar-category > summary::after {
+  content: '';
+  margin-left: auto;
+  width: 0.4rem;
+  height: 0.4rem;
+  border-right: 1.4px solid currentColor;
+  border-bottom: 1.4px solid currentColor;
+  transform: rotate(45deg);
+  transition: transform 0.15s ease;
+}
+
+.hyprism-sidebar-category[open] > summary::after {
+  transform: rotate(225deg);
+}
+
+.hyprism-sidebar-icon {
+  color: var(--ifm-color-primary);
+  flex-shrink: 0;
+}
+
 .hyprism-sidebar-link:hover,
 .hyprism-sidebar-category > summary:hover {
   background: rgba(127, 127, 127, 0.08);
@@ -199,6 +230,19 @@ html:not([data-docs-ready='true']) body {
 .hyprism-doc-main article {
   margin: 0 auto;
   max-width: 52rem;
+}
+
+.hyprism-doc-main article img {
+  display: block;
+  height: auto;
+  max-width: 100%;
+  border: 1px solid var(--hyprism-border);
+  border-radius: 0.75rem;
+}
+
+.hyprism-doc-main article a:has(> img) {
+  display: inline-block;
+  cursor: zoom-in;
 }
 
 .hyprism-doc-main article > h1:first-child {

@@ -1,79 +1,96 @@
 ---
 title: Local Node
-description: Autonomous OmniAuth and local Hytale compatibility endpoints
+description: Autonomous HTTPS endpoints, session ownership, certificates, and standalone options
 ---
 
 # Local Node
 
-Autonomous mode runs `HyPrism.LocalNode` as a dedicated companion process on a loopback endpoint such as `https://127.0.0.1:8443`. The endpoint is a literal IP address, so the game never resolves the endpoint through DNS and VPN clients with a tunnel DNS interceptor cannot break it Each autonomous game launch receives its own free port in the `8443` to `9999` range, so multiple local sessions can run together. The node rejects unexpected Host headers, limits request bodies to 2 MB, and does not require a separately deployed `hytale-auth-server`
+`HyPrism.LocalNode` is a companion process for autonomous local-profile sessions. It listens only on `127.0.0.1`, so client requests do not depend on DNS or a remote authentication server
 
-## Launch flow
+## Managed lifecycle
 
-1. `GameLauncher` allocates an isolated Local Node endpoint, selects `Assets.zip` from the instance, and starts the node before patching or launching the game
-2. The node creates one ephemeral Ed25519 key pair for the selected local profile
-3. The launcher obtains identity and session tokens from `POST /v1/sessions`
-4. `ClientPatcher` redirects known Hytale service prefixes to the loopback authority
-5. The game receives scoped certificate trust through `SSL_CERT_FILE` and a Java PKCS#12 trust store
-6. DualAuth validates the embedded JWK and handles remote server handshakes without asking the remote server to contact the player's loopback node
-7. After the game starts, the launcher transfers Local Node lifetime ownership to the game PID
-8. The node remains available if the launcher closes and stops itself when the game process exits
+`LocalNodeServiceFactory` allocates a free port from `8443–9999` and a separate `LocalNode/Sessions/<session-id>` directory for each launch. Accounts and certificates are shared across these sessions
 
-The client patch supports both regular length-prefixed strings and Linux NativeAOT frozen strings where the final character borders runtime metadata. Frozen replacements preserve that metadata byte. The patch can switch between connected and autonomous targets, and HyPrism restores the stable original backup before applying a different target. On macOS, backup and patch state files are stored outside a recognized app bundle to preserve its code signature. Binaries outside an app bundle keep these files beside the binary, and legacy bundle cleanup does not remove active adjacent state files
+1. `GameLauncher` creates a node and passes the active instance directory
+2. `LocalNodeHost` prepares certificates and launches the companion
+3. The launcher waits for HTTPS health, then creates a local session
+4. Client preparation redirects supported services and supplies certificate trust
+5. Once the game starts, the launcher attaches its PID to the node
+6. The node follows the game lifetime even if Desktop closes
 
-## Endpoint groups
+Before attachment, a managed node follows its launcher owner. Lifecycle requests require the per-process `X-HyPrism-Control` secret
 
-| Group | Routes |
+## HTTP surface
+
+| Group | Routes and behavior |
 | --- | --- |
-| Readiness and keys | `/health`, `/.well-known/jwks.json`, `/jwks.json` |
-| Sessions | `/v1/sessions`, `/game-session`, `/game-session/new`, `/game-session/child`, `/game-session/refresh`, `/game-session/authorize`, `/server-join/auth-grant`, `/server-join/auth-token`, `/game-session/exchange`, `/validate`, `/server/auto-auth` |
-| Lifecycle control | `/v1/lifecycle/attach`, `/v1/lifecycle/stop` with the per-process launcher secret |
-| Account data | `/my-account/game-profile`, `/my-account/get-profiles`, `/my-account/get-launcher-data`, `/profile/uuid/{uuid}`, `/profile/username/{username}` |
-| Avatars and cosmetics | `/my-account/skin`, `/my-account/cosmetics`, `/account-data/skin/{uuid}`, `/player-skins`, `/player-skins/active`, `/player-skins/{skinId}` |
-| Compatibility | configs, live config, telemetry, empty-state social routes, presence settings, and empty server listings |
+| Health and keys | `/health`, `/.well-known/jwks.json`, `/jwks.json` |
+| Session creation | `POST /v1/sessions`, `/game-session`, `/game-session/new` |
+| Session lifetime | `/game-session/child`, `/game-session/refresh`, `DELETE /game-session` |
+| Server handshake | `/game-session/authorize`, `/server-join/auth-grant`, `/server-join/auth-token`, `/game-session/exchange`, `/validate`, `/server/auto-auth` |
+| Account and profile | `/my-account/game-profile`, `/my-account/get-profiles`, `/my-account/get-launcher-data`, `/profile/uuid/{uuid}`, `/profile/username/{username}` |
+| Character | `/my-account/skin`, `/my-account/cosmetics`, `/account-data/skin/{uuid}`, `/player-skins` and child routes |
+| Lifecycle | `POST /v1/lifecycle/attach`, `POST /v1/lifecycle/stop` for managed processes |
+| Compatibility | Configs, telemetry, presence settings, empty social and server-discovery responses |
 
-Authorization grants and access tokens contain the public embedded JWK but never its private `d` value. Access tokens copy the requested certificate fingerprint into `cnf.x5t#S256`. JWKS contains public keys for active sessions only
+The host rejects unexpected Host headers and limits request bodies to 2 MiB. Compatibility routes do not provide a shared friends graph, invitations, cloud synchronization, NAT traversal, or public discovery
 
-Child-session and refresh calls issue fresh token pairs with the existing profile key. During `/game-session/authorize`, the Bearer token proves the player's session while the identity token in the request body identifies the target server. This matches the upstream singleplayer handshake and prevents a server identity from being mistaken for the player session
+The route implementation is `Sources/HyPrism.LocalNode/LocalNodeApplication.cs`; tests live in `Tests/HyPrism.LocalNode.Tests/LocalNodeHostTests.cs`
 
-Identity tokens, authorization grants, and server access tokens carry the active character payload in the string-valued `skin` claim used by the upstream server. The embedded server reads this claim during player setup, while the account and player-skin endpoints continue to back the menu editor
+## Tokens and character state
 
-`/my-account/cosmetics` follows the `sanasol/hytale-auth-server` response shape. The node reads each character creator category from the active instance's `Assets.zip` and returns all installed item IDs as unlocked. It falls back to the small upstream compatibility catalog only when the archive is unavailable or invalid
+Each selected local profile receives an ephemeral Ed25519 signing key. Identity handoff includes the private JWK required by DualAuth. JWKS, grants, and access tokens expose public key material only
 
-## Storage and trust
+Authorization validates the player's Bearer session separately from the target server identity in the request body. Access tokens bind the requested certificate fingerprint through `cnf.x5t#S256`. Refresh and child sessions reuse the profile key
 
-Each autonomous launch stores its runtime state below `LocalNode/Sessions/<session-id>` in the HyPrism application data directory. This prevents control secrets and trust bundles from colliding between concurrently running local sessions. Local profiles, selected skins, and presence preferences remain in the shared `LocalNode/Accounts.json` file, keyed by the stable UUID of the selected launcher profile
+The active character is included in the string-valued `skin` claim. The cosmetics catalog reads installed items from the active instance's `Assets.zip` and uses a small fallback when that archive is unavailable
 
-The TLS certificate authority is intentionally shared at `LocalNode/Certificate`. It signs the server certificate, which is valid for the `127.0.0.1` address rather than a particular port. Every Local Node endpoint can therefore use the same trusted chain without another system trust prompt
+## Certificate trust {/* #certificate-trust */}
 
-| File | Purpose |
+The shared authority is stored in `LocalNode/Certificate`. Its server certificate is valid for the IP address rather than a particular port
+
+| Platform | Trust setup |
 | --- | --- |
-| `Accounts.json` | shared local profiles, saved skins, active skin, and presence preferences keyed by launcher-profile UUID |
-| `accounts.lock` | short-lived cross-process lock that serializes changes to shared local profiles |
-| `hyprism-local-ca.pfx` | shared local certificate authority and private key in `LocalNode/Certificate` |
-| `hyprism-local-ca.crt` | shared PEM public certificate authority in `LocalNode/Certificate` |
-| `h.localhost.pfx` | shared server TLS certificate and private key signed by the local authority; the file name predates the loopback IP endpoint |
-| `h.localhost.crt` | shared PEM server certificate signed by the local authority; the file name predates the loopback IP endpoint |
-| `client-ca-bundle.pem` | Unix CA bundle inherited by the game process |
-| `client-trust.p12` | Java trust store inherited by embedded server JVMs |
-| `macos-trusted-v2.crt` | copy of the certificate registered in macOS trust settings, used to skip re-approval on later launches |
-The server certificate rotates when it is invalid, does not carry the endpoint IP address in its subject alternative names, is not signed by HyPrism's local certificate authority, or has fewer than seven valid days remaining. The certificate authority persists for ten years unless it is invalid. Windows adds that authority to the current user's root store only when its thumbprint is absent, then removes older self-signed HyPrism roots after the active authority is trusted. The Windows server key is imported without `EphemeralKeySet`, which Schannel requires for Kestrel TLS, and without `PersistKeySet`, so the imported key container is released with the certificate. Linux and macOS pass a combined CA bundle to the game process for OpenSSL consumers, and Java receives a dedicated PKCS#12 trust store on every platform
+| Windows | Add the local authority to the current user's root store when absent |
+| Linux | Supply a combined CA bundle to the game process |
+| macOS | Register the local authority in admin trust settings, potentially showing a system prompt, and supply a CA bundle |
+| Java on every platform | Supply a dedicated PKCS#12 trust store |
 
-On macOS, the first autonomous launch registers the HyPrism local certificate authority in the macOS admin trust settings so the game client and system TLS consumers trust the loopback endpoint. Registration may show a one-time approval prompt. The `macos-trusted-v2.crt` marker records the registered authority so later launches skip the prompt, and the previous root trust entry is removed only when the authority rotates. The server certificate remains restricted to the `127.0.0.1` endpoint address. HyPrism verifies the full chain before launching the game. Canceling the macOS security prompt stops the autonomous launch with an actionable error instead of weakening certificate validation
+The server certificate rotates when invalid, issued by a different authority, missing the endpoint IP, or within seven days of expiry. The local authority lasts ten years unless invalid. Canceling the macOS trust prompt aborts the launch
 
-ASP.NET logging providers are disabled for the companion process, so server request diagnostics do not share the static HyPrism logger or its console stream. The launcher reports only process startup, readiness, attachment, and exceptional control failures. Detailed node events stay in `Logs/<launch-time>/local-node-<port>.log`, and the previous file after size-based rotation is named `local-node-<port>.previous.log`. Unknown request metadata uses `local-node-requests-<port>.ndjson` in the same directory. Authentication routes record only method, path, response status, and duration without headers, tokens, or request bodies
+Private `.pfx` files belong to local state and must not be distributed with screenshots, logs, or test fixtures
 
-The embedded host receives the active game directory plus shared certificate, account, and session-log paths automatically. When running `HyPrism.LocalNode` as a standalone process, pass `--assets-path /absolute/path/to/Assets.zip` to expose the complete installed cosmetics catalog, `--certificate-directory /absolute/path/to/Certificate` to reuse an existing trusted local certificate authority, and `--account-data-directory /absolute/path/to/LocalNode` to reuse local profiles and skins. Use `--log-file /absolute/path/to/local-node.log` and `--request-journal /absolute/path/to/requests.ndjson` to override the two diagnostic destinations. Without these overrides, standalone mode keeps both files below its data directory
+## Standalone development
 
-## Limits
+A standalone node defaults to port `8443` and `LocalNodeData` beside its executable. For an isolated run from the repository root
 
-Local Node is a single-device compatibility backend, not a decentralized social network. It cannot provide globally unique names, a shared friends graph, cross-device presence, invitations, cloud synchronization of cosmetics, public discovery, or NAT traversal without another coordination layer
+```bash
+hyprism_node_data="$(mktemp -d)"
+dotnet run --project Sources/HyPrism.LocalNode -- \
+  --data-directory "$hyprism_node_data" \
+  --port 8443
+```
 
-The endpoint shapes are based on the open `sanasol/hytale-auth-server` compatibility surface. Automated tests cover the local HTTPS session, account, JWKS, grant exchange, certificate binding, avatar persistence, and client patch transitions. End-to-end verification against every future proprietary Hytale client build still requires a compatible installed client
+Standalone startup can also configure platform certificate trust. Prefer the automated Local Node suite for tests, which disables system trust changes and pins its generated certificate
 
-## Concurrent launches
+| Option | Meaning |
+| --- | --- |
+| `--data-directory` | Runtime state directory |
+| `--hostname` | Must be `127.0.0.1` |
+| `--port` | Standalone port from 1024 through 65535 |
+| `--assets-path` | Installed `Assets.zip` for the cosmetics catalog |
+| `--certificate-directory` | Reuse a certificate authority and server certificate |
+| `--account-data-directory` | Shared account and skin storage |
+| `--log-file` | Override the bounded node log |
+| `--request-journal` | Override the unknown-request journal |
+| `--owner-pid`, `--control-secret` | Managed lifecycle pair, both required together |
 
-HyPrism treats each game instance as a separate launch target. A single instance cannot be started twice, because its client files and user data are shared, but different instance directories can run with different authentication modes at the same time. For example, one instance can use Local Node, another a custom authentication service, and a third official authentication
+Arguments use `--name value` pairs. Unknown and duplicate options are rejected
 
-The launcher keeps a runtime process registry with the PID, process start time, instance, and profile. When HyPrism starts again after it was closed, it restores only entries whose process is still alive and whose start time still matches. Entries that ended while the launcher was unavailable are reconciled once so play time and launch cleanup are retained, while stale entries and reused PIDs are removed automatically
+## Diagnostics and compatibility
 
-Official authentication is deliberately restricted to one running client per Hytale account owner. HyPrism serializes official authentication between launcher processes and refuses a second launch when the restored process registry already contains that account
+Managed logs use the launcher's [session log directory](/docs/architecture/data-and-cache). Authentication diagnostics omit headers, token values, and request bodies
+
+Protocol compatibility follows the open [hytale-auth-server implementation](https://github.com/sanasol/hytale-auth-server). Automated tests cover HTTPS, account persistence, tokens, certificates, process lifetime, and client patch transitions; a new proprietary Hytale build still needs a real game launch to verify end-to-end compatibility
+
+Source: [LocalNodeApplication](../../../../Sources/HyPrism.LocalNode/LocalNodeApplication.cs), [LocalNodeHostTests](../../../../Tests/HyPrism.LocalNode.Tests/LocalNodeHostTests.cs)

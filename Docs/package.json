@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "docusaurus start --host 0.0.0.0",
     "build": "docusaurus build --out-dir out",
-    "check": "python3 ../Scripts/check_documentation.py && tsc --noEmit",
+    "check": "python3 ../Scripts/test_documentation.py && python3 ../Scripts/check_documentation.py && tsc --noEmit",
     "clear": "docusaurus clear",
     "serve": "docusaurus serve --dir out",
     "lint:content": "python3 ../Scripts/check_documentation.py"

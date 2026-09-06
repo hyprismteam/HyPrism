@@ -27,14 +27,22 @@ Public methods must include
 - `<returns>` for every non-void result, including `Task` and `Task<T>`
 - `<exception>` for every exception callers are expected to handle
 
+This illustrative interface shows the documentation format; it is not a launcher contract
+
 ```csharp
-/// <summary>
-/// Loads the selected profile from persistent storage
-/// </summary>
-/// <param name="profileId">Stable identifier of the profile to load</param>
-/// <returns>The profile when it exists, otherwise <see langword="null"/></returns>
-/// <exception cref="IOException">Thrown when the profile file cannot be read</exception>
-public Profile? LoadProfile(string profileId)
+using System.IO;
+using HyPrism.Core.Models;
+
+public interface IProfileReader
+{
+    /// <summary>
+    /// Loads the selected profile from persistent storage
+    /// </summary>
+    /// <param name="profileId">Stable identifier of the profile to load</param>
+    /// <returns>The profile when it exists, otherwise <see langword="null"/></returns>
+    /// <exception cref="IOException">Thrown when the profile file cannot be read</exception>
+    public Profile? LoadProfile(string profileId);
+}
 ```
 
 Use `<inheritdoc/>` on an implementation only when the interface documents the complete contract
@@ -50,3 +58,5 @@ Use `<inheritdoc/>` on an implementation only when the interface documents the c
 - cache reusable `JsonSerializerOptions` instead of creating them at each serialization call
 - prefer collection expressions and `System.Threading.Lock` when the target framework supports them
 - add a `using` directive instead of repeating an unambiguous framework namespace in member bodies
+
+Documentation changes follow the audience, example, and screenshot rules in [AGENTS.md](../../../../AGENTS.md)

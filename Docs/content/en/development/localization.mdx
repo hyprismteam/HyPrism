@@ -1,28 +1,52 @@
 ---
 title: Localization
-description: Add and maintain Avalonia resource strings
+description: Add resource strings and update views when the language changes
 ---
 
 # Localization
 
-Localization belongs to `HyPrism.Desktop` because translated UI text is a presentation concern
-
-The default resource is `Sources/HyPrism.Desktop/Localization/Resources.resx`. Each supported culture has a sibling file such as `Resources.ru-RU.resx`
+Launcher translations belong to Desktop. The default resource is `Sources/HyPrism.Desktop/Localization/Resources.resx`; each supported culture has a sibling such as `Resources.ru-RU.resx`
 
 ## Add a string
 
-1. Add the key and English value to `Resources.resx`
-2. Add the same key to every culture file
-3. Read the value through `StringLocalizer`
-4. Refresh the affected view model when `LanguageChanged` fires
-5. Add or update localization tests
+1. Add a stable key and English value to the default resource
+2. Add the same key to every culture resource
+3. Resolve it through `StringLocalizer`
+4. Refresh affected view-model properties when `LanguageChanged` fires
+5. Run localization tests
 
-`_supportedCultures` in the default resource controls the language picker. `_langName` in each culture resource provides the native display name
+Example resource entry
 
-`IDesktopSettingsStore` stores the selected culture code in the shared configuration. Core must not own translated strings or Avalonia resource lookup
+```xml
+<data name="example.ready" xml:space="preserve">
+  <value>Ready</value>
+</data>
+```
 
-## Validation
+Example access from presentation code
 
-`StringLocalizerTests` verifies that every bundled locale contains the complete default key set and preserves all interpolation placeholders
+```csharp
+using HyPrism.Desktop.Localization;
 
-Run `dotnet test Tests/HyPrism.Desktop.Tests/HyPrism.Desktop.Tests.csproj` after changing resource files
+var localizer = new StringLocalizer("en-US");
+var readyLabel = localizer["example.ready"];
+```
+
+The example key must be added before use. Missing keys fall back to English and then to the key itself
+
+## Languages and formatting
+
+`_supportedCultures` in the default resource controls the picker. `_langName` in each locale is its native display name. `IDesktopSettingsStore.Language` persists the selected culture
+
+Keep placeholder names and indices aligned between languages. Core publishes data and message keys, while Desktop owns translated UI text and resource lookup
+
+## Verify
+
+```bash
+dotnet test Tests/HyPrism.Desktop.Tests/HyPrism.Desktop.Tests.csproj \
+  --filter FullyQualifiedName~StringLocalizerTests
+```
+
+Tests check the complete key set and interpolation placeholders. Documentation uses a separate [two-language MDX model](/docs/development/documentation)
+
+Source: [Localization](../../../../Sources/HyPrism.Desktop/Localization)

@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 import Layout from '@theme/Layout'
+import MDXContent from '@theme/MDXContent'
 import TOC from '@theme/TOC'
 import React, { type ComponentType, useEffect } from 'react'
 import { useDocsLocale } from '../context/locale'
@@ -97,7 +98,9 @@ export default function LocalizedDocPage({ en, ru, pageKey }: LocalizedDocPagePr
           <DocsSidebar />
           <main className="hyprism-doc-main">
             <article className="theme-doc-markdown markdown">
-              <Content />
+              <MDXContent>
+                <Content />
+              </MDXContent>
             </article>
             <a className="hyprism-edit-link" href={editUrl}>
               {dictionary.editPage}

@@ -2,8 +2,11 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 export default {
+  icon: 'menu-book',
   dashboard: 'Home',
+  'instances-profiles-mods': 'Instances',
+  profiles: 'Profiles',
+  mods: 'Mods',
   news: 'News',
-  settings: 'Settings',
-  'instances-profiles-mods': 'Instances, profiles, and mods'
+  settings: 'Settings'
 }

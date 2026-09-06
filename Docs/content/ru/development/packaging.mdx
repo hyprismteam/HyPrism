@@ -1,0 +1,76 @@
+---
+title: Упаковка и релизы
+description: Платформенные пакеты, CI, целевые артефакты и версия релиза
+---
+
+# Упаковка и релизы
+
+`Packaging/` содержит поддерживаемые точки входа релизной сборки. Каждый сценарий создает пакеты из одного автономного publish Desktop, чтобы Desktop и Local Node поставлялись вместе
+
+## Целевые платформы
+
+| Хост | Runtime | Цели |
+| --- | --- | --- |
+| Linux | `linux-x64` | `deb`, `rpm`, `appimage`, `flatpak`, `tar` |
+| Windows | `win-x64` | `zip`, `msi`, `exe` |
+| macOS | `osx-arm64` | `dmg` |
+
+Собирайте пакеты на соответствующей платформе. Все сценарии принимают `all` и `--output`, стандартный каталог результата: `dist`
+
+## Linux
+
+Установите инструменты выбранных форматов: `dpkg-deb`, `rpmbuild`, `appimagetool`, `flatpak` и `flatpak-builder`
+
+```bash
+./Packaging/publish-linux.sh deb rpm tar --output dist
+./Packaging/publish-linux.sh all --output dist
+```
+
+Инструмент AppImage можно задать через `--appimagetool` или `APPIMAGETOOL`. Экспорт Flatpak и bundle используют ветку `stable`
+
+## Windows
+
+Для MSI и EXE сценарий устанавливает закрепленную версию WiX во временный каталог
+
+```powershell
+pwsh Packaging/publish-windows.ps1 all --output dist
+```
+
+Перед созданием пакетов проверяется наличие `HyPrism.Desktop.exe` и `HyPrism.LocalNode.exe`. ZIP содержит те же файлы приложения, что и установщики
+
+## macOS
+
+Сценарий использует системные `sips`, `iconutil`, `plutil`, `hdiutil`, `codesign` и `file`
+
+```bash
+./Packaging/publish-macos.sh dmg --output dist
+```
+
+Он создает app bundle для Apple Silicon, проверяет архитектуру Local Node, применяет и проверяет ad hoc подпись, затем создает DMG. Такая подпись не является нотарификацией
+
+## Источник версии
+
+Версия релиза задается в `Version` файла `Sources/HyPrism.Desktop/HyPrism.Desktop.csproj`. Сценарии получают ее через MSBuild
+
+```bash
+dotnet msbuild Sources/HyPrism.Desktop/HyPrism.Desktop.csproj \
+  -nologo -getProperty:Version
+```
+
+Релизный тег должен совпадать с `v<Version>`. При несовпадении workflow останавливается до упаковки
+
+## Ответственность CI
+
+| Workflow | Назначение |
+| --- | --- |
+| `ci.yml` | Группы проверок Core, Desktop, Local Node и Packaging |
+| `test-core.yml`, `test-desktop.yml`, `test-local-node.yml` | Отдельные матрицы Ubuntu, Windows и macOS |
+| `build.yml` | Выбор платформ |
+| `build-linux.yml`, `build-windows.yml`, `build-macos.yml` | Зависимости платформ и вызов упаковщиков |
+| `release.yml` | Проверка версии, общие сборки пакетов, релизные файлы |
+| `docs-pages.yml` | Проверка документации и GitHub Pages |
+| `reuse.yml` | Лицензионные заголовки и REUSE |
+
+Отдельный workflow Flathub и `Scripts/update-flathub-manifest.sh` содержат старые пути Electron/frontend. Они не являются поддерживаемым входом нативной упаковки и требуют миграции перед использованием
+
+Исходники: [Packaging](../../../../Packaging), [GitHub Actions](../../../../.github/workflows)

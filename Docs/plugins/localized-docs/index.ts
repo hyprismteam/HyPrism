@@ -28,6 +28,7 @@ type NavigationItem =
   | Readonly<{
       type: 'category'
       label: string
+      icon?: string
       position: number
       items: NavigationItem[]
     }>
@@ -77,19 +78,30 @@ function plainText(markdown: string): string {
     .trim()
 }
 
-async function readNavigationMetadata(directory: string): Promise<Map<string, string>> {
+async function readNavigationMetadata(directory: string): Promise<{
+  labels: Map<string, string>
+  icons: Map<string, string>
+}> {
   const metadataPath = path.join(directory, '_meta.ts')
+  const result: { labels: Map<string, string>; icons: Map<string, string> } = {
+    labels: new Map(),
+    icons: new Map()
+  }
   try {
     const source = await fs.readFile(metadataPath, 'utf8')
-    const entries = new Map<string, string>()
     const entryPattern = /^\s*(?:'([^']+)'|([A-Za-z0-9_-]+)):\s*'([^']+)'/gm
     for (const match of source.matchAll(entryPattern)) {
-      entries.set(match[1] || match[2], match[3])
+      const key = match[1] || match[2]
+      if (key !== 'icon') result.labels.set(key, match[3])
     }
-    return entries
+    const iconPattern = /^\s*icon:\s*'([^']+)'/gm
+    for (const match of source.matchAll(iconPattern)) {
+      result.icons.set('icon', match[1])
+    }
+    return result
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
-      return new Map()
+      return result
     }
     throw error
   }
@@ -166,12 +178,14 @@ async function buildNavigation(
     const entryPath = path.join(directory, entry.name)
     if (entry.isDirectory()) {
       const nestedItems = await buildNavigation(entryPath, contentPath, pages)
+      const childMetadata = await readNavigationMetadata(entryPath)
       if (nestedItems.length > 0) {
         items.push({
           type: 'category',
-          label: metadata.get(entry.name) || entry.name.replaceAll('-', ' '),
-          position: metadata.has(entry.name)
-            ? [...metadata.keys()].indexOf(entry.name)
+          label: metadata.labels.get(entry.name) || entry.name.replaceAll('-', ' '),
+          icon: childMetadata.icons.get('icon'),
+          position: metadata.labels.has(entry.name)
+            ? [...metadata.labels.keys()].indexOf(entry.name)
             : Number.MAX_SAFE_INTEGER,
           items: nestedItems
         })
@@ -188,10 +202,10 @@ async function buildNavigation(
     const name = entry.name.replace(/\.mdx?$/, '')
     items.push({
       type: 'link',
-      label: metadata.get(name) || page.title,
+      label: metadata.labels.get(name) || page.title,
       route,
-      position: metadata.has(name)
-        ? [...metadata.keys()].indexOf(name)
+      position: metadata.labels.has(name)
+        ? [...metadata.labels.keys()].indexOf(name)
         : page.position
     })
   }

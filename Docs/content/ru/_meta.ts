@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 const meta = {
+  icon: 'rocket-launch',
   index: 'Обзор',
   'getting-started': 'Начало работы',
   'user-guide': 'Руководство пользователя',

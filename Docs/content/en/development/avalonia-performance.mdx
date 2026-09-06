@@ -1,70 +1,69 @@
 ---
 title: Avalonia performance
-description: Profile and protect the HyPrism desktop UI performance budget
+description: Layout rules, rendering diagnostics, and regression checks
 ---
 
 # Avalonia performance
 
-HyPrism targets Avalonia 12.1.2 and enables compiled bindings for the whole Desktop project. Performance work must be based on a reproducible trace, render test, or measured visual tree change
+Measure UI performance with a reproducible window size, navigation path, data set, and renderer. Headless tests verify structure and state; they do not measure native compositor frame rate
 
-## Current runtime choices
+## Layout and collections
 
-- inactive Instances, News, Settings, and Profiles pages are created on first navigation and retained for later visits
-- the initial headless visual tree budget is 160 descendants, down from the measured baseline of 410 to 144 after deferred page realization
-- large mod and world collections use a constrained `ListBox` with `VirtualizingStackPanel` and a cache length of 1
-- collection replacements publish one reset notification instead of one notification per item
-- download progress updates are coalesced to the latest pending value before the UI dispatcher processes them
-- continuous custom rotation uses `TopLevel.RequestAnimationFrame` and does not mutate the transform while the visual is effectively hidden
-- smooth scrolling and middle-click auto-scroll animate through `TopLevel.RequestAnimationFrame` with frame-rate independent easing instead of a fixed 16 ms timer, so wheel updates track the display refresh rate
-- dashboard bitmap decoding runs outside the UI thread
-- the Skia GPU resource cache is capped at 256 MiB to retain the active 1920x1080 background and decoded news images without frequent eviction
-- region dirty rectangle clipping keeps the Avalonia 12.1 default because its CPU cost can reduce frame rate on GPU accelerated desktops
-- Windows ANGLE rendering asks DXGI for its high-performance adapter and matches that adapter to Avalonia by LUID, with software rendering retained as the fallback
-- the Windows composition mode defaults to the low-latency flip-model DXGI swap chain paced by display vblank, and the `HYPRISM_WIN32_COMPOSITION` environment variable reverts it for troubleshooting to `winui` or `dcomp`
-- Windows renders popups in the window overlay layer (`Win32PlatformOptions.OverlayPopups = true`), so popups never become native OS windows and carry no system shadows, borders, or snap decorations; the `FadingPopup` control additionally keeps `WindowManagerAddShadowHint` disabled
-- the .NET garbage collector runs in SustainedLowLatency mode so blocking collections are less likely to interrupt animation frames
-- Linux packaging declares `PrefersNonDefaultGPU=true`; direct startup adds Mesa and NVIDIA PRIME variables only when DRM exposes multiple adapters and does not replace values inherited from the user or desktop environment
+Constrain long lists in a `Grid` and use a virtualizing panel. A `StackPanel` on the scrolling axis gives an infinite size constraint and can defeat virtualization
 
-## Collection and layout rules
+```xml
+<Grid RowDefinitions="Auto,*">
+  <TextBlock Text="Items" />
+  <ListBox Grid.Row="1" ItemsSource="{Binding Items}">
+    <ListBox.ItemsPanel>
+      <ItemsPanelTemplate>
+        <VirtualizingStackPanel />
+      </ItemsPanelTemplate>
+    </ListBox.ItemsPanel>
+  </ListBox>
+</Grid>
+```
 
-Use a constrained `Grid` row for a long scrolling collection. Prefer the built-in virtualized `ListBox` when selection or a supported Avalonia 12.1 control is appropriate. Keep `ItemsControl` for small bounded groups such as navigation categories, article blocks, and contributor rows
+This layout fragment assumes a view model exposing `Items`. Use `ItemsControl` for small bounded groups, batch collection replacements, and avoid per-item dispatcher posts
 
-Do not place a virtualized list in a `StackPanel` along its scrolling axis. An infinite layout constraint disables virtualization. Keep item heights stable where practical because variable estimates cause additional layout work while scrolling
+Hidden content should use `IsVisible="False"` when it must leave layout and hit testing. Transparent content can still participate in both
 
-Use `IsVisible="False"` for inactive content. An element with zero opacity still participates in layout, rendering, and hit testing. Mark decorative overlays as not hit testable and use clipping, shadows, and overlapping transparency only when the design needs them
+## Startup and background work
 
-## Update and animation rules
+`DeferredContentControl` delays view creation and retains it after realization. Production startup can warm deferred sections while the loading screen covers the shell. The initial-tree test measures the uninitialized window, not the final warmed application
 
-Build or transform data away from the UI thread, then publish a complete batch on the dispatcher. High frequency producers such as download progress must keep at most one pending dispatcher callback and apply the latest value
+Prepare network data and expensive transformations off the dispatcher. Coalesce high-frequency progress so only the latest value is pending, and release decoded article images when the reader closes
 
-Use Avalonia transitions or `TopLevel.RequestAnimationFrame` for frame driven UI. The timestamp supplied to the callback is synchronized with Avalonia's animation and render tick. Do not create a permanent 16 ms `DispatcherTimer` for each animated visual
+## Animation and rendering
 
-## Profiling workflow
+Reuse shared controls and `MotionDurations`. Custom continuous animation uses `TopLevel.RequestAnimationFrame`, stops when hidden or detached, and follows elapsed time rather than assuming a fixed refresh rate
 
-1. Reproduce the same window size, navigation path, data volume, and renderer on every run
-2. Use Avalonia DevTools to inspect the visual tree, layout, redraws, and renderer diagnostics
-3. Capture CPU and allocation traces for startup, navigation, scrolling, and download progress separately
-4. Compare visual count, UI thread time, allocations, frame stability, and working set before and after the change
-5. Add a focused headless or render regression test for every retained optimization
+Desktop caps the Skia GPU resource cache at 256 MiB and uses sustained-low-latency garbage collection. Windows selects a high-performance rendering adapter with software fallback. These launcher-rendering choices are separate from the user's game GPU selection
 
-Run the Desktop regression suite after UI performance changes
+To compare a Windows composition backend in PowerShell
+
+```powershell
+$env:HYPRISM_WIN32_COMPOSITION = 'winui'
+dotnet run --project Sources/HyPrism.Desktop/HyPrism.Desktop.csproj
+```
+
+Supported values are `dxgi` (default), `winui`, and `dcomp`. Remove the variable after diagnosis
+
+```powershell
+Remove-Item Env:HYPRISM_WIN32_COMPOSITION
+```
+
+## Regression workflow
+
+1. Reproduce startup, navigation, scrolling, or download progress separately
+2. Record UI-thread time, allocations, visual count, and native frame behavior
+3. Change one cause and repeat with the same data
+4. Add a focused regression check when the change fixes measurable behavior
+
+Run the existing Desktop suite
 
 ```bash
 dotnet test Tests/HyPrism.Desktop.Tests/HyPrism.Desktop.Tests.csproj
 ```
 
-The startup budget is enforced by `AvaloniaPerformanceTests.MainWindowInitialVisualTreeStaysWithinBudget`
-
-## Reference material
-
-- [Avalonia performance optimization](https://docs.avaloniaui.net/docs/app-development/performance)
-- [Avalonia ItemsRepeater guidance](https://docs.avaloniaui.net/controls/data-display/collections/itemsrepeater)
-- [Avalonia 12 release notes](https://avaloniaui.net/blog/avalonia-12/)
-- [Avalonia 12.1 rendering changes](https://avaloniaui.net/blog/release-12-1)
-- [Avalonia 12.1.2 release](https://github.com/AvaloniaUI/Avalonia/releases/tag/12.1.2)
-- [RequestAnimationFrame timing explanation](https://github.com/AvaloniaUI/Avalonia/discussions/19276)
-- [Rendering latency investigation](https://github.com/AvaloniaUI/Avalonia/discussions/20562)
-- [Low-latency DXGI swap chain frame pacing](https://github.com/AvaloniaUI/Avalonia/discussions/20547)
-- [High-frequency rendering and GC allocations](https://github.com/AvaloniaUI/Avalonia/issues/19363)
-- [Win32 max refresh rate render timer](https://github.com/AvaloniaUI/Avalonia/pull/21643)
-- [ItemsRepeater package lifecycle](https://github.com/AvaloniaUI/Avalonia.Controls.ItemsRepeater)
+`AvaloniaPerformanceTests` checks initial visual count, deferred realization, virtualization, and batched collection notifications. Render tests wait for observable final state instead of relying on an assumed animation duration

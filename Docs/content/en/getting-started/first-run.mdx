@@ -1,26 +1,46 @@
 ---
 title: First run
-description: What HyPrism prepares before the first game launch
+description: Create a profile and instance, then start Hytale
 ---
 
 # First run
 
-On startup, HyPrism presents a solid-color loading screen arranged like the successful official-account callback page. A compact looping Lottie animation with an opacity mask occupies the central status area, theme-accent progress dots accompany the current operation, and the launcher logo remains at the bottom. During this time HyPrism creates its application directory, loads `Config.json`, migrates supported legacy data, registers the services required by the desktop host, preloads the Hytale news feed, previews, team avatars, and contributor avatars, and pre-builds every deferred shell section so the first visit to each dock section opens without a load hitch. The ready state remains visible for one second before the loading content fades and scales away while the launcher shell rises into view. The native window controls, title-bar dragging, and border resizing remain available throughout loading
+You need one player profile and one game instance before HyPrism can start Hytale
 
-## Before launching
+## 1. Choose the interface language
 
-1. Open **Settings** and choose the interface language
-2. Review the Java runtime and memory allocation
-3. Select connected or autonomous identity behavior for a local profile
-4. Choose or create an instance when the native instance screen becomes available
-5. Start the game from Home
+Open **Settings → General → Interface Language**. The launcher changes language immediately
 
-The bundled runtime is the safe default. A custom Java executable can be selected in settings when a compatible runtime is already installed
+## 2. Create a profile
 
-## Authentication
+Open **Profiles**, select **Add**, then choose a profile type
 
-Official profiles use the Hytale authentication flow and open the system browser when interactive sign-in is required. A local profile can request its session from the configured connected service or create an autonomous OmniAuth session on the device. OmniAuth does not grant official entitlements or centralized account features
+- **Official Hytale account** opens the Hytale sign-in page in your system browser and requires an entitled Hytale account
+- **Offline profile** creates a local identity with a name from 3 to 16 ASCII letters, digits, hyphens, or underscores
 
-## Downloads
+See [Profiles](/docs/user-guide/profiles) for authentication modes and profile management
 
-Version discovery checks the official source and enabled user-provided mirrors. HyPrism chooses an available source, downloads the required image or patch sequence, verifies the resulting installation, extracts assets, and launches the selected instance
+## 3. Create an instance
+
+Open **Instances**, select **New Instance**, choose a release branch and version, then create the instance. Creating the entry does not download the game yet
+
+See [Instances](/docs/user-guide/instances-profiles-mods) for installation, launch, and deletion behavior
+
+## 4. Review launch settings
+
+The defaults are suitable for most systems. Before the first download, check these options when needed
+
+- **Settings → Java** for a custom Java executable or memory limits
+- **Settings → General → Game GPU** on systems with more than one graphics adapter
+- **Settings → Downloads** when you intentionally use a custom mirror
+- **Settings → Network** to choose connected or autonomous sessions for offline profiles
+
+## 5. Install and launch
+
+Open the instance and select **Launch**. HyPrism downloads the selected version, prepares the runtime, and starts the game when installation succeeds
+
+You can also start the current instance from [Home](/docs/user-guide/dashboard) after it has been created
+
+:::tip
+Keep the launcher open during the first installation. Hover the active instance action to reveal **Cancel** when you need to stop the download
+:::

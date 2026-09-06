@@ -4,6 +4,8 @@
 import type { Config } from '@docusaurus/types'
 import type * as Preset from '@docusaurus/preset-classic'
 import { themes as prismThemes } from 'prism-react-renderer'
+import path from 'node:path'
+import repositoryLinks from './plugins/remark-repository-links'
 
 const configuredBasePath = process.env.PAGES_BASE_PATH || '/HyPrism'
 const baseUrl = `/${configuredBasePath.replace(/^\/+|\/+$/g, '')}/`
@@ -77,6 +79,7 @@ const config: Config = {
         path: 'content/en',
         routeBasePath: '__source/en',
         sidebarPath: false,
+        beforeDefaultRemarkPlugins: [[repositoryLinks, { repositoryRoot: path.resolve(__dirname, '..') }]],
         showLastUpdateAuthor: false,
         showLastUpdateTime: false
       }
@@ -88,6 +91,7 @@ const config: Config = {
         path: 'content/ru',
         routeBasePath: '__source/ru',
         sidebarPath: false,
+        beforeDefaultRemarkPlugins: [[repositoryLinks, { repositoryRoot: path.resolve(__dirname, '..') }]],
         showLastUpdateAuthor: false,
         showLastUpdateTime: false
       }
@@ -131,7 +135,8 @@ const config: Config = {
     },
     prism: {
       theme: prismThemes.github,
-      darkTheme: prismThemes.dracula
+      darkTheme: prismThemes.dracula,
+      additionalLanguages: ['csharp', 'powershell', 'bash', 'json', 'diff']
     }
   } satisfies Preset.ThemeConfig
 }

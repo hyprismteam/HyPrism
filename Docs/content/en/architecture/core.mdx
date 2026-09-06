@@ -1,57 +1,51 @@
 ---
 title: HyPrism.Core
-description: Domain features, contracts, and orchestration owned by the launcher core
+description: Domain services, orchestration, and host contracts
 ---
 
 # HyPrism.Core
 
-`HyPrism.Core` owns behavior that must not depend on a specific UI toolkit
+Core owns launcher behavior that can operate without a UI toolkit. Interfaces live beside their implementations; host capabilities live under `Application/Ports`
 
-## Application and infrastructure
+## Subsystems
 
-- `Application/Composition` builds the default dependency graph
-- `Application/Progress` publishes throttled download progress and error events scoped to an instance operation, letting stage changes and completion always through
-- `Application/Ports` contains only host-provided capabilities such as Discord presence and GPU discovery
-- `Infrastructure` contains JSON configuration persistence, logging, and shared launcher utilities
-- `Integrations/Hytale` contains protocol details required to communicate with official Hytale endpoints
+| Directory | Responsibility |
+| --- | --- |
+| `Application/Composition` | Dependency registration and optional asynchronous bootstrap |
+| `Application/Progress` | Instance-scoped progress, stage changes, completion, and errors |
+| `Application/Ports` | Host-provided Discord presence and GPU discovery |
+| `Accounts/Authentication` | Official OAuth, session refresh, token storage, callback-page contract |
+| `Accounts/Profiles` | Identity selection, profile lifecycle, ordering, migrations, play time |
+| `Accounts/Identity` and `Accounts/Skins` | Profile identity and character data |
+| `Game/Versions` and `Game/Sources` | Version catalogs, official source, mirror discovery and selection |
+| `Game/Download` and `Game/Patching` | Resumable transfers, differential updates, Butler execution |
+| `Game/Instances` | Instance registry, paths, import, metadata, deletion, migrations |
+| `Game/Launch` | Runtime setup, authentication selection, client patching, JVM and GPU options, process tracking |
+| `Game/Mods` | CurseForge API, compatibility, imports, enabled state, updates |
+| `Game/Assets` | Avatar lookup and backup |
+| `Infrastructure` | JSON storage, application directories, caches, logging, shared HTTP identity |
+| `Integrations/Hytale` | Official launcher protocol headers |
 
-## Game
+## Orchestration
 
-- `Game/Versions` resolves official and mirror version metadata and caches source results
-- `Game/Download` streams files, applies patch sequences, and reports progress
-- `Game/Instances` owns instance metadata, paths, selection, import, deletion, and migrations, and raises `InstancesChanged` whenever the instance collection changes so hosts can subscribe instead of polling
-- `Game/Launch` prepares Java, client endpoint redirection, the DualAuth Agent, environment variables, and the game process. Runtime downloads and installer waits observe operation cancellation, and official JRE archives with a published SHA-256 value are verified before extraction. Failed verification removes the downloaded archive on every supported platform. The process tracker raises typed started and exited lifecycle events carrying the instance identifier and exit code, reconciles processes that ended while the launcher was closed, and the launch coordinator raises `LaunchFailed` when an attempt ends without a running process
-- `Game/Authentication` obtains connected game sessions or issues self-contained OmniAuth tokens through the Local Node
-- `HyPrism.LocalNode` hosts the autonomous session, account, installed cosmetics catalog, configuration, and empty-state social compatibility surface
-- `Game/Assets` manages avatar data required by profiles and game launch
-- `Game/Mods` searches and installs CurseForge or local mods
-- `Game/Patching` owns the Butler client used for differential updates
-- `Game/Sources` implements official and JSON mirror sources, mirror discovery, and validated mirror persistence
+`GameLaunchCoordinator` guards installed-instance launches. `GameInstallationWorkflow` chooses installation or update work and calls `GameLauncher` after preparation. The [launch workflow](/docs/architecture/game-lifecycle) describes their ordering and cancellation boundaries
 
-## Accounts
+The repository services raise `InstancesChanged` and `ProfilesChanged` after mutations. Consumers subscribe to these events instead of polling disk or assuming their own action was the only writer
 
-`Accounts` is divided into authentication, profiles, identity, and skins. Contracts stay beside their implementation instead of being collected in a separate abstractions directory
+## Host boundary
 
-Both the profile repository and the profile manager raise `ProfilesChanged` after creating, deleting, switching, reordering, or editing profiles, so hosts react to profile state through events instead of refreshing manually. On game process exit, the profile repository accumulates total play time and per-instance counters used to resolve the profile's most played instance
+Core accepts an `AuthUriPresenter` callback for interactive OAuth. The host opens the browser and may supply `IOAuthCallbackPageRenderer` for the loopback callback response
 
-## Dependency rule
+Core resolves profile and instance paths, but Desktop opens their folders. GPU selection consumes `IGpuProvider`; presence consumes `IDiscordPresence`; autonomous launch consumes `ILocalNodeServiceFactory`
 
-Core may expose host capabilities through interfaces, but it must not reference Avalonia or any presentation model
+News parsing and GitHub metadata belong to Desktop because they support presentation rather than game or account rules
 
-OAuth remains UI-neutral: Core creates the authorization URI and accepts a host callback for presenting it. Opening a browser is owned by the active application host. `IOAuthCallbackPageRenderer` lets that host brand the local callback response without adding presentation assets or Avalonia dependencies to Core
+## Mod storage and compatibility
 
-Core resolves profile directories but never opens a system file manager. Native file dialogs and system memory detection belong to `HyPrism.Desktop`
+`ModManager` stores files under the target instance's `UserData/Mods`. Disabling a file adds the `.disabled` suffix, and enabling it restores the normal filename. Managed metadata connects installed files to CurseForge project and file identifiers
 
-Game launch depends only on `IGpuProvider` and `GpuAdapterInfo`. Each host owns the concrete adapter discovery implementation
+`ModCompatibilityEvaluator` reads the installed server version and compares it with the game versions attached to catalog files. The UI disables files classified as incompatible, while an unknown version remains a distinct state
 
-News parsing, GitHub metadata, and the Discord Rich Presence adapter belong to `HyPrism.Desktop`. Core only consumes `IDiscordPresence` as a host capability while reporting launcher and game activity
+See [Core contracts](/docs/reference/services) for integration examples and [Data and cache](/docs/architecture/data-and-cache) for persistence rules
 
-## Local Node
-
-`HyPrism.Desktop` owns a `LocalNodeHost` process controller behind the Core `ILocalNodeService` contract. Autonomous launch starts the dedicated `HyPrism.LocalNode` executable before patching the client, then transfers lifetime ownership to the game PID through the loopback control plane
-
-The host listens only on `https://127.0.0.1:8443`. The loopback IP literal keeps the client off DNS entirely, so VPN clients with a tunnel DNS interceptor cannot break the resolution of the Local Node endpoint. The patch budget of at most 16 characters lets `ClientPatcher` redirect session, account-data, telemetry, live-config, social, server-discovery, and socket-gateway prefixes to one loopback authority without growing the embedded domain segment
-
-OmniAuth signing keys live only for the dedicated node process attached to the active game. The identity handoff includes the private Ed25519 JWK required by DualAuth, while JWKS, authorization grants, and access tokens expose only public key material. Account, skin, and presence preferences persist below the application data directory
-
-The companion clears ASP.NET logging providers and writes its own bounded file log into the launcher's current `Logs/<launch-time>/` directory. Closing Desktop releases only launcher-side process handles, while the node continues monitoring the game and writing to that session directory until the game process exits
+Source: [Core source](../../../../Sources/HyPrism.Core)

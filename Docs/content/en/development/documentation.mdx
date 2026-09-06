@@ -1,51 +1,92 @@
 ---
 title: Documentation site
-description: Work locally with Docusaurus and publish the static site to GitHub Pages
+description: Author bilingual MDX, highlighted examples, navigation, and launcher screenshots
 ---
 
 # Documentation site
 
-The documentation is a Docusaurus 3 application stored entirely under `Docs`
+The documentation is a Docusaurus 3 application under `Docs`. Use Node.js 22 and the pnpm version pinned in `Docs/package.json`
 
-## Local development
-
-Use Node.js 22 and pnpm 11.21.0. The `packageManager` field in `Docs/package.json` keeps the pnpm version consistent between local development and CI
+## Run locally
 
 ```bash
 cd Docs
-pnpm install
+pnpm install --frozen-lockfile
 pnpm dev
 ```
 
-Open `http://localhost:3000/HyPrism/docs/`. The local development server uses the same `/HyPrism` base path as GitHub Pages
+Open the [local documentation](http://localhost:3000/HyPrism/docs/). Development and GitHub Pages use the same `/HyPrism` base path
 
-## Localization model
+## Content and languages
 
-English pages live under `content/en`, Russian pages live under `content/ru`, and both trees must contain matching routes. Both translations are exported under the same `/docs` URL
+English pages live under `content/en`, Russian under `content/ru`. Both trees must contain the same routes. The selected language changes content at the same public URL and is saved in the browser
 
-Interface translations for search, navigation, the table of contents, and page actions live in `src/i18n.ts`. The language switch updates the page without changing its URL and stores the preference in the browser
+`plugins/localized-docs` discovers MDX pages, extracts search text, reads navigation metadata, and rejects missing translations. `src/i18n.ts` contains the site interface strings
 
-The `plugins/localized-docs` build plugin discovers MDX pages and navigation metadata directly from both language trees. There is no page registry to update. Add matching MDX files and matching `_meta.ts` navigation entries when a page belongs in the sidebar. Development and production builds fail when a route is missing from either language
+Use explicit, matching heading IDs in both languages when another page links to that section
 
-## Production build
+```md
+## Downloads {/* #downloads */}
+```
+
+Internal documentation links use `/docs/...`; the MDX theme link applies the deployment base path. Write source links relative to the MDX file, for example `../../../../Sources/HyPrism.Core/Models/Config.cs`. The repository-link plugin verifies each target and converts it to a GitHub source link when building
+
+## Navigation and icons
+
+Each directory's `_meta.ts` defines page order and labels. Its `icon` field describes that category, not its child categories
+
+```typescript
+export default {
+  icon: 'code-blocks',
+  building: 'Building',
+  testing: 'Testing',
+  packaging: 'Packaging and releases'
+}
+```
+
+The five top-level categories use local SVG paths from Google's Material Symbols Rounded. `MaterialSymbol.tsx` owns the icon set, which is bundled without a remote font request
+
+## Examples and prose
+
+Follow `AGENTS.md`: user guides describe actions and results, while technical pages describe responsibilities, contracts, and maintenance constraints
+
+Every code fence needs a language. Use `bash`, `powershell`, `csharp`, `json`, `xml`, `typescript`, or `text` as appropriate. Explain prerequisites and results outside the example
+
+`LocalizedDocPage` wraps content with the Docusaurus `MDXContent` provider. This enables the theme's headings, links, admonitions, and highlighted code blocks. Prism grammars are configured in `docusaurus.config.ts`
+
+## Screenshots {/* #screenshots */}
+
+Documentation captures render the actual Avalonia views with deterministic sample profiles, instances, and service responses. They demonstrate the interface, not a live game session or current external news
+
+From the repository root
+
+```bash
+HYPRISM_DOCS_SCREENSHOTS="$PWD/Docs/static/img/user" \
+  dotnet test Tests/HyPrism.Desktop.Tests/HyPrism.Desktop.Tests.csproj \
+  --filter FullyQualifiedName~DocumentationScreenshotTests
+```
+
+The test writes English and Russian PNGs under `Docs/static/img/user/en` and `ru`. It runs only when the output variable is set. The actual views are rendered at 2× pixel density into PNG, without enlarging an existing bitmap. Dialog captures render only the relevant real control
+
+Use the matching language image, write useful alternative text, and link to the original image for full-size inspection. Crop dialogs or pickers only when the surrounding window is irrelevant. Review every updated capture for missing data, clipped controls, and unfinished transitions
+
+## Validate and export
 
 ```bash
 cd Docs
 pnpm install --frozen-lockfile
 pnpm check
-pnpm build
+PAGES_BASE_PATH=/HyPrism pnpm build
 ```
 
-Docusaurus exports static files to `Docs/out`
+`pnpm check` validates prose, language parity, code fences, local images, internal routes, explicit bilingual anchors, repository links, and Core contract documentation, then runs TypeScript checks. The static export goes to `Docs/out`
 
-## GitHub Pages path
+Check highlighted C#, shell, JSON, and XML examples in the rendered site, plus language switching, section links, sidebar icons, and narrow-window layout
 
-The workflow sets `PAGES_BASE_PATH=/HyPrism`. The deployed documentation starts at
+## Publishing
 
-```text
-https://hyprismteam.github.io/HyPrism/docs/
-```
+`docs-pages.yml` validates and publishes the static export. In repository **Settings → Pages**, the source must be **GitHub Actions**
 
-The site selects English or Russian from the saved preference and browser language
+The published entry point is the [HyPrism documentation site](https://hyprismteam.github.io/HyPrism/docs/). Do not commit `out`, `.docusaurus`, `node_modules`, or obsolete `.next` build products
 
-In repository settings, open **Pages** and select **GitHub Actions** as the publishing source. The `docs-pages.yml` workflow handles the remaining build and deployment steps
+Source: [AGENTS.md](../../../../AGENTS.md), [DocumentationScreenshotTests](../../../../Tests/HyPrism.Desktop.Tests/DocumentationScreenshotTests.cs)

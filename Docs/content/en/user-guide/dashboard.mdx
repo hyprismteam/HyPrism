@@ -1,14 +1,22 @@
 ---
 title: Home
-description: Use the native landing page and start the selected instance
+description: Start or stop the current game instance
 ---
 
 # Home
 
-Home is the native launch surface. It presents the selected instance over the configured background and keeps launch preparation in one focused place
+Home is the quickest way to start the current instance. It shows the instance name, branch, version, and one action that changes with its state
 
-When no instance exists, Home welcomes the player, explains the next step, and offers a direct action to create the first instance. When an instance is selected, Home shows its branch and version with the primary play or download action. Instance management remains on the Instances page
+[![Home with the current instance and its launch action](../../../static/img/user/en/home.png)](../../../static/img/user/en/home.png)
 
-After an installation completes, HyPrism always starts the game automatically
+| Instance state | Home action |
+| --- | --- |
+| Not created | Opens **Instances** so you can create one |
+| Not installed | Downloads the selected version, then launches it |
+| Installed | Starts the game |
+| Installing | Shows progress and can cancel the operation |
+| Running | Stops that instance |
 
-The background can rotate automatically or use a specific image from **Settings → Appearance**
+Installation and authentication errors appear in the launcher. Use the [instance console and logs](/docs/user-guide/instances-profiles-mods#console-and-logs) when the game starts but later fails
+
+To change the background, open **Settings → Appearance** and select a fixed image or automatic rotation. See [Settings](/docs/user-guide/settings#appearance) for the related news option

@@ -1,11 +1,11 @@
 ---
 title: Testing
-description: Run Core, Local Node, and Avalonia headless tests
+description: Run the three test suites and choose the right verification boundary
 ---
 
 # Testing
 
-Run all active tests from the repository root
+Run tests from the repository root. Each suite has its own project and CI matrix
 
 ```bash
 dotnet test Tests/HyPrism.Core.Tests/HyPrism.Core.Tests.csproj
@@ -13,21 +13,35 @@ dotnet test Tests/HyPrism.LocalNode.Tests/HyPrism.LocalNode.Tests.csproj
 dotnet test Tests/HyPrism.Desktop.Tests/HyPrism.Desktop.Tests.csproj
 ```
 
-Core tests cover launch coordination and profile behavior. Local Node protocol, persistence, certificate, HTTPS, and process tests live in `HyPrism.LocalNode.Tests`. Their HTTPS clients pin the generated certificate and disable platform trust changes, so running the suite does not add temporary certificate authorities to the Windows root store or show trust prompts. Desktop tests use Avalonia headless rendering to verify localization and important window states
+## Coverage boundaries
 
-CI presents Core, Desktop, Local Node, and Packaging as separate top-level check groups. Core, Desktop, and Local Node suites each run on Ubuntu, Windows, and macOS through their own reusable workflows. Matrix jobs use `fail-fast: false`, so one platform failure does not hide results from the other systems. Desktop coverage is headless and validates the Avalonia application on each operating system without opening a native compositor window. Platform package workflows separately publish the native target artifacts
+| Suite | Main coverage |
+| --- | --- |
+| Core | Launch coordination, process tracking, profiles, downloads, configuration, mirrors, patching, mods |
+| Local Node | HTTPS routes, tokens, account persistence, certificates, companion lifecycle |
+| Desktop | View-model workflows, localization, platform adapters, native view rendering and controls |
 
-Desktop tests run sequentially because the Avalonia application, dispatcher, and compositor are shared process state. Render tests must wait for an observable final property or view-model state instead of treating a fixed delay as proof that an animation completed. A fixed delay is only appropriate when the test intentionally samples an intermediate animation frame
+Local Node tests pin generated certificates and disable platform trust changes. Unit tests use temporary data and mocks rather than live account, game, or third-party services
 
-The Local Node macOS group also publishes the `osx-arm64` Desktop and Local Node apphosts and requests the Local Node `/health` endpoint after registering the generated `hyprism-local-ca.crt` root certificate in the runner's disposable System Keychain. The smoke test verifies the `127.0.0.1` server certificate issued by that root and checks that Local Node reports the `ready` status, expected server name, and HTTPS issuer. Deterministic tests verify the production user-Keychain command sequence, including hostname verification and certificate rotation. CI cannot approve the interactive user security dialog or replace a final launch with an installed Hytale client on a physical Mac
+Desktop tests share an Avalonia application, dispatcher, and compositor and run sequentially. Wait for a final property or state; use fixed delays only when deliberately sampling an intermediate animation frame
 
-## Test boundaries
+## Run a focused test
 
-- test domain behavior against Core interfaces
-- use temporary directories for persistent state
-- do not call live authentication, game, or third-party endpoints in unit tests
-- add a regression test when fixing a reproducible bug
-- keep render tests deterministic and independent of the machine theme
-- wait for final UI state instead of assuming an animation duration
+Use a fully qualified name filter during development
 
-Run the documentation build after changing any page, navigation metadata, or Docusaurus configuration
+```bash
+dotnet test Tests/HyPrism.Desktop.Tests/HyPrism.Desktop.Tests.csproj \
+  --filter FullyQualifiedName~StringLocalizerTests
+```
+
+Screenshot generation is an opt-in workflow documented under [Documentation site](/docs/development/documentation#screenshots). Normal test runs skip that capture
+
+## CI and manual checks
+
+Core, Desktop, and Local Node run separately on Ubuntu, Windows, and macOS with `fail-fast: false`. Packaging is a separate check group
+
+The macOS Local Node workflow also publishes apphosts and checks HTTPS health with a generated authority in the disposable runner keychain. This does not cover an interactive trust prompt on a player's Mac or a full proprietary Hytale launch
+
+Verify native compositor behavior, platform dialogs, and real game compatibility manually when those boundaries change. For a documentation-only change, run [content checks and static export](/docs/development/documentation)
+
+Source: [Tests](../../../../Tests)

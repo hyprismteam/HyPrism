@@ -1,45 +1,80 @@
 ---
 title: Data and cache
-description: Persistent launcher state and disposable cached content
+description: Application directories, persistent files, migrations, and session logs
 ---
 
 # Data and cache
 
-HyPrism keeps durable state separate from data that can be recreated
+HyPrism separates persistent player data from replaceable downloads and presentation caches
 
-| Location | Contents | Safe to remove |
-| --- | --- | --- |
-| `Config.json` | launcher preferences and selected identifiers | no, unless resetting settings is intended |
-| `Profiles/Profiles.json` | complete profile list and identity metadata | no |
-| `Profiles/<profile-id>/` | profile-scoped `Profile.json`, `HytaleSession.json`, `Skin.json`, avatars, and session data | no |
-| `Instances/Instances.json` | instance registry and display order | no |
-| `Instances/<instance-id>/Meta.json` | instance identity, branch, version, and play-time metadata | no |
-| `Mirrors/` | user-provided mirror metadata | only if custom mirrors are no longer needed |
-| `Runtime/GameProcesses.json` | live game-process registry used across launcher restarts | yes, when HyPrism and all game sessions are closed |
-| `Cache/News/Feed.json` and `Article-<hash>.json` | parsed news feed and articles | yes |
-| `Cache/Game/Versions.json` and `Patches.json` | version and patch snapshots | yes |
-| `Cache/Game/Downloads/` | resumable game payloads, including incomplete `.part` files | yes, when no download or update is active |
-| `Cache/Images/News/` | encoded news preview and article images | yes |
-| `Cache/Images/Github/` | encoded team and contributor avatars | yes |
-| `Logs/` | launcher, game-instance, and Local Node diagnostics grouped by launch | yes, when HyPrism and related game sessions are closed |
+## Application directory
 
-`Config.json` stores only `SelectedProfileId` for profile selection. Legacy identity fields are consumed by a one-time load migration and are not represented in the runtime configuration model
+| Platform | Default directory |
+| --- | --- |
+| Windows | `%LOCALAPPDATA%/HyPrism` |
+| macOS | `~/Library/Application Support/HyPrism` |
+| Linux | `$XDG_DATA_HOME/HyPrism`, or `~/.local/share/HyPrism` when unset |
 
-HyPrism-owned JSON file names and object property names use PascalCase. Existing files with legacy lowercase, kebab-case, or snake_case names are moved to their canonical names when first accessed, while deserialization remains case-insensitive. External service payloads, game-owned files, identifier-based cache files, and the `.mirror.json` interchange suffix keep the naming required by their contracts
+`HYPRISM_DATA` overrides the complete application directory only if that directory already exists. `InstanceDirectory` changes only the instance root
 
-On startup, HyPrism moves legacy PWR payloads from the `Cache/` root into `Cache/Game/Downloads/` and migrates `Cache/RemoteImages/` into the capitalized `Cache/Images/News/` and `Cache/Images/Github/` directories
+Use an isolated directory for development
+
+```bash
+hyprism_data="$(mktemp -d)"
+HYPRISM_DATA="$hyprism_data" dotnet run \
+  --project Sources/HyPrism.Desktop/HyPrism.Desktop.csproj
+```
+
+## Persistent state
+
+| Location relative to application data | Contents |
+| --- | --- |
+| `Config.json` | [Settings and selected identifiers](/docs/reference/configuration) |
+| `Profiles/Profiles.json` | Profile list and identity metadata |
+| `Profiles/<profile-id>/` | Profile data, sessions, skins, avatars |
+| `Instances/Instances.json` | Registry and display order under the instance root |
+| `Instances/<instance-id>/Meta.json` | Branch, version, installation and play-time metadata |
+| `Instances/<instance-id>/UserData/` | Worlds, mods, and game-owned data |
+| `Mirrors/*.mirror.json` | User mirror definitions |
+| `LocalNode/Accounts.json` | Autonomous profiles, skins, and presence preferences |
+| `LocalNode/Certificate/` | Local certificate authority and server certificates |
+| `Runtime/GameProcesses.json` | Process identities used across launcher restarts |
+
+The instance locations above use the default root. A custom instance root moves the registry and installation directories together
+
+Back up profiles, worlds, configuration, and local account data before migration testing. Session files and certificate private keys must not appear in fixtures or bug reports
+
+## Replaceable content
+
+| Location | Contents |
+| --- | --- |
+| `Cache/Game/Versions.json`, `Patches.json` | Source metadata |
+| `Cache/Game/Downloads/` | Game payloads and resumable `.part` files |
+| `Cache/News/` | Feed and parsed articles |
+| `Cache/Images/News/`, `Github/` | Encoded remote images |
+| `Jre/`, `Butler/`, `DualAuth/` | Downloaded launch tools |
+| `LocalNode/Sessions/<session-id>/` | Per-launch node runtime files and trust bundles |
+
+Do not clear downloads or runtime files while an installation or related game is active. Clearing a cache makes HyPrism retrieve or recreate its contents when needed
 
 ## Session logs
 
-Every HyPrism start creates `Logs/<yyyy-MM-dd_HH-mm-ss.fff>/` below the application data directory. All diagnostics produced by that launcher process and the game sessions it starts stay together in this directory
+Each launcher process creates one directory
 
-| File | Contents |
-| --- | --- |
-| `launcher.log` | launcher services, authentication flow, downloads, patching, and process orchestration |
-| `instance-<instance-id>.log` | complete standard output and standard error captured from one game instance |
-| `local-node-<port>.log` | lifecycle, route status, timing, and failures from an autonomous Local Node process |
-| `local-node-requests-<port>.ndjson` | metadata for unknown Local Node requests without headers, values, or bodies |
+```text
+Logs/<yyyy-MM-dd_HH-mm-ss.fff>/
+  launcher.log
+  instance-<instance-id>.log
+  local-node-<port>.log
+  local-node-requests-<port>.ndjson
+```
 
-The port suffix keeps concurrent Local Node processes separate. A Local Node process may continue writing into its original launch directory after the HyPrism window closes, until the attached game exits
+Instance logs capture game standard output and standard error. Local Node logs record route status, timing, lifecycle, and failures; unknown-request journals exclude headers and bodies. A node can continue writing to its original log directory after Desktop closes
 
-Never place access tokens or a CurseForge key in documentation, fixtures, or source control
+## Migration rules
+
+HyPrism-owned JSON uses PascalCase filenames and property names. `LauncherJsonFile` recognizes earlier filenames and moves them to canonical names; deserialization stays case-insensitive
+
+`LegacyProfileConfigMigration` moves old identity fields into the profile store. Instance and profile migrations preserve compatibility with older directory layouts. Cache migration moves old PWR downloads and remote images to the current directories
+
+Keep migration tests based on temporary copies of old data, and avoid changing game-owned filenames or external protocol casing

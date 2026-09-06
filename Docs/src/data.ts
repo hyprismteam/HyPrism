@@ -14,6 +14,7 @@ export type NavigationItem =
   | Readonly<{
       type: 'category'
       label: string
+      icon?: string
       position: number
       items: NavigationItem[]
     }>

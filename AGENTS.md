@@ -3,50 +3,95 @@ Copyright (C) 2026 HyPrism Launcher
 SPDX-License-Identifier: GPL-3.0-only
 -->
 
-# Agent documentation policy
+# Documentation policy for agents
 
-This file is intended for automation agents (bots, CI scripts, or assistant agents) that interact with the HyPrism repository. It explains how an agent should use the project's documentation and the responsibilities the agent must follow when making changes
+This policy applies to every automated change in the HyPrism repository
 
-## Read the docs to learn more 💡
+## Documentation is part of the change
 
-- Agents may read any files under `Docs/content/` to learn about features, architecture, build processes, APIs, and packaging
-- English pages live under `Docs/content/en/` and Russian pages live under `Docs/content/ru/`
-- Keep both language trees aligned when changing shared behavior
+Update documentation whenever a change affects behavior, features, public contracts, configuration, stored data, packaging, or contributor workflows
 
-## Documentation responsibilities (required) ✅
+| Change | Documentation to review |
+| --- | --- |
+| Launcher UI or user workflow | `Docs/content/en/user-guide/` and `Docs/content/ru/user-guide/` |
+| Installation or first launch | `Docs/content/*/getting-started/` |
+| Project boundaries or runtime flow | `Docs/content/*/architecture/` |
+| Public Core contract, configuration, Local Node, or mirror schema | `Docs/content/*/reference/` |
+| Build, test, localization, packaging, or release workflow | `Docs/content/*/development/` |
 
-An agent MUST:
+English pages live under `Docs/content/en/` and Russian pages under `Docs/content/ru/`. Keep their routes, structure, facts, links, examples, and screenshots aligned
 
-1. **Update documentation for every change** that affects behavior, features, APIs, configuration, packaging, or developer workflows
-2. **Update user-facing docs** when UI or feature behavior changes
-3. **Update developer docs** when build steps, CI, packaging, or contributor workflows change
-4. **Update API / bridge docs** when adding, renaming, or removing backend methods accessed by the frontend
+## Write for the page audience
 
-## How to make a docs change 🔧
+User documentation must help a person complete a task in the launcher
 
-- Add or modify MDX pages under `Docs/content/` and keep the writing clear and concise
-- Do not use em dashes in documentation or code comments
-- Do not end the final sentence of a section or list item with a period
-- Run `pnpm install` in `Docs/` when dependencies change
-- Validate content and types with `pnpm check` in `Docs/`
-- Validate the Docusaurus static export with `PAGES_BASE_PATH=/HyPrism pnpm build` in `Docs/`
-- Use commit messages starting with `docs:` when a commit contains only documentation changes
-- Include a short documentation checklist in the pull request description
+- Start with what the screen or option is for
+- Use the exact visible UI labels and give ordered steps for actions
+- State prerequisites, result, and destructive effects where they matter
+- Link the first relevant mention of a related guide or external resource
+- Include troubleshooting only when the reader can act on it
+- Exclude class names, animation timings, control internals, test budgets, and implementation history
 
-## Docs & PR checklist 📋 🤖
+Technical documentation must explain the maintained system rather than narrate individual commits
 
-Before merging changes, ensure the following:
+- Describe ownership boundaries, data flow, public contracts, persistence, security constraints, and supported maintenance workflows
+- Group components by responsibility and link to deeper reference pages
+- Record a low-level detail only when a contributor needs it to change or debug the system safely
+- Verify every claim against current source, tests, packaging scripts, or workflows
+- Remove obsolete migration notes after they no longer affect current development or stored data
 
-- [ ] Documentation updated (user / developer / API) for the change
-- [ ] `pnpm check` passes in `Docs/`
-- [ ] The Docusaurus static export builds for the `/HyPrism` base path
-- [ ] Spell-check or lint docs and code
-- [ ] README updated if needed
+## Style
 
-## When unsure
+- Use concise, direct language and concrete verbs
+- Prefer one idea per paragraph and short tables for exact mappings
+- Avoid marketing copy, filler, jokes, and commentary about the implementation process
+- Avoid em dashes in documentation and code comments
+- Do not end the final sentence of a paragraph or list item with a period
+- Use sentence case for headings
+- Introduce an acronym or project-specific term before using it alone
+- Keep link text descriptive instead of using raw URLs or phrases such as `click here`
+- Use repository-relative links for source files and `/docs/...` links for documentation pages
 
-If you're uncertain which docs to update, open a draft PR and request a docs review from a maintainer
+## Code and command examples
 
----
+- Put commands, configuration, JSON, source code, directory trees, and multi-line output in fenced code blocks
+- Add an explicit language to every opening fence, such as `bash`, `powershell`, `json`, `csharp`, `xml`, or `text`
+- Keep examples minimal, executable, and free of credentials or machine-specific absolute paths
+- Use inline code only for short names, values, paths, and single commands that are not a procedure
+- Explain the purpose and expected result of an example outside the block
 
-*This policy is a lightweight, actionable guide so agents can keep the docs accurate and up-to-date*
+## Screenshots
+
+- Use PNG screenshots captured from the current Avalonia UI, including headless render tests when they represent the real views
+- Keep original pixels and do not convert screenshots to lossy formats
+- Capture deterministic sample data without personal accounts, tokens, or local paths
+- Provide localized English and Russian screenshots when visible text is important to the instructions
+- Crop to the relevant control only when the surrounding screen adds no useful context
+- Give every image specific alternative text and remove an image when it no longer helps complete the task
+- Regenerate documentation screenshots after a visible UI change by following the command in the documentation-site guide
+
+## Validation
+
+Run these checks for every documentation change
+
+```bash
+cd Docs
+pnpm install --frozen-lockfile
+pnpm check
+PAGES_BASE_PATH=/HyPrism pnpm build
+```
+
+Also run the relevant .NET tests when documentation examples or screenshots depend on runtime behavior
+
+Before opening a pull request, verify the following
+
+- [ ] English and Russian pages describe the same current behavior
+- [ ] Internal and external links point to the intended destination
+- [ ] Every code block has syntax highlighting metadata
+- [ ] User pages contain tasks and outcomes, not implementation trivia
+- [ ] Technical pages cover every changed subsystem and contract
+- [ ] Screenshots are current, lossless, readable, and useful
+- [ ] `pnpm check` and the `/HyPrism` static export pass
+- [ ] README is updated when the repository entry points or supported packages change
+
+Use a `docs:` commit prefix when a commit contains documentation changes only. Include the relevant items from this checklist in the pull request description

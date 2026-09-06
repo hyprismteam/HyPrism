@@ -1,32 +1,26 @@
 ---
-title: Avalonia migration
-description: Current state of the native desktop transition
+title: Migration status
+description: Current native host and remaining feature gaps
 ---
 
-# Avalonia migration
+# Migration status
 
-HyPrism moved from Electron.NET and React to a native Avalonia 12 application. The old launcher and IPC generator have been removed from the repository
+Avalonia is the only launcher UI. The previous Electron.NET host, React frontend, and IPC generator have been removed
 
-## Current state
+## Current implementation
 
-| Area | State | Notes |
-| --- | --- | --- |
-| Core launcher logic | active | game, user, download, version, mirror, and platform behavior lives in .NET |
-| Home | native | responsive launch surface, selected-instance summary, and background selection |
-| News | native | adaptive feed, full article reader, caching, rich content, and external links |
-| Settings | native | adaptive categories, localization, Java memory controls, background picker, and download sources |
-| Instances | native | adaptive manager with instance-scoped mods, catalog, worlds, and a live game console |
-| Mods | native | installed manager with icons, toggles, selection, bulk actions, update checks, local import, and drag-and-drop; CurseForge discovery with category and sort filters, infinite scroll, compatibility-aware bulk installation, and a modal file and version detail view |
-| Profiles | native | adaptive manager for saved profiles, offline creation, Hytale sign-in, editing, duplication, deletion, folders, and UUID copy |
-| Onboarding | pending UI | the native flow is not implemented yet |
-| Packaging | native | release and development workflows target `HyPrism.Desktop` |
+Home, instance management, profiles, mod discovery and installation, news, and settings use native Avalonia views. Desktop calls Core interfaces directly; Local Node runs as a separate companion for autonomous sessions
 
-## Architectural boundary
+See the [architecture overview](/docs/architecture/overview) for current project ownership and [packaging](/docs/development/packaging) for release entry points
 
-The desktop host resolves Core components through dependency injection and calls C# interfaces directly. There is no IPC bridge or generated TypeScript contract
+## Remaining gaps
 
-Historical behavior can be recovered from version control when it is still useful. New functionality belongs to `HyPrism.Core` or `HyPrism.Desktop`
+The first-run onboarding UI and per-instance log viewer are not implemented. Players create a profile and instance manually through [First run](/docs/getting-started/first-run), and inspect diagnostic files through the [data directory](/docs/architecture/data-and-cache)
 
-## Remaining parity work
+A visible settings field may preserve an older preference before a corresponding native feature is implemented. Check its consumers when documenting behavior
 
-The host migration is complete. Feature parity work remains for the per-instance log viewer and onboarding, and each of those workflows must be implemented directly in Avalonia
+## Existing data
+
+Runtime compatibility remains for older profile, instance, configuration, and cache layouts. Those migrations belong to the owning Core repository or storage service and need fixture-based tests
+
+Do not restore the removed web bridge for new work. Historical implementation is available in version control when needed to understand old data

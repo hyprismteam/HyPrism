@@ -1,40 +1,86 @@
 ---
 title: Контракты Core
-description: Ответственность и размещение публичных контрактов HyPrism.Core
+description: Ответственность сервисов, интеграция хоста, события и отмена
 ---
 
 # Контракты Core
 
-`Bootstrapper.Initialize` регистрирует стандартные реализации и возвращает `IServiceProvider`. Хост может добавить платформенные регистрации через callback конфигурации
+Desktop вызывает интерфейсы Core напрямую. `Bootstrapper.Initialize` регистрирует реализации по умолчанию и принимает callback для добавления сервисов хоста до сборки контейнера
 
-Desktop читает версию лаунчера, сгенерированную из `HyPrism.Desktop.csproj`, и настраивает общую HTTP-идентификацию при запуске. Запросы новостей, среды выполнения, GitHub и DualAuth используют `HyPrism/<версия>` без отдельно поддерживаемой константы версии
+## Карта контрактов
 
-| Область | Основные контракты | Ответственность |
+| Область | Контракты | Ответственность |
 | --- | --- | --- |
-| Конфигурация | `IConfigStore` | сохранение общей конфигурации лаунчера и игры |
-| Прогресс | `IProgressReporter` | троттлируемые события прогресса и ошибок, привязанные к операции экземпляра |
-| Версии | `IGameVersionCatalog`, `IVersionSource`, `IMirrorCatalog`, `IMirrorDiscovery` | списки версий, выбор источников, хранение и обнаружение зеркал, кеш и патчи |
-| Экземпляры | `IInstanceRepository`, `IInstanceMigrator` | пути, метаданные, сохраняемый порядок, выбор, импорт, миграция и уведомления `InstancesChanged` |
-| Загрузка | `IFileDownloader`, `IPatchManager`, `IButlerClient` | передача, проверка файлов, патчинг и Butler |
-| Runtime | `IRuntimeProvisioner` | отменяемая установка JRE и Visual C++, поиск runtime и проверка совместимости |
-| Запуск | `IGameInstallationWorkflow`, `IGameLaunchCoordinator`, `IGameLauncher` | путь от выбранного или явно указанного экземпляра до процесса игры; координатор поднимает `LaunchFailed`, когда попытка завершилась без запущенного процесса |
-| Процесс | `IGameProcessTracker` | постоянное отслеживание процессов, типизированные события, сверка после простоя и корректное завершение конкретного экземпляра |
-| Консоль | `IGameConsoleService` | живой буфер вывода по экземплярам с типизированными событиями строк для консоли экземпляра |
-| Моды | `IModManager` | поиск, установка, импорт, включение, отключение, удаление, обновления и changelog |
-| Авторизация | `IHytaleAuthenticator`, `IOAuthCallbackPageRenderer`, `GameSessionAuthenticator` | официальные сессии, OAuth-запросы, страницы callback от хоста и игровые токены |
-| Профили | `IProfileManager`, `IProfileRepository`, `IUserIdentityProvider` | личность, сохраняемый порядок, жизненный цикл профиля и уведомления `ProfilesChanged` |
-| Ресурсы | `IAvatarCache`, `ISkinRepository` | данные аватаров и скинов для профилей и запуска игры |
-| Платформа | `IGpuProvider` | определение GPU, необходимое кроссплатформенному запуску игры |
-| Presence | `IDiscordPresence` | обновление состояния лаунчера и игры через реализацию хоста |
+| Конфигурация | `IConfigStore` | Настройки и выбранные идентификаторы |
+| Прогресс | `IProgressReporter` | Прогресс и ошибки экземпляра |
+| Версии | `IGameVersionCatalog`, `IVersionSource` | Списки, метаданные, выбор источника |
+| Зеркала | `IMirrorCatalog`, `IMirrorDiscovery` | Хранение, обнаружение, создание источников |
+| Экземпляры | `IInstanceRepository`, `IInstanceMigrator` | Пути, реестр, порядок, выбор, импорт, миграции |
+| Загрузки | `IFileDownloader`, `IPatchManager`, `IButlerClient` | Передача и применение патчей |
+| Среда выполнения | `IRuntimeProvisioner` | Java и Visual C++ |
+| Запуск | `IGameLaunchCoordinator`, `IGameInstallationWorkflow`, `IGameLauncher` | Подготовка до старта процесса |
+| Процессы | `IGameProcessTracker` | Идентификация, события, восстановление и выход |
+| Консоль | `IGameConsoleService` | Буферы и события строк экземпляра |
+| Моды | `IModManager` | Каталог, файлы, импорт, состояние, обновления |
+| Официальный вход | `IHytaleAuthenticator`, `IOAuthCallbackPageRenderer` | OAuth, обновление токенов, callback-страница |
+| Профили | `IProfileManager`, `IProfileRepository`, `IUserIdentityProvider` | Личность, жизненный цикл, порядок |
+| Персонаж | `IAvatarCache`, `ISkinRepository` | Аватары и скины |
+| Local Node | `ILocalNodeServiceFactory`, `ILocalNodeService` | Нода для запуска, доверие, привязка процесса |
+| Возможности хоста | `IGpuProvider`, `IDiscordPresence` | Обнаружение GPU и activity presence |
 
-Контракты находятся рядом с реализацией своей функциональности. В `Application/Ports` лежат только возможности, которые предоставляет активный хост, сейчас это `IDiscordPresence` и `IGpuProvider`
+Контракты расположены рядом с реализациями. `Application/Ports` содержит только предоставляемые хостом возможности, а не все интерфейсы проекта
 
-Запрашивайте самый узкий контракт, необходимый потребителю. Не получайте зависимости из контейнера внутри доменного кода
+## Чтение списка экземпляров
 
-Интерактивный OAuth не зависит от браузерного сервиса в Core. Хост передает асинхронную функцию открытия URI в операцию запуска, а Core вызывает ее только тогда, когда официальному аккаунту требуется авторизация. Хост может зарегистрировать `IOAuthCallbackPageRenderer`, чтобы заменить минимальный резервный HTML локального обработчика callback
+Потребитель получает самый узкий нужный интерфейс. Пример выводит сохраненные экземпляры без создания всего графа запуска
 
-В контрактах долгих операций `CancellationToken` располагается последним. Установка передает отмену в загрузки runtime и Butler, запись файлов, распаковку архивов и ожидание процессов. Импорт ZIP-экземпляра и поиск официальной сессии также учитывают отмену в асинхронных файловых и HTTP-операциях
+```csharp
+using HyPrism.Core.Game.Instances;
 
-Настройки Avalonia предоставляет `IDesktopSettingsStore` из `HyPrism.Desktop`. Компоненты Core, которым нужны параметры запуска, используют `IConfigStore` напрямую
+static void PrintInstances(IInstanceRepository instances)
+{
+    foreach (var instance in instances.GetCachedInstances())
+        Console.WriteLine($"{instance.Id}: {instance.Name}");
+}
+```
 
-`IHytaleNewsClient`, `IGitHubClient` и их реализации принадлежат функциональности Desktop. Новости предоставляют только официальную ленту Hytale и структурированные статьи, а данные GitHub используются страницей «О программе»
+## Явный адрес запуска
+
+Хост предоставляет открытие браузера. Пример рассчитан на установленный экземпляр и использует текущий активный профиль
+
+```csharp
+using HyPrism.Core.Accounts;
+using HyPrism.Core.Game;
+
+static Task LaunchInstalledAsync(
+    IGameLaunchCoordinator coordinator,
+    string instanceId,
+    AuthUriPresenter openAuthorizationUri)
+    => coordinator.LaunchAsync(instanceId, openAuthorizationUri);
+```
+
+Для новой установки вызовите `DownloadAndLaunchInstanceAsync` у `IGameInstallationWorkflow` и проверьте результат. Отмена выполняется через `CancelDownload(instanceId)`. Различие описано в [жизненном цикле игры](/docs/architecture/game-lifecycle)
+
+## События и отмена
+
+Репозитории публикуют `InstancesChanged` и `ProfilesChanged` после изменений. Запуск и выход процессов используют типизированные события `IGameProcessTracker`. `IGameLaunchCoordinator.LaunchFailed` сообщает об ошибках или отмене, возвращенных сценарием запуска; предварительные проверки могут отправить ошибку через прогресс или завершиться раньше
+
+Область прогресса связывает вложенные асинхронные операции с экземпляром. Смена стадии и завершение обходят ограничение частоты. Хост переносит обновления UI в dispatcher и отписывается при освобождении
+
+Если контракт принимает `CancellationToken`, передавайте его в сетевые и файловые операции. Установка управляет отменой отдельно для экземпляра вместо параметра токена в публичной точке входа
+
+## Официальная аутентификация
+
+`IHytaleAuthenticator.LoginAsync` создает OAuth PKCE challenge и передает URI авторизации хосту. Callback renderer возвращает браузеру HTML успеха или ошибки. `TokenStore` сохраняет сессии по профилям
+
+При переключении профиля текущая сессия перечитывается. Каталог версий может получить действительную сессию любого официального профиля, а запуск игры использует выбранный профиль. Авторизация загрузки и личность игрока решают разные задачи
+
+Не записывайте access, refresh, identity и игровые токены в UI-диагностику. Одновременный запуск официального аккаунта контролируется `OfficialLaunchGate` и постоянным реестром процессов
+
+## Сервисы Desktop
+
+`IDesktopSettingsStore` адаптирует настройки для UI. `IHytaleNewsClient` и `IGitHubClient` отвечают за данные представления. Системные диалоги и обработчики ссылок остаются в Desktop
+
+Версия релиза берется из `HyPrism.Desktop.csproj` и один раз настраивает `LauncherUserAgent` при старте. Потребители используют общее значение вместо собственных строк версии
+
+Исходники: [IGameLaunchCoordinator](../../../../Sources/HyPrism.Core/Game/IGameLaunchCoordinator.cs), [IProfileRepository](../../../../Sources/HyPrism.Core/Accounts/Profiles/IProfileRepository.cs)

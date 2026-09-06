@@ -1,25 +1,53 @@
 ---
 title: Обзор архитектуры
-description: Границы логики лаунчера, нативного UI и тестов
+description: Проекты, границы ответственности и запуск приложения
 ---
 
 # Обзор архитектуры
 
-HyPrism отделяет поведение лаунчера от его представления
+HyPrism состоит из трех проектов .NET 10 и отдельного приложения документации Docusaurus
 
 ```text
-HyPrism.Desktop
-  Avalonia views, view models, controls, localization, styles
-        │
-        ▼
-HyPrism.Core
-  application orchestration, game services, user services,
-  infrastructure, integrations, platform abstractions, models
-        │
-        ▼
-filesystem, network services, Hytale, Java, operating system
+Sources/
+  HyPrism.Core/       игра, аккаунты, хранение данных, контракты
+  HyPrism.Desktop/    Avalonia и адаптеры платформы
+  HyPrism.LocalNode/  локальный HTTPS-сервис и управление процессом
+Tests/
+  HyPrism.Core.Tests/
+  HyPrism.Desktop.Tests/
+  HyPrism.LocalNode.Tests/
+Docs/                двуязычный сайт документации
+Packaging/           сборка пакетов и ресурсы установщиков
 ```
 
-`Bootstrapper.Initialize` создает контейнер dependency injection, регистрирует общие сервисы и принимает callback хоста для платформенных реализаций, включая файловые диалоги и буфер обмена
+## Зависимости проектов
 
-Тесты находятся в корневом каталоге `Tests` и повторяют разделение на Core и Desktop
+Desktop ссылается на Core и Local Node. Local Node ссылается на Core. Core не зависит от Avalonia и предоставляет контракты обоим хостам
+
+| Граница | Владелец | Подробнее |
+| --- | --- | --- |
+| Предметная логика и постоянное состояние | Core | [Ответственность Core](/docs/architecture/core) |
+| Представления, команды, диалоги, ссылки | Desktop | [Устройство Desktop](/docs/architecture/desktop) |
+| Автономная аутентификация и локальный API | Local Node | [Протокол и жизненный цикл](/docs/reference/local-node) |
+| Установка и процессы игры | Core с возможностями хоста | [Жизненный цикл игры](/docs/architecture/game-lifecycle) |
+| Хранение, миграции и диагностика | Сервис-владелец | [Данные и кэш](/docs/architecture/data-and-cache) |
+
+В лаунчере нет Electron, веб-фронтенда, IPC-моста или генерируемого TypeScript API. Desktop вызывает интерфейсы C# напрямую
+
+## Запуск и завершение
+
+1. Desktop настраивает рендерер, версию лаунчера и общий HTTP User-Agent
+2. `Bootstrapper.Initialize` создает сервисы Core и применяет регистрации хоста
+3. `App` создает окно, локализатор, выбор файлов, обработчик ссылок и модели представления
+4. Асинхронная инициализация готовит необязательные сетевые данные под экраном загрузки
+5. При завершении отменяется инициализация, освобождаются модели и сервисы, закрывается лог
+
+Local Node, уже привязанный к игре, имеет отдельный жизненный цикл и работает до завершения игры
+
+## Где добавлять поведение
+
+Правила игры, аккаунтов, загрузки и хранения принадлежат Core. Состояние интерфейса и системные диалоги принадлежат Desktop. Local Node отвечает за локальный сервис и жизненный цикл вспомогательного процесса
+
+Перед добавлением сервиса проверьте [справку по контрактам](/docs/reference/services), а изменение покройте соответствующим [набором тестов](/docs/development/testing)
+
+Исходники: [Bootstrapper](../../../../Sources/HyPrism.Core/Application/Composition/Bootstrapper.cs), [Desktop startup](../../../../Sources/HyPrism.Desktop/Program.cs), [Local Node host](../../../../Sources/HyPrism.LocalNode/LocalNodeApplication.cs)

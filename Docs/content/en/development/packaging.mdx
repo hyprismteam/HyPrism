@@ -1,0 +1,76 @@
+---
+title: Packaging and releases
+description: Platform publishers, CI workflows, artifact targets, and release versioning
+---
+
+# Packaging and releases
+
+`Packaging/` contains the maintained release entry points. Each publisher creates packages from one self-contained Desktop publish so Desktop and Local Node ship together
+
+## Platform targets
+
+| Host | Runtime | Targets |
+| --- | --- | --- |
+| Linux | `linux-x64` | `deb`, `rpm`, `appimage`, `flatpak`, `tar` |
+| Windows | `win-x64` | `zip`, `msi`, `exe` |
+| macOS | `osx-arm64` | `dmg` |
+
+Use a matching host for packaging. Every script accepts `all` and `--output`; output defaults to `dist`
+
+## Linux
+
+Install the tools needed by your selected targets: `dpkg-deb`, `rpmbuild`, `appimagetool`, `flatpak`, and `flatpak-builder`
+
+```bash
+./Packaging/publish-linux.sh deb rpm tar --output dist
+./Packaging/publish-linux.sh all --output dist
+```
+
+AppImage tooling can be selected with `--appimagetool` or `APPIMAGETOOL`. Flatpak exports and bundles use the `stable` branch
+
+## Windows
+
+The publisher installs pinned WiX tooling in a temporary directory for MSI and EXE packaging
+
+```powershell
+pwsh Packaging/publish-windows.ps1 all --output dist
+```
+
+It verifies both `HyPrism.Desktop.exe` and `HyPrism.LocalNode.exe` before producing artifacts. ZIP contains the same application payload as the installers
+
+## macOS
+
+The publisher uses the system `sips`, `iconutil`, `plutil`, `hdiutil`, `codesign`, and `file` tools
+
+```bash
+./Packaging/publish-macos.sh dmg --output dist
+```
+
+It builds an Apple Silicon app bundle, checks the Local Node apphost architecture, applies an ad hoc signature, verifies it, and creates a DMG. Ad hoc signing is not notarization
+
+## Version source
+
+`Version` in `Sources/HyPrism.Desktop/HyPrism.Desktop.csproj` is the release version source. Publishers query it through MSBuild
+
+```bash
+dotnet msbuild Sources/HyPrism.Desktop/HyPrism.Desktop.csproj \
+  -nologo -getProperty:Version
+```
+
+A release tag must equal `v<Version>`. The release workflow rejects a mismatched tag before packaging
+
+## CI ownership
+
+| Workflow | Responsibility |
+| --- | --- |
+| `ci.yml` | Core, Desktop, Local Node, and Packaging check groups |
+| `test-core.yml`, `test-desktop.yml`, `test-local-node.yml` | Separate Ubuntu, Windows, and macOS test matrices |
+| `build.yml` | Platform dispatcher |
+| `build-linux.yml`, `build-windows.yml`, `build-macos.yml` | Platform dependencies and publisher calls |
+| `release.yml` | Version validation, shared package builds, release assets |
+| `docs-pages.yml` | Documentation validation and GitHub Pages deployment |
+| `reuse.yml` | License headers and REUSE compliance |
+
+The separate Flathub workflow and `Scripts/update-flathub-manifest.sh` contain legacy Electron/frontend paths. They are not the maintained native packaging entry point and require migration before reuse
+
+Source: [Packaging](../../../../Packaging), [GitHub Actions](../../../../.github/workflows)

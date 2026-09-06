@@ -1,52 +1,67 @@
 ---
 title: HyPrism.Desktop
-description: Avalonia views, view models, localization, and native controls
+description: Avalonia composition, feature ownership, and reusable controls
 ---
 
 # HyPrism.Desktop
 
-`HyPrism.Desktop` is the active application host
+Desktop is the Avalonia application host. It composes Core services, provides native capabilities, and adapts their state into views and commands
 
-## Composition
+## Composition and features
 
-- `App.axaml` loads shared tokens, styles, and resources
-- `Shell` contains the main window, native chrome, navigation, top-level application state, the frame-synchronized startup loading transition with the deferred section warm-up that pre-builds every deferred section while the loading screen covers the shell, and border resizing that applies one atomic move-and-resize per frame on Windows, runs a frame loop with `Position` plus `ClientSize` updates on macOS, and delegates the resize loop to the window manager through `BeginResizeDrag` on Linux
-- `Features/Dashboard` contains the home view and its instance presentation model
-- `SettingsViewModel` adapts `IDesktopSettingsStore` to the settings UI
-- `DesktopSettingsStore` owns Avalonia preferences and persists them through Core configuration storage
-- `ExternalUriLauncher` opens links in the system browser and preserves the absolute escaped URI when handing OAuth requests to the operating system
-- `FilePicker` uses Avalonia's native `StorageProvider` instead of shelling out to platform utilities
-- `SystemMemoryProvider` provides the memory limit shown by Java settings
-- `GpuProvider` implements the Core GPU boundary with host platform tools
-- `Features/News` retrieves official Hytale news and keeps parsed feed and article caches under `Cache/News`
-- the news reader prepares view models away from the dispatcher, realizes controls in background-priority ranges, reveals the document only after the final range, and creates only the template selected by each content kind
-- news image decoding runs after text presentation at background dispatcher priority, limits decode concurrency, and releases decoded bitmaps when the selected article closes
-- `Features/About` provides repository metadata, contributors, commits, and avatars for the About page
-- `Features/Settings` owns the adaptive settings UI and Desktop preferences
-- `Features/Profiles` owns the instance-aligned adaptive profile cards, content view, and creation wizard while delegating ordering, storage, switching, and session persistence to Core account services
-- `Controls/WizardHost` owns wizard lifecycle, active-step normalization, per-step animation selection after completed transitions, final-frame restoration without replay when returning to step zero, delayed cleanup, and navigation-pane coordination for instance, profile, and download-source flows
-- `Controls/WizardScreenTransition` provides the lower-level phased overview-to-wizard and wizard-step transitions, including render-clock-driven step animation, active-step recovery after interruption, and anchor tracking limited to an open wizard
-- `Controls/WizardRevealIcon` provides the unclipped border anchor, motion layer, configurable playback rate with a shared `2x` default, and single-play Lottie player so wizard icons initialize before their first visible frame and remain visible while centered content changes height. Alternate Lottie states use the reveal palette while preserving dark internal details on light shapes
-- `Controls/AdaptiveMasterDetailHost` owns the shared wide and compact master-detail state, breakpoint, column placement, content sizing, and remembered detail intent while keeping layout synchronization immediate and user navigation animated
-- `Controls/ReorderableListController` owns pointer capture, drag previews, and drop-index calculation for profile and instance lists
-- `Platform` contains native URI, file picker, memory, and GPU adapters plus the shared persistent remote image cache
-- `Integrations/Discord` implements the Core presence port and follows the Avalonia host lifetime
-- custom controls handle rich news content, smooth scrolling, animated combo boxes, and reusable fading popups
-- `.resx` files under `Localization` provide UI strings for every supported culture
+| Location | Responsibility |
+| --- | --- |
+| `Program.cs` | Service registrations, renderer configuration, application entry point |
+| `App.axaml` and `App.axaml.cs` | Resources, window creation, startup and shutdown |
+| `Shell` | Main window, navigation, top-level state, instance and news orchestration |
+| `Features/Dashboard` | Current-instance launch surface |
+| `Features/Instances` | Instance workspace, mods, catalog, worlds, console presentation |
+| `Features/Profiles` | Profile cards, activation, editing, creation and sign-in |
+| `Features/Settings` | Settings view model, persistence adapter, storage usage |
+| `Features/News` | Official feed, HTML parsing, structured articles, rich text |
+| `Features/About` | GitHub repository, commit, contributor and avatar data |
+| `Platform` | Browser and folder opening, file picker, memory and GPU discovery, image cache |
+| `Integrations/Discord` | Host implementation of Core presence |
+| `Localization` | Resource strings and runtime language selection |
 
-## UI foundation
+## Views and state
 
-Reusable desktop presentation is split into two layers:
+Compiled bindings are enabled for the Desktop project. Views declare `x:DataType`; view models expose observable state and commands. Code-behind handles behavior tied to input, layout, focus, or animation
 
-- `Styles/Tokens.axaml` defines surface, text, interaction, navigation selection, semantic status, toggle, and popup colors
-- `Styles/Controls.axaml` defines the shared animated ComboBox, popup surface, ComboBox items, toggle switches, `SettingsRow`, wizard actions, and segmented controls
+The following fragment illustrates a compiled binding to the existing settings view model
 
-Feature views opt into reusable controls with `uiComboBox`, `uiPopupSurface`, `uiToggle`, `uiSettingsGroup`, `uiSettingsRow`, and `uiSegmentedControl` classes. Enabled buttons, selectors, toggles, and sliders receive the shared hand cursor while text input and resize surfaces keep their specialized cursors. `FadingPopup` owns opening, closing, light dismiss, keyboard dismiss, animation timing, and close retention for both ComboBox lists and feature menus. It disables the window-manager shadow so rounded popup geometry remains consistent on Windows and Linux. New interaction colors and animation timings belong in this foundation instead of feature-scoped styles
+```xml
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:settings="using:HyPrism.Desktop.Features.Settings"
+             x:DataType="settings:SettingsViewModel">
+  <ToggleSwitch IsChecked="{Binding CloseAfterLaunch}" />
+</UserControl>
+```
 
-`MotionDurations` names shared animation timings by purpose. `RotatingVisual.IsActive` provides one monotonic UI-timer-driven spinner behavior that starts only while its visual is active and attached, then resets on stop or detach
+Publish observable collection changes on the UI dispatcher. Unsubscribe from service events and release image resources when their owner is disposed
 
-The desktop project uses compiled bindings by default. View models expose state and commands while code-behind is limited to control behavior that depends on Avalonia input, layout, or animation primitives
+## Shared UI foundation
 
-External links and file dialogs stay in Desktop. URI presentation is passed to Core as an asynchronous callback only for interactive OAuth, while file selection is consumed directly by Desktop view models. Desktop also implements `IOAuthCallbackPageRenderer` with the HyPrism logo, launcher colors, responsive layout, result state, and close-window guidance localized from the current `IDesktopSettingsStore.Language` value
+`Styles/Tokens.axaml` defines colors and semantic tokens. `Styles/Controls.axaml` defines shared control styles. Reuse their classes instead of copying feature-specific variants
 
-News and GitHub response models stay beside their Desktop features because they are presentation-facing data and are not part of game or account logic
+| Control | Responsibility |
+| --- | --- |
+| `AdaptiveMasterDetailHost` | Shared wide and compact navigation |
+| `DeferredContentControl` | Delayed creation and retention of feature views |
+| `WizardHost` | Wizard state, step transitions, and navigation coordination |
+| `OverlayModal` | Shared dialog sheet |
+| `FadingPopup` and `FadingComboBox` | Popup lifecycle and selection menus |
+| `ReorderableListController` | Drag handles, previews, and drop positions |
+| `NoteCard` | Informational and important callouts |
+| `SmoothScrollViewer` | Wheel and middle-button scrolling |
+
+Animation timing belongs in `MotionDurations` or the owning reusable control. The [performance guide](/docs/development/avalonia-performance) explains layout and rendering checks
+
+## Network presentation
+
+News and GitHub clients use the shared HTTP identity. Parsed news lives in `Cache/News`; encoded remote images live in `Cache/Images`. Article text is prepared before image decoding, and decoded article bitmaps are released when the article closes
+
+Native file selection uses Avalonia's `StorageProvider`. External links preserve escaped absolute URIs, including OAuth parameters. Neither capability belongs in Core
+
+Source: [MainWindowViewModel](../../../../Sources/HyPrism.Desktop/Shell/MainWindowViewModel.cs), [Shared controls](../../../../Sources/HyPrism.Desktop/Controls)

@@ -9,6 +9,7 @@ import React from 'react'
 import { useDocsLocale } from '../context/locale'
 import { routeToUrl, useLocalizedDocsData, type NavigationItem } from '../data'
 import { dictionaries } from '../i18n'
+import { MaterialSymbol } from './MaterialSymbol'
 
 function containsRoute(item: NavigationItem, activeRoute: string): boolean {
   return item.type === 'link'
@@ -38,7 +39,12 @@ function SidebarItem({ item, activeRoute }: Readonly<{
   return (
     <li>
       <details className="hyprism-sidebar-category" open={containsRoute(item, activeRoute)}>
-        <summary>{item.label}</summary>
+        <summary>
+          {item.icon && (
+            <MaterialSymbol name={item.icon} size={17} className="hyprism-sidebar-icon" />
+          )}
+          {item.label}
+        </summary>
         <ul>
           {item.items.map(child => (
             <SidebarItem

@@ -1,64 +1,66 @@
 ---
 title: Building
-description: Restore, build, and run the native launcher
+description: Restore, build, run, and isolate the native launcher
 ---
 
 # Building
 
-## Requirements
+The launcher requires .NET 10 SDK and Git. Node.js and pnpm are needed only for the [documentation site](/docs/development/documentation)
 
-- .NET 10 SDK
-- Git
-- Node.js 22 and pnpm only when working on the documentation
+## Clone and build
 
-## Native launcher
+Run these commands in a terminal
 
 ```bash
+git clone https://github.com/hyprismteam/HyPrism.git
+cd HyPrism
 dotnet restore HyPrism.sln
-dotnet build Sources/HyPrism.Desktop/HyPrism.Desktop.csproj
-dotnet run --project Sources/HyPrism.Desktop/HyPrism.Desktop.csproj
-```
-
-## Entire solution
-
-```bash
 dotnet build HyPrism.sln
 ```
 
-The solution contains `HyPrism.Core`, `HyPrism.Desktop`, `HyPrism.LocalNode`, and their test projects
+The solution builds Core, Desktop, Local Node, and their test projects
 
-## Local publishing
-
-Release entry points and their platform assets are centralized under `Packaging/`. On Linux, the publisher creates `deb`, `rpm`, AppImage, Flatpak bundle, and `tar.xz` from one self-contained Desktop publish output. Install `rpm`, Flatpak, Flatpak Builder, and appimagetool first, then run:
+## Run Desktop
 
 ```bash
-./Packaging/publish-linux.sh all --output dist
+dotnet run --project Sources/HyPrism.Desktop/HyPrism.Desktop.csproj
 ```
 
-Use a specific Linux target such as `deb`, `rpm`, `appimage`, `flatpak`, or `tar` to build only that package. On macOS, `./Packaging/publish-macos.sh dmg` creates the DMG. On Windows, `pwsh Packaging/publish-windows.ps1 all` creates ZIP, MSI, and EXE installer. Each platform workflow directly calls its corresponding entry point
+Desktop uses the same data directory as a packaged launcher unless you override it. To keep development data separate on Linux or macOS
 
-The Windows publisher verifies that both `HyPrism.Desktop.exe` and `HyPrism.LocalNode.exe` exist before creating portable and installer artifacts. It installs the pinned WiX 6 tool in an isolated temporary directory and uses the matching bootstrapper extension version
+```bash
+hyprism_data="$(mktemp -d)"
+HYPRISM_DATA="$hyprism_data" dotnet run \
+  --project Sources/HyPrism.Desktop/HyPrism.Desktop.csproj
+```
 
-The `Version` property in `Sources/HyPrism.Desktop/HyPrism.Desktop.csproj` is the only release version source. Packaging scripts evaluate it through MSBuild for assembly metadata, package metadata, and artifact names. A release tag must match `v<Version>` or the release workflow fails
+On Windows PowerShell
 
-## GitHub Actions
+```powershell
+$hyprismData = Join-Path ([IO.Path]::GetTempPath()) ("hyprism-dev-" + [guid]::NewGuid())
+New-Item -ItemType Directory -Path $hyprismData | Out-Null
+$env:HYPRISM_DATA = $hyprismData
+dotnet run --project Sources/HyPrism.Desktop/HyPrism.Desktop.csproj
+```
 
-`.github/workflows/ci.yml` is the push and pull request entry point. It exposes separate Core, Desktop, Local Node, and Packaging check groups. Each test group calls its own reusable matrix workflow, while Packaging uses the build dispatcher. `.github/workflows/build.yml` only selects platforms, while `build-linux.yml`, `build-windows.yml`, and `build-macos.yml` own their platform packaging
+The directory must exist before startup. It is retained after exit so you can inspect logs and state
 
-The current CI artifacts are Linux x64 `deb`, `rpm`, AppImage, Flatpak bundle, and `tar.xz`, Windows x64 portable ZIP, MSI, and EXE installer, and a macOS ARM64 DMG. Release builds reuse the same platform workflows and pass the release version into artifact names
+## Build a release configuration
 
-The Linux workflow retries the Flathub runtime installation when remote metadata or package downloads fail temporarily. The final failed attempt still stops the build before packaging starts. Flatpak export and bundle creation use the same `stable` branch selected by the Linux publisher
+```bash
+dotnet build HyPrism.sln --configuration Release
+```
 
-## macOS package
+A build creates development binaries. Use [Packaging and releases](/docs/development/packaging) for self-contained applications and installable artifacts
 
-The macOS workflow publishes the self-contained `osx-arm64` Desktop application with the Local Node apphost beside it, builds a native `.app` bundle, applies an ad hoc signature, verifies the bundle, and creates the uploaded DMG
+## Verify a change
 
-## Documentation
+Run the relevant [test suite](/docs/development/testing), then validate documentation when behavior or contributor workflows change
 
 ```bash
 cd Docs
-pnpm install --frozen-lockfile
-pnpm build
+pnpm check
+PAGES_BASE_PATH=/HyPrism pnpm build
 ```
 
-The static site is written to `Docs/out`
+The documentation export is written to `Docs/out`
