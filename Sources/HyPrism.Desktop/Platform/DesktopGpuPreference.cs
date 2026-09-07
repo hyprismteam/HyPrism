@@ -42,8 +42,6 @@ internal static class DesktopGpuPreference
     internal static Win32PlatformOptions CreateWin32Options()
         => new()
         {
-            RenderingMode = [Win32RenderingMode.AngleEgl, Win32RenderingMode.Software],
-            GraphicsAdapterSelectionCallback = SelectWindowsAdapter,
             CompositionMode = DesktopRenderOptions.CreateCompositionModes(),
             OverlayPopups = true
         };
