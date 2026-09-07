@@ -16,6 +16,13 @@ internal static class DesktopRenderOptions
 {
     internal const string CompositionEnvironmentVariable = "HYPRISM_WIN32_COMPOSITION";
 
+    internal static Win32PlatformOptions CreateWin32Options()
+        => new()
+        {
+            CompositionMode = CreateCompositionModes(),
+            OverlayPopups = true
+        };
+
     internal static IReadOnlyList<Win32CompositionMode> CreateCompositionModes(
         string? environmentValue = null)
     {

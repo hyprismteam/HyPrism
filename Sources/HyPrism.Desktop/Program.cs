@@ -25,7 +25,6 @@ internal static class Program
     public static void Main(string[] args)
     {
         Logger.CaptureOriginalConsole();
-        DesktopGpuPreference.ConfigureBeforeAvalonia();
         GCSettings.LatencyMode = GCLatencyMode.SustainedLowLatency;
         LauncherUserAgent.ConfigureVersion(DesktopApplicationInfo.Version);
         DesktopRuntime.Services = Bootstrapper.Initialize(services =>
@@ -60,7 +59,7 @@ internal static class Program
     public static AppBuilder BuildAvaloniaApp()
         => AppBuilder.Configure<App>()
             .UsePlatformDetect()
-            .With(DesktopGpuPreference.CreateWin32Options())
+            .With(DesktopRenderOptions.CreateWin32Options())
             .With(new SkiaOptions
             {
                 MaxGpuResourceSizeBytes = 256 * 1024 * 1024

@@ -54,10 +54,18 @@ public sealed class DesktopRenderOptionsTests
     [Fact]
     public void CreateWin32Options_UsesTheCompositionModeDefault()
     {
-        var options = DesktopGpuPreference.CreateWin32Options();
+        var options = DesktopRenderOptions.CreateWin32Options();
 
         Assert.Equal(
             Win32CompositionMode.LowLatencyDxgiSwapChain,
             Assert.Single(options.CompositionMode.Take(1)));
+    }
+
+    [Fact]
+    public void CreateWin32Options_DoesNotForceGraphicsAdapterSelection()
+    {
+        var options = DesktopRenderOptions.CreateWin32Options();
+
+        Assert.Null(options.GraphicsAdapterSelectionCallback);
     }
 }
