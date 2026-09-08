@@ -15,7 +15,6 @@ namespace HyPrism.Desktop.Features.Settings;
 
 public sealed partial class SettingsView : UserControl
 {
-    private double _backgroundPickerWidth;
     private readonly WizardHost _downloadSourceWizard;
     private readonly AdaptiveMasterDetailHost _layoutHost;
     private INotifyPropertyChanged? _viewModel;
@@ -189,17 +188,6 @@ public sealed partial class SettingsView : UserControl
             () => viewModel.IsAddingMirror);
     }
 
-    private void OnBackgroundPickerSizeChanged(object? sender, SizeChangedEventArgs e)
-    {
-        if (e.NewSize.Width <= 0 || Math.Abs(_backgroundPickerWidth - e.NewSize.Width) < 0.5)
-            return;
-
-        _backgroundPickerWidth = e.NewSize.Width;
-        Dispatcher.UIThread.Post(
-            () => UpdateBackgroundPickerLayout(e.NewSize.Width),
-            DispatcherPriority.Loaded);
-    }
-
     private void OnAboutContributorsSizeChanged(object? sender, SizeChangedEventArgs e)
     {
         const double containerPadding = 28;
@@ -212,37 +200,6 @@ public sealed partial class SettingsView : UserControl
             1,
             (int)Math.Floor((e.NewSize.Width - containerPadding) / contributorSlotWidth));
         viewModel.UpdateAboutContributorCapacity(slots);
-    }
-
-    private void UpdateBackgroundPickerLayout(double availableWidth)
-    {
-        const double targetSlotWidth = 185;
-        const double minimumSlotWidth = 150;
-        const double tileMargin = 12;
-
-        var maximumColumns = Math.Max(1, (int)Math.Floor(availableWidth / minimumSlotWidth));
-        var columns = Math.Clamp(
-            (int)Math.Round(availableWidth / targetSlotWidth, MidpointRounding.AwayFromZero),
-            1,
-            maximumColumns);
-        var slotWidth = Math.Floor((availableWidth - 1) / columns);
-        var tileWidth = Math.Max(120, slotWidth - tileMargin);
-        var tileHeight = Math.Round(tileWidth * 9 / 16);
-
-        var panel = BackgroundPicker.GetVisualDescendants().OfType<WrapPanel>().FirstOrDefault();
-        if (panel is not null)
-        {
-            panel.ItemWidth = slotWidth;
-            panel.ItemHeight = tileHeight + tileMargin;
-        }
-
-        foreach (var button in BackgroundPicker.GetVisualDescendants()
-                     .OfType<Button>()
-                     .Where(button => button.Classes.Contains("backgroundChoice")))
-        {
-            button.Width = tileWidth;
-            button.Height = tileHeight;
-        }
     }
 
     public bool TryCloseCompactContent()

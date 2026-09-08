@@ -15,7 +15,6 @@ using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using HyPrism.Desktop.Controls;
-using HyPrism.Desktop.Features.Dashboard;
 using HyPrism.Desktop.Shell;
 
 namespace HyPrism.Desktop.Features.Instances;

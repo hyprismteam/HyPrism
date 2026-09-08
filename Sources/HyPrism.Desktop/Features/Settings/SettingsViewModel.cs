@@ -84,7 +84,6 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     private string _selectedCategory = "general";
 
     [ObservableProperty] private SettingChoiceViewModel _selectedLanguage;
-    [ObservableProperty] private BackgroundChoiceViewModel _selectedBackground;
     [ObservableProperty] private SettingChoiceViewModel _selectedGpuPreference;
     private readonly IReadOnlyList<GpuAdapterInfo> _detectedGpuAdapters = [];
     [ObservableProperty] private bool _closeAfterLaunch;
@@ -210,10 +209,6 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         Languages = new ObservableCollection<SettingChoiceViewModel>(
             localizer.AvailableLanguages.Select(language =>
                 new SettingChoiceViewModel(language.Key, language.Value, GetFlagCountryCode(language.Key))));
-        var availableBackgrounds = settings.AvailableBackgrounds;
-        Backgrounds = new ObservableCollection<BackgroundChoiceViewModel>(
-            [new("auto", localizer["settings.visualSettings.autoShuffle"], availableBackgrounds.Take(3)),
-             .. availableBackgrounds.Select(name => new BackgroundChoiceViewModel(name, name, [name]))]);
         _detectedGpuAdapters = gpuProvider?.GetAdapters() ?? [];
         GpuPreferences = CreateGpuPreferences(localizer, _detectedGpuAdapters);
         AboutTeamMembers = new ObservableCollection<AboutTeamMemberViewModel>(
@@ -227,8 +222,6 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         ]);
 
         _selectedLanguage = FindChoice(Languages, settings.Language);
-        _selectedBackground = FindBackgroundChoice(Backgrounds, settings.BackgroundMode);
-        UpdateSelectedBackgroundState();
         _selectedGpuPreference = ResolveGpuChoice(settings.GpuPreference);
         _closeAfterLaunch = settings.CloseAfterLaunch;
         _showAlphaMods = settings.ShowAlphaMods;
@@ -269,7 +262,6 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
 
     public ObservableCollection<SettingCategoryViewModel> Categories { get; }
     public ObservableCollection<SettingChoiceViewModel> Languages { get; }
-    public ObservableCollection<BackgroundChoiceViewModel> Backgrounds { get; }
     public ObservableCollection<SettingChoiceViewModel> GpuPreferences { get; }
     public ObservableCollection<AboutTeamMemberViewModel> AboutTeamMembers { get; }
     public ObservableCollection<AboutContributorViewModel> AboutContributors { get; } = [];
@@ -363,7 +355,6 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     public string DeleteSourceHint { get; private set; } = string.Empty;
     public string MusicLabel { get; private set; } = string.Empty;
     public string MusicHint { get; private set; } = string.Empty;
-    public string BackgroundLabel { get; private set; } = string.Empty;
     public string HideNewsLabel { get; private set; } = string.Empty;
     public string HideNewsHint { get; private set; } = string.Empty;
     public string DiscordAnnouncementsLabel { get; private set; } = string.Empty;
@@ -505,7 +496,6 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         DeleteSourceHint = _localizer["settings.downloads.deleteSourceHint"];
         MusicLabel = _localizer["desktopSettings.music"];
         MusicHint = _localizer["desktopSettings.musicHint"];
-        BackgroundLabel = _localizer["settings.visualSettings.background"];
         HideNewsLabel = _localizer["settings.visualSettings.hideNews"];
         HideNewsHint = _localizer["settings.visualSettings.hideNewsHint"];
         DiscordAnnouncementsLabel = _localizer["discord.showAnnouncements"];
@@ -609,8 +599,6 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         UpdateCategoryDescription("network", _localizer["settings.categoryDescriptions.network"]);
         UpdateCategoryDescription("data", _localizer["settings.categoryDescriptions.data"]);
         UpdateCategoryDescription("about", _localizer["settings.categoryDescriptions.about"]);
-        Backgrounds.First(choice => choice.Value == "auto").Display =
-            _localizer["settings.visualSettings.autoShuffle"];
         UpdateChoiceDisplay(GpuPreferences, "auto", _localizer["settings.graphicsSettings.gpu_auto"]);
         foreach (var mirror in MirrorSources)
         {
@@ -636,14 +624,6 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
 
         if (_localizer.SetLanguage(value.Value))
             _settings.Language = _localizer.CurrentLanguage;
-    }
-    partial void OnSelectedBackgroundChanged(BackgroundChoiceViewModel value)
-    {
-        if (value is null)
-            return;
-
-        UpdateSelectedBackgroundState();
-        _settings.BackgroundMode = value.Value;
     }
     partial void OnSelectedGpuPreferenceChanged(SettingChoiceViewModel value) => _settings.GpuPreference = value.Value;
     partial void OnCloseAfterLaunchChanged(bool value) => _settings.CloseAfterLaunch = value;
@@ -929,13 +909,6 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
 
     [RelayCommand]
     private void SelectCustomJava() => UseCustomJava = true;
-
-    [RelayCommand]
-    private void SelectBackground(BackgroundChoiceViewModel? background)
-    {
-        if (background is not null && !ReferenceEquals(SelectedBackground, background))
-            SelectedBackground = background;
-    }
 
     [RelayCommand]
     private async Task BrowseJava()
@@ -2000,12 +1973,6 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         return JvmArgumentBuilder.SetInitialHeapMb(updated, (int)JavaInitialRamMb);
     }
 
-    private void UpdateSelectedBackgroundState()
-    {
-        foreach (var background in Backgrounds)
-            background.IsSelected = ReferenceEquals(background, SelectedBackground);
-    }
-
     private static string FormatMemory(double memoryMb)
     {
         var memoryGb = memoryMb / 1024;
@@ -2063,12 +2030,6 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
 
     private static SettingChoiceViewModel FindChoice(
         IEnumerable<SettingChoiceViewModel> choices,
-        string? value)
-        => choices.FirstOrDefault(choice => string.Equals(choice.Value, value, StringComparison.OrdinalIgnoreCase))
-           ?? choices.First();
-
-    private static BackgroundChoiceViewModel FindBackgroundChoice(
-        IEnumerable<BackgroundChoiceViewModel> choices,
         string? value)
         => choices.FirstOrDefault(choice => string.Equals(choice.Value, value, StringComparison.OrdinalIgnoreCase))
            ?? choices.First();
@@ -2228,34 +2189,6 @@ public sealed partial class AboutContributorViewModel : ObservableObject, IDispo
     public void Dispose()
     {
         Avatar = null;
-    }
-}
-
-public sealed partial class BackgroundChoiceViewModel : ObservableObject
-{
-    public BackgroundChoiceViewModel(string value, string display, IEnumerable<string> previewNames)
-    {
-        Value = value;
-        _display = display;
-        Previews = new ObservableCollection<Bitmap>(previewNames.Select(LoadPreview));
-    }
-
-    public string Value { get; }
-    public bool IsAuto => string.Equals(Value, "auto", StringComparison.Ordinal);
-    public bool IsSingle => !IsAuto;
-    public ObservableCollection<Bitmap> Previews { get; }
-    public Bitmap? Preview => Previews.FirstOrDefault();
-    public Bitmap? PreviewOne => Previews.ElementAtOrDefault(0);
-    public Bitmap? PreviewTwo => Previews.ElementAtOrDefault(1);
-    public Bitmap? PreviewThree => Previews.ElementAtOrDefault(2);
-    [ObservableProperty] private string _display;
-    [ObservableProperty] private bool _isSelected;
-
-    private static Bitmap LoadPreview(string name)
-    {
-        var uri = new Uri($"avares://HyPrism.Desktop/Assets/Backgrounds/{name}");
-        using var stream = AssetLoader.Open(uri);
-        return Bitmap.DecodeToWidth(stream, 360, BitmapInterpolationMode.MediumQuality);
     }
 }
 

@@ -261,9 +261,6 @@ Bei Laufwerkswechsel muss das Spiel möglicherweise neu installiert werden.</val
   <data name="discord.showAnnouncements" xml:space="preserve">
     <value>Ankündigungen anzeigen</value>
   </data>
-  <data name="dock.dashboard" xml:space="preserve">
-    <value>Startseite</value>
-  </data>
   <data name="dock.instances" xml:space="preserve">
     <value>Instanzen</value>
   </data>

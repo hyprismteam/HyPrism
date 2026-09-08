@@ -261,9 +261,6 @@ Sürücü değiştirirseniz oyunu yeniden yüklemeniz gerekebilir.</value>
   <data name="discord.showAnnouncements" xml:space="preserve">
     <value>Duyuruları göster</value>
   </data>
-  <data name="dock.dashboard" xml:space="preserve">
-    <value>Ana Sayfa</value>
-  </data>
   <data name="dock.instances" xml:space="preserve">
     <value>Örnekler</value>
   </data>

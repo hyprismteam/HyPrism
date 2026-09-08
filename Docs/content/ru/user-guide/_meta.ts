@@ -3,7 +3,6 @@
 
 export default {
   icon: 'menu-book',
-  dashboard: 'Главная',
   'instances-profiles-mods': 'Экземпляры',
   profiles: 'Профили',
   mods: 'Моды',

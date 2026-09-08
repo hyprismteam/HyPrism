@@ -147,7 +147,6 @@ public sealed class DocumentationScreenshotTests
             Capture(window, Path.Combine(outputDirectory, fileName));
         }
 
-        await CapturePageAsync("dashboard", "home.png");
         await CapturePageAsync("instances", "instances.png");
         await CapturePageAsync("profiles", "profiles.png");
 

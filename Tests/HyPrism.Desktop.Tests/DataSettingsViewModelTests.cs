@@ -523,7 +523,6 @@ public sealed class DataSettingsViewModelTests
     {
         var settings = new Mock<IDesktopSettingsStore>();
         settings.SetupGet(service => service.Language).Returns("en-US");
-        settings.SetupGet(service => service.BackgroundMode).Returns("auto");
         settings.SetupGet(service => service.GpuPreference).Returns("auto");
         settings.SetupGet(service => service.JavaArguments).Returns(string.Empty);
         settings.SetupGet(service => service.AuthDomain).Returns(string.Empty);
@@ -541,8 +540,6 @@ public sealed class DataSettingsViewModelTests
                 12 * 1024 * 1024,
                 3 * 1024 * 1024,
                 4 * 1024 * 1024));
-        settings.SetupGet(service => service.AvailableBackgrounds).Returns(
-            ["bg_1.jpg", "bg_2.jpg", "bg_3.jpg"]);
         return settings;
     }
 }

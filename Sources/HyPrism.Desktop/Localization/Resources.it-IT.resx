@@ -261,9 +261,6 @@ Potrebbe essere necessario reinstallare il gioco se si cambia drive.</value>
   <data name="discord.showAnnouncements" xml:space="preserve">
     <value>Mostra annunci</value>
   </data>
-  <data name="dock.dashboard" xml:space="preserve">
-    <value>Home</value>
-  </data>
   <data name="dock.instances" xml:space="preserve">
     <value>Istanze</value>
   </data>

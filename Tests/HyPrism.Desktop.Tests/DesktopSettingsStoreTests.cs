@@ -45,25 +45,6 @@ public sealed class DesktopSettingsStoreTests : IDisposable
     }
 
     [Fact]
-    public void BackgroundMode_RaisesChangeAfterSaving()
-    {
-        string? received = null;
-        _settings.BackgroundChanged += value => received = value;
-
-        _settings.BackgroundMode = "bg_4.png";
-
-        Assert.Equal("bg_4.png", _config.Configuration.BackgroundMode);
-        Assert.Equal("bg_4.png", received);
-    }
-
-    [Fact]
-    public void AvailableBackgrounds_ContainsAutoPickerAssets()
-    {
-        Assert.Contains("bg_1.jpg", _settings.AvailableBackgrounds);
-        Assert.Contains("bg_4.png", _settings.AvailableBackgrounds);
-    }
-
-    [Fact]
     public void DataDirectories_ExposeEffectiveStorageLocations()
     {
         Assert.Equal(Path.Combine(_directory, "Instances"), _settings.DefaultInstanceDirectory);

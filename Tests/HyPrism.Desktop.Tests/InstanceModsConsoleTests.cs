@@ -222,7 +222,6 @@ public sealed class InstanceModsConsoleTests
         instances.Setup(service => service.GetInstancePathById(instance.Id)).Returns(instancePath);
         instances.Setup(service => service.IsClientPresent(instancePath)).Returns(true);
         profiles.Setup(service => service.GetNick()).Returns("Console Test");
-        settings.SetupGet(service => service.AvailableBackgrounds).Returns([]);
 
         return (instances, profiles, profileRepository, launchCoordinator, installationWorkflow,
             gameProcess, progress, settings, news, uriLauncher);

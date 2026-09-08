@@ -49,7 +49,6 @@ public sealed class StartupLoadingTests
         instances.Setup(service => service.GetCachedInstances()).Returns([]);
         profiles.Setup(service => service.GetNick()).Returns("Startup Test");
         profileRepository.Setup(service => service.GetProfiles()).Returns([]);
-        settings.SetupGet(service => service.AvailableBackgrounds).Returns([]);
         settings
             .Setup(service => service.GetLauncherStorageUsageAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new LauncherStorageUsage(

@@ -8,9 +8,6 @@ namespace HyPrism.Desktop.Features.Settings;
 /// </summary>
 public interface IDesktopSettingsStore
 {
-    /// <summary>Raised after the selected background changes</summary>
-    event Action<string?>? BackgroundChanged;
-
     /// <summary>Gets or sets the interface language code</summary>
     string Language { get; set; }
 
@@ -25,12 +22,6 @@ public interface IDesktopSettingsStore
 
     /// <summary>Gets or sets whether the news page is disabled</summary>
     bool DisableNews { get; set; }
-
-    /// <summary>Gets or sets the selected background mode or file name</summary>
-    string BackgroundMode { get; set; }
-
-    /// <summary>Gets the background files bundled with Desktop</summary>
-    IReadOnlyList<string> AvailableBackgrounds { get; }
 
     /// <summary>Gets or sets whether authenticated game mode is enabled</summary>
     bool OnlineMode { get; set; }

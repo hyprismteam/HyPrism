@@ -73,7 +73,6 @@ public sealed class InstanceContentViewModelTests
             PlayTimeSeconds = 3720
         });
         profiles.Setup(service => service.GetNick()).Returns("Instance Test");
-        settings.SetupGet(service => service.AvailableBackgrounds).Returns([]);
         modManager.Setup(service => service.GetInstanceInstalledMods(instancePath)).Returns(
         [
             new InstalledMod
@@ -236,7 +235,6 @@ public sealed class InstanceContentViewModelTests
         instances.Setup(service => service.GetInstancePathById(instance.Id)).Returns("/tmp/action-instance");
         instances.Setup(service => service.IsClientPresent("/tmp/action-instance")).Returns(true);
         profiles.Setup(service => service.GetNick()).Returns("Action Test");
-        settings.SetupGet(service => service.AvailableBackgrounds).Returns([]);
         launchCoordinator.Setup(service => service.LaunchAsync(
                 instance.Id,
                 It.IsAny<AuthUriPresenter?>()))
@@ -340,7 +338,6 @@ public sealed class InstanceContentViewModelTests
         instances.Setup(service => service.GetInstancePathById(instance.Id)).Returns("/tmp/restored-instance");
         instances.Setup(service => service.IsClientPresent("/tmp/restored-instance")).Returns(true);
         profiles.Setup(service => service.GetNick()).Returns("Restore Test");
-        settings.SetupGet(service => service.AvailableBackgrounds).Returns([]);
         gameProcess.Setup(service => service.IsInstanceRunning(instance.Id)).Returns(true);
         gameProcess.Setup(service => service.ExitGame(instance.Id)).Returns(true);
 
@@ -412,7 +409,6 @@ public sealed class InstanceContentViewModelTests
         instances.Setup(service => service.IsClientPresent("/tmp/install-instance")).Returns(false);
         instances.Setup(service => service.IsClientPresent("/tmp/other-install-instance")).Returns(false);
         profiles.Setup(service => service.GetNick()).Returns("Install Test");
-        settings.SetupGet(service => service.AvailableBackgrounds).Returns([]);
         installationWorkflow.Setup(service => service.DownloadAndLaunchInstanceAsync(
                 instance.Id,
                 It.IsAny<AuthUriPresenter?>()))

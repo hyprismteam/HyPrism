@@ -25,7 +25,6 @@ using Avalonia.Threading;
 using Avalonia.VisualTree;
 using CommunityToolkit.Mvvm.Input;
 using HyPrism.Desktop.Features.About;
-using HyPrism.Desktop.Features.Dashboard;
 using HyPrism.Desktop.Features.Instances;
 using HyPrism.Desktop.Features.News;
 using HyPrism.Desktop.Features.Profiles;
@@ -866,7 +865,6 @@ public sealed class MainWindowRenderTests
             .Returns("/tmp/hyprism-animated-action");
         instances.Setup(service => service.IsClientPresent(It.IsAny<string>())).Returns(true);
         profile.Setup(service => service.GetNick()).Returns("Action Test");
-        settings.SetupGet(service => service.AvailableBackgrounds).Returns([]);
         launchCoordinator.Setup(service => service.LaunchAsync(
                 instance.Id,
                 It.IsAny<AuthUriPresenter?>()))
@@ -1316,7 +1314,6 @@ public sealed class MainWindowRenderTests
 
         instances.Setup(service => service.GetCachedInstances()).Returns([]);
         profile.Setup(service => service.GetNick()).Returns("Reader Test");
-        settings.SetupGet(service => service.AvailableBackgrounds).Returns([]);
         news.Setup(service => service.GetNewsAsync(It.IsAny<int>()))
             .ReturnsAsync(
             [
@@ -1523,7 +1520,6 @@ public sealed class MainWindowRenderTests
         settings.SetupGet(service => service.Language).Returns(() => language);
         settings.SetupSet(service => service.Language = It.IsAny<string>())
             .Callback<string>(value => language = value);
-        settings.SetupGet(service => service.AvailableBackgrounds).Returns([]);
         news.Setup(service => service.GetNewsAsync(It.IsAny<int>()))
             .ReturnsAsync((int count) => Enumerable.Range(1, count)
                 .Select(index => new NewsItemResponse
@@ -1833,8 +1829,6 @@ public sealed class MainWindowRenderTests
                 Name = "HyPrism Player",
                 IsOfficial = isOfficialProfile
             });
-        settings.SetupGet(service => service.AvailableBackgrounds).Returns(
-            ["bg_1.jpg", "bg_2.jpg", "bg_3.jpg", "bg_4.png", "bg_5.jpg", "bg_6.png"]);
         github.Setup(service => service.GetContributorsAsync()).ReturnsAsync(
         [
             new GitHubUser { Login = "yyyumeniku", Type = "User" },
@@ -2147,27 +2141,11 @@ public sealed class MainWindowRenderTests
         Assert.True(mainSceneSurface!.ClipToBounds);
         Assert.Equal(new CornerRadius(23), mainSceneSurface.CornerRadius);
 
-        var dashboard = Assert.Single(
-            window.GetVisualDescendants().OfType<DashboardView>());
-        Assert.True(dashboard.IsEffectivelyVisible);
-        Assert.False(dashboard.ClipToBounds);
-        var dashboardSurface = dashboard.FindControl<Border>("DashboardSurface");
-        Assert.NotNull(dashboardSurface);
-        Assert.True(dashboardSurface!.ClipToBounds);
-        Assert.Equal(new CornerRadius(23), dashboardSurface.CornerRadius);
-        var dashboardAction = Assert.Single(
-            dashboard.GetVisualDescendants().OfType<Button>(),
-            button => button.Classes.Contains("dashboardPrimary") && button.IsEffectivelyVisible);
-        Assert.DoesNotContain(
-            dashboard.GetVisualDescendants().OfType<Button>(),
-            button => button.Classes.Contains("dashboardManage"));
-        Assert.DoesNotContain(
-            dashboard.GetVisualDescendants().OfType<Border>(),
-            border => border.Classes.Contains("dashboardInstanceSummary"));
-        Assert.DoesNotContain(
-            dashboardAction.GetVisualDescendants(),
-            visual => visual.RenderTransform is ScaleTransform);
-        AssertNoPressScale(dashboardAction);
+        var shellInstancesView = Assert.Single(
+            window.GetVisualDescendants().OfType<InstancesView>());
+        Assert.True(shellInstancesView.IsEffectivelyVisible);
+        Assert.NotNull(shellInstancesView.FindControl<Border>("InstancesListPane"));
+        Assert.NotNull(shellInstancesView.FindControl<Grid>("InstancesContent"));
 
         Assert.NotNull(window.FindControl<Border>("ResizeNorth")?.Cursor);
         Assert.NotNull(window.FindControl<Border>("ResizeSouth")?.Cursor);
@@ -3856,11 +3834,8 @@ public sealed class MainWindowRenderTests
         var visualCategory = viewModel.Settings.Categories.Single(category => category.Id == "visual");
         viewModel.Settings.SelectCategoryCommand.Execute(visualCategory);
         Dispatcher.UIThread.RunJobs();
-        Assert.Equal(7, viewModel.Settings.Backgrounds.Count);
-        Assert.True(viewModel.Settings.Backgrounds[0].IsAuto);
-        Assert.Equal(3, viewModel.Settings.Backgrounds[0].Previews.Count);
         Assert.Equal(
-            2,
+            1,
             settingsView.GetVisualDescendants().OfType<Border>().Count(
                 border => border.IsEffectivelyVisible && border.Classes.Contains("settingsGroup")));
         var visualCategoryHeadings = settingsView.GetVisualDescendants()
@@ -3868,32 +3843,8 @@ public sealed class MainWindowRenderTests
             .Where(text => text.IsEffectivelyVisible && text.Classes.Contains("settingsCategoryHeading"))
             .Select(text => text.Text)
             .ToArray();
-        Assert.Equal(2, visualCategoryHeadings.Length);
+        Assert.Single(visualCategoryHeadings);
         Assert.Equal(viewModel.Settings.VisualTitle, visualCategoryHeadings[0]);
-        Assert.Equal(viewModel.Settings.BackgroundLabel, visualCategoryHeadings[1]);
-        var backgroundChoices = settingsView.GetVisualDescendants()
-            .OfType<Button>()
-            .Where(button => button.IsEffectivelyVisible && button.Classes.Contains("backgroundChoice"))
-            .ToArray();
-        Assert.Equal(7, backgroundChoices.Length);
-        Assert.All(backgroundChoices, choice =>
-        {
-            Assert.InRange(choice.Bounds.Width / choice.Bounds.Height, 1.76, 1.79);
-            Assert.True(choice.Bounds.Width >= 120);
-        });
-        var firstBackgroundRowY = backgroundChoices[0].TranslatePoint(default, settingsView)!.Value.Y;
-        var backgroundsInFirstRow = backgroundChoices.Count(choice =>
-            Math.Abs(choice.TranslatePoint(default, settingsView)!.Value.Y - firstBackgroundRowY) < 1);
-        Assert.Equal(width == 1920 ? 4 : 3, backgroundsInFirstRow);
-        var visualSettingsPreviewPath = Environment.GetEnvironmentVariable(
-            "HYPRISM_VISUAL_SETTINGS_RENDER_OUTPUT");
-        if (!string.IsNullOrWhiteSpace(visualSettingsPreviewPath) && width == 1280)
-        {
-            var visualSettingsFrame = window.CaptureRenderedFrame();
-            Assert.NotNull(visualSettingsFrame);
-            visualSettingsFrame!.Save(visualSettingsPreviewPath, PngBitmapEncoderOptions.Default);
-            Assert.True(File.Exists(visualSettingsPreviewPath));
-        }
 
         var generalCategory = viewModel.Settings.Categories.Single(category => category.Id == "general");
         viewModel.Settings.SelectCategoryCommand.Execute(generalCategory);

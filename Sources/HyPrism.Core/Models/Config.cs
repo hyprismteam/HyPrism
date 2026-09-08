@@ -69,12 +69,6 @@ public class Config
     public bool DisableNews { get; set; } = false;
 
     /// <summary>
-    /// Background mode: "auto" for rotating backgrounds, or a specific background filename.
-    /// Changed from "slideshow" to "auto" in v2.0.4.
-    /// </summary>
-    public string BackgroundMode { get; set; } = "auto";
-
-    /// <summary>
     /// Current interface language code (e.g., "en-US", "ru-RU", "de-DE")
     /// </summary>
     public string Language { get; set; } = "en-US";

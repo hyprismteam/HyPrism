@@ -40,7 +40,6 @@ public sealed class InstanceWizardViewModelTests
 
         instances.Setup(service => service.GetCachedInstances()).Returns([]);
         profiles.Setup(service => service.GetNick()).Returns("Wizard Test");
-        settings.SetupGet(service => service.AvailableBackgrounds).Returns([]);
         versionCatalog
             .Setup(service => service.TryGetCachedVersions(
                 "release",
@@ -100,7 +99,6 @@ public sealed class InstanceWizardViewModelTests
 
         instances.Setup(service => service.GetCachedInstances()).Returns([]);
         profiles.Setup(service => service.GetNick()).Returns("Wizard Test");
-        settings.SetupGet(service => service.AvailableBackgrounds).Returns([]);
         versionCatalog
             .Setup(service => service.TryGetCachedVersions(
                 "release",

@@ -291,9 +291,6 @@ You may need to reinstall the game if switching drives.</value>
   <data name="discord.showAnnouncements" xml:space="preserve">
     <value>Show announcements</value>
   </data>
-  <data name="dock.dashboard" xml:space="preserve">
-    <value>Home</value>
-  </data>
   <data name="dock.instances" xml:space="preserve">
     <value>Instances</value>
   </data>

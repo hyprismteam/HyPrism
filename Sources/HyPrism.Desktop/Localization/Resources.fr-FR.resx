@@ -261,9 +261,6 @@ Vous devrez peut-être réinstaller le jeu si vous changez de lecteur.</value>
   <data name="discord.showAnnouncements" xml:space="preserve">
     <value>Afficher les annonces</value>
   </data>
-  <data name="dock.dashboard" xml:space="preserve">
-    <value>Accueil</value>
-  </data>
   <data name="dock.instances" xml:space="preserve">
     <value>Instances</value>
   </data>

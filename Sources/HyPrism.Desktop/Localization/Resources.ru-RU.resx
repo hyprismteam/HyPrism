@@ -288,9 +288,6 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="discord.showAnnouncements" xml:space="preserve">
     <value>Показать объявления</value>
   </data>
-  <data name="dock.dashboard" xml:space="preserve">
-    <value>Главная</value>
-  </data>
   <data name="dock.instances" xml:space="preserve">
     <value>Экземпляры</value>
   </data>

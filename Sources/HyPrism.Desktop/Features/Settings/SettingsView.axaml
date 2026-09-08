@@ -957,44 +957,6 @@ SPDX-License-Identifier: GPL-3.0-only
               </Border>
             </StackPanel>
 
-            <StackPanel Spacing="10">
-              <TextBlock Text="{Binding BackgroundLabel}" Classes="settingsCategoryHeading" />
-              <Border Classes="uiSettingsGroup settingsGroup">
-                <Border Classes="uiSettingsRow settingsRow last">
-                  <ItemsControl x:Name="BackgroundPicker"
-                                ItemsSource="{Binding Backgrounds}"
-                                HorizontalAlignment="Stretch"
-                                SizeChanged="OnBackgroundPickerSizeChanged">
-                      <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate>
-                          <WrapPanel Orientation="Horizontal" />
-                        </ItemsPanelTemplate>
-                      </ItemsControl.ItemsPanel>
-                      <ItemsControl.ItemTemplate>
-                        <DataTemplate x:DataType="vm:BackgroundChoiceViewModel">
-                          <Button Classes="backgroundChoice"
-                                  Classes.selected="{Binding IsSelected}"
-                                  Command="{Binding DataContext.SelectBackgroundCommand, ElementName=SettingsRoot}"
-                                  CommandParameter="{Binding}">
-                            <Grid ClipToBounds="True">
-                              <Image Source="{Binding Preview}" Stretch="UniformToFill" IsVisible="{Binding IsSingle}" />
-                              <Grid ColumnDefinitions="*,*,*" IsVisible="{Binding IsAuto}">
-                                <Image Source="{Binding PreviewOne}" Stretch="UniformToFill" />
-                                <Image Grid.Column="1" Source="{Binding PreviewTwo}" Stretch="UniformToFill" />
-                                <Image Grid.Column="2" Source="{Binding PreviewThree}" Stretch="UniformToFill" />
-                              </Grid>
-                              <Border Classes="backgroundAutoLabel" IsVisible="{Binding IsAuto}">
-                                <TextBlock Text="{Binding Display}" />
-                              </Border>
-                              <Border Classes="backgroundSelectedIndicator" IsVisible="{Binding IsSelected}" />
-                            </Grid>
-                          </Button>
-                        </DataTemplate>
-                      </ItemsControl.ItemTemplate>
-                  </ItemsControl>
-                </Border>
-              </Border>
-            </StackPanel>
           </StackPanel>
 
           <StackPanel Spacing="22" IsVisible="{Binding IsNetwork}">

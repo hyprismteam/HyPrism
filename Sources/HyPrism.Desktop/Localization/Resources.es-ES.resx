@@ -261,9 +261,6 @@ Es posible que necesites reinstalar el juego si cambias de unidad.</value>
   <data name="discord.showAnnouncements" xml:space="preserve">
     <value>Mostrar anuncios</value>
   </data>
-  <data name="dock.dashboard" xml:space="preserve">
-    <value>Inicio</value>
-  </data>
   <data name="dock.instances" xml:space="preserve">
     <value>Instancias</value>
   </data>

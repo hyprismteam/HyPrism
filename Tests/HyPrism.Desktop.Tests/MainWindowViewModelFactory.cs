@@ -103,9 +103,7 @@ internal static class MainWindowViewModelFactory
             });
 
         settings.SetupGet(service => service.Language).Returns(language);
-        settings.SetupGet(service => service.BackgroundMode).Returns("auto");
         settings.SetupGet(service => service.GpuPreference).Returns("auto");
-        settings.SetupGet(service => service.AvailableBackgrounds).Returns([]);
 
         gitHub.Setup(service => service.GetContributorsAsync()).ReturnsAsync(
         [

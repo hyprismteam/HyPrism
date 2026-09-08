@@ -54,6 +54,7 @@ SPDX-License-Identifier: GPL-3.0-only
   <Style Selector="controls|FadingComboBox.uiComboBox">
     <Setter Property="HorizontalAlignment" Value="Stretch" />
     <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="Cursor" Value="Hand" />
     <Setter Property="HorizontalContentAlignment" Value="Left" />
     <Setter Property="Background" Value="{DynamicResource ControlSurfaceBrush}" />
     <Setter Property="BorderBrush" Value="Transparent" />

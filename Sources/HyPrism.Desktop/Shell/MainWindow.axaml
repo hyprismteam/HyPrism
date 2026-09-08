@@ -6,7 +6,6 @@ SPDX-License-Identifier: GPL-3.0-only
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:shell="using:HyPrism.Desktop.Shell"
-        xmlns:dashboard="using:HyPrism.Desktop.Features.Dashboard"
         xmlns:instances="using:HyPrism.Desktop.Features.Instances"
         xmlns:controls="using:HyPrism.Desktop.Controls"
         xmlns:news="using:HyPrism.Desktop.Features.News"
@@ -693,19 +692,6 @@ SPDX-License-Identifier: GPL-3.0-only
         </StackPanel>
 
         <StackPanel x:Name="PrimaryNavigation" Grid.Row="1" Spacing="2">
-          <Button Classes="nav"
-                  Classes.selected="{Binding IsDashboard}"
-                  Command="{Binding NavigateCommand}"
-                  CommandParameter="dashboard">
-            <StackPanel Orientation="Horizontal" Spacing="14">
-              <Grid Width="21" Height="21">
-                <Path Classes="navIconOutline" Stretch="Uniform" Data="{StaticResource HomeIcon}" />
-                <Path Classes="navIconFilled" Stretch="Uniform" Data="{StaticResource HomeFilledIcon}" />
-              </Grid>
-              <TextBlock VerticalAlignment="Center" Text="{Binding DashboardLabel}" />
-            </StackPanel>
-          </Button>
-
           <Button x:Name="InstancesNavButton"
                   Classes="nav"
                   Classes.selected="{Binding IsInstances}"
@@ -801,8 +787,6 @@ SPDX-License-Identifier: GPL-3.0-only
                 CornerRadius="23"
                 ClipToBounds="True">
         <Grid>
-          <dashboard:DashboardView IsVisible="{Binding IsDashboard}" />
-
           <controls:DeferredContentControl IsActive="{Binding IsInstances}"
                                            DeferredContent="{Binding}">
             <controls:DeferredContentControl.ContentTemplate>

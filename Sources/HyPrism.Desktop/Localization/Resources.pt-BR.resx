@@ -261,9 +261,6 @@ Você pode precisar reinstalar o jogo se trocar de unidade.</value>
   <data name="discord.showAnnouncements" xml:space="preserve">
     <value>Mostrar anúncios</value>
   </data>
-  <data name="dock.dashboard" xml:space="preserve">
-    <value>Início</value>
-  </data>
   <data name="dock.instances" xml:space="preserve">
     <value>Instâncias</value>
   </data>

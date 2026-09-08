@@ -261,9 +261,6 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="discord.showAnnouncements" xml:space="preserve">
     <value>공지 표시</value>
   </data>
-  <data name="dock.dashboard" xml:space="preserve">
-    <value>홈</value>
-  </data>
   <data name="dock.instances" xml:space="preserve">
     <value>인스턴스</value>
   </data>

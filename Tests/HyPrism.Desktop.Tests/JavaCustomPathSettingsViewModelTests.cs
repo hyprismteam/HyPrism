@@ -148,7 +148,6 @@ public sealed class JavaCustomPathSettingsViewModelTests
     {
         var settings = new Mock<IDesktopSettingsStore>();
         settings.SetupGet(service => service.Language).Returns("en-US");
-        settings.SetupGet(service => service.BackgroundMode).Returns("auto");
         settings.SetupGet(service => service.GpuPreference).Returns("auto");
         settings.SetupProperty(service => service.JavaArguments, string.Empty);
         settings.SetupProperty(service => service.CustomJavaPath, customJavaPath);
@@ -158,8 +157,6 @@ public sealed class JavaCustomPathSettingsViewModelTests
         settings.SetupGet(service => service.InstanceDirectory).Returns(DefaultInstanceDirectory);
         settings.SetupGet(service => service.DefaultInstanceDirectory).Returns(DefaultInstanceDirectory);
         settings.SetupGet(service => service.LauncherDataDirectory).Returns(LauncherDataDirectory);
-        settings.SetupGet(service => service.AvailableBackgrounds).Returns(
-            ["bg_1.jpg", "bg_2.jpg", "bg_3.jpg"]);
         return settings;
     }
 }

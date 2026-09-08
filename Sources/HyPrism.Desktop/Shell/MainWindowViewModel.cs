@@ -4,12 +4,10 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using Avalonia.Media.Imaging;
-using Avalonia.Platform;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using HyPrism.Desktop.Features.About;
-using HyPrism.Desktop.Features.Dashboard;
 using HyPrism.Desktop.Features.Instances;
 using HyPrism.Desktop.Features.News;
 using HyPrism.Desktop.Features.Profiles;
@@ -33,7 +31,6 @@ namespace HyPrism.Desktop.Shell;
 
 public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
 {
-    private const string DashboardPage = "dashboard";
     private const string InstancesPage = "instances";
     private const string NewsPage = "news";
     private const string ProfilesPage = "profiles";
@@ -85,8 +82,6 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     private readonly ObservableRangeCollection<NewsItemViewModel> _latestNews = [];
     private ProgressUpdateMessage? _pendingProgressUpdate;
     private int _progressUpdateScheduled;
-    private int _backgroundLoadVersion;
-    private bool _isDisposed;
     private CancellationTokenSource _newsImagesCancellation = new();
     private CancellationTokenSource _articleImagesCancellation = new();
     private CancellationTokenSource _articlePresentationCancellation = new();
@@ -139,7 +134,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     private string _startupLoadingStatus = string.Empty;
 
     [ObservableProperty]
-    private string _currentPage = DashboardPage;
+    private string _currentPage = InstancesPage;
 
     [ObservableProperty]
     private string _currentPageTitle = string.Empty;
@@ -185,15 +180,6 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
 
     [ObservableProperty]
     private string _managedInstancePlayTime = string.Empty;
-
-    [ObservableProperty]
-    private Bitmap? _dashboardBackground;
-
-    [ObservableProperty]
-    private string _primaryActionText = string.Empty;
-
-    [ObservableProperty]
-    private bool _canRunPrimaryAction;
 
     [ObservableProperty]
     private bool _canCancelActivity;
@@ -296,9 +282,6 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
 
     [ObservableProperty]
     private int _compactNewsPageIndex;
-
-    [ObservableProperty]
-    private bool _isCompactDashboardLayout;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsCreateReleaseBranch))]
@@ -496,7 +479,6 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         _remoteImageCache = remoteImageCache;
         _localizer = localizer;
         _localizer.LanguageChanged += ApplyLanguage;
-        _settingsStore.BackgroundChanged += OnBackgroundChanged;
         _settings = CreateSettingsViewModel();
         _settings.PropertyChanged += OnSettingsPropertyChanged;
         _profiles = new ProfilesViewModel(
@@ -507,8 +489,6 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
             authenticator,
             _instances);
         _profiles.ActiveProfileChanged += OnActiveProfileChanged;
-        _ = ReplaceDashboardBackgroundAsync(_settingsStore.BackgroundMode);
-
         UserName = profiles.GetNick();
         UserInitial = string.IsNullOrWhiteSpace(UserName)
             ? "H"
@@ -541,7 +521,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
             _gameConsole.LineReceived += OnConsoleLineReceived;
         BuildModCatalogSortOptions();
 
-        CurrentPageTitle = DashboardLabel;
+        CurrentPageTitle = InstancesLabel;
         RefreshInstances();
         RefreshManagedInstanceContent();
         if (IsGameRunning)
@@ -572,7 +552,6 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     }
     public ProfilesViewModel Profiles => _profiles;
 
-    public string DashboardLabel => _localizer["dock.dashboard"];
     public string InstancesLabel => _localizer["dock.instances"];
     public string NewsLabel => _localizer["dock.news"];
     public string ProfilesLabel => _localizer["dock.profiles"];
@@ -600,10 +579,6 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     public string ArticleLoadingLabel => _localizer["news.articleLoading"];
     public string SelectArticleLabel => _localizer["news.selectArticle"];
     public string LoadMoreLabel => _localizer["news.loadMore"];
-    public string HomeWelcomeTitle => _localizer["home.welcomeTitle"];
-    public string HomeWelcomeHint => _localizer["home.welcomeHint"];
-    public string HomeCurrentInstanceLabel => _localizer["home.currentInstance"];
-    public string HomeCreateInstanceLabel => _localizer["home.createInstance"];
     public string InstanceModsLabel => _localizer["instances.tab.mods"];
     public string InstanceBrowseLabel => _localizer["instances.tab.browse"];
     public string InstanceWorldsLabel => _localizer["instances.tab.worlds"];
@@ -747,12 +722,11 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         _ => ManagedInstanceName
     };
 
-    public bool IsDashboard => CurrentPage == DashboardPage;
     public bool IsInstances => CurrentPage == InstancesPage;
     public bool IsNews => CurrentPage == NewsPage;
     public bool IsProfiles => CurrentPage == ProfilesPage;
     public bool IsSettings => CurrentPage == SettingsPage;
-    public bool IsPlaceholderPage => !IsDashboard && !IsInstances && !IsNews && !IsProfiles && !IsSettings;
+    public bool IsPlaceholderPage => !IsInstances && !IsNews && !IsProfiles && !IsSettings;
     public bool HasInstances => AllInstances.Count > 0;
     public bool HasSelectedInstance => _selectedInstance is not null;
     public bool HasManagedInstance => _managedInstance is not null;
@@ -772,8 +746,6 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         IsManagedInstanceActionActive && !IsManagedInstanceActionRunning;
     private bool IsManagedInstanceRunning => _managedInstance is not null
         && _gameProcess.IsInstanceRunning(_managedInstance.Id);
-    private bool IsSelectedInstanceRunning => _selectedInstance is not null
-        && _gameProcess.IsInstanceRunning(_selectedInstance.Id);
     public bool IsManagedInstanceCancellationArmed =>
         IsManagedInstanceActionActive && _isManagedInstanceCancellationArmed;
     public bool CanRunManagedInstanceAction =>
@@ -801,17 +773,6 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     public bool IsCreateReleaseBranch =>
         string.Equals(NewInstanceBranch, "release", StringComparison.OrdinalIgnoreCase);
     public bool IsCreatePreReleaseBranch => !IsCreateReleaseBranch;
-    public bool IsPrimarySelectAction => _selectedInstance is null;
-    public bool IsPrimaryStopAction => IsSelectedInstanceRunning || (IsBusy && CanCancelActivity);
-    public bool IsPrimaryDownloadAction =>
-        _selectedInstance is { IsInstalled: false }
-        && !IsInstanceBusy(_selectedInstance.Id)
-        && !IsSelectedInstanceRunning;
-    public bool IsPrimaryPlayAction =>
-        _selectedInstance is { IsInstalled: true }
-        && !IsInstanceBusy(_selectedInstance.Id)
-        && !IsSelectedInstanceRunning;
-    public bool IsPrimaryPendingAction => IsBusy && !CanCancelActivity;
     public bool HasFeaturedNews => FeaturedNews is not null;
     public bool HasNewsError => !string.IsNullOrWhiteSpace(NewsError);
     public bool IsNewsReady => !IsNewsLoading && !HasNewsError;
@@ -873,7 +834,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
             NewsPage => NewsPage,
             ProfilesPage => ProfilesPage,
             SettingsPage => SettingsPage,
-            _ => DashboardPage
+            _ => InstancesPage
         };
 
         CurrentPageTitle = CurrentPage switch
@@ -882,7 +843,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
             NewsPage => NewsLabel,
             ProfilesPage => ProfilesLabel,
             SettingsPage => SettingsLabel,
-            _ => DashboardLabel
+            _ => InstancesLabel
         };
 
         NotifyPageStateChanged();
@@ -2300,64 +2261,6 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     }
 
     [RelayCommand]
-    private async Task PrimaryActionAsync()
-    {
-        if (_selectedInstance is not { } instance)
-        {
-            Navigate(InstancesPage);
-            return;
-        }
-
-        if (_gameProcess.IsInstanceRunning(instance.Id))
-        {
-            _gameProcess.ExitGame(instance.Id);
-            return;
-        }
-
-        if (IsInstanceBusy(instance.Id))
-        {
-            if (CanCancelActivity)
-                CancelActivity();
-
-            return;
-        }
-
-        BeginInstanceActivity(instance.Id);
-        CanCancelActivity = !instance.IsInstalled;
-        IsActivityVisible = true;
-        ActivityProgress = 0;
-        ActivityProgressText = "0%";
-        ActivityTitle = _localizer["common.loading"];
-        ActivityDetail = instance.Name;
-        UpdateSelectedInstancePresentation();
-
-        try
-        {
-            if (instance.IsInstalled)
-            {
-                await Task.Run(() => _gameLaunchCoordinator.LaunchAsync(
-                    instance.Id,
-                    authorizationUriPresenter: _uriLauncher.LaunchAsync));
-            }
-            else
-            {
-                _instances.SetSelectedInstance(instance.Id);
-                var result = await Task.Run(() =>
-                    _installationWorkflow.DownloadAndLaunchAsync(_uriLauncher.LaunchAsync));
-
-                if (!result.Success && !result.Cancelled && !string.IsNullOrWhiteSpace(result.Error))
-                    ShowError(result.Error);
-            }
-        }
-        finally
-        {
-            CanCancelActivity = false;
-            RefreshInstances();
-            EndInstanceActivity(instance.Id);
-        }
-    }
-
-    [RelayCommand]
     private void CancelActivity()
     {
         var instanceId = _managedInstanceActionInstanceId ?? _selectedInstance?.Id;
@@ -3393,9 +3296,6 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
             SelectedInstanceBranch = string.Empty;
             SelectedInstanceVersion = string.Empty;
             SelectedInstancePlayTime = FormatPlayTime(0);
-            PrimaryActionText = SelectInstanceLabel;
-            CanRunPrimaryAction = !IsBusy;
-            NotifyPrimaryActionStateChanged();
             return;
         }
 
@@ -3407,18 +3307,6 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         SelectedInstanceState = _selectedInstance.IsInstalled
             ? _localizer["instances.status.ready"]
             : _localizer["instances.status.notInstalled"];
-        var selectedInstanceIsBusy = IsInstanceBusy(_selectedInstance.Id);
-        PrimaryActionText = selectedInstanceIsBusy
-            ? CanCancelActivity
-                ? _localizer["main.cancel"]
-                : _localizer["common.loading"]
-            : IsSelectedInstanceRunning
-                ? _localizer["main.stop"]
-                : _selectedInstance.IsInstalled
-                    ? _localizer["main.play"]
-                    : _localizer["main.download"];
-        CanRunPrimaryAction = !selectedInstanceIsBusy || CanCancelActivity;
-        NotifyPrimaryActionStateChanged();
     }
 
     private void UpdateManagedInstancePresentation()
@@ -3452,15 +3340,6 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         ManagedInstanceState = _managedInstance.IsInstalled
             ? _localizer["instances.status.ready"]
             : _localizer["instances.status.notInstalled"];
-    }
-
-    private void NotifyPrimaryActionStateChanged()
-    {
-        OnPropertyChanged(nameof(IsPrimarySelectAction));
-        OnPropertyChanged(nameof(IsPrimaryStopAction));
-        OnPropertyChanged(nameof(IsPrimaryDownloadAction));
-        OnPropertyChanged(nameof(IsPrimaryPlayAction));
-        OnPropertyChanged(nameof(IsPrimaryPendingAction));
     }
 
     private SettingsViewModel CreateSettingsViewModel()
@@ -3501,7 +3380,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
             NewsPage => NewsLabel,
             ProfilesPage => ProfilesLabel,
             SettingsPage => SettingsLabel,
-            _ => DashboardLabel
+            _ => InstancesLabel
         };
         if (!IsInstanceOverviewSection)
             DisplayedInstanceSectionTitle = InstanceSectionTitle;
@@ -3729,61 +3608,6 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         Dispatcher.UIThread.Post(() => ShowError(error.Technical ?? error.Message));
     }
 
-    private void OnBackgroundChanged(string? mode)
-        => _ = ReplaceDashboardBackgroundAsync(mode);
-
-    private async Task ReplaceDashboardBackgroundAsync(string? mode)
-    {
-        var loadVersion = Interlocked.Increment(ref _backgroundLoadVersion);
-        var backgroundUri = ResolveDashboardBackgroundUri(mode);
-        Bitmap replacement;
-        try
-        {
-            replacement = await Task.Run(() => LoadDashboardBackground(backgroundUri))
-                .ConfigureAwait(false);
-        }
-        catch (Exception exception)
-        {
-            Logger.Warning("Background", $"Failed to load dashboard background: {exception.Message}");
-            return;
-        }
-
-        await Dispatcher.UIThread.InvokeAsync(() =>
-        {
-            if (_isDisposed || loadVersion != Volatile.Read(ref _backgroundLoadVersion))
-            {
-                replacement.Dispose();
-                return;
-            }
-
-            var previous = DashboardBackground;
-            DashboardBackground = replacement;
-            previous?.Dispose();
-        }, DispatcherPriority.Background);
-    }
-
-    private Uri ResolveDashboardBackgroundUri(string? mode)
-    {
-        var available = _settingsStore.AvailableBackgrounds;
-        var selected = mode;
-        if (string.IsNullOrWhiteSpace(selected) ||
-            string.Equals(selected, "auto", StringComparison.OrdinalIgnoreCase) ||
-            !available.Contains(selected, StringComparer.OrdinalIgnoreCase))
-        {
-            selected = available.Count > 0
-                ? available[Random.Shared.Next(available.Count)]
-                : "bg_26.jpg";
-        }
-
-        return new Uri($"avares://HyPrism.Desktop/Assets/Backgrounds/{selected}");
-    }
-
-    private static Bitmap LoadDashboardBackground(Uri uri)
-    {
-        using var stream = AssetLoader.Open(uri);
-        return new Bitmap(stream);
-    }
-
     private void ShowError(string message)
     {
         ActivityTitle = _localizer["error.title"];
@@ -3809,7 +3633,6 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
 
     private void NotifyPageStateChanged()
     {
-        OnPropertyChanged(nameof(IsDashboard));
         OnPropertyChanged(nameof(IsInstances));
         OnPropertyChanged(nameof(IsNews));
         OnPropertyChanged(nameof(IsProfiles));
@@ -3841,8 +3664,6 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
 
     public void Dispose()
     {
-        _isDisposed = true;
-        Interlocked.Increment(ref _backgroundLoadVersion);
         _managedInstanceActionTimer.Stop();
         _managedInstanceActionTimer.Tick -= OnManagedInstanceActionTimerTick;
         _consoleFlushTimer.Stop();
@@ -3883,12 +3704,9 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         _gameProcess.GameProcessExited -= OnGameProcessExited;
         _gameLaunchCoordinator.LaunchFailed -= OnLaunchFailed;
         _instances.InstancesChanged -= OnInstancesChanged;
-        _settingsStore.BackgroundChanged -= OnBackgroundChanged;
         _localizer.LanguageChanged -= ApplyLanguage;
         _profiles.ActiveProfileChanged -= OnActiveProfileChanged;
         _profiles.Dispose();
         Settings.Dispose();
-        DashboardBackground?.Dispose();
-        DashboardBackground = null;
     }
 }

@@ -65,7 +65,6 @@ public sealed class InstanceSectionRenderTests
         instances.Setup(service => service.GetInstancePathById(instance.Id)).Returns(instancePath);
         instances.Setup(service => service.IsClientPresent(instancePath)).Returns(true);
         profiles.Setup(service => service.GetNick()).Returns("Render Player");
-        settings.SetupGet(service => service.AvailableBackgrounds).Returns([]);
         modManager.Setup(service => service.GetInstanceInstalledMods(instancePath)).Returns(
         [
             new InstalledMod
@@ -481,7 +480,6 @@ public sealed class InstanceSectionRenderTests
         instances.Setup(service => service.GetInstancePathById(instance.Id)).Returns(instancePath);
         instances.Setup(service => service.IsClientPresent(instancePath)).Returns(true);
         profiles.Setup(service => service.GetNick()).Returns("Preview Player");
-        settings.SetupGet(service => service.AvailableBackgrounds).Returns([]);
         modManager.Setup(service => service.GetInstanceInstalledMods(instancePath)).Returns([]);
         modManager.Setup(service => service.SearchModsAsync(
                 It.IsAny<string>(), It.IsAny<int>(), It.IsAny<int>(),

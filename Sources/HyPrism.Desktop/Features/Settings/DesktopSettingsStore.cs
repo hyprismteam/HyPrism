@@ -12,7 +12,6 @@ namespace HyPrism.Desktop.Features.Settings;
 /// </summary>
 public sealed class DesktopSettingsStore : IDesktopSettingsStore
 {
-    private static readonly IReadOnlyList<string> BackgroundFiles = CreateBackgroundFiles();
     private readonly IConfigStore _configStore;
     private readonly string _appDirectory;
 
@@ -26,9 +25,6 @@ public sealed class DesktopSettingsStore : IDesktopSettingsStore
         _configStore = configStore;
         _appDirectory = Path.GetFullPath(appPath.AppDir);
     }
-
-    /// <inheritdoc/>
-    public event Action<string?>? BackgroundChanged;
 
     /// <inheritdoc/>
     public string Language
@@ -69,21 +65,6 @@ public sealed class DesktopSettingsStore : IDesktopSettingsStore
         get => _configStore.Configuration.DisableNews;
         set => Save(config => config.DisableNews = value);
     }
-
-    /// <inheritdoc/>
-    public string BackgroundMode
-    {
-        get => _configStore.Configuration.BackgroundMode;
-        set
-        {
-            var mode = string.IsNullOrWhiteSpace(value) ? "auto" : value;
-            Save(config => config.BackgroundMode = mode);
-            BackgroundChanged?.Invoke(mode);
-        }
-    }
-
-    /// <inheritdoc/>
-    public IReadOnlyList<string> AvailableBackgrounds => BackgroundFiles;
 
     /// <inheritdoc/>
     public bool OnlineMode
@@ -431,10 +412,4 @@ public sealed class DesktopSettingsStore : IDesktopSettingsStore
         ? StringComparison.OrdinalIgnoreCase
         : StringComparison.Ordinal;
 
-    private static IReadOnlyList<string> CreateBackgroundFiles()
-    {
-        var pngIds = new HashSet<int> { 4, 6, 9, 12, 16, 19 };
-        var ids = new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 22, 23, 24, 25, 26, 27, 28, 29, 30 };
-        return ids.Select(id => $"bg_{id}.{(pngIds.Contains(id) ? "png" : "jpg")}").ToArray();
-    }
 }

@@ -6,7 +6,6 @@ SPDX-License-Identifier: GPL-3.0-only
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:shell="using:HyPrism.Desktop.Shell"
-             xmlns:dashboard="using:HyPrism.Desktop.Features.Dashboard"
              xmlns:instances="using:HyPrism.Desktop.Features.Instances"
              xmlns:controls="using:HyPrism.Desktop.Controls"
              xmlns:easing="using:Avalonia.Animation.Easings"
@@ -134,7 +133,7 @@ SPDX-License-Identifier: GPL-3.0-only
                   </ItemsPanelTemplate>
                 </ItemsControl.ItemsPanel>
                 <ItemsControl.ItemTemplate>
-                  <DataTemplate x:DataType="dashboard:InstanceItemViewModel">
+                  <DataTemplate x:DataType="instances:InstanceItemViewModel">
                     <Button Classes="settingsRailCategory instancesListItem"
                             Classes.managed="{Binding IsManaged}"
                             Click="OnInstanceClicked"
