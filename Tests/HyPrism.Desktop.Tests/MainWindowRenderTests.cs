@@ -1296,6 +1296,28 @@ public sealed class MainWindowRenderTests
         Assert.Null(openedUrl);
     }
 
+    [Fact]
+    public void YouTubeNodeCreatesASeparateClickableArticleBlock()
+    {
+        var command = new RelayCommand<string?>(_ => { });
+        using var block = Assert.Single(NewsArticleBlockViewModel.Create(
+        [
+            new NewsContentNode
+            {
+                Kind = "youtube",
+                Url = "https://www.youtube.com/watch?v=amyYRSw3IZ0",
+                ImageUrl = "https://i.ytimg.com/vi/amyYRSw3IZ0/hqdefault.jpg"
+            }
+        ], command));
+
+        Assert.True(block.IsYouTube);
+        Assert.False(block.IsImage);
+        Assert.True(block.HasRemoteImages);
+        Assert.Equal("https://www.youtube.com/watch?v=amyYRSw3IZ0", block.Url);
+        Assert.Equal("https://i.ytimg.com/vi/amyYRSw3IZ0/hqdefault.jpg", block.ImageUrl);
+        Assert.Same(command, block.LinkCommand);
+    }
+
     [AvaloniaFact]
     public async Task CompactNewsLoadingUsesOpaqueReaderAndKeepsSkeletonBelowBack()
     {

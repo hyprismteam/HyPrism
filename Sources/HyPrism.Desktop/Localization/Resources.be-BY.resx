@@ -2460,6 +2460,12 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="news.articleLoading" xml:space="preserve">
     <value>Навіна загружаецца...</value>
   </data>
+  <data name="news.openInBrowser" xml:space="preserve">
+    <value>Адкрыць у браўзеры</value>
+  </data>
+  <data name="news.watchOnYouTube" xml:space="preserve">
+    <value>Глядзець на YouTube</value>
+  </data>
   <data name="news.loadMore" xml:space="preserve">
     <value>Загрузіць яшчэ</value>
   </data>

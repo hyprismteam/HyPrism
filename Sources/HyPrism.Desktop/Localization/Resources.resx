@@ -1278,6 +1278,12 @@ You may need to reinstall the game if switching drives.</value>
   <data name="news.articleLoading" xml:space="preserve">
     <value>Loading article...</value>
   </data>
+  <data name="news.openInBrowser" xml:space="preserve">
+    <value>Open in browser</value>
+  </data>
+  <data name="news.watchOnYouTube" xml:space="preserve">
+    <value>Watch on YouTube</value>
+  </data>
   <data name="news.disabled" xml:space="preserve">
     <value>News is disabled</value>
   </data>

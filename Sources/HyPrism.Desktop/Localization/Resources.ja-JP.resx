@@ -2460,6 +2460,12 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="news.articleLoading" xml:space="preserve">
     <value>記事を読み込み中...</value>
   </data>
+  <data name="news.openInBrowser" xml:space="preserve">
+    <value>ブラウザで開く</value>
+  </data>
+  <data name="news.watchOnYouTube" xml:space="preserve">
+    <value>YouTubeで見る</value>
+  </data>
   <data name="news.loadMore" xml:space="preserve">
     <value>もっと読み込む</value>
   </data>

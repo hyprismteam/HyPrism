@@ -2460,6 +2460,12 @@ Bei Laufwerkswechsel muss das Spiel möglicherweise neu installiert werden.</val
   <data name="news.articleLoading" xml:space="preserve">
     <value>Artikel wird geladen...</value>
   </data>
+  <data name="news.openInBrowser" xml:space="preserve">
+    <value>Im Browser öffnen</value>
+  </data>
+  <data name="news.watchOnYouTube" xml:space="preserve">
+    <value>Auf YouTube ansehen</value>
+  </data>
   <data name="news.loadMore" xml:space="preserve">
     <value>Mehr laden</value>
   </data>

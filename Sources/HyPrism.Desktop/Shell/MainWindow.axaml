@@ -74,6 +74,7 @@ SPDX-License-Identifier: GPL-3.0-only
                       Classes.details="{Binding IsDetails}"
                       Classes.list="{Binding IsList}"
                       Classes.image="{Binding IsImage}"
+                      Classes.youtube="{Binding IsYouTube}"
                       Classes.code="{Binding IsCode}"
                       Classes.divider="{Binding IsDivider}"
                       Classes.caption="{Binding IsCaption}">
@@ -246,6 +247,95 @@ SPDX-License-Identifier: GPL-3.0-only
                                TextAlignment="Center"
                                TextWrapping="Wrap" />
                   </Grid>
+                </Border>
+              </DataTemplate>
+            </Setter>
+          </Style>
+
+          <Style Selector="ContentControl.youtube">
+            <Setter Property="ContentTemplate">
+              <DataTemplate x:DataType="news:NewsArticleBlockViewModel">
+                <Border Classes="articleVideo">
+                  <Border Classes="articleVideoLink">
+                    <controls:AspectRatioPanel Ratio="1.7777778">
+                      <Grid>
+                        <Image IsVisible="{Binding HasImage}"
+                               Source="{Binding Image}"
+                               Stretch="UniformToFill"
+                               Opacity="0.68">
+                          <Image.Effect>
+                            <BlurEffect Radius="5" />
+                          </Image.Effect>
+                        </Image>
+                        <Border Background="#8C080A10" />
+                        <StackPanel HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    MaxWidth="760"
+                                    Spacing="14">
+                          <TextBlock Text="{Binding VideoTitle}"
+                                     Classes="articleVideoTitle"
+                                     Foreground="White"
+                                     FontSize="26"
+                                     FontWeight="Bold"
+                                     TextAlignment="Center"
+                                     HorizontalAlignment="Center"
+                                     TextWrapping="Wrap" />
+                          <Button Classes="articleVideoWatchButton"
+                                  Command="{Binding LinkCommand}"
+                                  CommandParameter="{Binding Url}"
+                                  HorizontalAlignment="Center"
+                                  Padding="0"
+                                  Background="Transparent"
+                                  BorderThickness="0">
+                            <Border Classes="articleVideoWatch"
+                                    Background="#99080A10"
+                                    CornerRadius="12"
+                                    Padding="16,10">
+                              <Grid Classes="articleVideoActionContent"
+                                    ColumnDefinitions="Auto,Auto">
+                                <Path Classes="articleVideoYoutubeIcon"
+                                      Grid.Column="0"
+                                      Width="25"
+                                      Height="18"
+                                      Margin="0,0,7,0"
+                                      Stretch="Uniform"
+                                      Data="{StaticResource YouTubeBrandIcon}"
+                                      VerticalAlignment="Center" />
+                                <Grid Grid.Column="1">
+                                  <StackPanel Classes="articleVideoActionIdle"
+                                              Orientation="Horizontal"
+                                              Spacing="7"
+                                              HorizontalAlignment="Center">
+                                    <TextBlock Classes="articleVideoWatchText"
+                                               Text="{Binding WatchOnYouTubeLabel}"
+                                               FontSize="16"
+                                               FontWeight="SemiBold"
+                                               VerticalAlignment="Center" />
+                                  </StackPanel>
+                                  <StackPanel Classes="articleVideoActionHover"
+                                              Orientation="Horizontal"
+                                              Spacing="7"
+                                              HorizontalAlignment="Center">
+                                    <TextBlock Classes="articleVideoWatchText"
+                                               Text="{Binding OpenInBrowserLabel}"
+                                               FontSize="16"
+                                               FontWeight="SemiBold"
+                                               VerticalAlignment="Center" />
+                                    <Path Classes="articleVideoExternalIcon"
+                                          Width="16"
+                                          Height="16"
+                                          Stretch="Uniform"
+                                          Data="{StaticResource OpenIcon}"
+                                          VerticalAlignment="Center" />
+                                  </StackPanel>
+                                </Grid>
+                              </Grid>
+                            </Border>
+                          </Button>
+                        </StackPanel>
+                      </Grid>
+                    </controls:AspectRatioPanel>
+                  </Border>
                 </Border>
               </DataTemplate>
             </Setter>

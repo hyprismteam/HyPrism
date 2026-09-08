@@ -74,3 +74,9 @@ path = "Sources/HyPrism.Desktop/Assets/Brands/DotNet*"
 precedence = "override"
 SPDX-FileCopyrightText = ".NET authors"
 SPDX-License-Identifier = "CC0-1.0"
+
+[[annotations]]
+path = "Sources/HyPrism.Desktop/Assets/Brands/YouTube*"
+precedence = "override"
+SPDX-FileCopyrightText = "Google LLC"
+SPDX-License-Identifier = "LicenseRef-YouTube"

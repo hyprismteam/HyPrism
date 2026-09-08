@@ -2460,6 +2460,12 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="news.articleLoading" xml:space="preserve">
     <value>正在加载文章...</value>
   </data>
+  <data name="news.openInBrowser" xml:space="preserve">
+    <value>在浏览器中打开</value>
+  </data>
+  <data name="news.watchOnYouTube" xml:space="preserve">
+    <value>在 YouTube 上观看</value>
+  </data>
   <data name="news.loadMore" xml:space="preserve">
     <value>加载更多</value>
   </data>

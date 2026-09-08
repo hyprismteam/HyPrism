@@ -1275,6 +1275,12 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="news.articleLoading" xml:space="preserve">
     <value>Загрузка статьи...</value>
   </data>
+  <data name="news.openInBrowser" xml:space="preserve">
+    <value>Открыть в браузере</value>
+  </data>
+  <data name="news.watchOnYouTube" xml:space="preserve">
+    <value>Смотреть на YouTube</value>
+  </data>
   <data name="news.disabled" xml:space="preserve">
     <value>Новости отключены</value>
   </data>

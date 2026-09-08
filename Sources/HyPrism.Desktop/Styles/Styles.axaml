@@ -768,6 +768,80 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="MinHeight" Value="120" />
   </Style>
 
+  <Style Selector="Border.articleVideo">
+    <Setter Property="Background" Value="#16000000" />
+    <Setter Property="BorderBrush" Value="#20FFFFFF" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="16" />
+    <Setter Property="ClipToBounds" Value="True" />
+  </Style>
+
+  <Style Selector="Border.articleVideoLink">
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+
+  <Style Selector="Border.articleVideoLink:pointerover">
+    <Setter Property="Background" Value="#10000000" />
+  </Style>
+
+  <Style Selector="Border.articleVideoLink:pressed">
+    <Setter Property="Background" Value="#20000000" />
+  </Style>
+
+  <Style Selector="Button.articleVideoWatchButton StackPanel.articleVideoActionIdle, Button.articleVideoWatchButton StackPanel.articleVideoActionHover">
+    <Setter Property="Transitions">
+      <Transitions>
+        <DoubleTransition Property="Opacity" Duration="0:0:0.22">
+          <DoubleTransition.Easing><easing:CubicEaseOut /></DoubleTransition.Easing>
+        </DoubleTransition>
+        <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.26">
+          <TransformOperationsTransition.Easing><easing:CubicEaseOut /></TransformOperationsTransition.Easing>
+        </TransformOperationsTransition>
+      </Transitions>
+    </Setter>
+  </Style>
+
+  <Style Selector="Button.articleVideoWatchButton StackPanel.articleVideoActionIdle">
+    <Setter Property="Opacity" Value="1" />
+    <Setter Property="RenderTransform" Value="translate(0px, 0px)" />
+  </Style>
+
+  <Style Selector="Button.articleVideoWatchButton StackPanel.articleVideoActionHover">
+    <Setter Property="Opacity" Value="0" />
+    <Setter Property="RenderTransform" Value="translate(0px, 8px)" />
+  </Style>
+
+  <Style Selector="Button.articleVideoWatchButton:pointerover StackPanel.articleVideoActionIdle">
+    <Setter Property="Opacity" Value="0" />
+    <Setter Property="RenderTransform" Value="translate(0px, -8px)" />
+  </Style>
+
+  <Style Selector="Button.articleVideoWatchButton:pointerover StackPanel.articleVideoActionHover">
+    <Setter Property="Opacity" Value="1" />
+    <Setter Property="RenderTransform" Value="translate(0px, 0px)" />
+  </Style>
+
+  <Style Selector="Border.articleVideoWatch Path.articleVideoYoutubeIcon">
+    <Setter Property="Fill" Value="White" />
+    <Setter Property="Transitions">
+      <Transitions>
+        <BrushTransition Property="Fill" Duration="0:0:0.18" />
+      </Transitions>
+    </Setter>
+  </Style>
+
+  <Style Selector="Border.articleVideoWatch TextBlock.articleVideoWatchText">
+    <Setter Property="Foreground" Value="White" />
+  </Style>
+
+  <Style Selector="Border.articleVideoWatch Path.articleVideoExternalIcon">
+    <Setter Property="Fill" Value="White" />
+  </Style>
+
+  <Style Selector="Button.articleVideoWatchButton:pointerover Path.articleVideoYoutubeIcon">
+    <Setter Property="Fill" Value="#FF0033" />
+  </Style>
+
   <Style Selector="Border.articleCode">
     <Setter Property="Background" Value="#E615151B" />
     <Setter Property="BorderBrush" Value="#456F63A3" />

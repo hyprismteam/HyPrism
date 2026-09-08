@@ -3002,7 +3002,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
             }
 
             var articleViewModel = await Task.Run(
-                () => new NewsArticleViewModel(article, _uriLauncher));
+                () => new NewsArticleViewModel(article, _uriLauncher, _localizer));
             if (loadVersion != _articleLoadVersion)
             {
                 articleViewModel.Dispose();

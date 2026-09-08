@@ -2460,6 +2460,12 @@ Vous devrez peut-être réinstaller le jeu si vous changez de lecteur.</value>
   <data name="news.articleLoading" xml:space="preserve">
     <value>Chargement de l'article...</value>
   </data>
+  <data name="news.openInBrowser" xml:space="preserve">
+    <value>Ouvrir dans le navigateur</value>
+  </data>
+  <data name="news.watchOnYouTube" xml:space="preserve">
+    <value>Regarder sur YouTube</value>
+  </data>
   <data name="news.loadMore" xml:space="preserve">
     <value>Charger plus</value>
   </data>

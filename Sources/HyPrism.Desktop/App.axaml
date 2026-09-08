@@ -14,6 +14,7 @@ SPDX-License-Identifier: GPL-3.0-only
         <ResourceInclude Source="avares://HyPrism.Desktop/Assets/Brands/CurseForge.axaml" />
         <ResourceInclude Source="avares://HyPrism.Desktop/Assets/Brands/Avalonia.axaml" />
         <ResourceInclude Source="avares://HyPrism.Desktop/Assets/Brands/DotNet.axaml" />
+        <ResourceInclude Source="avares://HyPrism.Desktop/Assets/Brands/YouTube.axaml" />
         <ResourceInclude Source="avares://HyPrism.Desktop/Styles/Tokens.axaml" />
       </ResourceDictionary.MergedDictionaries>
 

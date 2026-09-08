@@ -2460,6 +2460,12 @@ SPDX-License-Identifier: GPL-3.0-only
   <data name="news.articleLoading" xml:space="preserve">
     <value>기사 불러오는 중...</value>
   </data>
+  <data name="news.openInBrowser" xml:space="preserve">
+    <value>브라우저에서 열기</value>
+  </data>
+  <data name="news.watchOnYouTube" xml:space="preserve">
+    <value>YouTube에서 보기</value>
+  </data>
   <data name="news.loadMore" xml:space="preserve">
     <value>더 보기</value>
   </data>

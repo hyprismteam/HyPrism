@@ -2460,6 +2460,12 @@ Sürücü değiştirirseniz oyunu yeniden yüklemeniz gerekebilir.</value>
   <data name="news.articleLoading" xml:space="preserve">
     <value>Makale yükleniyor...</value>
   </data>
+  <data name="news.openInBrowser" xml:space="preserve">
+    <value>Tarayıcıda aç</value>
+  </data>
+  <data name="news.watchOnYouTube" xml:space="preserve">
+    <value>YouTube'da izle</value>
+  </data>
   <data name="news.loadMore" xml:space="preserve">
     <value>Daha Fazla Yükle</value>
   </data>

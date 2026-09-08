@@ -2463,6 +2463,12 @@ Potrebbe essere necessario reinstallare il gioco se si cambia drive.</value>
   <data name="news.articleLoading" xml:space="preserve">
     <value>Caricamento articolo...</value>
   </data>
+  <data name="news.openInBrowser" xml:space="preserve">
+    <value>Apri nel browser</value>
+  </data>
+  <data name="news.watchOnYouTube" xml:space="preserve">
+    <value>Guarda su YouTube</value>
+  </data>
   <data name="news.loadMore" xml:space="preserve">
     <value>Carica di più</value>
   </data>

@@ -63,7 +63,7 @@ public sealed class NewsArticleResponse
 /// <summary>
 /// A safe node in a news article content tree. Supported kinds include text, paragraph,
 /// heading, image, inline-image, link, bold, italic, blockquote, details, summary,
-/// list, list-item, code and divider.
+/// list, list-item, code, YouTube video and divider.
 /// </summary>
 public sealed class NewsContentNode
 {
@@ -73,7 +73,7 @@ public sealed class NewsContentNode
     /// <summary>Text payload for text and code nodes.</summary>
     public string? Text { get; set; }
 
-    /// <summary>Safe absolute URL for link nodes.</summary>
+    /// <summary>Safe absolute URL for link and media nodes.</summary>
     public string? Url { get; set; }
 
     /// <summary>Safe absolute URL for image nodes.</summary>

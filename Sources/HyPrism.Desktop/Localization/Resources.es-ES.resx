@@ -2460,6 +2460,12 @@ Es posible que necesites reinstalar el juego si cambias de unidad.</value>
   <data name="news.articleLoading" xml:space="preserve">
     <value>Cargando artículo...</value>
   </data>
+  <data name="news.openInBrowser" xml:space="preserve">
+    <value>Abrir en el navegador</value>
+  </data>
+  <data name="news.watchOnYouTube" xml:space="preserve">
+    <value>Ver en YouTube</value>
+  </data>
   <data name="news.loadMore" xml:space="preserve">
     <value>Cargar más</value>
   </data>

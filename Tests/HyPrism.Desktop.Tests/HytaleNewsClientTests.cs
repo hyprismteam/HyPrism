@@ -82,6 +82,9 @@ public sealed class HytaleNewsClientTests
         Assert.Contains(article.Content, node => node.Kind == "heading" && node.Level == 3);
         Assert.Contains(article.Content, node =>
             node.Kind == "image" && node.ImageUrl == "https://cdn.hytale.com/article-image.png");
+        var youtube = Assert.Single(article.Content, node => node.Kind == "youtube");
+        Assert.Equal("https://www.youtube.com/watch?v=amyYRSw3IZ0", youtube.Url);
+        Assert.Equal("https://i.ytimg.com/vi/amyYRSw3IZ0/hqdefault.jpg", youtube.ImageUrl);
         var quote = Assert.Single(article.Content, node => node.Kind == "blockquote");
         Assert.Contains(
             quote.Children.SelectMany(node => node.Children),

@@ -71,7 +71,9 @@ public sealed class HytaleNewsClient : IHytaleNewsClient
     private const int CacheExpirationMinutes = 30;
     private const int MaximumCachedArticles = 4;
     private static readonly TimeSpan ArticleDiskCacheLifetime = TimeSpan.FromDays(7);
-    private const int ArticleCacheSchemaVersion = 1;
+    // Bump when the parsed content tree changes so cached articles are rebuilt
+    // instead of silently omitting newly supported blocks such as YouTube videos
+    private const int ArticleCacheSchemaVersion = 2;
 
     /// <inheritdoc/>
     public async Task<List<NewsItemResponse>> GetNewsAsync(int count = 10)
@@ -655,7 +657,14 @@ public sealed class HytaleNewsClient : IHytaleNewsClient
             return null;
 
         var tag = element.TagName.ToUpperInvariant();
-        if (tag is "SCRIPT" or "STYLE" or "NOSCRIPT" or "IFRAME" or "FORM" or "BUTTON" or "SVG")
+        if (tag == "IFRAME")
+        {
+            return TryCreateYouTubeNode(element.GetAttribute("src"), out var video)
+                ? video
+                : null;
+        }
+
+        if (tag is "SCRIPT" or "STYLE" or "NOSCRIPT" or "FORM" or "BUTTON" or "SVG")
             return null;
 
         if (tag == "IMG")
@@ -727,6 +736,14 @@ public sealed class HytaleNewsClient : IHytaleNewsClient
         if (children.Count == 0)
             return null;
 
+        if (tag == "DIV" &&
+            element.ClassList.Contains("video-container") &&
+            children.Count == 1 &&
+            children[0].Kind == "youtube")
+        {
+            return children[0];
+        }
+
         // The blog editor sometimes wraps block images in inline formatting tags
         // such as <strong><img ...></strong>. Formatting has no meaning for media,
         // so unwrap it before paragraph-level block normalization.
@@ -735,7 +752,7 @@ public sealed class HytaleNewsClient : IHytaleNewsClient
             .ToList();
         if (tag is "A" or "STRONG" or "B" or "EM" or "I" or "SPAN" &&
             mediaChildren.Count > 0 &&
-            mediaChildren.All(child => child.Kind == "image"))
+            mediaChildren.All(child => child.Kind is "image" or "youtube"))
         {
             return mediaChildren.Count == 1
                 ? mediaChildren[0]
@@ -744,7 +761,7 @@ public sealed class HytaleNewsClient : IHytaleNewsClient
 
         // Hytale wraps lazy-loaded media in <p> elements. Keep those images as
         // first-class article blocks instead of handing them to the inline text renderer.
-        if (tag == "P" && children.Any(child => child.Kind == "image"))
+        if (tag == "P" && children.Any(child => child.Kind is "image" or "youtube"))
         {
             return children.Count == 1
                 ? children[0]
@@ -780,6 +797,63 @@ public sealed class HytaleNewsClient : IHytaleNewsClient
 
         return uri.AbsoluteUri;
     }
+
+    private static bool TryCreateYouTubeNode(string? value, out NewsContentNode node)
+    {
+        node = null!;
+        if (!Uri.TryCreate(value, UriKind.Absolute, out var uri) ||
+            uri.Scheme != Uri.UriSchemeHttps ||
+            !IsYouTubeHost(uri.Host))
+        {
+            return false;
+        }
+
+        var videoId = ExtractYouTubeVideoId(uri);
+        if (videoId is null)
+            return false;
+
+        node = new NewsContentNode
+        {
+            Kind = "youtube",
+            Url = $"https://www.youtube.com/watch?v={videoId}",
+            ImageUrl = $"https://i.ytimg.com/vi/{videoId}/hqdefault.jpg",
+            AltText = "YouTube video"
+        };
+        return true;
+    }
+
+    private static bool IsYouTubeHost(string host)
+        => host.Equals("youtube.com", StringComparison.OrdinalIgnoreCase) ||
+           host.Equals("www.youtube.com", StringComparison.OrdinalIgnoreCase) ||
+           host.Equals("m.youtube.com", StringComparison.OrdinalIgnoreCase) ||
+           host.Equals("youtube-nocookie.com", StringComparison.OrdinalIgnoreCase) ||
+           host.Equals("www.youtube-nocookie.com", StringComparison.OrdinalIgnoreCase) ||
+           host.Equals("youtu.be", StringComparison.OrdinalIgnoreCase);
+
+    private static string? ExtractYouTubeVideoId(Uri uri)
+    {
+        string? candidate;
+        if (uri.Host.Equals("youtu.be", StringComparison.OrdinalIgnoreCase))
+        {
+            candidate = uri.AbsolutePath.Trim('/').Split('/', StringSplitOptions.RemoveEmptyEntries)
+                .FirstOrDefault();
+        }
+        else
+        {
+            var segments = uri.AbsolutePath.Trim('/').Split('/', StringSplitOptions.RemoveEmptyEntries);
+            candidate = segments.Length >= 2 &&
+                        segments[0].Equals("embed", StringComparison.OrdinalIgnoreCase)
+                ? segments[1]
+                : HttpUtility.ParseQueryString(uri.Query)["v"];
+        }
+
+        return candidate is { Length: 11 } && candidate.All(IsYouTubeVideoIdCharacter)
+            ? candidate
+            : null;
+    }
+
+    private static bool IsYouTubeVideoIdCharacter(char character)
+        => char.IsAsciiLetterOrDigit(character) || character is '_' or '-';
 
     private static string NormalizeWhitespace(string value, bool preserveOuterWhitespace)
     {
