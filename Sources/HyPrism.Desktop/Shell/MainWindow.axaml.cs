@@ -36,9 +36,7 @@ public sealed partial class MainWindow : Window
     private bool? _usesWideNewsLayout;
     private int _wideArticleTransitionVersion;
     private int _startupTransitionVersion;
-    private bool _startupAnimationFrameActive;
     private bool _isSectionWarmUpStarted;
-    private TimeSpan? _startupAnimationStartedAt;
     private WindowEdge? _activeResizeEdge;
     private PixelPoint _resizeStartScreenPoint;
     private PixelPoint _pendingResizeScreenPoint;
@@ -180,7 +178,6 @@ public sealed partial class MainWindow : Window
         StartupMarkScale.ScaleX = 1;
         StartupMarkScale.ScaleY = 1;
         StartupAnimation.Start();
-        StartStartupFrameAnimation();
         StartSectionWarmUp();
 
         Dispatcher.UIThread.Post(() =>
@@ -221,7 +218,6 @@ public sealed partial class MainWindow : Window
         StartupLoadingScreen.IsVisible = false;
         LauncherShell.IsHitTestVisible = true;
         StartupAnimation.Stop();
-        StopStartupFrameAnimation();
     }
 
     private void ShowLauncherImmediately()
@@ -237,7 +233,6 @@ public sealed partial class MainWindow : Window
         LauncherShellScale.ScaleY = 1;
         LauncherShellTranslation.Y = 0;
         StartupAnimation.Stop();
-        StopStartupFrameAnimation();
     }
 
     private void StartSectionWarmUp()
@@ -270,38 +265,6 @@ public sealed partial class MainWindow : Window
             control.EndPreWarm();
         }
     }
-
-    private void StartStartupFrameAnimation()
-    {
-        if (_startupAnimationFrameActive)
-            return;
-
-        _startupAnimationFrameActive = true;
-        _startupAnimationStartedAt = null;
-        RequestAnimationFrame(UpdateStartupAnimationFrame);
-    }
-
-    private void StopStartupFrameAnimation()
-    {
-        _startupAnimationFrameActive = false;
-        _startupAnimationStartedAt = null;
-    }
-
-    private void UpdateStartupAnimationFrame(TimeSpan timestamp)
-    {
-        if (!_startupAnimationFrameActive || !StartupLoadingScreen.IsVisible)
-            return;
-
-        _startupAnimationStartedAt ??= timestamp;
-        var elapsed = (timestamp - _startupAnimationStartedAt.Value).TotalSeconds;
-        StartupDotOne.Opacity = CalculateStartupDotOpacity(elapsed, 0);
-        StartupDotTwo.Opacity = CalculateStartupDotOpacity(elapsed, 0.18);
-        StartupDotThree.Opacity = CalculateStartupDotOpacity(elapsed, 0.36);
-        RequestAnimationFrame(UpdateStartupAnimationFrame);
-    }
-
-    private static double CalculateStartupDotOpacity(double elapsed, double offset)
-        => 0.22 + Math.Max(0, Math.Sin((elapsed - offset) * Math.PI * 2)) * 0.78;
 
     private void OnNewsResponsiveSizeChanged(object? sender, SizeChangedEventArgs e)
         => UpdateNewsResponsiveLayout(e.NewSize.Width >= WideNewsLayoutThreshold);

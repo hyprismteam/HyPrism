@@ -1003,21 +1003,11 @@ SPDX-License-Identifier: GPL-3.0-only
                    FontWeight="Bold"
                    TextAlignment="Center" />
 
-        <StackPanel Grid.Row="2"
-                    Orientation="Horizontal"
-                    HorizontalAlignment="Center"
-                    Spacing="8">
-          <TextBlock Text="{Binding StartupLoadingStatus}"
-                     Foreground="#FF777E84"
-                     FontSize="15" />
-          <StackPanel Orientation="Horizontal"
-                      VerticalAlignment="Center"
-                      Spacing="4">
-            <Ellipse x:Name="StartupDotOne" Width="4" Height="4" Fill="{DynamicResource AccentBrush}" />
-            <Ellipse x:Name="StartupDotTwo" Width="4" Height="4" Fill="{DynamicResource AccentBrush}" />
-            <Ellipse x:Name="StartupDotThree" Width="4" Height="4" Fill="{DynamicResource AccentBrush}" />
-          </StackPanel>
-        </StackPanel>
+        <TextBlock Grid.Row="2"
+                   Text="{Binding StartupLoadingStatus}"
+                   HorizontalAlignment="Center"
+                   Foreground="#FF777E84"
+                   FontSize="15" />
       </Grid>
 
       <Image x:Name="StartupBrand"
