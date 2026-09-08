@@ -750,17 +750,26 @@ SPDX-License-Identifier: GPL-3.0-only
               ColumnDefinitions="44,*"
               ColumnSpacing="11"
               Margin="10,36,0,2">
-          <Border Width="44"
+          <Border x:Name="SidebarProfileAvatarHost"
+                  Width="44"
                   Height="44"
                   CornerRadius="22"
+                  ClipToBounds="True"
                   Background="{DynamicResource AccentSoftBrush}"
                   BorderBrush="{DynamicResource StrokeStrongBrush}"
                   BorderThickness="1">
-            <TextBlock HorizontalAlignment="Center"
-                       VerticalAlignment="Center"
-                       Foreground="{DynamicResource TextPrimaryBrush}"
-                       FontWeight="Bold"
-                       Text="{Binding UserInitial}" />
+            <Grid>
+              <Image x:Name="SidebarProfileAvatar"
+                     IsVisible="{Binding HasActiveProfileAvatar}"
+                     Source="{Binding ActiveProfileAvatar}"
+                     Stretch="UniformToFill" />
+              <TextBlock IsVisible="{Binding !HasActiveProfileAvatar}"
+                         HorizontalAlignment="Center"
+                         VerticalAlignment="Center"
+                         Foreground="{DynamicResource TextPrimaryBrush}"
+                         FontWeight="Bold"
+                         Text="{Binding UserInitial}" />
+            </Grid>
           </Border>
           <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="1">
             <TextBlock Text="{Binding UserName}"

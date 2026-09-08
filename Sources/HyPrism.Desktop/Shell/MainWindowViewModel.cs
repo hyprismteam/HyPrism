@@ -489,6 +489,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
             authenticator,
             _instances);
         _profiles.ActiveProfileChanged += OnActiveProfileChanged;
+        _profiles.PropertyChanged += OnProfilesPropertyChanged;
         UserName = profiles.GetNick();
         UserInitial = string.IsNullOrWhiteSpace(UserName)
             ? "H"
@@ -551,6 +552,9 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         }
     }
     public ProfilesViewModel Profiles => _profiles;
+
+    public Bitmap? ActiveProfileAvatar => _profiles.ActiveProfile?.Avatar;
+    public bool HasActiveProfileAvatar => ActiveProfileAvatar is not null;
 
     public string InstancesLabel => _localizer["dock.instances"];
     public string NewsLabel => _localizer["dock.news"];
@@ -3631,6 +3635,15 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
             : _localizer["desktopSettings.accountOffline"];
     }
 
+    private void OnProfilesPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(ProfilesViewModel.ActiveProfile) or null)
+        {
+            OnPropertyChanged(nameof(ActiveProfileAvatar));
+            OnPropertyChanged(nameof(HasActiveProfileAvatar));
+        }
+    }
+
     private void NotifyPageStateChanged()
     {
         OnPropertyChanged(nameof(IsInstances));
@@ -3706,6 +3719,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         _instances.InstancesChanged -= OnInstancesChanged;
         _localizer.LanguageChanged -= ApplyLanguage;
         _profiles.ActiveProfileChanged -= OnActiveProfileChanged;
+        _profiles.PropertyChanged -= OnProfilesPropertyChanged;
         _profiles.Dispose();
         Settings.Dispose();
     }

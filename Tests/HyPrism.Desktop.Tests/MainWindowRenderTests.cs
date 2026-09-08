@@ -1823,12 +1823,29 @@ public sealed class MainWindowRenderTests
         instances.Setup(service => service.IsClientPresent(It.IsAny<string>()))
             .Returns(true);
         profile.Setup(service => service.GetNick()).Returns("HyPrism Player");
+        profile.Setup(service => service.GetAvatarPreviewForUUID(It.IsAny<string>()))
+            .Returns($"data:image/png;base64,{Convert.ToBase64String(TinyPngHandler.ImageBytes)}");
         profileManagement.Setup(service => service.GetSelectedProfile())
             .Returns(new Profile
             {
+                Id = "active-profile",
                 Name = "HyPrism Player",
+                UUID = Guid.NewGuid().ToString(),
                 IsOfficial = isOfficialProfile
             });
+        profileManagement.Setup(service => service.GetProfiles())
+            .Returns(() =>
+            [
+                new Profile
+                {
+                    Id = "active-profile",
+                    Name = "HyPrism Player",
+                    UUID = "00000000-0000-0000-0000-000000000001",
+                    IsOfficial = isOfficialProfile
+                }
+            ]);
+        profileManagement.Setup(service => service.GetSelectedProfileId())
+            .Returns("active-profile");
         github.Setup(service => service.GetContributorsAsync()).ReturnsAsync(
         [
             new GitHubUser { Login = "yyyumeniku", Type = "User" },
@@ -2115,9 +2132,18 @@ public sealed class MainWindowRenderTests
         var frame = window.CaptureRenderedFrame();
         var handCursor = new Cursor(StandardCursorType.Hand).ToString();
         var arrowCursor = new Cursor(StandardCursorType.Arrow).ToString();
+        var sidebarProfileAvatarHost = window.FindControl<Border>("SidebarProfileAvatarHost");
+        var sidebarProfileAvatar = window.FindControl<Image>("SidebarProfileAvatar");
 
         Assert.NotNull(frame);
         Assert.Equal(new PixelSize(width, height), frame!.PixelSize);
+        Assert.True(viewModel.HasActiveProfileAvatar);
+        Assert.NotNull(sidebarProfileAvatarHost);
+        Assert.True(sidebarProfileAvatarHost!.ClipToBounds);
+        Assert.Equal(new CornerRadius(22), sidebarProfileAvatarHost.CornerRadius);
+        Assert.NotNull(sidebarProfileAvatar);
+        Assert.True(sidebarProfileAvatar!.IsEffectivelyVisible);
+        Assert.Same(viewModel.ActiveProfileAvatar, sidebarProfileAvatar.Source);
         Assert.All(
             window.GetVisualDescendants().OfType<Button>().Where(button => button.IsEnabled),
             button => Assert.Equal(handCursor, button.Cursor?.ToString()));

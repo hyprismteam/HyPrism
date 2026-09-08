@@ -98,6 +98,8 @@ public sealed partial class ProfilesViewModel : ObservableObject, IDisposable
 
     public event EventHandler<ActiveProfileChangedEventArgs>? ActiveProfileChanged;
 
+    public ProfileItemViewModel? ActiveProfile => Profiles.FirstOrDefault(profile => profile.IsActive);
+
     public bool HasSelectedProfile => SelectedProfile is not null;
     public bool HasProfiles => Profiles.Count > 0;
     public bool HasNoProfiles => !HasProfiles;
@@ -219,6 +221,7 @@ public sealed partial class ProfilesViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(HasProfiles));
         OnPropertyChanged(nameof(HasNoProfiles));
         OnPropertyChanged(nameof(IsEmptyStateVisible));
+        OnPropertyChanged(nameof(ActiveProfile));
 
         if (IsCreationVisible)
             return;
