@@ -21,6 +21,7 @@ public sealed class FadingPopup : Popup
     private CancellationTokenSource? _animationCancellation;
     private TopLevel? _subscribedTopLevel;
     private Window? _subscribedWindow;
+    private readonly List<ScrollViewer> _subscribedScrollViewers = [];
 
     public FadingPopup()
     {
@@ -106,6 +107,7 @@ public sealed class FadingPopup : Popup
         catch (OperationCanceledException)
         {
             // A close request replaces the opening animation
+            return;
         }
     }
 
@@ -124,6 +126,7 @@ public sealed class FadingPopup : Popup
         catch (OperationCanceledException)
         {
             // Reopening the popup cancels the pending visual close
+            return;
         }
     }
 
@@ -151,6 +154,8 @@ public sealed class FadingPopup : Popup
             _subscribedWindow = window;
             _subscribedWindow.Deactivated += OnWindowDeactivated;
         }
+
+        SubscribeToScrollViewers();
     }
 
     private void UnsubscribeFromTopLevel()
@@ -162,6 +167,42 @@ public sealed class FadingPopup : Popup
 
         _subscribedTopLevel = null;
         _subscribedWindow = null;
+        UnsubscribeFromScrollViewers();
+    }
+
+    private void SubscribeToScrollViewers()
+    {
+        UnsubscribeFromScrollViewers();
+
+        if (PlacementTarget is not Visual target)
+            return;
+
+        foreach (var scrollViewer in target.GetSelfAndVisualAncestors().OfType<ScrollViewer>())
+        {
+            scrollViewer.ScrollChanged += OnScrollChanged;
+            _subscribedScrollViewers.Add(scrollViewer);
+        }
+    }
+
+    private void UnsubscribeFromScrollViewers()
+    {
+        foreach (var scrollViewer in _subscribedScrollViewers)
+            scrollViewer.ScrollChanged -= OnScrollChanged;
+
+        _subscribedScrollViewers.Clear();
+    }
+
+    private void OnScrollChanged(object? sender, ScrollChangedEventArgs args)
+    {
+        if (!IsOpen || !IsRequestedOpen)
+            return;
+
+        // Popup's built-in LayoutUpdated check only compares the target's local
+        // bounds. Scrolling changes the target's screen position through an
+        // ancestor, so nudge the placement properties to request a fresh update.
+        var offset = VerticalOffset;
+        SetCurrentValue(VerticalOffsetProperty, offset + 0.001);
+        SetCurrentValue(VerticalOffsetProperty, offset);
     }
 
     private void OnTopLevelPointerPressed(object? sender, PointerPressedEventArgs args)

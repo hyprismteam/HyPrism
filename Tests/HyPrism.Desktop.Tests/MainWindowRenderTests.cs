@@ -11,6 +11,7 @@ using Avalonia.Animation;
 using Avalonia.Animation.Easings;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
+using Avalonia.Controls.Presenters;
 using Avalonia.Controls.Documents;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
@@ -1598,6 +1599,29 @@ public sealed class MainWindowRenderTests
         Assert.Equal(
             byte.MaxValue,
             Assert.IsAssignableFrom<ISolidColorBrush>(languagePopupBorder.Background).Color.A);
+        var settingsContent = window.GetVisualDescendants()
+            .OfType<ScrollViewer>()
+            .Single(scrollViewer => scrollViewer.Name == "SettingsContent");
+        var comboPositionBeforeScroll = fadingLanguageComboBox.TranslatePoint(default, window);
+        var popupPositionBeforeScroll = languagePopupBorder.TranslatePoint(default, window);
+        settingsContent.Offset = new Vector(0, 100);
+        Dispatcher.UIThread.RunJobs();
+        var comboPositionAfterScroll = fadingLanguageComboBox.TranslatePoint(default, window);
+        var popupPositionAfterScroll = languagePopupBorder.TranslatePoint(default, window);
+        Assert.NotNull(comboPositionBeforeScroll);
+        Assert.NotNull(comboPositionAfterScroll);
+        Assert.NotNull(popupPositionBeforeScroll);
+        Assert.NotNull(popupPositionAfterScroll);
+        Assert.InRange(
+            comboPositionBeforeScroll!.Value.Y - comboPositionAfterScroll!.Value.Y,
+            99,
+            101);
+        Assert.InRange(
+            popupPositionBeforeScroll!.Value.Y - popupPositionAfterScroll!.Value.Y,
+            99,
+            101);
+        settingsContent.Offset = default;
+        Dispatcher.UIThread.RunJobs();
         var settingsComboPreviewPath = Environment.GetEnvironmentVariable(
             "HYPRISM_SETTINGS_COMBO_RENDER_OUTPUT");
         if (!string.IsNullOrWhiteSpace(settingsComboPreviewPath))
@@ -1621,6 +1645,19 @@ public sealed class MainWindowRenderTests
         var germanContainer = languagePopupBorder.GetVisualDescendants()
             .OfType<ComboBoxItem>()
             .Single(item => ReferenceEquals(item.Content, german));
+        Assert.Equal(new CornerRadius(9), germanContainer.CornerRadius);
+        var germanPresenter = germanContainer.GetVisualDescendants()
+            .OfType<ContentPresenter>()
+            .Single(presenter => presenter.Name == "PART_ContentPresenter");
+        Assert.Equal(new CornerRadius(9), germanPresenter.CornerRadius);
+        Assert.Contains(
+            germanPresenter.Transitions!,
+            transition => transition is BrushTransition { Property: { } property } &&
+                          property == TemplatedControl.BackgroundProperty);
+        Assert.Contains(
+            germanPresenter.Transitions!,
+            transition => transition is BrushTransition { Property: { } property } &&
+                          property == TemplatedControl.ForegroundProperty);
         var selectionEvent = new FocusChangedEventArgs(InputElement.GotFocusEvent)
         {
             Source = germanContainer
@@ -4289,6 +4326,8 @@ public sealed class MainWindowRenderTests
         }
 
         var thumb = Assert.Single(thumbs);
+        var scrollTrack = thumb.GetVisualAncestors().OfType<Track>().Single();
+        Assert.True(scrollTrack.IsDirectionReversed);
         Assert.Equal(scrollBar.IsExpanded ? 6 : 3, thumb.Width);
         Assert.Equal(Avalonia.Layout.HorizontalAlignment.Center, thumb.HorizontalAlignment);
         Assert.True(thumb.CornerRadius.TopLeft >= 999);

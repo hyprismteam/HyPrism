@@ -43,7 +43,7 @@ Publish observable collection changes on the UI dispatcher. Unsubscribe from ser
 
 ## Shared UI foundation
 
-`Styles/Tokens.axaml` defines colors and semantic tokens. `Styles/Controls.axaml` defines shared control styles. Reuse their classes instead of copying feature-specific variants
+`Styles/HyPrismTheme.axaml` provides the application-owned templates for the window, scrolling, text input, selection, list, combo box, progress, tooltip, and popup surfaces. It must remain before the shared styles so feature-specific selectors can override its defaults. `Styles/Tokens.axaml` defines the colors and semantic tokens used by the theme, while `Styles/Controls.axaml` defines shared control styles. Reuse their classes instead of copying feature-specific variants
 
 | Control | Responsibility |
 | --- | --- |

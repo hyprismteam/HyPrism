@@ -740,8 +740,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="Fill" Value="{Binding $parent[Button].Foreground}" />
   </Style>
 
-  <!-- Keep one stable gutter and animate only the centered thumb width. This avoids
-       Fluent's overlay span and its edge-anchored scale transform for every page. -->
+  <!-- Keep one stable gutter and animate only the centered thumb width. -->
   <Style Selector="ScrollViewer[AllowAutoHide=True] /template/ ScrollContentPresenter#PART_ContentPresenter">
     <Setter Property="Grid.ColumnSpan" Value="1" />
   </Style>
@@ -1780,7 +1779,6 @@ SPDX-License-Identifier: GPL-3.0-only
       </Transitions>
     </Setter>
     <!-- The custom template hosts the background on a plain Border, so the
-         Fluent theme cannot inject its instant pointerover background and the
          BrushTransition above stays in charge of the hover highlight -->
     <Setter Property="Template">
       <ControlTemplate>
