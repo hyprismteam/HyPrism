@@ -3,15 +3,16 @@
 # Copyright (C) 2026 HyPrism Launcher
 # SPDX-License-Identifier: GPL-3.0-only
 
-# Publishes the Avalonia desktop host for Linux. Every package is made from the
-# same self-contained dotnet publish output so the Desktop and Local Node hosts
-# always ship together.
+# Publishes Linux packages for the Avalonia desktop host. Native package targets
+# share one self-contained dotnet publish output so Desktop and Local Node hosts
+# always ship together. The Nix target delegates the build to the repository flake
 set -euo pipefail
 
 PACKAGING_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$PACKAGING_DIR/.." && pwd)"
 PROJECT_FILE="$PROJECT_ROOT/Sources/HyPrism.Desktop/HyPrism.Desktop.csproj"
 ASSETS_DIR="$PACKAGING_DIR/linux"
+FLAKE_DIR="$ASSETS_DIR/flake"
 APP_ID="io.github.hyprismteam.HyPrism"
 APP_NAME="HyPrism"
 RUNTIME="linux-x64"
@@ -25,12 +26,13 @@ usage() {
 Usage: ./Packaging/publish-linux.sh <target> [<target>...] [options]
 
 Targets:
-  all       Build every Linux package supported by this host
+  all       Build every native Linux package supported by this host
   deb       Build a Debian package
   rpm       Build an RPM package
   appimage  Build an AppImage
   flatpak   Build a Flatpak bundle
   tar       Build a tar.xz archive
+  nix       Build the Nix flake package
 
 Options:
   --output <directory>      Artifact directory, defaults to dist
@@ -40,6 +42,7 @@ Options:
 Examples:
   ./Packaging/publish-linux.sh all
   ./Packaging/publish-linux.sh deb rpm tar --output ./dist
+  ./Packaging/publish-linux.sh nix
 EOF
 }
 
@@ -57,7 +60,7 @@ while [[ $# -gt 0 ]]; do
             usage
             exit 0
             ;;
-        all|deb|rpm|appimage|flatpak|tar)
+        all|deb|rpm|appimage|flatpak|tar|nix)
             TARGETS+=("$1")
             shift
             ;;
@@ -118,14 +121,30 @@ package_versions() {
     [[ -n "$RPM_RELEASE" ]] || RPM_RELEASE="1"
 }
 
-require_command dotnet
-require_command tar
-VERSION="$(dotnet msbuild "$PROJECT_FILE" -nologo -getProperty:Version | tail -n 1 | tr -d '\r')"
-if [[ -z "$VERSION" ]]; then
-    echo "HyPrism.Desktop.csproj does not define a Version property" >&2
-    exit 1
+contains_native_target=false
+for target in "${TARGETS[@]}"; do
+    case "$target" in
+        deb|rpm|appimage|flatpak|tar)
+            contains_native_target=true
+            break
+            ;;
+    esac
+done
+
+if contains_target nix; then
+    require_command nix
 fi
-package_versions
+
+if [[ "$contains_native_target" == true ]]; then
+    require_command dotnet
+    require_command tar
+    VERSION="$(dotnet msbuild "$PROJECT_FILE" -nologo -getProperty:Version | tail -n 1 | tr -d '\r')"
+    if [[ -z "$VERSION" ]]; then
+        echo "HyPrism.Desktop.csproj does not define a Version property" >&2
+        exit 1
+    fi
+    package_versions
+fi
 
 if contains_target deb; then
     require_command dpkg-deb
@@ -150,18 +169,22 @@ fi
 BUILD_ROOT="$(mktemp -d "${TMPDIR:-/tmp}/hyprism-publish.XXXXXX")"
 PUBLISH_DIR="$BUILD_ROOT/publish"
 trap 'rm -rf "$BUILD_ROOT"' EXIT
-mkdir -p "$OUTPUT_DIR"
+if [[ "$contains_native_target" == true ]]; then
+    mkdir -p "$OUTPUT_DIR"
+fi
 
-echo "Publishing $APP_NAME $VERSION for $RUNTIME"
-dotnet publish "$PROJECT_FILE" \
-    --configuration Release \
-    --runtime "$RUNTIME" \
-    --self-contained true \
-    -p:PublishReadyToRun=true \
-    --output "$PUBLISH_DIR"
+if [[ "$contains_native_target" == true ]]; then
+    echo "Publishing $APP_NAME $VERSION for $RUNTIME"
+    dotnet publish "$PROJECT_FILE" \
+        --configuration Release \
+        --runtime "$RUNTIME" \
+        --self-contained true \
+        -p:PublishReadyToRun=true \
+        --output "$PUBLISH_DIR"
 
-test -x "$PUBLISH_DIR/HyPrism.Desktop"
-test -x "$PUBLISH_DIR/HyPrism.LocalNode"
+    test -x "$PUBLISH_DIR/HyPrism.Desktop"
+    test -x "$PUBLISH_DIR/HyPrism.LocalNode"
+fi
 
 install_desktop_assets() {
     local root="$1"
@@ -181,6 +204,12 @@ create_system_payload() {
 
 build_tar() {
     tar -C "$PUBLISH_DIR" -cJf "$OUTPUT_DIR/HyPrism-linux-x64-$VERSION.tar.xz" .
+}
+
+build_nix() {
+    local store_path
+    store_path="$(cd "$FLAKE_DIR" && nix build .#hyprism --no-link --print-out-paths --print-build-logs)"
+    echo "Built Nix package at $store_path"
 }
 
 build_deb() {
@@ -278,7 +307,12 @@ for target in "${TARGETS[@]}"; do
         appimage) build_appimage ;;
         flatpak) build_flatpak ;;
         tar) build_tar ;;
+        nix) build_nix ;;
     esac
 done
 
-echo "Published artifacts to $OUTPUT_DIR"
+if [[ "$contains_native_target" == true ]]; then
+    echo "Published artifacts to $OUTPUT_DIR"
+else
+    echo "Built the Nix package through the repository flake"
+fi

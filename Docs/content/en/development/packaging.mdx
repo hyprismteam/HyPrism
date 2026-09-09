@@ -11,11 +11,11 @@ description: Platform publishers, CI workflows, artifact targets, and release ve
 
 | Host | Runtime | Targets |
 | --- | --- | --- |
-| Linux | `linux-x64` | `deb`, `rpm`, `appimage`, `flatpak`, `tar` |
+| Linux | `linux-x64` | `deb`, `rpm`, `appimage`, `flatpak`, `tar`, `nix` |
 | Windows | `win-x64` | `zip`, `msi`, `exe` |
 | macOS | `osx-arm64` | `dmg` |
 
-Use a matching host for packaging. Every script accepts `all` and `--output`; output defaults to `dist`
+Use a matching host for packaging. Native publishers accept `all` and `--output`; output defaults to `dist`
 
 ## Linux
 
@@ -27,6 +27,27 @@ Install the tools needed by your selected targets: `dpkg-deb`, `rpmbuild`, `appi
 ```
 
 AppImage tooling can be selected with `--appimagetool` or `APPIMAGETOOL`. Flatpak exports and bundles use the `stable` branch
+
+## NixOS
+
+The repository contains a flake for the native `x86_64-linux` package. Install Nix with flakes enabled, then build or run HyPrism from the repository root
+
+```bash
+nix build ./Packaging/linux/flake#hyprism
+nix run ./Packaging/linux/flake#hyprism
+./Packaging/publish-linux.sh nix
+```
+
+The flake pins nixpkgs and restores NuGet dependencies from `Packaging/linux/flake/nix/deps.json`. Update that file when .NET package references change
+
+Nix stores the result in `/nix/store`; the `--output` option applies only to native package targets
+
+To regenerate the NuGet dependency lockfile, build the helper exposed by the package and run it with the lockfile path
+
+```bash
+nix build ./Packaging/linux/flake#hyprism.fetch-deps
+./result ./Packaging/linux/flake/nix/deps.json
+```
 
 ## Windows
 
@@ -66,7 +87,7 @@ A release tag must equal `v<Version>`. The release workflow rejects a mismatched
 | `ci.yml` | Core, Desktop, Local Node, and Packaging check groups |
 | `test-core.yml`, `test-desktop.yml`, `test-local-node.yml` | Separate Ubuntu, Windows, and macOS test matrices |
 | `build.yml` | Platform dispatcher |
-| `build-linux.yml`, `build-windows.yml`, `build-macos.yml` | Platform dependencies and publisher calls |
+| `build-linux.yml`, `build-nix.yml`, `build-windows.yml`, `build-macos.yml` | Platform dependencies and publisher calls |
 | `release.yml` | Version validation, shared package builds, release assets |
 | `docs-pages.yml` | Documentation validation and GitHub Pages deployment |
 | `reuse.yml` | License headers and REUSE compliance |

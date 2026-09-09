@@ -11,11 +11,11 @@ description: Платформенные пакеты, CI, целевые арт�
 
 | Хост | Runtime | Цели |
 | --- | --- | --- |
-| Linux | `linux-x64` | `deb`, `rpm`, `appimage`, `flatpak`, `tar` |
+| Linux | `linux-x64` | `deb`, `rpm`, `appimage`, `flatpak`, `tar`, `nix` |
 | Windows | `win-x64` | `zip`, `msi`, `exe` |
 | macOS | `osx-arm64` | `dmg` |
 
-Собирайте пакеты на соответствующей платформе. Все сценарии принимают `all` и `--output`, стандартный каталог результата: `dist`
+Собирайте пакеты на соответствующей платформе. Нативные упаковщики принимают `all` и `--output`, стандартный каталог результата: `dist`
 
 ## Linux
 
@@ -27,6 +27,27 @@ description: Платформенные пакеты, CI, целевые арт�
 ```
 
 Инструмент AppImage можно задать через `--appimagetool` или `APPIMAGETOOL`. Экспорт Flatpak и bundle используют ветку `stable`
+
+## NixOS
+
+Репозиторий содержит flake для нативного пакета `x86_64-linux`. Установите Nix с поддержкой flakes, затем собирайте или запускайте HyPrism из корня репозитория
+
+```bash
+nix build ./Packaging/linux/flake#hyprism
+nix run ./Packaging/linux/flake#hyprism
+./Packaging/publish-linux.sh nix
+```
+
+Flake закрепляет nixpkgs и восстанавливает NuGet-зависимости из `Packaging/linux/flake/nix/deps.json`. Обновляйте этот файл при изменении ссылок на .NET-пакеты
+
+Nix сохраняет результат в `/nix/store`, параметр `--output` относится только к нативным пакетам
+
+Чтобы пересоздать lockfile NuGet-зависимостей, соберите служебный скрипт пакета и запустите его с путем к lockfile
+
+```bash
+nix build ./Packaging/linux/flake#hyprism.fetch-deps
+./result ./Packaging/linux/flake/nix/deps.json
+```
 
 ## Windows
 
@@ -66,7 +87,7 @@ dotnet msbuild Sources/HyPrism.Desktop/HyPrism.Desktop.csproj \
 | `ci.yml` | Группы проверок Core, Desktop, Local Node и Packaging |
 | `test-core.yml`, `test-desktop.yml`, `test-local-node.yml` | Отдельные матрицы Ubuntu, Windows и macOS |
 | `build.yml` | Выбор платформ |
-| `build-linux.yml`, `build-windows.yml`, `build-macos.yml` | Зависимости платформ и вызов упаковщиков |
+| `build-linux.yml`, `build-nix.yml`, `build-windows.yml`, `build-macos.yml` | Зависимости платформ и вызов упаковщиков |
 | `release.yml` | Проверка версии, общие сборки пакетов, релизные файлы |
 | `docs-pages.yml` | Проверка документации и GitHub Pages |
 | `reuse.yml` | Лицензионные заголовки и REUSE |

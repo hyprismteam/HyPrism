@@ -18,7 +18,7 @@ COPYRIGHT = "Copyright (C) 2026 HyPrism Launcher"
 LICENSE = "SPDX-License-" "Identifier: GPL-3.0-only"
 
 LINE_SUFFIXES = {".cs", ".js", ".mjs", ".ts", ".tsx"}
-HASH_SUFFIXES = {".desktop", ".py", ".sh", ".toml", ".yaml", ".yml"}
+HASH_SUFFIXES = {".desktop", ".nix", ".py", ".sh", ".toml", ".yaml", ".yml"}
 XML_SUFFIXES = {".axaml", ".csproj", ".html", ".manifest", ".plist", ".props", ".targets", ".xml"}
 BLOCK_SUFFIXES = {".css"}
 MARKDOWN_SUFFIXES = {".md"}

@@ -180,16 +180,19 @@ jobs:
             | **Linux** | x64 | AppImage | [HyPrism-linux-x64-${{ needs.version.outputs.version }}.AppImage](https://github.com/${{ github.repository }}/releases/download/${{ needs.version.outputs.tag_name }}/HyPrism-linux-x64-${{ needs.version.outputs.version }}.AppImage) |
             | **Linux** | x64 | Flatpak bundle | [HyPrism-linux-x64-${{ needs.version.outputs.version }}.flatpak](https://github.com/${{ github.repository }}/releases/download/${{ needs.version.outputs.tag_name }}/HyPrism-linux-x64-${{ needs.version.outputs.version }}.flatpak) |
             | **Linux** | x64 | tar.xz | [HyPrism-linux-x64-${{ needs.version.outputs.version }}.tar.xz](https://github.com/${{ github.repository }}/releases/download/${{ needs.version.outputs.tag_name }}/HyPrism-linux-x64-${{ needs.version.outputs.version }}.tar.xz) |
+            | **Linux** | x64 | Nix flake | [Packaging/linux/flake](https://github.com/${{ github.repository }}/tree/${{ needs.version.outputs.tag_name }}/Packaging/linux/flake) |
+
+            > For Nix users: Run the Nix package directly from this release with `nix run github:${{ github.repository }}?ref=${{ needs.version.outputs.tag_name }}&dir=Packaging/linux/flake`
             
             ### System Requirements
             
             | OS | Minimum version | Supported Architectures |
             |----|-----------------|------------------------|
             | Windows | Windows 10 22H2 or Windows 11 (latest cumulative updates recommended) | x64 |
-            | Linux | Ubuntu 18.04+, Debian 10+, Fedora 32+ | x64 |
-            | macOS | Monterey (12)+ | ARM64 (Apple Silicon) |
+            | Linux | Ubuntu 22.04+, Debian 12+, Fedora 32+, NixOS 21.11+ | x64 |
+            | macOS | Sequoia 15+ | ARM64 (Apple Silicon) |
             
-            > **Note**: Windows ARM64 and macOS Intel (x86_64) are **not supported**
+            > **Note**: Windows ARM64 and macOS Intel (x86_64) are **not supported** by the game
           draft: false
           prerelease: ${{ github.event.inputs.prerelease || false }}
           artifacts: final-assets/*

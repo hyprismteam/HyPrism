@@ -7,14 +7,14 @@ on:
   workflow_dispatch:
     inputs:
       platforms:
-        description: 'Platforms to build: linux, windows, macos, or all'
+        description: 'Platforms to build: linux, nix, windows, macos, or all'
         required: false
         default: 'all'
         type: string
   workflow_call:
     inputs:
       platforms:
-        description: 'Platforms to build: linux, windows, macos, or all'
+        description: 'Platforms to build: linux, nix, windows, macos, or all'
         required: false
         default: 'all'
         type: string
@@ -26,6 +26,10 @@ jobs:
   linux:
     if: inputs.platforms == 'all' || contains(inputs.platforms, 'linux')
     uses: ./.github/workflows/build-linux.yml
+
+  nix:
+    if: inputs.platforms == 'all' || contains(inputs.platforms, 'nix')
+    uses: ./.github/workflows/build-nix.yml
 
   windows:
     if: inputs.platforms == 'all' || contains(inputs.platforms, 'windows')
