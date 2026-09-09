@@ -28,7 +28,9 @@ public partial class JsonMirrorSource : IVersionSource
     private readonly SemaphoreSlim _fetchLock = new(1, 1);
     private readonly SemaphoreSlim _speedTestLock = new(1, 1);
 
-    private readonly Dictionary<string, (DateTime CachedAt, List<int> Versions)> _versionCache = [];
+    private readonly Dictionary<string, (DateTime CachedAt, List<DiscoveredVersion> Versions)> _versionCache = [];
+
+    private sealed record DiscoveredVersion(int Build, string? Name);
 
     private JsonElement? _cachedJsonIndex;
     private DateTime _jsonIndexCachedAt = DateTime.MinValue;
@@ -219,7 +221,13 @@ public partial class JsonMirrorSource : IVersionSource
                     var url = await GetDiffUrlAsync(os, arch, branch, prev, ver, ct);
                     if (!string.IsNullOrEmpty(url))
                     {
-                        steps.Add(new CachedPatchStep { From = prev, To = ver, PwrUrl = url });
+                        steps.Add(new CachedPatchStep
+                        {
+                            From = prev,
+                            To = ver,
+                            VersionName = versions.FirstOrDefault(version => version.Version == ver)?.VersionName,
+                            PwrUrl = url
+                        });
                     }
                     prev = ver;
                 }
@@ -232,7 +240,13 @@ public partial class JsonMirrorSource : IVersionSource
                     var url = await GetDownloadUrlAsync(os, arch, branch, ver, ct);
                     if (!string.IsNullOrEmpty(url))
                     {
-                        steps.Add(new CachedPatchStep { From = 0, To = ver, PwrUrl = url });
+                        steps.Add(new CachedPatchStep
+                        {
+                            From = 0,
+                            To = ver,
+                            VersionName = versions.FirstOrDefault(version => version.Version == ver)?.VersionName,
+                            PwrUrl = url
+                        });
                     }
                 }
             }
@@ -451,22 +465,24 @@ public partial class JsonMirrorSource : IVersionSource
         {
             return [.. versions.Select(v => new CachedVersionEntry
             {
-                Version = v,
+                Version = v.Build,
                 FromVersion = 0,
-                PwrUrl = BuildPatternUrl(config.FullBuildUrl, os, arch, branch, v, 0, v),
+                VersionName = v.Name,
+                PwrUrl = BuildPatternUrl(config.FullBuildUrl, os, arch, branch, v.Build, 0, v.Build),
                 SigUrl = config.SignatureUrl != null
-                    ? BuildPatternUrl(config.SignatureUrl, os, arch, branch, v, 0, v)
+                    ? BuildPatternUrl(config.SignatureUrl, os, arch, branch, v.Build, 0, v.Build)
                     : null
             }).OrderByDescending(e => e.Version)];
         }
 
         return [.. versions.Select(v => new CachedVersionEntry
         {
-            Version = v,
+            Version = v.Build,
+            VersionName = v.Name,
             FromVersion = 0,
-            PwrUrl = BuildPatternUrl(config.FullBuildUrl, os, arch, branch, v, 0, v),
+            PwrUrl = BuildPatternUrl(config.FullBuildUrl, os, arch, branch, v.Build, 0, v.Build),
             SigUrl = config.SignatureUrl != null
-                ? BuildPatternUrl(config.SignatureUrl, os, arch, branch, v, 0, v)
+                ? BuildPatternUrl(config.SignatureUrl, os, arch, branch, v.Build, 0, v.Build)
                 : null
         }).OrderByDescending(e => e.Version)];
     }
@@ -474,7 +490,7 @@ public partial class JsonMirrorSource : IVersionSource
     /// <summary>
     /// Discovers available versions using the configured method
     /// </summary>
-    private async Task<List<int>> DiscoverVersionsAsync(
+    private async Task<List<DiscoveredVersion>> DiscoverVersionsAsync(
         string os, string arch, string branch, CancellationToken ct)
     {
         var config = _meta.Pattern!;
@@ -494,7 +510,7 @@ public partial class JsonMirrorSource : IVersionSource
                 return cached.Versions;
             }
 
-            List<int> versions;
+            List<DiscoveredVersion> versions;
 
             switch (discovery.Method)
             {
@@ -508,7 +524,10 @@ public partial class JsonMirrorSource : IVersionSource
                     versions = await DiscoverVersionsManifestAsync(os, arch, branch, ct);
                     break;
                 case "static-list":
-                    versions = discovery.StaticVersions?.OrderByDescending(v => v).ToList() ?? [];
+                    versions = discovery.StaticVersions?
+                        .Select(v => new DiscoveredVersion(v, null))
+                        .OrderByDescending(v => v.Build)
+                        .ToList() ?? [];
                     break;
                 default:
                     Logger.Warning($"Mirror:{SourceId}", $"Unknown discovery method: {discovery.Method}");
@@ -540,7 +559,7 @@ public partial class JsonMirrorSource : IVersionSource
         }
     }
 
-    private async Task<List<int>> DiscoverVersionsJsonApiAsync(
+    private async Task<List<DiscoveredVersion>> DiscoverVersionsJsonApiAsync(
         string os, string arch, string branch, CancellationToken ct)
     {
         var discovery = _meta.Pattern!.VersionDiscovery;
@@ -565,10 +584,10 @@ public partial class JsonMirrorSource : IVersionSource
             ? ApplyPlaceholders(discovery.JsonPath, os, arch, branch, 0, 0, 0)
             : null;
 
-        return ParseVersionsFromJson(json, resolvedJsonPath);
+        return ParseVersionsFromJson(json, resolvedJsonPath, discovery.BuildJsonPath);
     }
 
-    private async Task<List<int>> DiscoverVersionsHtmlAsync(
+    private async Task<List<DiscoveredVersion>> DiscoverVersionsHtmlAsync(
         string os, string arch, string branch, CancellationToken ct)
     {
         var discovery = _meta.Pattern!.VersionDiscovery;
@@ -595,13 +614,13 @@ public partial class JsonMirrorSource : IVersionSource
     /// Discovers versions from a manifest.json file.
     /// Expects: { "files": { "{os}/{arch}/{branch}/{from}_to_{to}.pwr": { "size": N }, ... } }
     /// </summary>
-    private async Task<List<int>> DiscoverVersionsManifestAsync(
+    private async Task<List<DiscoveredVersion>> DiscoverVersionsManifestAsync(
         string os, string arch, string branch, CancellationToken ct)
     {
         var discovery = _meta.Pattern!.VersionDiscovery;
         if (string.IsNullOrEmpty(discovery.Url)) return [];
 
-        var url = discovery.Url;
+        var url = ApplyPlaceholders(discovery.Url, os, arch, branch, 0, 0, 0);
         Logger.Info($"Mirror: {SourceId}", $"Fetching manifest from {url}...");
 
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
@@ -619,53 +638,150 @@ public partial class JsonMirrorSource : IVersionSource
     }
 
     /// <summary>
-    /// Parses version numbers from manifest.json.
+    /// Parses version numbers and names from manifest.json.
     /// File paths: {os}/{arch}/{branch}/{from}_to_{to}.pwr
+    /// Version metadata may also be published under versions[branch][build].version
+    /// or files[...].gameVersion
     /// Returns list of available 'to' versions (targets) for the given os/arch/branch
     /// </summary>
-    private List<int> ParseVersionsFromManifest(string json, string os, string arch, string branch)
+    private List<DiscoveredVersion> ParseVersionsFromManifest(string json, string os, string arch, string branch)
     {
         try
         {
             using var doc = JsonDocument.Parse(json);
-            if (!doc.RootElement.TryGetProperty("files", out var filesNode) ||
-                filesNode.ValueKind != JsonValueKind.Object)
+            var versions = new Dictionary<int, string?>();
+            var fileVersions = new Dictionary<int, string?>();
+            var root = doc.RootElement;
+
+            if (root.TryGetProperty("versions", out var versionsNode) &&
+                versionsNode.ValueKind == JsonValueKind.Object)
             {
-                Logger.Warning($"Mirror: {SourceId}", "Manifest missing 'files' object");
-                return [];
-            }
-
-            var mappedOs = ApplyMapping(_meta.Pattern?.OsMapping, os);
-            var mappedArch = ApplyMapping(_meta.Pattern?.ArchMapping, arch);
-
-            var prefix = $"{mappedOs}/{mappedArch}/{branch}/";
-            var patchPattern = PatchFileNameRegex();
-
-            var versions = new HashSet<int>();
-
-            foreach (var file in filesNode.EnumerateObject())
-            {
-                if (!file.Name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
-                    continue;
-
-                var match = patchPattern.Match(file.Name);
-                if (match.Success)
+                var remoteBranch = ApplyMapping(_meta.Pattern?.BranchMapping, branch);
+                if (TryGetPropertyIgnoreCase(versionsNode, remoteBranch, out var branchVersions) &&
+                    branchVersions.ValueKind == JsonValueKind.Object)
                 {
-                    if (int.TryParse(match.Groups[2].Value, out var toVersion))
+                    foreach (var version in branchVersions.EnumerateObject())
                     {
-                        versions.Add(toVersion);
+                        if (!int.TryParse(version.Name, out var build) || build <= 0)
+                            continue;
+
+                        versions[build] = TryGetManifestVersionName(version.Value);
                     }
                 }
             }
 
-            Logger.Debug($"Mirror: {SourceId}", $"Manifest: found {versions.Count} versions for {mappedOs}/{mappedArch}/{branch}");
-            return [.. versions.OrderByDescending(v => v)];
+            if (root.TryGetProperty("files", out var filesNode) &&
+                filesNode.ValueKind == JsonValueKind.Object)
+            {
+                var mappedOs = ApplyMapping(_meta.Pattern?.OsMapping, os);
+                var mappedArch = ApplyMapping(_meta.Pattern?.ArchMapping, arch);
+                var mappedBranch = ApplyMapping(_meta.Pattern?.BranchMapping, branch);
+                var prefix = $"{mappedOs}/{mappedArch}/{mappedBranch}/";
+                var patchPattern = PatchFileNameRegex();
+
+                foreach (var file in filesNode.EnumerateObject())
+                {
+                    if (!file.Name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                        continue;
+
+                    var match = patchPattern.Match(file.Name);
+                    if (!match.Success || !int.TryParse(match.Groups[2].Value, out var toVersion))
+                        continue;
+
+                    var fileVersionName = TryGetManifestVersionName(file.Value);
+                    fileVersions[toVersion] = fileVersionName;
+                    if (!versions.TryGetValue(toVersion, out var existingName) ||
+                        string.IsNullOrWhiteSpace(existingName))
+                    {
+                        versions[toVersion] = fileVersionName;
+                    }
+                }
+            }
+
+            if (fileVersions.Count > 0)
+            {
+                versions = fileVersions.ToDictionary(
+                    pair => pair.Key,
+                    pair => string.IsNullOrWhiteSpace(pair.Value)
+                        ? versions.GetValueOrDefault(pair.Key)
+                        : pair.Value);
+            }
+
+            if (versions.Count == 0)
+            {
+                Logger.Warning($"Mirror: {SourceId}", "Manifest contains no usable version entries");
+                return [];
+            }
+
+            Logger.Debug($"Mirror: {SourceId}", $"Manifest: found {versions.Count} versions for {branch}");
+            return [.. versions
+                .OrderByDescending(pair => pair.Key)
+                .Select(pair => new DiscoveredVersion(pair.Key, pair.Value))];
         }
         catch (Exception ex)
         {
             Logger.Warning($"Mirror: {SourceId}", $"Failed to parse manifest: {ex.Message}");
             return [];
         }
+    }
+
+    private static bool TryGetPropertyIgnoreCase(JsonElement element, string propertyName, out JsonElement value)
+    {
+        if (element.TryGetProperty(propertyName, out value))
+            return true;
+
+        foreach (var property in element.EnumerateObject())
+        {
+            if (string.Equals(property.Name, propertyName, StringComparison.OrdinalIgnoreCase))
+            {
+                value = property.Value;
+                return true;
+            }
+        }
+
+        value = default;
+        return false;
+    }
+
+    private static string? TryGetManifestVersionName(JsonElement value)
+    {
+        if (value.ValueKind == JsonValueKind.String)
+        {
+            var text = value.GetString();
+            return string.IsNullOrWhiteSpace(text) || int.TryParse(text, out _)
+                ? null
+                : text;
+        }
+
+        if (value.ValueKind != JsonValueKind.Object)
+            return null;
+
+        foreach (var fieldName in new[]
+        {
+            "version", "gameVersion", "game_version", "versionName", "version_name",
+            "displayVersion", "display_version", "name"
+        })
+        {
+            if (TryGetPropertyIgnoreCase(value, fieldName, out var field) &&
+                field.ValueKind == JsonValueKind.String)
+            {
+                var text = field.GetString();
+                if (!string.IsNullOrWhiteSpace(text) && !int.TryParse(text, out _))
+                    return text;
+            }
+        }
+
+        foreach (var fieldName in new[] { "meta", "metadata" })
+        {
+            if (TryGetPropertyIgnoreCase(value, fieldName, out var metadata))
+            {
+                var nestedName = TryGetManifestVersionName(metadata);
+                if (!string.IsNullOrWhiteSpace(nestedName))
+                    return nestedName;
+            }
+        }
+
+        return null;
     }
 
     private static string ApplyMapping(Dictionary<string, string>? mapping, string value)
@@ -676,26 +792,30 @@ public partial class JsonMirrorSource : IVersionSource
     }
 
     /// <summary>
-    /// Parses version numbers from a JSON response using the configured jsonPath.
+    /// Parses version names and numeric builds from a JSON response using the configured jsonPath.
     /// Supports:
     /// - "items[].version" - array of objects with a version field
     /// - "versions" - simple property name pointing to an array
     /// - "platform.branch.newest" - dot-notation nested path to a single value
     /// - "$root" or null - root is an array
     /// </summary>
-    private List<int> ParseVersionsFromJson(string json, string? jsonPath)
+    private List<DiscoveredVersion> ParseVersionsFromJson(
+        string json,
+        string? jsonPath,
+        string? buildJsonPath)
     {
         try
         {
             using var doc = JsonDocument.Parse(json);
             var root = doc.RootElement;
-            var versions = new List<int>();
+            var versions = new List<DiscoveredVersion>();
 
             if (jsonPath != null && jsonPath.Contains("[]."))
             {
                 var parts = jsonPath.Split("[].");
                 var arrayName = parts[0];
                 var fieldName = parts[1];
+                var buildFieldName = GetPathLeaf(buildJsonPath);
 
                 JsonElement array;
                 if (string.IsNullOrEmpty(arrayName) || arrayName == "$root")
@@ -705,14 +825,11 @@ public partial class JsonMirrorSource : IVersionSource
 
                 foreach (var item in array.EnumerateArray())
                 {
-                    if (item.TryGetProperty(fieldName, out var val))
-                    {
-                        if (val.TryGetInt32(out int v)) versions.Add(v);
-                        else if (val.ValueKind == JsonValueKind.String && int.TryParse(val.GetString(), out v)) versions.Add(v);
-                    }
+                    if (TryCreateDiscoveredVersion(item, fieldName, buildFieldName, out var version))
+                        versions.Add(version);
                 }
 
-                return [.. versions.Distinct().OrderByDescending(v => v)];
+                return SortDiscoveredVersions(versions);
             }
 
             if (jsonPath == null || jsonPath == "$root")
@@ -721,11 +838,11 @@ public partial class JsonMirrorSource : IVersionSource
                 {
                     foreach (var el in root.EnumerateArray())
                     {
-                        if (el.TryGetInt32(out int v)) versions.Add(v);
-                        else if (el.ValueKind == JsonValueKind.String && int.TryParse(el.GetString(), out v)) versions.Add(v);
+                        if (TryCreateDiscoveredVersion(el, null, null, out var version))
+                            versions.Add(version);
                     }
                 }
-                return [.. versions.Distinct().OrderByDescending(v => v)];
+                return SortDiscoveredVersions(versions);
             }
 
             if (jsonPath.Contains('.'))
@@ -748,28 +865,20 @@ public partial class JsonMirrorSource : IVersionSource
                     }
                 }
 
-                if (current.ValueKind == JsonValueKind.Number)
-                {
-                    if (current.TryGetInt32(out int v))
-                    {
-                        versions.Add(v);
-                        Logger.Debug($"Mirror: {SourceId}", $"JsonPath '{jsonPath}': found version {v}");
-                    }
-                }
-                else if (current.ValueKind == JsonValueKind.Array)
+                if (current.ValueKind == JsonValueKind.Array)
                 {
                     foreach (var el in current.EnumerateArray())
                     {
-                        if (el.TryGetInt32(out int v)) versions.Add(v);
-                        else if (el.ValueKind == JsonValueKind.String && int.TryParse(el.GetString(), out v)) versions.Add(v);
+                        if (TryCreateDiscoveredVersion(el, null, GetPathLeaf(buildJsonPath), out var version))
+                            versions.Add(version);
                     }
                 }
-                else if (current.ValueKind == JsonValueKind.String && int.TryParse(current.GetString(), out int sv))
+                else if (TryCreateDiscoveredVersion(current, null, GetPathLeaf(buildJsonPath), out var singleVersion))
                 {
-                    versions.Add(sv);
+                    versions.Add(singleVersion);
                 }
 
-                return [.. versions.Distinct().OrderByDescending(v => v)];
+                return SortDiscoveredVersions(versions);
             }
 
             if (!root.TryGetProperty(jsonPath, out var versionsArray) || versionsArray.ValueKind != JsonValueKind.Array)
@@ -777,11 +886,11 @@ public partial class JsonMirrorSource : IVersionSource
 
             foreach (var el in versionsArray.EnumerateArray())
             {
-                if (el.TryGetInt32(out int v)) versions.Add(v);
-                else if (el.ValueKind == JsonValueKind.String && int.TryParse(el.GetString(), out v)) versions.Add(v);
+                if (TryCreateDiscoveredVersion(el, null, GetPathLeaf(buildJsonPath), out var version))
+                    versions.Add(version);
             }
 
-            return [.. versions.Distinct().OrderByDescending(v => v)];
+            return SortDiscoveredVersions(versions);
         }
         catch (JsonException ex)
         {
@@ -790,16 +899,148 @@ public partial class JsonMirrorSource : IVersionSource
         }
     }
 
+    private static string? GetPathLeaf(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+            return null;
+
+        var leaf = path.Split("[].", StringSplitOptions.RemoveEmptyEntries).Last();
+        return leaf.Split('.').Last();
+    }
+
+    private static bool TryCreateDiscoveredVersion(
+        JsonElement value,
+        string? versionFieldName,
+        string? buildFieldName,
+        out DiscoveredVersion version)
+    {
+        version = new DiscoveredVersion(0, null);
+
+        if (value.ValueKind == JsonValueKind.Number && value.TryGetInt32(out var numericValue))
+        {
+            version = new DiscoveredVersion(numericValue, null);
+            return true;
+        }
+
+        if (value.ValueKind == JsonValueKind.String &&
+            int.TryParse(value.GetString(), out numericValue))
+        {
+            version = new DiscoveredVersion(numericValue, null);
+            return true;
+        }
+
+        if (value.ValueKind != JsonValueKind.Object)
+            return false;
+
+        JsonElement versionValue = value;
+        var resolvedVersionFieldName = versionFieldName;
+        if (string.IsNullOrWhiteSpace(resolvedVersionFieldName))
+        {
+            resolvedVersionFieldName = new[] { "version", "versionName", "name" }
+                .FirstOrDefault(name => value.TryGetProperty(name, out _));
+        }
+
+        if (!string.IsNullOrWhiteSpace(resolvedVersionFieldName) &&
+            !value.TryGetProperty(resolvedVersionFieldName, out versionValue))
+        {
+            return false;
+        }
+
+        var versionName = versionValue.ValueKind == JsonValueKind.String
+            ? versionValue.GetString()
+            : null;
+
+        if (versionValue.ValueKind == JsonValueKind.Number && versionValue.TryGetInt32(out numericValue))
+            version = new DiscoveredVersion(numericValue, TryGetVersionName(value, resolvedVersionFieldName));
+        else if (!string.IsNullOrWhiteSpace(versionName) && int.TryParse(versionName, out numericValue))
+            version = new DiscoveredVersion(numericValue, null);
+        else if (TryGetBuild(value, buildFieldName, out numericValue))
+            version = new DiscoveredVersion(numericValue, versionName);
+        else
+            return false;
+
+        return version.Build > 0;
+    }
+
+    private static string? TryGetVersionName(JsonElement value, string? versionFieldName)
+    {
+        foreach (var fieldName in new[] { "versionName", "version_name", "version", "displayVersion", "display_version", "name" })
+        {
+            if (string.Equals(fieldName, versionFieldName, StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            if (value.TryGetProperty(fieldName, out var field) && field.ValueKind == JsonValueKind.String)
+            {
+                var name = field.GetString();
+                if (!string.IsNullOrWhiteSpace(name) && !int.TryParse(name, out _))
+                    return name;
+            }
+        }
+
+        foreach (var fieldName in new[] { "meta", "metadata" })
+        {
+            if (value.TryGetProperty(fieldName, out var metadata) && metadata.ValueKind == JsonValueKind.Object)
+            {
+                var nestedName = TryGetVersionName(metadata, versionFieldName: null);
+                if (!string.IsNullOrWhiteSpace(nestedName))
+                    return nestedName;
+            }
+        }
+
+        return null;
+    }
+
+    private static bool TryGetBuild(JsonElement value, string? explicitFieldName, out int build)
+    {
+        build = 0;
+        var fieldNames = new[]
+        {
+            explicitFieldName,
+            "build",
+            "buildNumber",
+            "build_number",
+            "buildVersion",
+            "build_version",
+            "buildId",
+            "build_id",
+            "versionNumber",
+            "version_number",
+            "id",
+            "number"
+        };
+
+        foreach (var fieldName in fieldNames.Where(name => !string.IsNullOrWhiteSpace(name)))
+        {
+            if (!value.TryGetProperty(fieldName!, out var field))
+                continue;
+
+            if (field.ValueKind == JsonValueKind.Number && field.TryGetInt32(out build))
+                return build > 0;
+
+            if (field.ValueKind == JsonValueKind.String && int.TryParse(field.GetString(), out build))
+                return build > 0;
+        }
+
+        return false;
+    }
+
+    private static List<DiscoveredVersion> SortDiscoveredVersions(IEnumerable<DiscoveredVersion> versions)
+        => [.. versions
+            .Where(version => version.Build > 0)
+            .GroupBy(version => version.Build)
+            .Select(group => group.FirstOrDefault(version => !string.IsNullOrWhiteSpace(version.Name)) ?? group.First())
+            .OrderByDescending(version => version.Build)];
+
     /// <summary>
     /// Parses version numbers from HTML using the configured regex pattern
     /// </summary>
-    private static List<int> ParseVersionsFromHtml(string html, string? pattern, long minFileSize)
+    private static List<DiscoveredVersion> ParseVersionsFromHtml(string html, string? pattern, long minFileSize)
     {
         if (string.IsNullOrEmpty(pattern)) return [];
 
         try
         {
-            var versions = new List<int>();
+            var versions = new List<DiscoveredVersion>();
             var regex = new Regex(
                 pattern,
                 RegexOptions.IgnoreCase | RegexOptions.CultureInvariant,
@@ -817,10 +1058,12 @@ public partial class JsonMirrorSource : IVersionSource
                     continue;
                 }
 
-                versions.Add(version);
+                versions.Add(new DiscoveredVersion(version, null));
             }
 
-            return [.. versions.Distinct().OrderByDescending(v => v)];
+            return [.. versions
+                .DistinctBy(version => version.Build)
+                .OrderByDescending(version => version.Build)];
         }
         catch (ArgumentException ex)
         {

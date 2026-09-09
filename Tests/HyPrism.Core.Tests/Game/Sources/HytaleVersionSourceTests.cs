@@ -50,7 +50,9 @@ public sealed class HytaleVersionSourceTests
             });
             var profiles = new Mock<IProfileManager>();
             profiles.Setup(service => service.GetProfiles()).Returns([profile]);
-            var handler = new OfficialProbeHandler();
+            var handler = new OfficialProbeHandler(
+                includeStepVersionName: false,
+                includeVersionManifest: true);
             using var httpClient = new HttpClient(handler);
             var authenticator = new HytaleAuthenticator(httpClient, appDir, config.Object);
             var source = new HytaleVersionSource(
@@ -69,6 +71,12 @@ public sealed class HytaleVersionSourceTests
             Assert.Equal(1, handler.PatchesRequestCount);
             Assert.True(handler.PatchesRequestWasAuthenticated);
             Assert.False(handler.UnauthenticatedRootWasRequested);
+
+            var versions = await source.GetVersionsAsync("linux", "x64", "release");
+            var version = Assert.Single(versions);
+            Assert.Equal(1, version.Version);
+            Assert.Equal("0.6.4", version.VersionName);
+            Assert.Equal(1, handler.VersionManifestRequestCount);
         }
         finally
         {
@@ -78,8 +86,18 @@ public sealed class HytaleVersionSourceTests
 
     private sealed class OfficialProbeHandler : HttpMessageHandler
     {
+        private readonly bool _includeStepVersionName;
+        private readonly bool _includeVersionManifest;
+
+        public OfficialProbeHandler(bool includeStepVersionName, bool includeVersionManifest)
+        {
+            _includeStepVersionName = includeStepVersionName;
+            _includeVersionManifest = includeVersionManifest;
+        }
+
         public int PatchesRequestCount { get; private set; }
         public bool PatchesRequestWasAuthenticated { get; private set; }
+        public int VersionManifestRequestCount { get; private set; }
         public bool UnauthenticatedRootWasRequested { get; private set; }
 
         protected override Task<HttpResponseMessage> SendAsync(
@@ -92,6 +110,21 @@ public sealed class HytaleVersionSourceTests
                 return Task.FromResult(JsonResponse("{\"version\":\"1.0.0\"}"));
             }
 
+            if (_includeVersionManifest &&
+                string.Equals(uri.Host, "account-data.hytale.com", StringComparison.OrdinalIgnoreCase) &&
+                uri.AbsolutePath.StartsWith("/game-assets/version/", StringComparison.Ordinal))
+            {
+                VersionManifestRequestCount++;
+                return Task.FromResult(JsonResponse(
+                    "{\"url\":\"https://signed.hytale.test/release.json\"}"));
+            }
+
+            if (_includeVersionManifest &&
+                string.Equals(uri.Host, "signed.hytale.test", StringComparison.OrdinalIgnoreCase))
+            {
+                return Task.FromResult(JsonResponse("{\"version\":\"0.6.4\"}"));
+            }
+
             if (string.Equals(uri.Host, "account-data.hytale.com", StringComparison.OrdinalIgnoreCase) &&
                 uri.AbsolutePath.StartsWith("/patches/", StringComparison.Ordinal))
             {
@@ -102,8 +135,11 @@ public sealed class HytaleVersionSourceTests
                         request.Headers.Authorization?.Parameter,
                         "official-access-token",
                         StringComparison.Ordinal);
+                var versionProperty = _includeStepVersionName
+                    ? ",\"version\":\"2026.09.08-e1d69dd\""
+                    : string.Empty;
                 return Task.FromResult(JsonResponse(
-                    "{\"steps\":[{\"from\":0,\"to\":1,\"pwr\":\"https://cdn.hytale.com/game.pwr\",\"pwrHead\":\"https://cdn.hytale.com/game.pwr\",\"sig\":\"https://cdn.hytale.com/game.sig\"}]}"));
+                    $"{{\"steps\":[{{\"from\":0,\"to\":1{versionProperty},\"pwr\":\"https://cdn.hytale.com/game.pwr\",\"pwrHead\":\"https://cdn.hytale.com/game.pwr\",\"sig\":\"https://cdn.hytale.com/game.sig\"}}]}}"));
             }
 
             if (string.Equals(uri.Host, "account-data.hytale.com", StringComparison.OrdinalIgnoreCase))

@@ -31,6 +31,7 @@ internal class HytaleAuthExpiredException : Exception
 public class HytaleVersionSource : IVersionSource
 {
     private const string PatchesApiBaseUrl = "https://account-data.hytale.com/patches";
+    private const string VersionManifestApiBaseUrl = "https://account-data.hytale.com/game-assets/version";
     private static readonly TimeSpan CacheTtl = TimeSpan.FromMinutes(15);
     private const int MaxAuthRetries = 2;
 
@@ -42,6 +43,7 @@ public class HytaleVersionSource : IVersionSource
     private readonly SemaphoreSlim _fetchLock = new(1, 1);
 
     private readonly Dictionary<string, (DateTime CachedAt, OfficialPatchesResponse Response)> _cache = [];
+    private readonly Dictionary<string, (DateTime CachedAt, string? VersionName)> _versionNameCache = [];
 
     /// <summary>
     /// Creates an official Hytale version source
@@ -132,10 +134,17 @@ public class HytaleVersionSource : IVersionSource
             return [];
         }
 
+        var versionName = latestStep.VersionName ?? response.VersionName;
+        if (string.IsNullOrWhiteSpace(versionName))
+        {
+            versionName = await GetVersionNameFromManifestAsync(branch, ct);
+        }
+
         var entries = new List<CachedVersionEntry>
         {
             new() {
                 Version = latestStep.To,
+                VersionName = versionName,
                 FromVersion = 0,
                 PwrUrl = latestStep.Pwr,
                 PwrHeadUrl = latestStep.PwrHead,
@@ -156,10 +165,16 @@ public class HytaleVersionSource : IVersionSource
             if (patches == null || patches.Steps.Count == 0)
                 return [];
 
+            var latestBuild = patches.Steps.Max(step => step.To);
+            var manifestVersionName = patches.Steps.Any(step => string.IsNullOrWhiteSpace(step.VersionName))
+                ? patches.VersionName ?? await GetVersionNameFromManifestAsync(branch, ct)
+                : null;
+
             return [.. patches.Steps.Select(s => new CachedPatchStep
             {
                 From = s.From,
                 To = s.To,
+                VersionName = s.VersionName ?? (s.To == latestBuild ? manifestVersionName : null),
                 PwrUrl = s.Pwr,
                 PwrHeadUrl = s.PwrHead,
                 SigUrl = s.Sig
@@ -293,6 +308,126 @@ public class HytaleVersionSource : IVersionSource
     }
 
     /// <summary>
+    /// Gets the human-readable version from the official game-assets manifest.
+    /// The authenticated endpoint may return a signed URL to a second JSON manifest
+    /// instead of returning the version object directly
+    /// </summary>
+    private async Task<string?> GetVersionNameFromManifestAsync(string branch, CancellationToken ct)
+    {
+        var cacheKey = branch.Trim().ToLowerInvariant();
+        lock (_versionNameCache)
+        {
+            if (_versionNameCache.TryGetValue(cacheKey, out var cached) &&
+                DateTime.UtcNow - cached.CachedAt < CacheTtl)
+            {
+                return cached.VersionName;
+            }
+        }
+
+        var versionName = await FetchWithTokenRefreshAsync(
+            async accessToken => await FetchVersionManifestNameAsync(branch, accessToken, ct),
+            ct);
+
+        lock (_versionNameCache)
+        {
+            _versionNameCache[cacheKey] = (DateTime.UtcNow, versionName);
+        }
+
+        return versionName;
+    }
+
+    private async Task<string?> FetchVersionManifestNameAsync(
+        string branch, string accessToken, CancellationToken ct)
+    {
+        var url = $"{VersionManifestApiBaseUrl}/{Uri.EscapeDataString(branch)}.json";
+        Logger.Info("HytaleSource", $"Fetching version manifest from {url}...");
+
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        cts.CancelAfter(TimeSpan.FromSeconds(30));
+
+        using var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        await HytaleLauncherHeaders.ApplyOfficialHeadersAsync(request, _httpClient, branch, cts.Token);
+
+        using var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cts.Token);
+        if (response.StatusCode == HttpStatusCode.Unauthorized ||
+            response.StatusCode == HttpStatusCode.Forbidden)
+        {
+            throw new HytaleAuthExpiredException($"Auth error while fetching version manifest: {response.StatusCode}");
+        }
+
+        if (!response.IsSuccessStatusCode)
+        {
+            Logger.Warning("HytaleSource", $"Version manifest returned {response.StatusCode}");
+            return null;
+        }
+
+        var json = await response.Content.ReadAsStringAsync(cts.Token);
+        var versionName = ParseVersionManifestName(json, out var signedManifestUrl);
+        if (!string.IsNullOrWhiteSpace(versionName) || string.IsNullOrWhiteSpace(signedManifestUrl))
+        {
+            return versionName;
+        }
+
+        using var signedResponse = await _httpClient.GetAsync(
+            signedManifestUrl,
+            HttpCompletionOption.ResponseHeadersRead,
+            cts.Token);
+        if (!signedResponse.IsSuccessStatusCode)
+        {
+            Logger.Warning("HytaleSource", $"Signed version manifest returned {signedResponse.StatusCode}");
+            return null;
+        }
+
+        var signedJson = await signedResponse.Content.ReadAsStringAsync(cts.Token);
+        return ParseVersionManifestName(signedJson, out _);
+    }
+
+    private static string? ParseVersionManifestName(string json, out string? signedManifestUrl)
+    {
+        signedManifestUrl = null;
+
+        try
+        {
+            using var document = JsonDocument.Parse(json);
+            var root = document.RootElement;
+            var versionName = FindJsonString(root,
+                "version", "versionName", "gameVersion", "game_version", "displayVersion", "display_version");
+            if (!string.IsNullOrWhiteSpace(versionName))
+            {
+                return versionName;
+            }
+
+            signedManifestUrl = FindJsonString(root, "url");
+            return null;
+        }
+        catch (JsonException)
+        {
+            Logger.Warning("HytaleSource", "Official version manifest was not valid JSON");
+            return null;
+        }
+    }
+
+    private static string? FindJsonString(JsonElement element, params string[] names)
+    {
+        if (element.ValueKind != JsonValueKind.Object)
+            return null;
+
+        foreach (var property in element.EnumerateObject())
+        {
+            if (names.Any(name => string.Equals(property.Name, name, StringComparison.OrdinalIgnoreCase)) &&
+                property.Value.ValueKind == JsonValueKind.String)
+            {
+                var value = property.Value.GetString();
+                if (!string.IsNullOrWhiteSpace(value))
+                    return value;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
     /// Executes an API call with automatic token refresh on auth errors.
     /// Uses GetValidOfficialSessionAsync to get session from ANY official profile
     /// </summary>
@@ -353,6 +488,10 @@ public class HytaleVersionSource : IVersionSource
     public void ClearCache()
     {
         _cache.Clear();
+        lock (_versionNameCache)
+        {
+            _versionNameCache.Clear();
+        }
         Logger.Info("HytaleSource", "Cache cleared");
     }
 

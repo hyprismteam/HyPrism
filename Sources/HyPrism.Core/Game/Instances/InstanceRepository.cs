@@ -1188,7 +1188,7 @@ public partial class InstanceRepository : IInstanceRepository
     }
 
     /// <inheritdoc/>
-    public InstanceMeta CreateInstanceMeta(string branch, int version, string? name = null, bool isLatest = false)
+    public InstanceMeta CreateInstanceMeta(string branch, int version, string? name = null, bool isLatest = false, string? versionName = null)
     {
         var normalizedBranch = NormalizeVersionType(branch);
 
@@ -1224,9 +1224,12 @@ public partial class InstanceRepository : IInstanceRepository
         var meta = new InstanceMeta
         {
             Id = instanceId,
-            Name = name ?? (isLatest ? $"{normalizedBranch} (Latest)" : $"{normalizedBranch} v{version}"),
+            Name = name ?? (isLatest
+                ? $"{normalizedBranch} (Latest)"
+                : $"{normalizedBranch} v{versionName ?? version.ToString()}"),
             Branch = normalizedBranch,
             Version = version,
+            VersionName = versionName,
             CreatedAt = DateTime.UtcNow,
             IsLatest = isLatest
         };
@@ -1241,7 +1244,8 @@ public partial class InstanceRepository : IInstanceRepository
                 Id = meta.Id,
                 Name = meta.Name,
                 Branch = meta.Branch,
-                Version = meta.Version
+                Version = meta.Version,
+                VersionName = meta.VersionName
             });
             SaveInstanceCache(cachedInstances);
             RaiseInstancesChanged();
@@ -1350,7 +1354,8 @@ public partial class InstanceRepository : IInstanceRepository
                 Id = meta.Id,
                 Name = meta.Name,
                 Branch = meta.Branch,
-                Version = meta.Version
+                Version = meta.Version,
+                VersionName = meta.VersionName
             };
         }
 
@@ -1503,7 +1508,7 @@ public partial class InstanceRepository : IInstanceRepository
                     continue;
                 var meta = GetInstanceMeta(instanceDir);
                 if (meta != null && meta.Branch.Equals(normalizedBranch, StringComparison.OrdinalIgnoreCase) && meta.Version == version)
-                    return new InstanceInfo { Id = meta.Id, Name = meta.Name, Branch = meta.Branch, Version = meta.Version };
+                    return new InstanceInfo { Id = meta.Id, Name = meta.Name, Branch = meta.Branch, Version = meta.Version, VersionName = meta.VersionName };
             }
         }
 
@@ -1515,7 +1520,7 @@ public partial class InstanceRepository : IInstanceRepository
         {
             var meta = GetInstanceMeta(instanceDir);
             if (meta != null && meta.Branch.Equals(normalizedBranch, StringComparison.OrdinalIgnoreCase) && meta.Version == version)
-                return new InstanceInfo { Id = meta.Id, Name = meta.Name, Branch = meta.Branch, Version = meta.Version };
+                return new InstanceInfo { Id = meta.Id, Name = meta.Name, Branch = meta.Branch, Version = meta.Version, VersionName = meta.VersionName };
         }
 
         return null;

@@ -131,7 +131,7 @@ public class MirrorPatternConfig
 public class VersionDiscoveryConfig
 {
     /// <summary>
-    /// Discovery method: "json-api", "html-autoindex", or "static-list".
+    /// Discovery method: "json-api", "html-autoindex", "manifest", or "static-list".
     /// </summary>
     public string Method { get; set; } = "json-api";
 
@@ -141,10 +141,15 @@ public class VersionDiscoveryConfig
     public string? Url { get; set; }
 
     /// <summary>
-    /// For json-api: path to the versions array in the JSON response.
+    /// For json-api: path to the version name or build in the JSON response.
     /// Supported formats: "items[].version", "versions", "$root"
     /// </summary>
     public string? JsonPath { get; set; }
+
+    /// <summary>
+    /// Optional path to the numeric build field when JSON entries expose both a version name and a build
+    /// </summary>
+    public string? BuildJsonPath { get; set; }
 
     /// <summary>
     /// For html-autoindex: regex pattern for extracting versions.

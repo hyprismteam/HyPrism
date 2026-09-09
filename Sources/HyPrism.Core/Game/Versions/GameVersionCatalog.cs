@@ -139,6 +139,7 @@ public class GameVersionCatalog : IGameVersionCatalog
         };
 
         snapshot = _cache.Sanitize(snapshot);
+        snapshot.SchemaVersion = VersionCache.CurrentSchemaVersion;
         snapshot.Os = osName;
         snapshot.Arch = arch;
         snapshot.FetchedAtUtc = DateTime.UtcNow;
@@ -266,6 +267,48 @@ public class GameVersionCatalog : IGameVersionCatalog
         return [.. allVersions.Keys.OrderByDescending(v => v)];
     }
 
+    /// <summary>
+    /// Gets merged version entries from cache, preserving the display name when a source provides one
+    /// </summary>
+    private static List<CachedVersionEntry> GetMergedVersionEntries(
+        VersionsCacheSnapshot snapshot,
+        string branch)
+    {
+        var allVersions = new Dictionary<int, CachedVersionEntry>();
+
+        foreach (var mirror in snapshot.Data.Mirrors)
+        {
+            if (!mirror.Branches.TryGetValue(branch, out var mirrorVersions))
+                continue;
+
+            foreach (var version in mirrorVersions)
+            {
+                if (!allVersions.TryGetValue(version.Version, out var existing) ||
+                    string.IsNullOrWhiteSpace(existing.VersionName))
+                {
+                    allVersions[version.Version] = version;
+                }
+            }
+        }
+
+        if (snapshot.Data.Hytale?.Branches.TryGetValue(branch, out var officialVersions) == true)
+        {
+            foreach (var version in officialVersions)
+            {
+                if (string.IsNullOrWhiteSpace(version.VersionName) &&
+                    allVersions.TryGetValue(version.Version, out var mirrorVersion) &&
+                    !string.IsNullOrWhiteSpace(mirrorVersion.VersionName))
+                {
+                    version.VersionName = mirrorVersion.VersionName;
+                }
+
+                allVersions[version.Version] = version;
+            }
+        }
+
+        return [.. allVersions.Values.OrderByDescending(version => version.Version)];
+    }
+
     /// <inheritdoc/>
     public bool TryGetCachedVersions(string branch, TimeSpan maxAge, out List<int> versions)
     {
@@ -281,6 +324,22 @@ public class GameVersionCatalog : IGameVersionCatalog
         }
 
         versions = GetMergedVersionList(cached, normalizedBranch);
+        return versions.Count > 0;
+    }
+
+    /// <inheritdoc/>
+    public bool TryGetCachedVersionEntries(string branch, TimeSpan maxAge, out List<CachedVersionEntry> versions)
+    {
+        versions = [];
+        var normalizedBranch = NormalizeBranch(branch);
+        string osName = LauncherUtilities.GetOS();
+        string arch = LauncherUtilities.GetArch();
+
+        var cached = _cache.TryGet(osName, arch);
+        if (cached == null || !_cache.IsBranchFresh(cached, normalizedBranch, maxAge))
+            return false;
+
+        versions = GetMergedVersionEntries(cached, normalizedBranch);
         return versions.Count > 0;
     }
 
@@ -320,6 +379,7 @@ public class GameVersionCatalog : IGameVersionCatalog
                     versionMap[v.Version] = new VersionInfo
                     {
                         Version = v.Version,
+                        VersionName = v.VersionName ?? versionMap.GetValueOrDefault(v.Version)?.VersionName,
                         Source = VersionSource.Mirror,
                         IsLatest = false
                     };
@@ -334,6 +394,7 @@ public class GameVersionCatalog : IGameVersionCatalog
                 versionMap[v.Version] = new VersionInfo
                 {
                     Version = v.Version,
+                    VersionName = v.VersionName ?? versionMap.GetValueOrDefault(v.Version)?.VersionName,
                     Source = VersionSource.Official,
                     IsLatest = false
                 };

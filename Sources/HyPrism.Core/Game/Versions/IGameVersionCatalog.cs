@@ -16,7 +16,7 @@ public interface IGameVersionCatalog
     /// </summary>
     /// <param name="branch">The game branch</param>
     /// <param name="ct">Token to cancel the request</param>
-    /// <returns>A list of available version numbers, sorted descending</returns>
+    /// <returns>A list of available numeric build identifiers, sorted descending</returns>
     Task<List<int>> GetVersionListAsync(string branch, CancellationToken ct = default);
 
     /// <summary>
@@ -24,9 +24,18 @@ public interface IGameVersionCatalog
     /// </summary>
     /// <param name="branch">The game branch</param>
     /// <param name="maxAge">The maximum age of cached data to accept</param>
-    /// <param name="versions">The cached versions if found and valid</param>
+    /// <param name="versions">The cached build identifiers if found and valid</param>
     /// <returns><c>true</c> if valid cached data was found; otherwise, <c>false</c></returns>
     bool TryGetCachedVersions(string branch, TimeSpan maxAge, out List<int> versions);
+
+    /// <summary>
+    /// Attempts to retrieve cached version entries with display names and build identifiers
+    /// </summary>
+    /// <param name="branch">The game branch</param>
+    /// <param name="maxAge">The maximum age of cached data to accept</param>
+    /// <param name="versions">The cached version entries if found and valid</param>
+    /// <returns><c>true</c> if valid cached data was found; otherwise, <c>false</c></returns>
+    bool TryGetCachedVersionEntries(string branch, TimeSpan maxAge, out List<CachedVersionEntry> versions);
 
     /// <summary>
     /// Checks if the latest installed version needs an update

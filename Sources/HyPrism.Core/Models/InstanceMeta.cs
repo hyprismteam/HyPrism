@@ -27,9 +27,14 @@ public class InstanceMeta
     public string Branch { get; set; } = "release";
 
     /// <summary>
-    /// Installed game version number.
+    /// Numeric build identifier of the installed game version
     /// </summary>
     public int Version { get; set; }
+
+    /// <summary>
+    /// Human-readable game version corresponding to <see cref="Version"/>
+    /// </summary>
+    public string? VersionName { get; set; }
 
     /// <summary>
     /// When this instance was created.
@@ -94,9 +99,14 @@ public class InstanceInfo
     public string Branch { get; set; } = "release";
 
     /// <summary>
-    /// Installed game version number.
+    /// Numeric build identifier of the installed game version
     /// </summary>
     public int Version { get; set; }
+
+    /// <summary>
+    /// Human-readable game version corresponding to <see cref="Version"/>
+    /// </summary>
+    public string? VersionName { get; set; }
 
     /// <summary>
     /// Whether the game files are actually installed (valid client/server executables exist).

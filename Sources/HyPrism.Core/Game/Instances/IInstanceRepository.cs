@@ -50,7 +50,7 @@ public interface IInstanceRepository
     /// Finds an existing instance path for the specified branch and version
     /// </summary>
     /// <param name="branch">The game branch</param>
-    /// <param name="version">The version number</param>
+    /// <param name="version">The numeric build identifier</param>
     /// <returns>The path to the existing instance, or <c>null</c> if not found</returns>
     string? FindExistingInstancePath(string branch, int version);
 
@@ -176,8 +176,9 @@ public interface IInstanceRepository
     /// <param name="version">The version number</param>
     /// <param name="name">Optional custom name for the instance</param>
     /// <param name="isLatest">Whether this is the auto-updating "latest" instance</param>
+    /// <param name="versionName">Optional human-readable game version name</param>
     /// <returns>The created instance metadata</returns>
-    InstanceMeta CreateInstanceMeta(string branch, int version, string? name = null, bool isLatest = false);
+    InstanceMeta CreateInstanceMeta(string branch, int version, string? name = null, bool isLatest = false, string? versionName = null);
 
     /// <summary>
     /// Gets the currently selected instance based on SelectedInstanceId

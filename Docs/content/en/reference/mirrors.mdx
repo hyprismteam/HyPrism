@@ -48,7 +48,30 @@ This complete example uses a reserved example domain and a static version list. 
 
 URL templates support `{base}`, `{os}`, `{arch}`, `{branch}`, `{version}`, `{from}`, and `{to}`. Internal platform strings include `windows`, `linux`, `darwin`, `amd64`, and `arm64`
 
-Discovery supports `static-list`, `json-api` with `Url` and `JsonPath`, or `html-autoindex` with `Url` and an optional `HtmlPattern`. Custom regular expressions are time-limited and invalid expressions are ignored
+Discovery supports `static-list`, `json-api` with `Url` and `JsonPath`, `manifest` with a manifest `Url`, or `html-autoindex` with `Url` and an optional `HtmlPattern`. Custom regular expressions are time-limited and invalid expressions are ignored
+
+### Version names and builds
+
+The launcher keeps the numeric build identifier separate from the human-readable game version. The build is used for download paths, patch chains, and instance compatibility, while the version name is shown in the instance creation list and instance details
+
+For JSON API entries, `JsonPath` points to the version name or numeric build. When an entry is an object, the parser reads a numeric `build`, `buildNumber`, `buildVersion`, `buildId`, `id`, or `number` field when available. Use `BuildJsonPath` when the build field needs to be specified explicitly
+
+```json
+{
+  "VersionDiscovery": {
+    "Method": "json-api",
+    "Url": "{base}/versions",
+    "JsonPath": "items[].version",
+    "BuildJsonPath": "items[].build"
+  }
+}
+```
+
+Manifest discovery also reads names from `versions[branch][build].version` and from `gameVersion` in matching file entries. This supports manifests where the file path contains only the numeric build, such as `0_to_27.pwr`
+
+The official source reads the authenticated `game-assets/version/{branch}.json` manifest and follows its signed JSON URL when necessary. The returned name is paired with the latest numeric build from the patches API
+
+The official source applies the same separation to metadata returned with patch steps. Older version cache snapshots are refreshed once after this format change, while existing instance files without a version name continue to use the numeric build as a fallback
 
 ## JSON index source
 

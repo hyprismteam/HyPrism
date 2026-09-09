@@ -52,6 +52,7 @@ internal static class MainWindowViewModelFactory
             Name = "Aurora survival",
             Branch = "release",
             Version = 7,
+            VersionName = "0.6.4",
             IsInstalled = true
         };
         var snapshotInstance = new InstanceInfo
@@ -60,6 +61,7 @@ internal static class MainWindowViewModelFactory
             Name = "Snapshot experiments",
             Branch = "pre-release",
             Version = 6,
+            VersionName = "build-6",
             IsInstalled = false
         };
 

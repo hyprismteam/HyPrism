@@ -115,6 +115,7 @@ public static partial class Bootstrapper
                     sp.GetRequiredService<HytaleVersionSource>(),
                     mirrorCatalog: sp.GetRequiredService<IMirrorCatalog>()));
             services.AddSingleton<IGameVersionCatalog>(sp => sp.GetRequiredService<GameVersionCatalog>());
+            services.AddSingleton<InstanceVersionNameMigrator>();
 
             services.AddSingleton(sp =>
                 new RuntimeProvisioner(
@@ -277,6 +278,7 @@ public static partial class Bootstrapper
         CancellationToken cancellationToken = default)
     {
         await EnsureCurseForgeKeyAsync(services, cancellationToken);
+        _ = services.GetRequiredService<InstanceVersionNameMigrator>().MigrateAsync(cancellationToken);
     }
 
     /// <summary>

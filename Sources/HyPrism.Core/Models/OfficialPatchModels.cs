@@ -1,6 +1,7 @@
 // Copyright (C) 2026 HyPrism Launcher
 // SPDX-License-Identifier: GPL-3.0-only
 
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace HyPrism.Core.Models;
@@ -17,6 +18,19 @@ public class OfficialPatchesResponse
     /// </summary>
     [JsonPropertyName("steps")]
     public List<OfficialPatchStep> Steps { get; set; } = [];
+
+    /// <summary>
+    /// Additional metadata returned by newer API versions, including a display version
+    /// when it is provided at the response level
+    /// </summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Metadata { get; set; }
+
+    /// <summary>
+    /// Gets the display version from response metadata when available
+    /// </summary>
+    [JsonIgnore]
+    public string? VersionName => JsonMetadataReader.TryGetString(Metadata, "version", "versionName", "name", "meta", "metadata");
 }
 
 /// <summary>
@@ -55,6 +69,18 @@ public class OfficialPatchStep
     /// </summary>
     [JsonPropertyName("sig")]
     public string Sig { get; set; } = "";
+
+    /// <summary>
+    /// Additional metadata returned by the API, including the human-readable version name
+    /// </summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Metadata { get; set; }
+
+    /// <summary>
+    /// Gets the display version from step metadata when available
+    /// </summary>
+    [JsonIgnore]
+    public string? VersionName => JsonMetadataReader.TryGetString(Metadata, "version", "versionName", "name", "meta", "metadata");
 }
 
 /// <summary>
@@ -63,9 +89,14 @@ public class OfficialPatchStep
 public class VersionInfo
 {
     /// <summary>
-    /// The version number.
+    /// The numeric build identifier used by the patch API
     /// </summary>
     public int Version { get; set; }
+
+    /// <summary>
+    /// The human-readable game version, for example <c>2026.09.08-e1d69dd</c>
+    /// </summary>
+    public string? VersionName { get; set; }
 
     /// <summary>
     /// The source of this version: "official" or "mirror".
@@ -132,9 +163,14 @@ public class VersionListResponse
 public class CachedVersionEntry
 {
     /// <summary>
-    /// The version number.
+    /// The numeric build identifier used by download URLs and patch operations
     /// </summary>
     public int Version { get; set; }
+
+    /// <summary>
+    /// The human-readable game version exposed by the source
+    /// </summary>
+    public string? VersionName { get; set; }
 
     /// <summary>
     /// URL to the PWR file for full download/patch.
@@ -189,6 +225,11 @@ public class MirrorSourceCache
 /// </summary>
 public class VersionsCacheSnapshot
 {
+    /// <summary>
+    /// Cache format version. Older snapshots are refreshed so newly supported version metadata is populated
+    /// </summary>
+    public int SchemaVersion { get; set; }
+
     /// <summary>
     /// When the cache was last updated (legacy, kept for backwards compatibility).
     /// </summary>
@@ -307,6 +348,11 @@ public class CachedPatchStep
     public int To { get; set; }
 
     /// <summary>
+    /// The human-readable version name reached by this patch, when supplied by the source
+    /// </summary>
+    public string? VersionName { get; set; }
+
+    /// <summary>
     /// URL to the PWR file (may contain expiring signature for official source).
     /// </summary>
     public string PwrUrl { get; set; } = "";
@@ -320,4 +366,46 @@ public class CachedPatchStep
     /// URL to the signature file.
     /// </summary>
     public string? SigUrl { get; set; }
+}
+
+internal static class JsonMetadataReader
+{
+    public static string? TryGetString(
+        IReadOnlyDictionary<string, JsonElement>? metadata,
+        params string[] names)
+    {
+        if (metadata == null)
+            return null;
+
+        foreach (var name in names)
+        {
+            var match = metadata.FirstOrDefault(item =>
+                string.Equals(item.Key, name, StringComparison.OrdinalIgnoreCase));
+
+            if (match.Value.ValueKind == JsonValueKind.String)
+            {
+                var value = match.Value.GetString();
+                if (!string.IsNullOrWhiteSpace(value))
+                    return value;
+            }
+
+            if (match.Value.ValueKind == JsonValueKind.Object)
+            {
+                foreach (var nestedKey in new[] { "version", "versionName", "name" })
+                {
+                    if (!match.Value.TryGetProperty(nestedKey, out var nestedName) ||
+                        nestedName.ValueKind != JsonValueKind.String)
+                    {
+                        continue;
+                    }
+
+                    var value = nestedName.GetString();
+                    if (!string.IsNullOrWhiteSpace(value))
+                        return value;
+                }
+            }
+        }
+
+        return null;
+    }
 }

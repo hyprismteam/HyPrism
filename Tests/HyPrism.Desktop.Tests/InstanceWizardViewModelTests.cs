@@ -8,6 +8,7 @@ using HyPrism.Core.Game;
 using HyPrism.Core.Game.Instances;
 using HyPrism.Core.Game.Launch;
 using HyPrism.Core.Game.Versions;
+using HyPrism.Core.Models;
 using HyPrism.Desktop.Features.Settings;
 using HyPrism.Desktop.Features.News;
 using HyPrism.Desktop.Localization;
@@ -146,4 +147,58 @@ public sealed class InstanceWizardViewModelTests
         Assert.Equal("release", viewModel.NewInstanceBranch);
         Assert.Equal([20, 19], viewModel.AvailableInstanceVersions.Select(item => item.Version));
     }
+
+    [AvaloniaFact]
+    public void VersionNamesAreDisplayedWithoutPrefixAndBuildEntriesAreListedLast()
+    {
+        var instances = new Mock<IInstanceRepository>();
+        var profiles = new Mock<IProfileManager>();
+        var profileRepository = new Mock<IProfileRepository>();
+        var launchCoordinator = new Mock<IGameLaunchCoordinator>();
+        var installationWorkflow = new Mock<IGameInstallationWorkflow>();
+        var gameProcess = new Mock<IGameProcessTracker>();
+        var progress = new Mock<IProgressReporter>();
+        var settings = new Mock<IDesktopSettingsStore>();
+        var news = new Mock<IHytaleNewsClient>();
+        var uriLauncher = new Mock<IExternalUriLauncher>();
+        var versionCatalog = new Mock<IGameVersionCatalog>();
+        var cachedVersions = new List<CachedVersionEntry>
+        {
+            new() { Version = 100, VersionName = "build-100" },
+            new() { Version = 102, VersionName = "2026.09.08-e1d69dd" },
+            new() { Version = 101, VersionName = "0.6.4" }
+        };
+
+        instances.Setup(service => service.GetCachedInstances()).Returns([]);
+        profiles.Setup(service => service.GetNick()).Returns("Wizard Test");
+        versionCatalog
+            .Setup(service => service.TryGetCachedVersionEntries(
+                "release",
+                It.IsAny<TimeSpan>(),
+                out cachedVersions))
+            .Returns(true);
+
+        using var viewModel = new MainWindowViewModel(
+            instances.Object,
+            profiles.Object,
+            profileRepository.Object,
+            launchCoordinator.Object,
+            installationWorkflow.Object,
+            gameProcess.Object,
+            progress.Object,
+            settings.Object,
+            news.Object,
+            uriLauncher.Object,
+            new HttpClient(),
+            new StringLocalizer("en-US"),
+            versionCatalog: versionCatalog.Object);
+
+        viewModel.OpenInstanceCreatorCommand.Execute(null);
+
+        Assert.Equal(
+            ["2026.09.08-e1d69dd", "0.6.4", "build-100"],
+            viewModel.AvailableInstanceVersions.Select(item => item.Label));
+        Assert.Equal("2026.09.08-e1d69dd", viewModel.SelectedNewInstanceVersion?.Label);
+    }
+
 }

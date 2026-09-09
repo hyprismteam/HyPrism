@@ -14,6 +14,11 @@ namespace HyPrism.Core.Game.Versions;
 /// </summary>
 public class VersionCache
 {
+    /// <summary>
+    /// Current on-disk cache format version
+    /// </summary>
+    public const int CurrentSchemaVersion = 2;
+
     private readonly string _appDir;
 
     /// <summary>
@@ -76,6 +81,9 @@ public class VersionCache
         Justification = "Public instance API is retained for source compatibility")]
     public bool IsBranchFresh(VersionsCacheSnapshot snapshot, string branch, TimeSpan maxAge)
     {
+        if (snapshot.SchemaVersion < CurrentSchemaVersion)
+            return false;
+
         if (snapshot.BranchFetchedAt.TryGetValue(branch, out var branchFetchedAt))
         {
             var branchAge = DateTime.UtcNow - branchFetchedAt;

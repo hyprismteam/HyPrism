@@ -917,7 +917,8 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
             var instance = _instances.CreateInstanceMeta(
                 branch,
                 version,
-                $"{FormatBranch(branch)} {FormatVersion(version)}");
+                $"{FormatBranch(branch)} {FormatVersion(version, SelectedNewInstanceVersion.VersionName)}",
+                versionName: SelectedNewInstanceVersion.VersionName);
             _managedInstance = _instances.FindInstanceById(instance.Id);
             IsInstanceCreatorOpen = false;
             ResetInstanceCreatorState();
@@ -2372,7 +2373,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
                 return new InstanceItemViewModel(
                     instance.Id,
                     instance.Name,
-                    FormatVersion(instance.Version),
+                    FormatVersion(instance.Version, instance.VersionName),
                     FormatBranch(instance.Branch),
                     instance.IsInstalled,
                     string.Equals(instance.Id, managedInstanceId, StringComparison.Ordinal));
@@ -2724,6 +2725,14 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         CancelInstanceVersionLoading();
 
         if (_versionCatalog is not null &&
+            _versionCatalog.TryGetCachedVersionEntries(branch, InstanceVersionCacheMaxAge, out var cachedVersionEntries))
+        {
+            IsInstanceVersionsLoading = false;
+            ApplyAvailableInstanceVersions(cachedVersionEntries);
+            return;
+        }
+
+        if (_versionCatalog is not null &&
             _versionCatalog.TryGetCachedVersions(branch, InstanceVersionCacheMaxAge, out var cachedVersions))
         {
             IsInstanceVersionsLoading = false;
@@ -2746,11 +2755,22 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
                 return;
             }
 
-            var versions = await _versionCatalog.GetVersionListAsync(branch, cancellationToken);
+            var versionResponse = await _versionCatalog.GetVersionListWithSourcesAsync(branch, cancellationToken);
             if (cancellationToken.IsCancellationRequested)
                 return;
 
-            ApplyAvailableInstanceVersions(versions);
+            if (versionResponse?.Versions.Count > 0)
+            {
+                ApplyAvailableInstanceVersions(versionResponse.Versions);
+            }
+            else
+            {
+                var versions = await _versionCatalog.GetVersionListAsync(branch, cancellationToken);
+                if (cancellationToken.IsCancellationRequested)
+                    return;
+
+                ApplyAvailableInstanceVersions(versions);
+            }
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -2790,9 +2810,12 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     private void ApplyAvailableInstanceVersions(IReadOnlyList<int> versions)
     {
         SelectedNewInstanceVersion = null;
-        var selectedVersion = versions.FirstOrDefault();
-        _availableInstanceVersions.ReplaceRange(versions
+        var orderedVersions = versions
+            .OrderByDescending(version => version)
             .Take(12)
+            .ToList();
+        var selectedVersion = orderedVersions.FirstOrDefault();
+        _availableInstanceVersions.ReplaceRange(orderedVersions
             .Select(version => new InstanceVersionItemViewModel(
                 version,
                 IsSelected: version == selectedVersion)));
@@ -2800,6 +2823,46 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         SelectedNewInstanceVersion = AvailableInstanceVersions.FirstOrDefault();
         OnPropertyChanged(nameof(HasAvailableInstanceVersions));
     }
+
+    private void ApplyAvailableInstanceVersions(IReadOnlyList<CachedVersionEntry> versions)
+    {
+        SelectedNewInstanceVersion = null;
+        var orderedVersions = versions
+            .OrderBy(version => IsLegacyBuildVersionName(version.VersionName))
+            .Take(12)
+            .ToList();
+        var selectedVersion = orderedVersions.FirstOrDefault();
+        _availableInstanceVersions.ReplaceRange(orderedVersions
+            .Select(version => new InstanceVersionItemViewModel(
+                version.Version,
+                version.VersionName,
+                isSelected: version.Version == selectedVersion?.Version)));
+
+        SelectedNewInstanceVersion = AvailableInstanceVersions.FirstOrDefault();
+        OnPropertyChanged(nameof(HasAvailableInstanceVersions));
+    }
+
+    private void ApplyAvailableInstanceVersions(IReadOnlyList<VersionInfo> versions)
+    {
+        SelectedNewInstanceVersion = null;
+        var orderedVersions = versions
+            .OrderBy(version => IsLegacyBuildVersionName(version.VersionName))
+            .Take(12)
+            .ToList();
+        var selectedVersion = orderedVersions.FirstOrDefault();
+        _availableInstanceVersions.ReplaceRange(orderedVersions
+            .Select(version => new InstanceVersionItemViewModel(
+                version.Version,
+                version.VersionName,
+                isSelected: version.Version == selectedVersion?.Version)));
+
+        SelectedNewInstanceVersion = AvailableInstanceVersions.FirstOrDefault();
+        OnPropertyChanged(nameof(HasAvailableInstanceVersions));
+    }
+
+    private static bool IsLegacyBuildVersionName(string? versionName)
+        => !string.IsNullOrWhiteSpace(versionName) &&
+           versionName.TrimStart().StartsWith("build", StringComparison.OrdinalIgnoreCase);
 
     private void RefreshAvailableInstanceVersionSelection(int selectedVersion)
     {
@@ -3310,9 +3373,9 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         }
 
         SelectedInstanceName = _selectedInstance.Name;
-        SelectedInstanceMeta = $"{FormatBranch(_selectedInstance.Branch)}  ·  {FormatVersion(_selectedInstance.Version)}";
+        SelectedInstanceMeta = $"{FormatBranch(_selectedInstance.Branch)}  ·  {FormatVersion(_selectedInstance.Version, _selectedInstance.VersionName)}";
         SelectedInstanceBranch = FormatBranch(_selectedInstance.Branch);
-        SelectedInstanceVersion = FormatVersion(_selectedInstance.Version);
+        SelectedInstanceVersion = FormatVersion(_selectedInstance.Version, _selectedInstance.VersionName);
         SelectedInstancePlayTime = FormatPlayTime(GetSelectedInstancePlayTimeSeconds());
         SelectedInstanceState = _selectedInstance.IsInstalled
             ? _localizer["instances.status.ready"]
@@ -3345,7 +3408,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
 
         ManagedInstanceName = _managedInstance.Name;
         ManagedInstanceBranch = FormatBranch(_managedInstance.Branch);
-        ManagedInstanceVersion = FormatVersion(_managedInstance.Version);
+        ManagedInstanceVersion = FormatVersion(_managedInstance.Version, _managedInstance.VersionName);
         ManagedInstancePlayTime = FormatPlayTime(GetManagedInstancePlayTimeSeconds());
         ManagedInstanceState = _managedInstance.IsInstalled
             ? _localizer["instances.status.ready"]
@@ -3401,8 +3464,10 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         OnPropertyChanged(string.Empty);
     }
 
-    private string FormatVersion(int version)
-        => version <= 0 ? _localizer["common.latest"] : $"v{version}";
+    private string FormatVersion(int version, string? versionName)
+        => version <= 0
+            ? _localizer["common.latest"]
+            : string.IsNullOrWhiteSpace(versionName) ? version.ToString() : versionName;
 
     private string FormatBranch(string branch)
         => branch.Contains("pre", StringComparison.OrdinalIgnoreCase)
