@@ -50,6 +50,7 @@ public sealed partial class App : Application
             var mainWindow = new MainWindow();
             var uriLauncher = new ExternalUriLauncher(() => mainWindow);
             var filePicker = new FilePicker(() => mainWindow);
+            mainWindow.DataContext = new StartupLoadingViewModel(localizer);
             desktop.MainWindow = mainWindow;
 
             desktop.Exit += OnDesktopExit;

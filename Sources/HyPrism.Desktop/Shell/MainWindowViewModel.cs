@@ -29,7 +29,7 @@ using HyPrism.Core.Infrastructure;
 
 namespace HyPrism.Desktop.Shell;
 
-public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
+public sealed partial class MainWindowViewModel : ObservableObject, IDisposable, IStartupLoadingState
 {
     private const string InstancesPage = "instances";
     private const string NewsPage = "news";

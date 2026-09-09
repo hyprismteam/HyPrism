@@ -87,14 +87,14 @@ public sealed partial class MainWindow : Window
         if (DataContext is MainWindowViewModel viewModel && _usesWideNewsLayout is { } useWideLayout)
             viewModel.IsWideNewsLayout = useWideLayout;
 
-        if (DataContext is MainWindowViewModel startupViewModel)
+        if (DataContext is IStartupLoadingState startupViewModel)
             ApplyStartupLoadingState(startupViewModel.IsStartupLoading);
     }
 
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName == nameof(MainWindowViewModel.IsStartupLoading) &&
-            DataContext is MainWindowViewModel startupViewModel)
+        if (e.PropertyName == nameof(IStartupLoadingState.IsStartupLoading) &&
+            DataContext is IStartupLoadingState startupViewModel)
         {
             ApplyStartupLoadingState(startupViewModel.IsStartupLoading);
         }
@@ -182,7 +182,7 @@ public sealed partial class MainWindow : Window
 
         Dispatcher.UIThread.Post(() =>
         {
-            if (DataContext is not MainWindowViewModel { IsStartupLoading: true })
+            if (DataContext is not IStartupLoadingState { IsStartupLoading: true })
                 return;
 
             StartupLoadingContent.Opacity = 1;
@@ -210,7 +210,7 @@ public sealed partial class MainWindow : Window
 
         await Task.Delay(440);
         if (transitionVersion != _startupTransitionVersion ||
-            DataContext is MainWindowViewModel { IsStartupLoading: true })
+            DataContext is IStartupLoadingState { IsStartupLoading: true })
         {
             return;
         }
