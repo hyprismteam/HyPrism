@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 using System.Text.Json;
-using HyPrism.Core.Accounts;
+using HyPrism.Core.Migrations;
 using HyPrism.Core.Models;
 
 namespace HyPrism.Core.Infrastructure;
@@ -14,6 +14,7 @@ namespace HyPrism.Core.Infrastructure;
 public class JsonConfigStore : IConfigStore
 {
     private readonly string _configPath;
+    private readonly bool _deferLegacyMigrations;
     private Config _config;
 
     /// <inheritdoc/>
@@ -24,11 +25,12 @@ public class JsonConfigStore : IConfigStore
     /// Loads existing configuration or creates a new one with default values.
     /// </summary>
     /// <param name="appDataPath">The application data directory path where Config.json is stored.</param>
-    public JsonConfigStore(string appDataPath)
+    public JsonConfigStore(string appDataPath, bool deferLegacyMigrations = false)
     {
         Directory.CreateDirectory(appDataPath);
         _configPath = LauncherJsonFile.GetPath(appDataPath, "Config.json", "config.json");
-        _config = LoadConfig();
+        _deferLegacyMigrations = deferLegacyMigrations;
+        _config = LoadConfig(applyLegacyMigrations: !deferLegacyMigrations);
     }
 
     /// <summary>
@@ -36,7 +38,7 @@ public class JsonConfigStore : IConfigStore
     /// Creates a new configuration with defaults if file doesn't exist or is invalid.
     /// </summary>
     /// <returns>The loaded or newly created configuration.</returns>
-    private Config LoadConfig()
+    private Config LoadConfig(bool applyLegacyMigrations)
     {
         Config config;
 
@@ -45,18 +47,23 @@ public class JsonConfigStore : IConfigStore
             if (File.Exists(_configPath))
             {
                 var json = File.ReadAllText(_configPath);
-                json = LegacyProfileConfigMigration.Migrate(
-                  Path.GetDirectoryName(_configPath)!,
-                  json,
-                  out var profileConfigMigrated);
+                var profileConfigMigrated = false;
+                if (applyLegacyMigrations)
+                {
+                    json = LegacyProfileConfigMigration.Migrate(
+                        Path.GetDirectoryName(_configPath)!,
+                        json,
+                        out profileConfigMigrated);
+                }
                 config = JsonSerializer.Deserialize<Config>(json, JsonDefaults.CaseInsensitive) ?? new Config();
 
                 Logger.Info("Config", $"Loaded config - Language: '{config.Language}'");
 
-                bool needsSave = profileConfigMigrated || !UsesPascalCaseRootProperties(json);
+                bool needsSave = applyLegacyMigrations &&
+                                 (profileConfigMigrated || !UsesPascalCaseRootProperties(json));
 
 #pragma warning disable CS0618 // Using obsolete fields for migration
-                if (config.VersionType == "latest")
+                if (applyLegacyMigrations && config.VersionType == "latest")
                 {
                     config.VersionType = "release";
                     needsSave = true;
@@ -83,6 +90,18 @@ public class JsonConfigStore : IConfigStore
         _config = config;
         SaveConfig();
         return config;
+    }
+
+    /// <summary>
+    /// Applies deferred legacy storage migrations and reloads the canonical configuration.
+    /// The Core migration runner calls this before any repository reads configuration-backed data.
+    /// </summary>
+    public void ApplyDeferredMigrations()
+    {
+        if (!_deferLegacyMigrations)
+            return;
+
+        _config = LoadConfig(applyLegacyMigrations: true);
     }
 
     /// <inheritdoc/>

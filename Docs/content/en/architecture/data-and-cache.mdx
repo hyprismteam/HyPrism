@@ -30,6 +30,7 @@ HYPRISM_DATA="$hyprism_data" dotnet run \
 | Location relative to application data | Contents |
 | --- | --- |
 | `Config.json` | [Settings and selected identifiers](/docs/reference/configuration) |
+| `MigrationState.json` | Completed durable Core data migrations |
 | `Profiles/Profiles.json` | Profile list and identity metadata |
 | `Profiles/<profile-id>/` | Profile data, sessions, skins, avatars |
 | `Instances/Instances.json` | Registry and display order under the instance root |
@@ -75,6 +76,10 @@ Instance logs capture game standard output and standard error. Local Node logs r
 
 HyPrism-owned JSON uses PascalCase filenames and property names. `LauncherJsonFile` recognizes earlier filenames and moves them to canonical names; deserialization stays case-insensitive
 
+`CoreMigrationRunner` applies local data migrations before Desktop reads instances, profiles, sessions, or mods. It records a durable step only after the step returns successfully, while the migration itself remains safe to rerun after an interrupted launch
+
 `LegacyProfileConfigMigration` moves old identity fields into the profile store. Instance and profile migrations preserve compatibility with older directory layouts. Cache migration moves old PWR downloads and remote images to the current directories
+
+Version names are retryable enrichment rather than a one-time migration. HyPrism fills missing names in instance metadata when a configured source can resolve the stored build identifier
 
 Keep migration tests based on temporary copies of old data, and avoid changing game-owned filenames or external protocol casing

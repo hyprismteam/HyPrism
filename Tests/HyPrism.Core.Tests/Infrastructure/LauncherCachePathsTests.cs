@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 using HyPrism.Core.Infrastructure;
+using HyPrism.Core.Migrations;
 
 namespace HyPrism.Core.Tests.Infrastructure;
 
@@ -26,7 +27,7 @@ public sealed class LauncherCachePathsTests
                 [4, 5, 6]);
             File.WriteAllText(Path.Combine(cacheDirectory, "unrelated.json"), "{}");
 
-            LauncherCachePaths.MigrateLegacyGameDownloads(appDirectory);
+            GameDownloadCacheMigration.Migrate(appDirectory);
 
             var downloadsDirectory = LauncherCachePaths.GetGameDownloadsDirectory(appDirectory);
             Assert.True(File.Exists(Path.Combine(

@@ -21,6 +21,8 @@ A visible settings field may preserve an older preference before a corresponding
 
 ## Existing data
 
-Runtime compatibility remains for older profile, instance, configuration, and cache layouts. Those migrations belong to the owning Core repository or storage service and need fixture-based tests
+Runtime compatibility remains for older profile, instance, configuration, and cache layouts. `CoreMigrationRunner` applies those migrations before Desktop creates view models that read player data. Completed durable steps are recorded in `MigrationState.json`; version-name enrichment is retried when source data becomes available
+
+Migrations belong in `Sources/HyPrism.Core/Migrations/` and need fixture-based tests. Hosts may invoke the runner, but must not contain migration rules
 
 Do not restore the removed web bridge for new work. Historical implementation is available in version control when needed to understand old data

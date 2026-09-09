@@ -2,10 +2,11 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 using System.Text.Json;
+using HyPrism.Core.Accounts;
 using HyPrism.Core.Models;
 using HyPrism.Core.Infrastructure;
 
-namespace HyPrism.Core.Accounts;
+namespace HyPrism.Core.Migrations;
 
 /// <summary>
 /// Provides helpers for migrating legacy profile folder structures to the current

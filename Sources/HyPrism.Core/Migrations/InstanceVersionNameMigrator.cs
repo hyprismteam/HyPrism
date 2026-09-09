@@ -2,9 +2,10 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 using HyPrism.Core.Game.Versions;
+using HyPrism.Core.Game.Instances;
 using HyPrism.Core.Infrastructure;
 
-namespace HyPrism.Core.Game.Instances;
+namespace HyPrism.Core.Migrations;
 
 /// <summary>
 /// Backfills human-readable version names for instances created before version names were stored

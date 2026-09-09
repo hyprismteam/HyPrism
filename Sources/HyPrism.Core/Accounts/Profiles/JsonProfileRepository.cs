@@ -7,6 +7,7 @@ using HyPrism.Core.Models;
 using HyPrism.Core.Infrastructure;
 using HyPrism.Core.Game;
 using HyPrism.Core.Game.Instances;
+using HyPrism.Core.Migrations;
 namespace HyPrism.Core.Accounts;
 
 /// <summary>
@@ -669,6 +670,24 @@ public class JsonProfileRepository : IProfileRepository
     }
 
     /// <inheritdoc/>
+    public void MigrateLegacyModsLinks()
+    {
+        try
+        {
+            foreach (var instance in _instances.GetInstalledInstances())
+                EnsureInstanceModsDirectory(null, instance.Path);
+
+            // Preserve the old selected-instance fallback for unfinished instances that
+            // cannot yet be returned by GetInstalledInstances.
+            InitializeProfileModsSymlink();
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning("Mods", $"Failed to migrate legacy profile mod links: {ex.Message}");
+        }
+    }
+
+    /// <inheritdoc/>
     public string GetProfilesFolder()
     {
         return LauncherUtilities.GetProfilesRoot(_appDir);
@@ -691,11 +710,11 @@ public class JsonProfileRepository : IProfileRepository
     /// Ensures the active instance has a real UserData/Mods directory.
     /// If a legacy profile symlink/junction is detected, migrates files back
     /// </summary>
-    private void EnsureInstanceModsDirectory(Profile? profile)
+    private void EnsureInstanceModsDirectory(Profile? profile, string? instancePath = null)
     {
         try
         {
-            var versionPath = TryGetCurrentExistingInstancePath();
+            var versionPath = instancePath ?? TryGetCurrentExistingInstancePath();
             if (string.IsNullOrWhiteSpace(versionPath))
             {
                 Logger.Info("Mods", "No existing instance found for mods directory initialization");
@@ -757,11 +776,15 @@ public class JsonProfileRepository : IProfileRepository
 
             try
             {
+                // Deleting a reparse point without recursion removes the link itself.
+                // Never recurse here: on platforms that follow a junction it could
+                // delete the profile directory that contains the user's mod files.
                 Directory.Delete(gameModsPath, false);
             }
-            catch
+            catch (Exception ex)
             {
-                Directory.Delete(gameModsPath, true);
+                Logger.Warning("Mods", $"Could not remove legacy mods link '{gameModsPath}': {ex.Message}");
+                return;
             }
 
             Directory.CreateDirectory(gameModsPath);

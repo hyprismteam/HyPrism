@@ -6,6 +6,7 @@ using HyPrism.Core.Application.Progress;
 using HyPrism.Core.Game.Patching;
 using HyPrism.Core.Game.Instances;
 using HyPrism.Core.Game.Versions;
+using HyPrism.Core.Migrations;
 
 namespace HyPrism.Core.Game.Download;
 
@@ -52,7 +53,7 @@ public class PatchManager : IPatchManager
         _instances = instances;
         _progress = progress;
         _httpClient = httpClient;
-        LauncherCachePaths.MigrateLegacyGameDownloads(appPath.AppDir);
+        GameDownloadCacheMigration.Migrate(appPath.AppDir);
         _downloadsCacheDirectory = LauncherCachePaths.GetGameDownloadsDirectory(appPath.AppDir);
     }
 

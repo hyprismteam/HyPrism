@@ -17,6 +17,7 @@ using HyPrism.Core.Game.Launch;
 using HyPrism.Core.Game.Mods;
 using HyPrism.Core.Game.Sources;
 using HyPrism.Core.Game.Versions;
+using HyPrism.Core.Migrations;
 
 namespace HyPrism.Core;
 
@@ -66,7 +67,9 @@ public static partial class Bootstrapper
             // Config is registered as both concrete (for HytaleVersionSource/HytaleAuthenticator that
             // need it before IConfigStore resolution) and as interface for all other consumers.
             services.AddSingleton<JsonConfigStore>(sp =>
-                new JsonConfigStore(sp.GetRequiredService<AppPathConfiguration>().AppDir));
+                new JsonConfigStore(
+                    sp.GetRequiredService<AppPathConfiguration>().AppDir,
+                    deferLegacyMigrations: true));
             services.AddSingleton<IConfigStore>(sp => sp.GetRequiredService<JsonConfigStore>());
 
             services.AddSingleton(sp =>
@@ -223,6 +226,9 @@ public static partial class Bootstrapper
                     sp.GetRequiredService<IUserIdentityProvider>()));
             services.AddSingleton<IProfileRepository>(sp => sp.GetRequiredService<JsonProfileRepository>());
 
+            services.AddSingleton<MigrationStateStore>();
+            services.AddSingleton<CoreMigrationRunner>();
+
             services.AddSingleton(sp =>
                 new HytaleAuthenticator(
                     sp.GetRequiredService<HttpClient>(),
@@ -277,8 +283,10 @@ public static partial class Bootstrapper
         IServiceProvider services,
         CancellationToken cancellationToken = default)
     {
+        await services.GetRequiredService<CoreMigrationRunner>()
+            .RunAsync(cancellationToken)
+            .ConfigureAwait(false);
         await EnsureCurseForgeKeyAsync(services, cancellationToken);
-        _ = services.GetRequiredService<InstanceVersionNameMigrator>().MigrateAsync(cancellationToken);
     }
 
     /// <summary>

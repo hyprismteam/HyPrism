@@ -50,38 +50,16 @@ public sealed partial class App : Application
             var mainWindow = new MainWindow();
             var uriLauncher = new ExternalUriLauncher(() => mainWindow);
             var filePicker = new FilePicker(() => mainWindow);
-            _mainWindowViewModel = new MainWindowViewModel(
-                services.GetRequiredService<IInstanceRepository>(),
-                services.GetRequiredService<IProfileManager>(),
-                services.GetRequiredService<IProfileRepository>(),
-                services.GetRequiredService<IGameLaunchCoordinator>(),
-                services.GetRequiredService<IGameInstallationWorkflow>(),
-                services.GetRequiredService<IGameProcessTracker>(),
-                services.GetRequiredService<IProgressReporter>(),
-                settings,
-                services.GetRequiredService<IHytaleNewsClient>(),
-                uriLauncher,
-                services.GetRequiredService<HttpClient>(),
-                localizer,
-                filePicker,
-                services.GetRequiredService<IGitHubClient>(),
-                services.GetRequiredService<IMirrorCatalog>(),
-                services.GetRequiredService<IMirrorDiscovery>(),
-                services.GetRequiredService<IGameVersionCatalog>(),
-                services.GetRequiredService<IModManager>(),
-                services.GetRequiredService<IHytaleAuthenticator>(),
-                services.GetRequiredService<RemoteImageCache>(),
-                services.GetRequiredService<IGameConsoleService>(),
-                services.GetRequiredService<IGpuProvider>());
-
-            _mainWindowViewModel.BeginStartupLoading();
-            mainWindow.DataContext = _mainWindowViewModel;
             desktop.MainWindow = mainWindow;
 
             desktop.Exit += OnDesktopExit;
             _bootstrapTask = InitializeAsync(
                 services,
-                _mainWindowViewModel,
+                mainWindow,
+                settings,
+                uriLauncher,
+                filePicker,
+                localizer,
                 _bootstrapCancellation.Token);
         }
 
@@ -96,16 +74,38 @@ public sealed partial class App : Application
         Logger.Shutdown();
     }
 
-    private static async Task InitializeAsync(
+    private async Task InitializeAsync(
         IServiceProvider services,
-        MainWindowViewModel viewModel,
+        MainWindow mainWindow,
+        IDesktopSettingsStore settings,
+        IExternalUriLauncher uriLauncher,
+        IFilePicker filePicker,
+        StringLocalizer localizer,
         CancellationToken cancellationToken)
     {
+        await InitializeCoreAsync(services, cancellationToken);
+
+        if (cancellationToken.IsCancellationRequested)
+            return;
+
+        var viewModel = await Dispatcher.UIThread.InvokeAsync(() =>
+        {
+            var created = CreateMainWindowViewModel(
+                services,
+                settings,
+                uriLauncher,
+                filePicker,
+                localizer);
+            created.BeginStartupLoading();
+            mainWindow.DataContext = created;
+            _mainWindowViewModel = created;
+            return created;
+        });
+
         var minimumVisibleTime = Task.Delay(TimeSpan.FromMilliseconds(950), cancellationToken);
         try
         {
             await Task.WhenAll(
-                InitializeCoreAsync(services, cancellationToken),
                 PreloadDynamicContentAsync(viewModel, cancellationToken),
                 minimumVisibleTime);
         }
@@ -116,6 +116,36 @@ public sealed partial class App : Application
 
         await Dispatcher.UIThread.InvokeAsync(viewModel.CompleteStartupLoading);
     }
+
+    private static MainWindowViewModel CreateMainWindowViewModel(
+        IServiceProvider services,
+        IDesktopSettingsStore settings,
+        IExternalUriLauncher uriLauncher,
+        IFilePicker filePicker,
+        StringLocalizer localizer)
+        => new(
+            services.GetRequiredService<IInstanceRepository>(),
+            services.GetRequiredService<IProfileManager>(),
+            services.GetRequiredService<IProfileRepository>(),
+            services.GetRequiredService<IGameLaunchCoordinator>(),
+            services.GetRequiredService<IGameInstallationWorkflow>(),
+            services.GetRequiredService<IGameProcessTracker>(),
+            services.GetRequiredService<IProgressReporter>(),
+            settings,
+            services.GetRequiredService<IHytaleNewsClient>(),
+            uriLauncher,
+            services.GetRequiredService<HttpClient>(),
+            localizer,
+            filePicker,
+            services.GetRequiredService<IGitHubClient>(),
+            services.GetRequiredService<IMirrorCatalog>(),
+            services.GetRequiredService<IMirrorDiscovery>(),
+            services.GetRequiredService<IGameVersionCatalog>(),
+            services.GetRequiredService<IModManager>(),
+            services.GetRequiredService<IHytaleAuthenticator>(),
+            services.GetRequiredService<RemoteImageCache>(),
+            services.GetRequiredService<IGameConsoleService>(),
+            services.GetRequiredService<IGpuProvider>());
 
     private static async Task InitializeCoreAsync(
         IServiceProvider services,

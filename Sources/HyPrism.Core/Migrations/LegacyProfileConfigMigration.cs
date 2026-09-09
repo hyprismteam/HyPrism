@@ -7,7 +7,7 @@ using System.Text.Json.Nodes;
 using HyPrism.Core.Infrastructure;
 using HyPrism.Core.Models;
 
-namespace HyPrism.Core.Accounts;
+namespace HyPrism.Core.Migrations;
 
 /// <summary>
 /// Moves profile identity out of legacy config fields into Profiles/Profiles.json

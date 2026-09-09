@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 using HyPrism.Core.Game.Instances;
+using HyPrism.Core.Migrations;
 using HyPrism.Core.Game.Versions;
 using HyPrism.Core.Models;
 

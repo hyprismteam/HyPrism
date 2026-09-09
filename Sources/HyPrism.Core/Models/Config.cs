@@ -3,11 +3,21 @@
 
 using System;
 using System.Collections.Generic;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace HyPrism.Core.Models;
 
 public class Config
 {
+    /// <summary>
+    /// Values owned by removed hosts or unavailable features are retained when the
+    /// configuration is rewritten. A dedicated migration may later give one of them
+    /// a supported destination without silently losing the user's preference.
+    /// </summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? UnknownProperties { get; set; }
+
     /// <summary>Launcher config schema version string.</summary>
     public string Version { get; set; } = "2.0.0";
     /// <summary>

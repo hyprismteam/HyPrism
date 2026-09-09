@@ -1,7 +1,7 @@
 // Copyright (C) 2026 HyPrism Launcher
 // SPDX-License-Identifier: GPL-3.0-only
 
-namespace HyPrism.Core.Game.Instances;
+namespace HyPrism.Core.Migrations;
 
 /// <summary>
 /// Handles one-time and on-startup migrations of legacy instance folder structures

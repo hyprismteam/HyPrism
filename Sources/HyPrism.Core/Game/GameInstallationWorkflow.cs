@@ -12,6 +12,7 @@ using HyPrism.Core.Game.Instances;
 using HyPrism.Core.Game.Launch;
 using HyPrism.Core.Game.Versions;
 using HyPrism.Core.Accounts;
+using HyPrism.Core.Migrations;
 
 namespace HyPrism.Core.Game;
 
@@ -80,7 +81,7 @@ public class GameInstallationWorkflow : IGameInstallationWorkflow
         _patchManager = patchManager;
         _gameLauncher = gameLauncher;
         _httpClient = httpClient;
-        LauncherCachePaths.MigrateLegacyGameDownloads(appPath.AppDir);
+        GameDownloadCacheMigration.Migrate(appPath.AppDir);
         _downloadsCacheDirectory = LauncherCachePaths.GetGameDownloadsDirectory(appPath.AppDir);
     }
 

@@ -70,8 +70,6 @@ public class HytaleAuthenticator : IHytaleAuthenticator
         _callbackPageRenderer = callbackPageRenderer ?? DefaultOAuthCallbackPageRenderer.Instance;
 
         LoadSession();
-
-        MigrateOldSessionIfNeeded();
     }
 
     /// <summary>
@@ -665,79 +663,6 @@ public class HytaleAuthenticator : IHytaleAuthenticator
     /// Falls back to app root if no profile is active (legacy behavior)
     /// </summary>
     private string GetSessionFilePath() => TokenStore.GetSessionFilePath(GetCurrentProfileFolder(), _appDir);
-
-    /// <summary>
-    /// Gets the old (legacy) session file path at app root
-    /// </summary>
-    private string GetLegacySessionFilePath() => TokenStore.GetLegacySessionFilePath(_appDir);
-
-    /// <summary>
-    /// Migrates old global session file to current profile folder if needed
-    /// </summary>
-    private void MigrateOldSessionIfNeeded()
-    {
-        try
-        {
-            var legacyPath = GetLegacySessionFilePath();
-            var profileFolder = GetCurrentProfileFolder();
-
-            if (profileFolder == null || CurrentSession != null || !File.Exists(legacyPath))
-                return;
-
-            var profileSessionPath = TokenStore.GetSessionFilePath(profileFolder, _appDir);
-
-            if (File.Exists(profileSessionPath))
-                return;
-
-            Directory.CreateDirectory(profileFolder);
-            File.Copy(legacyPath, profileSessionPath);
-            Logger.Info("HytaleAuth", $"Migrated session from root to profile folder");
-
-            LoadSession();
-
-            if (CurrentSession != null)
-            {
-                var config = _configStore.Configuration;
-                var selectedId = config.SelectedProfileId;
-                if (!string.IsNullOrEmpty(selectedId))
-                {
-                    var profilesPath = LauncherJsonFile.GetPath(
-                        LauncherUtilities.GetProfilesRoot(_appDir),
-                        "Profiles.json",
-                        "profiles.json");
-                    if (File.Exists(profilesPath))
-                    {
-                        try
-                        {
-                            var profiles = JsonSerializer.Deserialize<List<Profile>>(
-                                File.ReadAllText(profilesPath),
-                                JsonDefaults.CaseInsensitiveIndented) ?? [];
-                            var activeProfile = profiles.FirstOrDefault(p => p.Id == selectedId);
-                            if (activeProfile != null)
-                            {
-                                activeProfile.IsOfficial = true;
-                                File.WriteAllText(
-                                    profilesPath,
-                                    JsonSerializer.Serialize(profiles, JsonDefaults.CaseInsensitiveIndented));
-                                Logger.Info("HytaleAuth", $"Marked profile '{activeProfile.Name}' as official after migration");
-                            }
-                        }
-                        catch (Exception ex2)
-                        {
-                            Logger.Warning("HytaleAuth", $"Failed to mark profile as official: {ex2.Message}");
-                        }
-                    }
-                }
-            }
-
-            try { File.Delete(legacyPath); }
-            catch (Exception ex) { Logger.Warning("HytaleAuth", $"Could not delete old session file: {ex.Message}"); }
-        }
-        catch (Exception ex)
-        {
-            Logger.Warning("HytaleAuth", $"Session migration failed: {ex.Message}");
-        }
-    }
 
     /// <summary>
     /// Reloads session for the current profile. Call this after switching profiles

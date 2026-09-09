@@ -109,6 +109,12 @@ public interface IProfileRepository
     void InitializeProfileModsSymlink();
 
     /// <summary>
+    /// Repairs legacy profile-backed mod links for every discovered instance.
+    /// This is intended for startup migrations and is safe to repeat.
+    /// </summary>
+    void MigrateLegacyModsLinks();
+
+    /// <summary>
     /// Gets the path to the profiles root folder
     /// </summary>
     /// <returns>The absolute path to the profiles folder</returns>

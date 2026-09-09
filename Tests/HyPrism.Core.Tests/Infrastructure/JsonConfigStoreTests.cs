@@ -171,6 +171,32 @@ public class JsonConfigStoreTests : IDisposable
         AssertConfigContainsNoLegacyProfileFields();
     }
 
+    [Fact]
+    public void Constructor_RemovedHostSettings_PreservesThemWhenCanonicalizingConfig()
+    {
+        File.WriteAllText(Path.Combine(_tempDir, "config.json"), """
+            {
+              "launcherBranch": "beta",
+              "installedLauncherBranch": "release",
+              "launchAfterDownload": false,
+              "accentColor": "#112233",
+              "backgroundMode": "custom.png",
+              "useDualAuth": false
+            }
+            """);
+
+        _ = new JsonConfigStore(_tempDir);
+
+        using var document = JsonDocument.Parse(File.ReadAllText(Path.Combine(_tempDir, "Config.json")));
+        var properties = document.RootElement.EnumerateObject()
+            .ToDictionary(property => property.Name, property => property.Value, StringComparer.OrdinalIgnoreCase);
+
+        Assert.Equal("beta", properties["launcherBranch"].GetString());
+        Assert.False(properties["launchAfterDownload"].GetBoolean());
+        Assert.Equal("#112233", properties["accentColor"].GetString());
+        Assert.False(properties["useDualAuth"].GetBoolean());
+    }
+
 
     [Fact]
     public void Constructor_CorruptJson_CreatesDefaultConfig()

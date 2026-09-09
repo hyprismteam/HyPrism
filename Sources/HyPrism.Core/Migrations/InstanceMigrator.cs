@@ -3,10 +3,11 @@
 
 using System.Runtime.InteropServices;
 using System.Text.Json;
+using HyPrism.Core.Game.Instances;
 using HyPrism.Core.Models;
 using HyPrism.Core.Infrastructure;
 
-namespace HyPrism.Core.Game.Instances;
+namespace HyPrism.Core.Migrations;
 
 /// <summary>
 /// Handles one-time and on-startup migrations of legacy instance folder structures
