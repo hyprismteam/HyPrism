@@ -152,7 +152,9 @@ public sealed class StartupLoadingTests
         news.Verify(service => service.GetNewsAsync(It.IsAny<int>()), Times.Once);
 
         viewModel.CompleteStartupLoading();
-        await Task.Delay(480);
+        await WaitUntilAsync(
+            () => !startupScreen.IsVisible,
+            TimeSpan.FromSeconds(2));
         Dispatcher.UIThread.RunJobs();
 
         Assert.False(startupScreen.IsVisible);
