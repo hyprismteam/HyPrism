@@ -2452,7 +2452,13 @@ You may need to reinstall the game if switching drives.</value>
     <value>Checking...</value>
   </data>
   <data name="settings.networkSettings.authServerHint" xml:space="preserve">
-    <value>Select the authentication server used for online play.</value>
+    <value>Add the address of the server used to authenticate online play.</value>
+  </data>
+  <data name="settings.networkSettings.authServerPlaceholder" xml:space="preserve">
+    <value>For example, sessions.example.com</value>
+  </data>
+  <data name="settings.networkSettings.authServerErrorTooltip" xml:space="preserve">
+    <value>Auth server is unreachable</value>
   </data>
   <data name="settings.networkSettings.authServerOfficialNote" xml:space="preserve">
     <value>Official servers are always considered available.</value>

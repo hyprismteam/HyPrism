@@ -105,11 +105,12 @@ public sealed class WizardScreenTransitionTests
     public async Task RotatingVisualRunsOnlyWhileAttachedAndActive()
     {
         var spinner = new Border();
+        var spinnerHost = new Border { Child = spinner };
         RotatingVisual.SetIsActive(spinner, true);
 
         Assert.Null(spinner.RenderTransform);
 
-        var window = new Window { Content = spinner };
+        var window = new Window { Content = spinnerHost };
         window.Show();
         Dispatcher.UIThread.RunJobs();
         var rotation = Assert.IsType<RotateTransform>(spinner.RenderTransform);
@@ -126,6 +127,16 @@ public sealed class WizardScreenTransitionTests
         await WaitForRenderStateAsync(
             () => rotation.Angle is > 0 and < 360,
             "reactivated rotating visual to advance");
+        Assert.InRange(rotation.Angle, 1, 359);
+
+        spinnerHost.IsVisible = false;
+        Dispatcher.UIThread.RunJobs();
+        Assert.Equal(0, rotation.Angle);
+
+        spinnerHost.IsVisible = true;
+        await WaitForRenderStateAsync(
+            () => rotation.Angle is > 0 and < 360,
+            "rotating visual under a restored ancestor to advance");
         Assert.InRange(rotation.Angle, 1, 359);
 
         window.Close();

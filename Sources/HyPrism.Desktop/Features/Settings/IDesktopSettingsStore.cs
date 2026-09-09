@@ -29,6 +29,9 @@ public interface IDesktopSettingsStore
     /// <summary>Gets or sets the authentication service domain</summary>
     string AuthDomain { get; set; }
 
+    /// <summary>Gets or sets user-added authentication service domains</summary>
+    IReadOnlyList<string> AuthServers { get; set; }
+
     /// <summary>Gets or sets custom Java arguments</summary>
     string JavaArguments { get; set; }
 

@@ -2122,7 +2122,13 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>认证服务器</value>
   </data>
   <data name="settings.networkSettings.authServerHint" xml:space="preserve">
-    <value>选择用于在线游戏的认证服务器。</value>
+    <value>输入用于在线游戏身份验证的服务器地址。</value>
+  </data>
+  <data name="settings.networkSettings.authServerPlaceholder" xml:space="preserve">
+    <value>例如：sessions.example.com</value>
+  </data>
+  <data name="settings.networkSettings.authServerErrorTooltip" xml:space="preserve">
+    <value>认证服务器无法访问</value>
   </data>
   <data name="settings.networkSettings.currentServer" xml:space="preserve">
     <value>当前服务器</value>

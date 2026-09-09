@@ -2122,7 +2122,13 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>인증 서버</value>
   </data>
   <data name="settings.networkSettings.authServerHint" xml:space="preserve">
-    <value>온라인 플레이에 사용되는 인증 서버를 선택하세요.</value>
+    <value>온라인 플레이 인증에 사용할 서버 주소를 입력하세요.</value>
+  </data>
+  <data name="settings.networkSettings.authServerPlaceholder" xml:space="preserve">
+    <value>예: sessions.example.com</value>
+  </data>
+  <data name="settings.networkSettings.authServerErrorTooltip" xml:space="preserve">
+    <value>인증 서버에 연결할 수 없습니다</value>
   </data>
   <data name="settings.networkSettings.currentServer" xml:space="preserve">
     <value>현재 서버</value>

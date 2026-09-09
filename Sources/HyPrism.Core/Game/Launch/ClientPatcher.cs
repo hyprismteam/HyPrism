@@ -472,7 +472,7 @@ public class ClientPatcher
     private static int PatchDiscordUrl(byte[] data)
     {
         string oldUrl = ".gg/hytale";
-        string newUrl = ".gg/MHkEjepMQ7";
+        string newUrl = ".gg/hytale"; // temp
 
         byte[] oldBytes = StringToLengthPrefixed(oldUrl);
         byte[] newBytes = StringToLengthPrefixed(newUrl);
@@ -495,7 +495,7 @@ public class ClientPatcher
     {
         var (mode, mainDomain, subdomainPrefix) = GetDomainStrategy();
 
-        Logger.Info("Patcher", "=== Client Patcher v1.0 ===", false);
+        Logger.Info("Patcher", "=== Client Patcher ===", false);
         Logger.Info("Patcher", $"Target: {clientPath}", false);
         Logger.Info("Patcher", $"Domain: {_targetDomain} ({_targetDomain.Length} chars)", false);
 

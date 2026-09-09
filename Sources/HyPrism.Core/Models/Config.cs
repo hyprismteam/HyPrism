@@ -86,6 +86,12 @@ public class Config
     public string AuthDomain { get; set; } = "sessions.sanasol.ws";
 
     /// <summary>
+    /// User-added authentication service domains shown in the desktop network settings.
+    /// The active value remains stored in <see cref="AuthDomain"/>.
+    /// </summary>
+    public List<string> AuthServers { get; set; } = [];
+
+    /// <summary>
     /// Custom JVM arguments passed through JAVA_TOOL_OPTIONS for Java processes started by the game client.
     /// Example: "-Xmx4G -Dfile.encoding=UTF-8".
     /// </summary>

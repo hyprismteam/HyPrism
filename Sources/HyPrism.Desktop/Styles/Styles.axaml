@@ -1203,6 +1203,32 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="FontWeight" Value="Medium" />
   </Style>
 
+  <Style Selector="settings|SettingsView RadioButton.authServerRadio">
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+  </Style>
+
+  <Style Selector="settings|SettingsView Border.authServerRadioIndicator">
+    <Setter Property="Width" Value="18" />
+    <Setter Property="Height" Value="18" />
+    <Setter Property="Padding" Value="4" />
+    <Setter Property="Background" Value="#0F1012" />
+    <Setter Property="BorderBrush" Value="#78FFFFFF" />
+    <Setter Property="BorderThickness" Value="1.5" />
+    <Setter Property="CornerRadius" Value="999" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+
+  <Style Selector="settings|SettingsView Border.authServerRadioIndicator.selected">
+    <Setter Property="BorderBrush" Value="#FFFFFF" />
+  </Style>
+
+  <Style Selector="settings|SettingsView Ellipse.authServerRadioDot">
+    <Setter Property="Fill" Value="#FFFFFF" />
+  </Style>
+
   <Style Selector="Grid.sourceAvailability">
     <Setter Property="Width" Value="18" />
     <Setter Property="Height" Value="18" />
@@ -1904,6 +1930,10 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="Foreground" Value="White" />
   </Style>
 
+  <Style Selector="settings|SettingsView Button.authServerAddAction.active, settings|SettingsView Button.authServerAddAction.active:pointerover">
+    <Setter Property="Width" Value="272" />
+  </Style>
+
   <!-- The custom Java action mirrors the instance folder button and fades plus
        slides in and out with the runtime selection instead of popping -->
   <!-- The button floats over the row instead of sharing its layout, so the
@@ -1970,6 +2000,64 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="Padding" Value="12,9" />
   </Style>
 
+  <Style Selector="settings|SettingsView TextBox.authServerInput">
+    <Setter Property="Padding" Value="12,9,44,9" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="Transitions">
+      <Transitions>
+        <BrushTransition Property="Foreground" Duration="0:0:0.18" />
+      </Transitions>
+    </Setter>
+  </Style>
+
+  <Style Selector="settings|SettingsView TextBox.authServerInput.error,
+                  settings|SettingsView TextBox.authServerInput.error:focus">
+    <Setter Property="Background" Value="{DynamicResource DangerSurfaceBrush}" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Foreground" Value="{DynamicResource DangerSoftBrush}" />
+  </Style>
+
+  <Style Selector="settings|SettingsView TextBox.authServerInput.error:pointerover">
+    <Setter Property="Background" Value="{DynamicResource DangerSurfaceHoverBrush}" />
+  </Style>
+
+  <Style Selector="settings|SettingsView TextBox.authServerInput.error:pointerover:focus">
+    <Setter Property="Background" Value="{DynamicResource DangerSurfaceBrush}" />
+  </Style>
+
+  <Style Selector="settings|SettingsView Button.authServerInputError">
+    <Setter Property="Width" Value="32" />
+    <Setter Property="Height" Value="32" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="Margin" Value="0,0,6,0" />
+    <Setter Property="HorizontalAlignment" Value="Right" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Opacity" Value="0" />
+    <Setter Property="IsHitTestVisible" Value="False" />
+    <Setter Property="FocusAdorner" Value="{x:Null}" />
+    <Setter Property="Transitions">
+      <Transitions>
+        <DoubleTransition Property="Opacity" Duration="0:0:0.18">
+          <DoubleTransition.Easing><easing:CubicEaseOut /></DoubleTransition.Easing>
+        </DoubleTransition>
+      </Transitions>
+    </Setter>
+  </Style>
+
+  <Style Selector="settings|SettingsView Button.authServerInputError.error">
+    <Setter Property="Opacity" Value="1" />
+    <Setter Property="IsHitTestVisible" Value="True" />
+  </Style>
+
+  <Style Selector="settings|SettingsView PathIcon.authServerInputErrorIcon">
+    <Setter Property="Width" Value="18" />
+    <Setter Property="Height" Value="18" />
+    <Setter Property="Foreground" Value="{DynamicResource DangerBrush}" />
+  </Style>
+
   <Style Selector="settings|SettingsView TextBox /template/ Border#PART_BorderElement">
     <Setter Property="Background" Value="{DynamicResource ControlSurfaceBrush}" />
     <Setter Property="BorderBrush" Value="Transparent" />
@@ -1991,6 +2079,21 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="Background" Value="{DynamicResource ControlSurfaceActiveBrush}" />
     <Setter Property="BorderBrush" Value="Transparent" />
     <Setter Property="BorderThickness" Value="0" />
+  </Style>
+
+  <Style Selector="settings|SettingsView TextBox.authServerInput.error /template/ Border#PART_BorderElement,
+                  settings|SettingsView TextBox.authServerInput.error:focus /template/ Border#PART_BorderElement">
+    <Setter Property="Background" Value="{DynamicResource DangerSurfaceBrush}" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+  </Style>
+
+  <Style Selector="settings|SettingsView TextBox.authServerInput.error:pointerover /template/ Border#PART_BorderElement">
+    <Setter Property="Background" Value="{DynamicResource DangerSurfaceHoverBrush}" />
+  </Style>
+
+  <Style Selector="settings|SettingsView TextBox.authServerInput.error:pointerover:focus /template/ Border#PART_BorderElement">
+    <Setter Property="Background" Value="{DynamicResource DangerSurfaceBrush}" />
   </Style>
 
 

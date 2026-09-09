@@ -2125,7 +2125,13 @@ Potrebbe essere necessario reinstallare il gioco se si cambia drive.</value>
     <value>Server di autenticazione</value>
   </data>
   <data name="settings.networkSettings.authServerHint" xml:space="preserve">
-    <value>Seleziona il server di autenticazione utilizzato per il gioco online.</value>
+    <value>Inserisci l'indirizzo del server usato per autenticare il gioco online.</value>
+  </data>
+  <data name="settings.networkSettings.authServerPlaceholder" xml:space="preserve">
+    <value>Ad esempio, sessions.example.com</value>
+  </data>
+  <data name="settings.networkSettings.authServerErrorTooltip" xml:space="preserve">
+    <value>Il server di autenticazione non è raggiungibile</value>
   </data>
   <data name="settings.networkSettings.currentServer" xml:space="preserve">
     <value>Server corrente</value>

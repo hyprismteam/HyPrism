@@ -2122,7 +2122,13 @@ Bei Laufwerkswechsel muss das Spiel möglicherweise neu installiert werden.</val
     <value>Auth-Server</value>
   </data>
   <data name="settings.networkSettings.authServerHint" xml:space="preserve">
-    <value>Wähle den Authentifizierungsserver für Online-Spiel.</value>
+    <value>Gib die Adresse des Servers für die Authentifizierung beim Online-Spielen ein.</value>
+  </data>
+  <data name="settings.networkSettings.authServerPlaceholder" xml:space="preserve">
+    <value>Zum Beispiel sessions.example.com</value>
+  </data>
+  <data name="settings.networkSettings.authServerErrorTooltip" xml:space="preserve">
+    <value>Auth-Server ist nicht erreichbar</value>
   </data>
   <data name="settings.networkSettings.currentServer" xml:space="preserve">
     <value>Aktueller Server</value>

@@ -1610,6 +1610,8 @@ public sealed class MainWindowRenderTests
         Assert.Equal(8, languagePopup.VerticalOffset);
         Assert.False(languagePopup.IsLightDismissEnabled);
         Assert.False(languagePopup.WindowManagerAddShadowHint);
+        Assert.True(languagePopup.ShouldUseOverlayLayer);
+        Assert.True(languagePopup.IsUsingOverlayLayer);
         Assert.Equal(new CornerRadius(18), languagePopupBorder.CornerRadius);
         Assert.Equal(
             Color.Parse("#1D1E21"),
@@ -2185,6 +2187,25 @@ public sealed class MainWindowRenderTests
         Assert.Equal(new Thickness(1, 1, 1, 0), mainSceneFrame.BorderThickness);
         viewModel.SelectedModCatalogPreview = null;
         Dispatcher.UIThread.RunJobs();
+        Assert.Equal(new Thickness(1), mainSceneFrame.BorderThickness);
+        viewModel.Settings.ShowAddJavaArgumentCommand.Execute(null);
+        Dispatcher.UIThread.RunJobs();
+        Assert.Equal(new Thickness(1, 1, 1, 0), mainSceneFrame.BorderThickness);
+        viewModel.Settings.CancelAddJavaArgumentCommand.Execute(null);
+        Dispatcher.UIThread.RunJobs();
+        Assert.Equal(new Thickness(1), mainSceneFrame.BorderThickness);
+        viewModel.Settings.ShowAddEnvironmentVariableCommand.Execute(null);
+        Dispatcher.UIThread.RunJobs();
+        Assert.Equal(new Thickness(1, 1, 1, 0), mainSceneFrame.BorderThickness);
+        viewModel.Settings.CancelAddEnvironmentVariableCommand.Execute(null);
+        Dispatcher.UIThread.RunJobs();
+        Assert.Equal(new Thickness(1), mainSceneFrame.BorderThickness);
+        viewModel.Settings.ShowAddAuthServerCommand.Execute(null);
+        Dispatcher.UIThread.RunJobs();
+        Assert.Equal(new Thickness(1, 1, 1, 0), mainSceneFrame.BorderThickness);
+        viewModel.Settings.CancelAddAuthServerCommand.Execute(null);
+        Dispatcher.UIThread.RunJobs();
+        Assert.Equal(new Thickness(1), mainSceneFrame.BorderThickness);
         Assert.NotNull(mainSceneSurface);
         Assert.True(mainSceneSurface!.ClipToBounds);
         Assert.Equal(new CornerRadius(23), mainSceneSurface.CornerRadius);
@@ -3589,7 +3610,12 @@ public sealed class MainWindowRenderTests
             Assert.Equal(new CornerRadius(11), comboBox.CornerRadius);
             Assert.NotNull(comboBox.ItemContainerTheme);
         });
-        var settingsTextBoxes = settingsView.GetVisualDescendants().OfType<TextBox>().ToArray();
+        viewModel.Settings.ShowAddJavaArgumentCommand.Execute(null);
+        Dispatcher.UIThread.RunJobs();
+        var javaArgumentOverlay = settingsView.FindControl<OverlayModal>("JavaArgumentModal");
+        Assert.NotNull(javaArgumentOverlay);
+        Assert.True(javaArgumentOverlay.IsEffectivelyVisible);
+        var settingsTextBoxes = javaArgumentOverlay.GetVisualDescendants().OfType<TextBox>().ToArray();
         Assert.NotEmpty(settingsTextBoxes);
         Assert.All(settingsTextBoxes, textBox =>
         {
@@ -3597,6 +3623,7 @@ public sealed class MainWindowRenderTests
             Assert.Equal(new CornerRadius(11), textBox.CornerRadius);
             Assert.Null(textBox.FocusAdorner);
         });
+        viewModel.Settings.CancelAddJavaArgumentCommand.Execute(null);
         var compactSettingsLayout = settingsView.Bounds.Width < 940;
         Assert.True(settingsRail!.IsEffectivelyVisible);
         Assert.Equal(compactSettingsLayout, compactSettingsToolbar!.IsVisible);

@@ -2122,7 +2122,13 @@ Es posible que necesites reinstalar el juego si cambias de unidad.</value>
     <value>Servidor de Autenticación</value>
   </data>
   <data name="settings.networkSettings.authServerHint" xml:space="preserve">
-    <value>Selecciona el servidor de autenticación usado para juego online.</value>
+    <value>Introduce la dirección del servidor usado para autenticar el juego online.</value>
+  </data>
+  <data name="settings.networkSettings.authServerPlaceholder" xml:space="preserve">
+    <value>Por ejemplo, sessions.example.com</value>
+  </data>
+  <data name="settings.networkSettings.authServerErrorTooltip" xml:space="preserve">
+    <value>El servidor de autenticación no está disponible</value>
   </data>
   <data name="settings.networkSettings.currentServer" xml:space="preserve">
     <value>Servidor actual</value>

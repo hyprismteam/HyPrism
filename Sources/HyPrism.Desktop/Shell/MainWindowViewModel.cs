@@ -479,7 +479,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         _remoteImageCache = remoteImageCache;
         _localizer = localizer;
         _localizer.LanguageChanged += ApplyLanguage;
-        _settings = CreateSettingsViewModel();
+        _settings = CreateSettingsViewModel(profileRepository);
         _settings.PropertyChanged += OnSettingsPropertyChanged;
         _profiles = new ProfilesViewModel(
             profiles,
@@ -651,7 +651,11 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     public bool CanLoadMoreModCatalog => HasMoreModCatalog && !IsLoadingMoreModCatalog && !IsModCatalogLoading;
     public bool HasModCatalogPreview => IsModCatalogPreviewOpen;
     public bool IsModCatalogPreviewMounted => SelectedModCatalogPreview is not null;
-    public bool IsBottomSheetMounted => IsModCatalogPreviewMounted || Settings.IsAddingJavaArgument;
+    public bool IsBottomSheetMounted =>
+        IsModCatalogPreviewMounted ||
+        Settings.IsAddingJavaArgument ||
+        Settings.IsAddingEnvironmentVariable ||
+        Settings.IsAddingAuthServer;
     public bool HasModCatalogPreviewImage => ModCatalogPreviewImage is not null;
     public bool HasModCatalogPreviewFiles => ModCatalogPreviewFiles.Count > 0;
     public bool HasMultipleModCatalogPreviewScreenshots =>
@@ -1546,7 +1550,9 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
 
     private void OnSettingsPropertyChanged(object? sender, PropertyChangedEventArgs args)
     {
-        if (args.PropertyName == nameof(SettingsViewModel.IsAddingJavaArgument))
+        if (args.PropertyName is nameof(SettingsViewModel.IsAddingJavaArgument) or
+            nameof(SettingsViewModel.IsAddingEnvironmentVariable) or
+            nameof(SettingsViewModel.IsAddingAuthServer))
             OnPropertyChanged(nameof(IsBottomSheetMounted));
     }
 
@@ -3346,7 +3352,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
             : _localizer["instances.status.notInstalled"];
     }
 
-    private SettingsViewModel CreateSettingsViewModel()
+    private SettingsViewModel CreateSettingsViewModel(IProfileRepository profileRepository)
         => new(
             _settingsStore,
             _uriLauncher,
@@ -3358,7 +3364,9 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
             _versionCatalog,
             _gameProcess,
             _instances,
-            _gpuProvider);
+            _gpuProvider,
+            profileRepository,
+            _httpClient);
 
     private void ApplyLanguage(string language)
     {

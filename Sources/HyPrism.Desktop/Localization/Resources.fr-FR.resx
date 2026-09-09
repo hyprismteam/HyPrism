@@ -2122,7 +2122,13 @@ Vous devrez peut-être réinstaller le jeu si vous changez de lecteur.</value>
     <value>Serveur d'Authentification</value>
   </data>
   <data name="settings.networkSettings.authServerHint" xml:space="preserve">
-    <value>Sélectionne le serveur d'authentification utilisé pour le jeu en ligne.</value>
+    <value>Saisis l'adresse du serveur utilisé pour l'authentification du jeu en ligne.</value>
+  </data>
+  <data name="settings.networkSettings.authServerPlaceholder" xml:space="preserve">
+    <value>Par exemple, sessions.example.com</value>
+  </data>
+  <data name="settings.networkSettings.authServerErrorTooltip" xml:space="preserve">
+    <value>Le serveur d'authentification est inaccessible</value>
   </data>
   <data name="settings.networkSettings.currentServer" xml:space="preserve">
     <value>Serveur actuel</value>

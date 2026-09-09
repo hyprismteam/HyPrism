@@ -128,6 +128,26 @@ SPDX-License-Identifier: GPL-3.0-only
       </Grid>
     </DataTemplate>
 
+    <DataTemplate x:Key="AuthServerAddActionTemplate" x:DataType="vm:SettingsViewModel">
+      <Grid Classes="managedActionContent">
+        <StackPanel Classes="managedActionIdle"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center">
+          <TextBlock Text="{Binding AuthServerAddLabel}" />
+        </StackPanel>
+        <Grid Classes="managedActionProgress" VerticalAlignment="Center">
+          <Path Classes="managedActionSpinner"
+                controls:RotatingVisual.IsActive="{Binding IsCheckingAuthServer}"
+                HorizontalAlignment="Center"
+                Data="M10,2 A8,8 0 1 1 2,10" />
+        </Grid>
+        <TextBlock Classes="managedActionCancel"
+                   Text="{Binding CancelLabel}"
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Center" />
+      </Grid>
+    </DataTemplate>
+
 
     <ControlTheme x:Key="JavaSliderTrackButtonTheme" TargetType="RepeatButton">
       <Setter Property="Template">
@@ -973,18 +993,100 @@ SPDX-License-Identifier: GPL-3.0-only
               </Border>
             </StackPanel>
 
-            <StackPanel Spacing="10">
-              <TextBlock Text="{Binding AuthServerLabel}" Classes="settingsCategoryHeading" />
-              <Border Classes="uiSettingsGroup settingsGroup">
-                <Border Classes="uiSettingsRow settingsRow last">
-                  <StackPanel Spacing="10">
-                    <TextBlock Text="{Binding AuthServerHint}" Classes="uiSettingsHint settingsHint" />
-                    <TextBox Text="{Binding AuthDomain}" />
-                    <Button Classes="settingsAction" Command="{Binding SaveNetworkCommand}" HorizontalAlignment="Right">
-                      <TextBlock Text="{Binding SaveLabel}" />
-                    </Button>
+            <StackPanel Spacing="10" IsVisible="{Binding IsAuthServerVisible}">
+              <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16" Margin="4,0,4,2">
+                <TextBlock Text="{Binding AuthServerLabel}"
+                           Classes="settingsCategoryHeading"
+                           VerticalAlignment="Center" />
+                <Button Grid.Column="1"
+                        x:Name="AddAuthServerButton"
+                        Classes="sourceAdd"
+                        Theme="{StaticResource SourceAddButtonTheme}"
+                        Command="{Binding ShowAddAuthServerCommand}">
+                  <StackPanel Orientation="Horizontal" Spacing="6">
+                    <TextBlock Text="+" FontSize="17" FontWeight="SemiBold" />
+                    <TextBlock Text="{Binding AuthServerAddLabel}" />
                   </StackPanel>
-                </Border>
+                </Button>
+              </Grid>
+              <Border x:Name="AuthServerTable"
+                      Classes="uiSettingsGroup settingsGroup"
+                      IsVisible="{Binding HasAuthServers}">
+                <StackPanel>
+                  <Border Classes="sourceTableHeader">
+                    <Grid ColumnDefinitions="2.4*,1.05*,84,34" ColumnSpacing="16">
+                      <TextBlock Text="{Binding SourceLinkColumn}" />
+                      <TextBlock Grid.Column="1"
+                                 Text="{Binding SourceAvailabilityColumn}"
+                                 HorizontalAlignment="Center" />
+                      <TextBlock Grid.Column="2"
+                                 Text="{Binding SourcePingColumn}"
+                                 HorizontalAlignment="Center" />
+                    </Grid>
+                  </Border>
+                  <ItemsControl ItemsSource="{Binding AuthServerItems}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="vm:AuthServerItemViewModel">
+                        <Border Classes="uiSettingsRow settingsRow mirrorSourceRow"
+                                Classes.last="{Binding IsLast}">
+                          <Grid ColumnDefinitions="2.4*,1.05*,84,34" ColumnSpacing="16">
+                            <RadioButton Classes="authServerRadio"
+                                         GroupName="AuthServers"
+                                         IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                         VerticalAlignment="Center">
+                              <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
+                                <Border Classes="authServerRadioIndicator"
+                                        Classes.selected="{Binding IsSelected}">
+                                  <Ellipse Classes="authServerRadioDot"
+                                           IsVisible="{Binding IsSelected}" />
+                                </Border>
+                                <TextBlock Grid.Column="1"
+                                           Text="{Binding Value}"
+                                           Classes="sourceTableValue link"
+                                           TextTrimming="CharacterEllipsis" />
+                              </Grid>
+                            </RadioButton>
+                            <Grid Grid.Column="1"
+                                  Classes="sourceAvailability"
+                                  Classes.checking="{Binding IsChecking}"
+                                  Classes.available="{Binding IsAvailable}"
+                                  Classes.unavailable="{Binding IsUnavailable}"
+                                  HorizontalAlignment="Center"
+                                  VerticalAlignment="Center"
+                                  ToolTip.Tip="{Binding Availability}">
+                              <Grid Classes="sourceAvailabilityState checking">
+                                <Path Classes="sourceAvailabilitySpinner"
+                                      controls:RotatingVisual.IsActive="{Binding IsChecking}"
+                                      Data="M10,2 A8,8 0 1 1 2,10" />
+                              </Grid>
+                              <Grid Classes="sourceAvailabilityState available">
+                                <PathIcon Data="{StaticResource CheckIcon}"
+                                          Classes="sourceAvailabilityIcon available" />
+                              </Grid>
+                              <Grid Classes="sourceAvailabilityState unavailable">
+                                <PathIcon Data="{StaticResource CloseIcon}"
+                                          Classes="sourceAvailabilityIcon unavailable" />
+                              </Grid>
+                            </Grid>
+                            <TextBlock Grid.Column="2"
+                                       Text="{Binding Ping}"
+                                       Classes="sourceTableValue"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center" />
+                            <Button Grid.Column="3"
+                                    Classes="mirrorRemove"
+                                    IsVisible="{Binding CanRemove}"
+                                    Command="{Binding DataContext.RemoveAuthServerCommand, ElementName=SettingsRoot}"
+                                    CommandParameter="{Binding}"
+                                    ToolTip.Tip="{Binding DataContext.RemoveLabel, ElementName=SettingsRoot}">
+                              <PathIcon Data="{StaticResource CloseIcon}" Width="15" Height="15" />
+                            </Button>
+                          </Grid>
+                        </Border>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </StackPanel>
               </Border>
             </StackPanel>
           </StackPanel>
@@ -1738,6 +1840,73 @@ SPDX-License-Identifier: GPL-3.0-only
                 <TextBlock Text="{Binding AddSourceButtonLabel}" />
               </Button>
             </StackPanel>
+          </StackPanel>
+        </Border>
+        <Border Classes="javaArgumentModalOutline" />
+      </Grid>
+    </controls:OverlayModal.ModalContent>
+  </controls:OverlayModal>
+  <controls:OverlayModal x:Name="AuthServerModal"
+                         Classes="javaArgumentModal"
+                         IsOpen="{Binding IsAddingAuthServer}"
+                         DismissCommand="{Binding CancelAddAuthServerCommand}"
+                         SheetMaxWidth="560"
+                         SheetMaxHeight="360"
+                         SheetMargin="12,20,12,0"
+                         ShoulderMaxWidth="608"
+                         ShoulderMargin="12,0,12,0"
+                         HiddenOffset="420"
+                         ZIndex="200">
+    <controls:OverlayModal.ModalContent>
+      <Grid Classes="javaArgumentModalSheet">
+        <Border Classes="javaArgumentModalContent">
+          <StackPanel Spacing="16">
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+              <TextBlock Text="{Binding AuthServerLabel}"
+                         FontSize="22"
+                         FontWeight="Bold"
+                         VerticalAlignment="Center" />
+              <Button Grid.Column="1"
+                      Classes="javaArgumentModalClose mirrorRemove"
+                      Command="{Binding CancelAddAuthServerCommand}"
+                      ToolTip.Tip="{Binding CancelLabel}">
+                <PathIcon Data="{StaticResource CloseIcon}" Width="15" Height="15" />
+              </Button>
+            </Grid>
+            <TextBlock Text="{Binding AuthServerHint}"
+                       Classes="uiSettingsHint settingsHint" />
+            <Grid Classes="authServerInputHost">
+              <TextBox x:Name="NewAuthServerTextBox"
+                       Text="{Binding NewAuthServer, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                       Classes="authServerInput"
+                       Classes.error="{Binding IsAuthServerAddError}"
+                       PlaceholderText="{Binding AuthServerPlaceholder}" />
+              <Button Classes="authServerInputError"
+                      Classes.error="{Binding IsAuthServerAddError}"
+                      ToolTip.Tip="{Binding AuthServerErrorTooltip}"
+                      IsTabStop="False">
+                <PathIcon Data="{StaticResource WarningIcon}"
+                          Classes="authServerInputErrorIcon" />
+              </Button>
+            </Grid>
+            <Grid Width="272"
+                  HorizontalAlignment="Right">
+              <Button Classes="wizardAction"
+                      HorizontalAlignment="Left"
+                      Command="{Binding CancelAddAuthServerCommand}">
+                <TextBlock Text="{Binding CancelLabel}" />
+              </Button>
+              <Button Classes="wizardAction create instanceFolderChangeAction authServerAddAction"
+                      Classes.active="{Binding IsCheckingAuthServer}"
+                      Classes.cancelArmed="{Binding IsAuthServerCancellationArmed}"
+                      ZIndex="1"
+                      HorizontalAlignment="Right"
+                      PointerExited="OnAuthServerAddPointerExited"
+                      Command="{Binding AddAuthServerCommand}">
+                <ContentControl Content="{Binding}"
+                                ContentTemplate="{StaticResource AuthServerAddActionTemplate}" />
+              </Button>
+            </Grid>
           </StackPanel>
         </Border>
         <Border Classes="javaArgumentModalOutline" />

@@ -2122,7 +2122,13 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>認証サーバー</value>
   </data>
   <data name="settings.networkSettings.authServerHint" xml:space="preserve">
-    <value>オンラインプレイに使用する認証サーバーを選択します。</value>
+    <value>オンラインプレイの認証に使用するサーバーのアドレスを入力してください。</value>
+  </data>
+  <data name="settings.networkSettings.authServerPlaceholder" xml:space="preserve">
+    <value>例: sessions.example.com</value>
+  </data>
+  <data name="settings.networkSettings.authServerErrorTooltip" xml:space="preserve">
+    <value>認証サーバーに接続できません</value>
   </data>
   <data name="settings.networkSettings.currentServer" xml:space="preserve">
     <value>現在のサーバー</value>

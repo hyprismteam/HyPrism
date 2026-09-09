@@ -2122,7 +2122,13 @@ Sürücü değiştirirseniz oyunu yeniden yüklemeniz gerekebilir.</value>
     <value>Kimlik Doğrulama Sunucusu</value>
   </data>
   <data name="settings.networkSettings.authServerHint" xml:space="preserve">
-    <value>Çevrimiçi oyun için kullanılacak kimlik doğrulama sunucusunu seçin.</value>
+    <value>Çevrimiçi oyun kimlik doğrulaması için kullanılacak sunucunun adresini girin.</value>
+  </data>
+  <data name="settings.networkSettings.authServerPlaceholder" xml:space="preserve">
+    <value>Örneğin, sessions.example.com</value>
+  </data>
+  <data name="settings.networkSettings.authServerErrorTooltip" xml:space="preserve">
+    <value>Kimlik doğrulama sunucusuna ulaşılamıyor</value>
   </data>
   <data name="settings.networkSettings.currentServer" xml:space="preserve">
     <value>Mevcut sunucu</value>

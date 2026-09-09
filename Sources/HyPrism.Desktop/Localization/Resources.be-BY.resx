@@ -2122,7 +2122,13 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>Сервер аўтэнтыфікацыі</value>
   </data>
   <data name="settings.networkSettings.authServerHint" xml:space="preserve">
-    <value>Абярыце сервер аўтэнтыфікацыі для анлайн-гульні.</value>
+    <value>Укажыце адрас сервера, які будзе выкарыстоўвацца для аўтэнтыфікацыі анлайн-гульні.</value>
+  </data>
+  <data name="settings.networkSettings.authServerPlaceholder" xml:space="preserve">
+    <value>Напрыклад, sessions.example.com</value>
+  </data>
+  <data name="settings.networkSettings.authServerErrorTooltip" xml:space="preserve">
+    <value>Сервер аўтэнтыфікацыі недаступны</value>
   </data>
   <data name="settings.networkSettings.currentServer" xml:space="preserve">
     <value>Бягучы сервер</value>

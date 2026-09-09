@@ -14,9 +14,11 @@ using HyPrism.Desktop.Controls;
 using HyPrism.Desktop.Localization;
 using HyPrism.Desktop.Features.About;
 using HyPrism.Desktop.Platform;
+using HyPrism.Core.Accounts;
 using HyPrism.Core.Application.Ports;
 using HyPrism.Core.Infrastructure;
 using HyPrism.Core.Game.Launch;
+using HyPrism.Core.Game.Authentication;
 using HyPrism.Core.Game.Instances;
 using HyPrism.Core.Game.Sources;
 using HyPrism.Core.Game.Versions;
@@ -28,6 +30,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
 {
     private const int MinimumJavaMemoryMb = 1024;
     private const int JavaMemoryStepMb = 256;
+    private const string DefaultAuthServer = "sessions.sanasol.ws";
     private static readonly TimeSpan MinimumInstanceFolderActionDuration = TimeSpan.FromMilliseconds(450);
     private static readonly HashSet<string> BotLogins = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -54,14 +57,20 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     private readonly IGameVersionCatalog? _versionCatalog;
     private readonly IGameProcessTracker? _gameProcess;
     private readonly IInstanceRepository? _instanceRepository;
+    private readonly IProfileRepository? _profileRepository;
+    private readonly HttpClient? _httpClient;
     private bool _updatingJavaMemory;
     private bool _updatingJavaArguments;
     private bool _aboutDataLoadStarted;
     private bool _aboutDataLoaded;
     private bool _downloadSourcesProbeStarted;
+    private bool _authServerProbeStarted;
     private bool _storageUsageLoadStarted;
     private bool _disposed;
     private CancellationTokenSource? _sourceProbeCancellation;
+    private CancellationTokenSource? _authServerProbeCancellation;
+    private CancellationTokenSource? _authServerAddCancellation;
+    private bool _isAuthServerCancellationArmed;
     private CancellationTokenSource? _storageUsageCancellation;
     private CancellationTokenSource? _instanceFolderChangeCancellation;
     private bool _isInstanceFolderChangeCancellationArmed;
@@ -91,11 +100,25 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     [ObservableProperty] private bool _musicEnabled;
     [ObservableProperty] private bool _disableNews;
     [ObservableProperty] private bool _showDiscordAnnouncements;
-    [ObservableProperty] private bool _onlineMode;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsAuthServerVisible))]
+    private bool _onlineMode;
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(UseBundledJava))]
     private bool _useCustomJava;
     [ObservableProperty] private string _authDomain;
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(AddAuthServerCommand))]
+    private string _newAuthServer = string.Empty;
+    [ObservableProperty] private bool _isAddingAuthServer;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsAuthServerCancellationArmed))]
+    [NotifyCanExecuteChangedFor(nameof(AddAuthServerCommand))]
+    private bool _isCheckingAuthServer;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasAuthServerAddStatus))]
+    private string _authServerAddStatus = string.Empty;
+    [ObservableProperty] private bool _isAuthServerAddError;
     [ObservableProperty] private string _customJavaPath;
     [ObservableProperty] private string _javaArguments;
     [ObservableProperty]
@@ -179,7 +202,9 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         IGameVersionCatalog? versionCatalog = null,
         IGameProcessTracker? gameProcess = null,
         IInstanceRepository? instanceRepository = null,
-        IGpuProvider? gpuProvider = null)
+        IGpuProvider? gpuProvider = null,
+        IProfileRepository? profileRepository = null,
+        HttpClient? httpClient = null)
     {
         _settings = settings;
         _uriLauncher = uriLauncher;
@@ -191,8 +216,12 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         _versionCatalog = versionCatalog;
         _gameProcess = gameProcess;
         _instanceRepository = instanceRepository;
+        _profileRepository = profileRepository;
+        _httpClient = httpClient;
         if (_instanceRepository is not null)
             _instanceRepository.InstancesChanged += OnInstancesChanged;
+        if (_profileRepository is not null)
+            _profileRepository.ProfilesChanged += OnProfilesChanged;
 
         Categories = new ObservableCollection<SettingCategoryViewModel>(
         [
@@ -230,7 +259,8 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         _showDiscordAnnouncements = settings.ShowDiscordAnnouncements;
         _onlineMode = settings.OnlineMode;
         _useCustomJava = settings.UseCustomJava;
-        _authDomain = settings.AuthDomain;
+        _authDomain = ResolveAuthServer(settings.AuthDomain);
+        IsOfficialProfile = _profileRepository?.GetSelectedProfile()?.IsOfficial == true;
         _customJavaPath = settings.CustomJavaPath;
         var persistedJavaArguments = settings.JavaArguments;
         _javaArguments = JvmArgumentBuilder.RemoveHeapArguments(persistedJavaArguments);
@@ -256,6 +286,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         }
 
         RefreshLocalization();
+        ReloadAuthServerItems();
         ReplaceJavaArgumentItems(_javaArguments);
         ReloadMirrorItems();
     }
@@ -266,6 +297,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     public ObservableCollection<AboutTeamMemberViewModel> AboutTeamMembers { get; }
     public ObservableCollection<AboutContributorViewModel> AboutContributors { get; } = [];
     public ObservableCollection<MirrorSourceViewModel> MirrorSources { get; } = [];
+    public ObservableCollection<AuthServerItemViewModel> AuthServerItems { get; } = [];
     public ObservableCollection<JavaArgumentItemViewModel> JavaArgumentItems { get; } = [];
     public ObservableCollection<EnvironmentVariableItemViewModel> EnvironmentVariableItems { get; } = [];
 
@@ -291,6 +323,11 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     public bool IsAddSourceChoiceVisible => MirrorAdditionStep == DownloadSourceAdditionStep.ChooseMethod;
     public bool IsAutomaticSourceVisible => MirrorAdditionStep == DownloadSourceAdditionStep.Automatic;
     public bool IsManualSourceVisible => MirrorAdditionStep == DownloadSourceAdditionStep.Manual;
+    public bool IsAuthServerVisible => OnlineMode && !IsOfficialProfile;
+    public bool IsOfficialProfile { get; private set; }
+    public bool HasAuthServers => AuthServerItems.Count > 0;
+    public bool HasAuthServerAddStatus => !string.IsNullOrWhiteSpace(AuthServerAddStatus);
+    public bool IsAuthServerCancellationArmed => IsCheckingAuthServer && _isAuthServerCancellationArmed;
     public bool CanChangeInstanceFolder => !IsGameRunning && !IsChangingInstanceFolder;
     public bool CanUseInstanceFolderChangeAction => !IsGameRunning;
     public bool IsDefaultInstanceFolder => DirectoriesEqual(InstanceFolder, _settings.DefaultInstanceDirectory);
@@ -363,6 +400,14 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     public string OnlineModeHint { get; private set; } = string.Empty;
     public string AuthServerLabel { get; private set; } = string.Empty;
     public string AuthServerHint { get; private set; } = string.Empty;
+    public string AuthServerPlaceholder { get; private set; } = string.Empty;
+    public string AuthServerAddLabel { get; private set; } = string.Empty;
+    public string AuthServerCheckingLabel { get; private set; } = string.Empty;
+    public string AuthServerOnlineLabel { get; private set; } = string.Empty;
+    public string AuthServerOfflineLabel { get; private set; } = string.Empty;
+    public string AuthServerPingTemplate { get; private set; } = string.Empty;
+    public string AuthServerOfflineWarning { get; private set; } = string.Empty;
+    public string AuthServerErrorTooltip { get; private set; } = string.Empty;
     public string JavaRuntimeLabel { get; private set; } = string.Empty;
     public string BundledJavaLabel { get; private set; } = string.Empty;
     public string BundledJavaHint { get; private set; } = string.Empty;
@@ -504,6 +549,14 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         OnlineModeHint = _localizer["settings.networkSettings.onlineModeHint"];
         AuthServerLabel = _localizer["settings.networkSettings.authServer"];
         AuthServerHint = _localizer["settings.networkSettings.authServerHint"];
+        AuthServerPlaceholder = _localizer["settings.networkSettings.authServerPlaceholder"];
+        AuthServerAddLabel = _localizer["settings.downloads.add"];
+        AuthServerCheckingLabel = _localizer["settings.networkSettings.authServerChecking"];
+        AuthServerOnlineLabel = _localizer["settings.networkSettings.authServerOnline"];
+        AuthServerOfflineLabel = _localizer["settings.networkSettings.authServerOffline"];
+        AuthServerPingTemplate = _localizer["settings.networkSettings.authServerPing"];
+        AuthServerOfflineWarning = _localizer["settings.networkSettings.authServerOfflineWarning"];
+        AuthServerErrorTooltip = _localizer["settings.networkSettings.authServerErrorTooltip"];
         JavaRuntimeLabel = _localizer["settings.javaSettings.javaRuntime"];
         BundledJavaLabel = _localizer["settings.javaSettings.useBundledJava"];
         BundledJavaHint = _localizer["settings.javaSettings.useBundledJavaHint"];
@@ -610,6 +663,13 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
                 _localizer["settings.downloads.sourceNoCompatibleVersions"],
                 _localizer["settings.downloads.sourceUnavailable"]);
         }
+        foreach (var server in AuthServerItems)
+        {
+            server.RefreshAvailabilityLabel(
+                AuthServerCheckingLabel,
+                AuthServerOnlineLabel,
+                AuthServerOfflineLabel);
+        }
 
         OnPropertyChanged(string.Empty);
     }
@@ -631,7 +691,20 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     partial void OnMusicEnabledChanged(bool value) => _settings.MusicEnabled = value;
     partial void OnDisableNewsChanged(bool value) => _settings.DisableNews = value;
     partial void OnShowDiscordAnnouncementsChanged(bool value) => _settings.ShowDiscordAnnouncements = value;
-    partial void OnOnlineModeChanged(bool value) => _settings.OnlineMode = value;
+    partial void OnOnlineModeChanged(bool value)
+    {
+        _settings.OnlineMode = value;
+        if (value && IsNetwork)
+            EnsureAuthServersProbed();
+    }
+    partial void OnNewAuthServerChanged(string value)
+    {
+        if (!IsAuthServerAddError && string.IsNullOrWhiteSpace(AuthServerAddStatus))
+            return;
+
+        IsAuthServerAddError = false;
+        AuthServerAddStatus = string.Empty;
+    }
     partial void OnUseCustomJavaChanged(bool value)
     {
         _settings.UseCustomJava = value;
@@ -687,6 +760,8 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
             _ = LoadAboutDataAsync();
         else if (string.Equals(category.Id, "downloads", StringComparison.Ordinal))
             EnsureDownloadSourcesProbed();
+        else if (string.Equals(category.Id, "network", StringComparison.Ordinal))
+            EnsureAuthServersProbed();
         else if (string.Equals(category.Id, "data", StringComparison.Ordinal))
             EnsureStorageUsageLoaded();
     }
@@ -903,6 +978,246 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         _settings.AuthDomain = AuthDomain;
         ShowSaved();
     }
+
+    [RelayCommand]
+    private void ShowAddAuthServer()
+    {
+        NewAuthServer = string.Empty;
+        AuthServerAddStatus = string.Empty;
+        IsAuthServerAddError = false;
+        IsAddingAuthServer = true;
+    }
+
+    [RelayCommand]
+    private void CancelAddAuthServer()
+    {
+        CancelAuthServerAddition();
+        NewAuthServer = string.Empty;
+        AuthServerAddStatus = string.Empty;
+        IsAuthServerAddError = false;
+        IsAddingAuthServer = false;
+    }
+
+    private bool CanAddAuthServer()
+        => IsCheckingAuthServer || !string.IsNullOrWhiteSpace(NewAuthServer);
+
+    [RelayCommand(AllowConcurrentExecutions = true, CanExecute = nameof(CanAddAuthServer))]
+    private async Task AddAuthServer()
+    {
+        if (IsCheckingAuthServer)
+        {
+            if (IsAuthServerCancellationArmed)
+                CancelAuthServerAddition();
+
+            return;
+        }
+
+        var value = NormalizeAuthServer(NewAuthServer);
+        if (string.IsNullOrWhiteSpace(value))
+            return;
+
+        _isAuthServerCancellationArmed = false;
+        OnPropertyChanged(nameof(IsAuthServerCancellationArmed));
+        IsCheckingAuthServer = true;
+        AuthServerAddStatus = string.Empty;
+        IsAuthServerAddError = false;
+        var cancellation = new CancellationTokenSource();
+        var previousCancellation = _authServerAddCancellation;
+        _authServerAddCancellation = cancellation;
+        previousCancellation?.Cancel();
+
+        try
+        {
+            var result = await CheckAuthServerAsync(value, cancellation.Token);
+            if (!result.IsAvailable)
+            {
+                AuthServerAddStatus = AuthServerOfflineWarning;
+                IsAuthServerAddError = true;
+                return;
+            }
+
+            var existing = AuthServerItems.FirstOrDefault(server =>
+                string.Equals(server.Value, value, StringComparison.OrdinalIgnoreCase));
+            if (existing is null)
+            {
+                existing = new AuthServerItemViewModel(
+                    value,
+                    isBuiltIn: false,
+                    isSelected: false,
+                    checkingLabel: AuthServerCheckingLabel,
+                    selected: SelectAuthServer);
+                AuthServerItems.Add(existing);
+                UpdateAuthServerRows();
+            }
+
+            existing.ApplyProbe(
+                result.IsAvailable,
+                result.PingMs,
+                AuthServerOnlineLabel,
+                AuthServerOfflineLabel,
+                AuthServerPingTemplate);
+            SelectAuthServer(existing);
+            PersistAuthServers();
+            NewAuthServer = string.Empty;
+            AuthServerAddStatus = string.Empty;
+            IsAuthServerAddError = false;
+            IsAddingAuthServer = false;
+            ShowSaved();
+        }
+        catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
+        {
+            Logger.Debug("Settings", "Auth server addition was canceled");
+        }
+        finally
+        {
+            _isAuthServerCancellationArmed = false;
+            OnPropertyChanged(nameof(IsAuthServerCancellationArmed));
+            IsCheckingAuthServer = false;
+            if (ReferenceEquals(_authServerAddCancellation, cancellation))
+                _authServerAddCancellation = null;
+            cancellation.Dispose();
+        }
+    }
+
+    private void CancelAuthServerAddition()
+    {
+        try
+        {
+            _authServerAddCancellation?.Cancel();
+        }
+        catch (ObjectDisposedException)
+        {
+            _authServerAddCancellation = null;
+        }
+    }
+
+    public void ArmAuthServerCancellation()
+    {
+        if (!IsCheckingAuthServer || _isAuthServerCancellationArmed)
+            return;
+
+        _isAuthServerCancellationArmed = true;
+        OnPropertyChanged(nameof(IsAuthServerCancellationArmed));
+        AddAuthServerCommand.NotifyCanExecuteChanged();
+    }
+
+    [RelayCommand]
+    private void RemoveAuthServer(AuthServerItemViewModel? server)
+    {
+        if (server is null || server.IsBuiltIn || !AuthServerItems.Remove(server))
+            return;
+
+        if (server.IsSelected)
+            SelectAuthServer(AuthServerItems[0]);
+
+        UpdateAuthServerRows();
+        PersistAuthServers();
+        ShowSaved();
+    }
+
+    private void SelectAuthServer(AuthServerItemViewModel? server)
+    {
+        if (server is null || !AuthServerItems.Contains(server))
+            return;
+
+        foreach (var item in AuthServerItems)
+            item.SetSelectedWithoutNotification(ReferenceEquals(item, server));
+
+        AuthDomain = server.Value;
+        _settings.AuthDomain = server.Value;
+        OnPropertyChanged(nameof(AuthDomain));
+    }
+
+    private void ReloadAuthServerItems()
+    {
+        _authServerProbeStarted = false;
+        _authServerProbeCancellation?.Cancel();
+        AuthServerItems.Clear();
+        AuthServerItems.Add(new AuthServerItemViewModel(
+            DefaultAuthServer,
+            isBuiltIn: true,
+            isSelected: string.Equals(AuthDomain, DefaultAuthServer, StringComparison.OrdinalIgnoreCase),
+            checkingLabel: AuthServerCheckingLabel,
+            selected: SelectAuthServer));
+
+        var configuredServers = _settings.AuthServers ?? [];
+        foreach (var configuredServer in configuredServers)
+        {
+            var normalized = NormalizeAuthServer(configuredServer);
+            if (string.IsNullOrWhiteSpace(normalized) ||
+                AuthServerItems.Any(server => string.Equals(server.Value, normalized, StringComparison.OrdinalIgnoreCase)))
+                continue;
+
+            AuthServerItems.Add(new AuthServerItemViewModel(
+                normalized,
+                isBuiltIn: false,
+                isSelected: string.Equals(AuthDomain, normalized, StringComparison.OrdinalIgnoreCase),
+                checkingLabel: AuthServerCheckingLabel,
+                selected: SelectAuthServer));
+        }
+
+        if (!AuthServerItems.Any(server => server.IsSelected))
+        {
+            var active = AuthServerItems.FirstOrDefault(server =>
+                string.Equals(server.Value, AuthDomain, StringComparison.OrdinalIgnoreCase));
+            if (active is null && !string.Equals(AuthDomain, DefaultAuthServer, StringComparison.OrdinalIgnoreCase))
+            {
+                active = new AuthServerItemViewModel(
+                    AuthDomain,
+                    isBuiltIn: false,
+                    isSelected: true,
+                    checkingLabel: AuthServerCheckingLabel,
+                    selected: SelectAuthServer);
+                AuthServerItems.Add(active);
+            }
+
+            SelectAuthServer(active ?? AuthServerItems[0]);
+        }
+
+        UpdateAuthServerRows();
+        if (IsNetwork && IsAuthServerVisible)
+            EnsureAuthServersProbed();
+    }
+
+    private void UpdateAuthServerRows()
+    {
+        for (var index = 0; index < AuthServerItems.Count; index++)
+            AuthServerItems[index].IsLast = index == AuthServerItems.Count - 1;
+
+        OnPropertyChanged(nameof(HasAuthServers));
+    }
+
+    private void PersistAuthServers()
+        => _settings.AuthServers = AuthServerItems
+            .Where(server => !server.IsBuiltIn)
+            .Select(server => server.Value)
+            .ToArray();
+
+    private void OnProfilesChanged()
+    {
+        var isOfficial = _profileRepository?.GetSelectedProfile()?.IsOfficial == true;
+        if (IsOfficialProfile == isOfficial)
+            return;
+
+        IsOfficialProfile = isOfficial;
+        OnPropertyChanged(nameof(IsOfficialProfile));
+        OnPropertyChanged(nameof(IsAuthServerVisible));
+
+        if (!isOfficial)
+        {
+            AuthDomain = ResolveAuthServer(_settings.AuthDomain);
+            ReloadAuthServerItems();
+            OnPropertyChanged(nameof(AuthDomain));
+        }
+    }
+
+    private static string NormalizeAuthServer(string? value)
+        => value?.Trim().TrimEnd('/') ?? string.Empty;
+
+    private static string ResolveAuthServer(string? value)
+        => NormalizeAuthServer(value) is { Length: > 0 } normalized
+            ? normalized
+            : DefaultAuthServer;
 
     [RelayCommand]
     private void SelectBundledJava() => UseCustomJava = false;
@@ -1714,6 +2029,99 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         _ = ProbeDownloadSourcesAsync();
     }
 
+    private void EnsureAuthServersProbed()
+    {
+        if (!IsAuthServerVisible || _authServerProbeStarted)
+            return;
+
+        _authServerProbeStarted = true;
+        _ = ProbeAuthServersAsync();
+    }
+
+    private async Task ProbeAuthServersAsync()
+    {
+        var cancellation = new CancellationTokenSource();
+        var previousCancellation = _authServerProbeCancellation;
+        _authServerProbeCancellation = cancellation;
+        previousCancellation?.Cancel();
+        var ct = cancellation.Token;
+
+        foreach (var server in AuthServerItems)
+            server.SetChecking(AuthServerCheckingLabel);
+
+        try
+        {
+            await Task.WhenAll(AuthServerItems.Select(server => ProbeAuthServerAsync(server, ct)));
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            Logger.Debug("Settings", "Auth server probes were canceled");
+        }
+        finally
+        {
+            if (ReferenceEquals(_authServerProbeCancellation, cancellation))
+                _authServerProbeCancellation = null;
+            cancellation.Dispose();
+        }
+    }
+
+    private async Task ProbeAuthServerAsync(AuthServerItemViewModel server, CancellationToken ct)
+    {
+        try
+        {
+            var result = await CheckAuthServerAsync(server.Value, ct);
+            if (!ct.IsCancellationRequested && AuthServerItems.Contains(server))
+            {
+                server.ApplyProbe(
+                    result.IsAvailable,
+                    result.PingMs,
+                    AuthServerOnlineLabel,
+                    AuthServerOfflineLabel,
+                    AuthServerPingTemplate);
+            }
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            Logger.Debug("Settings", $"Auth server probe was canceled for {server.Value}");
+        }
+        catch (Exception ex)
+        {
+            Logger.Debug("Settings", $"Auth server probe failed for {server.Value}: {ex.Message}");
+            if (AuthServerItems.Contains(server))
+            {
+                server.ApplyProbe(
+                    isAvailable: false,
+                    pingMs: -1,
+                    AuthServerOnlineLabel,
+                    AuthServerOfflineLabel,
+                    AuthServerPingTemplate);
+            }
+        }
+    }
+
+    private async Task<AuthServerProbeResult> CheckAuthServerAsync(
+        string authServer,
+        CancellationToken ct)
+    {
+        if (_httpClient is null)
+            return new(false, -1);
+
+        try
+        {
+            var result = await AuthServerAvailabilityChecker.CheckAsync(_httpClient, authServer, ct);
+            return new(result.IsAvailable, result.PingMs);
+        }
+        catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+        {
+            return new(false, -1);
+        }
+        catch (Exception ex)
+        {
+            Logger.Debug("Settings", $"Auth server availability check failed for {authServer}: {ex.Message}");
+            return new(false, -1);
+        }
+    }
+
     private void PersistMirrorEnabledState(MirrorSourceViewModel source)
     {
         if (_mirrorCatalog is null || _versionCatalog is null)
@@ -2067,6 +2475,8 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         _disposed = true;
         _sourceProbeCancellation?.Cancel();
         _sourceProbeCancellation?.Dispose();
+        _authServerProbeCancellation?.Cancel();
+        _authServerAddCancellation?.Cancel();
         _storageUsageCancellation?.Cancel();
         _storageUsageCancellation?.Dispose();
         _instanceFolderChangeCancellation?.Cancel();
@@ -2077,6 +2487,8 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         }
         if (_instanceRepository is not null)
             _instanceRepository.InstancesChanged -= OnInstancesChanged;
+        if (_profileRepository is not null)
+            _profileRepository.ProfilesChanged -= OnProfilesChanged;
         foreach (var member in AboutTeamMembers)
             member.Dispose();
         foreach (var contributor in _aboutContributorPool)
@@ -2093,6 +2505,8 @@ public enum DownloadSourceAdditionStep
     Automatic,
     Manual
 }
+
+internal readonly record struct AuthServerProbeResult(bool IsAvailable, long PingMs);
 
 public sealed partial class JavaArgumentItemViewModel(string value) : ObservableObject
 {

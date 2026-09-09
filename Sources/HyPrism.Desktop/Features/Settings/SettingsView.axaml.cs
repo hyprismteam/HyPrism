@@ -77,6 +77,13 @@ public sealed partial class SettingsView : UserControl
                 Dispatcher.UIThread.Post(() => NewEnvironmentVariableTextBox.Focus(), DispatcherPriority.Loaded);
         }
 
+        if (args.PropertyName == nameof(SettingsViewModel.IsAddingAuthServer))
+        {
+            ApplyModalBackground();
+            if (DataContext is SettingsViewModel { IsAddingAuthServer: true })
+                Dispatcher.UIThread.Post(() => NewAuthServerTextBox.Focus(), DispatcherPriority.Loaded);
+        }
+
         if (args.PropertyName != nameof(SettingsViewModel.IsAddingMirror))
             return;
 
@@ -130,6 +137,12 @@ public sealed partial class SettingsView : UserControl
     {
         if (DataContext is SettingsViewModel viewModel)
             viewModel.ArmInstanceFolderChangeCancellation();
+    }
+
+    private void OnAuthServerAddPointerExited(object? sender, PointerEventArgs args)
+    {
+        if (DataContext is SettingsViewModel viewModel)
+            viewModel.ArmAuthServerCancellation();
     }
 
     private void OnToggleMirrorMenuPointerReleased(object? sender, PointerReleasedEventArgs args)
@@ -216,6 +229,12 @@ public sealed partial class SettingsView : UserControl
             return true;
         }
 
+        if (DataContext is SettingsViewModel { IsAddingAuthServer: true } authServerViewModel)
+        {
+            authServerViewModel.CancelAddAuthServerCommand.Execute(null);
+            return true;
+        }
+
         if (DataContext is SettingsViewModel { IsAddingMirror: true } viewModel)
         {
             viewModel.CancelAddMirrorCommand.Execute(null);
@@ -233,6 +252,9 @@ public sealed partial class SettingsView : UserControl
         } or SettingsViewModel
         {
             IsAddingEnvironmentVariable: true
+        } or SettingsViewModel
+        {
+            IsAddingAuthServer: true
         };
         SettingsLayout.IsHitTestVisible = !isOpen;
         ((BlurEffect)SettingsLayout.Effect!).Radius = isOpen ? 6 : 0;

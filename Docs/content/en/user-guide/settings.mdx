@@ -79,6 +79,10 @@ The Appearance category contains the **Disable news** switch. It does not curren
 This category affects offline profiles only
 
 - **Online mode** sends local-profile session requests to the configured authentication server
+- **Auth Server** lists the built-in session service and any user-added servers. Select a row to make it active, use **Add** to open the overlay dialog, then confirm the address after its response check succeeds, or remove a user-added row
+- The add dialog explains that the address is used for online authentication and shows an example placeholder. If the response check fails, the field turns red and the warning icon shows the reason on hover. Editing the address clears the error state
+- The table columns are **Link**, **Availability**, and **Ping**. Each row shows the same availability state style as Download sources, including the current response time when the server is online
+- The Auth Server list is hidden for official profiles and while Online mode is disabled
 - Disabling online mode uses the on-device [Local Node](/docs/reference/local-node)
 
 Official profiles always use official Hytale authentication. Local Node sessions do not grant official ownership or centralized social features

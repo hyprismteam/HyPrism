@@ -83,6 +83,17 @@ public sealed class DesktopSettingsStore : IDesktopSettingsStore
     }
 
     /// <inheritdoc/>
+    public IReadOnlyList<string> AuthServers
+    {
+        get => _configStore.Configuration.AuthServers;
+        set => Save(config => config.AuthServers = value?
+            .Where(server => !string.IsNullOrWhiteSpace(server))
+            .Select(server => server.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList() ?? []);
+    }
+
+    /// <inheritdoc/>
     public string JavaArguments
     {
         get => _configStore.Configuration.JavaArguments;

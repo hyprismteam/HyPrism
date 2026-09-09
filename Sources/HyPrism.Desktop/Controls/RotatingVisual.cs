@@ -5,6 +5,7 @@ using System.Runtime.CompilerServices;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
+using Avalonia.Threading;
 using Avalonia.VisualTree;
 
 namespace HyPrism.Desktop.Controls;
@@ -42,20 +43,30 @@ public sealed class RotatingVisual : AvaloniaObject
 
     private sealed class RotationState
     {
+        private readonly List<Visual> _visibilitySources = [];
         private bool _isActive;
         private bool _eventsAttached;
+        private bool _visibilityUpdateQueued;
         private int _animationVersion;
         private TimeSpan? _animationStartedAt;
+        private Visual? _target;
         private Visual? _visual;
 
         public void SetActive(Visual visual, bool isActive)
         {
             _isActive = isActive;
+            _target = visual;
             EnsureEventsAttached(visual);
             if (isActive && visual.IsAttachedToVisualTree())
-                Start(visual);
+            {
+                AttachVisibilityEvents(visual);
+                UpdateAnimationState(visual);
+            }
             else
+            {
+                DetachVisibilityEvents();
                 Stop(visual);
+            }
         }
 
         private void EnsureEventsAttached(Visual visual)
@@ -71,17 +82,67 @@ public sealed class RotatingVisual : AvaloniaObject
         private void OnAttachedToVisualTree(object? sender, VisualTreeAttachmentEventArgs args)
         {
             if (_isActive && sender is Visual visual)
-                Start(visual);
+            {
+                AttachVisibilityEvents(visual);
+                UpdateAnimationState(visual);
+            }
         }
 
         private void OnDetachedFromVisualTree(object? sender, VisualTreeAttachmentEventArgs args)
         {
             if (sender is Visual visual)
+            {
+                DetachVisibilityEvents();
+                Stop(visual);
+            }
+        }
+
+        private void AttachVisibilityEvents(Visual visual)
+        {
+            DetachVisibilityEvents();
+
+            for (Visual? source = visual; source is not null; source = source.GetVisualParent())
+            {
+                source.PropertyChanged += OnVisibilityPropertyChanged;
+                _visibilitySources.Add(source);
+            }
+        }
+
+        private void DetachVisibilityEvents()
+        {
+            foreach (var source in _visibilitySources)
+                source.PropertyChanged -= OnVisibilityPropertyChanged;
+
+            _visibilitySources.Clear();
+        }
+
+        private void OnVisibilityPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs args)
+        {
+            if (args.Property != Visual.IsVisibleProperty || _visibilityUpdateQueued)
+                return;
+
+            _visibilityUpdateQueued = true;
+            Dispatcher.UIThread.Post(() =>
+            {
+                _visibilityUpdateQueued = false;
+                if (_target is { } visual)
+                    UpdateAnimationState(visual);
+            }, DispatcherPriority.Render);
+        }
+
+        private void UpdateAnimationState(Visual visual)
+        {
+            if (_isActive && visual.IsAttachedToVisualTree() && visual.IsEffectivelyVisible)
+                Start(visual);
+            else
                 Stop(visual);
         }
 
         private void Start(Visual visual)
         {
+            if (ReferenceEquals(_visual, visual))
+                return;
+
             Stop(visual);
             visual.RenderTransformOrigin = RelativePoint.Center;
             visual.RenderTransform ??= new RotateTransform();
@@ -112,24 +173,21 @@ public sealed class RotatingVisual : AvaloniaObject
 
             if (!_isActive ||
                 visual is null ||
-                !visual.IsAttachedToVisualTree())
+                !visual.IsAttachedToVisualTree() ||
+                !visual.IsEffectivelyVisible)
             {
                 if (visual is not null)
                     Stop(visual);
                 return;
             }
 
-            if (visual.IsEffectivelyVisible && visual.RenderTransform is RotateTransform rotation)
+            if (visual.RenderTransform is RotateTransform rotation)
             {
                 _animationStartedAt ??= timestamp;
                 var elapsed = timestamp - _animationStartedAt.Value;
                 rotation.Angle = elapsed.TotalMilliseconds %
                                  MotionDurations.SpinnerRotation.TotalMilliseconds /
                                  MotionDurations.SpinnerRotation.TotalMilliseconds * 360;
-            }
-            else
-            {
-                _animationStartedAt = null;
             }
 
             TopLevel.GetTopLevel(visual)?.RequestAnimationFrame(

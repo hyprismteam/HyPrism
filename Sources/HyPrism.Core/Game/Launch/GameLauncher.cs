@@ -402,30 +402,13 @@ public partial class GameLauncher : IGameLauncher
             authDomain = DefaultCustomAuthDomain;
         }
 
-        var normalized = authDomain.Trim().TrimEnd('/');
-        if (!normalized.StartsWith("http://", StringComparison.OrdinalIgnoreCase) &&
-            !normalized.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
-        {
-            normalized = $"https://{normalized}";
-        }
-
-        var pingUrl = $"{normalized}/health";
-        Logger.Info("Game", $"Checking auth server availability: {pingUrl}");
+        Logger.Info("Game", $"Checking auth server API availability: {authDomain}");
 
         try
         {
-            using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
-            cts.CancelAfter(TimeSpan.FromSeconds(10));
-
-            using var response = await _httpClient.GetAsync(pingUrl, cts.Token);
-
-            var isAvailable = response.IsSuccessStatusCode ||
-                (int)response.StatusCode == 404 ||
-                (int)response.StatusCode == 401 ||
-                (int)response.StatusCode == 403;
-
-            Logger.Info("Game", $"Auth server check result: {(isAvailable ? "available" : "unavailable")} (status: {(int)response.StatusCode})");
-            return isAvailable;
+            var result = await AuthServerAvailabilityChecker.CheckAsync(_httpClient, authDomain, ct);
+            Logger.Info("Game", $"Auth server API check result: {(result.IsAvailable ? "available" : "unavailable")}");
+            return result.IsAvailable;
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {

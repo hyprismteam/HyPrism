@@ -27,6 +27,9 @@ public sealed class FadingPopup : Popup
     {
         IsLightDismissEnabled = false;
         WindowManagerAddShadowHint = false;
+        // Keep menus in the main composition tree so long-running sessions do
+        // not repeatedly allocate native popup hosts
+        ShouldUseOverlayLayer = true;
     }
 
     public bool IsRequestedOpen

@@ -2449,7 +2449,13 @@ SPDX-License-Identifier: GPL-3.0-only
     <value>Проверка...</value>
   </data>
   <data name="settings.networkSettings.authServerHint" xml:space="preserve">
-    <value>Выберите сервер авторизации для онлайн-игры.</value>
+    <value>Укажите адрес сервера, который будет использоваться для авторизации в онлайн-игре.</value>
+  </data>
+  <data name="settings.networkSettings.authServerPlaceholder" xml:space="preserve">
+    <value>Например, sessions.example.com</value>
+  </data>
+  <data name="settings.networkSettings.authServerErrorTooltip" xml:space="preserve">
+    <value>Сервер авторизации недоступен</value>
   </data>
   <data name="settings.networkSettings.authServerOfficialNote" xml:space="preserve">
     <value>Официальные серверы всегда считаются доступными.</value>
