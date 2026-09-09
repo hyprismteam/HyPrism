@@ -52,7 +52,9 @@ public class ModInfo
 /// <summary>Paged file list for a specific mod.</summary>
 public class ModFilesResult
 {
+    /// <summary>Files returned for the requested mod</summary>
     public List<ModFileInfo> Files { get; set; } = [];
+    /// <summary>Total number of files matching the request</summary>
     public int TotalCount { get; set; }
 }
 
@@ -84,8 +86,11 @@ public class ModFileInfo
 /// <summary>A mod category returned from CurseForge.</summary>
 public class ModCategory
 {
+    /// <summary>CurseForge category identifier</summary>
     public int Id { get; set; }
+    /// <summary>Category display name</summary>
     public string Name { get; set; } = "";
+    /// <summary>CurseForge URL slug</summary>
     public string Slug { get; set; } = "";
 }
 
@@ -146,9 +151,13 @@ public class InstalledMod
 /// </summary>
 public class ModListEntry
 {
+    /// <summary>CurseForge project identifier, when known</summary>
     public string? CurseForgeId { get; set; }
+    /// <summary>CurseForge file identifier, when known</summary>
     public string? FileId { get; set; }
+    /// <summary>Mod display name stored in the list</summary>
     public string? Name { get; set; }
+    /// <summary>Mod version stored in the list</summary>
     public string? Version { get; set; }
 }
 

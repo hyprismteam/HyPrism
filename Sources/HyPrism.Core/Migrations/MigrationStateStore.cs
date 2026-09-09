@@ -22,6 +22,7 @@ public sealed class MigrationStateStore
     }
 
     /// <summary>Returns whether a migration completed successfully.</summary>
+    /// <returns>true when the migration is marked as completed; otherwise false</returns>
     public bool IsCompleted(string migrationId)
     {
         lock (_lock)

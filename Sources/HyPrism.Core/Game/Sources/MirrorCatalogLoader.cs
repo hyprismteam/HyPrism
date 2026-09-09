@@ -107,12 +107,14 @@ public static class MirrorCatalogLoader
     /// <summary>
     /// Gets the path to the Mirrors directory
     /// </summary>
+    /// <returns>The mirrors directory</returns>
     public static string GetMirrorsDirectory(string appDir)
         => Path.Combine(appDir, MirrorsDirName);
 
     /// <summary>
     /// Gets a list of all mirror metadata (without creating sources)
     /// </summary>
+    /// <returns>All mirror definitions</returns>
     public static List<MirrorMeta> GetAllMirrorMetas(string appDir)
     {
         var mirrorsDir = GetMirrorsDirectory(appDir);
@@ -165,6 +167,7 @@ public static class MirrorCatalogLoader
     /// <summary>
     /// Deletes a mirror by ID
     /// </summary>
+    /// <returns>true when the operation succeeds; otherwise false</returns>
     public static bool DeleteMirror(string appDir, string mirrorId)
     {
         if (string.IsNullOrWhiteSpace(mirrorId))
@@ -187,6 +190,7 @@ public static class MirrorCatalogLoader
     /// <summary>
     /// Checks if a mirror with the given ID exists
     /// </summary>
+    /// <returns>true when the operation succeeds; otherwise false</returns>
     public static bool MirrorExists(string appDir, string mirrorId)
     {
         if (string.IsNullOrWhiteSpace(mirrorId))

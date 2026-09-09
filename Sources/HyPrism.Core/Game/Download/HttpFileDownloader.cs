@@ -187,6 +187,7 @@ public class HttpFileDownloader : IFileDownloader
     /// <summary>
     /// Check file size without downloading.
     /// </summary>
+    /// <returns>A task that completes with the requested file size</returns>
     public Task<long> GetFileSizeAsync(string url, CancellationToken cancellationToken = default)
     {
         return GetFileSizeAsync(url, null, cancellationToken);
@@ -195,6 +196,7 @@ public class HttpFileDownloader : IFileDownloader
     /// <summary>
     /// Check file size without downloading, with custom headers.
     /// </summary>
+    /// <returns>A task that completes with the requested file size</returns>
     public async Task<long> GetFileSizeAsync(string url, Dictionary<string, string>? headers, CancellationToken cancellationToken = default)
     {
         try
@@ -220,6 +222,7 @@ public class HttpFileDownloader : IFileDownloader
     /// <summary>
     /// Check if file exists on server.
     /// </summary>
+    /// <returns>A task that completes with true when the operation succeeds; otherwise false</returns>
     public Task<bool> FileExistsAsync(string url, CancellationToken cancellationToken = default)
     {
         return FileExistsAsync(url, null, cancellationToken);
@@ -228,6 +231,7 @@ public class HttpFileDownloader : IFileDownloader
     /// <summary>
     /// Check if file exists on server, with custom headers.
     /// </summary>
+    /// <returns>A task that completes with true when the operation succeeds; otherwise false</returns>
     public async Task<bool> FileExistsAsync(string url, Dictionary<string, string>? headers, CancellationToken cancellationToken = default)
     {
         try

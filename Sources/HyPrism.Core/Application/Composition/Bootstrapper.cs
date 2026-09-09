@@ -278,6 +278,7 @@ public static partial class Bootstrapper
     /// Performs asynchronous initialization after the service provider has been built
     /// </summary>
     /// <param name="services">Service provider returned by <see cref="Initialize"/></param>
+    /// <param name="cancellationToken">Token used to cancel remote initialization</param>
     /// <returns>A task that completes after optional remote bootstrap data has been prepared</returns>
     public static async Task InitializeAsync(
         IServiceProvider services,

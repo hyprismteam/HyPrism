@@ -5,14 +5,14 @@ description: Двуязычный MDX, подсветка примеров, на
 
 # Сайт документации
 
-Документация использует Docusaurus 3 в каталоге `Docs`. Нужны Node.js 22 и версия pnpm, закрепленная в `Docs/package.json`
+Документация использует Docusaurus 3 в каталоге `Docs`. Нужны Node.js 22 и npm
 
 ## Локальный запуск
 
 ```bash
 cd Docs
-pnpm install --frozen-lockfile
-pnpm dev
+npm ci
+npm run dev
 ```
 
 Откройте [локальную документацию](http://localhost:3000/HyPrism/docs/). Разработка и GitHub Pages используют одинаковый базовый путь `/HyPrism`
@@ -74,12 +74,12 @@ HYPRISM_DOCS_SCREENSHOTS="$PWD/Docs/static/img/user" \
 
 ```bash
 cd Docs
-pnpm install --frozen-lockfile
-pnpm check
-PAGES_BASE_PATH=/HyPrism pnpm build
+npm ci
+npm run check
+PAGES_BASE_PATH=/HyPrism npm run build
 ```
 
-`pnpm check` запускает тесты валидатора, проверяет текст, паритет языков, кодовые блоки, изображения, маршруты, двуязычные якоря, ссылки на исходники и документацию контрактов Core, затем запускает TypeScript. Статический экспорт записывается в `Docs/out`
+`npm run check` запускает тесты валидатора, проверяет текст, паритет языков, кодовые блоки, изображения, маршруты, двуязычные якоря, ссылки на исходники и документацию контрактов Core, затем запускает TypeScript. Статический экспорт записывается в `Docs/out`
 
 В готовом сайте проверьте подсветку C#, shell, JSON и XML, переключение языка, ссылки разделов, иконки и узкую компоновку
 

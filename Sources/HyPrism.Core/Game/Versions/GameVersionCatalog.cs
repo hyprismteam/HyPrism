@@ -346,6 +346,7 @@ public class GameVersionCatalog : IGameVersionCatalog
     /// <summary>
     /// Gets version list with source information (official vs mirror)
     /// </summary>
+    /// <returns>A task that completes with the requested version list with sources</returns>
     public async Task<VersionListResponse> GetVersionListWithSourcesAsync(string branch, CancellationToken ct = default)
     {
         var normalizedBranch = NormalizeBranch(branch);
@@ -414,6 +415,7 @@ public class GameVersionCatalog : IGameVersionCatalog
     /// <summary>
     /// Gets the source of versions for a branch
     /// </summary>
+    /// <returns>The requested version source</returns>
     public VersionSource GetVersionSource(string branch)
     {
         var normalizedBranch = NormalizeBranch(branch);
@@ -431,6 +433,7 @@ public class GameVersionCatalog : IGameVersionCatalog
     /// Gets the download URL for a specific version.
     /// Prefers official source if available
     /// </summary>
+    /// <returns>The requested version download url, or null when unavailable</returns>
     public string? GetVersionDownloadUrl(string branch, int version)
     {
         var normalizedBranch = NormalizeBranch(branch);
@@ -465,6 +468,7 @@ public class GameVersionCatalog : IGameVersionCatalog
     /// <summary>
     /// Gets the cached version entry for a specific version
     /// </summary>
+    /// <returns>The cached version entry, or null when unavailable</returns>
     public CachedVersionEntry? GetVersionEntry(string branch, int version)
     {
         var normalizedBranch = NormalizeBranch(branch);
@@ -655,6 +659,7 @@ public class GameVersionCatalog : IGameVersionCatalog
     /// Returns true if the specified branch uses diff-based patching (mirrors only).
     /// Pre-release branch uses diffs, release uses full copies
     /// </summary>
+    /// <returns>true when the branch uses differential updates; otherwise false</returns>
     public bool IsDiffBasedBranch(string branch)
     {
         var normalizedBranch = NormalizeBranch(branch);
@@ -666,6 +671,7 @@ public class GameVersionCatalog : IGameVersionCatalog
     /// Gets download URL from mirror sources only.
     /// Used when official servers are down and we need explicit mirror fallback
     /// </summary>
+    /// <returns>A task that completes with the requested mirror download url, or null when unavailable</returns>
     public async Task<string?> GetMirrorDownloadUrlAsync(
         string os, string arch, string branch, int version, CancellationToken ct = default)
     {
@@ -700,6 +706,7 @@ public class GameVersionCatalog : IGameVersionCatalog
     /// <summary>
     /// Gets diff patch URL from mirror sources for applying incremental updates
     /// </summary>
+    /// <returns>A task that completes with the requested mirror diff url, or null when unavailable</returns>
     public async Task<string?> GetMirrorDiffUrlAsync(
         string os, string arch, string branch, int fromVersion, int toVersion, CancellationToken ct = default)
     {
@@ -755,6 +762,7 @@ public class GameVersionCatalog : IGameVersionCatalog
     /// <summary>
     /// Check if latest instance needs an update
     /// </summary>
+    /// <returns>A task that completes with true when the operation succeeds; otherwise false</returns>
     public async Task<bool> CheckLatestNeedsUpdateAsync(string branch, Func<string, bool> isClientPresent, Func<string> getLatestInstancePath, Func<string, LatestVersionInfo?> loadLatestInfo)
     {
         var normalizedBranch = NormalizeBranch(branch);
@@ -777,6 +785,7 @@ public class GameVersionCatalog : IGameVersionCatalog
     /// <summary>
     /// Gets the version status for the latest instance
     /// </summary>
+    /// <returns>A task that completes with the latest version status</returns>
     public async Task<VersionStatus> GetLatestVersionStatusAsync(string branch, Func<string, bool> isClientPresent, Func<string> getLatestInstancePath, Func<string, LatestVersionInfo?> loadLatestInfo)
     {
         try
@@ -841,6 +850,7 @@ public class GameVersionCatalog : IGameVersionCatalog
     /// <summary>
     /// Get pending update information
     /// </summary>
+    /// <returns>A task that completes with the requested pending update info, or null when unavailable</returns>
     public async Task<UpdateInfo?> GetPendingUpdateInfoAsync(string branch, Func<string> getLatestInstancePath, Func<string, LatestVersionInfo?> loadLatestInfo)
     {
         try
@@ -877,6 +887,7 @@ public class GameVersionCatalog : IGameVersionCatalog
     /// <summary>
     /// Get sequence of patches to apply for differential update
     /// </summary>
+    /// <returns>The patch sequence</returns>
     public List<int> GetPatchSequence(int fromVersion, int toVersion)
     {
         var patches = new List<int>();
@@ -914,6 +925,7 @@ public class GameVersionCatalog : IGameVersionCatalog
     /// <summary>
     /// Tests the speed and availability of a mirror by ID
     /// </summary>
+    /// <returns>A task that completes with the selected mirror speed test result</returns>
     public async Task<MirrorSpeedTestResult> TestMirrorSpeedAsync(string mirrorId, bool forceRefresh = false, CancellationToken ct = default)
     {
         var mirrors = GetMirrorSourcesSnapshot();
@@ -951,6 +963,7 @@ public class GameVersionCatalog : IGameVersionCatalog
     /// <summary>
     /// Tests the speed and availability of the official Hytale CDN
     /// </summary>
+    /// <returns>A task that completes with the official source speed test result</returns>
     public async Task<MirrorSpeedTestResult> TestOfficialSpeedAsync(bool forceRefresh = false, CancellationToken ct = default)
     {
         if (_hytaleSource == null || !_hytaleSource.IsAvailable)
@@ -1053,6 +1066,7 @@ public class GameVersionCatalog : IGameVersionCatalog
     /// Selects the best mirror based on speed tests.
     /// Only called when official source is not available
     /// </summary>
+    /// <returns>A task that completes with the selected best mirror, or null when unavailable</returns>
     public async Task<IVersionSource?> SelectBestMirrorAsync(CancellationToken ct = default)
     {
         var mirrors = GetMirrorSourcesSnapshot();
@@ -1120,6 +1134,7 @@ public class GameVersionCatalog : IGameVersionCatalog
     /// <summary>
     /// Gets the currently selected mirror, or selects one if not yet selected
     /// </summary>
+    /// <returns>A task that completes with the selected mirror, or null when unavailable</returns>
     public async Task<IVersionSource?> GetSelectedMirrorAsync(CancellationToken ct = default)
     {
         if (_selectedMirror != null)

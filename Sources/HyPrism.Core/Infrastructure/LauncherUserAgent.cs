@@ -21,6 +21,7 @@ public static class LauncherUserAgent
     /// <summary>
     /// Extracts the product version generated for an assembly by MSBuild
     /// </summary>
+    /// <returns>The requested version</returns>
     public static string GetVersion(Assembly assembly)
     {
         ArgumentNullException.ThrowIfNull(assembly);
@@ -45,6 +46,9 @@ public static class LauncherUserAgent
     /// <summary>
     /// Creates a launcher User-Agent from a product version
     /// </summary>
+    /// <param name="version">Product version used in the User-Agent</param>
+    /// <returns>The formatted launcher User-Agent value</returns>
+    /// <exception cref="ArgumentException">Thrown when the version is empty or is not a valid HTTP product token</exception>
     public static string Create(string version)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(version);

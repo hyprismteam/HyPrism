@@ -63,7 +63,7 @@ def header_style(path: Path) -> str | None:
     if (
         relative == "LICENSE"
         or relative == "Docs/next-env.d.ts"
-        or relative == "Docs/pnpm-lock.yaml"
+        or relative == "Docs/package-lock.json"
         or relative.startswith("Licenses/")
     ):
         return None

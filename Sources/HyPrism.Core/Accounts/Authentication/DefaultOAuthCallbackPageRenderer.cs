@@ -13,6 +13,10 @@ internal sealed class DefaultOAuthCallbackPageRenderer : IOAuthCallbackPageRende
     {
     }
 
+    /// <summary>Renders the OAuth callback result as a complete HTML page</summary>
+    /// <param name="success">Whether authorization completed successfully</param>
+    /// <param name="message">Message shown to the user</param>
+    /// <returns>The rendered HTML page</returns>
     public string Render(bool success, string message)
     {
         var title = success ? "Authorization successful" : "Authorization failed";

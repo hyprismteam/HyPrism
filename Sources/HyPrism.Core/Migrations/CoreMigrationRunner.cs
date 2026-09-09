@@ -48,6 +48,7 @@ public sealed class CoreMigrationRunner
     /// <summary>
     /// Applies all local structural migrations, then performs retryable version-name enrichment.
     /// </summary>
+    /// <returns>A task that completes when the operation finishes</returns>
     public async Task RunAsync(CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -150,6 +151,10 @@ public sealed class CoreMigrationRunner
 
         public string Id { get; }
 
+        /// <summary>Applies the delegated migration action</summary>
+        /// <param name="context">Migration context supplied by the runner</param>
+        /// <param name="cancellationToken">Token used to cancel the migration</param>
+        /// <returns>A task that completes after the delegated action finishes</returns>
         public Task ApplyAsync(MigrationContext context, CancellationToken cancellationToken = default)
             => _apply(cancellationToken);
     }

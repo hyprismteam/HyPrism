@@ -14,6 +14,8 @@ public interface IRuntimeProvisioner
     /// <param name="progressCallback">Callback for reporting progress (percentage, status message)</param>
     /// <param name="cancellationToken">Token used to cancel runtime download and installation</param>
     /// <returns>A task that completes when a compatible runtime is available</returns>
+    /// <exception cref="OperationCanceledException">Thrown when runtime installation is cancelled</exception>
+    /// <exception cref="InvalidDataException">Thrown when the downloaded runtime archive is invalid</exception>
     Task EnsureJREInstalledAsync(
         Action<int, string> progressCallback,
         CancellationToken cancellationToken = default);

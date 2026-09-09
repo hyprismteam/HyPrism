@@ -71,9 +71,6 @@ public class HytaleVersionSource : IVersionSource
     public VersionSourceType Type => VersionSourceType.Official;
 
     /// <inheritdoc/>
-    /// <remarks>
-    /// Checks if ANY official profile has a valid session (not just the active one)
-    /// </remarks>
     public bool IsAvailable => HasAnyOfficialProfile();
 
     /// <summary>
@@ -111,11 +108,6 @@ public class HytaleVersionSource : IVersionSource
     };
 
     /// <inheritdoc/>
-    /// <remarks>
-    /// Official Hytale API with from_build=0 returns the LATEST full version as a complete .pwr.
-    /// This means for downloading the latest version, we DON'T need patch chains.
-    /// Patches (from_build=1+) are only needed for updating existing installations
-    /// </remarks>
     public bool IsDiffBasedBranch(string branch) => false;
 
     /// <inheritdoc/>
@@ -480,6 +472,7 @@ public class HytaleVersionSource : IVersionSource
     /// <summary>
     /// Gets the access token from the current Hytale session
     /// </summary>
+    /// <returns>The access token, or null when unavailable</returns>
     public string? GetAccessToken() => _authService.CurrentSession?.AccessToken;
 
     /// <summary>
@@ -509,6 +502,7 @@ public class HytaleVersionSource : IVersionSource
     /// <summary>
     /// Returns cached speed test result if still valid
     /// </summary>
+    /// <returns>The cached speed test result, or null when unavailable</returns>
     public MirrorSpeedTestResult? GetCachedSpeedTest()
     {
         if (_speedTestResult == null)
@@ -524,6 +518,7 @@ public class HytaleVersionSource : IVersionSource
     /// Tests official CDN speed (ping and download speed).
     /// Uses authenticated requests to download real game data
     /// </summary>
+    /// <returns>A task that completes with the official source speed test result</returns>
     public async Task<MirrorSpeedTestResult> TestSpeedAsync(CancellationToken ct = default)
     {
         var cached = GetCachedSpeedTest();

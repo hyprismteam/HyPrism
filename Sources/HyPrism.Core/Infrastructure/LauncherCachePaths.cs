@@ -13,6 +13,7 @@ public static class LauncherCachePaths
     /// <summary>
     /// Gets the directory used for resumable game payload downloads
     /// </summary>
+    /// <returns>The game downloads directory</returns>
     public static string GetGameDownloadsDirectory(string appDirectory)
         => Path.Combine(appDirectory, "Cache", "Game", "Downloads");
 

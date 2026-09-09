@@ -10,20 +10,26 @@ namespace HyPrism.Core.Game.Sources;
 /// </summary>
 public class MirrorSpeedTestResult
 {
+    /// <summary>Stable identifier of the tested mirror</summary>
     public string MirrorId { get; set; } = "";
+    /// <summary>Base URL of the tested mirror</summary>
     public string MirrorUrl { get; set; } = "";
+    /// <summary>Display name of the tested mirror</summary>
     public string MirrorName { get; set; } = "";
+    /// <summary>Round-trip probe time in milliseconds, or a negative value when unavailable</summary>
     public long PingMs { get; set; } = 0;
     /// <summary>
     /// Download speed in MB/s (megabytes per second)
     /// </summary>
     public double SpeedMBps { get; set; } = 0;
+    /// <summary>Whether the mirror responded successfully</summary>
     public bool IsAvailable { get; set; }
     /// <summary>
     /// Whether an available mirror exposes at least one version for the current OS and architecture.
     /// Null means the compatibility check does not apply or could not be completed
     /// </summary>
     public bool? HasVersionsForCurrentPlatform { get; set; }
+    /// <summary>UTC time when the speed test was completed</summary>
     public DateTime TestedAt { get; set; } = DateTime.UtcNow;
 }
 
@@ -85,6 +91,7 @@ public interface IVersionSource
     /// <summary>
     /// Whether this source is currently available (e.g., authenticated for official)
     /// </summary>
+    /// <remarks>For the official Hytale source, availability is based on any official profile with a valid session</remarks>
     bool IsAvailable { get; }
 
     /// <summary>
@@ -104,6 +111,7 @@ public interface IVersionSource
     /// Pre-release typically uses diffs (v{from}~{to}), release uses full copies
     /// </summary>
     /// <param name="branch">The branch name</param>
+    /// <remarks>For the official Hytale source, the latest full build is returned directly and patch chains update existing installations</remarks>
     /// <returns>True if the branch uses diff-based patches</returns>
     bool IsDiffBasedBranch(string branch);
 

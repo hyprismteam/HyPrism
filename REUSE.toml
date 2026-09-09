@@ -12,7 +12,7 @@ path = [
     "**/*.json",
     "**/*.mdx",
     "**/*.lock",
-    "Docs/pnpm-lock.yaml",
+    "Docs/package-lock.json",
     "Docs/next-env.d.ts",
     "**/*.md5",
     "**/.hintrc",

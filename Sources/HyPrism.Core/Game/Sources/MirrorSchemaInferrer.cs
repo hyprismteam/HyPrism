@@ -20,6 +20,7 @@ internal static class MirrorSchemaInferrer
     /// Produces a safe, lowercase identifier from the given <paramref name="uri"/>'s hostname
     /// by stripping common TLD/www decorations.
     /// </summary>
+    /// <returns>The generated mirror identifier</returns>
     public static string GenerateMirrorId(Uri uri)
     {
         var host = uri.Host.Replace(".", "-").ToLowerInvariant();
@@ -34,6 +35,7 @@ internal static class MirrorSchemaInferrer
     /// Extracts a human-readable mirror name from the <paramref name="uri"/>'s hostname
     /// (second-to-last label, capitalised).
     /// </summary>
+    /// <returns>The mirror display name</returns>
     public static string ExtractMirrorName(Uri uri)
     {
         var host = uri.Host;
@@ -56,6 +58,7 @@ internal static class MirrorSchemaInferrer
     /// Builds a <see cref="MirrorMeta"/> for mirrors that expose version info via
     /// <c>/infos</c> and host patch archives under <c>/dl/{os}/{arch}/{version}.pwr</c>.
     /// </summary>
+    /// <returns>The created infos api pattern mirror</returns>
     public static MirrorMeta CreateInfosApiPatternMirror(Uri baseUri, string mirrorId)
     {
         var baseUrl = baseUri.GetLeftPart(UriPartial.Authority);
@@ -112,6 +115,7 @@ internal static class MirrorSchemaInferrer
     /// Builds a <see cref="MirrorMeta"/> for mirrors that publish a <c>manifest.json</c>
     /// listing patch files in <c>{os}/{arch}/{branch}/{from}_to_{to}.pwr</c> layout.
     /// </summary>
+    /// <returns>The created manifest pattern mirror</returns>
     public static MirrorMeta CreateManifestPatternMirror(
         Uri baseUri,
         string mirrorId,
@@ -170,6 +174,7 @@ internal static class MirrorSchemaInferrer
     /// Builds a <see cref="MirrorMeta"/> for mirrors running the Hytale Launcher API
     /// (<c>/launcher/patches/{branch}/versions</c>).
     /// </summary>
+    /// <returns>The created launcher api pattern mirror</returns>
     public static MirrorMeta CreateLauncherApiPatternMirror(Uri baseUri, string mirrorId)
     {
         var baseUrl = baseUri.GetLeftPart(UriPartial.Authority);
@@ -216,6 +221,7 @@ internal static class MirrorSchemaInferrer
     /// Builds a <see cref="MirrorMeta"/> for mirrors serving raw patch archives via HTTP
     /// directory auto-index at <c>{base}{basePath}/{os}/{arch}/{branch}/{from}/</c>.
     /// </summary>
+    /// <returns>The created static files pattern mirror</returns>
     public static MirrorMeta CreateStaticFilesPatternMirror(Uri baseUri, string mirrorId, string basePath)
     {
         var baseUrl = baseUri.GetLeftPart(UriPartial.Authority);
@@ -266,6 +272,7 @@ internal static class MirrorSchemaInferrer
     /// <c>"grouped"</c> when platform nodes contain sub-keys (<c>base</c> / <c>patch</c>),
     /// or <c>"flat"</c> otherwise.
     /// </summary>
+    /// <returns>The detected JSON structure</returns>
     public static string DetectJsonStructure(JsonElement hytaleNode)
     {
         foreach (var branch in hytaleNode.EnumerateObject())

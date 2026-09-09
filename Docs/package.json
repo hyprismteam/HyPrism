@@ -2,7 +2,6 @@
   "name": "@hyprism/docs",
   "version": "0.1.0",
   "private": true,
-  "packageManager": "pnpm@11.21.0",
   "scripts": {
     "dev": "docusaurus start --host 0.0.0.0",
     "build": "docusaurus build --out-dir out",
@@ -30,6 +29,13 @@
     "@types/node": "24.10.13",
     "@types/react": "19.2.18",
     "typescript": "6.0.3"
+  },
+  "allowScripts": {
+    "@swc/core": true,
+    "core-js": true
+  },
+  "overrides": {
+    "zod": "4.1.12"
   },
   "browserslist": {
     "production": [

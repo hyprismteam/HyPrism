@@ -27,6 +27,7 @@ public interface IButlerClient
     /// <param name="progressCallback">Optional callback for reporting progress (percentage, status message)</param>
     /// <param name="cancellationToken">Token used to cancel installation</param>
     /// <returns>The path to the installed Butler executable</returns>
+    /// <exception cref="OperationCanceledException">Thrown when Butler installation is cancelled</exception>
     Task<string> EnsureButlerInstalledAsync(
         Action<int, string>? progressCallback = null,
         CancellationToken cancellationToken = default);
@@ -40,5 +41,6 @@ public interface IButlerClient
     /// <param name="externalCancellationToken">Token to cancel the operation</param>
     /// <returns>A task that completes after Butler applies the patch</returns>
     /// <exception cref="OperationCanceledException">Thrown when the operation is cancelled</exception>
+    /// <exception cref="InvalidOperationException">Thrown when Butler cannot apply the patch</exception>
     Task ApplyPwrAsync(string pwrFile, string targetDir, Action<int, string>? progressCallback = null, CancellationToken externalCancellationToken = default);
 }

@@ -9,6 +9,8 @@ SPDX-License-Identifier: GPL-3.0-only
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <WarningsAsErrors>$(WarningsAsErrors);CS1570;CS1572;CS1573;CS1587;CS1591</WarningsAsErrors>
   </PropertyGroup>
 
   <ItemGroup>

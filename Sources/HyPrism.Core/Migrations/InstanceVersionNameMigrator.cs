@@ -17,6 +17,10 @@ public sealed class InstanceVersionNameMigrator
     private readonly IInstanceRepository _instances;
     private readonly IGameVersionCatalog _versions;
 
+    /// <summary>Creates a migration that backfills missing instance version names</summary>
+    /// <param name="instances">Repository containing instance metadata</param>
+    /// <param name="versions">Catalog used to resolve version names</param>
+    /// <exception cref="ArgumentNullException">Thrown when a required service is <see langword="null"/></exception>
     public InstanceVersionNameMigrator(
         IInstanceRepository instances,
         IGameVersionCatalog versions)
@@ -28,6 +32,7 @@ public sealed class InstanceVersionNameMigrator
     /// <summary>
     /// Finds missing version names, persists them to instance metadata, and refreshes the instance cache
     /// </summary>
+    /// <returns>A task that completes when the operation finishes</returns>
     public async Task MigrateAsync(CancellationToken cancellationToken = default)
     {
         try

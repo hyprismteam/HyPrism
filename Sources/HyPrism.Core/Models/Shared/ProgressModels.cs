@@ -51,8 +51,12 @@ public class ProgressUpdateMessage
 /// <summary>Describes an operation error together with its optional instance target.</summary>
 public sealed class OperationErrorMessage
 {
+    /// <summary>Identifier of the affected instance, when applicable</summary>
     public string? InstanceId { get; init; }
+    /// <summary>Stable error category key</summary>
     public required string Type { get; init; }
+    /// <summary>User-facing error message or localization key</summary>
     public required string Message { get; init; }
+    /// <summary>Optional technical details for diagnostics</summary>
     public string? Technical { get; init; }
 }

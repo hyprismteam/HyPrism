@@ -26,7 +26,7 @@ Downloads are available in [Releases](https://github.com/hyprismteam/HyPrism/rel
 **Requirements:**
 
 - .NET 10.0 SDK
-- Node.js 22 and pnpm when working on the documentation
+- Node.js 22 and npm when working on the documentation
 
 **Build:**
 

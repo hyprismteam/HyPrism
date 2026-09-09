@@ -25,6 +25,7 @@ public class JsonConfigStore : IConfigStore
     /// Loads existing configuration or creates a new one with default values.
     /// </summary>
     /// <param name="appDataPath">The application data directory path where Config.json is stored.</param>
+    /// <param name="deferLegacyMigrations">Whether legacy migrations should be deferred to the startup migration runner</param>
     public JsonConfigStore(string appDataPath, bool deferLegacyMigrations = false)
     {
         Directory.CreateDirectory(appDataPath);

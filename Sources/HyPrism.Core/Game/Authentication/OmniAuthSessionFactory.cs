@@ -19,12 +19,14 @@ public static class OmniAuthSessionFactory
     /// <summary>
     /// Creates identity and session tokens signed by a new ephemeral Ed25519 key
     /// </summary>
+    /// <returns>The created OmniAuth session</returns>
     public static OmniAuthSession Create(string playerUuid, string playerName)
         => Create(playerUuid, playerName, DefaultIssuer);
 
     /// <summary>
     /// Creates identity and session tokens signed by a new ephemeral Ed25519 key for an explicit issuer
     /// </summary>
+    /// <returns>The created OmniAuth session</returns>
     public static OmniAuthSession Create(string playerUuid, string playerName, string issuer)
         => new OmniAuthSessionIssuer(playerUuid, playerName, issuer).CreateSession();
 }
@@ -99,6 +101,7 @@ public sealed class OmniAuthSessionIssuer
     /// <summary>
     /// Issues the initial identity and session tokens
     /// </summary>
+    /// <returns>The created authentication session</returns>
     public OmniAuthSession CreateSession(
         string identityScope = "hytale:server hytale:client",
         string[]? entitlements = null,
@@ -135,6 +138,7 @@ public sealed class OmniAuthSessionIssuer
     /// <summary>
     /// Issues a server-scoped authorization grant
     /// </summary>
+    /// <returns>The created authorization grant</returns>
     public string CreateAuthorizationGrant(
         string audience,
         string? scope = null,
@@ -156,6 +160,7 @@ public sealed class OmniAuthSessionIssuer
     /// <summary>
     /// Issues the final server access token with optional certificate binding
     /// </summary>
+    /// <returns>The created access token</returns>
     public string CreateAccessToken(
         string audience,
         string? certificateFingerprint,
@@ -194,6 +199,7 @@ public sealed class OmniAuthSessionIssuer
     /// <summary>
     /// Validates a token created by this session issuer
     /// </summary>
+    /// <returns>true when the token is valid; otherwise false</returns>
     public bool TryValidateToken(string token, out JsonElement claims)
     {
         claims = default;

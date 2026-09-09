@@ -26,6 +26,7 @@ public static class DualAuthAgent
     /// Gets the global path where the DualAuth agent is stored.
     /// The agent is shared across all instances: appDir/DualAuth/dualauth-agent.jar
     /// </summary>
+    /// <returns>The Dual Auth agent path</returns>
     public static string GetAgentPath(string appDir)
     {
         return Path.Combine(appDir, AgentDirName, AgentFilename);
@@ -34,6 +35,7 @@ public static class DualAuthAgent
     /// <summary>
     /// Gets the path to the file that stores the installed agent version tag
     /// </summary>
+    /// <returns>The Dual Auth agent version path</returns>
     public static string GetAgentVersionPath(string appDir)
     {
         return Path.Combine(appDir, AgentDirName, VersionFilename);
@@ -43,6 +45,7 @@ public static class DualAuthAgent
     /// Reads the installed agent version tag from disk.
     /// Returns null if the file does not exist or cannot be read
     /// </summary>
+    /// <returns>The installed Dual Auth agent version, or null when unavailable</returns>
     public static string? GetInstalledAgentVersion(string appDir)
     {
         var versionPath = GetAgentVersionPath(appDir);
@@ -140,6 +143,7 @@ public static class DualAuthAgent
     /// Checks GitHub for a newer release and replaces the installed file only after a valid download.
     /// Falls back to <see cref="EnsureAgentAvailableAsync"/> if the GitHub API is unreachable
     /// </summary>
+    /// <returns>The Dual Auth result describing whether the agent was updated</returns>
     public static async Task<DualAuthResult> EnsureAgentUpToDateAsync(
         string appDir,
         Action<string, int?>? progressCallback = null,
@@ -245,6 +249,7 @@ public static class DualAuthAgent
     /// <summary>
     /// Checks if the DualAuth agent exists and appears valid
     /// </summary>
+    /// <returns>true when the Dual Auth agent is available; otherwise false</returns>
     public static bool IsAgentAvailable(string appDir)
     {
         var agentPath = GetAgentPath(appDir);
@@ -265,6 +270,7 @@ public static class DualAuthAgent
     /// Downloads the DualAuth agent JAR if not already present or invalid.
     /// The agent is stored globally in appDir/DualAuth/ and shared across all instances
     /// </summary>
+    /// <returns>The Dual Auth result describing whether the agent is available</returns>
     public static async Task<DualAuthResult> EnsureAgentAvailableAsync(
         string appDir,
         Action<string, int?>? progressCallback = null,
@@ -310,7 +316,7 @@ public static class DualAuthAgent
 
                 if (totalBytes > 0)
                 {
-                    var percent = (int)((downloadedBytes * 100) / totalBytes);
+                    var percent = (int)(downloadedBytes * 100 / totalBytes);
                     progressCallback?.Invoke($"Downloading agent... {downloadedBytes / 1024} KB", percent);
                 }
             }
@@ -381,6 +387,7 @@ public static class DualAuthAgent
     /// <summary>
     /// Builds environment variable lines for Unix launch scripts
     /// </summary>
+    /// <returns>The Unix environment variable lines</returns>
     public static string BuildUnixEnvLines(string agentPath, string authDomain, bool trustOfficialIssuers = true)
     {
         return $@"# DualAuth Agent Configuration
@@ -397,8 +404,12 @@ export HYTALE_TRUST_OFFICIAL=""{(trustOfficialIssuers ? "true" : "false")}""
 /// </summary>
 public class DualAuthResult
 {
+    /// <summary>Whether the agent operation completed successfully</summary>
     public bool Success { get; init; }
+    /// <summary>Path to the installed agent, when available</summary>
     public string? AgentPath { get; init; }
+    /// <summary>Whether an existing valid agent was reused</summary>
     public bool AlreadyExists { get; init; }
+    /// <summary>Error description when the operation failed</summary>
     public string? Error { get; init; }
 }

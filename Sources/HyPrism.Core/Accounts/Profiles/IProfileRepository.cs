@@ -20,6 +20,7 @@ public interface IProfileRepository
     /// <summary>
     /// Gets all available user profiles
     /// </summary>
+    /// <remarks>Filters out profiles with missing names or UUIDs</remarks>
     /// <returns>A list of all user profiles with valid names and UUIDs</returns>
     List<Profile> GetProfiles();
 
@@ -47,6 +48,7 @@ public interface IProfileRepository
     /// <param name="name">The profile name (1-16 characters)</param>
     /// <param name="uuid">The UUID for the profile</param>
     /// <param name="isOfficial">Whether the profile is linked to an official Hytale account</param>
+    /// <remarks>Validates the name length and UUID format before creation</remarks>
     /// <returns>The created profile, or null if creation failed</returns>
     Profile? CreateProfile(string name, string uuid, bool isOfficial = false);
 
@@ -54,6 +56,7 @@ public interface IProfileRepository
     /// Deletes a profile by its unique identifier
     /// </summary>
     /// <param name="profileId">The unique identifier of the profile to delete</param>
+    /// <remarks>Updates <see cref="GetSelectedProfileId"/> if the deleted profile was active</remarks>
     /// <returns>True if the profile was successfully deleted; otherwise, false</returns>
     bool DeleteProfile(string profileId);
 
@@ -61,6 +64,7 @@ public interface IProfileRepository
     /// Switches to a profile by its unique ID
     /// </summary>
     /// <param name="profileId">The profile ID to switch to</param>
+    /// <remarks>Backs up the current profile skin data and restores the selected profile skin data</remarks>
     /// <returns>True if the switch was successful; otherwise, false</returns>
     bool SwitchProfile(string profileId);
 
@@ -86,6 +90,7 @@ public interface IProfileRepository
     /// Duplicates an existing profile including all user data (mods, UserData folder)
     /// </summary>
     /// <param name="profileId">The unique identifier of the profile to duplicate</param>
+    /// <remarks>Copies the UserData folder, mods folder, and skin data from the source profile</remarks>
     /// <returns>The newly created profile, or null if duplication failed</returns>
     Profile? DuplicateProfile(string profileId);
 
@@ -93,6 +98,7 @@ public interface IProfileRepository
     /// Duplicates an existing profile without copying user data (only profile settings)
     /// </summary>
     /// <param name="profileId">The unique identifier of the profile to duplicate</param>
+    /// <remarks>Copies mods and skin/avatar data but not the UserData folder</remarks>
     /// <returns>The newly created profile, or null if duplication failed</returns>
     Profile? DuplicateProfileWithoutData(string profileId);
 
@@ -110,7 +116,7 @@ public interface IProfileRepository
 
     /// <summary>
     /// Repairs legacy profile-backed mod links for every discovered instance.
-    /// This is intended for startup migrations and is safe to repeat.
+    /// This is intended for startup migrations and is safe to repeat
     /// </summary>
     void MigrateLegacyModsLinks();
 

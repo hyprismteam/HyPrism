@@ -5,14 +5,14 @@ description: Author bilingual MDX, highlighted examples, navigation, and launche
 
 # Documentation site
 
-The documentation is a Docusaurus 3 application under `Docs`. Use Node.js 22 and the pnpm version pinned in `Docs/package.json`
+The documentation is a Docusaurus 3 application under `Docs`. Use Node.js 22 and npm
 
 ## Run locally
 
 ```bash
 cd Docs
-pnpm install --frozen-lockfile
-pnpm dev
+npm ci
+npm run dev
 ```
 
 Open the [local documentation](http://localhost:3000/HyPrism/docs/). Development and GitHub Pages use the same `/HyPrism` base path
@@ -74,12 +74,12 @@ Use the matching language image, write useful alternative text, and link to the 
 
 ```bash
 cd Docs
-pnpm install --frozen-lockfile
-pnpm check
-PAGES_BASE_PATH=/HyPrism pnpm build
+npm ci
+npm run check
+PAGES_BASE_PATH=/HyPrism npm run build
 ```
 
-`pnpm check` validates prose, language parity, code fences, local images, internal routes, explicit bilingual anchors, repository links, and Core contract documentation, then runs TypeScript checks. The static export goes to `Docs/out`
+`npm run check` validates prose, language parity, code fences, local images, internal routes, explicit bilingual anchors, repository links, and Core contract documentation, then runs TypeScript checks. The static export goes to `Docs/out`
 
 Check highlighted C#, shell, JSON, and XML examples in the rendered site, plus language switching, section links, sidebar icons, and narrow-window layout
 

@@ -51,6 +51,7 @@ internal sealed class CurseForgeClient
     /// <summary>
     /// Returns <c>true</c> when a CurseForge API key is configured; otherwise logs a warning and returns <c>false</c>.
     /// </summary>
+    /// <returns>true when a CurseForge API key is configured; otherwise false</returns>
     public bool HasApiKey()
     {
         if (!string.IsNullOrEmpty(_getApiKey())) return true;
@@ -62,6 +63,7 @@ internal sealed class CurseForgeClient
     /// Creates an <see cref="HttpRequestMessage"/> targeting the CurseForge v1 API
     /// with the required authentication and content-type headers.
     /// </summary>
+    /// <returns>The created request</returns>
     public HttpRequestMessage CreateRequest(HttpMethod method, string endpoint)
     {
         var request = new HttpRequestMessage(method, $"{ApiBaseUrl}{endpoint}");
@@ -75,6 +77,7 @@ internal sealed class CurseForgeClient
     /// When <paramref name="fileId"/> is specified the exact file is fetched first;
     /// if not found (deleted/expired) the method falls back to the latest uploaded file.
     /// </summary>
+    /// <returns>A task that completes with the resolved file, or null when unavailable</returns>
     public async Task<CurseForgeFile?> ResolveFileAsync(string modId, string? fileId)
     {
         if (!string.IsNullOrWhiteSpace(fileId))
@@ -123,6 +126,7 @@ internal sealed class CurseForgeClient
     /// → deterministic edge.forgecdn.net CDN URL.
     /// </para>
     /// </summary>
+    /// <returns>A task that completes with the resolved download url, or null when unavailable</returns>
     public async Task<string?> ResolveDownloadUrlAsync(string modId, string fileId, string? directUrl, string? fileName)
     {
         if (!string.IsNullOrWhiteSpace(directUrl))
@@ -165,6 +169,7 @@ internal sealed class CurseForgeClient
     /// Builds a deterministic edge.forgecdn.net CDN URL from the numeric file ID and file name.
     /// Returns <c>null</c> when the file ID is invalid or the file name is empty.
     /// </summary>
+    /// <returns>The fallback CDN URL, or null when unavailable</returns>
     public static string? BuildEdgeCdnFallbackUrl(string fileId, string? fileName)
     {
         if (!int.TryParse(fileId, out var numericFileId) || numericFileId <= 0)

@@ -10,9 +10,13 @@ namespace HyPrism.Core.Game.Sources;
 /// </summary>
 public class DiscoveryResult
 {
+    /// <summary>Whether mirror discovery produced a usable definition</summary>
     public bool Success { get; set; }
+    /// <summary>Error description when discovery fails</summary>
     public string? Error { get; set; }
+    /// <summary>Discovered mirror definition, when discovery succeeds</summary>
     public MirrorMeta? Mirror { get; set; }
+    /// <summary>Detected mirror layout identifier, when available</summary>
     public string? DetectedType { get; set; }
 }
 

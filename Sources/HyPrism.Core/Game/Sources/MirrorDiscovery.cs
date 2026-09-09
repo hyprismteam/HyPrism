@@ -69,6 +69,7 @@ public partial class MirrorDiscovery : IMirrorDiscovery
     /// <param name="url">The mirror URL to discover</param>
     /// <param name="headers">Optional custom headers to use for discovery requests (supports {hytaleAgent} variable)</param>
     /// <param name="ct">Cancellation token</param>
+    /// <returns>A task that completes with the discovered mirror definition</returns>
     public async Task<DiscoveryResult> DiscoverMirrorAsync(string url, Dictionary<string, string>? headers = null, CancellationToken ct = default)
     {
         _customHeaders = headers;

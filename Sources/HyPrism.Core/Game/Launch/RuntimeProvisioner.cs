@@ -624,6 +624,7 @@ public partial class RuntimeProvisioner : IRuntimeProvisioner
     /// Checks if Visual C++ Redistributable is installed on Windows.
     /// Uses registry check for VC++ 14.x (Visual Studio 2015-2022)
     /// </summary>
+    /// <returns>true when the Visual C++ Redistributable is installed; otherwise false</returns>
     public bool IsVCRedistInstalled()
     {
         if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
@@ -658,6 +659,8 @@ public partial class RuntimeProvisioner : IRuntimeProvisioner
     /// Ensures Visual C++ Redistributable is installed on Windows.
     /// Downloads and runs the installer if not present
     /// </summary>
+    /// <returns>A task that completes when the operation finishes</returns>
+    /// <exception cref="OperationCanceledException">Thrown when redistributable installation is cancelled</exception>
     public async Task EnsureVCRedistInstalledAsync(
         Action<int, string> progressCallback,
         CancellationToken cancellationToken = default)

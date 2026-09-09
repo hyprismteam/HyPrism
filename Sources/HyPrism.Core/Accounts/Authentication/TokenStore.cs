@@ -37,6 +37,7 @@ internal static class TokenStore
     /// <summary>
     /// Gets the legacy (pre-profile) session file path at the app root.
     /// </summary>
+    /// <returns>The requested legacy session file path</returns>
     public static string GetLegacySessionFilePath(string appDir) =>
         LauncherJsonFile.GetPath(appDir, SessionFileName, LegacySessionFileName);
 
@@ -44,6 +45,7 @@ internal static class TokenStore
     /// Loads a <see cref="HytaleAuthSession"/> from the specified file path.
     /// Returns <c>null</c> when the file does not exist or deserialisation fails.
     /// </summary>
+    /// <returns>The loaded value, or null when unavailable</returns>
     public static HytaleAuthSession? Load(string filePath)
     {
         if (!File.Exists(filePath)) return null;

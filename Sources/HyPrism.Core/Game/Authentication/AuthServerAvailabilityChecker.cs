@@ -7,6 +7,11 @@ using System.Text.Json;
 
 namespace HyPrism.Core.Game.Authentication;
 
+/// <summary>
+/// Describes whether an authentication server responded to the expected API probe
+/// </summary>
+/// <param name="IsAvailable">Whether the server exposed a recognized authentication endpoint</param>
+/// <param name="PingMs">Elapsed probe time in milliseconds, or <c>-1</c> when no endpoint responded</param>
 public readonly record struct AuthServerAvailabilityResult(bool IsAvailable, long PingMs);
 
 /// <summary>
@@ -31,6 +36,14 @@ public static class AuthServerAvailabilityChecker
         "message"
     ];
 
+    /// <summary>
+    /// Probes an authentication server and measures the first recognized response
+    /// </summary>
+    /// <param name="httpClient">The HTTP client used for the probe</param>
+    /// <param name="authServer">The configured authentication server URL or host name</param>
+    /// <param name="cancellationToken">Token used to cancel the probe</param>
+    /// <returns>The availability result and elapsed probe time</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="httpClient"/> is <see langword="null"/></exception>
     public static async Task<AuthServerAvailabilityResult> CheckAsync(
         HttpClient httpClient,
         string authServer,

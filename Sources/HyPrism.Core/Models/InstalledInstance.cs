@@ -26,11 +26,17 @@ public enum InstanceValidationStatus
 /// </summary>
 public class InstanceValidationDetails
 {
+    /// <summary>Whether the instance executable is present</summary>
     public bool HasExecutable { get; set; }
+    /// <summary>Whether the instance assets directory is present</summary>
     public bool HasAssets { get; set; }
+    /// <summary>Whether the instance libraries are present</summary>
     public bool HasLibraries { get; set; }
+    /// <summary>Whether the instance configuration is present</summary>
     public bool HasConfig { get; set; }
+    /// <summary>Names of required components that are missing</summary>
     public List<string> MissingComponents { get; set; } = [];
+    /// <summary>Error description produced during validation</summary>
     public string? ErrorMessage { get; set; }
 }
 

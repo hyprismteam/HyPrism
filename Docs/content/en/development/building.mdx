@@ -5,7 +5,7 @@ description: Restore, build, run, and isolate the native launcher
 
 # Building
 
-The launcher requires .NET 10 SDK and Git. Node.js and pnpm are needed only for the [documentation site](/docs/development/documentation)
+The launcher requires .NET 10 SDK and Git. Node.js and npm are needed only for the [documentation site](/docs/development/documentation)
 
 ## Clone and build
 
@@ -59,8 +59,8 @@ Run the relevant [test suite](/docs/development/testing), then validate document
 
 ```bash
 cd Docs
-pnpm check
-PAGES_BASE_PATH=/HyPrism pnpm build
+npm run check
+PAGES_BASE_PATH=/HyPrism npm run build
 ```
 
 The documentation export is written to `Docs/out`

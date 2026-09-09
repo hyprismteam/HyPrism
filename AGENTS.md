@@ -76,9 +76,9 @@ Run these checks for every documentation change
 
 ```bash
 cd Docs
-pnpm install --frozen-lockfile
-pnpm check
-PAGES_BASE_PATH=/HyPrism pnpm build
+npm ci
+npm run check
+PAGES_BASE_PATH=/HyPrism npm run build
 ```
 
 Also run the relevant .NET tests when documentation examples or screenshots depend on runtime behavior
@@ -91,7 +91,7 @@ Before opening a pull request, verify the following
 - [ ] User pages contain tasks and outcomes, not implementation trivia
 - [ ] Technical pages cover every changed subsystem and contract
 - [ ] Screenshots are current, lossless, readable, and useful
-- [ ] `pnpm check` and the `/HyPrism` static export pass
+- [ ] `npm run check` and the `/HyPrism` static export pass
 - [ ] README is updated when the repository entry points or supported packages change
 
 Use a `docs:` commit prefix when a commit contains documentation changes only. Include the relevant items from this checklist in the pull request description

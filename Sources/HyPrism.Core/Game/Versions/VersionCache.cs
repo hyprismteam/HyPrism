@@ -55,6 +55,7 @@ public class VersionCache
     #region Path helpers
 
     /// <summary>Returns the path to the on-disk versions cache file.</summary>
+    /// <returns>The versions cache snapshot path</returns>
     public string GetSnapshotPath()
         => LauncherJsonFile.GetPath(
             Path.Combine(_appDir, "Cache", "Game"),
@@ -62,6 +63,7 @@ public class VersionCache
             "versions.json");
 
     /// <summary>Returns the path to the on-disk patches cache file.</summary>
+    /// <returns>The patch cache snapshot path</returns>
     public string GetPatchSnapshotPath()
         => LauncherJsonFile.GetPath(
             Path.Combine(_appDir, "Cache", "Game"),
@@ -75,6 +77,7 @@ public class VersionCache
     /// <summary>
     /// Checks if a specific branch's data in the cache is fresh (within <paramref name="maxAge"/>).
     /// </summary>
+    /// <returns><c>true</c> when the branch cache is newer than the allowed age; otherwise <c>false</c></returns>
     [SuppressMessage(
         "Performance",
         "CA1822:Mark members as static",
@@ -103,6 +106,7 @@ public class VersionCache
     /// Returns the in-memory or on-disk snapshot if it matches <paramref name="osName"/>/<paramref name="arch"/>,
     /// without checking freshness.
     /// </summary>
+    /// <returns>The cached versions snapshot, or null when no snapshot is available</returns>
     public VersionsCacheSnapshot? TryGet(string osName, string arch)
     {
         try
@@ -137,6 +141,7 @@ public class VersionCache
     /// Returns the in-memory or on-disk snapshot only if it matches
     /// <paramref name="osName"/>/<paramref name="arch"/> AND is younger than <paramref name="maxAge"/>.
     /// </summary>
+    /// <returns>The fresh cached versions snapshot, or null when the cache is missing or stale</returns>
     public VersionsCacheSnapshot? TryGetFresh(string osName, string arch, TimeSpan maxAge)
     {
         try
@@ -172,6 +177,7 @@ public class VersionCache
     }
 
     /// <summary>Loads the versions snapshot from disk, or returns <c>null</c> if absent or corrupt.</summary>
+    /// <returns>The loaded value, or null when unavailable</returns>
     public VersionsCacheSnapshot? Load()
     {
         try
@@ -221,6 +227,7 @@ public class VersionCache
     /// Removes mirror entries from a snapshot whose IDs are no longer registered,
     /// and ensures all nullable collections are initialised.
     /// </summary>
+    /// <returns>A sanitized snapshot containing only valid cache entries</returns>
     public VersionsCacheSnapshot Sanitize(VersionsCacheSnapshot snapshot)
     {
         snapshot.Data ??= new VersionsCacheData();
@@ -247,6 +254,7 @@ public class VersionCache
     #region Patches snapshot
 
     /// <summary>Loads the patches snapshot from disk, or returns <c>null</c> if absent or corrupt.</summary>
+    /// <returns>The loaded patches, or null when unavailable</returns>
     public PatchesCacheSnapshot? LoadPatches()
     {
         try

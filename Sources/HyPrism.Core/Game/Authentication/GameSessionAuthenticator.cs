@@ -175,6 +175,7 @@ public class GameSessionAuthenticator
     /// <summary>
     /// Validate an existing token is still valid
     /// </summary>
+    /// <returns>A task that completes with true when the operation succeeds; otherwise false</returns>
     public async Task<bool> ValidateTokenAsync(string token)
     {
         foreach (var authServerUrl in _authServerUrls)
@@ -197,78 +198,115 @@ public class GameSessionAuthenticator
     }
 }
 
+/// <summary>
+/// Request body used to create a game session on a custom authentication server
+/// </summary>
 public class GameSessionRequest
 {
+    /// <summary>Player UUID sent to the authentication server</summary>
     [JsonPropertyName("uuid")]
     public string UUID { get; set; } = "";
 
+    /// <summary>Player display name sent to the authentication server</summary>
     [JsonPropertyName("name")]
     public string Name { get; set; } = "";
 
+    /// <summary>Scopes requested for the game session</summary>
     [JsonPropertyName("scopes")]
     public string[] Scopes { get; set; } = [];
 }
 
+/// <summary>
+/// Response body returned by a custom authentication server
+/// </summary>
 public class GameSessionResponse
 {
+    /// <summary>Identity token using the camel-case response name</summary>
     [JsonPropertyName("identityToken")]
     public string? IdentityToken { get; set; }
 
+    /// <summary>Identity token using the snake-case response name</summary>
     [JsonPropertyName("identity_token")]
     public string? IdentityTokenAlt { get; set; }
 
+    /// <summary>Generic token returned by the server</summary>
     [JsonPropertyName("token")]
     public string? Token { get; set; }
 
+    /// <summary>Access token returned by the server</summary>
     [JsonPropertyName("accessToken")]
     public string? AccessToken { get; set; }
 
+    /// <summary>JWT token returned by the server</summary>
     [JsonPropertyName("jwt_token")]
     public string? JwtToken { get; set; }
 
+    /// <summary>Session token using the camel-case response name</summary>
     [JsonPropertyName("sessionToken")]
     public string? SessionToken { get; set; }
 
+    /// <summary>Session token using the snake-case response name</summary>
     [JsonPropertyName("session_token")]
     public string? SessionTokenAlt { get; set; }
 
+    /// <summary>Player UUID returned by the server</summary>
     [JsonPropertyName("uuid")]
     public string? UUID { get; set; }
 
+    /// <summary>Player display name returned by the server</summary>
     [JsonPropertyName("name")]
     public string? Name { get; set; }
 
+    /// <summary>Player username returned by the server</summary>
     [JsonPropertyName("username")]
     public string? Username { get; set; }
 
+    /// <summary>Nested player profile returned by the server</summary>
     [JsonPropertyName("profile")]
     public GameSessionProfile? Profile { get; set; }
 
+    /// <summary>UTC time when the returned session expires</summary>
     [JsonPropertyName("expiresAt")]
     public DateTime? ExpiresAt { get; set; }
 
+    /// <summary>Lifetime of the returned session in seconds</summary>
     [JsonPropertyName("expiresIn")]
     public int? ExpiresIn { get; set; }
 
+    /// <summary>Token type declared by the server</summary>
     [JsonPropertyName("tokenType")]
     public string? TokenType { get; set; }
 }
 
+/// <summary>
+/// Player profile nested in a custom authentication response
+/// </summary>
 public class GameSessionProfile
 {
+    /// <summary>Player username</summary>
     [JsonPropertyName("username")]
     public string? Username { get; set; }
 
+    /// <summary>Player display name</summary>
     [JsonPropertyName("name")]
     public string? Name { get; set; }
 }
 
+/// <summary>
+/// Normalized result of a custom authentication request
+/// </summary>
 public class AuthTokenResult
 {
+    /// <summary>Whether the authentication request succeeded</summary>
     public bool Success { get; set; }
+    /// <summary>Primary access or identity token, when available</summary>
     public string? Token { get; set; }
+    /// <summary>Game session token, when available</summary>
     public string? SessionToken { get; set; }
+    /// <summary>Player UUID returned by the authentication server</summary>
     public string? UUID { get; set; }
+    /// <summary>Player display name returned by the authentication server</summary>
     public string? Name { get; set; }
+    /// <summary>Error description when <see cref="Success"/> is <see langword="false"/></summary>
     public string? Error { get; set; }
 }

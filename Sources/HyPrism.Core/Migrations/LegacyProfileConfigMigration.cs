@@ -24,6 +24,11 @@ internal static class LegacyProfileConfigMigration
     /// <summary>
     /// Migrates legacy profile fields and returns config JSON without those fields
     /// </summary>
+    /// <param name="appDataPath">Application data directory containing the profiles folder</param>
+    /// <param name="json">Legacy configuration JSON</param>
+    /// <param name="changed">Set to <see langword="true"/> when legacy fields are removed</param>
+    /// <returns>The migration result</returns>
+    /// <exception cref="JsonException">Thrown when the configuration JSON is not an object</exception>
     public static string Migrate(string appDataPath, string json, out bool changed)
     {
         changed = false;

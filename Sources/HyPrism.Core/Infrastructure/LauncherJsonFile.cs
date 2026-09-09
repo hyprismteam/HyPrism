@@ -13,6 +13,7 @@ internal static class LauncherJsonFile
     /// <summary>
     /// Returns the canonical file path after moving a legacy file when one is present
     /// </summary>
+    /// <returns>The requested path</returns>
     public static string GetPath(string directory, string canonicalFileName, params string[] legacyFileNames)
     {
         lock (MigrationLock)

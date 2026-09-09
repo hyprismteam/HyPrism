@@ -19,6 +19,7 @@ public static class LauncherUtilities
     /// "prerelease" or "pre-release" -> "pre-release"
     /// "latest" -> "release"
     /// </summary>
+    /// <returns>The normalized version type</returns>
     public static string NormalizeVersionType(string versionType)
     {
         if (string.IsNullOrWhiteSpace(versionType))
@@ -34,6 +35,7 @@ public static class LauncherUtilities
     /// Sanitizes a filename by removing invalid characters.
     /// Returns "default" if the resulting name is empty.
     /// </summary>
+    /// <returns>The sanitized file name</returns>
     public static string SanitizeFileName(string name)
     {
         var invalid = Path.GetInvalidFileNameChars();
@@ -44,6 +46,7 @@ public static class LauncherUtilities
     /// <summary>
     /// Gets the profiles root directory inside app data.
     /// </summary>
+    /// <returns>The requested profiles root</returns>
     public static string GetProfilesRoot(string appDir)
     {
         var profilesDir = Path.Combine(appDir, "Profiles");
@@ -55,6 +58,7 @@ public static class LauncherUtilities
     /// Resolves profile folder path using ID-first layout and attempts to migrate
     /// legacy name-based folders when possible.
     /// </summary>
+    /// <returns>The requested profile folder path</returns>
     public static string GetProfileFolderPath(string appDir, Profile profile, bool createIfMissing = true, bool migrateLegacyByName = true)
     {
         var profilesDir = GetProfilesRoot(appDir);
@@ -156,6 +160,7 @@ public static class LauncherUtilities
     /// Gets the effective application data directory.
     /// Checks environment variable first, then config file, then defaults to platform-specific location.
     /// </summary>
+    /// <returns>The requested effective app dir</returns>
     public static string GetEffectiveAppDir()
     {
         var envDir = Environment.GetEnvironmentVariable("HYPRISM_DATA");
@@ -170,6 +175,7 @@ public static class LauncherUtilities
     /// <summary>
     /// Gets the default platform-specific application data directory.
     /// </summary>
+    /// <returns>The requested default app dir</returns>
     public static string GetDefaultAppDir()
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
@@ -195,6 +201,7 @@ public static class LauncherUtilities
     /// <summary>
     /// Gets the current operating system identifier.
     /// </summary>
+    /// <returns>The normalized operating system identifier</returns>
     public static string GetOS()
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) return "windows";
@@ -206,6 +213,7 @@ public static class LauncherUtilities
     /// <summary>
     /// Gets the current CPU architecture identifier.
     /// </summary>
+    /// <returns>The normalized processor architecture identifier</returns>
     public static string GetArch()
     {
         return RuntimeInformation.OSArchitecture switch
@@ -375,6 +383,7 @@ public static class LauncherUtilities
     /// <summary>
     /// Checks if the macOS app signature timestamp matches the executable's last write time.
     /// </summary>
+    /// <returns>true when the macOS application signature is current; otherwise false</returns>
     public static bool IsMacAppSignatureCurrent(string executablePath, string stampPath)
     {
         try
@@ -414,6 +423,7 @@ public static class LauncherUtilities
     /// Generates a random username for new users.
     /// Format: Adjective + Noun + 4-digit number (max 16 chars total)
     /// </summary>
+    /// <returns>A generated random username</returns>
     public static string GenerateRandomUsername()
     {
         var random = new Random();

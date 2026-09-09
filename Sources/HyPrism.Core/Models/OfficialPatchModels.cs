@@ -370,6 +370,10 @@ public class CachedPatchStep
 
 internal static class JsonMetadataReader
 {
+    /// <summary>Returns the first string value stored under any of the specified names</summary>
+    /// <param name="metadata">Metadata dictionary to inspect</param>
+    /// <param name="names">Case-insensitive property names to try</param>
+    /// <returns>The matching string value, or <see langword="null"/> when none is found</returns>
     public static string? TryGetString(
         IReadOnlyDictionary<string, JsonElement>? metadata,
         params string[] names)

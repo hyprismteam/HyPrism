@@ -104,6 +104,7 @@ public sealed class ProgressReporter : IProgressReporter
     /// <param name="type">The error category</param>
     /// <param name="message">The user-facing error message</param>
     /// <param name="technical">Optional diagnostic details</param>
+    /// <param name="instanceId">Optional instance identifier associated with the error</param>
     private void SendErrorEvent(string type, string message, string? technical, string? instanceId)
     {
         OperationErrorOccurred?.Invoke(new OperationErrorMessage

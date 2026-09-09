@@ -277,6 +277,7 @@ public class ClientPatcher
     /// <summary>
     /// Check if client is already patched for this domain
     /// </summary>
+    /// <returns>true when the client is already patched; otherwise false</returns>
     public bool IsPatchedAlready(string clientPath)
     {
         string flagFile = GetFlagFilePath(clientPath);
@@ -491,6 +492,7 @@ public class ClientPatcher
     /// <summary>
     /// Patch the client binary to use custom domain
     /// </summary>
+    /// <returns>The patch result describing whether the client was changed</returns>
     public PatchResult PatchClient(string clientPath, Action<string, int?>? progressCallback = null)
     {
         var (mode, mainDomain, subdomainPrefix) = GetDomainStrategy();
@@ -695,6 +697,7 @@ public class ClientPatcher
     /// <summary>
     /// Find the client binary path based on platform
     /// </summary>
+    /// <returns>The matching client path, or null when unavailable</returns>
     public static string? FindClientPath(string gameDir)
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
@@ -717,6 +720,7 @@ public class ClientPatcher
     /// <summary>
     /// Ensure client is patched before launching
     /// </summary>
+    /// <returns>The patch result for the client</returns>
     public PatchResult EnsureClientPatched(string gameDir, Action<string, int?>? progressCallback = null)
     {
         string? clientPath = FindClientPath(gameDir);
@@ -731,6 +735,7 @@ public class ClientPatcher
     /// <summary>
     /// Check if the client binary in the given game directory is currently patched (any domain)
     /// </summary>
+    /// <returns>true when the client is patched; otherwise false</returns>
     public static bool IsClientPatched(string gameDir)
     {
         string? clientPath = FindClientPath(gameDir);
@@ -744,6 +749,7 @@ public class ClientPatcher
     /// <summary>
     /// Check if the server JAR in the given game directory is currently patched
     /// </summary>
+    /// <returns>true when the server JAR is patched; otherwise false</returns>
     public static bool IsServerJarPatched(string gameDir)
     {
         string serverJarPath = Path.Combine(gameDir, "Server", "HytaleServer.jar");
@@ -755,6 +761,7 @@ public class ClientPatcher
     /// Restore the client binary from its .original backup, removing the patch.
     /// Used when switching to official servers where no patching is needed
     /// </summary>
+    /// <returns>The patch result describing whether the client was restored</returns>
     public static PatchResult RestoreClientFromBackup(string gameDir, Action<string, int?>? progressCallback = null)
     {
         string? clientPath = FindClientPath(gameDir);
@@ -803,6 +810,7 @@ public class ClientPatcher
     /// <summary>
     /// Restore the server JAR from its .original backup, removing the patch
     /// </summary>
+    /// <returns>The patch result describing whether the server JAR was restored</returns>
     public static PatchResult RestoreServerJarFromBackup(string gameDir, Action<string, int?>? progressCallback = null)
     {
         string serverJarPath = Path.Combine(gameDir, "Server", "HytaleServer.jar");
@@ -841,6 +849,7 @@ public class ClientPatcher
     /// Restore both client and server JAR from backups.
     /// Used when switching to official servers
     /// </summary>
+    /// <returns>The patch result describing whether all backups were restored</returns>
     public static PatchResult RestoreAllFromBackup(string gameDir, Action<string, int?>? progressCallback = null)
     {
         Logger.Info("Patcher", "=== Restoring originals (official mode) ===");
@@ -871,6 +880,7 @@ public class ClientPatcher
     /// <summary>
     /// Sign macOS binary after patching (ad-hoc signature)
     /// </summary>
+    /// <returns>true when the operation succeeds; otherwise false</returns>
     public static bool SignMacOSBinary(string binaryPath)
     {
         if (!RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
@@ -927,9 +937,14 @@ public class ClientPatcher
 /// </summary>
 public class PatchResult
 {
+    /// <summary>Whether the patch or restore operation completed successfully</summary>
     public bool Success { get; set; }
+    /// <summary>Whether the requested patch was already applied</summary>
     public bool AlreadyPatched { get; set; }
+    /// <summary>Number of replacements applied during the operation</summary>
     public int PatchCount { get; set; }
+    /// <summary>Error description when the operation failed</summary>
     public string? Error { get; set; }
+    /// <summary>Non-fatal warning produced during the operation</summary>
     public string? Warning { get; set; }
 }

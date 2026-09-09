@@ -73,6 +73,7 @@ public partial class GameLauncher : IGameLauncher
     /// <param name="gpuProvider">Service for GPU detection</param>
     /// <param name="appPath">Application path configuration</param>
     /// <param name="profiles">Service for the active launcher profile</param>
+    /// <param name="profileRepository">Repository for persistent launcher profiles</param>
     /// <param name="localNodeFactory">Factory for launch-scoped loopback authentication services</param>
     /// <param name="logSession">Central log paths for the current launcher process</param>
     /// <param name="console">Optional live console buffer for game process output</param>

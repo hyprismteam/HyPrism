@@ -169,6 +169,7 @@ public partial class InstanceRepository : IInstanceRepository
     /// <summary>
     /// Get the path for a specific branch (release/pre-release)
     /// </summary>
+    /// <returns>The branch path</returns>
     public string GetBranchPath(string branch)
     {
         string normalizedBranch = NormalizeVersionType(branch);
@@ -178,6 +179,7 @@ public partial class InstanceRepository : IInstanceRepository
     /// <summary>
     /// Get the UserData path for a specific instance version
     /// </summary>
+    /// <returns>The instance UserData path</returns>
     public string GetInstanceUserDataPath(string versionPath)
     {
         return Path.Combine(versionPath, "UserData");
@@ -187,6 +189,7 @@ public partial class InstanceRepository : IInstanceRepository
     /// Resolve version to actual number. Returns 0 if not found.
     /// Checks in order: provided version > config.SelectedVersion > latest.json > local folders
     /// </summary>
+    /// <returns>The resolved version or latest</returns>
     public int ResolveVersionOrLatest(string branch, int version)
     {
         var config = GetConfig();
@@ -218,6 +221,7 @@ public partial class InstanceRepository : IInstanceRepository
     /// Find existing instance path by branch and version.
     /// Checks multiple locations including legacy naming formats and GUID-named folders
     /// </summary>
+    /// <returns>The existing instance path, or null when unavailable</returns>
     public string? FindExistingInstancePath(string branch, int version)
     {
         string normalizedBranch = NormalizeVersionType(branch);
@@ -287,6 +291,7 @@ public partial class InstanceRepository : IInstanceRepository
     /// <summary>
     /// Get all instance roots including legacy locations
     /// </summary>
+    /// <returns>All instance roots, including legacy roots</returns>
     public IEnumerable<string> GetInstanceRootsIncludingLegacy()
     {
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -330,6 +335,7 @@ public partial class InstanceRepository : IInstanceRepository
     /// <summary>
     /// Get path for latest instance symlink/info
     /// </summary>
+    /// <returns>The latest instance path</returns>
     public string GetLatestInstancePath(string branch)
     {
         return Path.Combine(GetBranchPath(branch), "latest");
@@ -338,6 +344,7 @@ public partial class InstanceRepository : IInstanceRepository
     /// <summary>
     /// Get path for latest.json file (legacy, used for migration only)
     /// </summary>
+    /// <returns>The latest instance information path</returns>
     public string GetLatestInfoPath(string branch)
     {
         return Path.Combine(GetBranchPath(branch), "latest.json");
@@ -353,6 +360,7 @@ public partial class InstanceRepository : IInstanceRepository
     /// Reads from the "latest" instance's Meta.json (InstalledVersion field).
     /// Falls back to legacy latest.json for migration
     /// </summary>
+    /// <returns>The loaded latest info, or null when unavailable</returns>
     public LatestInstanceInfo? LoadLatestInfo(string branch)
     {
         try
@@ -456,6 +464,7 @@ public partial class InstanceRepository : IInstanceRepository
     /// <summary>
     /// Normalize version type: "prerelease" or "pre-release" -> "pre-release"
     /// </summary>
+    /// <returns>The normalized version type</returns>
     public static string NormalizeVersionType(string versionType)
     {
         return LauncherUtilities.NormalizeVersionType(versionType);
@@ -465,6 +474,7 @@ public partial class InstanceRepository : IInstanceRepository
     /// Checks if the game client executable exists at the specified version path.
     /// Tries multiple layouts: new layout (Client/...) and legacy layout (game/Client/...)
     /// </summary>
+    /// <returns>true when the client is present; otherwise false</returns>
     public bool IsClientPresent(string versionPath)
     {
         var subfolders = new[] { "", "game" };
@@ -501,6 +511,7 @@ public partial class InstanceRepository : IInstanceRepository
     /// <summary>
     /// Checks if game assets are present at the specified version path
     /// </summary>
+    /// <returns>true when the required assets are present; otherwise false</returns>
     public bool AreAssetsPresent(string versionPath)
     {
         string assetsCheck;
@@ -523,6 +534,7 @@ public partial class InstanceRepository : IInstanceRepository
     /// Searches existing instances by branch/version using Meta.json.
     /// If not found, returns a path for a new instance (but does not create it)
     /// </summary>
+    /// <returns>The instance path</returns>
     public string GetInstancePath(string branch, int version)
     {
         if (version == 0)
@@ -576,6 +588,7 @@ public partial class InstanceRepository : IInstanceRepository
     /// <summary>
     /// Resolves the instance path, optionally preferring existing legacy paths
     /// </summary>
+    /// <returns>The resolved instance path</returns>
     public string ResolveInstancePath(string branch, int version, bool preferExisting)
     {
         if (preferExisting)
@@ -642,6 +655,7 @@ public partial class InstanceRepository : IInstanceRepository
     /// Deletes a game instance by branch and version number.
     /// Also removes latest.json for latest instances (version 0)
     /// </summary>
+    /// <returns>true when the operation succeeds; otherwise false</returns>
     public bool DeleteGame(string branch, int versionNumber)
     {
         try
@@ -676,6 +690,7 @@ public partial class InstanceRepository : IInstanceRepository
     /// <summary>
     /// Deletes a game instance by unique ID
     /// </summary>
+    /// <returns>true when the operation succeeds; otherwise false</returns>
     public bool DeleteGameById(string instanceId)
     {
         try
@@ -716,6 +731,7 @@ public partial class InstanceRepository : IInstanceRepository
     /// <summary>
     /// Scan for all installed instances in the standard hierarchy
     /// </summary>
+    /// <returns>All installed instances</returns>
     public List<InstalledInstance> GetInstalledInstances()
     {
         var results = new List<InstalledInstance>();
@@ -1541,6 +1557,7 @@ public partial class InstanceRepository : IInstanceRepository
     /// For downgrades or branch changes: removes game client files and prepares for fresh download.
     /// Always keeps UserData and Meta.json, and marks IsLatest = false
     /// </summary>
+    /// <returns>true when the operation succeeds; otherwise false</returns>
     public bool ChangeInstanceVersion(string instanceId, string branch, int version)
     {
         try

@@ -5,7 +5,7 @@ description: Восстановление зависимостей, сборка
 
 # Сборка
 
-Для лаунчера нужны .NET 10 SDK и Git. Node.js и pnpm нужны только для [сайта документации](/docs/development/documentation)
+Для лаунчера нужны .NET 10 SDK и Git. Node.js и npm нужны только для [сайта документации](/docs/development/documentation)
 
 ## Клонирование и сборка
 
@@ -59,8 +59,8 @@ dotnet build HyPrism.sln --configuration Release
 
 ```bash
 cd Docs
-pnpm check
-PAGES_BASE_PATH=/HyPrism pnpm build
+npm run check
+PAGES_BASE_PATH=/HyPrism npm run build
 ```
 
 Статический сайт записывается в `Docs/out`

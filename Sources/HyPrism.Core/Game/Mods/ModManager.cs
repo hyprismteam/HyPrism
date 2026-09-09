@@ -27,7 +27,7 @@ public partial class ModManager : IModManager
     /// <summary>
     /// Ensures the <paramref name="modsPath"/> exists as a directory.
     /// The Hytale game sometimes creates a regular <b>file</b> named <c>Mods</c>
-    /// inside <c>UserData/</c>.  <see cref="Directory.CreateDirectory"/> throws
+    /// inside <c>UserData/</c>.  <see cref="Directory.CreateDirectory(string)"/> throws
     /// <see cref="IOException"/> when a file with the same name already exists,
     /// so we delete the conflicting file first.
     /// </summary>

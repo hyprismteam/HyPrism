@@ -215,6 +215,7 @@ public class HytaleAuthenticator : IHytaleAuthenticator
     /// <summary>
     /// Returns the current auth status (logged in, username, uuid)
     /// </summary>
+    /// <returns>The current authentication status</returns>
     public object GetAuthStatus()
     {
         if (CurrentSession != null)
@@ -233,6 +234,7 @@ public class HytaleAuthenticator : IHytaleAuthenticator
     /// <summary>
     /// Refreshes the access token if expired. Returns a valid session or null
     /// </summary>
+    /// <returns>A task that completes with the current valid authentication session, or null when unavailable</returns>
     public async Task<HytaleAuthSession?> GetValidSessionAsync()
     {
         if (CurrentSession == null) return null;
@@ -256,6 +258,7 @@ public class HytaleAuthenticator : IHytaleAuthenticator
     /// Forces a token refresh regardless of expiry time.
     /// Used when API returns 401/403 indicating token is invalid
     /// </summary>
+    /// <returns>A task that completes with true when the operation succeeds; otherwise false</returns>
     public async Task<bool> ForceRefreshAsync()
     {
         if (CurrentSession == null) return false;
@@ -278,6 +281,7 @@ public class HytaleAuthenticator : IHytaleAuthenticator
     /// because game session tokens (identityToken/sessionToken) expire independently
     /// and must be refreshed before each launch
     /// </summary>
+    /// <returns>A task that completes with a fresh authentication session for launch, or null when unavailable</returns>
     public async Task<HytaleAuthSession?> EnsureFreshSessionForLaunchAsync()
     {
         var session = await GetValidSessionAsync();
@@ -680,6 +684,7 @@ public class HytaleAuthenticator : IHytaleAuthenticator
     /// Gets a valid session from any official profile (not just the active one).
     /// Used for fetching version info when the current profile may not be official
     /// </summary>
+    /// <returns>A task that completes with the valid official session, or null when unavailable</returns>
     public async Task<HytaleAuthSession?> GetValidOfficialSessionAsync(CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -869,28 +874,42 @@ public class HytaleAuthenticator : IHytaleAuthenticator
 [JsonConverter(typeof(HytaleAuthSessionJsonConverter))]
 public class HytaleAuthSession
 {
+    /// <summary>Access token used for authenticated API requests</summary>
     public string AccessToken { get; set; } = "";
 
+    /// <summary>Refresh token used to renew the access token</summary>
     public string RefreshToken { get; set; } = "";
 
+    /// <summary>Token expiration time in UTC</summary>
     public DateTime ExpiresAt { get; set; }
 
+    /// <summary>Game session token</summary>
     public string SessionToken { get; set; } = "";
 
+    /// <summary>Identity token</summary>
     public string IdentityToken { get; set; } = "";
 
+    /// <summary>Authenticated player name</summary>
     public string Username { get; set; } = "";
 
+    /// <summary>Authenticated player UUID</summary>
     public string UUID { get; set; } = "";
 
+    /// <summary>Authenticated account owner identifier</summary>
     public string AccountOwnerId { get; set; } = "";
 
+    /// <summary>Available account profiles</summary>
     [JsonIgnore]
     public List<(string Username, string Uuid)> AccountProfiles { get; set; } = [];
 }
 
 internal sealed class HytaleAuthSessionJsonConverter : JsonConverter<HytaleAuthSession>
 {
+    /// <summary>Reads an authentication session from JSON</summary>
+    /// <param name="reader">JSON reader positioned at the session object</param>
+    /// <param name="typeToConvert">Session type being converted</param>
+    /// <param name="options">Serializer options used for conversion</param>
+    /// <returns>The deserialized authentication session</returns>
     public override HytaleAuthSession Read(
         ref Utf8JsonReader reader,
         Type typeToConvert,
@@ -1018,6 +1037,7 @@ public class HytaleNoProfileException : Exception
 /// </summary>
 public class HytaleAuthException : Exception
 {
+    /// <summary>Authentication service error category</summary>
     public string ErrorType { get; }
 
     /// <summary>

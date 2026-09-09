@@ -16,22 +16,26 @@ public static partial class JvmArgumentBuilder
     /// <summary>
     /// Reads the maximum JVM heap size (<c>-Xmx</c>) and returns it in megabytes.
     /// </summary>
+    /// <returns>The parsed maximum heap mb, or null when unavailable</returns>
     public static int? ParseMaximumHeapMb(string? args) => ParseHeapMb(args, "Xmx");
 
     /// <summary>
     /// Reads the initial JVM heap size (<c>-Xms</c>) and returns it in megabytes.
     /// </summary>
+    /// <returns>The parsed initial heap mb, or null when unavailable</returns>
     public static int? ParseInitialHeapMb(string? args) => ParseHeapMb(args, "Xms");
 
     /// <summary>
     /// Replaces or inserts the maximum JVM heap size (<c>-Xmx</c>).
     /// </summary>
+    /// <returns>The JVM argument string with the maximum heap size configured</returns>
     public static string SetMaximumHeapMb(string? args, int memoryMb)
         => SetHeapMb(args, "Xmx", memoryMb);
 
     /// <summary>
     /// Replaces or inserts the initial JVM heap size (<c>-Xms</c>).
     /// </summary>
+    /// <returns>The JVM argument string with the initial heap size configured</returns>
     public static string SetInitialHeapMb(string? args, int memoryMb)
         => SetHeapMb(args, "Xms", memoryMb);
 
@@ -39,6 +43,7 @@ public static partial class JvmArgumentBuilder
     /// Removes launcher-managed heap arguments (<c>-Xms</c> and <c>-Xmx</c>)
     /// from a user-editable JVM argument string.
     /// </summary>
+    /// <returns>The JVM argument string without heap-size options</returns>
     public static string RemoveHeapArguments(string? args)
     {
         var withoutHeap = HeapArgumentRegex().Replace(args ?? string.Empty, " ");
@@ -48,6 +53,7 @@ public static partial class JvmArgumentBuilder
     /// <summary>
     /// Returns whether a JVM argument string contains launcher-managed heap arguments.
     /// </summary>
+    /// <returns>true when the operation succeeds; otherwise false</returns>
     public static bool ContainsHeapArguments(string? args)
         => !string.Equals(
             RemoveHeapArguments(args),

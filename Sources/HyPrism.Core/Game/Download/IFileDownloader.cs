@@ -17,6 +17,8 @@ public interface IFileDownloader
     /// <param name="ct">Token to cancel the download</param>
     /// <returns>A task that completes after the file is written</returns>
     /// <exception cref="OperationCanceledException">Thrown when the download is cancelled</exception>
+    /// <exception cref="HttpRequestException">Thrown when the remote server rejects the request</exception>
+    /// <exception cref="IOException">Thrown when the downloaded file cannot be written</exception>
     Task DownloadFileAsync(string url, string destinationPath, Action<int, long, long> progressCallback, CancellationToken ct = default);
 
     /// <summary>
@@ -29,6 +31,8 @@ public interface IFileDownloader
     /// <param name="ct">Token to cancel the download</param>
     /// <returns>A task that completes after the file is written</returns>
     /// <exception cref="OperationCanceledException">Thrown when the download is cancelled</exception>
+    /// <exception cref="HttpRequestException">Thrown when the remote server rejects the request</exception>
+    /// <exception cref="IOException">Thrown when the downloaded file cannot be written</exception>
     Task DownloadFileAsync(string url, string destinationPath, Action<int, long, long> progressCallback, Dictionary<string, string>? headers, CancellationToken ct = default);
 
     /// <summary>

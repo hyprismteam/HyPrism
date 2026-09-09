@@ -8,6 +8,9 @@ using System.Text.Json.Serialization;
 
 namespace HyPrism.Core.Models;
 
+/// <summary>
+/// Persistent launcher configuration and compatibility settings
+/// </summary>
 public class Config
 {
     /// <summary>
@@ -134,7 +137,7 @@ public class Config
 
     /// <summary>
     /// GPU preference for game launch: "auto" (system decides), the legacy "dedicated"/"integrated"
-    /// types, or an adapter key ("pci:<id>" when the platform exposes it, otherwise the card name).
+    /// types, or an adapter key ("pci:&lt;id&gt;" when the platform exposes it, otherwise the card name).
     /// Adapter keys pin the game to the exact card chosen in settings
     /// </summary>
     public string GpuPreference { get; set; } = "dedicated";

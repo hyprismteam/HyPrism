@@ -107,9 +107,11 @@ public class JsonProfileRepository : IProfileRepository
     }
 
     /// <summary>Gets the ID of the currently active profile</summary>
+    /// <returns>The selected profile identifier, or null when unavailable</returns>
     public string GetSelectedProfileId() => _configStore.Configuration.SelectedProfileId ?? "";
 
     /// <summary>Gets the currently active profile object, or null if none is selected</summary>
+    /// <returns>The selected profile, or null when unavailable</returns>
     public Profile? GetSelectedProfile()
     {
         var id = GetSelectedProfileId();
@@ -119,7 +121,6 @@ public class JsonProfileRepository : IProfileRepository
 
 
     /// <inheritdoc/>
-    /// <remarks>Filters out any profiles with null/empty names or UUIDs</remarks>
     public List<Profile> GetProfiles()
     {
         EnsureProfileStorageUpgraded();
@@ -199,7 +200,6 @@ public class JsonProfileRepository : IProfileRepository
     }
 
     /// <inheritdoc/>
-    /// <remarks>Validates name length (1-16 characters) and UUID format before creation</remarks>
     public Profile? CreateProfile(string name, string uuid, bool isOfficial = false)
     {
         try
@@ -261,7 +261,6 @@ public class JsonProfileRepository : IProfileRepository
     }
 
     /// <inheritdoc/>
-    /// <remarks>Updates SelectedProfileId if the deleted profile was active</remarks>
     public bool DeleteProfile(string profileId)
     {
         try
@@ -298,7 +297,6 @@ public class JsonProfileRepository : IProfileRepository
     }
 
     /// <inheritdoc/>
-    /// <remarks>Backups current profile's skin data and restores the new profile's skin data</remarks>
     public bool SwitchProfile(string profileId)
     {
         try
@@ -408,7 +406,6 @@ public class JsonProfileRepository : IProfileRepository
     }
 
     /// <inheritdoc/>
-    /// <remarks>Copies UserData folder, mods folder, and skin data from the source profile</remarks>
     public Profile? DuplicateProfile(string profileId)
     {
         try
@@ -518,7 +515,6 @@ public class JsonProfileRepository : IProfileRepository
     }
 
     /// <inheritdoc/>
-    /// <remarks>Copies mods and skin/avatar but NOT UserData folder</remarks>
     public Profile? DuplicateProfileWithoutData(string profileId)
     {
         try

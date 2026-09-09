@@ -7,15 +7,27 @@ using HyPrism.Core.Models;
 
 namespace HyPrism.Core.Game.Mods;
 
+/// <summary>
+/// Compatibility status of a mod for a game version
+/// </summary>
 public enum ModCompatibilityStatus
 {
+    /// <summary>Compatibility could not be determined</summary>
     Unknown,
+    /// <summary>The mod declares support for the game version</summary>
     Compatible,
+    /// <summary>The mod declares no support for the game version</summary>
     Incompatible
 }
 
+/// <summary>
+/// Compares mod version declarations with an installed game version
+/// </summary>
 public static partial class ModCompatibilityEvaluator
 {
+    /// <summary>Reads the game version from an instance server archive</summary>
+    /// <param name="instancePath">Path to the game instance directory</param>
+    /// <returns>The detected game version, or <see langword="null"/> when it cannot be read</returns>
     public static string? DetectInstanceGameVersion(string instancePath)
     {
         var serverJar = Path.Combine(instancePath, "Server", "HytaleServer.jar");
@@ -44,6 +56,10 @@ public static partial class ModCompatibilityEvaluator
         return null;
     }
 
+    /// <summary>Evaluates whether a mod supports the installed game version</summary>
+    /// <param name="instanceGameVersion">Installed game version</param>
+    /// <param name="supportedGameVersions">Versions declared by the mod</param>
+    /// <returns>The compatibility status derived from the major and minor versions</returns>
     public static ModCompatibilityStatus Evaluate(
         string? instanceGameVersion,
         IReadOnlyCollection<string> supportedGameVersions)
@@ -66,6 +82,10 @@ public static partial class ModCompatibilityEvaluator
             : ModCompatibilityStatus.Incompatible;
     }
 
+    /// <summary>Selects the first compatible file, or the first file with unknown compatibility</summary>
+    /// <param name="files">Candidate mod files in preference order</param>
+    /// <param name="instanceGameVersion">Installed game version</param>
+    /// <returns>A recommended file, or <see langword="null"/> when no candidate is available</returns>
     public static ModFileInfo? SelectRecommendedFile(
         IEnumerable<ModFileInfo> files,
         string? instanceGameVersion)

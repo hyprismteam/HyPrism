@@ -15,6 +15,12 @@ internal static class HytaleLauncherHeaders
     private static string? _cachedVersion;
     private static DateTime _cachedAt;
 
+    /// <summary>Applies official launcher headers to an HTTP request</summary>
+    /// <param name="request">Request that receives the headers</param>
+    /// <param name="httpClient">HTTP client used to resolve the launcher version</param>
+    /// <param name="branch">Game branch included in the request headers</param>
+    /// <param name="ct">Token used to cancel version resolution</param>
+    /// <returns>A task that completes after the headers are applied</returns>
     public static async Task ApplyOfficialHeadersAsync(
         HttpRequestMessage request,
         HttpClient httpClient,
@@ -29,6 +35,10 @@ internal static class HytaleLauncherHeaders
         request.Headers.TryAddWithoutValidation("x-hytale-launcher-branch", launcherBranch);
     }
 
+    /// <summary>Gets the cached or remote official launcher version</summary>
+    /// <param name="httpClient">HTTP client used to query the launcher metadata</param>
+    /// <param name="ct">Token used to cancel the request</param>
+    /// <returns>A task that completes with the launcher version or a fallback value</returns>
     public static async Task<string> GetLauncherVersionAsync(HttpClient httpClient, CancellationToken ct = default)
     {
         if (!string.IsNullOrWhiteSpace(_cachedVersion) && DateTime.UtcNow - _cachedAt < CacheTtl)
@@ -73,6 +83,9 @@ internal static class HytaleLauncherHeaders
         }
     }
 
+    /// <summary>Adds the launcher client identifier to a launcher data URL</summary>
+    /// <param name="baseUrl">Base launcher data URL</param>
+    /// <returns>The URL containing the launcher client identifier</returns>
     public static string BuildLauncherDataUrlWithClientId(string baseUrl)
     {
         if (string.IsNullOrWhiteSpace(baseUrl))
