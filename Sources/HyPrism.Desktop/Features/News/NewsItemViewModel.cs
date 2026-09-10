@@ -6,6 +6,7 @@ using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using HyPrism.Desktop.Controls;
 using HyPrism.Desktop.Platform;
 
 namespace HyPrism.Desktop.Features.News;
@@ -90,7 +91,7 @@ public sealed partial class NewsItemViewModel : ObservableObject, IDisposable
 
         try
         {
-            var bitmap = await RemoteNewsBitmap.LoadAsync(
+            var bitmap = await RemoteBitmapLoader.LoadAsync(
                     ImageUrl,
                     1200,
                     httpClient,

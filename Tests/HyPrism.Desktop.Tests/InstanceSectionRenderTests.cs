@@ -149,7 +149,7 @@ public sealed class InstanceSectionRenderTests
             modManager: modManager.Object,
             gameConsole: console);
 
-        var view = new InstancesView { DataContext = viewModel };
+        var view = new InstancesView { DataContext = viewModel.Instances };
         var window = new Window
         {
             Width = 1180,
@@ -543,7 +543,7 @@ public sealed class InstanceSectionRenderTests
             modManager: modManager.Object,
             gameConsole: console);
 
-        var view = new InstancesView { DataContext = viewModel };
+        var view = new InstancesView { DataContext = viewModel.Instances };
         var modal = view.FindControl<OverlayModal>("ModCatalogModal");
         Assert.NotNull(modal);
         var window = new Window

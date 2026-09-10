@@ -15,7 +15,6 @@ using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using HyPrism.Desktop.Controls;
-using HyPrism.Desktop.Shell;
 
 namespace HyPrism.Desktop.Features.Instances;
 
@@ -85,7 +84,7 @@ public sealed partial class InstancesView : UserControl
         ApplySectionStateImmediately();
         ApplyModCatalogModalBackground();
 
-        if (DataContext is MainWindowViewModel { IsInstanceCreatorOpen: true })
+        if (DataContext is InstancesViewModel { IsInstanceCreatorOpen: true })
             _ = PlayCreatorOpenAnimationAsync();
         else
             HideCreatorImmediately();
@@ -93,46 +92,46 @@ public sealed partial class InstancesView : UserControl
 
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs args)
     {
-        if (args.PropertyName is nameof(MainWindowViewModel.HasInstances))
+        if (args.PropertyName is nameof(InstancesViewModel.HasInstances))
             UpdateLayout(Bounds.Width);
 
-        if (args.PropertyName is nameof(MainWindowViewModel.NewInstanceBranch))
+        if (args.PropertyName is nameof(InstancesViewModel.NewInstanceBranch))
             UpdateBranchIndicator(animate: true);
 
-        if (args.PropertyName is nameof(MainWindowViewModel.InstanceSection))
+        if (args.PropertyName is nameof(InstancesViewModel.InstanceSection))
         {
-            if (DataContext is MainWindowViewModel { IsInstanceOverviewSection: true })
+            if (DataContext is InstancesViewModel { IsInstanceOverviewSection: true })
                 _ = PlaySectionCloseAnimationAsync();
             else
                 _ = PlaySectionOpenAnimationAsync();
         }
 
-        if (args.PropertyName is nameof(MainWindowViewModel.IsInstanceVersionsLoading))
+        if (args.PropertyName is nameof(InstancesViewModel.IsInstanceVersionsLoading))
         {
-            if (DataContext is MainWindowViewModel { IsInstanceVersionsLoading: true })
+            if (DataContext is InstancesViewModel { IsInstanceVersionsLoading: true })
                 ShowVersionLoading();
             else
                 _ = HideVersionLoadingAsync();
         }
 
-        if (args.PropertyName is nameof(MainWindowViewModel.ConsoleRevision))
+        if (args.PropertyName is nameof(InstancesViewModel.ConsoleRevision))
             ScrollConsoleToBottom();
 
-        if (args.PropertyName is nameof(MainWindowViewModel.IsInstanceCreatorOpen))
+        if (args.PropertyName is nameof(InstancesViewModel.IsInstanceCreatorOpen))
         {
-            if (DataContext is MainWindowViewModel { IsInstanceCreatorOpen: true })
+            if (DataContext is InstancesViewModel { IsInstanceCreatorOpen: true })
                 _ = PlayCreatorOpenAnimationAsync();
             else
                 _ = PlayCreatorCloseAnimationAsync();
         }
 
-        if (args.PropertyName is nameof(MainWindowViewModel.HasModCatalogPreview))
+        if (args.PropertyName is nameof(InstancesViewModel.HasModCatalogPreview))
             ApplyModCatalogModalBackground();
     }
 
     private void ApplyModCatalogModalBackground()
     {
-        var isOpen = DataContext is MainWindowViewModel { HasModCatalogPreview: true };
+        var isOpen = DataContext is InstancesViewModel { HasModCatalogPreview: true };
         InstancesLayout.IsHitTestVisible = !isOpen;
         ((BlurEffect)InstancesLayout.Effect!).Radius = isOpen ? 6 : 0;
     }
@@ -140,7 +139,7 @@ public sealed partial class InstancesView : UserControl
     private void OnModCatalogModalClosed(object? sender, EventArgs args)
     {
         InstancesLayout.IsHitTestVisible = true;
-        if (DataContext is MainWindowViewModel viewModel)
+        if (DataContext is InstancesViewModel viewModel)
             viewModel.CompleteModCatalogPreviewClose();
     }
 
@@ -154,7 +153,7 @@ public sealed partial class InstancesView : UserControl
 
     public bool TryCloseModCatalogPreview()
     {
-        if (DataContext is not MainWindowViewModel { HasModCatalogPreview: true } viewModel)
+        if (DataContext is not InstancesViewModel { HasModCatalogPreview: true } viewModel)
             return false;
 
         viewModel.CloseModCatalogPreviewCommand.Execute(null);
@@ -163,7 +162,7 @@ public sealed partial class InstancesView : UserControl
 
     private void UpdateLayout(double width)
     {
-        if (width <= 0 || DataContext is not MainWindowViewModel viewModel)
+        if (width <= 0 || DataContext is not InstancesViewModel viewModel)
             return;
 
         var hasInstances = viewModel.HasInstances;
@@ -234,7 +233,7 @@ public sealed partial class InstancesView : UserControl
 
     private void OnManagedInstanceActionPointerExited(object? sender, PointerEventArgs args)
     {
-        if (DataContext is MainWindowViewModel viewModel)
+        if (DataContext is InstancesViewModel viewModel)
             viewModel.ArmManagedInstanceCancellation();
     }
 
@@ -259,7 +258,7 @@ public sealed partial class InstancesView : UserControl
             args,
             (instanceId, targetIndex) =>
             {
-                if (DataContext is MainWindowViewModel viewModel)
+                if (DataContext is InstancesViewModel viewModel)
                     viewModel.MoveInstance(instanceId, targetIndex);
             },
             () =>
@@ -275,7 +274,7 @@ public sealed partial class InstancesView : UserControl
         if (_layoutHost.IsCompact && !_creatorOpenedFromCompactList)
             _layoutHost.OpenDetail();
 
-        if (DataContext is MainWindowViewModel viewModel)
+        if (DataContext is InstancesViewModel viewModel)
             viewModel.OpenInstanceCreatorCommand.Execute(null);
     }
 
@@ -300,7 +299,7 @@ public sealed partial class InstancesView : UserControl
         if (!_layoutHost.IsCompact || !_layoutHost.IsDetailOpen)
             return false;
 
-        if (DataContext is MainWindowViewModel { IsInstanceCreatorOpen: true } viewModel)
+        if (DataContext is InstancesViewModel { IsInstanceCreatorOpen: true } viewModel)
         {
             viewModel.CloseInstanceCreatorCommand.Execute(null);
             return true;
@@ -314,7 +313,7 @@ public sealed partial class InstancesView : UserControl
         if (TryCloseModCatalogPreview())
             return true;
 
-        if (DataContext is MainWindowViewModel { IsInstanceOverviewSection: false } viewModel)
+        if (DataContext is InstancesViewModel { IsInstanceOverviewSection: false } viewModel)
         {
             viewModel.CloseInstanceSectionCommand.Execute(null);
             return true;
@@ -330,7 +329,7 @@ public sealed partial class InstancesView : UserControl
         {
             await _creatorWizard.ShowWizardForCompactEntryAsync();
             if (revision != _creatorNavigationRevision ||
-                DataContext is not MainWindowViewModel { IsInstanceCreatorOpen: true })
+                DataContext is not InstancesViewModel { IsInstanceCreatorOpen: true })
             {
                 return;
             }
@@ -341,13 +340,13 @@ public sealed partial class InstancesView : UserControl
         }
 
         if (!_layoutHost.IsCompact &&
-            DataContext is MainWindowViewModel { HasInstances: true })
+            DataContext is InstancesViewModel { HasInstances: true })
         {
             _creatorWizard.HideNavigationPane(animate: true);
         }
 
         await _creatorWizard.OpenAsync(
-            () => DataContext is MainWindowViewModel { IsInstanceCreatorOpen: true },
+            () => DataContext is InstancesViewModel { IsInstanceCreatorOpen: true },
             () => UpdateBranchIndicator(animate: false));
     }
 
@@ -360,7 +359,7 @@ public sealed partial class InstancesView : UserControl
             _layoutHost.TryCloseDetail();
             await Task.Delay(CompactContentTransitionDuration);
             if (revision == _creatorNavigationRevision &&
-                DataContext is MainWindowViewModel { IsInstanceCreatorOpen: false })
+                DataContext is InstancesViewModel { IsInstanceCreatorOpen: false })
             {
                 _creatorWizard.ShowOverviewImmediately();
                 _creatorOpenedFromCompactList = false;
@@ -370,11 +369,11 @@ public sealed partial class InstancesView : UserControl
         }
 
         await _creatorWizard.CloseAsync(
-            () => DataContext is MainWindowViewModel { IsInstanceCreatorOpen: false },
+            () => DataContext is InstancesViewModel { IsInstanceCreatorOpen: false },
             () =>
             {
                 if (!_layoutHost.IsCompact &&
-                    DataContext is MainWindowViewModel { HasInstances: true })
+                    DataContext is InstancesViewModel { HasInstances: true })
                 {
                     _creatorWizard.ShowNavigationPane(animate: true);
                 }
@@ -389,7 +388,7 @@ public sealed partial class InstancesView : UserControl
         _creatorOpenedFromCompactList = false;
         _creatorWizard.ShowOverviewImmediately();
         if (!_layoutHost.IsCompact &&
-            DataContext is MainWindowViewModel { HasInstances: true })
+            DataContext is InstancesViewModel { HasInstances: true })
         {
             _creatorWizard.ShowNavigationPane(animate: false);
         }
@@ -424,7 +423,7 @@ public sealed partial class InstancesView : UserControl
         {
             await Task.Delay(WizardScreenTransition.PhaseDuration, cancellationToken);
             if (cancellationToken.IsCancellationRequested ||
-                DataContext is not MainWindowViewModel { IsInstanceOverviewSection: false })
+                DataContext is not InstancesViewModel { IsInstanceOverviewSection: false })
             {
                 return;
             }
@@ -472,7 +471,7 @@ public sealed partial class InstancesView : UserControl
         {
             await Task.Delay(WizardScreenTransition.PhaseDuration, cancellationToken);
             if (cancellationToken.IsCancellationRequested ||
-                DataContext is not MainWindowViewModel { IsInstanceOverviewSection: true })
+                DataContext is not InstancesViewModel { IsInstanceOverviewSection: true })
             {
                 return;
             }
@@ -497,7 +496,7 @@ public sealed partial class InstancesView : UserControl
     private void ApplySectionStateImmediately()
     {
         CancelSectionAnimation();
-        var showHub = DataContext is not MainWindowViewModel { IsInstanceOverviewSection: false };
+        var showHub = DataContext is not InstancesViewModel { IsInstanceOverviewSection: false };
         var hubTranslation = (TranslateTransform)InstanceHubScreen.RenderTransform!;
         var sectionTranslation = (TranslateTransform)InstanceSectionScreen.RenderTransform!;
         var hubTransitions = InstanceHubScreen.Transitions;
@@ -541,7 +540,7 @@ public sealed partial class InstancesView : UserControl
 
         await Dispatcher.UIThread.InvokeAsync(static () => { }, DispatcherPriority.Loaded);
         if (cancellationToken.IsCancellationRequested ||
-            DataContext is not MainWindowViewModel { IsInstanceOverviewSection: false })
+            DataContext is not InstancesViewModel { IsInstanceOverviewSection: false })
         {
             return;
         }
@@ -573,7 +572,7 @@ public sealed partial class InstancesView : UserControl
         {
             await Task.Delay(CompactSectionSlideDuration + TimeSpan.FromMilliseconds(20), cancellationToken);
             if (cancellationToken.IsCancellationRequested ||
-                DataContext is not MainWindowViewModel { IsInstanceOverviewSection: true })
+                DataContext is not InstancesViewModel { IsInstanceOverviewSection: true })
             {
                 return;
             }
@@ -650,7 +649,7 @@ public sealed partial class InstancesView : UserControl
 
     private void UpdateBranchIndicator(bool animate)
     {
-        if (DataContext is not MainWindowViewModel viewModel || BranchSwitchTrack.Bounds.Width <= 0)
+        if (DataContext is not InstancesViewModel viewModel || BranchSwitchTrack.Bounds.Width <= 0)
             return;
 
         var translation = (TranslateTransform)BranchSelectionIndicator.RenderTransform!;
@@ -669,7 +668,7 @@ public sealed partial class InstancesView : UserControl
     private void ApplyVersionLoadingStateImmediately()
     {
         CancelVersionLoadingAnimation();
-        var isLoading = DataContext is MainWindowViewModel { IsInstanceVersionsLoading: true };
+        var isLoading = DataContext is InstancesViewModel { IsInstanceVersionsLoading: true };
         var comboTransitions = InstanceVersionComboBox.Transitions;
         var spinnerTransitions = VersionLoadingSpinner.Transitions;
         InstanceVersionComboBox.Transitions = null;
@@ -702,7 +701,7 @@ public sealed partial class InstancesView : UserControl
         {
             await Task.Delay(VersionLoadingFadeDuration, cancellationToken);
             if (cancellationToken.IsCancellationRequested ||
-                DataContext is MainWindowViewModel { IsInstanceVersionsLoading: true })
+                DataContext is InstancesViewModel { IsInstanceVersionsLoading: true })
             {
                 return;
             }
@@ -734,7 +733,7 @@ public sealed partial class InstancesView : UserControl
     private void OnModFilesDragEntered(object? sender, DragEventArgs args)
     {
         args.Handled = true;
-        if (DataContext is not MainWindowViewModel { IsManagedInstanceInstalled: true } ||
+        if (DataContext is not InstancesViewModel { IsManagedInstanceInstalled: true } ||
             !ContainsFiles(args.DataTransfer))
         {
             args.DragEffects = DragDropEffects.None;
@@ -756,7 +755,7 @@ public sealed partial class InstancesView : UserControl
     {
         args.Handled = true;
         ShowModDropOverlay(false);
-        if (DataContext is not MainWindowViewModel viewModel ||
+        if (DataContext is not InstancesViewModel viewModel ||
             args.DataTransfer is not IAsyncDataTransfer data ||
             !ContainsFiles(args.DataTransfer))
         {
@@ -794,7 +793,7 @@ public sealed partial class InstancesView : UserControl
     private void OnCatalogSearchKeyDown(object? sender, KeyEventArgs args)
     {
         if (args.Key is not (Key.Enter or Key.Return) ||
-            DataContext is not MainWindowViewModel viewModel)
+            DataContext is not InstancesViewModel viewModel)
         {
             return;
         }
@@ -806,7 +805,7 @@ public sealed partial class InstancesView : UserControl
     private void OnCatalogModPreviewRequested(object? sender, TappedEventArgs args)
     {
         if (sender is not Border { DataContext: ModCatalogItemViewModel item } ||
-            DataContext is not MainWindowViewModel viewModel)
+            DataContext is not InstancesViewModel viewModel)
         {
             return;
         }
@@ -826,7 +825,7 @@ public sealed partial class InstancesView : UserControl
     {
         if (args.OffsetDelta.Y == 0 ||
             sender is not ScrollViewer scrollViewer ||
-            DataContext is not MainWindowViewModel viewModel ||
+            DataContext is not InstancesViewModel viewModel ||
             !viewModel.CanLoadMoreModCatalog)
         {
             return;
@@ -843,7 +842,7 @@ public sealed partial class InstancesView : UserControl
     {
         if (args.OffsetDelta.Y == 0 ||
             sender is not ScrollViewer scrollViewer ||
-            DataContext is not MainWindowViewModel viewModel ||
+            DataContext is not InstancesViewModel viewModel ||
             !viewModel.IsConsoleAutoScroll)
         {
             return;
@@ -858,7 +857,7 @@ public sealed partial class InstancesView : UserControl
 
     private void ScrollConsoleToBottom()
     {
-        if (DataContext is not MainWindowViewModel { IsConsoleAutoScroll: true } viewModel ||
+        if (DataContext is not InstancesViewModel { IsConsoleAutoScroll: true } viewModel ||
             viewModel.ConsoleLines.Count == 0)
         {
             return;

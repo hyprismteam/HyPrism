@@ -13,11 +13,11 @@ Desktop is the Avalonia application host. It composes Core services, provides na
 | --- | --- |
 | `Program.cs` | Service registrations, renderer configuration, application entry point |
 | `App.axaml` and `App.axaml.cs` | Resources, window creation, startup and shutdown |
-| `Shell` | Main window, navigation, top-level state, instance and news orchestration |
-| `Features/Instances` | Instance list, selection, launch, mods, catalog, worlds, and console presentation |
+| `Shell` | Main window, navigation, startup overlay, account presentation, and feature composition |
+| `Features/Instances` | Instance lifecycle, selection, launch activity, mods, catalog, worlds, console state, and instance view |
 | `Features/Profiles` | Profile cards, activation, editing, creation and sign-in |
 | `Features/Settings` | Settings view model, persistence adapter, storage usage |
-| `Features/News` | Official feed, HTML parsing, structured articles, rich text |
+| `Features/News` | Feed and article loading, cache coordination, image state, HTML parsing, structured articles, and news view |
 | `Features/About` | GitHub repository, commit, contributor and avatar data |
 | `Platform` | Browser and folder opening, file picker, memory and GPU discovery, image cache |
 | `Integrations/Discord` | Host implementation of Core presence |
@@ -26,6 +26,8 @@ Desktop is the Avalonia application host. It composes Core services, provides na
 ## Views and state
 
 Compiled bindings are enabled for the Desktop project. Views declare `x:DataType`; view models expose observable state and commands. Code-behind handles behavior tied to input, layout, focus, or animation
+
+`MainWindowViewModel` owns only shell state and composes feature view models. `InstancesViewModel` and `NewsViewModel` own their feature state and service subscriptions. `MainWindow.axaml` passes those child models into `InstancesView` and `NewsView`, so feature bindings do not depend on Shell properties
 
 The following fragment illustrates a compiled binding to the existing settings view model
 
@@ -61,6 +63,8 @@ Animation timing belongs in `MotionDurations` or the owning reusable control. Th
 
 News and GitHub clients use the shared HTTP identity. Parsed news lives in `Cache/News`; encoded remote images live in `Cache/Images`. Article text is prepared before image decoding, and decoded article bitmaps are released when the article closes
 
+`RemoteBitmapLoader` is shared by image-bearing features. It validates remote URLs, uses `RemoteImageCache` when available, and decodes bitmaps away from the Avalonia dispatcher
+
 Native file selection uses Avalonia's `StorageProvider`. External links preserve escaped absolute URIs, including OAuth parameters. Neither capability belongs in Core
 
-Source: [MainWindowViewModel](../../../../Sources/HyPrism.Desktop/Shell/MainWindowViewModel.cs), [Shared controls](../../../../Sources/HyPrism.Desktop/Controls)
+Source: [MainWindowViewModel](../../../../Sources/HyPrism.Desktop/Shell/MainWindowViewModel.cs), [InstancesViewModel](../../../../Sources/HyPrism.Desktop/Features/Instances/InstancesViewModel.cs), [NewsViewModel](../../../../Sources/HyPrism.Desktop/Features/News/NewsViewModel.cs), [Shared controls](../../../../Sources/HyPrism.Desktop/Controls)

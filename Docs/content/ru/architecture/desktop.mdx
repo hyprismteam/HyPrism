@@ -13,11 +13,11 @@ Desktop служит хостом приложения Avalonia. Он собир
 | --- | --- |
 | `Program.cs` | Регистрации сервисов, рендерер, точка входа |
 | `App.axaml` и `App.axaml.cs` | Ресурсы, создание окна, запуск и завершение |
-| `Shell` | Окно, навигация, общее состояние, координация экземпляров и новостей |
-| `Features/Instances` | Список экземпляров, выбор, запуск, моды, каталог, миры и консоль |
+| `Shell` | Окно, навигация, overlay запуска, данные аккаунта и сборка функций |
+| `Features/Instances` | Жизненный цикл экземпляров, выбор, запуск, активность, моды, каталог, миры, состояние консоли и представление экземпляров |
 | `Features/Profiles` | Карточки, активация, редактирование, создание и вход |
 | `Features/Settings` | Настройки, адаптер хранения, использование диска |
-| `Features/News` | Официальная лента, разбор HTML, статьи, форматированный текст |
+| `Features/News` | Загрузка ленты и статей, координация кэша, состояние изображений, разбор HTML, статьи и представление новостей |
 | `Features/About` | Репозиторий GitHub, коммиты, участники и аватары |
 | `Platform` | Ссылки, папки, диалоги, память, GPU, кэш изображений |
 | `Integrations/Discord` | Реализация контракта presence |
@@ -26,6 +26,8 @@ Desktop служит хостом приложения Avalonia. Он собир
 ## Представления и состояние
 
 В проекте включены компилируемые привязки. Представления объявляют `x:DataType`, модели предоставляют наблюдаемое состояние и команды. Code-behind обрабатывает ввод, компоновку, фокус и анимацию
+
+`MainWindowViewModel` содержит только состояние Shell и собирает модели функций. `InstancesViewModel` и `NewsViewModel` владеют состоянием своих функций и подписками на сервисы. `MainWindow.axaml` передаёт эти дочерние модели в `InstancesView` и `NewsView`, поэтому привязки функций не зависят от свойств Shell
 
 Пример привязки к существующей модели настроек
 
@@ -61,6 +63,8 @@ Desktop служит хостом приложения Avalonia. Он собир
 
 Клиенты новостей и GitHub используют общую HTTP-идентификацию. Разобранные новости хранятся в `Cache/News`, закодированные изображения в `Cache/Images`. Текст статьи готовится до декодирования изображений, а декодированные bitmap освобождаются при закрытии статьи
 
+`RemoteBitmapLoader` используется функциями, которые показывают изображения. Он проверяет удалённые URL, использует `RemoteImageCache` при наличии и декодирует bitmap вне Avalonia dispatcher
+
 Выбор файлов использует Avalonia `StorageProvider`. Обработчик ссылок сохраняет экранированные абсолютные URI, включая параметры OAuth. Эти возможности не принадлежат Core
 
-Исходники: [MainWindowViewModel](../../../../Sources/HyPrism.Desktop/Shell/MainWindowViewModel.cs), [Shared controls](../../../../Sources/HyPrism.Desktop/Controls)
+Исходники: [MainWindowViewModel](../../../../Sources/HyPrism.Desktop/Shell/MainWindowViewModel.cs), [InstancesViewModel](../../../../Sources/HyPrism.Desktop/Features/Instances/InstancesViewModel.cs), [NewsViewModel](../../../../Sources/HyPrism.Desktop/Features/News/NewsViewModel.cs), [Shared controls](../../../../Sources/HyPrism.Desktop/Controls)

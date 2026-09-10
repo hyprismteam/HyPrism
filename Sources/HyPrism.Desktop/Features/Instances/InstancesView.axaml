@@ -5,13 +5,12 @@ SPDX-License-Identifier: GPL-3.0-only
 
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:shell="using:HyPrism.Desktop.Shell"
              xmlns:instances="using:HyPrism.Desktop.Features.Instances"
              xmlns:controls="using:HyPrism.Desktop.Controls"
              xmlns:easing="using:Avalonia.Animation.Easings"
              x:Class="HyPrism.Desktop.Features.Instances.InstancesView"
              x:Name="InstancesRoot"
-             x:DataType="shell:MainWindowViewModel">
+             x:DataType="instances:InstancesViewModel">
   <UserControl.Resources>
     <DataTemplate x:Key="InstanceVersionTemplate" x:DataType="instances:InstanceVersionItemViewModel">
       <TextBlock Text="{Binding Label}" VerticalAlignment="Center" />
@@ -24,7 +23,7 @@ SPDX-License-Identifier: GPL-3.0-only
                  TextTrimming="CharacterEllipsis" />
     </DataTemplate>
 
-    <DataTemplate x:Key="ManagedInstanceActionTemplate" x:DataType="shell:MainWindowViewModel">
+    <DataTemplate x:Key="ManagedInstanceActionTemplate" x:DataType="instances:InstancesViewModel">
       <Grid Classes="managedActionContent">
         <StackPanel Classes="managedActionIdle"
                     Orientation="Horizontal"

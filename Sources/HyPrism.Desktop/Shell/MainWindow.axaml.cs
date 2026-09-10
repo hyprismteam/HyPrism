@@ -18,7 +18,6 @@ namespace HyPrism.Desktop.Shell;
 
 public sealed partial class MainWindow : Window
 {
-    private const double WideNewsLayoutThreshold = 1180;
 
     private static readonly Dictionary<WindowEdge, Cursor> ResizeCursors = new()
     {
@@ -32,9 +31,6 @@ public sealed partial class MainWindow : Window
         [WindowEdge.SouthEast] = new Cursor(StandardCursorType.BottomRightCorner)
     };
 
-    private INotifyPropertyChanged? _observedViewModel;
-    private bool? _usesWideNewsLayout;
-    private int _wideArticleTransitionVersion;
     private int _startupTransitionVersion;
     private bool _isSectionWarmUpStarted;
     private WindowEdge? _activeResizeEdge;
@@ -58,6 +54,7 @@ public sealed partial class MainWindow : Window
 
     private const uint SwpNoZOrder = 0x0004;
     private const uint SwpNoActivate = 0x0010;
+    private INotifyPropertyChanged? _observedViewModel;
 
     private ScaleTransform LauncherShellScale =>
         ((TransformGroup)LauncherShell.RenderTransform!).Children.OfType<ScaleTransform>().Single();
@@ -84,8 +81,6 @@ public sealed partial class MainWindow : Window
         if (_observedViewModel is not null)
             _observedViewModel.PropertyChanged += OnViewModelPropertyChanged;
 
-        if (DataContext is MainWindowViewModel viewModel && _usesWideNewsLayout is { } useWideLayout)
-            viewModel.IsWideNewsLayout = useWideLayout;
 
         if (DataContext is IStartupLoadingState startupViewModel)
             ApplyStartupLoadingState(startupViewModel.IsStartupLoading);
@@ -99,51 +94,6 @@ public sealed partial class MainWindow : Window
             ApplyStartupLoadingState(startupViewModel.IsStartupLoading);
         }
 
-        if (e.PropertyName == nameof(MainWindowViewModel.SelectedNewsArticle) &&
-            DataContext is MainWindowViewModel { SelectedNewsArticle: not null } viewModel)
-        {
-            var wideArticleHost = FindVisualByName<ContentControl>("WideArticleHost");
-            var compactArticleHost = FindVisualByName<ContentControl>("CompactArticleHost");
-            if (wideArticleHost is null || compactArticleHost is null)
-                return;
-
-            var transitionVersion = ++_wideArticleTransitionVersion;
-            var transitions = wideArticleHost.Transitions;
-            if (viewModel.IsWideNewsLayout)
-            {
-                // Hide the newly-bound tree without animating the old content out. The
-                // first visible fade therefore starts only after the hero and its mask
-                // have both completed a render pass.
-                wideArticleHost.Transitions = null;
-                wideArticleHost.Opacity = 0;
-            }
-
-            Dispatcher.UIThread.Post(() =>
-            {
-                if (transitionVersion != _wideArticleTransitionVersion)
-                    return;
-
-                foreach (var scrollViewer in compactArticleHost
-                             .GetVisualDescendants()
-                             .OfType<ScrollViewer>())
-                {
-                    scrollViewer.ScrollToHome();
-                }
-
-                foreach (var scrollViewer in wideArticleHost
-                             .GetVisualDescendants()
-                             .OfType<ScrollViewer>())
-                {
-                    scrollViewer.ScrollToHome();
-                }
-
-                if (viewModel.IsWideNewsLayout)
-                {
-                    wideArticleHost.Transitions = transitions;
-                    wideArticleHost.Opacity = 1;
-                }
-            }, DispatcherPriority.Background);
-        }
     }
 
     private void ApplyStartupLoadingState(bool isLoading)
@@ -266,31 +216,6 @@ public sealed partial class MainWindow : Window
         }
     }
 
-    private void OnNewsResponsiveSizeChanged(object? sender, SizeChangedEventArgs e)
-        => UpdateNewsResponsiveLayout(e.NewSize.Width >= WideNewsLayoutThreshold);
-
-    private void UpdateNewsResponsiveLayout(bool useWideLayout)
-    {
-        if (DataContext is MainWindowViewModel viewModel)
-            viewModel.IsWideNewsLayout = useWideLayout;
-
-        if (_usesWideNewsLayout == useWideLayout)
-            return;
-
-        _usesWideNewsLayout = useWideLayout;
-        var compactNewsShell = FindVisualByName<Carousel>("CompactNewsShell");
-        var wideNewsShell = FindVisualByName<Grid>("WideNewsShell");
-        if (compactNewsShell is not null)
-            compactNewsShell.IsVisible = !useWideLayout;
-        if (wideNewsShell is not null)
-            wideNewsShell.IsVisible = useWideLayout;
-    }
-
-    private T? FindVisualByName<T>(string name)
-        where T : Control
-        => this.GetVisualDescendants()
-            .OfType<T>()
-            .FirstOrDefault(control => string.Equals(control.Name, name, StringComparison.Ordinal));
 
     protected override void OnKeyDown(KeyEventArgs e)
     {
@@ -327,9 +252,9 @@ public sealed partial class MainWindow : Window
         }
 
         if (e.Key == Key.Escape &&
-            DataContext is MainWindowViewModel { IsNews: true, HasSelectedNewsItem: true } viewModel)
+            DataContext is MainWindowViewModel { IsNews: true, News: { HasSelectedNewsItem: true } } viewModel)
         {
-            viewModel.CloseNewsArticleCommand.Execute(null);
+            viewModel.News.CloseNewsArticleCommand.Execute(null);
             e.Handled = true;
             return;
         }
