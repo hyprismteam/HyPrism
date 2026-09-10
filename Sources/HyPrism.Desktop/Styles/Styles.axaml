@@ -574,7 +574,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="Fill" Value="{Binding $parent[Button].Foreground}" />
   </Style>
 
-  <!-- Keep one stable gutter and animate only the centered thumb width. -->
+  <!-- Keep the scrollbar layout stable and animate only the thumb rendering. -->
   <Style Selector="ScrollViewer[AllowAutoHide=True] /template/ ScrollContentPresenter#PART_ContentPresenter">
     <Setter Property="Grid.ColumnSpan" Value="1" />
   </Style>
@@ -593,17 +593,21 @@ SPDX-License-Identifier: GPL-3.0-only
   </Style>
 
   <Style Selector="ScrollViewer /template/ ScrollBar:vertical /template/ Thumb">
-    <Setter Property="Width" Value="3" />
-    <Setter Property="MinWidth" Value="3" />
+    <Setter Property="Width" Value="6" />
+    <Setter Property="MinWidth" Value="6" />
     <Setter Property="MinHeight" Value="40" />
     <Setter Property="HorizontalAlignment" Value="Center" />
     <Setter Property="Background" Value="{DynamicResource ScrollBarPanningThumbBackground}" />
     <Setter Property="CornerRadius" Value="999" />
-    <Setter Property="RenderTransform" Value="none" />
+    <Setter Property="RenderTransform" Value="scaleX(0.5)" />
     <Setter Property="RenderTransformOrigin" Value="50%,50%" />
     <Setter Property="Transitions">
       <Transitions>
-        <DoubleTransition Property="Width" Duration="0:0:0.16" />
+        <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.16">
+          <TransformOperationsTransition.Easing>
+            <easing:CubicEaseInOut />
+          </TransformOperationsTransition.Easing>
+        </TransformOperationsTransition>
         <BrushTransition Property="Background" Duration="0:0:0.18" />
       </Transitions>
     </Setter>
@@ -612,7 +616,7 @@ SPDX-License-Identifier: GPL-3.0-only
   <Style Selector="ScrollViewer /template/ ScrollBar:vertical[IsExpanded=true] /template/ Thumb">
     <Setter Property="Width" Value="6" />
     <Setter Property="Background" Value="{DynamicResource ScrollBarThumbBackgroundColor}" />
-    <Setter Property="RenderTransform" Value="none" />
+    <Setter Property="RenderTransform" Value="scaleX(1)" />
   </Style>
 
   <Style Selector="ScrollViewer /template/ ScrollBar:vertical /template/ Thumb:pointerover">

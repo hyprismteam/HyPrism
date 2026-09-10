@@ -4354,13 +4354,12 @@ public sealed class MainWindowRenderTests
         var thumb = Assert.Single(thumbs);
         var scrollTrack = thumb.GetVisualAncestors().OfType<Track>().Single();
         Assert.True(scrollTrack.IsDirectionReversed);
-        Assert.Equal(scrollBar.IsExpanded ? 6 : 3, thumb.Width);
+        Assert.Equal(6, thumb.Width);
         Assert.Equal(Avalonia.Layout.HorizontalAlignment.Center, thumb.HorizontalAlignment);
         Assert.True(thumb.CornerRadius.TopLeft >= 999);
-        Assert.False(thumb.RenderTransform is ScaleTransform);
         Assert.Contains(
             thumb.Transitions!,
-            transition => transition is DoubleTransition { Property.Name: "Width" });
+            transition => transition is TransformOperationsTransition { Property.Name: "RenderTransform" });
 
         var thumbBorder = thumb.GetVisualDescendants().OfType<Border>().Single();
         Assert.True(thumbBorder.CornerRadius.TopLeft >= 999);
