@@ -4,7 +4,7 @@
 using System.Runtime;
 using Avalonia;
 using Avalonia.Skia;
-using HyPrism.Desktop.Features.About;
+using HyPrism.Desktop.Integrations.GitHub;
 using HyPrism.Desktop.Features.News;
 using HyPrism.Desktop.Features.Settings;
 using HyPrism.Desktop.Integrations.Discord;

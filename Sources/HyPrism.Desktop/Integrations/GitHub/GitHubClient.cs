@@ -7,7 +7,7 @@ using System.Text.Json.Serialization;
 using HyPrism.Core.Infrastructure;
 using HyPrism.Desktop.Platform;
 
-namespace HyPrism.Desktop.Features.About;
+namespace HyPrism.Desktop.Integrations.GitHub;
 
 /// <summary>
 /// Represents a public GitHub account returned by the contributors API
@@ -44,7 +44,6 @@ public sealed class GitHubUser
     [JsonPropertyName("contributions")]
     public int Contributions { get; init; }
 }
-
 /// <summary>
 /// Represents a commit displayed in the About page
 /// </summary>

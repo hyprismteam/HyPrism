@@ -5,7 +5,7 @@ using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Avalonia.Threading;
-using HyPrism.Desktop.Features.About;
+using HyPrism.Desktop.Integrations.GitHub;
 using HyPrism.Desktop.Features.News;
 using HyPrism.Desktop.Features.Settings;
 using HyPrism.Desktop.Platform;

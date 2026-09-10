@@ -11,7 +11,7 @@ using HyPrism.Core.Game.Launch;
 using HyPrism.Core.Game.Sources;
 using HyPrism.Core.Game.Versions;
 using HyPrism.Core.Models;
-using HyPrism.Desktop.Features.About;
+using HyPrism.Desktop.Integrations.GitHub;
 using HyPrism.Desktop.Features.News;
 using HyPrism.Desktop.Features.Settings;
 using HyPrism.Desktop.Localization;

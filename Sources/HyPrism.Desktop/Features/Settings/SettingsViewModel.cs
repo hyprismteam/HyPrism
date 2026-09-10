@@ -12,7 +12,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using HyPrism.Desktop.Controls;
 using HyPrism.Desktop.Localization;
-using HyPrism.Desktop.Features.About;
+using HyPrism.Desktop.Integrations.GitHub;
 using HyPrism.Desktop.Platform;
 using HyPrism.Core.Accounts;
 using HyPrism.Core.Application.Ports;

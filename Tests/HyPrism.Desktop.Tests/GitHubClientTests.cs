@@ -3,7 +3,7 @@
 
 using System.Net;
 using System.Text;
-using HyPrism.Desktop.Features.About;
+using HyPrism.Desktop.Integrations.GitHub;
 using Xunit;
 
 namespace HyPrism.Desktop.Tests;
