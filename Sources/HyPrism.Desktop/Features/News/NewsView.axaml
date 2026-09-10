@@ -7,7 +7,6 @@ SPDX-License-Identifier: GPL-3.0-only
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:news="using:HyPrism.Desktop.Features.News"
              xmlns:controls="using:HyPrism.Desktop.Controls"
-             xmlns:animation="using:Avalonia.Animation"
              xmlns:easing="using:Avalonia.Animation.Easings"
              xmlns:lottie="clr-namespace:Avalonia.Labs.Lottie;assembly=Avalonia.Labs.Lottie"
              x:Class="HyPrism.Desktop.Features.News.NewsView"
@@ -504,7 +503,7 @@ SPDX-License-Identifier: GPL-3.0-only
           <Grid ColumnDefinitions="*,Auto,*">
             <Button Classes="articleBack"
                     HorizontalAlignment="Left"
-                    Command="{Binding CloseNewsArticleCommand}">
+                    Click="OnCompactNewsBackClicked">
               <StackPanel Orientation="Horizontal" Spacing="9">
                 <Path Width="12"
                       Height="12"
@@ -714,50 +713,36 @@ SPDX-License-Identifier: GPL-3.0-only
                 <Grid x:Name="NewsResponsiveLayout"
                       SizeChanged="OnNewsResponsiveSizeChanged"
                       Background="{DynamicResource SurfaceBrush}">
-            <Grid IsVisible="{Binding IsCompactNewsLayout}">
-              <Carousel x:Name="CompactNewsShell"
-                        SelectedIndex="{Binding CompactNewsPageIndex, Mode=OneWay}">
-                <Carousel.PageTransition>
-                  <animation:PageSlide Duration="0:0:0.3" Orientation="Horizontal">
-                    <animation:PageSlide.SlideInEasing>
-                      <easing:CubicEaseInOut />
-                    </animation:PageSlide.SlideInEasing>
-                    <animation:PageSlide.SlideOutEasing>
-                      <easing:CubicEaseInOut />
-                    </animation:PageSlide.SlideOutEasing>
-                  </animation:PageSlide>
-                </Carousel.PageTransition>
-                <ContentControl Content="{Binding}"
-                                ContentTemplate="{StaticResource NewsFeedTemplate}" />
-                <ContentControl x:Name="CompactArticleHost"
+            <Grid x:Name="CompactNewsShell"
+                  IsVisible="{Binding IsCompactNewsLayout}"
+                  ColumnDefinitions="Auto,*"
+                  ClipToBounds="True">
+              <Border x:Name="CompactNewsFeedBackground"
+                      Background="{DynamicResource SurfaceBrush}">
+                <ContentControl x:Name="CompactNewsFeedHost"
                                 Content="{Binding}"
-                                ContentTemplate="{StaticResource NewsReaderTemplate}" />
-              </Carousel>
+                                ContentTemplate="{StaticResource NewsFeedTemplate}" />
+              </Border>
 
-              <Border IsVisible="{Binding IsCompactNewsTransitionActive}"
-                      Classes="newsTransitionEdgeFade"
-                      Width="38"
-                      HorizontalAlignment="Left"
-                      IsHitTestVisible="False">
-                <Border.Background>
-                  <LinearGradientBrush StartPoint="0%,50%" EndPoint="100%,50%">
-                    <GradientStop Color="#FF0D0E10" Offset="0" />
-                    <GradientStop Color="#000D0E10" Offset="1" />
-                  </LinearGradientBrush>
-                </Border.Background>
-              </Border>
-              <Border IsVisible="{Binding IsCompactNewsTransitionActive}"
-                      Classes="newsTransitionEdgeFade"
-                      Width="38"
-                      HorizontalAlignment="Right"
-                      IsHitTestVisible="False">
-                <Border.Background>
-                  <LinearGradientBrush StartPoint="0%,50%" EndPoint="100%,50%">
-                    <GradientStop Color="#000D0E10" Offset="0" />
-                    <GradientStop Color="#FF0D0E10" Offset="1" />
-                  </LinearGradientBrush>
-                </Border.Background>
-              </Border>
+              <ContentControl x:Name="CompactArticleHost"
+                              Grid.Column="1"
+                              ZIndex="1"
+                              Content="{Binding}"
+                              ContentTemplate="{StaticResource NewsReaderTemplate}">
+                <ContentControl.RenderTransform>
+                  <TranslateTransform>
+                    <TranslateTransform.Transitions>
+                      <Transitions>
+                        <DoubleTransition Property="X" Duration="0:0:0.3">
+                          <DoubleTransition.Easing>
+                            <easing:CubicEaseInOut />
+                          </DoubleTransition.Easing>
+                        </DoubleTransition>
+                      </Transitions>
+                    </TranslateTransform.Transitions>
+                  </TranslateTransform>
+                </ContentControl.RenderTransform>
+              </ContentControl>
             </Grid>
 
             <Grid x:Name="WideNewsShell"

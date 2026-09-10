@@ -4,8 +4,10 @@
 using System.ComponentModel;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Interactivity;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
+using HyPrism.Desktop.Controls;
 
 namespace HyPrism.Desktop.Features.News;
 
@@ -13,6 +15,7 @@ public sealed partial class NewsView : UserControl
 {
     private const double WideNewsLayoutThreshold = 1180;
 
+    private readonly AdaptiveMasterDetailHost _layoutHost;
     private INotifyPropertyChanged? _observedViewModel;
     private int _wideArticleTransitionVersion;
     private bool? _usesWideNewsLayout;
@@ -20,6 +23,11 @@ public sealed partial class NewsView : UserControl
     public NewsView()
     {
         InitializeComponent();
+        _layoutHost = new AdaptiveMasterDetailHost(
+            CompactNewsShell,
+            CompactNewsFeedBackground,
+            CompactArticleHost,
+            compactBreakpoint: WideNewsLayoutThreshold);
         DataContextChanged += OnDataContextChanged;
     }
 
@@ -32,14 +40,32 @@ public sealed partial class NewsView : UserControl
         if (_observedViewModel is not null)
             _observedViewModel.PropertyChanged += OnViewModelPropertyChanged;
 
-        if (DataContext is NewsViewModel viewModel && _usesWideNewsLayout is { } useWideLayout)
-            viewModel.IsWideNewsLayout = useWideLayout;
+        _usesWideNewsLayout = null;
+        UpdateNewsLayout(Bounds.Width);
     }
 
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
+        if (DataContext is not NewsViewModel viewModel)
+            return;
+
+        if (e.PropertyName == nameof(NewsViewModel.SelectedNewsItem) &&
+            viewModel.SelectedNewsItem is not null)
+        {
+            _layoutHost.RememberDetail();
+            if (_layoutHost.IsCompact)
+                _layoutHost.OpenDetail();
+        }
+
+        if (e.PropertyName == nameof(NewsViewModel.IsCompactNewsArticleClosing) &&
+            viewModel.IsCompactNewsArticleClosing &&
+            _layoutHost.IsCompact)
+        {
+            _layoutHost.TryCloseDetail();
+        }
+
         if (e.PropertyName != nameof(NewsViewModel.SelectedNewsArticle) ||
-            DataContext is not NewsViewModel { SelectedNewsArticle: not null } viewModel)
+            viewModel.SelectedNewsArticle is null)
         {
             return;
         }
@@ -86,21 +112,43 @@ public sealed partial class NewsView : UserControl
 
     private void OnNewsResponsiveSizeChanged(object? sender, SizeChangedEventArgs e)
     {
-        if (DataContext is not NewsViewModel viewModel)
+        UpdateNewsLayout(e.NewSize.Width);
+    }
+
+    private void UpdateNewsLayout(double width)
+    {
+        if (width <= 0 || DataContext is not NewsViewModel viewModel)
             return;
 
-        var useWideLayout = e.NewSize.Width >= WideNewsLayoutThreshold;
+        _layoutHost.Update(width, hasMaster: true);
+        var useWideLayout = !_layoutHost.IsCompact;
         viewModel.IsWideNewsLayout = useWideLayout;
+        if (viewModel.SelectedNewsItem is not null &&
+            _layoutHost.IsCompact &&
+            !_layoutHost.IsDetailOpen)
+        {
+            _layoutHost.OpenDetail();
+        }
+
         if (_usesWideNewsLayout == useWideLayout)
             return;
 
         _usesWideNewsLayout = useWideLayout;
-        var compactNewsShell = FindVisualByName<Carousel>("CompactNewsShell");
+        var compactNewsShell = FindVisualByName<Grid>("CompactNewsShell");
         var wideNewsShell = FindVisualByName<Grid>("WideNewsShell");
         if (compactNewsShell is not null)
             compactNewsShell.IsVisible = !useWideLayout;
         if (wideNewsShell is not null)
             wideNewsShell.IsVisible = useWideLayout;
+    }
+
+    private async void OnCompactNewsBackClicked(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is not NewsViewModel viewModel)
+            return;
+
+        _layoutHost.TryCloseDetail();
+        await viewModel.CloseNewsArticleCommand.ExecuteAsync(null);
     }
 
     private T? FindVisualByName<T>(string name)

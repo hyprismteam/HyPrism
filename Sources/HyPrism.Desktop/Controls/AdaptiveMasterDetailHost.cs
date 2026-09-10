@@ -21,6 +21,7 @@ public sealed class AdaptiveMasterDetailHost
     private readonly Control? _compactToolbar;
     private readonly Control? _contentHost;
     private readonly Action<bool>? _applyCompactClass;
+    private readonly double _compactBreakpoint;
     private double _width;
     private bool _hasMaster = true;
     private bool _showCompactToolbar = true;
@@ -32,14 +33,19 @@ public sealed class AdaptiveMasterDetailHost
         Control detail,
         Control? compactToolbar = null,
         Control? contentHost = null,
-        Action<bool>? applyCompactClass = null)
+        Action<bool>? applyCompactClass = null,
+        double compactBreakpoint = DefaultBreakpoint)
     {
+        if (compactBreakpoint <= 0)
+            throw new ArgumentOutOfRangeException(nameof(compactBreakpoint));
+
         _layout = layout;
         _master = master;
         _detail = detail;
         _compactToolbar = compactToolbar;
         _contentHost = contentHost;
         _applyCompactClass = applyCompactClass;
+        _compactBreakpoint = compactBreakpoint;
         _detail.RenderTransform ??= new TranslateTransform();
     }
 
@@ -54,7 +60,7 @@ public sealed class AdaptiveMasterDetailHost
         _width = width;
         _hasMaster = hasMaster;
         _showCompactToolbar = showCompactToolbar;
-        var compact = width < DefaultBreakpoint;
+        var compact = width < _compactBreakpoint;
         if (IsCompact != compact)
         {
             if (compact)

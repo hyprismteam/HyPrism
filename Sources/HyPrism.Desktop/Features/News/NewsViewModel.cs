@@ -18,6 +18,7 @@ public sealed partial class NewsViewModel : ObservableObject, IDisposable
     private const int NewsPageSize = 8;
     private const int MaximumNewsCount = 30;
     private const int MaximumCachedNewsArticles = 2;
+    private const int CompactArticleAnimationMilliseconds = 300;
     private const int CompactTransitionMilliseconds = 320;
     private const int ArticleSkeletonDelayMilliseconds = 180;
     private const int ArticleBodySkeletonFadeMilliseconds = 180;
@@ -102,6 +103,9 @@ public sealed partial class NewsViewModel : ObservableObject, IDisposable
 
     [ObservableProperty]
     private bool _isCompactNewsTransitionActive;
+
+    [ObservableProperty]
+    private bool _isCompactNewsArticleClosing;
 
     [ObservableProperty]
     private bool _isNewsArticleScrolled;
@@ -296,6 +300,7 @@ public sealed partial class NewsViewModel : ObservableObject, IDisposable
         _newsImagesCancellation.Cancel();
         _articleImagesCancellation.Cancel();
         _articlePresentationCancellation.Cancel();
+        IsCompactNewsArticleClosing = false;
         BeginArticleBodyPreparation();
         previousArticle?.ResetRenderedBlocks();
         previousArticle?.ReleaseImages();
@@ -380,8 +385,8 @@ public sealed partial class NewsViewModel : ObservableObject, IDisposable
         if (!IsCompactNewsLayout)
             return;
 
-        // The reader bindings are fully updated before Carousel starts measuring the
-        // incoming page, preventing article realization from stalling the first frame.
+        // Keep article realization behind the compact detail transition so the first
+        // frame only has to animate the already laid out reader shell
         BeginCompactNewsTransition();
         CompactNewsPageIndex = 1;
     }
@@ -393,6 +398,7 @@ public sealed partial class NewsViewModel : ObservableObject, IDisposable
         _articleImagesCancellation.Cancel();
         _articlePresentationCancellation.Cancel();
         IsNewsArticleScrolled = false;
+        IsCompactNewsArticleClosing = IsCompactNewsLayout;
         foreach (var newsItem in _allNews)
             newsItem.IsSelected = false;
         CompactNewsPageIndex = 0;
@@ -416,6 +422,7 @@ public sealed partial class NewsViewModel : ObservableObject, IDisposable
         NewsArticleError = string.Empty;
         IsNewsArticleLoading = false;
         IsNewsArticleSkeletonVisible = false;
+        IsCompactNewsArticleClosing = false;
         NotifyNewsStateChanged();
         RestartImageLoading();
     }
@@ -440,7 +447,7 @@ public sealed partial class NewsViewModel : ObservableObject, IDisposable
         _compactNewsTransitionCancellation.Dispose();
         _compactNewsTransitionCancellation = new CancellationTokenSource();
         _compactNewsTransitionReadyAt =
-            Environment.TickCount64 + CompactTransitionMilliseconds + 34;
+            Environment.TickCount64 + CompactArticleAnimationMilliseconds;
         IsCompactNewsTransitionActive = true;
         _ = CompleteCompactNewsTransitionAsync(_compactNewsTransitionCancellation.Token);
     }
@@ -449,7 +456,7 @@ public sealed partial class NewsViewModel : ObservableObject, IDisposable
     {
         try
         {
-            await Task.Delay(CompactTransitionMilliseconds + 60, cancellationToken).ConfigureAwait(false);
+            await Task.Delay(CompactTransitionMilliseconds, cancellationToken).ConfigureAwait(false);
             Dispatcher.UIThread.Post(() => IsCompactNewsTransitionActive = false);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)

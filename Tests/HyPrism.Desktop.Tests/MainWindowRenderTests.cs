@@ -1379,31 +1379,25 @@ public sealed class MainWindowRenderTests
             () => viewModel.IsCompactNewsTransitionActive &&
                   window.GetVisualDescendants()
                       .OfType<Border>()
-                      .Count(border => border.IsEffectivelyVisible &&
-                                       border.Classes.Contains("newsTransitionEdgeFade")) == 2 &&
-                  window.GetVisualDescendants()
-                      .OfType<Border>()
                       .Any(border => border.IsEffectivelyVisible &&
                                      border.Classes.Contains("skeleton")),
             "compact news loading transition to become active");
         Dispatcher.UIThread.RunJobs();
 
-        var compactShell = FindVisualByName<Carousel>(window, "CompactNewsShell");
+        var compactShell = FindVisualByName<Grid>(window, "CompactNewsShell");
         var articleHost = FindVisualByName<ContentControl>(window, "CompactArticleHost");
         Assert.NotNull(compactShell);
         Assert.NotNull(articleHost);
-        Assert.Equal(1, compactShell!.SelectedIndex);
         Assert.True(viewModel.IsNewsArticleLoading);
-        var transition = Assert.IsType<PageSlide>(compactShell.PageTransition);
-        Assert.IsType<CubicEaseInOut>(transition.SlideInEasing);
-        Assert.IsType<CubicEaseInOut>(transition.SlideOutEasing);
         Assert.True(viewModel.IsCompactNewsTransitionActive);
-        Assert.Equal(
-            2,
-            window.GetVisualDescendants()
-                .OfType<Border>()
-                .Count(border => border.IsEffectivelyVisible &&
-                                 border.Classes.Contains("newsTransitionEdgeFade")));
+        var articleTranslation = Assert.IsType<TranslateTransform>(articleHost!.RenderTransform);
+        Assert.True(articleTranslation.X > 0);
+        var articleTransition = Assert.IsType<DoubleTransition>(Assert.Single(
+            articleTranslation.Transitions!,
+            transition => transition is DoubleTransition { Property: { } property } &&
+                          property == TranslateTransform.XProperty));
+        Assert.Equal(TimeSpan.FromMilliseconds(300), articleTransition.Duration);
+        Assert.IsType<CubicEaseInOut>(articleTransition.Easing);
 
         var readerRoot = articleHost!.GetVisualDescendants()
             .OfType<Grid>()
@@ -2873,7 +2867,7 @@ public sealed class MainWindowRenderTests
             Times.Once);
 
         var newsLayout = FindVisualByName<Grid>(window, "NewsResponsiveLayout");
-        var compactNewsShell = FindVisualByName<Carousel>(window, "CompactNewsShell");
+        var compactNewsShell = FindVisualByName<Grid>(window, "CompactNewsShell");
         var wideNewsShell = FindVisualByName<Grid>(window, "WideNewsShell");
         var wideNewsFeedBackground = FindVisualByName<Border>(window, "WideNewsFeedBackground");
         var compactArticleHost = FindVisualByName<ContentControl>(window, "CompactArticleHost");
@@ -2883,10 +2877,13 @@ public sealed class MainWindowRenderTests
         Assert.NotNull(wideNewsShell);
         Assert.NotNull(wideNewsFeedBackground);
         Assert.NotNull(wideArticleHost);
-        var compactTransition = Assert.IsType<PageSlide>(compactNewsShell!.PageTransition);
-        Assert.Equal(PageSlide.SlideAxis.Horizontal, compactTransition.Orientation);
-        Assert.IsType<CubicEaseInOut>(compactTransition.SlideInEasing);
-        Assert.IsType<CubicEaseInOut>(compactTransition.SlideOutEasing);
+        var compactArticleTranslation = Assert.IsType<TranslateTransform>(compactArticleHost!.RenderTransform);
+        var compactArticleTransition = Assert.IsType<DoubleTransition>(Assert.Single(
+            compactArticleTranslation.Transitions!,
+            transition => transition is DoubleTransition { Property: { } property } &&
+                          property == TranslateTransform.XProperty));
+        Assert.Equal(TimeSpan.FromMilliseconds(300), compactArticleTransition.Duration);
+        Assert.IsType<CubicEaseInOut>(compactArticleTransition.Easing);
 
         var usesWideLayout = newsLayout!.Bounds.Width >= 1180;
         Assert.Equal(!usesWideLayout, compactNewsShell!.IsVisible);
@@ -2984,7 +2981,6 @@ public sealed class MainWindowRenderTests
         Assert.False(viewModel.IsNewsFeedVisible);
         Assert.True(viewModel.FeaturedNews.IsSelected);
         Assert.Equal(usesWideLayout ? 0 : 1, viewModel.CompactNewsPageIndex);
-        Assert.Equal(usesWideLayout ? 0 : 1, compactNewsShell.SelectedIndex);
         Assert.Equal("Hytale launches a new adventure", viewModel.SelectedNewsArticle?.Title);
         var selectedArticle = viewModel.SelectedNewsArticle!;
         Assert.False(viewModel.IsNewsArticleSkeletonVisible);
@@ -3488,7 +3484,8 @@ public sealed class MainWindowRenderTests
         Assert.Null(viewModel.SelectedNewsArticle);
         Assert.False(viewModel.FeaturedNews.IsSelected);
         Assert.Equal(0, viewModel.CompactNewsPageIndex);
-        Assert.Equal(0, compactNewsShell.SelectedIndex);
+        if (!usesWideLayout)
+            Assert.True(compactArticleTranslation.X > 0);
 
         await viewModel.FeaturedNews.OpenCommand.ExecuteAsync(null);
         Dispatcher.UIThread.RunJobs();
