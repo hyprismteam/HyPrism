@@ -33,6 +33,7 @@ public sealed partial class MainWindow : Window
 
     private int _startupTransitionVersion;
     private bool _isSectionWarmUpStarted;
+    private bool _isStartupLoadingHiding;
     private WindowEdge? _activeResizeEdge;
     private PixelPoint _resizeStartScreenPoint;
     private PixelPoint _pendingResizeScreenPoint;
@@ -83,7 +84,12 @@ public sealed partial class MainWindow : Window
 
 
         if (DataContext is IStartupLoadingState startupViewModel)
+        {
             ApplyStartupLoadingState(startupViewModel.IsStartupLoading);
+
+            if (DataContext is MainWindowViewModel { IsStartupLoading: true })
+                ScheduleSectionWarmUpAfterRender();
+        }
     }
 
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -100,7 +106,10 @@ public sealed partial class MainWindow : Window
     {
         if (isLoading)
         {
-            ShowStartupLoading();
+            // The startup state is replaced once Core has finished preparing
+            // the real shell view model. Keep the same visual loading run.
+            if (!StartupLoadingScreen.IsVisible || _isStartupLoadingHiding)
+                ShowStartupLoading();
             return;
         }
 
@@ -113,6 +122,7 @@ public sealed partial class MainWindow : Window
     private void ShowStartupLoading()
     {
         _startupTransitionVersion++;
+        _isStartupLoadingHiding = false;
         StartupLoadingScreen.IsVisible = true;
         StartupLoadingScreen.IsHitTestVisible = true;
         StartupLoadingScreen.Opacity = 1;
@@ -128,7 +138,6 @@ public sealed partial class MainWindow : Window
         StartupMarkScale.ScaleX = 1;
         StartupMarkScale.ScaleY = 1;
         StartupAnimation.Start();
-        StartSectionWarmUp();
 
         Dispatcher.UIThread.Post(() =>
         {
@@ -142,9 +151,20 @@ public sealed partial class MainWindow : Window
         }, DispatcherPriority.Render);
     }
 
+    private void ScheduleSectionWarmUpAfterRender()
+    {
+        if (_isSectionWarmUpStarted)
+            return;
+
+        Dispatcher.UIThread.Post(
+            () => Dispatcher.UIThread.Post(StartSectionWarmUp, DispatcherPriority.Background),
+            DispatcherPriority.Render);
+    }
+
     private async Task HideStartupLoadingAsync()
     {
         var transitionVersion = ++_startupTransitionVersion;
+        _isStartupLoadingHiding = true;
         StartupLoadingScreen.IsHitTestVisible = false;
         StartupLoadingContent.Opacity = 0;
         StartupBrand.Opacity = 0;
@@ -166,6 +186,7 @@ public sealed partial class MainWindow : Window
         }
 
         StartupLoadingScreen.IsVisible = false;
+        _isStartupLoadingHiding = false;
         LauncherShell.IsHitTestVisible = true;
         StartupAnimation.Stop();
     }
@@ -173,6 +194,7 @@ public sealed partial class MainWindow : Window
     private void ShowLauncherImmediately()
     {
         _startupTransitionVersion++;
+        _isStartupLoadingHiding = false;
         StartupLoadingScreen.IsVisible = false;
         StartupLoadingScreen.IsHitTestVisible = false;
         StartupLoadingScreen.Opacity = 0;
@@ -187,7 +209,8 @@ public sealed partial class MainWindow : Window
 
     private void StartSectionWarmUp()
     {
-        if (_isSectionWarmUpStarted)
+        if (_isSectionWarmUpStarted ||
+            DataContext is not MainWindowViewModel { IsStartupLoading: true })
             return;
 
         _isSectionWarmUpStarted = true;

@@ -263,6 +263,7 @@ SPDX-License-Identifier: GPL-3.0-only
             HorizontalAlignment="Center"
             VerticalAlignment="Center"
             Opacity="0"
+            x:DataType="shell:IStartupLoadingState"
             RenderTransformOrigin="50%,50%"
             RowDefinitions="128,Auto,Auto"
             RowSpacing="13">

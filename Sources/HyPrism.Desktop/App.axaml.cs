@@ -41,7 +41,6 @@ public sealed partial class App : Application
         {
             var services = DesktopRuntime.Services;
             var settings = services.GetRequiredService<IDesktopSettingsStore>();
-            services.GetRequiredService<IDiscordPresence>().Initialize();
 
             var localizer = new StringLocalizer(settings.Language);
             if (!string.Equals(settings.Language, localizer.CurrentLanguage, StringComparison.OrdinalIgnoreCase))
@@ -54,6 +53,10 @@ public sealed partial class App : Application
             desktop.MainWindow = mainWindow;
 
             desktop.Exit += OnDesktopExit;
+            // Let Avalonia show the lightweight startup view before bootstrap
+            // begins. InitializeAsync starts its blocking work on a worker.
+            base.OnFrameworkInitializationCompleted();
+
             _bootstrapTask = InitializeAsync(
                 services,
                 mainWindow,
@@ -62,6 +65,7 @@ public sealed partial class App : Application
                 filePicker,
                 localizer,
                 _bootstrapCancellation.Token);
+            return;
         }
 
         base.OnFrameworkInitializationCompleted();
@@ -84,19 +88,28 @@ public sealed partial class App : Application
         StringLocalizer localizer,
         CancellationToken cancellationToken)
     {
-        await InitializeCoreAsync(services, cancellationToken);
+        await Task.Run(
+            async () =>
+            {
+                services.GetRequiredService<IDiscordPresence>().Initialize();
+                await InitializeCoreAsync(services, cancellationToken).ConfigureAwait(false);
+            },
+            cancellationToken);
 
         if (cancellationToken.IsCancellationRequested)
             return;
 
-        var viewModel = await Dispatcher.UIThread.InvokeAsync(() =>
-        {
-            var created = CreateMainWindowViewModel(
+        var created = await Task.Run(
+            () => CreateMainWindowViewModel(
                 services,
                 settings,
                 uriLauncher,
                 filePicker,
-                localizer);
+                localizer),
+            cancellationToken);
+
+        var viewModel = await Dispatcher.UIThread.InvokeAsync(() =>
+        {
             created.BeginStartupLoading();
             mainWindow.DataContext = created;
             _mainWindowViewModel = created;
