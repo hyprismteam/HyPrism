@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Copyright (C) 2026 HyPrism Launcher
+  SPDX-License-Identifier: GPL-3.0-only
+-->
+<Wix
+    xmlns="http://wixtoolset.org/schemas/v4/wxs"
+    xmlns:bal="http://wixtoolset.org/schemas/v4/wxs/bal">
+  <Bundle
+      Name="HyPrism"
+      Manufacturer="HyPrism Team"
+      Version="$(var.ProductVersion)"
+      UpgradeCode="5B9C81F5-083C-45B3-8AC9-C6DAE2DEB61F">
+    <BootstrapperApplication>
+      <bal:WixStandardBootstrapperApplication LicenseUrl="" Theme="hyperlinkLicense" />
+    </BootstrapperApplication>
+    <Chain>
+      <MsiPackage SourceFile="$(var.MsiPath)" />
+    </Chain>
+  </Bundle>
+</Wix>

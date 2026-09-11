@@ -1,0 +1,51 @@
+---
+title: HyPrism.Core
+description: Domain services, orchestration, and host contracts
+---
+
+# HyPrism.Core
+
+Core owns launcher behavior that can operate without a UI toolkit. Interfaces live beside their implementations; host capabilities live under `Application/Ports`
+
+## Subsystems
+
+| Directory | Responsibility |
+| --- | --- |
+| `Application/Composition` | Dependency registration and optional asynchronous bootstrap |
+| `Application/Progress` | Instance-scoped progress, stage changes, completion, and errors |
+| `Application/Ports` | Host-provided Discord presence and GPU discovery |
+| `Accounts/Authentication` | Official OAuth, session refresh, token storage, callback-page contract |
+| `Accounts/Profiles` | Identity selection, profile lifecycle, ordering, migrations, play time |
+| `Accounts/Identity` and `Accounts/Skins` | Profile identity and character data |
+| `Game/Versions` and `Game/Sources` | Version catalogs, official source, mirror discovery and selection |
+| `Game/Download` and `Game/Patching` | Resumable transfers, differential updates, Butler execution |
+| `Game/Instances` | Instance registry, paths, import, metadata, deletion, migrations |
+| `Game/Launch` | Runtime setup, authentication selection, client patching, JVM and GPU options, process tracking |
+| `Game/Mods` | CurseForge API, compatibility, imports, enabled state, updates |
+| `Game/Assets` | Avatar lookup and backup |
+| `Infrastructure` | JSON storage, application directories, caches, logging, shared HTTP identity |
+| `Integrations/Hytale` | Official launcher protocol headers |
+
+## Orchestration
+
+`GameLaunchCoordinator` guards installed-instance launches. `GameInstallationWorkflow` chooses installation or update work and calls `GameLauncher` after preparation. The [launch workflow](/docs/architecture/game-lifecycle) describes their ordering and cancellation boundaries
+
+The repository services raise `InstancesChanged` and `ProfilesChanged` after mutations. Consumers subscribe to these events instead of polling disk or assuming their own action was the only writer
+
+## Host boundary
+
+Core accepts an `AuthUriPresenter` callback for interactive OAuth. The host opens the browser and may supply `IOAuthCallbackPageRenderer` for the loopback callback response
+
+Core resolves profile and instance paths, but Desktop opens their folders. GPU selection consumes `IGpuProvider`; presence consumes `IDiscordPresence`; autonomous launch consumes `ILocalNodeServiceFactory`
+
+News parsing and GitHub metadata belong to Desktop because they support presentation rather than game or account rules
+
+## Mod storage and compatibility
+
+`ModManager` stores files under the target instance's `UserData/Mods`. Disabling a file adds the `.disabled` suffix, and enabling it restores the normal filename. Managed metadata connects installed files to CurseForge project and file identifiers
+
+`ModCompatibilityEvaluator` reads the installed server version and compares it with the game versions attached to catalog files. The UI disables files classified as incompatible, while an unknown version remains a distinct state
+
+See [Core contracts](/docs/reference/services) for integration examples and [Data and cache](/docs/architecture/data-and-cache) for persistence rules
+
+Source: [Core source](../../../../Sources/HyPrism.Core)

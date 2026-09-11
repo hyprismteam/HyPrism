@@ -1,0 +1,412 @@
+<!--
+Copyright (C) 2026 HyPrism Launcher
+SPDX-License-Identifier: GPL-3.0-only
+-->
+
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:shell="using:HyPrism.Desktop.Shell"
+        xmlns:instances="using:HyPrism.Desktop.Features.Instances"
+        xmlns:controls="using:HyPrism.Desktop.Controls"
+        xmlns:news="using:HyPrism.Desktop.Features.News"
+        xmlns:profiles="using:HyPrism.Desktop.Features.Profiles"
+        xmlns:settings="using:HyPrism.Desktop.Features.Settings"
+        xmlns:animation="using:Avalonia.Animation"
+        xmlns:easing="using:Avalonia.Animation.Easings"
+        xmlns:lottie="clr-namespace:Avalonia.Labs.Lottie;assembly=Avalonia.Labs.Lottie"
+        x:Class="HyPrism.Desktop.Shell.MainWindow"
+        x:DataType="shell:MainWindowViewModel"
+        Title="HyPrism"
+        Width="1280"
+        Height="800"
+        MinWidth="1024"
+        MinHeight="700"
+        CanResize="True"
+        Background="{DynamicResource AppBackgroundBrush}"
+        WindowStartupLocation="CenterScreen"
+        WindowDecorations="None">
+
+
+  <Grid x:Name="WindowRoot">
+  <Grid x:Name="LauncherShell"
+        RowDefinitions="30,*"
+        RenderTransformOrigin="50%,50%">
+    <Grid.Transitions>
+      <Transitions>
+        <DoubleTransition Property="Opacity" Duration="0:0:0.42">
+          <DoubleTransition.Easing><easing:CubicEaseOut /></DoubleTransition.Easing>
+        </DoubleTransition>
+      </Transitions>
+    </Grid.Transitions>
+    <Grid.RenderTransform>
+      <TransformGroup>
+        <ScaleTransform ScaleX="1" ScaleY="1">
+          <ScaleTransform.Transitions>
+            <Transitions>
+              <DoubleTransition Property="ScaleX" Duration="0:0:0.42">
+                <DoubleTransition.Easing><easing:CubicEaseOut /></DoubleTransition.Easing>
+              </DoubleTransition>
+              <DoubleTransition Property="ScaleY" Duration="0:0:0.42">
+                <DoubleTransition.Easing><easing:CubicEaseOut /></DoubleTransition.Easing>
+              </DoubleTransition>
+            </Transitions>
+          </ScaleTransform.Transitions>
+        </ScaleTransform>
+        <TranslateTransform>
+          <TranslateTransform.Transitions>
+            <Transitions>
+              <DoubleTransition Property="Y" Duration="0:0:0.42">
+                <DoubleTransition.Easing><easing:CubicEaseOut /></DoubleTransition.Easing>
+              </DoubleTransition>
+            </Transitions>
+          </TranslateTransform.Transitions>
+        </TranslateTransform>
+      </TransformGroup>
+    </Grid.RenderTransform>
+    <Grid Grid.Row="1"
+          ColumnDefinitions="238,*"
+          ColumnSpacing="18"
+          Margin="18,2,18,18">
+
+      <Grid Grid.Column="0" RowDefinitions="Auto,*,Auto">
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="12" Margin="10,12,10,30">
+          <Image Width="48"
+                 Height="48"
+                 Source="avares://HyPrism.Desktop/Assets/Images/logo.png"
+                 Stretch="Uniform" />
+          <StackPanel VerticalAlignment="Center" Spacing="-3">
+            <TextBlock Text="HyPrism" FontSize="25" FontWeight="Bold" />
+            <TextBlock Text="LAUNCHER"
+                       Foreground="{DynamicResource TextSecondaryBrush}"
+                       FontSize="10"
+                       FontWeight="Bold"
+                       LetterSpacing="2" />
+          </StackPanel>
+        </StackPanel>
+
+        <StackPanel x:Name="PrimaryNavigation" Grid.Row="1" Spacing="2">
+          <Button x:Name="InstancesNavButton"
+                  Classes="nav"
+                  Classes.selected="{Binding IsInstances}"
+                  Command="{Binding NavigateCommand}"
+                  CommandParameter="instances">
+            <StackPanel Orientation="Horizontal" Spacing="14">
+              <Grid Width="21" Height="21">
+                <Path Classes="navIconOutline" Stretch="Uniform" Data="{StaticResource InstancesIcon}" />
+                <Path Classes="navIconFilled" Stretch="Uniform" Data="{StaticResource InstancesFilledIcon}" />
+              </Grid>
+              <TextBlock VerticalAlignment="Center" Text="{Binding InstancesLabel}" />
+            </StackPanel>
+          </Button>
+
+          <Button Classes="nav"
+                  Classes.selected="{Binding IsNews}"
+                  Command="{Binding NavigateCommand}"
+                  CommandParameter="news">
+            <StackPanel Orientation="Horizontal" Spacing="14">
+              <Grid Width="21" Height="21">
+                <Path Classes="navIconOutline" Stretch="Uniform" Data="{StaticResource NewsIcon}" />
+                <Path Classes="navIconFilled" Stretch="Uniform" Data="{StaticResource NewsFilledIcon}" />
+              </Grid>
+              <TextBlock VerticalAlignment="Center" Text="{Binding NewsLabel}" />
+            </StackPanel>
+          </Button>
+
+          <Button Classes="nav"
+                  Classes.selected="{Binding IsProfiles}"
+                  Command="{Binding NavigateCommand}"
+                  CommandParameter="profiles">
+            <StackPanel Orientation="Horizontal" Spacing="14">
+              <Grid Width="21" Height="21">
+                <Path Classes="navIconOutline" Stretch="Uniform" Data="{StaticResource ProfilesIcon}" />
+                <Path Classes="navIconFilled" Stretch="Uniform" Data="{StaticResource ProfilesFilledIcon}" />
+              </Grid>
+              <TextBlock VerticalAlignment="Center" Text="{Binding ProfilesLabel}" />
+            </StackPanel>
+          </Button>
+
+          <Button Classes="nav"
+                  Classes.selected="{Binding IsSettings}"
+                  Command="{Binding NavigateCommand}"
+                  CommandParameter="settings">
+            <StackPanel Orientation="Horizontal" Spacing="14">
+              <Grid Width="21" Height="21">
+                <Path Classes="navIconOutline" Stretch="Uniform" Data="{StaticResource SettingsIcon}" />
+                <Path Classes="navIconFilled" Stretch="Uniform" Data="{StaticResource SettingsFilledIcon}" />
+              </Grid>
+              <TextBlock VerticalAlignment="Center" Text="{Binding SettingsLabel}" />
+            </StackPanel>
+          </Button>
+        </StackPanel>
+
+        <Grid Grid.Row="2"
+              ColumnDefinitions="44,*"
+              ColumnSpacing="11"
+              Margin="10,36,0,2">
+          <Border x:Name="SidebarProfileAvatarHost"
+                  Width="44"
+                  Height="44"
+                  CornerRadius="22"
+                  ClipToBounds="True"
+                  Background="{DynamicResource AccentSoftBrush}"
+                  BorderBrush="{DynamicResource StrokeStrongBrush}"
+                  BorderThickness="1">
+            <Grid>
+              <Image x:Name="SidebarProfileAvatar"
+                     IsVisible="{Binding HasActiveProfileAvatar}"
+                     Source="{Binding ActiveProfileAvatar}"
+                     Stretch="UniformToFill" />
+              <TextBlock IsVisible="{Binding !HasActiveProfileAvatar}"
+                         HorizontalAlignment="Center"
+                         VerticalAlignment="Center"
+                         Foreground="{DynamicResource TextPrimaryBrush}"
+                         FontWeight="Bold"
+                         Text="{Binding UserInitial}" />
+            </Grid>
+          </Border>
+          <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="1">
+            <TextBlock Text="{Binding UserName}"
+                       FontWeight="SemiBold"
+                       TextTrimming="CharacterEllipsis"
+                       TextWrapping="NoWrap" />
+            <TextBlock Classes="muted"
+                       Text="{Binding AccountType}"
+                       FontSize="12"
+                       TextWrapping="NoWrap" />
+          </StackPanel>
+        </Grid>
+      </Grid>
+
+      <Border x:Name="MainSceneFrame"
+              Grid.Column="1"
+              Classes="mainSceneFrame"
+              Classes.bottomSheetOpen="{Binding IsBottomSheetMounted}"
+              Background="{DynamicResource SurfaceBrush}"
+              CornerRadius="24"
+              ClipToBounds="False">
+        <Border x:Name="MainSceneSurface"
+                Background="{DynamicResource SurfaceBrush}"
+                CornerRadius="23"
+                ClipToBounds="True">
+        <Grid>
+          <controls:DeferredContentControl IsActive="{Binding IsInstances}"
+                                           DeferredContent="{Binding Instances}">
+            <controls:DeferredContentControl.ContentTemplate>
+              <DataTemplate x:DataType="instances:InstancesViewModel">
+                <instances:InstancesView />
+              </DataTemplate>
+            </controls:DeferredContentControl.ContentTemplate>
+          </controls:DeferredContentControl>
+
+          <controls:DeferredContentControl IsActive="{Binding IsNews}"
+                                           DeferredContent="{Binding News}">
+            <controls:DeferredContentControl.ContentTemplate>
+              <DataTemplate x:DataType="news:NewsViewModel">
+                <news:NewsView />
+              </DataTemplate>
+            </controls:DeferredContentControl.ContentTemplate>
+          </controls:DeferredContentControl>
+
+          <controls:DeferredContentControl IsActive="{Binding IsSettings}"
+                                           DeferredContent="{Binding Settings}">
+            <controls:DeferredContentControl.ContentTemplate>
+              <DataTemplate x:DataType="settings:SettingsViewModel">
+                <settings:SettingsView />
+              </DataTemplate>
+            </controls:DeferredContentControl.ContentTemplate>
+          </controls:DeferredContentControl>
+
+          <controls:DeferredContentControl IsActive="{Binding IsProfiles}"
+                                           DeferredContent="{Binding Profiles}">
+            <controls:DeferredContentControl.ContentTemplate>
+              <DataTemplate x:DataType="profiles:ProfilesViewModel">
+                <profiles:ProfilesView />
+              </DataTemplate>
+            </controls:DeferredContentControl.ContentTemplate>
+          </controls:DeferredContentControl>
+
+          <Grid IsVisible="{Binding IsPlaceholderPage}" Margin="28">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="10">
+              <TextBlock Text="{Binding CurrentPageTitle}"
+                         HorizontalAlignment="Center"
+                         FontSize="25"
+                         FontWeight="Bold" />
+            </StackPanel>
+          </Grid>
+
+        </Grid>
+        </Border>
+      </Border>
+    </Grid>
+
+  </Grid>
+
+  <Border x:Name="StartupLoadingScreen"
+          IsVisible="False"
+          IsHitTestVisible="False"
+          Opacity="0"
+          Background="#FF0B0C0E"
+          ZIndex="1000">
+    <Border.Transitions>
+      <Transitions>
+        <DoubleTransition Property="Opacity" Duration="0:0:0.38">
+          <DoubleTransition.Easing><easing:CubicEaseInOut /></DoubleTransition.Easing>
+        </DoubleTransition>
+      </Transitions>
+    </Border.Transitions>
+    <Grid ClipToBounds="True"
+          Margin="32,32,32,26"
+          RowDefinitions="*,Auto">
+      <Grid x:Name="StartupLoadingContent"
+            Grid.Row="0"
+            Width="540"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            Opacity="0"
+            x:DataType="shell:IStartupLoadingState"
+            RenderTransformOrigin="50%,50%"
+            RowDefinitions="128,Auto,Auto"
+            RowSpacing="13">
+        <Grid.Transitions>
+          <Transitions>
+            <DoubleTransition Property="Opacity" Duration="0:0:0.32">
+              <DoubleTransition.Easing><easing:CubicEaseOut /></DoubleTransition.Easing>
+            </DoubleTransition>
+          </Transitions>
+        </Grid.Transitions>
+        <Grid.RenderTransform>
+          <ScaleTransform ScaleX="0.9" ScaleY="0.9">
+            <ScaleTransform.Transitions>
+              <Transitions>
+                <DoubleTransition Property="ScaleX" Duration="0:0:0.42">
+                  <DoubleTransition.Easing><easing:CubicEaseOut /></DoubleTransition.Easing>
+                </DoubleTransition>
+                <DoubleTransition Property="ScaleY" Duration="0:0:0.42">
+                  <DoubleTransition.Easing><easing:CubicEaseOut /></DoubleTransition.Easing>
+                </DoubleTransition>
+              </Transitions>
+            </ScaleTransform.Transitions>
+          </ScaleTransform>
+        </Grid.RenderTransform>
+
+        <Grid x:Name="StartupMark"
+              Width="96"
+              Height="96"
+              HorizontalAlignment="Center"
+              RenderTransformOrigin="50%,50%">
+          <Grid.RenderTransform>
+            <ScaleTransform ScaleX="1" ScaleY="1">
+              <ScaleTransform.Transitions>
+                <Transitions>
+                  <DoubleTransition Property="ScaleX" Duration="0:0:0.32">
+                    <DoubleTransition.Easing><easing:CubicEaseInOut /></DoubleTransition.Easing>
+                  </DoubleTransition>
+                  <DoubleTransition Property="ScaleY" Duration="0:0:0.32">
+                    <DoubleTransition.Easing><easing:CubicEaseInOut /></DoubleTransition.Easing>
+                  </DoubleTransition>
+                </Transitions>
+              </ScaleTransform.Transitions>
+            </ScaleTransform>
+          </Grid.RenderTransform>
+
+          <lottie:Lottie x:Name="StartupAnimation"
+                         Width="96"
+                         Height="96"
+                         HorizontalAlignment="Center"
+                         VerticalAlignment="Center"
+                         Path="/Assets/Lotties/figures.json"
+                         AutoPlay="True"
+                         RepeatCount="-1"
+                         OpacityMask="{DynamicResource AccentBrush}"
+                         Stretch="Uniform" />
+        </Grid>
+
+        <TextBlock Grid.Row="1"
+                   Text="{Binding StartupLoadingTitle}"
+                   HorizontalAlignment="Center"
+                   Foreground="#FFD5D8DA"
+                   FontSize="26"
+                   FontWeight="Bold"
+                   TextAlignment="Center" />
+
+        <TextBlock Grid.Row="2"
+                   Text="{Binding StartupLoadingStatus}"
+                   HorizontalAlignment="Center"
+                   Foreground="#FF777E84"
+                   FontSize="15" />
+      </Grid>
+
+      <Image x:Name="StartupBrand"
+             Grid.Row="1"
+             Width="132"
+             Margin="0,32,0,0"
+             HorizontalAlignment="Center"
+             Opacity="0"
+             Source="avares://HyPrism.Desktop/Assets/Images/preview_logo.png"
+             Stretch="Uniform">
+        <Image.Transitions>
+          <Transitions>
+            <DoubleTransition Property="Opacity" Duration="0:0:0.52">
+              <DoubleTransition.Easing><easing:CubicEaseOut /></DoubleTransition.Easing>
+            </DoubleTransition>
+          </Transitions>
+        </Image.Transitions>
+      </Image>
+    </Grid>
+  </Border>
+
+  <Grid x:Name="WindowChrome"
+        Height="30"
+        VerticalAlignment="Top"
+        ColumnDefinitions="*,Auto"
+        ZIndex="2000">
+    <Border Grid.Column="0"
+            Background="Transparent"
+            PointerPressed="OnTitleBarPointerPressed"
+            WindowDecorationProperties.ElementRole="TitleBar" />
+
+    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="0">
+      <Button x:Name="MinimizeWindowButton"
+              Classes="window"
+              VerticalContentAlignment="Stretch"
+              Click="OnMinimizeClicked"
+              WindowDecorationProperties.ElementRole="MinimizeButton">
+        <Border Classes="windowMinimize"
+                Width="11"
+                Height="1.5"
+                Margin="0,0,0,10"
+                VerticalAlignment="Bottom" />
+      </Button>
+      <Button x:Name="MaximizeWindowButton"
+              Classes="window"
+              Click="OnMaximizeClicked"
+              WindowDecorationProperties.ElementRole="MaximizeButton">
+        <Path Classes="windowIcon"
+              Width="11"
+              Height="11"
+              Stretch="Uniform"
+              Data="{StaticResource MaximizeIcon}" />
+      </Button>
+      <Button x:Name="CloseWindowButton"
+              Classes="window"
+              Click="OnCloseClicked"
+              WindowDecorationProperties.ElementRole="CloseButton">
+        <Path Classes="windowIcon"
+              Width="11"
+              Height="11"
+              Stretch="Uniform"
+              Data="{StaticResource CloseIcon}" />
+      </Button>
+    </StackPanel>
+  </Grid>
+
+  <Border x:Name="ResizeNorth" ZIndex="2001" Height="6" VerticalAlignment="Top" Background="Transparent" Cursor="SizeNorthSouth" PointerPressed="OnResizeNorth" />
+  <Border x:Name="ResizeSouth" ZIndex="2001" Height="6" VerticalAlignment="Bottom" Background="Transparent" Cursor="SizeNorthSouth" PointerPressed="OnResizeSouth" />
+  <Border x:Name="ResizeWest" ZIndex="2001" Width="6" HorizontalAlignment="Left" Background="Transparent" Cursor="SizeWestEast" PointerPressed="OnResizeWest" />
+  <Border x:Name="ResizeEast" ZIndex="2001" Width="6" HorizontalAlignment="Right" Background="Transparent" Cursor="SizeWestEast" PointerPressed="OnResizeEast" />
+  <Border x:Name="ResizeNorthWest" ZIndex="2002" Width="10" Height="10" HorizontalAlignment="Left" VerticalAlignment="Top" Background="Transparent" Cursor="TopLeftCorner" PointerPressed="OnResizeNorthWest" />
+  <Border x:Name="ResizeNorthEast" ZIndex="2002" Width="10" Height="10" HorizontalAlignment="Right" VerticalAlignment="Top" Background="Transparent" Cursor="TopRightCorner" PointerPressed="OnResizeNorthEast" />
+  <Border x:Name="ResizeSouthWest" ZIndex="2002" Width="10" Height="10" HorizontalAlignment="Left" VerticalAlignment="Bottom" Background="Transparent" Cursor="BottomLeftCorner" PointerPressed="OnResizeSouthWest" />
+  <Border x:Name="ResizeSouthEast" ZIndex="2002" Width="10" Height="10" HorizontalAlignment="Right" VerticalAlignment="Bottom" Background="Transparent" Cursor="BottomRightCorner" PointerPressed="OnResizeSouthEast" />
+  </Grid>
+</Window>

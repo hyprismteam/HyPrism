@@ -1,0 +1,60 @@
+---
+title: Installation
+description: Choose and install the correct HyPrism package for your platform
+---
+
+# Installation
+
+Use a packaged release unless you are developing HyPrism
+
+## Download a release
+
+Open [HyPrism Releases on GitHub](https://github.com/hyprismteam/HyPrism/releases) and choose the package for your system
+
+| Platform | Target | Packages |
+| --- | --- | --- |
+| Windows | x64 | EXE installer, MSI, or portable ZIP |
+| Linux | x64 | DEB, RPM, AppImage, Flatpak bundle, or tar.xz |
+| macOS | Apple Silicon | DMG |
+
+The packages include the desktop launcher and the Local Node helper used by autonomous local profiles
+
+## Platform notes
+
+### Windows
+
+Use the EXE or MSI for a normal installation. Extract the portable ZIP to a writable directory before starting `HyPrism.Desktop.exe`
+
+### Linux
+
+Prefer DEB or RPM when your distribution supports it. Make an AppImage executable before running it. Replace `4.0.0` in these examples with the downloaded version
+
+```bash
+chmod +x HyPrism-linux-x64-4.0.0.AppImage
+./HyPrism-linux-x64-4.0.0.AppImage
+```
+
+The Flatpak bundle can be installed with the desktop software manager or Flatpak CLI
+
+```bash
+flatpak install ./HyPrism-linux-x64-4.0.0.flatpak
+```
+
+### macOS
+
+Open the DMG and move HyPrism to Applications. The current release target requires Apple Silicon
+
+Autonomous mode may ask once for permission to trust HyPrism's local certificate authority. Canceling the prompt cancels that game launch without weakening TLS validation. See [Local Node](/docs/reference/local-node#certificate-trust) for the reason
+
+## Run from source
+
+Contributors need the .NET 10 SDK and Git
+
+```bash
+git clone https://github.com/hyprismteam/HyPrism.git
+cd HyPrism
+dotnet restore HyPrism.sln
+dotnet run --project Sources/HyPrism.Desktop/HyPrism.Desktop.csproj
+```
+
+Continue with [First run](/docs/getting-started/first-run) after the launcher opens

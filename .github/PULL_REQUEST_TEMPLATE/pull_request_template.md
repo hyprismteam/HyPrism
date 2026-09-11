@@ -1,6 +1,11 @@
+<!--
+Copyright (C) 2026 HyPrism Launcher
+SPDX-License-Identifier: GPL-3.0-only
+-->
+
 ## Summary
 
-<!-- Briefly describe what this PR does and why. -->
+<!-- Briefly describe what this PR does and why -->
 
 ## Type of Change
 

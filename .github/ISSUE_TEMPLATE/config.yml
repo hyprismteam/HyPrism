@@ -1,8 +1,11 @@
+# Copyright (C) 2026 HyPrism Launcher
+# SPDX-License-Identifier: GPL-3.0-only
+
 blank_issues_enabled: false
 contact_links:
   - name: Discord Community
     url: https://discord.com/invite/ekZqTtynjp
     about: For quick support and general discussion, join our Discord server
   - name: Documentation
-    url: https://github.com/hyprismteam/HyPrism/tree/main/Docs
-    about: Check the docs before opening an issue — your answer might already be there
+    url: https://hyprismteam.github.io/HyPrism/docs/
+    about: Check the docs before opening an issue because your answer might already be there

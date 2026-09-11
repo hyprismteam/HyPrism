@@ -1,0 +1,96 @@
+<!--
+Copyright (C) 2026 HyPrism Launcher
+SPDX-License-Identifier: GPL-3.0-only
+-->
+
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:easing="using:Avalonia.Animation.Easings"
+             x:Class="HyPrism.Desktop.Controls.OverlayModal"
+             x:Name="OverlayRoot"
+             Focusable="True"
+             IsVisible="False"
+             IsHitTestVisible="False">
+  <Grid>
+    <Border x:Name="OverlayModalBackdrop"
+            Background="#B8000000"
+            Opacity="0"
+            PointerPressed="OnBackdropPressed">
+      <Border.Transitions>
+        <Transitions>
+          <DoubleTransition Property="Opacity" Duration="0:0:0.18">
+            <DoubleTransition.Easing><easing:CubicEaseOut /></DoubleTransition.Easing>
+          </DoubleTransition>
+        </Transitions>
+      </Border.Transitions>
+    </Border>
+
+    <Border Height="1"
+            Background="{DynamicResource MainCardStrokeBrush}"
+            VerticalAlignment="Bottom"
+            IsHitTestVisible="False" />
+
+    <Grid x:Name="OverlayModalSheet"
+          ZIndex="1"
+          MaxWidth="{Binding SheetMaxWidth, ElementName=OverlayRoot}"
+          MaxHeight="{Binding SheetMaxHeight, ElementName=OverlayRoot}"
+          Margin="{Binding SheetMargin, ElementName=OverlayRoot}"
+          HorizontalAlignment="Stretch"
+          VerticalAlignment="Bottom">
+      <Grid.RenderTransform>
+        <TranslateTransform Y="720">
+          <TranslateTransform.Transitions>
+            <Transitions>
+              <DoubleTransition Property="Y" Duration="0:0:0.32">
+                <DoubleTransition.Easing><easing:CubicEaseInOut /></DoubleTransition.Easing>
+              </DoubleTransition>
+            </Transitions>
+          </TranslateTransform.Transitions>
+        </TranslateTransform>
+      </Grid.RenderTransform>
+      <ContentPresenter Content="{Binding ModalContent, ElementName=OverlayRoot}"
+                        HorizontalContentAlignment="Stretch"
+                        VerticalContentAlignment="Stretch" />
+    </Grid>
+
+    <Grid x:Name="OverlayModalShoulders"
+          ZIndex="2"
+          Height="42"
+          MaxWidth="{Binding ShoulderMaxWidth, ElementName=OverlayRoot}"
+          Margin="{Binding ShoulderMargin, ElementName=OverlayRoot}"
+          HorizontalAlignment="Stretch"
+          VerticalAlignment="Bottom"
+          RenderTransformOrigin="50%,100%"
+          IsHitTestVisible="False">
+      <Grid.RenderTransform>
+        <ScaleTransform ScaleY="0">
+          <ScaleTransform.Transitions>
+            <Transitions>
+              <DoubleTransition Property="ScaleY" Duration="0:0:0.32">
+                <DoubleTransition.Easing><easing:CubicEaseInOut /></DoubleTransition.Easing>
+              </DoubleTransition>
+            </Transitions>
+          </ScaleTransform.Transitions>
+        </ScaleTransform>
+      </Grid.RenderTransform>
+      <Path x:Name="OverlayModalShoulderFill"
+            Data="M 0,100 C 2.4,100 4,70 4,0 L 4,100 Z M 96,0 C 96,70 97.6,100 100,100 L 96,100 Z"
+            Stretch="Fill"
+            Fill="{DynamicResource AppBackgroundBrush}" />
+      <Path x:Name="OverlayModalShoulderStroke"
+            Data="M 0,100 C 2.4,100 4,70 4,0 M 96,0 C 96,70 97.6,100 100,100"
+            Stretch="Fill"
+            Fill="Transparent"
+            Stroke="{DynamicResource MainCardStrokeBrush}"
+            StrokeThickness="1"
+            StrokeJoin="Round" />
+      <Border x:Name="OverlayModalShoulderMask"
+              Height="3"
+              Background="{DynamicResource AppBackgroundBrush}"
+              ZIndex="1"
+              HorizontalAlignment="Stretch"
+              VerticalAlignment="Bottom"
+              IsHitTestVisible="False" />
+    </Grid>
+  </Grid>
+</UserControl>

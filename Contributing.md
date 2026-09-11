@@ -1,3 +1,8 @@
+<!--
+Copyright (C) 2026 HyPrism Launcher
+SPDX-License-Identifier: GPL-3.0-only
+-->
+
 # Contribution
 
 We appreciate the community's contribution to the development of the HyPrism launcher!

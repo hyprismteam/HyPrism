@@ -1,0 +1,52 @@
+---
+title: Локализация
+description: Добавление строковых ресурсов и обновление UI при смене языка
+---
+
+# Локализация
+
+Переводы лаунчера принадлежат Desktop. Стандартный ресурс: `Sources/HyPrism.Desktop/Localization/Resources.resx`; каждой культуре соответствует соседний файл, например `Resources.ru-RU.resx`
+
+## Добавление строки
+
+1. Добавьте стабильный ключ и английское значение в стандартный ресурс
+2. Добавьте тот же ключ во все языковые ресурсы
+3. Получайте значение через `StringLocalizer`
+4. Обновляйте свойства моделей при событии `LanguageChanged`
+5. Запустите тесты локализации
+
+Пример записи русского ресурса
+
+```xml
+<data name="example.ready" xml:space="preserve">
+  <value>Готово</value>
+</data>
+```
+
+Пример обращения из кода представления
+
+```csharp
+using HyPrism.Desktop.Localization;
+
+var localizer = new StringLocalizer("ru-RU");
+var readyLabel = localizer["example.ready"];
+```
+
+Ключ примера нужно добавить до использования. При отсутствии перевода выбирается английское значение, затем сам ключ
+
+## Языки и форматирование
+
+`_supportedCultures` стандартного ресурса управляет списком языков. `_langName` каждой локали задает название на родном языке. `IDesktopSettingsStore.Language` сохраняет выбранную культуру
+
+Имена и индексы подстановок должны совпадать. Core публикует данные и ключи сообщений, а Desktop отвечает за переведенный UI и чтение ресурсов
+
+## Проверка
+
+```bash
+dotnet test Tests/HyPrism.Desktop.Tests/HyPrism.Desktop.Tests.csproj \
+  --filter FullyQualifiedName~StringLocalizerTests
+```
+
+Тесты проверяют полный набор ключей и подстановки. Документация использует отдельную [двуязычную модель MDX](/docs/development/documentation)
+
+Исходники: [Localization](../../../../Sources/HyPrism.Desktop/Localization)

@@ -1,0 +1,78 @@
+# Copyright (C) 2026 HyPrism Launcher
+# SPDX-License-Identifier: GPL-3.0-only
+
+name: Build Linux
+
+on:
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_VERSION: '10.0.x'
+  DOTNET_QUALITY: 'preview'
+
+jobs:
+  build:
+    name: Linux x64
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+          dotnet-quality: ${{ env.DOTNET_QUALITY }}
+
+      - name: Install Linux packaging tools
+        run: |
+          retry() {
+            local attempt=1
+            local maximum_attempts=3
+
+            until "$@"; do
+              if [ "$attempt" -ge "$maximum_attempts" ]; then
+                echo "Command failed after $maximum_attempts attempts: $*" >&2
+                return 1
+              fi
+
+              echo "::warning::Command failed on attempt $attempt, retrying: $*"
+              sleep $((attempt * 15))
+              attempt=$((attempt + 1))
+            done
+          }
+
+          sudo apt-get update
+          sudo apt-get install -y flatpak flatpak-builder rpm
+          flatpak remote-add --if-not-exists --user flathub https://flathub.org/repo/flathub.flatpakrepo
+          retry flatpak install -y --user flathub \
+            org.freedesktop.Platform//24.08 \
+            org.freedesktop.Sdk//24.08
+          mkdir -p "$RUNNER_TEMP/hyprism-tools"
+          curl --fail --location --retry 3 \
+            --output "$RUNNER_TEMP/hyprism-tools/appimagetool" \
+            https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage
+          chmod +x "$RUNNER_TEMP/hyprism-tools/appimagetool"
+
+      - name: Publish Linux x64 packages
+        env:
+          APPIMAGETOOL: ${{ runner.temp }}/hyprism-tools/appimagetool
+        run: |
+          ./Packaging/publish-linux.sh all \
+            --output dist
+
+      - name: Upload Linux artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-x64
+          path: |
+            dist/*.deb
+            dist/*.rpm
+            dist/*.AppImage
+            dist/*.flatpak
+            dist/*.tar.xz
+          if-no-files-found: error
