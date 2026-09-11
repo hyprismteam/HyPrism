@@ -10,7 +10,7 @@ using Avalonia.VisualTree;
 namespace HyPrism.Desktop.Controls;
 
 /// <summary>
-/// A vertical scroll viewer with eased wheel scrolling and browser-style middle-click auto-scroll.
+/// A scroll viewer with eased wheel scrolling and optional browser-style middle-click auto-scroll.
 /// </summary>
 public sealed class SmoothScrollViewer : ScrollViewer
 {
@@ -21,6 +21,11 @@ public sealed class SmoothScrollViewer : ScrollViewer
 
     public static readonly StyledProperty<string?> ScrollContextKeyProperty =
         AvaloniaProperty.Register<SmoothScrollViewer, string?>(nameof(ScrollContextKey));
+
+    public static readonly StyledProperty<bool> EnableMiddleClickAutoScrollProperty =
+        AvaloniaProperty.Register<SmoothScrollViewer, bool>(
+            nameof(EnableMiddleClickAutoScroll),
+            defaultValue: false);
 
     private const double WheelStep = 92;
     private const double WheelEasingPerTick = 0.16;
@@ -35,6 +40,7 @@ public sealed class SmoothScrollViewer : ScrollViewer
     private readonly Cursor _autoScrollIdleCursor = new(StandardCursorType.SizeAll);
     private readonly Cursor _autoScrollUpCursor = new(StandardCursorType.TopSide);
     private readonly Cursor _autoScrollDownCursor = new(StandardCursorType.BottomSide);
+    private double _targetX;
     private double _targetY;
     private bool _isAnimating;
     private bool _isAutoScrolling;
@@ -45,6 +51,7 @@ public sealed class SmoothScrollViewer : ScrollViewer
     private double _autoScrollTargetVelocity;
     private Cursor? _previousCursor;
     private IPointer? _capturedPointer;
+    private bool _isApplyingOffset;
 
     protected override Type StyleKeyOverride => typeof(ScrollViewer);
 
@@ -60,19 +67,49 @@ public sealed class SmoothScrollViewer : ScrollViewer
         set => SetValue(ScrollContextKeyProperty, value);
     }
 
-    protected override void OnPointerWheelChanged(PointerWheelEventArgs e)
+    public bool EnableMiddleClickAutoScroll
     {
-        if (Extent.Height <= Viewport.Height)
+        get => GetValue(EnableMiddleClickAutoScrollProperty);
+        set => SetValue(EnableMiddleClickAutoScrollProperty, value);
+    }
+
+    protected override void OnPointerWheelChanged(PointerWheelEventArgs e)
+        => HandlePointerWheelChanged(e);
+
+    internal void HandlePointerWheelChanged(PointerWheelEventArgs e)
+    {
+        var maxX = Math.Max(0, Extent.Width - Viewport.Width);
+        var maxY = Math.Max(0, Extent.Height - Viewport.Height);
+        var wheelDelta = e.Delta;
+        if ((maxX <= 0 && maxY <= 0) ||
+            (Math.Abs(wheelDelta.X) < double.Epsilon && Math.Abs(wheelDelta.Y) < double.Epsilon))
         {
             base.OnPointerWheelChanged(e);
             return;
         }
 
+        var currentTargetX = _isAnimating ? _targetX : Offset.X;
+        var currentTargetY = _isAnimating ? _targetY : Offset.Y;
+        var targetX = Math.Clamp(currentTargetX - wheelDelta.X * WheelStep, 0, maxX);
+        var targetY = Math.Clamp(currentTargetY - wheelDelta.Y * WheelStep, 0, maxY);
+        var canScrollHorizontally = Math.Abs(wheelDelta.X) >= double.Epsilon &&
+                                    maxX > 0 &&
+                                    !IsAtScrollBoundary(wheelDelta.X, Offset.X, currentTargetX, maxX);
+        var canScrollVertically = Math.Abs(wheelDelta.Y) >= double.Epsilon &&
+                                  maxY > 0 &&
+                                  !IsAtScrollBoundary(wheelDelta.Y, Offset.Y, currentTargetY, maxY);
+        if (!canScrollHorizontally && !canScrollVertically)
+        {
+            _isAnimating = false;
+            _targetX = Offset.X;
+            _targetY = Offset.Y;
+            base.OnPointerWheelChanged(e);
+            return;
+        }
+
         StopAutoScroll();
-        _targetY = Math.Clamp(
-            (_isAnimating ? _targetY : Offset.Y) - e.Delta.Y * WheelStep,
-            0,
-            Math.Max(0, Extent.Height - Viewport.Height));
+        _targetX = targetX;
+        _targetY = targetY;
         _isAnimating = true;
         EnsureFrameLoop();
         e.Handled = true;
@@ -81,7 +118,7 @@ public sealed class SmoothScrollViewer : ScrollViewer
     protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
         var point = e.GetCurrentPoint(this);
-        if (point.Properties.IsMiddleButtonPressed)
+        if (EnableMiddleClickAutoScroll && point.Properties.IsMiddleButtonPressed)
         {
             if (_isAutoScrolling)
             {
@@ -158,6 +195,14 @@ public sealed class SmoothScrollViewer : ScrollViewer
         base.OnPropertyChanged(change);
         if (change.Property == OffsetProperty)
         {
+            if (!_isApplyingOffset)
+            {
+                _isAnimating = false;
+                var offset = change.GetNewValue<Vector>();
+                _targetX = offset.X;
+                _targetY = offset.Y;
+            }
+
             SetCurrentValue(IsPastTopProperty, Offset.Y > 6);
         }
         else if (change.Property == ScrollContextKeyProperty)
@@ -197,6 +242,7 @@ public sealed class SmoothScrollViewer : ScrollViewer
             : 0.0;
         _lastFrameTimestamp = timestamp;
 
+        var maxX = Math.Max(0, Extent.Width - Viewport.Width);
         var maxY = Math.Max(0, Extent.Height - Viewport.Height);
         if (_isAutoScrolling)
         {
@@ -206,7 +252,7 @@ public sealed class SmoothScrollViewer : ScrollViewer
                 _autoScrollVelocity = 0;
 
             var next = Math.Clamp(Offset.Y + _autoScrollVelocity * deltaMilliseconds / 1000.0, 0, maxY);
-            Offset = new Vector(Offset.X, next);
+            SetAnimatedOffset(new Vector(Offset.X, next));
             if ((next <= 0 && _autoScrollVelocity < 0) ||
                 (next >= maxY && _autoScrollVelocity > 0))
             {
@@ -218,16 +264,21 @@ public sealed class SmoothScrollViewer : ScrollViewer
 
         if (_isAnimating)
         {
+            _targetX = Math.Clamp(_targetX, 0, maxX);
             _targetY = Math.Clamp(_targetY, 0, maxY);
-            var delta = _targetY - Offset.Y;
-            if (Math.Abs(delta) < 0.5)
+            var deltaX = _targetX - Offset.X;
+            var deltaY = _targetY - Offset.Y;
+            if (Math.Abs(deltaX) < 0.5 && Math.Abs(deltaY) < 0.5)
             {
-                Offset = new Vector(Offset.X, _targetY);
+                SetAnimatedOffset(new Vector(_targetX, _targetY));
                 _isAnimating = false;
             }
             else
             {
-                Offset = new Vector(Offset.X, Offset.Y + delta * EasePerFrame(WheelEasingPerTick, deltaMilliseconds));
+                var easing = EasePerFrame(WheelEasingPerTick, deltaMilliseconds);
+                SetAnimatedOffset(new Vector(
+                    Offset.X + deltaX * easing,
+                    Offset.Y + deltaY * easing));
             }
         }
 
@@ -243,12 +294,34 @@ public sealed class SmoothScrollViewer : ScrollViewer
     private static double EasePerFrame(double perTickFactor, double deltaMilliseconds)
         => 1 - Math.Pow(1 - perTickFactor, Math.Max(0, deltaMilliseconds) / TickMilliseconds);
 
+    private static bool IsAtScrollBoundary(
+        double wheelDelta,
+        double offset,
+        double target,
+        double maximum)
+        => (wheelDelta > 0 && offset <= 0 && target <= 0) ||
+           (wheelDelta < 0 && offset >= maximum && target >= maximum);
+
+    private void SetAnimatedOffset(Vector offset)
+    {
+        _isApplyingOffset = true;
+        try
+        {
+            Offset = offset;
+        }
+        finally
+        {
+            _isApplyingOffset = false;
+        }
+    }
+
     private void ResetScrollPosition()
     {
         _isAnimating = false;
         StopAutoScroll();
+        _targetX = 0;
         _targetY = 0;
-        Offset = new Vector(Offset.X, 0);
+        Offset = new Vector(0, 0);
         SetCurrentValue(IsPastTopProperty, false);
     }
 

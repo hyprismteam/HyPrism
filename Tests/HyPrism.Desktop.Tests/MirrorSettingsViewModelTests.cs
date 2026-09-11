@@ -392,7 +392,7 @@ public sealed class MirrorSettingsViewModelTests
             await Task.Delay(100);
             Dispatcher.UIThread.RunJobs();
 
-            var categoryScroll = Assert.IsType<ScrollViewer>(
+            var categoryScroll = Assert.IsAssignableFrom<ScrollViewer>(
                 view.FindControl<ScrollViewer>("SettingsCategoryScroll"));
             var fixedRailContent = Assert.IsType<Grid>(categoryScroll.Parent);
             Assert.Equal(276, fixedRailContent.MinWidth);

@@ -117,7 +117,7 @@ SPDX-License-Identifier: GPL-3.0-only
         </TranslateTransform>
       </Border.RenderTransform>
       <Grid MinWidth="276">
-        <ScrollViewer Classes="instancesScroll"
+        <controls:SmoothScrollViewer Classes="instancesScroll"
                       Margin="14,18,4,18"
                       HorizontalContentAlignment="Stretch"
                       HorizontalScrollBarVisibility="Disabled"
@@ -188,7 +188,7 @@ SPDX-License-Identifier: GPL-3.0-only
                 </StackPanel>
               </Button>
           </StackPanel>
-        </ScrollViewer>
+        </controls:SmoothScrollViewer>
       </Grid>
     </Border>
 
@@ -406,7 +406,7 @@ SPDX-License-Identifier: GPL-3.0-only
               </Grid>
             </Border>
 
-            <ScrollViewer Grid.Row="1"
+            <controls:SmoothScrollViewer Grid.Row="1"
                           HorizontalScrollBarVisibility="Disabled"
                           VerticalScrollBarVisibility="Auto">
               <StackPanel Classes="instanceHubContent"
@@ -610,7 +610,7 @@ SPDX-License-Identifier: GPL-3.0-only
                 </Border>
 
               </StackPanel>
-            </ScrollViewer>
+            </controls:SmoothScrollViewer>
           </Grid>
 
           <Grid x:Name="InstanceSectionScreen"
@@ -1452,7 +1452,7 @@ SPDX-License-Identifier: GPL-3.0-only
             </Button>
           </Grid>
 
-          <ScrollViewer Grid.Row="1"
+          <controls:SmoothScrollViewer Grid.Row="1"
                         HorizontalScrollBarVisibility="Disabled"
                         VerticalScrollBarVisibility="Auto">
             <StackPanel Spacing="16" Margin="0,0,8,0">
@@ -1688,7 +1688,7 @@ SPDX-License-Identifier: GPL-3.0-only
                 </Grid>
               </Border>
             </StackPanel>
-          </ScrollViewer>
+          </controls:SmoothScrollViewer>
           </Grid>
         </Border>
 

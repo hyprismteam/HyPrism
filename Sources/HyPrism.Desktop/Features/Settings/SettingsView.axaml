@@ -427,7 +427,7 @@ SPDX-License-Identifier: GPL-3.0-only
         </TranslateTransform>
       </Border.RenderTransform>
       <Grid MinWidth="276">
-        <ScrollViewer x:Name="SettingsCategoryScroll"
+        <controls:SmoothScrollViewer x:Name="SettingsCategoryScroll"
                       Classes="settingsCategoryScroll"
                       Margin="14,18,4,18"
                       HorizontalContentAlignment="Stretch"
@@ -443,7 +443,7 @@ SPDX-License-Identifier: GPL-3.0-only
               </ItemsPanelTemplate>
             </ItemsControl.ItemsPanel>
           </ItemsControl>
-        </ScrollViewer>
+        </controls:SmoothScrollViewer>
       </Grid>
     </Border>
 
@@ -535,7 +535,7 @@ SPDX-License-Identifier: GPL-3.0-only
         </Grid>
       </Border>
 
-      <ScrollViewer x:Name="SettingsContent"
+      <controls:SmoothScrollViewer x:Name="SettingsContent"
                     Grid.Row="1"
                     Classes="settingsScroll"
                     HorizontalScrollBarVisibility="Disabled"
@@ -1505,7 +1505,7 @@ SPDX-License-Identifier: GPL-3.0-only
           </StackPanel>
 
         </Grid>
-      </ScrollViewer>
+      </controls:SmoothScrollViewer>
       </Grid>
 
       <Border x:Name="DownloadSourceWizardScreen"
@@ -1531,7 +1531,7 @@ SPDX-License-Identifier: GPL-3.0-only
             </TranslateTransform.Transitions>
           </TranslateTransform>
         </Border.RenderTransform>
-        <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+        <controls:SmoothScrollViewer HorizontalScrollBarVisibility="Disabled"
                       VerticalScrollBarVisibility="Auto">
           <StackPanel MaxWidth="560"
                       HorizontalAlignment="Stretch"
@@ -1707,7 +1707,7 @@ SPDX-License-Identifier: GPL-3.0-only
               </StackPanel>
             </StackPanel>
           </StackPanel>
-        </ScrollViewer>
+        </controls:SmoothScrollViewer>
       </Border>
     </Grid>
 

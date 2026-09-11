@@ -10,7 +10,8 @@ SPDX-License-Identifier: GPL-3.0-only
 -->
 
 <Styles xmlns="https://github.com/avaloniaui"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="using:HyPrism.Desktop.Controls">
 
   <!-- Window: transparent frame, the app draws its own chrome -->
   <Style Selector="Window">
@@ -95,7 +96,7 @@ SPDX-License-Identifier: GPL-3.0-only
                 BorderBrush="{TemplateBinding BorderBrush}"
                 BorderThickness="{TemplateBinding BorderThickness}"
                 CornerRadius="{TemplateBinding CornerRadius}">
-          <ScrollViewer Name="PART_ScrollViewer"
+          <controls:SmoothScrollViewer Name="PART_ScrollViewer"
                         HorizontalScrollBarVisibility="{TemplateBinding (ScrollViewer.HorizontalScrollBarVisibility)}"
                         VerticalScrollBarVisibility="{TemplateBinding (ScrollViewer.VerticalScrollBarVisibility)}"
                         IsScrollChainingEnabled="{TemplateBinding (ScrollViewer.IsScrollChainingEnabled)}"
@@ -106,7 +107,7 @@ SPDX-License-Identifier: GPL-3.0-only
             <ItemsPresenter Name="PART_ItemsPresenter"
                             ItemsPanel="{TemplateBinding ItemsPanel}"
                             Margin="{TemplateBinding Padding}" />
-          </ScrollViewer>
+          </controls:SmoothScrollViewer>
         </Border>
       </ControlTemplate>
     </Setter>
@@ -200,12 +201,12 @@ SPDX-License-Identifier: GPL-3.0-only
                     HorizontalAlignment="Stretch"
                     CornerRadius="11"
                     Padding="6">
-              <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+              <controls:SmoothScrollViewer HorizontalScrollBarVisibility="Disabled"
                             VerticalScrollBarVisibility="{TemplateBinding ScrollViewer.VerticalScrollBarVisibility}"
                             IsScrollChainingEnabled="False">
                 <ItemsPresenter Name="PART_ItemsPresenter"
                                 ItemsPanel="{TemplateBinding ItemsPanel}" />
-              </ScrollViewer>
+              </controls:SmoothScrollViewer>
             </Border>
           </Popup>
         </Grid>
@@ -263,7 +264,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="Template">
       <ControlTemplate>
         <Grid ColumnDefinitions="*,Auto" RowDefinitions="*,Auto">
-          <ScrollContentPresenter Name="PART_ContentPresenter"
+          <controls:SmoothScrollContentPresenter Name="PART_ContentPresenter"
                                   Grid.Row="0"
                                   Grid.Column="0"
                                   Background="{TemplateBinding Background}"
@@ -273,15 +274,15 @@ SPDX-License-Identifier: GPL-3.0-only
                                   VerticalSnapPointsAlignment="{TemplateBinding VerticalSnapPointsAlignment}"
                                   Padding="{TemplateBinding Padding}"
                                   ScrollViewer.IsScrollInertiaEnabled="{TemplateBinding IsScrollInertiaEnabled}">
-            <ScrollContentPresenter.GestureRecognizers>
+            <controls:SmoothScrollContentPresenter.GestureRecognizers>
               <ScrollGestureRecognizer CanHorizontallyScroll="{Binding CanHorizontallyScroll, ElementName=PART_ContentPresenter}"
                                        CanVerticallyScroll="{Binding CanVerticallyScroll, ElementName=PART_ContentPresenter}"
                                        IsScrollInertiaEnabled="{Binding (ScrollViewer.IsScrollInertiaEnabled), ElementName=PART_ContentPresenter}"
                                        Offset="{Binding Offset, ElementName=PART_ContentPresenter}"
                                        Viewport="{Binding Viewport, ElementName=PART_ContentPresenter}"
                                        Extent="{Binding Extent, ElementName=PART_ContentPresenter}" />
-            </ScrollContentPresenter.GestureRecognizers>
-          </ScrollContentPresenter>
+            </controls:SmoothScrollContentPresenter.GestureRecognizers>
+          </controls:SmoothScrollContentPresenter>
           <ScrollBar Name="PART_HorizontalScrollBar"
                      Orientation="Horizontal"
                      Grid.Row="1" />
@@ -370,7 +371,7 @@ SPDX-License-Identifier: GPL-3.0-only
                          IsVisible="False"
                          Text="{TemplateBinding PlaceholderText}"
                          DockPanel.Dock="Top" />
-              <ScrollViewer Name="PART_ScrollViewer"
+              <controls:SmoothScrollViewer Name="PART_ScrollViewer"
                             HorizontalScrollBarVisibility="{TemplateBinding (ScrollViewer.HorizontalScrollBarVisibility)}"
                             VerticalScrollBarVisibility="{TemplateBinding (ScrollViewer.VerticalScrollBarVisibility)}"
                             IsScrollChainingEnabled="{TemplateBinding (ScrollViewer.IsScrollChainingEnabled)}"
@@ -410,7 +411,7 @@ SPDX-License-Identifier: GPL-3.0-only
                                  HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                                  VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
                 </Panel>
-              </ScrollViewer>
+              </controls:SmoothScrollViewer>
             </DockPanel>
             <ContentPresenter Grid.Column="2"
                               VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
@@ -603,7 +604,7 @@ SPDX-License-Identifier: GPL-3.0-only
                 BorderThickness="{TemplateBinding BorderThickness}"
                 Padding="{TemplateBinding Padding}"
                 CornerRadius="{TemplateBinding CornerRadius}">
-          <ScrollViewer HorizontalScrollBarVisibility="Auto"
+          <controls:SmoothScrollViewer HorizontalScrollBarVisibility="Auto"
                         VerticalScrollBarVisibility="Auto">
             <ContentPresenter x:Name="PART_ContentPresenter"
                               Content="{TemplateBinding Content}"
@@ -613,7 +614,7 @@ SPDX-License-Identifier: GPL-3.0-only
                               VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
                               HorizontalContentAlignment="Stretch"
                               VerticalContentAlignment="Stretch" />
-          </ScrollViewer>
+          </controls:SmoothScrollViewer>
         </Border>
       </ControlTemplate>
     </Setter>

@@ -55,11 +55,11 @@ Publish observable collection changes on the UI dispatcher. Unsubscribe from ser
 | `FadingPopup` and `FadingComboBox` | Popup lifecycle and selection menus |
 | `ReorderableListController` | Drag handles, previews, and drop positions |
 | `NoteCard` | Informational and important callouts |
-| `SmoothScrollViewer` | Wheel and middle-button scrolling |
+| `SmoothScrollViewer` | Shared wheel and precision-touchpad scrolling; optional middle-button auto-scroll |
 
 Animation timing belongs in `MotionDurations` or the owning reusable control. The [performance guide](/docs/development/avalonia-performance) explains layout and rendering checks
 
-The shared vertical scrollbar keeps a fixed 6 px thumb layout slot. Its idle 3 px appearance and expanded 6 px appearance use a `RenderTransform` transition, so hover changes do not trigger repeated measure and arrange passes. Keep future thickness animations on render properties rather than `Width`
+App-owned scroll hosts use `SmoothScrollViewer`, so mouse-wheel and precision-touchpad deltas feed one frame-based easing loop. Its template uses `SmoothScrollContentPresenter` to intercept wheel input before Avalonia's default immediate offset update. Middle-button auto-scroll is opt-in and remains enabled only for News views. The scrollbar keeps a fixed 6 px thumb layout slot and animates its idle 3 px appearance through `RenderTransform`; keep future thickness animations on render properties rather than `Width`
 
 ## Network presentation
 

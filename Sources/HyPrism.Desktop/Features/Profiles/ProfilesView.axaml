@@ -244,7 +244,7 @@ SPDX-License-Identifier: GPL-3.0-only
         </TranslateTransform>
       </Border.RenderTransform>
       <Grid MinWidth="276">
-        <ScrollViewer Classes="instancesScroll"
+        <controls:SmoothScrollViewer Classes="instancesScroll"
                       Margin="14,18,4,18"
                       HorizontalContentAlignment="Stretch"
                       HorizontalScrollBarVisibility="Disabled"
@@ -356,7 +356,7 @@ SPDX-License-Identifier: GPL-3.0-only
             </StackPanel>
           </Button>
           </StackPanel>
-        </ScrollViewer>
+        </controls:SmoothScrollViewer>
       </Grid>
     </Border>
 
@@ -527,7 +527,7 @@ SPDX-License-Identifier: GPL-3.0-only
             </Grid>
           </Border>
 
-          <ScrollViewer Grid.Row="1"
+          <controls:SmoothScrollViewer Grid.Row="1"
                         HorizontalScrollBarVisibility="Disabled"
                         VerticalScrollBarVisibility="Auto">
             <StackPanel x:Name="ProfilesContentHost"
@@ -726,7 +726,7 @@ SPDX-License-Identifier: GPL-3.0-only
                 </Border>
               </StackPanel>
             </StackPanel>
-          </ScrollViewer>
+          </controls:SmoothScrollViewer>
         </Grid>
       </Grid>
 
@@ -752,7 +752,7 @@ SPDX-License-Identifier: GPL-3.0-only
             </TranslateTransform.Transitions>
           </TranslateTransform>
         </Border.RenderTransform>
-        <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+        <controls:SmoothScrollViewer HorizontalScrollBarVisibility="Disabled"
                       VerticalScrollBarVisibility="Auto">
           <StackPanel MaxWidth="560"
                       HorizontalAlignment="Stretch"
@@ -974,7 +974,7 @@ SPDX-License-Identifier: GPL-3.0-only
               </Grid>
             </StackPanel>
           </StackPanel>
-        </ScrollViewer>
+        </controls:SmoothScrollViewer>
       </Border>
     </Grid>
 

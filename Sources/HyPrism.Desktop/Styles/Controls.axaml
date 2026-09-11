@@ -104,12 +104,12 @@ SPDX-License-Identifier: GPL-3.0-only
                       Background="{DynamicResource ControlSurfaceActiveBrush}"
                       HorizontalAlignment="Stretch"
                       IsHitTestVisible="{TemplateBinding IsDropDownOpen}">
-                <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+                <controls:SmoothScrollViewer HorizontalScrollBarVisibility="Disabled"
                               VerticalScrollBarVisibility="Auto"
                               IsScrollChainingEnabled="False">
                   <ItemsPresenter x:Name="PART_ItemsPresenter"
                                   ItemsPanel="{TemplateBinding ItemsPanel}" />
-                </ScrollViewer>
+                </controls:SmoothScrollViewer>
               </Border>
             </controls:FadingPopup>
           </Grid>

@@ -1751,6 +1751,7 @@ public sealed class MainWindowRenderTests
         {
             Width = 320,
             Height = 220,
+            EnableMiddleClickAutoScroll = true,
             Content = new Border { Height = 1400 }
         };
         var window = new Window
@@ -1772,11 +1773,20 @@ public sealed class MainWindowRenderTests
         Assert.NotNull(center);
 
         window.MouseWheel(center!.Value, new Vector(0, -1), RawInputModifiers.None);
+        Assert.Equal(0, viewer.Offset.Y);
         await WaitForConditionAsync(
             () => viewer.Offset.Y > 0,
             "smooth scrolling after a wheel event");
         Dispatcher.UIThread.RunJobs();
         Assert.True(viewer.Offset.Y > 0);
+        var afterMouseWheel = viewer.Offset.Y;
+
+        window.MouseWheel(center.Value, new Vector(0, -0.25), RawInputModifiers.None);
+        await WaitForConditionAsync(
+            () => viewer.Offset.Y > afterMouseWheel,
+            "smooth scrolling after a precision touchpad delta");
+        Dispatcher.UIThread.RunJobs();
+        Assert.True(viewer.Offset.Y > afterMouseWheel);
 
         window.MouseDown(center.Value, MouseButton.Middle);
         Dispatcher.UIThread.RunJobs();
@@ -4330,6 +4340,7 @@ public sealed class MainWindowRenderTests
 
     private static void AssertUsesApplicationScrollBar(ScrollViewer scrollViewer)
     {
+        Assert.IsType<SmoothScrollViewer>(scrollViewer);
         var contentPresenter = scrollViewer.GetVisualDescendants()
             .OfType<Avalonia.Controls.Presenters.ScrollContentPresenter>()
             .Single(control => control.Name == "PART_ContentPresenter");

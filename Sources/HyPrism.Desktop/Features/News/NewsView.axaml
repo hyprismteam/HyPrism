@@ -464,6 +464,7 @@ SPDX-License-Identifier: GPL-3.0-only
                    VerticalAlignment="Center" />
 
         <controls:SmoothScrollViewer IsVisible="{Binding IsNewsLandingVisible}"
+                                     EnableMiddleClickAutoScroll="True"
                                      Classes="newsFeedScroll"
                                      HorizontalScrollBarVisibility="Disabled"
                                      VerticalScrollBarVisibility="Auto">
@@ -599,6 +600,7 @@ SPDX-License-Identifier: GPL-3.0-only
 
         <controls:SmoothScrollViewer Grid.Row="1"
                                      IsVisible="{Binding IsNewsArticleVisible}"
+                                     EnableMiddleClickAutoScroll="True"
                                      IsPastTop="{Binding IsNewsArticleScrolled, Mode=TwoWay}"
                                      ScrollContextKey="{Binding SelectedNewsItem.Url}"
                                      Background="{DynamicResource SurfaceBrush}"
