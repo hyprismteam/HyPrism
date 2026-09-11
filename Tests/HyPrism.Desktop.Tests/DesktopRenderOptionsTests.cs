@@ -13,28 +13,26 @@ public sealed class DesktopRenderOptionsTests
     [InlineData(null)]
     [InlineData("")]
     [InlineData("  ")]
-    [InlineData("dxgi")]
-    [InlineData(" DXGI ")]
-    public void CreateCompositionModes_DefaultsToLowLatencyDxgiSwapChain(string? environmentValue)
+    public void CreateCompositionModes_DefaultsToWinUiComposition(string? environmentValue)
     {
         var modes = DesktopRenderOptions.CreateCompositionModes(environmentValue);
 
         Assert.Equal(
-            Win32CompositionMode.LowLatencyDxgiSwapChain,
+            Win32CompositionMode.WinUIComposition,
             Assert.Single(modes.Take(1)));
         Assert.Contains(Win32CompositionMode.WinUIComposition, modes);
         Assert.Contains(Win32CompositionMode.RedirectionSurface, modes);
     }
 
     [Theory]
-    [InlineData("winui")]
-    [InlineData("WINUI ")]
-    public void CreateCompositionModes_CanRevertToWinUiComposition(string environmentValue)
+    [InlineData("dxgi")]
+    [InlineData(" DXGI ")]
+    public void CreateCompositionModes_CanSelectLowLatencyDxgiSwapChain(string environmentValue)
     {
         var modes = DesktopRenderOptions.CreateCompositionModes(environmentValue);
 
         Assert.Equal(
-            Win32CompositionMode.WinUIComposition,
+            Win32CompositionMode.LowLatencyDxgiSwapChain,
             Assert.Single(modes.Take(1)));
         Assert.Contains(Win32CompositionMode.RedirectionSurface, modes);
     }
@@ -57,7 +55,7 @@ public sealed class DesktopRenderOptionsTests
         var options = DesktopRenderOptions.CreateWin32Options();
 
         Assert.Equal(
-            Win32CompositionMode.LowLatencyDxgiSwapChain,
+            Win32CompositionMode.WinUIComposition,
             Assert.Single(options.CompositionMode.Take(1)));
     }
 

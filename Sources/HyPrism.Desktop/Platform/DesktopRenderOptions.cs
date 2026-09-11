@@ -8,9 +8,8 @@ namespace HyPrism.Desktop.Platform;
 
 /// <summary>
 /// Selects the Win32 composition mode used by Avalonia for frame presentation.
-/// The default is the low-latency flip-model DXGI swap chain paced by display vblank.
-/// The environment variable HYPRISM_WIN32_COMPOSITION reverts it for troubleshooting:
-/// winui (Avalonia default), dcomp, or dxgi.
+/// The default is Avalonia's WinUI composition mode.
+/// The environment variable HYPRISM_WIN32_COMPOSITION selects dcomp or dxgi for troubleshooting.
 /// </summary>
 internal static class DesktopRenderOptions
 {
@@ -33,7 +32,8 @@ internal static class DesktopRenderOptions
         {
             Win32CompositionMode.DirectComposition => DirectCompositionModes,
             Win32CompositionMode.WinUIComposition => WinUiCompositionModes,
-            _ => LowLatencyDxgiModes
+            Win32CompositionMode.LowLatencyDxgiSwapChain => LowLatencyDxgiModes,
+            _ => WinUiCompositionModes
         };
 
         return modes;

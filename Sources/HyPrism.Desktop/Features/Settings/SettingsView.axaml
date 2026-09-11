@@ -1107,36 +1107,30 @@ SPDX-License-Identifier: GPL-3.0-only
                         MaxWidth="720"
                         HorizontalAlignment="Stretch"
                         Spacing="12">
-              <Grid Width="260" Height="260" HorizontalAlignment="Center">
-                <controls:StorageDonutChart x:Name="StorageDonut"
-                                            Width="246"
-                                            Height="246"
-                                            HorizontalAlignment="Center"
-                                            VerticalAlignment="Center"
-                                            Items="{Binding StorageUsageItems}"
-                                            TrackBrush="{DynamicResource ControlTrackBrush}"
-                                            HoleBrush="{DynamicResource SurfaceBrush}"
-                                            SeparatorBrush="{DynamicResource SurfaceBrush}"
-                                            SeparatorThickness="2.5"
-                                            InnerRadiusRatio="0.5"
-                                            IsAnimationEnabled="{Binding IsData}"
-                                            LabelFontFamily="{DynamicResource GoogleSansFont}" />
-                <StackPanel HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Spacing="3"
-                            IsVisible="{Binding !IsStorageUsageLoading}">
-                  <TextBlock Text="{Binding TotalStorageUsage}"
-                             Classes="storageTotalValue" />
-                </StackPanel>
-                <StackPanel HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Spacing="8"
-                            IsVisible="{Binding IsStorageUsageLoading}">
+              <Border Classes="storageUsageCard">
+                <Grid>
+                  <StackPanel Spacing="10" IsVisible="{Binding !IsStorageUsageLoading}">
+                   <TextBlock Text="{Binding TotalStorageUsage}"
+                              Classes="storageTotalValue storageUsageValue" />
+                   <Border Height="16" CornerRadius="8">
+                    <ItemsControl ItemsSource="{Binding StorageUsageItems}">
+                      <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate><controls:StorageUsageBarPanel /></ItemsPanelTemplate>
+                      </ItemsControl.ItemsPanel>
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="controls:StorageUsageSegment">
+                          <Border Background="{Binding Brush}" CornerRadius="3" />
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </Border>
+                  </StackPanel>
+                  <StackPanel Spacing="8" IsVisible="{Binding IsStorageUsageLoading}">
                   <ProgressBar Classes="storageLoadingProgress" IsIndeterminate="True" />
-                  <TextBlock Text="{Binding StorageLoadingLabel}"
-                             Classes="storageTotalLabel" />
-                </StackPanel>
-              </Grid>
+                  <TextBlock Text="{Binding StorageLoadingLabel}" Classes="storageTotalLabel" />
+                  </StackPanel>
+                </Grid>
+              </Border>
               <Border x:Name="StorageLegendCard"
                       Classes="storageLegendCard"
                       HorizontalAlignment="Stretch">
@@ -1149,9 +1143,9 @@ SPDX-License-Identifier: GPL-3.0-only
                     </ItemsPanelTemplate>
                   </ItemsControl.ItemsPanel>
                   <ItemsControl.ItemTemplate>
-                    <DataTemplate x:DataType="controls:StorageDonutSegment">
+                    <DataTemplate x:DataType="controls:StorageUsageSegment">
                       <Border Classes="storageLegendItem">
-                        <Grid RowDefinitions="Auto,Auto" RowSpacing="3">
+                         <Grid RowDefinitions="Auto,Auto" RowSpacing="3" VerticalAlignment="Center">
                           <Grid ColumnDefinitions="Auto,*" ColumnSpacing="7">
                             <Border Width="8"
                                     Height="8"

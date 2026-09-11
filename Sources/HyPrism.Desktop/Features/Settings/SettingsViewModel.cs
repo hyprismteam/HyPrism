@@ -166,7 +166,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     private string _instanceFolder = string.Empty;
     [ObservableProperty] private bool _isStorageUsageLoading;
     [ObservableProperty] private string _totalStorageUsage = "0 B";
-    [ObservableProperty] private IReadOnlyList<StorageDonutSegment> _storageUsageItems = [];
+    [ObservableProperty] private IReadOnlyList<StorageUsageSegment> _storageUsageItems = [];
     [ObservableProperty] private bool _hasAboutLatestCommit;
     [ObservableProperty] private bool _hasMoreAboutContributors;
     [ObservableProperty] private string _aboutLatestCommitSha = string.Empty;
@@ -1699,22 +1699,20 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
                 usage.InstanceBytes,
                 total,
                 "#245EA8",
-                StorageDonutIconKind.Instances,
                 (_instanceRepository?.GetCachedInstances().Count ?? 0).ToString()),
-            CreateStorageSegment(ImagesLabel, usage.ImageBytes, total, "#227F96", StorageDonutIconKind.Images),
-            CreateStorageSegment(ModsLabel, usage.ModBytes, total, "#60469B", StorageDonutIconKind.Mods),
-            CreateStorageSegment(NewsLabel, usage.NewsBytes, total, "#A86416", StorageDonutIconKind.News),
-            CreateStorageSegment(LogsLabel, usage.LogBytes, total, "#9C3A50", StorageDonutIconKind.Logs),
-            CreateStorageSegment(OtherFilesLabel, usage.OtherBytes, total, "#197765", StorageDonutIconKind.Other)
+            CreateStorageSegment(ImagesLabel, usage.ImageBytes, total, "#227F96"),
+            CreateStorageSegment(ModsLabel, usage.ModBytes, total, "#60469B"),
+            CreateStorageSegment(NewsLabel, usage.NewsBytes, total, "#A86416"),
+            CreateStorageSegment(LogsLabel, usage.LogBytes, total, "#9C3A50"),
+            CreateStorageSegment(OtherFilesLabel, usage.OtherBytes, total, "#197765")
         ];
     }
 
-    private static StorageDonutSegment CreateStorageSegment(
+    private static StorageUsageSegment CreateStorageSegment(
         string label,
         long bytes,
         long total,
         string color,
-        StorageDonutIconKind iconKind,
         string? count = null)
         => new(
             label,
@@ -1722,7 +1720,6 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
             FormatStorageSize(bytes),
             $"{bytes * 100d / total:0.#}%",
             new SolidColorBrush(Color.Parse(color)),
-            iconKind,
             count);
 
     private void OnInstancesChanged()

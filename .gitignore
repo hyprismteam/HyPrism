@@ -18,6 +18,7 @@ obj/
 *.suo
 *.cache
 .vs/
+.artifacts/*
 Build/icons/*
 Build/*
 

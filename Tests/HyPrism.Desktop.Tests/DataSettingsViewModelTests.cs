@@ -26,87 +26,6 @@ namespace HyPrism.Desktop.Tests;
 
 public sealed class DataSettingsViewModelTests
 {
-    [Fact]
-    public void StorageDonutLabelFont_GrowsWithTheSegmentShare()
-    {
-        var tiny = StorageDonutChart.GetPreferredLabelFontSize(0.026);
-        var medium = StorageDonutChart.GetPreferredLabelFontSize(0.12);
-        var large = StorageDonutChart.GetPreferredLabelFontSize(0.48);
-
-        Assert.True(tiny < medium);
-        Assert.True(medium < large);
-    }
-
-    [Fact]
-    public void StorageDonutParticlePhases_AreDistributedAcrossTheAnimationCycle()
-    {
-        var phases = Enumerable.Range(0, 14)
-            .Select(index => StorageDonutChart.GetParticlePhase(
-                StorageDonutIconKind.Instances,
-                index))
-            .ToArray();
-
-        Assert.True(phases.Min() < 0.15);
-        Assert.True(phases.Max() > 0.85);
-        Assert.Equal(phases.Length, phases.Distinct().Count());
-    }
-
-    [AvaloniaFact]
-    public async Task StorageDonutParticles_UseRoundedIconsAndAnimate()
-    {
-        var chart = new StorageDonutChart
-        {
-            Width = 300,
-            Height = 300,
-            TrackBrush = Brushes.Black,
-            HoleBrush = Brushes.Black,
-            Items =
-            [
-                new("Instances", 40, "40 MB", "40%", Brushes.Blue, StorageDonutIconKind.Instances),
-                new("Images", 20, "20 MB", "20%", Brushes.Teal, StorageDonutIconKind.Images),
-                new("Mods", 15, "15 MB", "15%", Brushes.Purple, StorageDonutIconKind.Mods),
-                new("News", 10, "10 MB", "10%", Brushes.Orange, StorageDonutIconKind.News),
-                new("Logs", 8, "8 MB", "8%", Brushes.Crimson, StorageDonutIconKind.Logs),
-                new("Other", 7, "7 MB", "7%", Brushes.DarkSlateGray, StorageDonutIconKind.Other)
-            ]
-        };
-        var window = new Window
-        {
-            Width = 320,
-            Height = 320,
-            Content = chart
-        };
-
-        window.Show();
-        Dispatcher.UIThread.RunJobs();
-        Assert.Equal(6, chart.LoadedParticleIconCount);
-        Assert.True(chart.IsParticleAnimationRunning);
-        await Task.Delay(120, TestContext.Current.CancellationToken);
-        Dispatcher.UIThread.RunJobs();
-        using var firstFrame = window.CaptureRenderedFrame();
-        var sceneBuildCount = chart.StaticSceneBuildCount;
-        Assert.Equal(20, chart.CachedParticleCount);
-        await Task.Delay(360, TestContext.Current.CancellationToken);
-        Dispatcher.UIThread.RunJobs();
-        using var secondFrame = window.CaptureRenderedFrame();
-
-        Assert.NotNull(firstFrame);
-        Assert.NotNull(secondFrame);
-        using var firstBytes = new MemoryStream();
-        using var secondBytes = new MemoryStream();
-        firstFrame.Save(firstBytes, PngBitmapEncoderOptions.Default);
-        secondFrame.Save(secondBytes, PngBitmapEncoderOptions.Default);
-        Assert.False(firstBytes.ToArray().SequenceEqual(secondBytes.ToArray()));
-        Assert.Equal(sceneBuildCount, chart.StaticSceneBuildCount);
-
-        chart.IsAnimationEnabled = false;
-        Assert.False(chart.IsParticleAnimationRunning);
-        chart.IsAnimationEnabled = true;
-        Assert.True(chart.IsParticleAnimationRunning);
-
-        window.Close();
-    }
-
     [AvaloniaFact]
     public async Task BrowseInstanceFolder_MovesDataAndUpdatesTheDisplayedPath()
     {
@@ -402,7 +321,8 @@ public sealed class DataSettingsViewModelTests
         var launcherCard = Assert.IsType<Border>(view.FindControl<Border>("LauncherDataCard"));
         var launcherFilesCard = Assert.IsType<Border>(view.FindControl<Border>("LauncherFilesCard"));
         var storageLegendCard = Assert.IsType<Border>(view.FindControl<Border>("StorageLegendCard"));
-        var storageDonut = Assert.IsType<StorageDonutChart>(view.FindControl<StorageDonutChart>("StorageDonut"));
+        var storageUsageOverview = Assert.IsType<StackPanel>(
+            view.FindControl<StackPanel>("StorageUsageOverview"));
         var warning = Assert.IsType<Border>(view.FindControl<Border>("DataGameRunningWarning"));
         var selectButton = Assert.IsType<Button>(view.FindControl<Button>("SelectInstanceFolderButton"));
         var resetButton = Assert.IsType<Button>(view.FindControl<Button>("ResetInstanceFolderButton"));
@@ -416,14 +336,12 @@ public sealed class DataSettingsViewModelTests
         Assert.True(launcherCard.IsEffectivelyVisible);
         Assert.True(launcherFilesCard.IsEffectivelyVisible);
         Assert.True(storageLegendCard.IsEffectivelyVisible);
-        Assert.True(storageDonut.IsEffectivelyVisible);
-        Assert.Equal(6, storageDonut.Items.Count);
-        Assert.Equal("Instances", storageDonut.Items[0].Label);
-        Assert.Equal("3", storageDonut.Items[0].Count);
-        Assert.Equal(StorageDonutIconKind.Instances, storageDonut.Items[0].IconKind);
-        Assert.Equal("News", storageDonut.Items[3].Label);
+        Assert.True(storageUsageOverview.IsEffectivelyVisible);
+        Assert.Equal(6, viewModel.StorageUsageItems.Count);
+        Assert.Equal("Instances", viewModel.StorageUsageItems[0].Label);
+        Assert.Equal("3", viewModel.StorageUsageItems[0].Count);
+        Assert.Equal("News", viewModel.StorageUsageItems[3].Label);
         Assert.Equal("151 MB", viewModel.TotalStorageUsage);
-        Assert.Contains("Google Sans", storageDonut.LabelFontFamily.ToString());
         Assert.True(warning.IsEffectivelyVisible);
         Assert.False(selectButton.IsEnabled);
         Assert.False(resetButton.IsEnabled);

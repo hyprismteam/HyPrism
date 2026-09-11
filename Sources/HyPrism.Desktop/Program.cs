@@ -1,7 +1,6 @@
 // Copyright (C) 2026 HyPrism Launcher
 // SPDX-License-Identifier: GPL-3.0-only
 
-using System.Runtime;
 using Avalonia;
 using Avalonia.Skia;
 using HyPrism.Desktop.Integrations.GitHub;
@@ -25,7 +24,6 @@ internal static class Program
     public static void Main(string[] args)
     {
         Logger.CaptureOriginalConsole();
-        GCSettings.LatencyMode = GCLatencyMode.SustainedLowLatency;
         LauncherUserAgent.ConfigureVersion(DesktopApplicationInfo.Version);
         DesktopRuntime.Services = Bootstrapper.Initialize(services =>
         {

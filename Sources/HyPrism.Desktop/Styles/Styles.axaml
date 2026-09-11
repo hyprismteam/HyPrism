@@ -1007,6 +1007,16 @@ SPDX-License-Identifier: GPL-3.0-only
     <Setter Property="HorizontalAlignment" Value="Center" />
   </Style>
 
+  <Style Selector="Border.storageUsageCard">
+    <Setter Property="Background" Value="{DynamicResource ControlGroupBrush}" />
+    <Setter Property="CornerRadius" Value="14" />
+    <Setter Property="Padding" Value="18" />
+  </Style>
+
+  <Style Selector="TextBlock.storageTotalValue.storageUsageValue">
+    <Setter Property="HorizontalAlignment" Value="Left" />
+  </Style>
+
   <Style Selector="ProgressBar.storageLoadingProgress">
     <Setter Property="Width" Value="56" />
     <Setter Property="Height" Value="3" />
