@@ -8,17 +8,11 @@ SPDX-License-Identifier: GPL-3.0-only
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net10.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-
     <EnableDefaultItems>false</EnableDefaultItems>
   </PropertyGroup>
 
   <ItemGroup>
     <Compile Include="Program.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="Sources/HyPrism.Desktop/HyPrism.Desktop.csproj" />
   </ItemGroup>
 

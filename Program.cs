@@ -1,10 +1,8 @@
 // Copyright (C) 2026 HyPrism Launcher
 // SPDX-License-Identifier: GPL-3.0-only
 
-namespace HyPrism.Dev;
-
-internal static class DevLauncher
+internal static class Program
 {
-    [STAThread]
-    public static void Main(string[] args) => Desktop.Program.Main(args);
+    [System.STAThread]
+    static void Main(string[] args) => HyPrism.Desktop.Program.Main(args);
 }
