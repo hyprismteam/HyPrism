@@ -1,0 +1,18 @@
+<Solution>
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Folder Name="/Sources/">
+    <Project Path="Sources/HyPrism.Core/HyPrism.Core.csproj" />
+    <Project Path="Sources/HyPrism.Desktop/HyPrism.Desktop.csproj" />
+    <Project Path="Sources/HyPrism.LocalNode/HyPrism.LocalNode.csproj" />
+  </Folder>
+  <Folder Name="/Tests/">
+    <Project Path="Tests/HyPrism.Core.Tests/HyPrism.Core.Tests.csproj" />
+    <Project Path="Tests/HyPrism.Desktop.Tests/HyPrism.Desktop.Tests.csproj" />
+    <Project Path="Tests/HyPrism.LocalNode.Tests/HyPrism.LocalNode.Tests.csproj" />
+  </Folder>
+  <Project Path="HyPrism.csproj" />
+</Solution>

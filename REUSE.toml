@@ -21,7 +21,7 @@ path = [
     "**/*.ogg",
     "**/*.ico",
     "**/*.icns",
-    "HyPrism.sln"
+    "HyPrism.slnx"
 ]
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2026 HyPrism Launcher"
