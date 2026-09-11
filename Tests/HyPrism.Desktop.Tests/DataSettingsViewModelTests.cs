@@ -358,8 +358,10 @@ public sealed class DataSettingsViewModelTests
             icon => icon.Classes.Contains("dataPathOpenIcon"));
         Assert.Equal(default, instancePathSurface.BorderThickness);
         Assert.Equal(default, launcherPathSurface.BorderThickness);
-        Assert.Same(storageDonut.TrackBrush, instancePathSurface.Background);
-        Assert.Same(storageDonut.TrackBrush, launcherPathSurface.Background);
+        var pathSurfaceBrush = Assert.IsAssignableFrom<ISolidColorBrush>(
+            window.FindResource("ControlTrackBrush"));
+        Assert.Same(pathSurfaceBrush, instancePathSurface.Background);
+        Assert.Same(pathSurfaceBrush, launcherPathSurface.Background);
         Assert.InRange(
             Math.Abs(storageLegendCard.Bounds.Width - launcherFilesCard.Bounds.Width),
             0,

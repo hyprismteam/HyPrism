@@ -4,3 +4,4 @@
 using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleTo("HyPrism.Desktop.Tests")]
+[assembly: InternalsVisibleTo("HyPrism")]
